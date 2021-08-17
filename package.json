@@ -1,0 +1,26 @@
+{
+  "name": "audiobookshelf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
+  },
+  "author": "advplyr",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "bcryptjs": "^2.4.3",
+    "chokidar": "^3.5.2",
+    "cookie-parser": "^1.4.5",
+    "express": "^4.17.1",
+    "fluent-ffmpeg": "^2.1.2",
+    "fs-extra": "^10.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "libgen": "^2.1.0",
+    "njodb": "^0.4.20",
+    "node-dir": "^0.1.17",
+    "socket.io": "^4.1.3"
+  }
+}

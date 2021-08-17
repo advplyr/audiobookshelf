@@ -1,0 +1,6 @@
+dev.js
+node_modules/
+/config/
+/audiobooks/
+/metadata/
+/test/

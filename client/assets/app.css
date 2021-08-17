@@ -1,0 +1,52 @@
+@import url('./transitions.css');
+
+.page {
+  width: 100%;
+  height: calc(100% - 64px);
+  max-height: calc(100% - 64px);
+}
+.page.streaming {
+  height: calc(100% - 64px - 165px);
+  max-height: calc(100% - 64px - 165px);
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 8px;
+}
+/* Track */
+::-webkit-scrollbar-track {
+  background-color: rgba(0,0,0,0);
+}
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #855620; 
+  border-radius: 4px;
+}
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #704922; 
+}
+
+
+.tracksTable {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #474747;
+}
+.tracksTable tr:nth-child(even) {
+  background-color: #2e2e2e;
+}
+.tracksTable tr {
+  background-color: #373838;
+}
+.tracksTable tr:hover {
+  background-color: #474747;
+}
+.tracksTable td {
+  padding: 4px;
+}
+.tracksTable th {
+  padding: 4px;
+  font-size: 0.75rem;
+}

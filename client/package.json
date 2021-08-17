@@ -1,0 +1,28 @@
+{
+  "name": "audiobookshelf-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nuxt",
+    "build": "nuxt build",
+    "start": "nuxt start",
+    "generate": "nuxt generate"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@nuxtjs/axios": "^5.13.6",
+    "@nuxtjs/proxy": "^2.1.0",
+    "core-js": "^3.16.0",
+    "hls.js": "^1.0.7",
+    "nuxt": "^2.15.7",
+    "nuxt-socket-io": "^1.1.18",
+    "vue-toastification": "^1.7.11",
+    "vuedraggable": "^2.24.3"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^4.2.1",
+    "postcss": "^8.3.6"
+  }
+}
