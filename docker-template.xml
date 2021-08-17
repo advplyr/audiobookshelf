@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>audiobookshelf</Name>
+  <Repository>advplyr/audiobookshelf</Repository>
+  <Registry>https://hub.docker.com/r/advplyr/audiobookshelf/</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://hub.docker.com/r/advplyr/audiobookshelf/</Support>
+  <Project/>
+  <Overview>Audiobook manager and player</Overview>
+  <Category>MediaApp:Books MediaServer:Books Status:Beta<</Category>
+  <WebUI>http://[IP]:[PORT:80]</WebUI>
+  <TemplateURL/>
+  <Icon>https://github.com/advplyr/audiobookshelf/raw/master/client/static/Logo.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled>1629238508</DateInstalled>
+  <DonateText/>
+  <DonateLink/>
+  <Description>Audiobook manager and player</Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>3337</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/media/Audiobooks/</HostDir>
+      <ContainerDir>/audiobooks</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/audiobookshelf/config/</HostDir>
+      <ContainerDir>/config</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+    <Volume>
+      <HostDir>/mnt/user/appdata/audiobookshelf/metadata/</HostDir>
+      <ContainerDir>/metadata</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment/>
+  <Labels/>
+  <Config Name="Audiobooks" Target="/audiobooks" Default="" Mode="rw" Description="Container Path: /audiobooks" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media/Audiobooks/</Config>
+  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/audiobookshelf/config/" Mode="rw" Description="Container Path: /config" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/config/</Config>
+  <Config Name="Metadata" Target="/metadata" Default="/mnt/user/appdata/audiobookshelf/metadata/" Mode="rw" Description="Container Path: /metadata" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/metadata/</Config>
+  <Config Name="Web UI Port" Target="80" Default="3337" Mode="tcp" Description="Container Port: 80" Type="Port" Display="always" Required="false" Mask="false">3337</Config>
+</Container>
