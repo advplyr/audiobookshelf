@@ -12,6 +12,8 @@
         <div class="flex-grow" />
         <ui-btn color="success" @click="scan">Scan</ui-btn>
       </div>
+      <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
+      <p class="font-mono">v{{ $config.version }}</p>
     </div>
   </div>
 </template>
