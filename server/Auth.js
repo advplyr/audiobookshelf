@@ -68,18 +68,6 @@ class Auth {
     })
   }
 
-  async getAuth(req) {
-    if (req.signedCookies.user) {
-      var user = this.users.find(u => u.username = req.signedCookies.user)
-      if (user) {
-        delete user.pash
-      }
-      return user
-    } else {
-      return false
-    }
-  }
-
   generateAccessToken(payload) {
     return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: '1800s' });
   }

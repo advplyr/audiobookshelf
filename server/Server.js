@@ -198,6 +198,11 @@ class Server {
     var client = this.clients[socket.id]
     client.user = user
 
+    if (!client.user.toJSONForBrowser) {
+      Logger.error('Invalid user...', client.user)
+      return
+    }
+
     // Check if user has stream open
     if (client.user.stream) {
       Logger.info('User has stream open already', client.user.stream)

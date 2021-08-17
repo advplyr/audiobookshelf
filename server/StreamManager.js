@@ -111,6 +111,10 @@ class StreamManager {
       return
     }
     client.stream.updateClientCurrentTime(currentTime)
+    if (!client.user) {
+      Logger.error('No User for client', client)
+      return
+    }
     client.user.updateAudiobookProgress(client.stream)
     this.db.updateEntity('user', client.user.toJSON())
   }
