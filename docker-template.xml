@@ -25,7 +25,7 @@
     <Mode>bridge</Mode>
     <Publish>
       <Port>
-        <HostPort>3337</HostPort>
+        <HostPort>13378</HostPort>
         <ContainerPort>80</ContainerPort>
         <Protocol>tcp</Protocol>
       </Port>
@@ -33,7 +33,7 @@
   </Networking>
   <Data>
     <Volume>
-      <HostDir>/mnt/user/media/Audiobooks/</HostDir>
+      <HostDir/>
       <ContainerDir>/audiobooks</ContainerDir>
       <Mode>rw</Mode>
     </Volume>
@@ -50,8 +50,8 @@
   </Data>
   <Environment/>
   <Labels/>
-  <Config Name="Audiobooks" Target="/audiobooks" Default="" Mode="rw" Description="Container Path: /audiobooks" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media/Audiobooks/</Config>
+  <Config Name="Audiobooks" Target="/audiobooks" Default="" Mode="rw" Description="Container Path: /audiobooks" Type="Path" Display="always" Required="true" Mask="false" />
   <Config Name="Config" Target="/config" Default="/mnt/user/appdata/audiobookshelf/config/" Mode="rw" Description="Container Path: /config" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/config/</Config>
   <Config Name="Metadata" Target="/metadata" Default="/mnt/user/appdata/audiobookshelf/metadata/" Mode="rw" Description="Container Path: /metadata" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/metadata/</Config>
-  <Config Name="Web UI Port" Target="80" Default="3337" Mode="tcp" Description="Container Port: 80" Type="Port" Display="always" Required="false" Mask="false">3337</Config>
+  <Config Name="Web UI Port" Target="80" Default="13378" Mode="tcp" Description="Container Port: 80" Type="Port" Display="always" Required="false" Mask="false">13378</Config>
 </Container>
