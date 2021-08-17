@@ -27,8 +27,8 @@
           <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="forward10">
             <span class="material-icons text-3xl">forward_10</span>
           </div>
-          <div class="cursor-pointer flex items-center justify-center text-gray-300 ml-8" @mousedown.prevent @mouseup.prevent>
-            <span class="font-mono text-lg uppercase">2x</span>
+          <div class="flex items-center justify-center text-gray-300 ml-8" @mousedown.prevent @mouseup.prevent>
+            <span class="font-mono text-lg uppercase text-gray-500">1x</span>
           </div>
         </template>
         <template v-else>

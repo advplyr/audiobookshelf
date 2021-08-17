@@ -1,5 +1,9 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-auto">
+    <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
+      <p class="text-center text-2xl font-book mb-4">Your Audiobookshelf is empty!</p>
+      <ui-btn color="success" @click="scan">Scan your Audiobooks</ui-btn>
+    </div>
     <div class="w-full flex flex-col items-center">
       <template v-for="(shelf, index) in groupedBooks">
         <div :key="index" class="w-full bookshelfRow relative">
@@ -75,6 +79,9 @@ export default {
     audiobooksUpdated() {
       console.log('[AudioBookshelf] Audiobooks Updated')
       this.setGroupedBooks()
+    },
+    scan() {
+      this.$root.socket.emit('scan')
     }
   },
   mounted() {
