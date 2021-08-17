@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+/config
+/audiobooks
+/metadata
+dev.js
+/test/
