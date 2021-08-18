@@ -115,8 +115,12 @@ class StreamManager {
       Logger.error('No User for client', client)
       return
     }
+    if (!client.user.updateAudiobookProgress) {
+      Logger.error('Invalid User for client', client)
+      return
+    }
     client.user.updateAudiobookProgress(client.stream)
-    this.db.updateEntity('user', client.user.toJSON())
+    this.db.updateEntity('user', client.user)
   }
 }
 module.exports = StreamManager

@@ -9,6 +9,7 @@ You can directly use them in pages and other components without the need to impo
 - `<AudioPlayer>` | `<audio-player>` (components/AudioPlayer.vue)
 - `<AppAppbar>` | `<app-appbar>` (components/app/Appbar.vue)
 - `<AppBookShelf>` | `<app-book-shelf>` (components/app/BookShelf.vue)
+- `<AppBookShelfToolbar>` | `<app-book-shelf-toolbar>` (components/app/BookShelfToolbar.vue)
 - `<AppStreamContainer>` | `<app-stream-container>` (components/app/StreamContainer.vue)
 - `<AppTracksTable>` | `<app-tracks-table>` (components/app/TracksTable.vue)
 - `<CardsBookCard>` | `<cards-book-card>` (components/cards/BookCard.vue)

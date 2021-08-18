@@ -20,6 +20,7 @@ let store = {};
   store.modules = store.modules || {}
 
   resolveStoreModules(require('..\\store\\audiobooks.js'), 'audiobooks.js')
+  resolveStoreModules(require('..\\store\\settings.js'), 'settings.js')
 
   // If the environment supports hot reloading...
 
@@ -28,6 +29,7 @@ let store = {};
     module.hot.accept([
       '..\\store\\audiobooks.js',
       '..\\store\\index.js',
+      '..\\store\\settings.js',
     ], () => {
       // Update `root.modules` with the latest definitions.
       updateModules()

@@ -1,5 +1,6 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
+    <app-book-shelf-toolbar />
     <app-book-shelf />
   </div>
 </template>

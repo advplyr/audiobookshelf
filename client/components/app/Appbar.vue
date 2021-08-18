@@ -83,6 +83,7 @@ export default {
 
 <style>
 #appbar {
-  box-shadow: 0px 8px 8px #111111aa;
+  /* box-shadow: 0px 8px 8px #111111aa; */
+  box-shadow: 0px 5px 5px #11111155;
 }
 </style>

@@ -35,21 +35,43 @@ export default {
     },
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
+    },
+    orderBy() {
+      return this.$store.state.settings.orderBy
+    },
+    orderDesc() {
+      return this.$store.state.settings.orderDesc
     }
   },
   methods: {
+    sortAudiobooks() {
+      var audiobooks = this.audiobooks.map((ab) => ({ ...ab }))
+      audiobooks.sort((a, b) => {
+        var bookA = a.book || {}
+        var bookB = b.book || {}
+        if (this.orderDesc) {
+          return bookB[this.orderBy] > bookA[this.orderBy] ? 1 : -1
+        } else {
+          // ASCENDING A -> Z
+          return bookA[this.orderBy] > bookB[this.orderBy] ? 1 : -1
+        }
+      })
+      return audiobooks
+    },
     setGroupedBooks() {
       var groups = []
       var currentRow = 0
       var currentGroup = []
-      for (let i = 0; i < this.audiobooks.length; i++) {
+      var audiobooksSorted = this.sortAudiobooks()
+      console.log('AB SORTED', audiobooksSorted)
+      for (let i = 0; i < audiobooksSorted.length; i++) {
         var row = Math.floor(i / this.booksPerRow)
         if (row > currentRow) {
           groups.push([...currentGroup])
           currentRow = row
           currentGroup = []
         }
-        currentGroup.push(this.audiobooks[i])
+        currentGroup.push(audiobooksSorted[i])
       }
       if (currentGroup.length) {
         groups.push([...currentGroup])
@@ -98,6 +120,9 @@ export default {
 </script>
 
 <style>
+#bookshelf {
+  height: calc(100% - 40px);
+}
 .bookshelfRow {
   background-image: url(/wood_panels.jpg);
 }

@@ -8,7 +8,7 @@
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
   <Support>https://hub.docker.com/r/advplyr/audiobookshelf/</Support>
-  <Project/>
+  <Project>https://github.com/advplyr/audiobookshelf</Project>
   <Overview>Audiobook manager and player</Overview>
   <Category>MediaApp:Books MediaServer:Books Status:Beta<</Category>
   <WebUI>http://[IP]:[PORT:80]</WebUI>

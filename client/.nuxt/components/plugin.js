@@ -5,6 +5,7 @@ const components = {
   AudioPlayer: () => import('../..\\components\\AudioPlayer.vue' /* webpackChunkName: "components/audio-player" */).then(c => wrapFunctional(c.default || c)),
   AppAppbar: () => import('../..\\components\\app\\Appbar.vue' /* webpackChunkName: "components/app-appbar" */).then(c => wrapFunctional(c.default || c)),
   AppBookShelf: () => import('../..\\components\\app\\BookShelf.vue' /* webpackChunkName: "components/app-book-shelf" */).then(c => wrapFunctional(c.default || c)),
+  AppBookShelfToolbar: () => import('../..\\components\\app\\BookShelfToolbar.vue' /* webpackChunkName: "components/app-book-shelf-toolbar" */).then(c => wrapFunctional(c.default || c)),
   AppStreamContainer: () => import('../..\\components\\app\\StreamContainer.vue' /* webpackChunkName: "components/app-stream-container" */).then(c => wrapFunctional(c.default || c)),
   AppTracksTable: () => import('../..\\components\\app\\TracksTable.vue' /* webpackChunkName: "components/app-tracks-table" */).then(c => wrapFunctional(c.default || c)),
   CardsBookCard: () => import('../..\\components\\cards\\BookCard.vue' /* webpackChunkName: "components/cards-book-card" */).then(c => wrapFunctional(c.default || c)),
