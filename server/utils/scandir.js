@@ -26,47 +26,44 @@ function getFileType(ext) {
   if (INFO_FORMATS.includes(ext_cleaned)) return 'info'
   if (IMAGE_FORMATS.includes(ext_cleaned)) return 'image'
   if (EBOOK_FORMATS.includes(ext_cleaned)) return 'ebook'
-  return null
+  return 'unknown'
 }
 
 async function getAllAudiobookFiles(path) {
   console.log('getAllAudiobooks', path)
   var paths = await getPaths(path)
-  var books = {}
+  var audiobooks = {}
 
   paths.files.forEach((filepath) => {
     var relpath = filepath.replace(path, '').slice(1)
     var pathformat = Path.parse(relpath)
     var authordir = Path.dirname(pathformat.dir)
     var bookdir = Path.basename(pathformat.dir)
-    if (!books[bookdir]) {
-      books[bookdir] = {
+    if (!audiobooks[bookdir]) {
+      audiobooks[bookdir] = {
         author: authordir,
         title: bookdir,
         path: pathformat.dir,
         fullPath: Path.join(path, pathformat.dir),
         parts: [],
-        infos: [],
-        images: [],
-        ebooks: [],
         otherFiles: []
       }
     }
 
     var filetype = getFileType(pathformat.ext)
     if (filetype === 'abpart') {
-      books[bookdir].parts.push(`${pathformat.name}${pathformat.ext}`)
-    } else if (filetype === 'info') {
-      books[bookdir].infos.push(`${pathformat.name}${pathformat.ext}`)
-    } else if (filetype === 'image') {
-      books[bookdir].images.push(`${pathformat.name}${pathformat.ext}`)
-    } else if (filetype === 'ebook') {
-      books[bookdir].ebooks.push(`${pathformat.name}${pathformat.ext}`)
+      audiobooks[bookdir].parts.push(pathformat.base)
     } else {
-      Logger.warn('Invalid file type', pathformat.name, pathformat.ext)
-      books[bookdir].otherFiles.push(`${pathformat.name}${pathformat.ext}`)
+      var fileObj = {
+        filetype: filetype,
+        filename: pathformat.base,
+        path: relpath,
+        fullPath: filepath,
+        ext: pathformat.ext
+      }
+      audiobooks[bookdir].otherFiles.push(fileObj)
     }
   })
-  return Object.values(books)
+  return Object.values(audiobooks)
 }
 module.exports.getAllAudiobookFiles = getAllAudiobookFiles

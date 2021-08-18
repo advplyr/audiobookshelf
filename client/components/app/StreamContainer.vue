@@ -14,7 +14,7 @@
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :loading="!stream" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :loading="isLoading" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
   </div>
 </template>
 
@@ -33,6 +33,14 @@ export default {
     },
     user() {
       return this.$store.state.user
+    },
+    isLoading() {
+      if (!this.streamAudiobook) return false
+      if (this.stream) {
+        // IF Stream exists, set loading if stream is diff from next stream
+        return this.stream.audiobook.id !== this.streamAudiobook.id
+      }
+      return true
     },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
@@ -56,7 +64,7 @@ export default {
   methods: {
     audioPlayerMounted() {
       if (this.stream) {
-        // this.$refs.audioPlayer.set(this.playlistUrl)
+        console.log('[STREAM-CONTAINER] audioPlayerMounted w/ Stream', this.stream)
         this.openStream()
       }
     },
@@ -77,6 +85,9 @@ export default {
       }
       var currentTime = this.stream.clientCurrentTime || 0
       this.$refs.audioPlayer.set(this.playlistUrl, currentTime, playOnLoad)
+      if (this.stream.isTranscodeComplete) {
+        this.$refs.audioPlayer.setStreamReady()
+      }
     },
     streamProgress(data) {
       if (!data.numSegments) return
@@ -87,14 +98,16 @@ export default {
     },
     streamOpen(stream) {
       this.stream = stream
-      this.$nextTick(() => {
+      if (this.$refs.audioPlayer) {
+        console.log('[STREAM-CONTAINER] streamOpen', stream)
         this.openStream()
-      })
+      }
     },
     streamClosed(streamId) {
       if (this.stream && this.stream.id === streamId) {
         this.terminateStream()
         this.$store.commit('clearStreamAudiobook', this.stream.audiobook.id)
+        this.stream = null
       }
     },
     streamReady() {
@@ -122,14 +135,6 @@ export default {
         console.log(`[STREAM-CONTAINER] streamReset Received for time ${startTime}`)
         this.$refs.audioPlayer.resetStream(startTime)
       }
-    }
-  },
-  mounted() {
-    if (this.stream) {
-      console.log('[STREAM_CONTAINER] Mounted with STREAM', this.stream)
-      this.$nextTick(() => {
-        this.openStream()
-      })
     }
   }
 }

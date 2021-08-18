@@ -14,9 +14,6 @@
   "AppStreamContainer": {
     "description": "Auto imported from components/app/StreamContainer.vue"
   },
-  "AppTracksTable": {
-    "description": "Auto imported from components/app/TracksTable.vue"
-  },
   "CardsBookCard": {
     "description": "Auto imported from components/cards/BookCard.vue"
   },
@@ -31,6 +28,15 @@
   },
   "ModalsModal": {
     "description": "Auto imported from components/modals/Modal.vue"
+  },
+  "TablesAudioFilesTable": {
+    "description": "Auto imported from components/tables/AudioFilesTable.vue"
+  },
+  "TablesOtherFilesTable": {
+    "description": "Auto imported from components/tables/OtherFilesTable.vue"
+  },
+  "TablesTracksTable": {
+    "description": "Auto imported from components/tables/TracksTable.vue"
   },
   "UiBtn": {
     "description": "Auto imported from components/ui/Btn.vue"

@@ -83,7 +83,8 @@ class Stream extends EventEmitter {
       clientPlaylistUri: this.clientPlaylistUri,
       clientCurrentTime: this.clientCurrentTime,
       startTime: this.startTime,
-      segmentStartNumber: this.segmentStartNumber
+      segmentStartNumber: this.segmentStartNumber,
+      isTranscodeComplete: this.isTranscodeComplete
     }
   }
 

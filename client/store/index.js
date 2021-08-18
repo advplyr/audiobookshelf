@@ -25,7 +25,6 @@ export const actions = {
 export const mutations = {
   setUser(state, user) {
     state.user = user
-    console.log('SETUSER', user)
     if (user.token) {
       localStorage.setItem('token', user.token)
     }
@@ -58,6 +57,7 @@ export const mutations = {
     state.isScanning = isScanning
   },
   setScanProgress(state, progress) {
+    if (progress > 0) state.isScanning = true
     state.scanProgress = progress
   }
 }

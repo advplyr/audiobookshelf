@@ -1,11 +1,11 @@
 <template>
   <div class="w-full my-2">
     <div class="w-full bg-primary px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
-      <p class="pr-4">Audio Tracks</p>
-      <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span>
+      <p class="pr-4">Other Audio Files</p>
+      <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ files.length }}</span>
       <div class="flex-grow" />
       <nuxt-link :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
-        <ui-btn small color="primary">Edit Track Order</ui-btn>
+        <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
@@ -15,17 +15,14 @@
       <div class="w-full" v-show="showTracks">
         <table class="text-sm tracksTable">
           <tr class="font-book">
-            <th>#</th>
             <th class="text-left">Filename</th>
             <th class="text-left">Size</th>
             <th class="text-left">Duration</th>
+            <th class="text-left">Notes</th>
           </tr>
-          <template v-for="track in tracks">
-            <tr :key="track.index">
-              <td class="text-center">
-                <p>{{ track.index }}</p>
-              </td>
-              <td class="font-book">
+          <template v-for="track in files">
+            <tr :key="track.path">
+              <td class="font-book pl-2">
                 {{ track.filename }}
               </td>
               <td class="font-mono">
@@ -33,6 +30,9 @@
               </td>
               <td class="font-mono">
                 {{ $secondsToTimestamp(track.duration) }}
+              </td>
+              <td class="text-xs">
+                <p>{{ track.error || '' }}</p>
               </td>
             </tr>
           </template>
@@ -45,7 +45,7 @@
 <script>
 export default {
   props: {
-    tracks: {
+    files: {
       type: Array,
       default: () => []
     },
