@@ -14,7 +14,6 @@ class Audiobook {
     this.invalidParts = []
 
     this.audioFiles = []
-    this.ebookFiles = []
     this.otherFiles = []
 
     this.tags = []
@@ -38,7 +37,6 @@ class Audiobook {
     this.invalidParts = audiobook.invalidParts
 
     this.audioFiles = audiobook.audioFiles
-    this.ebookFiles = audiobook.ebookFiles
     this.otherFiles = audiobook.otherFiles
 
     this.tags = audiobook.tags
@@ -103,7 +101,6 @@ class Audiobook {
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
       audioFiles: this.audioFiles,
-      ebookFiles: this.ebookFiles,
       otherFiles: this.otherFiles
     }
   }
@@ -141,7 +138,6 @@ class Audiobook {
       missingParts: this.missingParts,
       invalidParts: this.invalidParts,
       audioFiles: this.audioFiles,
-      ebookFiles: this.ebookFiles,
       otherFiles: this.otherFiles,
       tags: this.tags,
       book: this.bookToJSON(),
@@ -156,7 +152,6 @@ class Audiobook {
     this.addedAt = Date.now()
 
     this.otherFiles = data.otherFiles || []
-    this.ebookFiles = data.ebooks || []
     this.setBook(data)
   }
 

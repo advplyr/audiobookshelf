@@ -92,17 +92,14 @@ async function scanParts(audiobook, parts) {
       continue;
     }
 
-    var audioFileObj = {
-      path: parts[i],
-      filename: Path.basename(parts[i]),
-      fullPath: fullPath
-    }
-
     var trackNumFromMeta = getTrackNumberFromMeta(scanData)
     var trackNumFromFilename = getTrackNumberFromFilename(parts[i])
 
-    audioFileObj = {
-      ...audioFileObj,
+    var audioFileObj = {
+      path: Path.join(audiobook.path, parts[i]),
+      ext: Path.extname(parts[i]),
+      filename: parts[i],
+      fullPath: fullPath,
       ...scanData,
       trackNumFromMeta,
       trackNumFromFilename
@@ -129,15 +126,8 @@ async function scanParts(audiobook, parts) {
       continue;
     }
 
-    var track = {
-      index: trackNumber,
-      filename: parts[i],
-      ext: Path.extname(parts[i]),
-      path: Path.join(audiobook.path, parts[i]),
-      fullPath: Path.join(audiobook.fullPath, parts[i]),
-      ...scanData
-    }
-    tracks.push(track)
+    audioFileObj.index = trackNumber
+    tracks.push(audioFileObj)
   }
 
   if (!tracks.length) {

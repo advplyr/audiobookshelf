@@ -42,11 +42,12 @@
     </div>
     <div class="relative">
       <!-- Track -->
-      <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125" :class="loading ? 'animate-pulse' : ''" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
-        <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
+      <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
+        <div ref="readyTrack" class="h-full bg-gray-500 absolute top-0 left-0 pointer-events-none" />
         <div ref="bufferTrack" class="h-full bg-gray-400 absolute top-0 left-0 pointer-events-none" />
         <div ref="playedTrack" class="h-full bg-gray-200 absolute top-0 left-0 pointer-events-none" />
         <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
+        <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white bg-opacity-25" />
       </div>
 
       <!-- Hover timestamp -->
@@ -97,6 +98,9 @@ export default {
   },
   methods: {
     seek(time) {
+      if (this.loading) {
+        return
+      }
       if (this.seekLoading) {
         console.error('Already seek loading', this.seekedTime)
         return
@@ -169,6 +173,7 @@ export default {
     setStreamReady() {
       this.readyTrackWidth = this.trackWidth
       this.$refs.readyTrack.style.width = this.trackWidth + 'px'
+      console.warn('SET STREAM READY', this.readyTrackWidth)
     },
     setChunksReady(chunks, numSegments) {
       var largestSeg = 0
@@ -307,7 +312,6 @@ export default {
         console.error('No audio on paused()')
         return
       }
-      console.log('Paused')
       this.isPaused = this.$refs.audio.paused
     },
     playing() {
@@ -321,7 +325,6 @@ export default {
       this.totalDuration = this.audioEl.duration
     },
     set(url, currentTime, playOnLoad = false) {
-      console.log('[AudioPlayer] SET PlayOnLoad ', playOnLoad)
       if (this.hlsInstance) {
         this.terminateStream()
       }
@@ -342,13 +345,13 @@ export default {
           xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
         }
       }
-      console.log('[AudioPlayer-Set] HLS Config', hlsOptions, this.$secondsToTimestamp(hlsOptions.startPosition))
+      console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
       this.hlsInstance = new Hls(hlsOptions)
       var audio = this.$refs.audio
       audio.volume = this.volume
       this.hlsInstance.attachMedia(audio)
       this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-        console.log('[HLS] MEDIA ATTACHED')
+        // console.log('[HLS] MEDIA ATTACHED')
         this.hlsInstance.loadSource(url)
 
         this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
@@ -366,10 +369,7 @@ export default {
         })
         this.hlsInstance.on(Hls.Events.FRAG_LOADED, (e, data) => {
           var frag = data.frag
-          console.log('[HLS] Frag Loaded', frag.sn, this.$secondsToTimestamp(frag.start), frag)
-        })
-        this.hlsInstance.on(Hls.Events.STREAM_STATE_TRANSITION, (e, data) => {
-          console.log('[HLS] Stream State Transition', data)
+          // console.log('[HLS] Frag Loaded', frag.sn, this.$secondsToTimestamp(frag.start), frag)
         })
         this.hlsInstance.on(Hls.Events.BUFFER_APPENDED, (e, data) => {
           // console.log('[HLS] BUFFER', data)
@@ -419,7 +419,8 @@ export default {
     }
   },
   mounted() {
-    this.$nextTick(this.init)
+    // this.$nextTick(this.init)
+    this.init()
   }
 }
 </script>
@@ -431,5 +432,18 @@ export default {
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
   border-top: 6px solid white;
+}
+.loadingTrack {
+  animation-name: loadingTrack;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+}
+@keyframes loadingTrack {
+  0% {
+    left: -25%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 </style>

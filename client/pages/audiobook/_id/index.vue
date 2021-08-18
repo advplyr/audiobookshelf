@@ -47,7 +47,11 @@
             <p class="text-sm font-mono">{{ invalidParts.join(', ') }}</p>
           </div>
 
-          <app-tracks-table :tracks="tracks" :audiobook-id="audiobook.id" class="mt-6" />
+          <tables-tracks-table :tracks="tracks" :audiobook-id="audiobook.id" class="mt-6" />
+
+          <tables-audio-files-table v-if="otherAudioFiles.length" :audiobook-id="audiobook.id" :files="otherAudioFiles" class="mt-6" />
+
+          <tables-other-files-table v-if="otherFiles.length" :audiobook-id="audiobook.id" :files="otherFiles" class="mt-6" />
         </div>
       </div>
     </div>
@@ -136,8 +140,19 @@ export default {
     book() {
       return this.audiobook.book || {}
     },
+    otherFiles() {
+      return this.audiobook.otherFiles || []
+    },
+    otherAudioFiles() {
+      return this.audioFiles.filter((af) => {
+        return !this.tracks.find((t) => t.path === af.path)
+      })
+    },
     tracks() {
       return this.audiobook.tracks || []
+    },
+    audioFiles() {
+      return this.audiobook.audioFiles || []
     },
     description() {
       return this.book.description || 'No Description'
