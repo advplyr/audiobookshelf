@@ -11,6 +11,9 @@
     <div v-show="processing" class="flex h-full items-center justify-center">
       <p>Loading...</p>
     </div>
+    <div v-show="!processing && !searchResults.length" class="flex h-full items-center justify-center">
+      <p>No Results</p>
+    </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden">
       <template v-for="(res, index) in searchResults">
         <div :key="index" class="w-full border-b border-gray-700 pb-2 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer" @click="selectMatch(res)">
@@ -42,6 +45,7 @@
 <script>
 export default {
   props: {
+    processing: Boolean,
     audiobook: {
       type: Object,
       default: () => {}
@@ -63,7 +67,16 @@ export default {
       }
     }
   },
-  computed: {},
+  computed: {
+    isProcessing: {
+      get() {
+        return this.processing
+      },
+      set(val) {
+        this.$emit('update:processing', val)
+      }
+    }
+  },
   methods: {
     submitSearch() {
       this.runSearch()
@@ -75,7 +88,13 @@ export default {
       this.searchResults = []
       this.processing = true
       this.lastSearch = this.search
-      var results = await this.$axios.$get(`/api/find/search?title=${this.search}`)
+      var results = await this.$axios.$get(`/api/find/search?title=${this.search}`).catch((error) => {
+        console.error('Failed', error)
+        return []
+      })
+      results = results.filter((res) => {
+        return !!res.title
+      })
       console.log('Got results', results)
       this.searchResults = results
       this.processing = false
@@ -91,10 +110,31 @@ export default {
       this.search = this.audiobook.book.title
       this.runSearch()
     },
-    selectMatch(match) {}
-  },
-  mounted() {
-    console.log('Match mounted')
+    async selectMatch(match) {
+      this.isProcessing = true
+      const updatePayload = {
+        book: {}
+      }
+      if (match.cover) {
+        updatePayload.book.cover = match.cover
+      }
+      if (match.title) {
+        updatePayload.book.title = match.title
+      }
+      if (match.description) {
+        updatePayload.book.description = match.description
+      }
+      var updatedAudiobook = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
+        console.error('Failed to update', error)
+        return false
+      })
+      this.isProcessing = false
+      if (updatedAudiobook) {
+        console.log('Update Successful', updatedAudiobook)
+        this.$toast.success('Update Successful')
+        this.$emit('close')
+      }
+    }
   }
 }
 </script>

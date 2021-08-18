@@ -50,6 +50,9 @@ export default {
     mouseleave() {
       if (this.isShowing) this.hideTooltip()
     }
+  },
+  beforeDestroy() {
+    this.hideTooltip()
   }
 }
 </script>

@@ -8,6 +8,9 @@
   "AppBookShelf": {
     "description": "Auto imported from components/app/BookShelf.vue"
   },
+  "AppBookShelfToolbar": {
+    "description": "Auto imported from components/app/BookShelfToolbar.vue"
+  },
   "AppStreamContainer": {
     "description": "Auto imported from components/app/StreamContainer.vue"
   },

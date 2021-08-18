@@ -1,13 +1,18 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
-  purge: {},
+  purge: {
+    options: {
+      safelist: [
+        'bg-success'
+      ]
+    }
+  },
   darkMode: false,
   theme: {
     extend: {
       colors: {
         bg: '#373838',
-        yellowgreen: 'yellowgreen',
         primary: '#262626',
         accent: '#1ad691',
         error: '#FF5252',

@@ -3,6 +3,7 @@ import { wrapFunctional } from './utils'
 export { default as AudioPlayer } from '../..\\components\\AudioPlayer.vue'
 export { default as AppAppbar } from '../..\\components\\app\\Appbar.vue'
 export { default as AppBookShelf } from '../..\\components\\app\\BookShelf.vue'
+export { default as AppBookShelfToolbar } from '../..\\components\\app\\BookShelfToolbar.vue'
 export { default as AppStreamContainer } from '../..\\components\\app\\StreamContainer.vue'
 export { default as AppTracksTable } from '../..\\components\\app\\TracksTable.vue'
 export { default as CardsBookCard } from '../..\\components\\cards\\BookCard.vue'
@@ -27,6 +28,7 @@ export { default as ModalsEditTabsTracks } from '../..\\components\\modals\\edit
 export const LazyAudioPlayer = import('../..\\components\\AudioPlayer.vue' /* webpackChunkName: "components/audio-player" */).then(c => wrapFunctional(c.default || c))
 export const LazyAppAppbar = import('../..\\components\\app\\Appbar.vue' /* webpackChunkName: "components/app-appbar" */).then(c => wrapFunctional(c.default || c))
 export const LazyAppBookShelf = import('../..\\components\\app\\BookShelf.vue' /* webpackChunkName: "components/app-book-shelf" */).then(c => wrapFunctional(c.default || c))
+export const LazyAppBookShelfToolbar = import('../..\\components\\app\\BookShelfToolbar.vue' /* webpackChunkName: "components/app-book-shelf-toolbar" */).then(c => wrapFunctional(c.default || c))
 export const LazyAppStreamContainer = import('../..\\components\\app\\StreamContainer.vue' /* webpackChunkName: "components/app-stream-container" */).then(c => wrapFunctional(c.default || c))
 export const LazyAppTracksTable = import('../..\\components\\app\\TracksTable.vue' /* webpackChunkName: "components/app-tracks-table" */).then(c => wrapFunctional(c.default || c))
 export const LazyCardsBookCard = import('../..\\components\\cards\\BookCard.vue' /* webpackChunkName: "components/cards-book-card" */).then(c => wrapFunctional(c.default || c))

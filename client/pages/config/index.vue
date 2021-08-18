@@ -13,7 +13,9 @@
         <ui-btn color="success" @click="scan">Scan</ui-btn>
       </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
-      <p class="font-mono">v{{ $config.version }}</p>
+      <div class="flex items-center py-4">
+        <p class="font-mono">v{{ $config.version }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -23,7 +25,11 @@ export default {
   data() {
     return {}
   },
-  computed: {},
+  computed: {
+    streamAudiobook() {
+      return this.$store.state.streamAudiobook
+    }
+  },
   methods: {
     scan() {
       this.$root.socket.emit('scan')
