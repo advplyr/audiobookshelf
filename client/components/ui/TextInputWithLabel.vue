@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <p class="px-1">{{ label }}</p>
+    <p class="px-1 text-sm">{{ label }}</p>
     <ui-text-input v-model="inputValue" :disabled="disabled" class="w-full" />
   </div>
 </template>

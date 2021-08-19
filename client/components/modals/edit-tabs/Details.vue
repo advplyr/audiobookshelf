@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
-    <div v-if="userProgress" class="bg-primary rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
+    <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
       <div class="w-full flex items-center">
         <p>
           Your progress: <span class="font-mono text-lg">{{ (userProgress * 100).toFixed(0) }}%</span>
@@ -12,12 +12,16 @@
     <form @submit.prevent="submitForm">
       <ui-text-input-with-label v-model="details.title" label="Title" />
 
-      <ui-text-input-with-label v-model="details.author" label="Author" class="mt-4" />
+      <ui-text-input-with-label v-model="details.author" label="Author" class="mt-2" />
 
-      <ui-textarea-with-label v-model="details.description" :rows="6" label="Description" class="mt-4" />
+      <ui-text-input-with-label v-model="details.series" label="Series" class="mt-2" />
+
+      <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
+
+      <ui-multi-select v-model="details.genre" label="Genre" :items="genres" class="mt-2" @addOption="addGenre" />
 
       <div class="flex py-4">
-        <ui-btn color="error" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+        <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
         <div class="flex-grow" />
         <ui-btn type="submit">Submit</ui-btn>
       </div>
@@ -39,9 +43,12 @@ export default {
       details: {
         title: null,
         description: null,
-        author: null
+        author: null,
+        series: null,
+        genre: []
       },
-      resettingProgress: false
+      resettingProgress: false,
+      genres: ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
     }
   },
   watch: {
@@ -75,6 +82,12 @@ export default {
     }
   },
   methods: {
+    addGenre(genre) {
+      this.genres.push({
+        text: genre,
+        value: genre
+      })
+    },
     async submitForm() {
       console.log('Submit form', this.details)
       this.isProcessing = true
@@ -96,6 +109,8 @@ export default {
       this.details.title = this.book.title
       this.details.description = this.book.description
       this.details.author = this.book.author
+      this.details.genre = this.book.genre || []
+      this.details.series = this.book.series
     },
     resetProgress() {
       if (confirm(`Are you sure you want to reset your progress?`)) {

@@ -6,12 +6,12 @@
       </div>
     </template>
     <div class="absolute -top-10 left-0 w-full flex">
-      <div class="h-10 w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300" :class="selectedTab === 'details' ? 'bg-bg' : 'bg-primary text-gray-400'" @click="selectTab('details')">Details</div>
-      <div class="h-10 w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300" :class="selectedTab === 'cover' ? 'bg-bg' : 'bg-primary text-gray-400'" @click="selectTab('cover')">Cover</div>
-      <div class="h-10 w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300" :class="selectedTab === 'match' ? 'bg-bg' : 'bg-primary text-gray-400'" @click="selectTab('match')">Match</div>
-      <div class="h-10 w-28 rounded-t-lg flex items-center justify-center cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300" :class="selectedTab === 'tracks' ? 'bg-bg' : 'bg-primary text-gray-400'" @click="selectTab('tracks')">Tracks</div>
+      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'details' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('details')">Details</div>
+      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'cover' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('cover')">Cover</div>
+      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'match' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('match')">Match</div>
+      <div class="w-28 rounded-t-lg flex items-center justify-center cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'tracks' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('tracks')">Tracks</div>
     </div>
-    <div class="px-4 w-full h-full text-sm py-6 rounded-b-lg rounded-tr-lg bg-bg shadow-lg">
+    <div class="px-4 w-full h-full text-sm py-6 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
       <keep-alive>
         <component v-if="audiobook" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" />
       </keep-alive>
@@ -84,3 +84,12 @@ export default {
   mounted() {}
 }
 </script>
+
+<style>
+.tab {
+  height: 40px;
+}
+.tab.tab-selected {
+  height: 41px;
+}
+</style>
