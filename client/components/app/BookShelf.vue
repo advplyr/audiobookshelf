@@ -20,13 +20,17 @@
 </template>
 
 <script>
+import { sort } from '@/assets/fastSort'
+console.log('SORT', sort)
+
 export default {
   data() {
     return {
       width: 0,
       bookWidth: 176,
       booksPerRow: 0,
-      groupedBooks: []
+      groupedBooks: [],
+      currFilterOrderKey: null
     }
   },
   computed: {
@@ -36,34 +40,19 @@ export default {
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
     },
-    orderBy() {
-      return this.$store.state.settings.orderBy
-    },
-    orderDesc() {
-      return this.$store.state.settings.orderDesc
+    filterOrderKey() {
+      return this.$store.getters['settings/getFilterOrderKey']
     }
   },
   methods: {
-    sortAudiobooks() {
-      var audiobooks = this.audiobooks.map((ab) => ({ ...ab }))
-      audiobooks.sort((a, b) => {
-        var bookA = a.book || {}
-        var bookB = b.book || {}
-        if (this.orderDesc) {
-          return bookB[this.orderBy] > bookA[this.orderBy] ? 1 : -1
-        } else {
-          // ASCENDING A -> Z
-          return bookA[this.orderBy] > bookB[this.orderBy] ? 1 : -1
-        }
-      })
-      return audiobooks
-    },
     setGroupedBooks() {
       var groups = []
       var currentRow = 0
       var currentGroup = []
-      var audiobooksSorted = this.sortAudiobooks()
-      console.log('AB SORTED', audiobooksSorted)
+
+      var audiobooksSorted = this.$store.getters['audiobooks/getFilteredAndSorted']()
+      this.currFilterOrderKey = this.filterOrderKey
+
       for (let i = 0; i < audiobooksSorted.length; i++) {
         var row = Math.floor(i / this.booksPerRow)
         if (row > currentRow) {
@@ -102,18 +91,27 @@ export default {
       console.log('[AudioBookshelf] Audiobooks Updated')
       this.setGroupedBooks()
     },
+    settingsUpdated() {
+      // var newSortKey = `${this.orderBy}-${this.orderDesc}`
+      if (this.currFilterOrderKey !== this.filterOrderKey) {
+        this.setGroupedBooks()
+      }
+    },
     scan() {
       this.$root.socket.emit('scan')
     }
   },
   mounted() {
     this.$store.commit('audiobooks/addListener', { id: 'bookshelf', meth: this.audiobooksUpdated })
+    this.$store.commit('settings/addListener', { id: 'bookshelf', meth: this.settingsUpdated })
+
     this.$store.dispatch('audiobooks/load')
     this.init()
     window.addEventListener('resize', this.resize)
   },
   beforeDestroy() {
     this.$store.commit('audiobooks/removeListener', 'bookshelf')
+    this.$store.commit('settings/removeListener', 'bookshelf')
     window.removeEventListener('resize', this.resize)
   }
 }

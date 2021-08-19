@@ -13,6 +13,8 @@ You can directly use them in pages and other components without the need to impo
 - `<AppStreamContainer>` | `<app-stream-container>` (components/app/StreamContainer.vue)
 - `<CardsBookCard>` | `<cards-book-card>` (components/cards/BookCard.vue)
 - `<CardsBookCover>` | `<cards-book-cover>` (components/cards/BookCover.vue)
+- `<ControlsFilterSelect>` | `<controls-filter-select>` (components/controls/FilterSelect.vue)
+- `<ControlsOrderSelect>` | `<controls-order-select>` (components/controls/OrderSelect.vue)
 - `<ControlsVolumeControl>` | `<controls-volume-control>` (components/controls/VolumeControl.vue)
 - `<ModalsEditModal>` | `<modals-edit-modal>` (components/modals/EditModal.vue)
 - `<ModalsModal>` | `<modals-modal>` (components/modals/Modal.vue)

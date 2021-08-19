@@ -7,6 +7,8 @@ export { default as AppBookShelfToolbar } from '../..\\components\\app\\BookShel
 export { default as AppStreamContainer } from '../..\\components\\app\\StreamContainer.vue'
 export { default as CardsBookCard } from '../..\\components\\cards\\BookCard.vue'
 export { default as CardsBookCover } from '../..\\components\\cards\\BookCover.vue'
+export { default as ControlsFilterSelect } from '../..\\components\\controls\\FilterSelect.vue'
+export { default as ControlsOrderSelect } from '../..\\components\\controls\\OrderSelect.vue'
 export { default as ControlsVolumeControl } from '../..\\components\\controls\\VolumeControl.vue'
 export { default as ModalsEditModal } from '../..\\components\\modals\\EditModal.vue'
 export { default as ModalsModal } from '../..\\components\\modals\\Modal.vue'
@@ -34,6 +36,8 @@ export const LazyAppBookShelfToolbar = import('../..\\components\\app\\BookShelf
 export const LazyAppStreamContainer = import('../..\\components\\app\\StreamContainer.vue' /* webpackChunkName: "components/app-stream-container" */).then(c => wrapFunctional(c.default || c))
 export const LazyCardsBookCard = import('../..\\components\\cards\\BookCard.vue' /* webpackChunkName: "components/cards-book-card" */).then(c => wrapFunctional(c.default || c))
 export const LazyCardsBookCover = import('../..\\components\\cards\\BookCover.vue' /* webpackChunkName: "components/cards-book-cover" */).then(c => wrapFunctional(c.default || c))
+export const LazyControlsFilterSelect = import('../..\\components\\controls\\FilterSelect.vue' /* webpackChunkName: "components/controls-filter-select" */).then(c => wrapFunctional(c.default || c))
+export const LazyControlsOrderSelect = import('../..\\components\\controls\\OrderSelect.vue' /* webpackChunkName: "components/controls-order-select" */).then(c => wrapFunctional(c.default || c))
 export const LazyControlsVolumeControl = import('../..\\components\\controls\\VolumeControl.vue' /* webpackChunkName: "components/controls-volume-control" */).then(c => wrapFunctional(c.default || c))
 export const LazyModalsEditModal = import('../..\\components\\modals\\EditModal.vue' /* webpackChunkName: "components/modals-edit-modal" */).then(c => wrapFunctional(c.default || c))
 export const LazyModalsModal = import('../..\\components\\modals\\Modal.vue' /* webpackChunkName: "components/modals-modal" */).then(c => wrapFunctional(c.default || c))

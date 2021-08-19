@@ -20,6 +20,12 @@
   "CardsBookCover": {
     "description": "Auto imported from components/cards/BookCover.vue"
   },
+  "ControlsFilterSelect": {
+    "description": "Auto imported from components/controls/FilterSelect.vue"
+  },
+  "ControlsOrderSelect": {
+    "description": "Auto imported from components/controls/OrderSelect.vue"
+  },
   "ControlsVolumeControl": {
     "description": "Auto imported from components/controls/VolumeControl.vue"
   },
