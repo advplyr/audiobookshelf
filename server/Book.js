@@ -8,7 +8,7 @@ class Book {
     this.publisher = null
     this.description = null
     this.cover = null
-    this.genre = []
+    this.genres = []
 
     if (book) {
       this.construct(book)
@@ -24,7 +24,7 @@ class Book {
     this.publisher = book.publisher
     this.description = book.description
     this.cover = book.cover
-    this.genre = book.genre
+    this.genres = book.genres
   }
 
   toJSON() {
@@ -37,7 +37,7 @@ class Book {
       publisher: this.publisher,
       description: this.description,
       cover: this.cover,
-      genre: this.genre
+      genres: this.genres
     }
   }
 
@@ -49,7 +49,7 @@ class Book {
     this.publishYear = data.publish_year || null
     this.description = data.description || null
     this.cover = data.cover || null
-    this.genre = data.genre || []
+    this.genres = data.genres || []
   }
 
   update(payload) {
@@ -57,12 +57,12 @@ class Book {
     for (const key in payload) {
       if (payload[key] === undefined) continue;
 
-      if (key === 'genre') {
-        if (payload['genre'] === null && this.genre !== null) {
-          this.genre = []
+      if (key === 'genres') {
+        if (payload['genres'] === null && this.genres !== null) {
+          this.genres = []
           hasUpdates = true
-        } else if (payload['genre'].join(',') !== this.genre.join(',')) {
-          this.genre = payload['genre']
+        } else if (payload['genres'].join(',') !== this.genres.join(',')) {
+          this.genres = payload['genres']
           hasUpdates = true
         }
       } else if (this[key] !== undefined && payload[key] !== this[key]) {

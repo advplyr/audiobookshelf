@@ -2,8 +2,8 @@
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
     <button type="button" class="relative w-full h-full bg-fg border border-gray-500 hover:border-gray-300 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
       <span class="flex items-center justify-between">
-        <span class="block truncate" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
-        <span class="material-icons text-xl text-yellow-400">{{ descending ? 'expand_more' : 'expand_less' }}</span>
+        <span class="block truncate text-xs" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
+        <span class="material-icons text-lg text-yellow-400">{{ descending ? 'expand_more' : 'expand_less' }}</span>
       </span>
       <!-- <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
         <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

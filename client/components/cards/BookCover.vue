@@ -8,7 +8,7 @@
       </div>
     </div>
     <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
-      <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ author }}</p>
+      <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
     </div>
   </div>
 </template>
@@ -36,13 +36,19 @@ export default {
       return this.book.title || 'No Title'
     },
     titleCleaned() {
-      if (this.title.length > 75) {
-        return this.title.slice(0, 47) + '...'
+      if (this.title.length > 60) {
+        return this.title.slice(0, 57) + '...'
       }
       return this.title
     },
     author() {
       return this.book.author || 'Unknown'
+    },
+    authorCleaned() {
+      if (this.author.length > 30) {
+        return this.author.slice(0, 27) + '...'
+      }
+      return this.author
     },
     cover() {
       return this.book.cover || '/book_placeholder.jpg'

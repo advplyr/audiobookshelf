@@ -7,3 +7,4 @@ npm-debug.log
 /metadata
 dev.js
 /test/
+/client/.nuxt/

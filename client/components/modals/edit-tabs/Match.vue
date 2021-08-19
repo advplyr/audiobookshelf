@@ -55,7 +55,6 @@ export default {
     return {
       search: null,
       lastSearch: null,
-      processing: false,
       searchResults: []
     }
   },

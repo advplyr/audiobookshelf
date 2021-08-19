@@ -28,6 +28,8 @@ class ApiController {
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
+
+    this.router.get('/genres', this.getGenres.bind(this))
   }
 
   find(req, res) {
@@ -138,6 +140,12 @@ class ApiController {
     await this.db.updateEntity('user', req.user)
     this.emitter('user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
+  }
+
+  getGenres(req, res) {
+    res.json({
+      genres: this.db.getGenres()
+    })
   }
 }
 module.exports = ApiController

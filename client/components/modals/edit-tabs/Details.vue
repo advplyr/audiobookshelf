@@ -18,7 +18,7 @@
 
       <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
 
-      <ui-multi-select v-model="details.genre" label="Genre" :items="genres" class="mt-2" @addOption="addGenre" />
+      <ui-multi-select v-model="details.genres" label="Genre" :items="genres" class="mt-2" @addOption="addGenre" />
 
       <div class="flex py-4">
         <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
@@ -45,7 +45,7 @@ export default {
         description: null,
         author: null,
         series: null,
-        genre: []
+        genres: []
       },
       resettingProgress: false,
       genres: ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
@@ -109,7 +109,7 @@ export default {
       this.details.title = this.book.title
       this.details.description = this.book.description
       this.details.author = this.book.author
-      this.details.genre = this.book.genre || []
+      this.details.genres = this.book.genres || []
       this.details.series = this.book.series
     },
     resetProgress() {

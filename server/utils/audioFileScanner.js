@@ -106,12 +106,10 @@ async function scanParts(audiobook, parts) {
     }
     audiobook.audioFiles.push(audioFileObj)
 
-    var trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
-    if (trackNumber === null) {
-      if (parts.length === 1) {
-        // Only 1 track
-        trackNumber = 1
-      } else {
+    var trackNumber = 1
+    if (parts.length > 1) {
+      trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
+      if (trackNumber === null) {
         Logger.error('Invalid track number for', parts[i])
         audioFileObj.invalid = true
         audioFileObj.error = 'Failed to get track number'
@@ -136,6 +134,11 @@ async function scanParts(audiobook, parts) {
   }
 
   tracks.sort((a, b) => a.index - b.index)
+  audiobook.audioFiles.sort((a, b) => {
+    var aNum = isNumber(a.trackNumFromMeta) ? a.trackNumFromMeta : isNumber(a.trackNumFromFilename) ? a.trackNumFromFilename : 0
+    var bNum = isNumber(b.trackNumFromMeta) ? b.trackNumFromMeta : isNumber(b.trackNumFromFilename) ? b.trackNumFromFilename : 0
+    return aNum - bNum
+  })
 
   // If first index is 0, increment all by 1
   if (tracks[0].index === 0) {
