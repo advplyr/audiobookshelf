@@ -9,6 +9,8 @@ const components = {
   AppStreamContainer: () => import('../..\\components\\app\\StreamContainer.vue' /* webpackChunkName: "components/app-stream-container" */).then(c => wrapFunctional(c.default || c)),
   CardsBookCard: () => import('../..\\components\\cards\\BookCard.vue' /* webpackChunkName: "components/cards-book-card" */).then(c => wrapFunctional(c.default || c)),
   CardsBookCover: () => import('../..\\components\\cards\\BookCover.vue' /* webpackChunkName: "components/cards-book-cover" */).then(c => wrapFunctional(c.default || c)),
+  ControlsFilterSelect: () => import('../..\\components\\controls\\FilterSelect.vue' /* webpackChunkName: "components/controls-filter-select" */).then(c => wrapFunctional(c.default || c)),
+  ControlsOrderSelect: () => import('../..\\components\\controls\\OrderSelect.vue' /* webpackChunkName: "components/controls-order-select" */).then(c => wrapFunctional(c.default || c)),
   ControlsVolumeControl: () => import('../..\\components\\controls\\VolumeControl.vue' /* webpackChunkName: "components/controls-volume-control" */).then(c => wrapFunctional(c.default || c)),
   ModalsEditModal: () => import('../..\\components\\modals\\EditModal.vue' /* webpackChunkName: "components/modals-edit-modal" */).then(c => wrapFunctional(c.default || c)),
   ModalsModal: () => import('../..\\components\\modals\\Modal.vue' /* webpackChunkName: "components/modals-modal" */).then(c => wrapFunctional(c.default || c)),

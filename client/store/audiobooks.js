@@ -1,3 +1,4 @@
+import { sort } from '@/assets/fastSort'
 
 export const state = () => ({
   audiobooks: [],
@@ -5,7 +6,21 @@ export const state = () => ({
 })
 
 export const getters = {
+  getFiltered: (state, getters, rootState) => () => {
+    var filtered = state.audiobooks
+    // TODO: Add filters
+    return filtered
+  },
+  getFilteredAndSorted: (state, getters, rootState) => () => {
+    var settings = rootState.settings.settings
+    var direction = settings.orderDesc ? 'desc' : 'asc'
 
+    var filtered = getters.getFiltered()
+    return sort(filtered)[direction]((ab) => {
+      // Supports dot notation strings i.e. "book.title"
+      return settings.orderBy.split('.').reduce((a, b) => a[b], ab)
+    })
+  }
 }
 
 export const actions = {
@@ -19,7 +34,8 @@ export const actions = {
         console.error('Failed', error)
         commit('set', [])
       })
-  }
+  },
+
 }
 
 export const mutations = {

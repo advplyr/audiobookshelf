@@ -11,6 +11,9 @@ module.exports = {
   darkMode: false,
   theme: {
     extend: {
+      height: {
+        '7.5': '1.75rem'
+      },
       colors: {
         bg: '#373838',
         primary: '#262626',
