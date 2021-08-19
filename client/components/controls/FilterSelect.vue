@@ -2,7 +2,7 @@
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
     <button type="button" class="relative w-full h-full bg-fg border border-gray-500 hover:border-gray-300 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
       <span class="flex items-center justify-between">
-        <span class="block truncate" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
+        <span class="block truncate text-xs" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
         <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -11,15 +11,42 @@
       </span>
     </button>
 
-    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
-      <template v-for="item in items">
-        <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item.value)">
-          <div class="flex items-center">
-            <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
+    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+      <ul v-show="!sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
+        <template v-for="item in items">
+          <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item)">
+            <div class="flex items-center justify-between">
+              <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
+            </div>
+            <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
+              <span class="material-icons">arrow_right</span>
+            </div>
+          </li>
+        </template>
+      </ul>
+      <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
+        <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-black-400" role="option" @click="sublist = null">
+          <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
+            <span class="material-icons">arrow_left</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="font-normal ml-3 block truncate">Back</span>
           </div>
         </li>
-      </template>
-    </ul>
+        <li v-if="!sublistItems.length" class="text-gray-400 select-none relative px-2" role="option">
+          <div class="flex items-center justify-center">
+            <span class="font-normal block truncate py-2">No {{ sublist }}</span>
+          </div>
+        </li>
+        <template v-for="item in sublistItems">
+          <li :key="item" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" :class="`${sublist}.${item}` === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedSublistOption(item)">
+            <div class="flex items-center">
+              <span class="font-normal truncate py-2 text-xs">{{ snakeToNormal(item) }}</span>
+            </div>
+          </li>
+        </template>
+      </ul>
+    </div>
   </div>
 </template>
 
@@ -31,6 +58,7 @@ export default {
   data() {
     return {
       showMenu: false,
+      sublist: null,
       items: [
         {
           text: 'All',
@@ -38,13 +66,23 @@ export default {
         },
         {
           text: 'Genre',
-          value: 'genre'
+          value: 'genres',
+          sublist: true
         },
         {
           text: 'Tag',
-          value: 'tag'
+          value: 'tags',
+          sublist: true
         }
       ]
+    }
+  },
+  watch: {
+    showMenu(newVal) {
+      if (!newVal) {
+        if (this.sublist && !this.selectedItemSublist) this.sublist = null
+        if (!this.sublist && this.selectedItemSublist) this.sublist = this.selectedItemSublist
+      }
     }
   },
   computed: {
@@ -56,17 +94,53 @@ export default {
         this.$emit('input', val)
       }
     },
+    selectedItemSublist() {
+      return this.selected && this.selected.includes('.') ? this.selected.split('.')[0] : false
+    },
     selectedText() {
+      if (!this.selected) return ''
+      var parts = this.selected.split('.')
+      if (parts.length > 1) {
+        return this.snakeToNormal(parts[1])
+      }
       var _sel = this.items.find((i) => i.value === this.selected)
       if (!_sel) return ''
       return _sel.text
+    },
+    genres() {
+      return this.$store.state.audiobooks.genres
+    },
+    tags() {
+      return this.$store.state.audiobooks.tags
+    },
+    sublistItems() {
+      return this[this.sublist] || []
     }
   },
   methods: {
+    snakeToNormal(kebab) {
+      if (!kebab) {
+        return 'err'
+      }
+      return String(kebab)
+        .split('_')
+        .map((t) => t.slice(0, 1).toUpperCase() + t.slice(1))
+        .join(' ')
+    },
     clickOutside() {
+      if (!this.selectedItemSublist) this.sublist = null
       this.showMenu = false
     },
-    clickedOption(val) {
+    clickedSublistOption(item) {
+      this.clickedOption({ value: `${this.sublist}.${item}` })
+    },
+    clickedOption(option) {
+      if (option.sublist) {
+        this.sublist = option.value
+        return
+      }
+
+      var val = option.value
       if (this.selected === val) {
         this.showMenu = false
         return

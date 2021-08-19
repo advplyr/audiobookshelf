@@ -29,10 +29,10 @@
             <div class="font-book text-center px-4 w-12">
               {{ audio.index }}
             </div>
-            <div class="font-book text-center px-2 w-40">
+            <div class="font-book text-center px-2 w-32">
               {{ audio.trackNumFromFilename }}
             </div>
-            <div class="font-book text-center w-40">
+            <div class="font-book text-center w-32">
               {{ audio.trackNumFromMeta }}
             </div>
             <div class="font-book truncate px-4 flex-grow">

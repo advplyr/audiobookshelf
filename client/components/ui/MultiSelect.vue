@@ -99,16 +99,11 @@ export default {
         return
       }
       this.currentSearch = this.textInput
-      // this.itemsToShow = this.items.filter((i) => {
-      //   var iValue = String(i.value).toLowerCase()
-      //   return iValue.includes(this.currentSearch.toLowerCase())
-      // })
     },
     keydownInput() {
       clearTimeout(this.typingTimeout)
       this.isTyping = true
       this.typingTimeout = setTimeout(() => {
-        // this.setMatchingItems()
         this.currentSearch = this.textInput
       }, 100)
       this.setInputWidth()
@@ -145,7 +140,6 @@ export default {
       }
       this.isFocused = true
       this.recalcMenuPos()
-      // this.$refs.input.style.width = '100px'
     },
     inputBlur() {
       setTimeout(() => {
@@ -165,15 +159,12 @@ export default {
       e.stopPropagation()
       e.preventDefault()
       if (this.$refs.input) this.$refs.input.focus()
-      // this.$nextTick(() => {
-      //   this.$refs.input.focus()
-      // })
+
       var newSelected = null
       if (this.selected.includes(itemValue)) {
         newSelected = this.selected.filter((s) => s !== itemValue)
       } else {
         newSelected = this.selected.concat([itemValue])
-        // this.blur()
       }
       this.textInput = null
       this.currentSearch = null

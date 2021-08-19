@@ -57,6 +57,10 @@ class Audiobook {
     return this.book ? this.book.author : 'Unknown'
   }
 
+  get genres() {
+    return this.book ? this.book.genres || [] : []
+  }
+
   get totalDuration() {
     var total = 0
     this.tracks.forEach((track) => total += track.duration)

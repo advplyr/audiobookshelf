@@ -154,5 +154,23 @@ class Db {
       Logger.error(`[DB] Remove entity ${entityName} Failed: ${error}`)
     })
   }
+
+  getGenres() {
+    var allGenres = []
+    this.db.audiobooks.forEach((audiobook) => {
+      allGenres = allGenres.concat(audiobook.genres)
+    })
+    allGenres = [...new Set(allGenres)] // Removes duplicates
+    return allGenres
+  }
+
+  getTags() {
+    var allTags = []
+    this.db.audiobooks.forEach((audiobook) => {
+      allTags = allTags.concat(audiobook.tags)
+    })
+    allTags = [...new Set(allTags)] // Removes duplicates
+    return allTags
+  }
 }
 module.exports = Db

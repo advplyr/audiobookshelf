@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-16 bg-primary relative">
-    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-6 py-1 z-20">
+    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-6 py-1 z-30">
       <div class="flex h-full items-center">
         <img v-if="!showBack" src="/LogoTransparent.png" class="w-12 h-12 mr-4" />
         <a v-if="showBack" @click="back" class="rounded-full h-12 w-12 flex items-center justify-center hover:bg-white hover:bg-opacity-10 mr-4 cursor-pointer">

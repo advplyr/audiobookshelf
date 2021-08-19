@@ -20,9 +20,6 @@
 </template>
 
 <script>
-import { sort } from '@/assets/fastSort'
-console.log('SORT', sort)
-
 export default {
   data() {
     return {
