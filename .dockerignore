@@ -4,6 +4,7 @@ npm-debug.log
 .gitignore
 /config
 /audiobooks
+/audiobooks2
 /metadata
 dev.js
 /test/
