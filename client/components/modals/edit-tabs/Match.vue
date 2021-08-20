@@ -85,7 +85,7 @@ export default {
       console.log('Search', this.lastSearch, this.search)
 
       this.searchResults = []
-      this.processing = true
+      this.isProcessing = true
       this.lastSearch = this.search
       var results = await this.$axios.$get(`/api/find/search?title=${this.search}`).catch((error) => {
         console.error('Failed', error)
@@ -96,7 +96,7 @@ export default {
       })
       console.log('Got results', results)
       this.searchResults = results
-      this.processing = false
+      this.isProcessing = false
     },
     init() {
       if (!this.audiobook.book || !this.audiobook.book.title) {

@@ -1,13 +1,16 @@
 <template>
-  <div class="relative" v-click-outside="clickOutside">
+  <div class="relative" v-click-outside="clickOutside" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="cursor-pointer" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
-      <span class="material-icons text-3xl">volume_up</span>
+      <span class="material-icons text-3xl">{{ volumeIcon }}</span>
     </div>
-    <div v-show="isOpen" class="absolute bottom-10 left-0 h-28 py-2 bg-white shadow-sm rounded-lg">
-      <div ref="volumeTrack" class="w-2 border-2 border-white h-full bg-gray-400 mx-4 relative cursor-pointer" @mousedown="mousedownTrack" @click="clickVolumeTrack">
-        <div class="w-3 h-3 bg-gray-500 shadow-sm rounded-full absolute -left-1 bottom-0 pointer-events-none" :class="isDragging ? 'transform scale-150' : ''" :style="{ top: cursorTop + 'px' }" />
+    <transition name="menux">
+      <div v-show="isOpen" class="volumeMenu h-6 absolute bottom-2 w-28 px-2 bg-bg shadow-sm rounded-lg" style="left: -116px">
+        <div ref="volumeTrack" class="h-1 w-full bg-gray-500 my-2.5 relative cursor-pointer rounded-full" @mousedown="mousedownTrack" @click="clickVolumeTrack">
+          <div class="bg-gray-100 h-full absolute left-0 top-0 pointer-events-none rounded-full" :style="{ width: volume * trackWidth + 'px' }" />
+          <div class="w-2.5 h-2.5 bg-white shadow-sm rounded-full absolute pointer-events-none" :class="isDragging ? 'transform scale-125 origin-center' : ''" :style="{ left: cursorLeft + 'px', top: '-3px' }" />
+        </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -20,8 +23,12 @@ export default {
     return {
       isOpen: false,
       isDragging: false,
-      posY: 0,
-      trackHeight: 112 - 16
+      isHovering: false,
+      posX: 0,
+      lastValue: 0.5,
+      isMute: false,
+      trackWidth: 112 - 20,
+      openTimeout: null
     }
   },
   computed: {
@@ -33,22 +40,45 @@ export default {
         this.$emit('input', val)
       }
     },
-    cursorTop() {
-      var top = this.trackHeight * this.volume
-      return top - 6
+    cursorLeft() {
+      var left = this.trackWidth * this.volume
+      return left - 3
+    },
+    volumeIcon() {
+      if (this.volume <= 0) return 'volume_mute'
+      else if (this.volume <= 0.5) return 'volume_down'
+      else return 'volume_up'
     }
   },
   methods: {
+    mouseover() {
+      this.isHovering = true
+      this.setOpen()
+    },
+    mouseleave() {
+      this.isHovering = false
+    },
+    setOpen() {
+      this.isOpen = true
+      clearTimeout(this.openTimeout)
+      this.openTimeout = setTimeout(() => {
+        if (!this.isHovering && !this.isDragging) {
+          this.isOpen = false
+        } else {
+          this.setOpen()
+        }
+      }, 600)
+    },
     mousemove(e) {
-      var diff = this.posY - e.y
-      this.posY = e.y
+      var diff = this.posX - e.x
+      this.posX = e.x
       var volShift = 0
       if (diff < 0) {
         // Volume up
-        volShift = diff / this.trackHeight
+        volShift = diff / this.trackWidth
       } else {
         // volume down
-        volShift = diff / this.trackHeight
+        volShift = diff / this.trackWidth
       }
       var newVol = this.volume - volShift
       newVol = Math.min(Math.max(0, newVol), 1)
@@ -64,8 +94,8 @@ export default {
     },
     mousedownTrack(e) {
       this.isDragging = true
-      this.posY = e.y
-      var vol = e.offsetY / e.target.clientHeight
+      this.posX = e.x
+      var vol = e.offsetX / this.trackWidth
       vol = Math.min(Math.max(vol, 0), 1)
       this.volume = vol
       document.body.addEventListener('mousemove', this.mousemove)
@@ -76,14 +106,24 @@ export default {
       this.isOpen = false
     },
     clickVolumeIcon() {
-      this.isOpen = !this.isOpen
+      this.isMute = !this.isMute
+      if (this.isMute) {
+        this.lastValue = this.volume
+        this.volume = 0
+      } else {
+        this.volume = this.lastValue || 0.5
+      }
     },
     clickVolumeTrack(e) {
-      var vol = e.offsetY / e.target.clientHeight
+      var vol = e.offsetX / this.trackWidth
       vol = Math.min(Math.max(vol, 0), 1)
       this.volume = vol
     }
   },
-  mounted() {}
+  mounted() {
+    if (this.value === 0) {
+      this.isMute = true
+    }
+  }
 }
 </script>
