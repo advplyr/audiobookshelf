@@ -6,9 +6,16 @@ AudioBookshelf is a self-hosted audiobook server for managing and playing your a
 
 <img alt="Screenshot1" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_bookshelf.png" />
 
+Folder Structures Supported:
+
+* `/[TITLE]/...`
+* `/[AUTHOR]/[TITLE]/...`
+* `/[AUTHOR]/[SERIES]/[TITLE]/...`
+* Title can start with a year and hyphen like, "1989 - Book Title Here", which will use 1989 as the publish year.
+
+
 Missing a lot of features still, like...
 
-* Scanner is intended for file structure `[author name]/[title]/...`
 * Adding new audiobooks require pressing Scan button again (on settings page)
 * Matching is all manual now and only using 1 source (openlibrary)
 * Need to add cover selection from match results

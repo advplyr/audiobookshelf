@@ -20,7 +20,7 @@ class Book {
     this.title = book.title
     this.author = book.author
     this.series = book.series
-    this.publishYear = book.publish_year
+    this.publishYear = book.publishYear
     this.publisher = book.publisher
     this.description = book.description
     this.cover = book.cover
@@ -33,7 +33,7 @@ class Book {
       title: this.title,
       author: this.author,
       series: this.series,
-      publishYear: this.publish_year,
+      publishYear: this.publishYear,
       publisher: this.publisher,
       description: this.description,
       cover: this.cover,
@@ -42,11 +42,12 @@ class Book {
   }
 
   setData(data) {
+    console.log('SET DATA', data)
     this.olid = data.olid || null
     this.title = data.title || null
     this.author = data.author || null
     this.series = data.series || null
-    this.publishYear = data.publish_year || null
+    this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.cover = data.cover || null
     this.genres = data.genres || []

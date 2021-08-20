@@ -12,7 +12,14 @@
     <form @submit.prevent="submitForm">
       <ui-text-input-with-label v-model="details.title" label="Title" />
 
-      <ui-text-input-with-label v-model="details.author" label="Author" class="mt-2" />
+      <div class="flex mt-2 -mx-1">
+        <div class="w-3/4 px-1">
+          <ui-text-input-with-label v-model="details.author" label="Author" />
+        </div>
+        <div class="flex-grow px-1">
+          <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
+        </div>
+      </div>
 
       <ui-text-input-with-label v-model="details.series" label="Series" class="mt-2" />
 
@@ -45,6 +52,7 @@ export default {
         description: null,
         author: null,
         series: null,
+        publishYear: null,
         genres: []
       },
       resettingProgress: false,
@@ -111,6 +119,7 @@ export default {
       this.details.author = this.book.author
       this.details.genres = this.book.genres || []
       this.details.series = this.book.series
+      this.details.publishYear = this.book.publishYear
     },
     resetProgress() {
       if (confirm(`Are you sure you want to reset your progress?`)) {

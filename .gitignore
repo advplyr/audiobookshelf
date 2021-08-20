@@ -2,6 +2,7 @@ dev.js
 node_modules/
 /config/
 /audiobooks/
+/audiobooks2/
 /metadata/
 /test/
 /client/.nuxt/

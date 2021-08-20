@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
     <p class="px-1 text-sm">{{ label }}</p>
-    <ui-text-input v-model="inputValue" :disabled="disabled" class="w-full" />
+    <ui-text-input v-model="inputValue" :disabled="disabled" :type="type" class="w-full" />
   </div>
 </template>
 
@@ -10,6 +10,10 @@ export default {
   props: {
     value: [String, Number],
     label: String,
+    type: {
+      type: String,
+      default: 'text'
+    },
     disabled: Boolean
   },
   data() {
