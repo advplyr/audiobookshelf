@@ -27,9 +27,7 @@
           <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="forward10">
             <span class="material-icons text-3xl">forward_10</span>
           </div>
-          <div class="flex items-center justify-center text-gray-300 ml-8" @mousedown.prevent @mouseup.prevent>
-            <span class="font-mono text-lg uppercase text-gray-500">1x</span>
-          </div>
+          <controls-playback-speed-control v-model="playbackRate" @change="updatePlaybackRate" />
         </template>
         <template v-else>
           <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
@@ -75,6 +73,7 @@ export default {
       hlsInstance: null,
       staleHlsInstance: null,
       volume: 0.5,
+      playbackRate: 1,
       trackWidth: 0,
       isPaused: true,
       url: null,
@@ -126,7 +125,15 @@ export default {
     },
     updateVolume(volume) {
       if (this.audioEl) {
-        this.audioEl.volume = 1 - volume
+        this.audioEl.volume = volume
+      }
+    },
+    updatePlaybackRate(playbackRate) {
+      if (this.audioEl) {
+        console.log('UpdatePlaybackRate', playbackRate)
+        this.audioEl.playbackRate = playbackRate
+      } else {
+        console.error('No Audio El updatePlaybackRate')
       }
     },
     mousemoveTrack(e) {
@@ -173,7 +180,6 @@ export default {
     setStreamReady() {
       this.readyTrackWidth = this.trackWidth
       this.$refs.readyTrack.style.width = this.trackWidth + 'px'
-      console.warn('SET STREAM READY', this.readyTrackWidth)
     },
     setChunksReady(chunks, numSegments) {
       var largestSeg = 0
@@ -349,6 +355,7 @@ export default {
       this.hlsInstance = new Hls(hlsOptions)
       var audio = this.$refs.audio
       audio.volume = this.volume
+      audio.playbackRate = this.playbackRate
       this.hlsInstance.attachMedia(audio)
       this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
         // console.log('[HLS] MEDIA ATTACHED')
@@ -366,13 +373,6 @@ export default {
           if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
             console.error('[HLS] BUFFER STALLED ERROR')
           }
-        })
-        this.hlsInstance.on(Hls.Events.FRAG_LOADED, (e, data) => {
-          var frag = data.frag
-          // console.log('[HLS] Frag Loaded', frag.sn, this.$secondsToTimestamp(frag.start), frag)
-        })
-        this.hlsInstance.on(Hls.Events.BUFFER_APPENDED, (e, data) => {
-          // console.log('[HLS] BUFFER', data)
         })
         this.hlsInstance.on(Hls.Events.DESTROYING, () => {
           console.warn('[HLS] Destroying HLS Instance')
@@ -425,14 +425,7 @@ export default {
 }
 </script>
 
-<style scoped>
-.arrow-down {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-top: 6px solid white;
-}
+<style>
 .loadingTrack {
   animation-name: loadingTrack;
   animation-duration: 1s;

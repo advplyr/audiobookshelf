@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "0.9.52",
+  "version": "0.9.54",
   "description": "Audiobook manager and player",
   "main": "index.js",
   "scripts": {

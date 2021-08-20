@@ -45,3 +45,17 @@
 .menu-leave-active {
   opacity: 0;
 }
+
+.menux-enter, .menux-leave-active {
+  transform: translateX(15px);
+}
+.menux-enter-active {
+  transition: all 0.2s;
+}
+.menux-leave-active {
+  transition: all 0.1s;
+}
+.menux-enter,
+.menux-leave-active {
+  opacity: 0;
+}

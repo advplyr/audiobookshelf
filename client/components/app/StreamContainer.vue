@@ -92,8 +92,11 @@ export default {
     streamProgress(data) {
       if (!data.numSegments) return
       var chunks = data.chunks
+      console.log(`[STREAM-CONTAINER] Stream Progress ${data.percent}`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setChunksReady(chunks, data.numSegments)
+      } else {
+        console.error('No Audio Ref')
       }
     },
     streamOpen(stream) {
@@ -101,6 +104,8 @@ export default {
       if (this.$refs.audioPlayer) {
         console.log('[STREAM-CONTAINER] streamOpen', stream)
         this.openStream()
+      } else {
+        console.error('No Audio Ref')
       }
     },
     streamClosed(streamId) {
@@ -111,8 +116,11 @@ export default {
       }
     },
     streamReady() {
+      console.log(`[STREAM-CONTAINER] Stream Ready`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setStreamReady()
+      } else {
+        console.error('No Audio Ref')
       }
     },
     updateTime(currentTime) {

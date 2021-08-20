@@ -28,6 +28,10 @@
   background: #704922; 
 }
 
+.no-scroll::-webkit-scrollbar {
+  display: none;
+  opacity: 0;
+}
 
 .tracksTable {
   border-collapse: collapse;
@@ -49,4 +53,12 @@
 .tracksTable th {
   padding: 4px;
   font-size: 0.75rem;
+}
+
+.arrow-down {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid white;
 }

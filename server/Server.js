@@ -130,7 +130,6 @@ class Server {
       res.sendStatus(200)
     })
 
-    app.post('/stream', (req, res) => this.streamManager.openStreamRequest(req, res))
     app.post('/login', (req, res) => this.auth.login(req, res))
     app.post('/logout', this.logout.bind(this))
     app.get('/ping', (req, res) => {
@@ -165,7 +164,6 @@ class Server {
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
       socket.on('test', () => {
-        console.log('Test Request from', socket.id)
         socket.emit('test_received', socket.id)
       })
 
