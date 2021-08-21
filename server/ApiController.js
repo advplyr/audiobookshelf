@@ -14,7 +14,9 @@ class ApiController {
   }
 
   init() {
+    this.router.get('/find/covers', this.findCovers.bind(this))
     this.router.get('/find/:method', this.find.bind(this))
+
 
     this.router.get('/audiobooks', this.getAudiobooks.bind(this))
     this.router.get('/audiobook/:id', this.getAudiobook.bind(this))
@@ -34,6 +36,11 @@ class ApiController {
 
   find(req, res) {
     this.scanner.find(req, res)
+  }
+
+  findCovers(req, res) {
+    console.log('Find covers', req.query)
+    this.scanner.findCovers(req, res)
   }
 
   async getMetadata(req, res) {

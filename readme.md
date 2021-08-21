@@ -23,7 +23,6 @@ Title can start with the publish year like so:
 
 * Adding new audiobooks require pressing Scan button again (on settings page)
 * Matching is all manual now and only using 1 source (openlibrary)
-* Need to add cover selection from match results
 * Support different views to see more details of each audiobook
 * Then comes the mobile app..
 
