@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
     <div class="flex">
       <cards-book-cover :audiobook="audiobook" />
       <div class="flex-grow pl-6 pr-2">
@@ -9,6 +9,23 @@
             <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-3 w-24">Update</ui-btn>
           </div>
         </form>
+
+        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-primary">
+          <div class="flex items-center justify-center py-2">
+            <p>{{ localCovers.length }} local image(s)</p>
+            <div class="flex-grow" />
+            <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? 'Hide' : 'Show' }}</ui-btn>
+          </div>
+
+          <div v-if="showLocalCovers" class="flex items-center justify-center">
+            <template v-for="cover in localCovers">
+              <!-- <img :src="`/local/${cover.path}`" :key="cover.path" class="w-20 h-32 object-cover m-0.5" /> -->
+              <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover.localPath)">
+                <img :src="cover.localPath" class="h-24 object-cover" style="width: 60px" />
+              </div>
+            </template>
+          </div>
+        </div>
 
         <form @submit.prevent="submitSearchForm">
           <div class="flex items-center justify-start -mx-1 py-2 mt-2">
@@ -23,7 +40,7 @@
             </div>
           </div>
         </form>
-        <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-72 overflow-y-scroll mt-2 max-w-full">
+        <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-60 overflow-y-scroll mt-2 max-w-full">
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
             <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
@@ -37,6 +54,8 @@
 </template>
 
 <script>
+import Path from 'path'
+
 export default {
   props: {
     processing: Boolean,
@@ -51,7 +70,8 @@ export default {
       searchAuthor: null,
       imageUrl: null,
       coversFound: [],
-      hasSearched: false
+      hasSearched: false,
+      showLocalCovers: false
     }
   },
   watch: {
@@ -73,10 +93,23 @@ export default {
     },
     book() {
       return this.audiobook ? this.audiobook.book || {} : {}
+    },
+    otherFiles() {
+      return this.audiobook ? this.audiobook.otherFiles || [] : []
+    },
+    localCovers() {
+      return this.otherFiles
+        .filter((f) => f.filetype === 'image')
+        .map((file) => {
+          var _file = { ...file }
+          _file.localPath = Path.join('local', _file.path)
+          return _file
+        })
     }
   },
   methods: {
     init() {
+      this.showLocalCovers = false
       if (this.coversFound.length && (this.searchTitle !== this.book.title || this.searchAuthor !== this.book.author)) {
         this.coversFound = []
         this.hasSearched = false

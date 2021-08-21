@@ -12,7 +12,15 @@
         <div class="flex-grow" />
         <ui-btn color="success" @click="scan">Scan</ui-btn>
       </div>
+
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
+
+      <div class="flex items-center py-4">
+        <ui-btn color="error" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
+      </div>
+
+      <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
+
       <div class="flex items-center py-4">
         <p class="font-mono">v{{ $config.version }}</p>
         <div class="flex-grow" />
@@ -32,7 +40,9 @@
 <script>
 export default {
   data() {
-    return {}
+    return {
+      isResettingAudiobooks: false
+    }
   },
   computed: {
     streamAudiobook() {
@@ -42,6 +52,22 @@ export default {
   methods: {
     scan() {
       this.$root.socket.emit('scan')
+    },
+    resetAudiobooks() {
+      if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
+        this.isResettingAudiobooks = true
+        this.$axios
+          .$delete('/api/audiobooks')
+          .then(() => {
+            this.isResettingAudiobooks = false
+            this.$toast.success('Successfully reset audiobooks')
+          })
+          .catch((error) => {
+            console.error('failed to reset audiobooks', error)
+            this.isResettingAudiobooks = false
+            this.$toast.error('Failed to reset audiobooks - stop docker and manually remove appdata')
+          })
+      }
     }
   },
   mounted() {}

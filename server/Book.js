@@ -16,6 +16,10 @@ class Book {
     }
   }
 
+  get _title() { return this.title || '' }
+  get _author() { return this.author || '' }
+  get _series() { return this.series || '' }
+
   construct(book) {
     this.olid = book.olid
     this.title = book.title
@@ -80,6 +84,10 @@ class Book {
       }
     }
     return true
+  }
+
+  isSearchMatch(search) {
+    return this._title.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
   }
 }
 module.exports = Book
