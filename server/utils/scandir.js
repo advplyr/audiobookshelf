@@ -40,6 +40,10 @@ async function getAllAudiobookFiles(abRootPath) {
 
     // If relative file directory has 3 folders, then the middle folder will be series
     var splitDir = pathformat.dir.split(Path.sep)
+    if (splitDir.length === 1) {
+      Logger.error('Invalid file in root dir', filepath)
+      return
+    }
     var author = splitDir.shift()
     var series = null
     if (splitDir.length > 1) series = splitDir.shift()

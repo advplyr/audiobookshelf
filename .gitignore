@@ -1,3 +1,4 @@
+.env
 dev.js
 node_modules/
 /config/

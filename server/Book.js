@@ -1,3 +1,4 @@
+const Path = require('path')
 class Book {
   constructor(book = null) {
     this.olid = null
@@ -42,7 +43,6 @@ class Book {
   }
 
   setData(data) {
-    console.log('SET DATA', data)
     this.olid = data.olid || null
     this.title = data.title || null
     this.author = data.author || null
@@ -51,6 +51,14 @@ class Book {
     this.description = data.description || null
     this.cover = data.cover || null
     this.genres = data.genres || []
+
+    // Use first image file as cover
+    if (data.otherFiles && data.otherFiles.length) {
+      var imageFile = data.otherFiles.find(f => f.filetype === 'image')
+      if (imageFile) {
+        this.cover = Path.join('/local', imageFile.path)
+      }
+    }
   }
 
   update(payload) {

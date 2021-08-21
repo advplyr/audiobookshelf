@@ -13,7 +13,6 @@ const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
 const Logger = require('./Logger')
-const streamTest = require('./streamTest')
 
 class Server {
   constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -110,7 +109,6 @@ class Server {
       const distPath = Path.join(global.appRoot, '/client/dist')
       app.use(express.static(distPath))
     }
-
     app.use(express.static(this.AudiobookPath))
     app.use(express.static(this.MetadataPath))
     app.use(express.urlencoded({ extended: true }));
@@ -121,13 +119,6 @@ class Server {
 
     app.get('/', (req, res) => {
       res.sendFile('/index.html')
-    })
-    app.get('/test/:id', (req, res) => {
-      var audiobook = this.audiobooks.find(a => a.id === req.params.id)
-      var startTime = !isNaN(req.query.start) ? Number(req.query.start) : 0
-      Logger.info('/test with audiobook', audiobook.title)
-      streamTest.start(audiobook, startTime)
-      res.sendStatus(200)
     })
 
     app.post('/login', (req, res) => this.auth.login(req, res))

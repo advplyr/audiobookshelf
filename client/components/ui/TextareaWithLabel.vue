@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <p class="px-1 text-sm">{{ label }}</p>
+    <p class="px-1 text-sm font-semibold">{{ label }}</p>
     <ui-textarea-input v-model="inputValue" :rows="rows" class="w-full" />
   </div>
 </template>

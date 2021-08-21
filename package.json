@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "release": "dotenv release-it --disable-metrics --no-npm --npm.skipChecks",
+    "release-dry": "dotenv release-it --disable-metrics --no-npm --npm.skipChecks --dry-run"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -22,5 +24,9 @@
     "njodb": "^0.4.20",
     "node-dir": "^0.1.17",
     "socket.io": "^4.1.3"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^4.0.0",
+    "release-it": "^14.11.5"
   }
 }

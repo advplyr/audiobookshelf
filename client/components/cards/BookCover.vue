@@ -1,7 +1,13 @@
 <template>
   <div class="relative rounded-sm overflow-hidden" :style="{ height: width * 1.6 + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
-    <img ref="cover" :src="cover" class="w-full h-full object-cover" />
+    <img ref="cover" :src="cover" @error="imageError" class="w-full h-full object-cover" />
 
+    <div v-if="imageFailed" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-red-100" :style="{ padding: placeholderCoverPadding + 'rem' }">
+      <div class="w-full h-full border-2 border-error flex flex-col items-center justify-center">
+        <img src="/LogoTransparent.png" class="mb-2" :style="{ height: 64 * sizeMultiplier + 'px' }" />
+        <p class="text-center font-book text-error" :style="{ fontSize: titleFontSize + 'rem' }">Invalid Cover</p>
+      </div>
+    </div>
     <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div>
         <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
@@ -26,7 +32,9 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      imageFailed: false
+    }
   },
   computed: {
     book() {
@@ -56,23 +64,28 @@ export default {
     hasCover() {
       return !!this.book.cover
     },
-    fontSizeMultiplier() {
+    sizeMultiplier() {
       return this.width / 120
     },
     titleFontSize() {
-      return 0.75 * this.fontSizeMultiplier
+      return 0.75 * this.sizeMultiplier
     },
     authorFontSize() {
-      return 0.6 * this.fontSizeMultiplier
+      return 0.6 * this.sizeMultiplier
     },
     placeholderCoverPadding() {
-      return 0.8 * this.fontSizeMultiplier
+      return 0.8 * this.sizeMultiplier
     },
     authorBottom() {
-      return 0.75 * this.fontSizeMultiplier
+      return 0.75 * this.sizeMultiplier
     }
   },
-  methods: {},
+  methods: {
+    imageError(err) {
+      console.error('ImgError', err)
+      this.imageFailed = true
+    }
+  },
   mounted() {}
 }
 </script>

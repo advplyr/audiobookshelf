@@ -14,7 +14,7 @@
       </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
       <div class="flex items-center py-4">
-        <p class="font-mono">Beta v{{ $config.version }}</p>
+        <p class="font-mono">v{{ $config.version }}</p>
         <div class="flex-grow" />
         <p class="pr-2 text-sm font-book text-yellow-400">Report bugs, request features, provide feedback, and contribute on <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>.</p>
         <a href="https://github.com/advplyr/audiobookshelf" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">

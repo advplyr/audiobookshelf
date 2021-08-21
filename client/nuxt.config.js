@@ -35,7 +35,7 @@ module.exports = {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fira+Mono&family=Ubuntu+Mono&family=Open+Sans:wght@600&family=Gentium+Book+Basic' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Fira+Mono&family=Ubuntu+Mono&family=Open+Sans:wght@400;600&family=Gentium+Book+Basic' },
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Icons' }
     ]
   },
@@ -69,7 +69,8 @@ module.exports = {
   ],
 
   proxy: {
-    '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } }
+    '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } },
+    '/local/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/', pathRewrite: { '^/local/': '' } }
   },
 
   io: {
