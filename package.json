@@ -7,7 +7,7 @@
     "dev": "node index.js",
     "start": "node index.js",
     "release": "dotenv release-it --disable-metrics --no-npm --npm.skipChecks",
-    "release-update": "dotenv release-it --disable-metrics --github.update",
+    "release-update": "dotenv release-it --disable-metrics --github.update --no-increment",
     "release-dry": "dotenv release-it --disable-metrics --no-npm --npm.skipChecks --dry-run"
   },
   "author": "advplyr",
