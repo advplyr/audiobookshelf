@@ -10,28 +10,40 @@ class LibGen {
     console.log(`${this.mirror} is currently fastest`)
   }
 
-  async search(query) {
+  async search(queryTitle) {
     if (!this.mirror) {
       await this.init()
     }
+    queryTitle = queryTitle.replace(/'/g, '')
     var options = {
       mirror: this.mirror,
-      query: query,
+      query: queryTitle,
       search_in: 'title'
     }
+    var httpsMirror = this.mirror
+    if (httpsMirror.startsWith('http:')) {
+      httpsMirror = httpsMirror.replace('http:', 'https:')
+    }
+    // console.log('LibGen Search Options', options)
     try {
       const data = await libgen.search(options)
       let n = data.length
-      console.log(`${n} results for "${options.query}"`)
+      // console.log(`${n} results for "${options.query}"`)
+      var cleanedResults = []
       while (n--) {
-        console.log('');
-        console.log('Title: ' + data[n].title)
-        console.log('Author: ' + data[n].author)
-        console.log('Download: ' +
-          'http://gen.lib.rus.ec/book/index.php?md5=' +
-          data[n].md5.toLowerCase())
+        var resultObj = {
+          id: data[n].id,
+          title: data[n].title,
+          author: data[n].author,
+          publisher: data[n].publisher,
+          description: data[n].descr,
+          cover: `${httpsMirror}/covers/${data[n].coverurl}`,
+          year: data[n].year
+        }
+        if (!resultObj.title) continue;
+        cleanedResults.push(resultObj)
       }
-      return data
+      return cleanedResults
     } catch (err) {
       console.error(err)
       return {

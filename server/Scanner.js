@@ -77,13 +77,17 @@ class Scanner {
     var result = null
 
     if (method === 'isbn') {
-      console.log('Search', query, 'via ISBN')
       result = await this.bookFinder.findByISBN(query)
     } else if (method === 'search') {
-      console.log('Search', query, 'via query')
-      result = await this.bookFinder.search(query)
+      result = await this.bookFinder.search(query.provider, query.title, query.author || null)
     }
 
+    res.json(result)
+  }
+
+  async findCovers(req, res) {
+    var query = req.query
+    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
     res.json(result)
   }
 }

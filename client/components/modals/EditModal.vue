@@ -34,7 +34,9 @@ export default {
         if (newVal) {
           if (this.audiobook && this.audiobook.id === this.selectedAudiobookId) return
           this.audiobook = null
-          this.fetchFull()
+          this.init()
+        } else {
+          this.$store.commit('audiobooks/removeListener', 'edit-modal')
         }
       }
     }
@@ -71,6 +73,13 @@ export default {
   methods: {
     selectTab(tab) {
       this.selectedTab = tab
+    },
+    audiobookUpdated() {
+      this.fetchFull()
+    },
+    init() {
+      this.$store.commit('audiobooks/addListener', { meth: this.audiobookUpdated, id: 'edit-modal', audiobookId: this.selectedAudiobookId })
+      this.fetchFull()
     },
     async fetchFull() {
       try {

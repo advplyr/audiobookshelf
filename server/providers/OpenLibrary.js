@@ -50,7 +50,7 @@ class OpenLibrary {
     return {
       title: doc.title,
       author: doc.author_name ? doc.author_name.join(', ') : null,
-      first_publish_year: doc.first_publish_year,
+      year: doc.first_publish_year,
       edition: doc.cover_edition_key,
       cover: doc.cover_edition_key ? `https://covers.openlibrary.org/b/OLID/${doc.cover_edition_key}-L.jpg` : null,
       ...worksData
@@ -60,6 +60,18 @@ class OpenLibrary {
   async search(query) {
     var queryString = Object.keys(query).map(key => key + '=' + query[key]).join('&')
     var lookupData = await this.get(`/search.json?${queryString}`)
+    if (!lookupData) {
+      return {
+        errorCode: 404
+      }
+    }
+    var searchDocs = await Promise.all(lookupData.docs.map(d => this.cleanSearchDoc(d)))
+    return searchDocs
+  }
+
+  async searchTitle(title) {
+    title = title.replace(/'/g, '')
+    var lookupData = await this.get(`/search.json?title=${title}`)
     if (!lookupData) {
       return {
         errorCode: 404
