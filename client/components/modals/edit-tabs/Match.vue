@@ -15,7 +15,7 @@
     <div v-show="processing" class="flex h-full items-center justify-center">
       <p>Loading...</p>
     </div>
-    <div v-show="!processing && !searchResults.length" class="flex h-full items-center justify-center">
+    <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
       <p>No Results</p>
     </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper">
@@ -37,11 +37,13 @@ export default {
   },
   data() {
     return {
+      audiobookId: null,
       searchTitle: null,
       searchAuthor: null,
       lastSearch: null,
       provider: 'best',
-      searchResults: []
+      searchResults: [],
+      hasSearched: false
     }
   },
   watch: {
@@ -90,15 +92,22 @@ export default {
       })
       this.searchResults = results
       this.isProcessing = false
+      this.hasSearched = true
     },
     init() {
+      if (this.audiobook.id !== this.audiobookId) {
+        this.searchResults = []
+        this.hasSearched = false
+        this.audiobookId = this.audiobook.id
+      }
+
       if (!this.audiobook.book || !this.audiobook.book.title) {
         this.searchTitle = null
+        this.searchAuthor = null
         return
       }
       this.searchTitle = this.audiobook.book.title
       this.searchAuthor = this.audiobook.book.author || ''
-      this.runSearch()
     },
     async selectMatch(match) {
       this.isProcessing = true

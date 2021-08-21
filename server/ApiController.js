@@ -17,8 +17,9 @@ class ApiController {
     this.router.get('/find/covers', this.findCovers.bind(this))
     this.router.get('/find/:method', this.find.bind(this))
 
-
     this.router.get('/audiobooks', this.getAudiobooks.bind(this))
+    this.router.delete('/audiobooks', this.deleteAllAudiobooks.bind(this))
+
     this.router.get('/audiobook/:id', this.getAudiobook.bind(this))
     this.router.delete('/audiobook/:id', this.deleteAudiobook.bind(this))
     this.router.patch('/audiobook/:id/tracks', this.updateAudiobookTracks.bind(this))
@@ -57,9 +58,22 @@ class ApiController {
   }
 
   getAudiobooks(req, res) {
-    Logger.info('Get Audiobooks')
-    var audiobooksMinified = this.db.audiobooks.map(ab => ab.toJSONMinified())
-    res.json(audiobooksMinified)
+    var audiobooks = []
+    if (req.query.q) {
+      audiobooks = this.db.audiobooks.filter(ab => {
+        return ab.isSearchMatch(req.query.q)
+      }).map(ab => ab.toJSONMinified())
+    } else {
+      audiobooks = this.db.audiobooks.map(ab => ab.toJSONMinified())
+    }
+    res.json(audiobooks)
+  }
+
+  async deleteAllAudiobooks(req, res) {
+    Logger.info('Removing all Audiobooks')
+    var success = await this.db.recreateAudiobookDb()
+    if (success) res.sendStatus(200)
+    else res.sendStatus(500)
   }
 
   getAudiobook(req, res) {

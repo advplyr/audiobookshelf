@@ -207,5 +207,9 @@ class Audiobook {
       this.addTrack(file)
     })
   }
+
+  isSearchMatch(search) {
+    return this.book.isSearchMatch(search.toLowerCase().trim())
+  }
 }
 module.exports = Audiobook

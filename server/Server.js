@@ -108,8 +108,11 @@ class Server {
     if (process.env.NODE_ENV === 'production') {
       const distPath = Path.join(global.appRoot, '/client/dist')
       app.use(express.static(distPath))
+      app.use('/local', express.static(this.AudiobookPath))
+    } else {
+      app.use(express.static(this.AudiobookPath))
     }
-    app.use(express.static(this.AudiobookPath))
+
     app.use(express.static(this.MetadataPath))
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())

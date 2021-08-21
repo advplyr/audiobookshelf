@@ -8,9 +8,9 @@
         </a>
         <h1 class="text-2xl font-book">AudioBookshelf</h1>
 
+        <controls-global-search />
         <div class="flex-grow" />
 
-        <!-- <button class="px-4 py-2 bg-blue-500 rounded-xs" @click="scan">Scan</button> -->
         <nuxt-link to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">settings</span>
         </nuxt-link>

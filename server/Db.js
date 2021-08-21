@@ -28,6 +28,12 @@ class Db {
     return this.settingsDb
   }
 
+  getEntityDbKey(entityName) {
+    if (entityName === 'user') return 'usersDb'
+    else if (entityName === 'audiobook') return 'audiobooksDb'
+    return 'settingsDb'
+  }
+
   getEntityArrayKey(entityName) {
     if (entityName === 'user') return 'users'
     else if (entityName === 'audiobook') return 'audiobooks'
@@ -152,6 +158,18 @@ class Db {
       })
     }).catch((error) => {
       Logger.error(`[DB] Remove entity ${entityName} Failed: ${error}`)
+    })
+  }
+
+  recreateAudiobookDb() {
+    return this.audiobooksDb.drop().then((results) => {
+      Logger.info(`[DB] Dropped audiobook db`, results)
+      this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
+      this.audiobooks = []
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Failed to drop audiobook db`, error)
+      return false
     })
   }
 
