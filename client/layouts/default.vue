@@ -136,6 +136,11 @@ export default {
       this.socket.on('scan_start', this.scanStart)
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
+    },
+    checkVersion() {
+      this.$axios.$get('http://github.com/advplyr/audiobookshelf/raw/master/package.json').then((data) => {
+        console.log('GOT DATA', data)
+      })
     }
   },
   beforeMount() {
@@ -145,6 +150,7 @@ export default {
   },
   mounted() {
     this.initializeSocket()
+    this.checkVersion()
   }
 }
 </script>

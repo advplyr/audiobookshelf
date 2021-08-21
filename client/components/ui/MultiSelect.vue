@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <p class="px-1 text-sm">{{ label }}</p>
+    <p class="px-1 text-sm font-semibold">{{ label }}</p>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
         <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-text" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
