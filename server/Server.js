@@ -3,7 +3,6 @@ const express = require('express')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('fs-extra')
-const cookieparser = require('cookie-parser')
 
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
@@ -101,7 +100,6 @@ class Server {
 
     this.server = http.createServer(app)
 
-    app.use(cookieparser('secret_family_recipe'))
     app.use(this.auth.cors)
 
     // Static path to generated nuxt

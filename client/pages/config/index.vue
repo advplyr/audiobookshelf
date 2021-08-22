@@ -1,10 +1,29 @@
 <template>
   <div class="page p-6" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full max-w-4xl mx-auto">
-      <h1 class="text-2xl mb-2">Config</h1>
+      <div class="flex items-center mb-2">
+        <h1 class="text-2xl">Users</h1>
+        <div class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clickAddUser">
+          <span class="material-icons" style="font-size: 1.4rem">add</span>
+        </div>
+        <!-- <ui-btn small :padding-x="4" class="h-8">Create User</ui-btn> -->
+      </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
-      <div class="p-4 text-center h-20">
-        <p>Nothing much here yet...</p>
+      <div class="p-4 text-center">
+        <table id="accounts" class="mb-8">
+          <tr>
+            <th>Username</th>
+            <th>Account Type</th>
+            <th style="width: 200px">Created At</th>
+          </tr>
+          <tr v-for="user in users" :key="user.id">
+            <td>{{ user.username }}</td>
+            <td>{{ user.type }}</td>
+            <td class="text-sm font-mono">
+              {{ new Date(user.createdAt).toISOString() }}
+            </td>
+          </tr>
+        </table>
       </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
       <div class="flex items-center py-4 mb-8">
@@ -16,7 +35,7 @@
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
 
       <div class="flex items-center py-4">
-        <ui-btn color="error" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
+        <ui-btn color="bg" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
       </div>
 
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
@@ -41,7 +60,8 @@
 export default {
   data() {
     return {
-      isResettingAudiobooks: false
+      isResettingAudiobooks: false,
+      users: null
     }
   },
   computed: {
@@ -52,6 +72,19 @@ export default {
   methods: {
     scan() {
       this.$root.socket.emit('scan')
+    },
+    clickAddUser() {
+      this.$toast.info('Under Construction: User management coming soon.')
+    },
+    loadUsers() {
+      this.$axios
+        .$get('/api/users')
+        .then((users) => {
+          this.users = users
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+        })
     },
     resetAudiobooks() {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
@@ -70,6 +103,39 @@ export default {
       }
     }
   },
-  mounted() {}
+  mounted() {
+    this.loadUsers()
+  }
 }
 </script>
+
+<style>
+#accounts {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#accounts td,
+#accounts th {
+  border: 1px solid #2e2e2e;
+  padding: 8px 8px;
+  text-align: left;
+}
+
+#accounts tr:nth-child(even) {
+  background-color: #3a3a3a;
+}
+
+#accounts tr:hover {
+  background-color: #444;
+}
+
+#accounts th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: #333;
+}
+</style>

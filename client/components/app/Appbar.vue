@@ -26,10 +26,11 @@ export default {
   data() {
     return {
       menuItems: [
-        // {
-        //   value: 'settings',
-        //   text: 'Settings'
-        // },
+        {
+          value: 'account',
+          text: 'Account',
+          to: '/account'
+        },
         {
           value: 'logout',
           text: 'Logout'
@@ -72,8 +73,6 @@ export default {
     menuAction(action) {
       if (action === 'logout') {
         this.logout()
-      } else if (action === 'settings') {
-        // Show settings modal
       }
     }
   },
@@ -83,7 +82,6 @@ export default {
 
 <style>
 #appbar {
-  /* box-shadow: 0px 8px 8px #111111aa; */
   box-shadow: 0px 5px 5px #11111155;
 }
 </style>

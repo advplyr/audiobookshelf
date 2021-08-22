@@ -62,3 +62,7 @@
   border-right: 6px solid transparent;
   border-top: 6px solid white;
 }
+
+.icon-text {
+  font-size: 1.1rem;
+}
