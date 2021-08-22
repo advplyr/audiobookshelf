@@ -145,15 +145,6 @@ export default {
   },
   mounted() {
     this.initializeSocket()
-    // var test1 = 'crab rangoon'
-    // var code = this.$stringToCode(test1)
-    // var str = this.$codeToString(code)
-    // console.log(code, str, test1 === str)
-
-    // var test2 = 'pig~iN.A._BlNan190a Fry em like b**&& A!@#%$&acn()'
-    // var code2 = this.$stringToCode(test2)
-    // var str2 = this.$codeToString(code2)
-    // console.log(code2, code2.length, str2, str2.length, test2 === str2)
   }
 }
 </script>
