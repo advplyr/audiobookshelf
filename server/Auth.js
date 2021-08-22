@@ -114,65 +114,50 @@ class Auth {
     }
   }
 
-  async checkAuth(req, res) {
-    var username = req.body.username
-    Logger.debug('Check Auth', username, !!req.body.password)
+  comparePassword(password, user) {
+    if (user.type === 'root' && !password && !user.pash) return true
+    if (!password || !user.pash) return false
+    return bcrypt.compare(password, user.pash)
+  }
 
-    var matchingUser = this.users.find(u => u.username === username)
-    if (!matchingUser) {
+  async userChangePassword(req, res) {
+    var { password, newPassword } = req.body
+    newPassword = newPassword || ''
+    var matchingUser = this.users.find(u => u.id === req.user.id)
+
+    // Only root can have an empty password
+    if (matchingUser.type !== 'root' && !newPassword) {
       return res.json({
-        error: 'User not found'
+        error: 'Invalid new password - Only root can have an empty password'
       })
     }
 
-    var cleanedUser = { ...matchingUser }
-    delete cleanedUser.pash
-
-    // check for empty password (default)
-    if (!req.body.password) {
-      if (!matchingUser.pash) {
-        res.cookie('user', username, { signed: true })
-        return res.json({
-          user: cleanedUser
-        })
-      } else {
-        return res.json({
-          error: 'Invalid Password'
-        })
-      }
+    var compare = await this.comparePassword(password, matchingUser)
+    if (!compare) {
+      return res.json({
+        error: 'Invalid password'
+      })
     }
 
-    // Set root password first time
-    if (matchingUser.type === 'root' && !matchingUser.pash && req.body.password && req.body.password.length > 1) {
-      console.log('Set root pash')
-      var pw = await this.hashPass(req.body.password)
+    var pw = ''
+    if (newPassword) {
+      pw = await this.hashPass(newPassword)
       if (!pw) {
         return res.json({
           error: 'Hash failed'
         })
       }
-      this.users = this.users.map(u => {
-        if (u.username === matchingUser.username) {
-          u.pash = pw
-        }
-        return u
-      })
-      await this.saveAuthDb()
-      return res.json({
-        setroot: true,
-        user: cleanedUser
-      })
     }
 
-    var compare = await bcrypt.compare(req.body.password, matchingUser.pash)
-    if (compare) {
-      res.cookie('user', username, { signed: true })
+    matchingUser.pash = pw
+    var success = await this.db.updateEntity('user', matchingUser)
+    if (success) {
       res.json({
-        user: cleanedUser
+        success: true
       })
     } else {
       res.json({
-        error: 'Invalid Password'
+        error: 'Unknown error'
       })
     }
   }

@@ -143,8 +143,10 @@ class Db {
       this[arrayKey] = this[arrayKey].map(e => {
         return e.id === entity.id ? entity : e
       })
+      return true
     }).catch((error) => {
       Logger.error(`[DB] Update entity ${entityName} Failed: ${error}`)
+      return false
     })
   }
 

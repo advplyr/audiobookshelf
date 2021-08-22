@@ -28,7 +28,9 @@ class ApiController {
     this.router.get('/metadata/:id/:trackIndex', this.getMetadata.bind(this))
     this.router.patch('/match/:id', this.match.bind(this))
 
+    this.router.get('/users', this.getUsers.bind(this))
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
+    this.router.patch('/user/password', this.userChangePassword.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
 
@@ -156,11 +158,20 @@ class ApiController {
     res.sendStatus(200)
   }
 
+  getUsers(req, res) {
+    if (req.user.type !== 'root') return res.sendStatus(403)
+    return res.json(this.db.users.map(u => u.toJSONForBrowser()))
+  }
+
   async resetUserAudiobookProgress(req, res) {
     req.user.resetAudiobookProgress(req.params.id)
     await this.db.updateEntity('user', req.user)
     this.emitter('user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
+  }
+
+  userChangePassword(req, res) {
+    this.auth.userChangePassword(req, res)
   }
 
   getGenres(req, res) {
