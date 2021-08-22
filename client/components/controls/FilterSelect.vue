@@ -76,6 +76,11 @@ export default {
           text: 'Tag',
           value: 'tags',
           sublist: true
+        },
+        {
+          text: 'Series',
+          value: 'series',
+          sublist: true
         }
       ]
     }
@@ -115,6 +120,9 @@ export default {
     },
     tags() {
       return this.$store.state.audiobooks.tags
+    },
+    series() {
+      return this.$store.state.audiobooks.series
     },
     sublistItems() {
       return this[this.sublist] || []

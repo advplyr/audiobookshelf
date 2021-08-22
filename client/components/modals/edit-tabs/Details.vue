@@ -21,11 +21,20 @@
         </div>
       </div>
 
-      <ui-text-input-with-label v-model="details.series" label="Series" class="mt-2" />
+      <!-- <ui-text-input-with-label v-model="details.series" label="Series" class="mt-2" /> -->
+
+      <ui-input-dropdown v-model="details.series" label="Series" class="mt-2" :items="series" />
 
       <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
 
-      <ui-multi-select v-model="details.genres" label="Genre" :items="genres" class="mt-2" @addOption="addGenre" />
+      <div class="flex mt-2 -mx-1">
+        <div class="w-1/2 px-1">
+          <ui-multi-select v-model="details.genres" label="Genres" :items="genres" />
+        </div>
+        <div class="flex-grow px-1">
+          <ui-multi-select v-model="newTags" label="Tags" :items="tags" />
+        </div>
+      </div>
 
       <div class="flex py-4">
         <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
@@ -55,8 +64,8 @@ export default {
         publishYear: null,
         genres: []
       },
-      resettingProgress: false,
-      genres: ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
+      newTags: [],
+      resettingProgress: false
     }
   },
   watch: {
@@ -87,21 +96,25 @@ export default {
     },
     userProgress() {
       return this.userAudiobook ? this.userAudiobook.progress : 0
+    },
+    genres() {
+      return this.$store.state.audiobooks.genres
+    },
+    tags() {
+      return this.$store.state.audiobooks.tags
+    },
+    series() {
+      return this.$store.state.audiobooks.series
     }
   },
   methods: {
-    addGenre(genre) {
-      this.genres.push({
-        text: genre,
-        value: genre
-      })
-    },
     async submitForm() {
-      console.log('Submit form', this.details)
       this.isProcessing = true
       const updatePayload = {
-        book: this.details
+        book: this.details,
+        tags: this.newTags
       }
+
       var updatedAudiobook = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
@@ -120,6 +133,8 @@ export default {
       this.details.genres = this.book.genres || []
       this.details.series = this.book.series
       this.details.publishYear = this.book.publishYear
+
+      this.newTags = this.audiobook.tags || []
     },
     resetProgress() {
       if (confirm(`Are you sure you want to reset your progress?`)) {

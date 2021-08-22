@@ -1,0 +1,112 @@
+<template>
+  <div class="w-full">
+    <p class="px-1 text-sm font-semibold">{{ label }}</p>
+    <div ref="wrapper" class="relative">
+      <form @submit.prevent="submitForm">
+        <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-text">
+          <input ref="input" v-model="textInput" class="h-full w-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+        </div>
+      </form>
+
+      <ul ref="menu" v-show="isFocused && items.length && (itemsToShow.length || currentSearch)" class="absolute z-50 mt-0 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+        <template v-for="item in itemsToShow">
+          <li :key="item" class="text-gray-50 select-none relative py-2 pr-3 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
+            <div class="flex items-center">
+              <span class="font-normal ml-3 block truncate">{{ item }}</span>
+            </div>
+            <span v-if="input === item" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
+              <span class="material-icons text-xl">checkmark</span>
+            </span>
+          </li>
+        </template>
+        <li v-if="!itemsToShow.length" class="text-gray-50 select-none relative py-2 pr-9" role="option">
+          <div class="flex items-center justify-center">
+            <span class="font-normal">No items</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    value: [String, Number],
+    label: String,
+    items: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data() {
+    return {
+      isFocused: false,
+      currentSearch: null,
+      typingTimeout: null,
+      textInput: null
+    }
+  },
+  watch: {
+    value: {
+      immediate: true,
+      handler(newVal) {
+        this.textInput = newVal
+      }
+    }
+  },
+  computed: {
+    input: {
+      get() {
+        return this.value
+      },
+      set(val) {
+        this.$emit('input', val)
+      }
+    },
+    itemsToShow() {
+      if (!this.currentSearch || !this.textInput || this.textInput === this.input) {
+        return this.items
+      }
+      return this.items.filter((i) => {
+        var iValue = String(i).toLowerCase()
+        return iValue.includes(this.currentSearch.toLowerCase())
+      })
+    }
+  },
+  methods: {
+    keydownInput() {
+      clearTimeout(this.typingTimeout)
+      this.typingTimeout = setTimeout(() => {
+        this.currentSearch = this.textInput
+      }, 100)
+    },
+    inputFocus() {
+      this.isFocused = true
+    },
+    inputBlur() {
+      setTimeout(() => {
+        if (document.activeElement === this.$refs.input) {
+          return
+        }
+        this.isFocused = false
+        if (this.input !== this.textInput) {
+          this.input = this.$cleanString(this.textInput) || null
+        }
+      }, 50)
+    },
+    submitForm() {
+      this.input = this.$cleanString(this.textInput) || null
+      this.currentSearch = null
+    },
+    clickedOption(e, item) {
+      var newValue = this.input === item ? null : item
+      this.textInput = null
+      this.currentSearch = null
+      this.input = this.$cleanString(newValue) || null
+      if (this.$refs.input) this.$refs.input.blur()
+    }
+  },
+  mounted() {}
+}
+</script>

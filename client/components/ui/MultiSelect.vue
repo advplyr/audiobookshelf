@@ -4,7 +4,7 @@
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
         <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-text" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
-          <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 ma-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center">{{ snakeToNormal(item) }}</div>
+          <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 ma-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center">{{ $snakeToNormal(item) }}</div>
           <input ref="input" v-model="textInput" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
@@ -13,7 +13,7 @@
         <template v-for="item in itemsToShow">
           <li :key="item" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
-              <span class="font-normal ml-3 block truncate">{{ snakeToNormal(item) }}</span>
+              <span class="font-normal ml-3 block truncate">{{ $snakeToNormal(item) }}</span>
             </div>
             <span v-if="selected.includes(item)" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
               <span class="material-icons text-xl">checkmark</span>
@@ -47,7 +47,6 @@ export default {
     return {
       textInput: null,
       currentSearch: null,
-      isTyping: false,
       typingTimeout: null,
       isFocused: false,
       menu: null
@@ -71,38 +70,15 @@ export default {
       }
 
       return this.items.filter((i) => {
-        var normie = this.snakeToNormal(i)
+        var normie = this.$snakeToNormal(i)
         var iValue = String(normie).toLowerCase()
         return iValue.includes(this.currentSearch.toLowerCase())
       })
     }
   },
   methods: {
-    snakeToNormal(kebab) {
-      if (!kebab) {
-        return 'err'
-      }
-      return String(kebab)
-        .split('_')
-        .map((t) => t.slice(0, 1).toUpperCase() + t.slice(1))
-        .join(' ')
-    },
-    normalToSnake(normie) {
-      return normie
-        .trim()
-        .split(' ')
-        .map((t) => t.toLowerCase())
-        .join('_')
-    },
-    setMatchingItems() {
-      if (!this.textInput) {
-        return
-      }
-      this.currentSearch = this.textInput
-    },
     keydownInput() {
       clearTimeout(this.typingTimeout)
-      this.isTyping = true
       this.typingTimeout = setTimeout(() => {
         this.currentSearch = this.textInput
       }, 100)
@@ -122,6 +98,7 @@ export default {
       this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
+      console.log('Recalc menu pos', boundingBox.height)
     },
     unmountMountMenu() {
       if (!this.$refs.menu) return
@@ -169,6 +146,9 @@ export default {
       this.textInput = null
       this.currentSearch = null
       this.$emit('input', newSelected)
+      this.$nextTick(() => {
+        this.recalcMenuPos()
+      })
     },
     clickWrapper() {
       if (this.showMenu) {
@@ -177,9 +157,8 @@ export default {
       this.focus()
     },
     insertNewItem(item) {
-      var kebabItem = this.normalToSnake(item)
+      var kebabItem = this.$normalToSnake(item)
       this.selected.push(kebabItem)
-      this.$emit('addOption', kebabItem)
       this.$emit('input', this.selected)
       this.textInput = null
       this.currentSearch = null
@@ -191,7 +170,7 @@ export default {
       if (!this.textInput) return
 
       var cleaned = this.textInput.toLowerCase().trim()
-      var cleanedKebab = this.normalToSnake(cleaned)
+      var cleanedKebab = this.$normalToSnake(cleaned)
       var matchesItem = this.items.find((i) => {
         return i === cleaned || cleanedKebab === i
       })

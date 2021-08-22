@@ -38,6 +38,77 @@ Vue.prototype.$secondsToTimestamp = (seconds) => {
   return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
 }
 
+Vue.prototype.$snakeToNormal = (snake) => {
+  if (!snake) {
+    return ''
+  }
+  return String(snake)
+    .split('_')
+    .map((t) => t.slice(0, 1).toUpperCase() + t.slice(1))
+    .join(' ')
+}
+
+Vue.prototype.$normalToSnake = (normie) => {
+  if (!normie) return ''
+  return normie
+    .trim()
+    .split(' ')
+    .map((t) => t.toLowerCase())
+    .join('_')
+}
+
+const availableChars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+const getCharCode = (char) => availableChars.indexOf(char)
+const getCharFromCode = (code) => availableChars[Number(code)] || -1
+const cleanChar = (char) => getCharCode(char) < 0 ? '?' : char
+
+Vue.prototype.$cleanString = (str) => {
+  if (!str) return ''
+
+  // replace accented characters: https://stackoverflow.com/a/49901740/7431543
+  str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+
+  var cleaned = ''
+  for (let i = 0; i < str.length; i++) {
+    cleaned += cleanChar(str[i])
+  }
+  return cleaned
+}
+
+Vue.prototype.$stringToCode = (str) => {
+  if (!str) return ''
+  var numcode = [...str].map(s => {
+    return String(getCharCode(s)).padStart(2, '0')
+  }).join('')
+  return BigInt(numcode).toString(36)
+}
+
+Vue.prototype.$codeToString = (code) => {
+  if (!code) return ''
+  var numcode = ''
+  try {
+    numcode = [...code].reduce((acc, curr) => {
+      return BigInt(parseInt(curr, 36)) + BigInt(36) * acc
+    }, 0n)
+  } catch (err) {
+    console.error('numcode fialed', code, err)
+  }
+  var numcodestr = String(numcode)
+
+  var remainder = numcodestr.length % 2
+  numcodestr = numcodestr.padStart(numcodestr.length - 1 + remainder, '0')
+
+  var finalform = ''
+  var numChunks = Math.floor(numcodestr.length / 2)
+  var remaining = numcodestr
+  for (let i = 0; i < numChunks; i++) {
+    var chunk = remaining.slice(0, 2)
+    remaining = remaining.slice(2)
+    finalform += getCharFromCode(chunk)
+  }
+  return finalform
+}
+
 function loadImageBlob(uri) {
   return new Promise((resolve) => {
     const img = document.createElement('img')

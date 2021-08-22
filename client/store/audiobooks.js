@@ -6,7 +6,8 @@ export const state = () => ({
   audiobooks: [],
   listeners: [],
   genres: [...STANDARD_GENRES],
-  tags: []
+  tags: [],
+  series: []
 })
 
 export const getters = {
@@ -14,19 +15,15 @@ export const getters = {
     var filtered = state.audiobooks
     var settings = rootState.settings.settings || {}
     var filterBy = settings.filterBy || ''
-    var filterByParts = filterBy.split('.')
-    if (filterByParts.length > 1) {
-      var primary = filterByParts[0]
-      var secondary = filterByParts[1]
-      if (primary === 'genres') {
-        filtered = filtered.filter(ab => {
-          return ab.book && ab.book.genres.includes(secondary)
-        })
-      } else if (primary === 'tags') {
-        filtered = filtered.filter(ab => ab.tags.includes(secondary))
-      }
+
+    var searchGroups = ['genres', 'tags', 'series']
+    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    if (group) {
+      var filter = filterBy.replace(`${group}.`, '')
+      if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
+      else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
+      else if (group === 'series') filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
     }
-    // TODO: Add filters
     return filtered
   },
   getFilteredAndSorted: (state, getters, rootState) => () => {
@@ -65,6 +62,7 @@ export const mutations = {
       genres = genres.concat(ab.book.genres)
     })
     state.genres = [...new Set(genres)] // Remove Duplicates
+    state.genres.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
 
     // TAGS
     var tags = []
@@ -72,6 +70,16 @@ export const mutations = {
       tags = tags.concat(ab.tags)
     })
     state.tags = [...new Set(tags)] // Remove Duplicates
+    state.tags.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+
+    // SERIES
+    var series = []
+    audiobooks.forEach((ab) => {
+      if (!ab.book || !ab.book.series || series.includes(ab.book.series)) return
+      series.push(ab.book.series)
+    })
+    state.series = series
+    state.series.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
 
     state.audiobooks = audiobooks
     state.listeners.forEach((listener) => {
@@ -80,19 +88,34 @@ export const mutations = {
   },
   addUpdate(state, audiobook) {
     var index = state.audiobooks.findIndex(a => a.id === audiobook.id)
+    var origAudiobook = null
     if (index >= 0) {
+      origAudiobook = { ...state.audiobooks[index] }
       state.audiobooks.splice(index, 1, audiobook)
     } else {
       state.audiobooks.push(audiobook)
     }
 
-    // GENRES
     if (audiobook.book) {
+      // GENRES
       var newGenres = []
       audiobook.book.genres.forEach((genre) => {
         if (!state.genres.includes(genre)) newGenres.push(genre)
       })
-      if (newGenres.length) state.genres = state.genres.concat(newGenres)
+      if (newGenres.length) {
+        state.genres = state.genres.concat(newGenres)
+        state.genres.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+      }
+
+      // SERIES
+      if (audiobook.book.series && !state.series.includes(audiobook.book.series)) {
+        state.series.push(audiobook.book.series)
+        state.series.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+      }
+      if (origAudiobook && origAudiobook.book && origAudiobook.book.series) {
+        var isInAB = state.audiobooks.find(ab => ab.book && ab.book.series === origAudiobook.book.series)
+        if (!isInAB) state.series = state.series.filter(series => series !== origAudiobook.book.series)
+      }
     }
 
     // TAGS
@@ -100,8 +123,10 @@ export const mutations = {
     audiobook.tags.forEach((tag) => {
       if (!state.tags.includes(tag)) newTags.push(tag)
     })
-    if (newTags.length) state.tags = state.tags.concat(newTags)
-
+    if (newTags.length) {
+      state.tags = state.tags.concat(newTags)
+      state.tags.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+    }
 
     state.listeners.forEach((listener) => {
       if (!listener.audiobookId || listener.audiobookId === audiobook.id) {
@@ -112,8 +137,8 @@ export const mutations = {
   remove(state, audiobook) {
     state.audiobooks = state.audiobooks.filter(a => a.id !== audiobook.id)
 
-    // GENRES
     if (audiobook.book) {
+      // GENRES
       audiobook.book.genres.forEach((genre) => {
         if (!STANDARD_GENRES.includes(genre)) {
           var isInOtherAB = state.audiobooks.find(ab => {
@@ -125,6 +150,15 @@ export const mutations = {
           }
         }
       })
+
+      // SERIES
+      if (audiobook.book.series) {
+        var isInOtherAB = state.audiobooks.find(ab => ab.book && ab.book.series === audiobook.book.series)
+        if (!isInOtherAB) {
+          // Series not used in any other audiobook - remove it
+          state.series = state.series.filter(s => s !== audiobook.book.series)
+        }
+      }
     }
 
     // TAGS
@@ -137,7 +171,6 @@ export const mutations = {
         state.tags = state.tags.filter(t => t !== tag)
       }
     })
-
 
     state.listeners.forEach((listener) => {
       if (!listener.audiobookId || listener.audiobookId === audiobook.id) {
