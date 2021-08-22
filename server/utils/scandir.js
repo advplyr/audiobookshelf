@@ -1,6 +1,7 @@
 const Path = require('path')
 const dir = require('node-dir')
 const Logger = require('../Logger')
+const { cleanString } = require('./index')
 
 const AUDIOBOOK_PARTS_FORMATS = ['m4b', 'mp3']
 const INFO_FORMATS = ['nfo']
@@ -64,7 +65,7 @@ async function getAllAudiobookFiles(abRootPath) {
       audiobooks[path] = {
         author: author,
         title: title,
-        series: series,
+        series: cleanString(series),
         publishYear: publishYear,
         path: relpath,
         fullPath: Path.join(abRootPath, path),
