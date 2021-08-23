@@ -24,13 +24,13 @@ export default {
   },
   computed: {
     user() {
-      return this.$store.state.user
+      return this.$store.state.user.user
     }
   },
   methods: {
     connect() {
       console.log('[SOCKET] Connected')
-      var token = this.$store.getters.getToken
+      var token = this.$store.getters['user/getToken']
       this.socket.emit('auth', token)
     },
     connectError() {},
@@ -49,7 +49,8 @@ export default {
         }
       }
       if (payload.user) {
-        this.$store.commit('setUser', payload.user)
+        this.$store.commit('user/setUser', payload.user)
+        this.$store.commit('user/setSettings', payload.user.settings)
       }
     },
     streamOpen(stream) {
@@ -92,8 +93,9 @@ export default {
       this.$store.commit('setScanProgress', progress)
     },
     userUpdated(user) {
-      if (this.$store.state.user.id === user.id) {
-        this.$store.commit('setUser', user)
+      if (this.$store.state.user.user.id === user.id) {
+        this.$store.commit('user/setUser', user)
+        this.$store.commit('user/setSettings', user.settings)
       }
     },
     initializeSocket() {
@@ -139,7 +141,7 @@ export default {
     }
   },
   beforeMount() {
-    if (!this.$store.state.user) {
+    if (!this.$store.state.user.user) {
       this.$router.replace(`/login?redirect=${this.$route.path}`)
     }
   },

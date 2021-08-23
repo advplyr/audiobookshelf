@@ -8,9 +8,19 @@ class User {
     this.token = null
     this.createdAt = null
     this.audiobooks = null
+    this.settings = {}
 
     if (user) {
       this.construct(user)
+    }
+  }
+
+  getDefaultUserSettings() {
+    return {
+      orderBy: 'book.title',
+      orderDesc: false,
+      filterBy: 'all',
+      playbackRate: 1
     }
   }
 
@@ -23,7 +33,8 @@ class User {
       stream: this.stream,
       token: this.token,
       audiobooks: this.audiobooks,
-      createdAt: this.createdAt
+      createdAt: this.createdAt,
+      settings: this.settings
     }
   }
 
@@ -35,7 +46,8 @@ class User {
       stream: this.stream,
       token: this.token,
       audiobooks: this.audiobooks,
-      createdAt: this.createdAt
+      createdAt: this.createdAt,
+      settings: this.settings
     }
   }
 
@@ -48,6 +60,7 @@ class User {
     this.token = user.token
     this.audiobooks = user.audiobooks || null
     this.createdAt = user.createdAt
+    this.settings = user.settings || this.getDefaultUserSettings()
   }
 
   updateAudiobookProgress(stream) {
@@ -62,6 +75,32 @@ class User {
     this.audiobooks[stream.audiobookId].lastUpdate = Date.now()
     this.audiobooks[stream.audiobookId].progress = stream.clientProgress
     this.audiobooks[stream.audiobookId].currentTime = stream.clientCurrentTime
+  }
+
+  // Returns Boolean If update was made
+  updateSettings(settings) {
+    if (!this.settings) {
+      this.settings = { ...settings }
+      return true
+    }
+    var madeUpdates = false
+
+    for (const key in this.settings) {
+      if (settings[key] !== undefined && this.settings[key] !== settings[key]) {
+        this.settings[key] = settings[key]
+        madeUpdates = true
+      }
+    }
+
+    // Check if new settings update has keys not currently in user settings
+    for (const key in settings) {
+      if (settings[key] !== undefined && this.settings[key] === undefined) {
+        this.settings[key] = settings[key]
+        madeUpdates = true
+      }
+    }
+
+    return madeUpdates
   }
 
   resetAudiobookProgress(audiobookId) {

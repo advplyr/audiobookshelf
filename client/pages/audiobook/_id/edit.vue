@@ -66,7 +66,7 @@ export default {
     draggable
   },
   async asyncData({ store, params, app, redirect, route }) {
-    if (!store.state.user) {
+    if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
     var audiobook = await app.$axios.$get(`/api/audiobook/${params.id}`).catch((error) => {

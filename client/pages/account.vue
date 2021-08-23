@@ -43,7 +43,7 @@ export default {
   },
   computed: {
     user() {
-      return this.$store.state.user || null
+      return this.$store.state.user.user || null
     },
     username() {
       return this.user.username

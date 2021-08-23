@@ -43,7 +43,7 @@ export default {
       return this.$route.name !== 'index'
     },
     user() {
-      return this.$store.state.user
+      return this.$store.state.user.user
     },
     username() {
       return this.user ? this.user.username : 'err'

@@ -22,6 +22,7 @@
 export default {
   data() {
     return {
+      audioPlayerReady: false,
       lastServerUpdateSentSeconds: 0,
       stream: null
     }
@@ -32,7 +33,7 @@ export default {
       return 'Logo.png'
     },
     user() {
-      return this.$store.state.user
+      return this.$store.state.user.user
     },
     isLoading() {
       if (!this.streamAudiobook) return false
@@ -63,6 +64,7 @@ export default {
   },
   methods: {
     audioPlayerMounted() {
+      this.audioPlayerReady = true
       if (this.stream) {
         console.log('[STREAM-CONTAINER] audioPlayerMounted w/ Stream', this.stream)
         this.openStream()
@@ -104,7 +106,7 @@ export default {
       if (this.$refs.audioPlayer) {
         console.log('[STREAM-CONTAINER] streamOpen', stream)
         this.openStream()
-      } else {
+      } else if (this.audioPlayerReady) {
         console.error('No Audio Ref')
       }
     },

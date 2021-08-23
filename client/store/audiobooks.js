@@ -13,7 +13,7 @@ export const state = () => ({
 export const getters = {
   getFiltered: (state, getters, rootState) => () => {
     var filtered = state.audiobooks
-    var settings = rootState.settings.settings || {}
+    var settings = rootState.user.settings || {}
     var filterBy = settings.filterBy || ''
 
     var searchGroups = ['genres', 'tags', 'series']
@@ -27,7 +27,7 @@ export const getters = {
     return filtered
   },
   getFilteredAndSorted: (state, getters, rootState) => () => {
-    var settings = rootState.settings.settings
+    var settings = rootState.user.settings
     var direction = settings.orderDesc ? 'desc' : 'asc'
 
     var filtered = getters.getFiltered()

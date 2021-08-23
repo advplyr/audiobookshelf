@@ -49,7 +49,7 @@ export default {
   },
   computed: {
     user() {
-      return this.$store.state.user
+      return this.$store.state.user.user
     }
   },
   methods: {
@@ -71,7 +71,7 @@ export default {
       } else if (authRes.error) {
         this.error = authRes.error
       } else {
-        this.$store.commit('setUser', authRes.user)
+        this.$store.commit('user/setUser', authRes.user)
       }
       this.processing = false
     },
@@ -90,7 +90,7 @@ export default {
               }
             })
             .then((res) => {
-              this.$store.commit('setUser', res.user)
+              this.$store.commit('user/setUser', res.user)
               this.processing = false
             })
             .catch((error) => {

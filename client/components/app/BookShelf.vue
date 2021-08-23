@@ -32,13 +32,13 @@ export default {
   },
   computed: {
     userAudiobooks() {
-      return this.$store.state.user ? this.$store.state.user.audiobooks || {} : {}
+      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
     },
     filterOrderKey() {
-      return this.$store.getters['settings/getFilterOrderKey']
+      return this.$store.getters['user/getFilterOrderKey']
     }
   },
   methods: {
@@ -100,7 +100,7 @@ export default {
   },
   mounted() {
     this.$store.commit('audiobooks/addListener', { id: 'bookshelf', meth: this.audiobooksUpdated })
-    this.$store.commit('settings/addListener', { id: 'bookshelf', meth: this.settingsUpdated })
+    this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
 
     this.$store.dispatch('audiobooks/load')
     this.init()
@@ -108,7 +108,7 @@ export default {
   },
   beforeDestroy() {
     this.$store.commit('audiobooks/removeListener', 'bookshelf')
-    this.$store.commit('settings/removeListener', 'bookshelf')
+    this.$store.commit('user/removeSettingsListener', 'bookshelf')
     window.removeEventListener('resize', this.resize)
   }
 }
