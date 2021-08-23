@@ -41,3 +41,7 @@ const cleanString = (str) => {
   return cleaned
 }
 module.exports.cleanString = cleanString
+
+module.exports.isObject = (val) => {
+  return val !== null && typeof val === 'object'
+}

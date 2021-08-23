@@ -14,7 +14,8 @@
 export default {
   data() {
     return {
-      settings: {}
+      settings: {},
+      hasInit: false
     }
   },
   computed: {
@@ -30,15 +31,24 @@ export default {
       this.saveSettings()
     },
     saveSettings() {
-      // Send to server
-      this.$store.commit('settings/setSettings', this.settings)
+      this.$store.commit('user/setSettings', this.settings) // Immediate update
+      this.$store.dispatch('user/updateUserSettings', this.settings)
     },
     init() {
-      this.settings = { ...this.$store.state.settings.settings }
+      this.settings = { ...this.$store.state.user.settings }
+    },
+    settingsUpdated(settings) {
+      for (const key in settings) {
+        this.settings[key] = settings[key]
+      }
     }
   },
   mounted() {
     this.init()
+    this.$store.commit('user/addSettingsListener', { id: 'bookshelftoolbar', meth: this.settingsUpdated })
+  },
+  beforeDestroy() {
+    this.$store.commit('user/removeSettingsListener', 'bookshelftoolbar')
   }
 }
 </script>

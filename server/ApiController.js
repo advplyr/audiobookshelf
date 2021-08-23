@@ -1,5 +1,6 @@
 const express = require('express')
 const Logger = require('./Logger')
+const { isObject } = require('./utils/index')
 
 class ApiController {
   constructor(db, scanner, auth, streamManager, rssFeeds, emitter) {
@@ -32,6 +33,7 @@ class ApiController {
     this.router.get('/users', this.getUsers.bind(this))
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
     this.router.patch('/user/password', this.userChangePassword.bind(this))
+    this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
 
@@ -183,6 +185,21 @@ class ApiController {
     var feed = await this.rssFeeds.openFeed(audiobook)
     console.log('Feed open', feed)
     res.json(feed)
+  }
+
+  async userUpdateSettings(req, res) {
+    var settingsUpdate = req.body
+    if (!settingsUpdate || !isObject(settingsUpdate)) {
+      return res.sendStatus(500)
+    }
+    var madeUpdates = req.user.updateSettings(settingsUpdate)
+    if (madeUpdates) {
+      await this.db.updateEntity('user', req.user)
+    }
+    return res.json({
+      success: true,
+      settings: req.user.settings
+    })
   }
 
   getGenres(req, res) {

@@ -92,7 +92,7 @@ export default {
       return this.audiobook ? this.audiobook.book || {} : {}
     },
     userAudiobook() {
-      return this.$store.getters['getUserAudiobook'](this.audiobookId)
+      return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
     },
     userProgress() {
       return this.userAudiobook ? this.userAudiobook.progress : 0

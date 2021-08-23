@@ -1,6 +1,5 @@
 
 export const state = () => ({
-  user: null,
   streamAudiobook: null,
   showEditModal: false,
   selectedAudiobook: null,
@@ -10,26 +9,11 @@ export const state = () => ({
   developerMode: false
 })
 
-export const getters = {
-  getToken: (state) => {
-    return state.user ? state.user.token : null
-  },
-  getUserAudiobook: (state) => (audiobookId) => {
-    return state.user && state.user.audiobooks ? state.user.audiobooks[audiobookId] || null : null
-  }
-}
+export const getters = {}
 
-export const actions = {
-
-}
+export const actions = {}
 
 export const mutations = {
-  setUser(state, user) {
-    state.user = user
-    if (user.token) {
-      localStorage.setItem('token', user.token)
-    }
-  },
   setStreamAudiobook(state, audiobook) {
     state.playOnLoad = true
     state.streamAudiobook = audiobook

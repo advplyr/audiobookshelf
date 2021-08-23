@@ -63,7 +63,7 @@
 <script>
 export default {
   async asyncData({ store, params, app, redirect, route }) {
-    if (!store.state.user) {
+    if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
     var audiobook = await app.$axios.$get(`/api/audiobook/${params.id}`).catch((error) => {
@@ -163,7 +163,7 @@ export default {
       return this.book.description || 'No Description'
     },
     userAudiobooks() {
-      return this.$store.state.user ? this.$store.state.user.audiobooks || {} : {}
+      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
     userAudiobook() {
       return this.userAudiobooks[this.audiobookId] || null

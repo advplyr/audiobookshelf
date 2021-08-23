@@ -27,7 +27,7 @@
           <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="forward10">
             <span class="material-icons text-3xl">forward_10</span>
           </div>
-          <controls-playback-speed-control v-model="playbackRate" @change="updatePlaybackRate" />
+          <controls-playback-speed-control v-model="playbackRate" @change="playbackRateChanged" />
         </template>
         <template v-else>
           <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
@@ -89,7 +89,7 @@ export default {
   },
   computed: {
     token() {
-      return this.$store.getters.getToken
+      return this.$store.getters['user/getToken']
     },
     totalDurationPretty() {
       return this.$secondsToTimestamp(this.totalDuration)
@@ -130,11 +130,21 @@ export default {
     },
     updatePlaybackRate(playbackRate) {
       if (this.audioEl) {
-        console.log('UpdatePlaybackRate', playbackRate)
-        this.audioEl.playbackRate = playbackRate
+        try {
+          this.audioEl.playbackRate = playbackRate
+          this.audioEl.defaultPlaybackRate = playbackRate
+        } catch (error) {
+          console.error('Update playback rate failed', error)
+        }
       } else {
         console.error('No Audio El updatePlaybackRate')
       }
+    },
+    playbackRateChanged(playbackRate) {
+      this.updatePlaybackRate(playbackRate)
+      this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
+        console.error('Failed to update settings', err)
+      })
     },
     mousemoveTrack(e) {
       var offsetX = e.offsetX
@@ -355,7 +365,8 @@ export default {
       this.hlsInstance = new Hls(hlsOptions)
       var audio = this.$refs.audio
       audio.volume = this.volume
-      audio.playbackRate = this.playbackRate
+      audio.defaultPlaybackRate = this.playbackRate
+
       this.hlsInstance.attachMedia(audio)
       this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
         // console.log('[HLS] MEDIA ATTACHED')
@@ -410,17 +421,27 @@ export default {
       this.set(this.url, startTime, true)
     },
     init() {
+      this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
+
       this.audioEl = this.$refs.audio
       if (this.$refs.track) {
         this.trackWidth = this.$refs.track.clientWidth
       } else {
         console.error('Track not loaded', this.$refs)
       }
+    },
+    settingsUpdated(settings) {
+      if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
+        this.updatePlaybackRate(settings.playbackRate)
+      }
     }
   },
   mounted() {
-    // this.$nextTick(this.init)
+    this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
     this.init()
+  },
+  beforeDestroy() {
+    this.$store.commit('user/removeSettingsListener', 'audioplayer')
   }
 }
 </script>
