@@ -2,11 +2,12 @@ const express = require('express')
 const Logger = require('./Logger')
 
 class ApiController {
-  constructor(db, scanner, auth, streamManager, emitter) {
+  constructor(db, scanner, auth, streamManager, rssFeeds, emitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
     this.streamManager = streamManager
+    this.rssFeeds = rssFeeds
     this.emitter = emitter
 
     this.router = express()
@@ -35,6 +36,8 @@ class ApiController {
     this.router.post('/authorize', this.authorize.bind(this))
 
     this.router.get('/genres', this.getGenres.bind(this))
+
+    this.router.post('/feed', this.openRssFeed.bind(this))
   }
 
   find(req, res) {
@@ -42,7 +45,6 @@ class ApiController {
   }
 
   findCovers(req, res) {
-    console.log('Find covers', req.query)
     this.scanner.findCovers(req, res)
   }
 
@@ -172,6 +174,15 @@ class ApiController {
 
   userChangePassword(req, res) {
     this.auth.userChangePassword(req, res)
+  }
+
+  async openRssFeed(req, res) {
+    var audiobookId = req.body.audiobookId
+    var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
+    if (!audiobook) return res.sendStatus(404)
+    var feed = await this.rssFeeds.openFeed(audiobook)
+    console.log('Feed open', feed)
+    res.json(feed)
   }
 
   getGenres(req, res) {

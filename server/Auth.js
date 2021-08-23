@@ -75,6 +75,10 @@ class Auth {
   verifyToken(token) {
     return new Promise((resolve) => {
       jwt.verify(token, process.env.TOKEN_SECRET, (err, payload) => {
+        if (!payload || err) {
+          Logger.error('JWT Verify Token Failed', err)
+          return resolve(null)
+        }
         var user = this.users.find(u => u.id === payload.userId)
         resolve(user || null)
       })

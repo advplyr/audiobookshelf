@@ -6,7 +6,8 @@ export const state = () => ({
   selectedAudiobook: null,
   playOnLoad: false,
   isScanning: false,
-  scanProgress: null
+  scanProgress: null,
+  developerMode: false
 })
 
 export const getters = {
@@ -59,5 +60,8 @@ export const mutations = {
   setScanProgress(state, progress) {
     if (progress > 0) state.isScanning = true
     state.scanProgress = progress
+  },
+  setDeveloperMode(state, val) {
+    state.developerMode = val
   }
 }

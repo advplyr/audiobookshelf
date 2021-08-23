@@ -53,6 +53,7 @@
         </a>
       </div>
     </div>
+    <div class="fixed bottom-0 left-0 w-10 h-10" @dblclick="setDeveloperMode"></div>
   </div>
 </template>
 
@@ -70,6 +71,11 @@ export default {
     }
   },
   methods: {
+    setDeveloperMode() {
+      var value = !this.$store.state.developerMode
+      this.$store.commit('setDeveloperMode', value)
+      this.$toast.info(`Developer Mode ${value ? 'Enabled' : 'Disabled'}`)
+    },
     scan() {
       this.$root.socket.emit('scan')
     },
