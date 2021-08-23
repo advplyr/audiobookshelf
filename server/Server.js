@@ -11,6 +11,7 @@ const Db = require('./Db')
 const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
+const RssFeeds = require('./RssFeeds')
 const Logger = require('./Logger')
 
 class Server {
@@ -30,8 +31,10 @@ class Server {
     this.watcher = new Watcher(this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.emitter.bind(this))
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
-    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this))
+    this.rssFeeds = new RssFeeds(this.Port, this.db)
+    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.emitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.MetadataPath)
+
 
     this.server = null
     this.io = null
@@ -112,11 +115,13 @@ class Server {
     }
 
     app.use(express.static(this.MetadataPath))
+    app.use(express.static(Path.join(global.appRoot, 'static')))
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
+    app.use('/feeds', this.rssFeeds.router)
 
     app.get('/', (req, res) => {
       res.sendFile('/index.html')

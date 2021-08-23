@@ -23,6 +23,8 @@
             </ui-btn>
             <ui-btn :padding-x="4" class="flex items-center ml-4" @click="editClick"><span class="material-icons text-white pr-2" style="font-size: 18px">edit</span>Edit</ui-btn>
 
+            <ui-btn v-if="isDeveloperMode" class="mx-2" @click="openRssFeed">Open RSS Feed</ui-btn>
+
             <div v-if="progressPercent > 0" class="px-4 py-2 bg-primary text-sm font-semibold rounded-md text-gray-200 ml-4 relative" :class="resettingProgress ? 'opacity-25' : ''">
               <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
               <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
@@ -82,6 +84,9 @@ export default {
     }
   },
   computed: {
+    isDeveloperMode() {
+      return this.$store.state.developerMode
+    },
     missingPartChunks() {
       if (this.missingParts === 1) return this.missingParts[0]
       var chunks = []
@@ -180,6 +185,18 @@ export default {
     }
   },
   methods: {
+    openRssFeed() {
+      this.$axios
+        .$post('/api/feed', { audiobookId: this.audiobook.id })
+        .then((res) => {
+          console.log('Feed open', res)
+          this.$toast.success('RSS Feed Open')
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Failed to open feed')
+        })
+    },
     startStream() {
       this.$store.commit('setStreamAudiobook', this.audiobook)
       this.$root.socket.emit('open_stream', this.audiobook.id)
