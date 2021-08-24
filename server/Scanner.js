@@ -24,6 +24,7 @@ class Scanner {
     // TEMP - fix relative file paths
     if (this.audiobooks.length) {
       for (let i = 0; i < this.audiobooks.length; i++) {
+        var ab = this.audiobooks[i]
         if (ab.fixRelativePath(this.AudiobookPath)) {
           await this.db.updateAudiobook(ab)
         }
