@@ -1,3 +1,4 @@
+const Path = require('path')
 const Logger = require('./Logger')
 const BookFinder = require('./BookFinder')
 const Audiobook = require('./Audiobook')
@@ -20,6 +21,15 @@ class Scanner {
   }
 
   async scan() {
+    // TEMP - fix relative file paths
+    if (this.audiobooks.length) {
+      for (let i = 0; i < this.audiobooks.length; i++) {
+        if (ab.fixRelativePath(this.AudiobookPath)) {
+          await this.db.updateAudiobook(ab)
+        }
+      }
+    }
+
     const scanStart = Date.now()
     var audiobookDataFound = await getAllAudiobookFiles(this.AudiobookPath)
 
