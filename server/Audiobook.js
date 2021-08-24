@@ -157,6 +157,20 @@ class Audiobook {
     }
   }
 
+  // Scanner had a bug that was saving a file path as the audiobook path.
+  // audiobook path should be a directory.
+  // fixing this before a scan prevents audiobooks being removed and re-added
+  fixRelativePath(abRootPath) {
+    var pathExt = Path.extname(this.path)
+    if (pathExt) {
+      this.path = Path.dirname(this.path)
+      this.fullPath = Path.join(abRootPath, this.path)
+      Logger.warn('Audiobook path has extname', pathExt, 'fixed path:', this.path)
+      return true
+    }
+    return false
+  }
+
   setData(data) {
     this.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
     this.path = data.path
