@@ -39,7 +39,11 @@ export const getters = {
 }
 
 export const actions = {
-  load({ commit }) {
+  load({ commit, rootState }) {
+    if (!rootState.user || !rootState.user.user) {
+      console.error('audiobooks/load - User not set')
+      return
+    }
     this.$axios
       .$get(`/api/audiobooks`)
       .then((data) => {

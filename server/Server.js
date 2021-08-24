@@ -106,8 +106,8 @@ class Server {
     app.use(this.auth.cors)
 
     // Static path to generated nuxt
+    const distPath = Path.join(global.appRoot, '/client/dist')
     if (process.env.NODE_ENV === 'production') {
-      const distPath = Path.join(global.appRoot, '/client/dist')
       app.use(express.static(distPath))
       app.use('/local', express.static(this.AudiobookPath))
     } else {
@@ -119,13 +119,12 @@ class Server {
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
 
+    // Dynamic routes are not generated on client
+    app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
     app.use('/feeds', this.rssFeeds.router)
-
-    app.get('/', (req, res) => {
-      res.sendFile('/index.html')
-    })
 
     app.post('/login', (req, res) => this.auth.login(req, res))
     app.post('/logout', this.logout.bind(this))

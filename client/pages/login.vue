@@ -34,16 +34,11 @@ export default {
   watch: {
     user(newVal) {
       if (newVal) {
-        // if (process.env.NODE_ENV !== 'production') {
         if (this.$route.query.redirect) {
           this.$router.replace(this.$route.query.redirect)
         } else {
           this.$router.replace('/')
         }
-
-        // } else {
-        //   window.location.reload()
-        // }
       }
     }
   },
@@ -56,7 +51,7 @@ export default {
     async submitForm() {
       this.error = null
       this.processing = true
-      // var uri = `${process.env.serverUrl}/auth`
+
       var payload = {
         username: this.username,
         password: this.password || ''

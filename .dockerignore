@@ -10,3 +10,4 @@ npm-debug.log
 dev.js
 /test/
 /client/.nuxt/
+/client/dist/
