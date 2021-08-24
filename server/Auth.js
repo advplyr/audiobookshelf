@@ -42,7 +42,7 @@ class Auth {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
     if (token == null) {
-      Logger.error('Api called without a token')
+      Logger.error('Api called without a token', req.path)
       return res.sendStatus(401)
     }
 

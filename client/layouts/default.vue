@@ -10,6 +10,7 @@
 
 <script>
 export default {
+  middleware: 'authenticated',
   data() {
     return {
       socket: null
@@ -138,11 +139,6 @@ export default {
       this.socket.on('scan_start', this.scanStart)
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
-    }
-  },
-  beforeMount() {
-    if (!this.$store.state.user.user) {
-      this.$router.replace(`/login?redirect=${this.$route.path}`)
     }
   },
   mounted() {
