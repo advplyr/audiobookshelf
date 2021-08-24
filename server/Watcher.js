@@ -45,7 +45,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   onNewFile(path) {
-    Logger.info('FolderWatcher: New File', path)
+    Logger.debug('FolderWatcher: New File', path)
     this.emit('file_added', {
       path: path.replace(this.AudiobookPath, ''),
       fullPath: path
@@ -53,7 +53,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   onFileRemoved(path) {
-    Logger.info('FolderWatcher: File Removed', path)
+    Logger.debug('FolderWatcher: File Removed', path)
     this.emit('file_removed', {
       path: path.replace(this.AudiobookPath, ''),
       fullPath: path
@@ -61,7 +61,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   onFileUpdated(path) {
-    Logger.info('FolderWatcher: Updated File', path)
+    Logger.debug('FolderWatcher: Updated File', path)
     this.emit('file_updated', {
       path: path.replace(this.AudiobookPath, ''),
       fullPath: path

@@ -1,4 +1,7 @@
+const Path = require('path')
 const { bytesPretty, elapsedPretty } = require('./utils/fileUtils')
+const { comparePaths } = require('./utils/index')
+const Logger = require('./Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
 
@@ -8,6 +11,7 @@ class Audiobook {
     this.path = null
     this.fullPath = null
     this.addedAt = null
+    this.lastUpdate = null
 
     this.tracks = []
     this.missingParts = []
@@ -29,6 +33,7 @@ class Audiobook {
     this.path = audiobook.path
     this.fullPath = audiobook.fullPath
     this.addedAt = audiobook.addedAt
+    this.lastUpdate = audiobook.lastUpdate || this.addedAt
 
     this.tracks = audiobook.tracks.map(track => {
       return new AudioTrack(track)
@@ -99,6 +104,7 @@ class Audiobook {
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
+      lastUpdate: this.lastUpdate,
       missingParts: this.missingParts,
       invalidParts: this.invalidParts,
       tags: this.tags,
@@ -117,6 +123,7 @@ class Audiobook {
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
+      lastUpdate: this.lastUpdate,
       duration: this.totalDuration,
       size: this.totalSize,
       hasBookMatch: !!this.book,
@@ -135,6 +142,7 @@ class Audiobook {
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
+      lastUpdate: this.lastUpdate,
       duration: this.totalDuration,
       durationPretty: this.durationPretty,
       size: this.totalSize,
@@ -154,6 +162,7 @@ class Audiobook {
     this.path = data.path
     this.fullPath = data.fullPath
     this.addedAt = Date.now()
+    this.lastUpdate = this.addedAt
 
     this.otherFiles = data.otherFiles || []
     this.setBook(data)
@@ -188,6 +197,10 @@ class Audiobook {
       }
     }
 
+    if (hasUpdates) {
+      this.lastUpdate = Date.now()
+    }
+
     return hasUpdates
   }
 
@@ -206,6 +219,77 @@ class Audiobook {
     this.audioFiles.forEach((file) => {
       this.addTrack(file)
     })
+    this.lastUpdate = Date.now()
+  }
+
+  removeAudioFile(audioFile) {
+    this.tracks = this.tracks.filter(t => t.path !== audioFile.path)
+    this.audioFiles = this.audioFiles.filter(f => f.path !== audioFile.path)
+  }
+
+  audioPartExists(part) {
+    var path = Path.join(this.path, part)
+    return this.audioFiles.find(file => file.path === path)
+  }
+
+  checkUpdateMissingParts() {
+    var currMissingParts = this.missingParts.join(',')
+
+    var current_index = 1
+    var missingParts = []
+    for (let i = 0; i < this.tracks.length; i++) {
+      var _track = this.tracks[i]
+      if (_track.index > current_index) {
+        var num_parts_missing = _track.index - current_index
+        for (let x = 0; x < num_parts_missing; x++) {
+          missingParts.push(current_index + x)
+        }
+      }
+      current_index = _track.index + 1
+    }
+
+    this.missingParts = missingParts
+
+    var wasUpdated = this.missingParts.join(',') !== currMissingParts
+    if (wasUpdated && this.missingParts.length) {
+      Logger.info(`[Audiobook] "${this.title}" has ${missingParts.length} missing parts`)
+    }
+
+    return wasUpdated
+  }
+
+  // On scan check other files found with other files saved
+  syncOtherFiles(newOtherFiles) {
+    var currOtherFileNum = this.otherFiles.length
+
+    var newOtherFilePaths = newOtherFiles.map(f => f.path)
+    this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
+    newOtherFiles.forEach((file) => {
+      var existingOtherFile = this.otherFiles.find(f => f.path === file.path)
+      if (!existingOtherFile) {
+        Logger.info(`[Audiobook] New other file found on sync ${file.filename}/${file.filetype} | "${this.title}"`)
+        this.otherFiles.push(file)
+      }
+    })
+
+    var hasUpdates = currOtherFileNum !== this.otherFiles.length
+
+    var imageFiles = this.otherFiles.filter(f => f.filetype === 'image')
+    if (this.book.cover && this.book.cover.substr(1).startsWith('local')) {
+      var coverStillExists = imageFiles.find(f => comparePaths(f.path, this.book.cover.substr('/local/'.length)))
+      if (!coverStillExists) {
+        Logger.info(`[Audiobook] Local cover was removed | "${this.title}"`)
+        this.book.cover = null
+        hasUpdates = true
+      }
+    }
+
+    if (!this.book.cover && imageFiles.length) {
+      this.book.cover = Path.join('/local', imageFiles[0].path)
+      Logger.info(`[Audiobook] Local cover was set | "${this.title}"`)
+      hasUpdates = true
+    }
+    return hasUpdates
   }
 
   isSearchMatch(search) {

@@ -104,8 +104,10 @@ class Db {
   updateAudiobook(audiobook) {
     return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
       Logger.debug(`[DB] Audiobook updated ${results.updated}`)
+      return true
     }).catch((error) => {
       Logger.error(`[DB] Audiobook update failed ${error}`)
+      return false
     })
   }
 
