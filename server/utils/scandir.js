@@ -69,7 +69,7 @@ async function getAllAudiobookFiles(abRootPath) {
         title: title,
         series: cleanString(series),
         publishYear: publishYear,
-        path: relpath,
+        path: path,
         fullPath: Path.join(abRootPath, path),
         parts: [],
         otherFiles: []

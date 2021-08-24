@@ -83,9 +83,15 @@ export default {
       }
       this.$store.commit('audiobooks/remove', audiobook)
     },
-    scanComplete() {
+    scanComplete(results) {
+      if (!results) results = {}
       this.$store.commit('setIsScanning', false)
-      this.$toast.success('Scan Finished')
+      var scanResultMsgs = []
+      if (results.added) scanResultMsgs.push(`${results.added} added`)
+      if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
+      if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
+      if (!scanResultMsgs.length) this.$toast.success('Scan Finished\nEverything was up to date')
+      else this.$toast.success('Scan Finished\n' + scanResultMsgs.join('\n'))
     },
     scanStart() {
       this.$store.commit('setIsScanning', true)

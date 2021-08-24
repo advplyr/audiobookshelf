@@ -1,3 +1,5 @@
+const Path = require('path')
+
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
   if (!caseSensitive) {
     str1 = str1.toLowerCase()
@@ -44,4 +46,26 @@ module.exports.cleanString = cleanString
 
 module.exports.isObject = (val) => {
   return val !== null && typeof val === 'object'
+}
+
+function normalizePath(path) {
+  const replace = [
+    [/\\/g, '/'],
+    [/(\w):/, '/$1'],
+    [/(\w+)\/\.\.\/?/g, ''],
+    [/^\.\//, ''],
+    [/\/\.\//, '/'],
+    [/\/\.$/, ''],
+    [/\/$/, ''],
+  ]
+  replace.forEach(array => {
+    while (array[0].test(path)) {
+      path = path.replace(array[0], array[1])
+    }
+  })
+  return path
+}
+
+module.exports.comparePaths = (path1, path2) => {
+  return (path1 === path2) || (normalizePath(path1) === normalizePath(path2))
 }

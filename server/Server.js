@@ -53,33 +53,26 @@ class Server {
   }
 
   emitter(ev, data) {
-    Logger.debug('EMITTER', ev)
-    if (!this.io) {
-      Logger.error('Invalid IO')
-      return
-    }
+    // Logger.debug('EMITTER', ev)
     this.io.emit(ev, data)
   }
 
-  async fileAddedUpdated({ path, fullPath }) {
-    Logger.info('[SERVER] FileAddedUpdated', path, fullPath)
-  }
-
+  async fileAddedUpdated({ path, fullPath }) { }
   async fileRemoved({ path, fullPath }) { }
 
   async scan() {
-    Logger.info('[SERVER] Starting Scan')
+    Logger.info('[Server] Starting Scan')
     this.isScanning = true
     this.isInitialized = true
     this.emitter('scan_start')
-    await this.scanner.scan()
+    var results = await this.scanner.scan()
     this.isScanning = false
-    this.emitter('scan_complete')
-    Logger.info('[SERVER] Scan complete')
+    this.emitter('scan_complete', results)
+    Logger.info('[Server] Scan complete')
   }
 
   async init() {
-    Logger.info('[SERVER] Init')
+    Logger.info('[Server] Init')
     await this.streamManager.removeOrphanStreams()
     await this.db.init()
     this.auth.init()

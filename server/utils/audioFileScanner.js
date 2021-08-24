@@ -78,7 +78,7 @@ function getTrackNumberFromFilename(filename) {
 
 async function scanParts(audiobook, parts) {
   if (!parts || !parts.length) {
-    Logger.error('Scan Parts', audiobook.title, 'No Parts', parts)
+    Logger.error('[AudioFileScanner] Scan Parts', audiobook.title, 'No Parts', parts)
     return
   }
   var tracks = []
@@ -87,7 +87,7 @@ async function scanParts(audiobook, parts) {
 
     var scanData = await scan(fullPath)
     if (!scanData || scanData.error) {
-      Logger.error('Scan failed for', parts[i])
+      Logger.error('[AudioFileScanner] Scan failed for', parts[i])
       audiobook.invalidParts.push(parts[i])
       continue;
     }
@@ -110,7 +110,7 @@ async function scanParts(audiobook, parts) {
     if (parts.length > 1) {
       trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
       if (trackNumber === null) {
-        Logger.error('Invalid track number for', parts[i])
+        Logger.error('[AudioFileScanner] Invalid track number for', parts[i])
         audioFileObj.invalid = true
         audioFileObj.error = 'Failed to get track number'
         continue;
@@ -118,7 +118,7 @@ async function scanParts(audiobook, parts) {
     }
 
     if (tracks.find(t => t.index === trackNumber)) {
-      Logger.error('Duplicate track number for', parts[i])
+      Logger.error('[AudioFileScanner] Duplicate track number for', parts[i])
       audioFileObj.invalid = true
       audioFileObj.error = 'Duplicate track number'
       continue;
@@ -129,7 +129,7 @@ async function scanParts(audiobook, parts) {
   }
 
   if (!tracks.length) {
-    Logger.warn('No Tracks for audiobook', audiobook.id)
+    Logger.warn('[AudioFileScanner] No Tracks for audiobook', audiobook.id)
     return
   }
 
@@ -148,26 +148,12 @@ async function scanParts(audiobook, parts) {
     })
   }
 
-  var parts_copy = tracks.map(p => ({ ...p }))
-  var current_index = 1
-
-  for (let i = 0; i < parts_copy.length; i++) {
-    var cleaned_part = parts_copy[i]
-    if (cleaned_part.index > current_index) {
-      var num_parts_missing = cleaned_part.index - current_index
-      for (let x = 0; x < num_parts_missing; x++) {
-        audiobook.missingParts.push(current_index + x)
-      }
-    }
-    current_index = cleaned_part.index + 1
-  }
-
-  if (audiobook.missingParts.length) {
-    Logger.info('Audiobook', audiobook.title, 'Has missing parts', audiobook.missingParts)
-  }
-
+  var hasTracksAlready = audiobook.tracks.length
   tracks.forEach((track) => {
     audiobook.addTrack(track)
   })
+  if (hasTracksAlready) {
+    audiobook.tracks.sort((a, b) => a.index - b.index)
+  }
 }
 module.exports.scanParts = scanParts
