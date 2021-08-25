@@ -1,6 +1,7 @@
 const Path = require('path')
 const Logger = require('../Logger')
-var prober = require('./prober')
+const prober = require('./prober')
+const AudioFile = require('../AudioFile')
 
 
 function getDefaultAudioStream(audioStreams) {
@@ -76,41 +77,42 @@ function getTrackNumberFromFilename(filename) {
   return number
 }
 
-async function scanParts(audiobook, parts) {
-  if (!parts || !parts.length) {
-    Logger.error('[AudioFileScanner] Scan Parts', audiobook.title, 'No Parts', parts)
+async function scanAudioFiles(audiobook, newAudioFiles) {
+  if (!newAudioFiles || !newAudioFiles.length) {
+    Logger.error('[AudioFileScanner] Scan Audio Files no files', audiobook.title)
     return
   }
   var tracks = []
-  for (let i = 0; i < parts.length; i++) {
-    var fullPath = Path.join(audiobook.fullPath, parts[i])
+  for (let i = 0; i < newAudioFiles.length; i++) {
+    var audioFile = newAudioFiles[i]
 
-    var scanData = await scan(fullPath)
+    var scanData = await scan(audioFile.fullPath)
     if (!scanData || scanData.error) {
-      Logger.error('[AudioFileScanner] Scan failed for', parts[i])
-      audiobook.invalidParts.push(parts[i])
+      Logger.error('[AudioFileScanner] Scan failed for', audioFile.path)
+      // audiobook.invalidAudioFiles.push(parts[i])
       continue;
     }
 
     var trackNumFromMeta = getTrackNumberFromMeta(scanData)
-    var trackNumFromFilename = getTrackNumberFromFilename(parts[i])
+    var trackNumFromFilename = getTrackNumberFromFilename(audioFile.filename)
 
     var audioFileObj = {
-      path: Path.join(audiobook.path, parts[i]),
-      ext: Path.extname(parts[i]),
-      filename: parts[i],
-      fullPath: fullPath,
+      ino: audioFile.ino,
+      filename: audioFile.filename,
+      path: audioFile.path,
+      fullPath: audioFile.fullPath,
+      ext: audioFile.ext,
       ...scanData,
       trackNumFromMeta,
       trackNumFromFilename
     }
-    audiobook.audioFiles.push(audioFileObj)
+    audiobook.addAudioFile(audioFileObj)
 
     var trackNumber = 1
-    if (parts.length > 1) {
+    if (newAudioFiles.length > 1) {
       trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
       if (trackNumber === null) {
-        Logger.error('[AudioFileScanner] Invalid track number for', parts[i])
+        Logger.error('[AudioFileScanner] Invalid track number for', audioFile.filename)
         audioFileObj.invalid = true
         audioFileObj.error = 'Failed to get track number'
         continue;
@@ -118,7 +120,7 @@ async function scanParts(audiobook, parts) {
     }
 
     if (tracks.find(t => t.index === trackNumber)) {
-      Logger.error('[AudioFileScanner] Duplicate track number for', parts[i])
+      Logger.error('[AudioFileScanner] Duplicate track number for', audioFile.filename)
       audioFileObj.invalid = true
       audioFileObj.error = 'Duplicate track number'
       continue;
@@ -156,4 +158,4 @@ async function scanParts(audiobook, parts) {
     audiobook.tracks.sort((a, b) => a.index - b.index)
   }
 }
-module.exports.scanParts = scanParts
+module.exports.scanAudioFiles = scanAudioFiles

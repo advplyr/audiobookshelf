@@ -1,15 +1,20 @@
 const Path = require('path')
 const { bytesPretty, elapsedPretty } = require('./utils/fileUtils')
-const { comparePaths } = require('./utils/index')
+const { comparePaths, getIno } = require('./utils/index')
 const Logger = require('./Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
+const AudioFile = require('./AudioFile')
+const AudiobookFile = require('./AudiobookFile')
 
 class Audiobook {
   constructor(audiobook = null) {
     this.id = null
+    this.ino = null // Inode
+
     this.path = null
     this.fullPath = null
+
     this.addedAt = null
     this.lastUpdate = null
 
@@ -30,19 +35,18 @@ class Audiobook {
 
   construct(audiobook) {
     this.id = audiobook.id
+    this.ino = audiobook.ino || null
+
     this.path = audiobook.path
     this.fullPath = audiobook.fullPath
     this.addedAt = audiobook.addedAt
     this.lastUpdate = audiobook.lastUpdate || this.addedAt
 
-    this.tracks = audiobook.tracks.map(track => {
-      return new AudioTrack(track)
-    })
+    this.tracks = audiobook.tracks.map(track => new AudioTrack(track))
     this.missingParts = audiobook.missingParts
-    this.invalidParts = audiobook.invalidParts
 
-    this.audioFiles = audiobook.audioFiles
-    this.otherFiles = audiobook.otherFiles
+    this.audioFiles = audiobook.audioFiles.map(file => new AudioFile(file))
+    this.otherFiles = audiobook.otherFiles.map(file => new AudiobookFile(file))
 
     this.tags = audiobook.tags
     if (audiobook.book) {
@@ -102,6 +106,7 @@ class Audiobook {
   toJSON() {
     return {
       id: this.id,
+      ino: this.ino,
       title: this.title,
       author: this.author,
       cover: this.cover,
@@ -114,14 +119,15 @@ class Audiobook {
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
-      audioFiles: this.audioFiles,
-      otherFiles: this.otherFiles
+      audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
+      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON())
     }
   }
 
   toJSONMinified() {
     return {
       id: this.id,
+      ino: this.ino,
       book: this.bookToJSON(),
       tags: this.tags,
       path: this.path,
@@ -140,9 +146,6 @@ class Audiobook {
   toJSONExpanded() {
     return {
       id: this.id,
-      // title: this.title,
-      // author: this.author,
-      // cover: this.cover,
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
@@ -153,8 +156,8 @@ class Audiobook {
       sizePretty: this.sizePretty,
       missingParts: this.missingParts,
       invalidParts: this.invalidParts,
-      audioFiles: this.audioFiles,
-      otherFiles: this.otherFiles,
+      audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
+      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON()
@@ -175,14 +178,46 @@ class Audiobook {
     return false
   }
 
+  // Update was made to add ino values, ensure they are set
+  async checkUpdateInos() {
+    var hasUpdates = false
+    if (!this.ino) {
+      this.ino = await getIno(this.fullPath)
+      hasUpdates = true
+    }
+    for (let i = 0; i < this.audioFiles.length; i++) {
+      var af = this.audioFiles[i]
+      if (!af.ino || af.ino === this.ino) {
+        af.ino = await getIno(af.fullPath)
+        if (!af.ino) {
+          Logger.error('[Audiobook] checkUpdateInos: Failed to set ino for audio file', af.fullPath)
+        } else {
+          var track = this.tracks.find(t => comparePaths(t.path, af.path))
+          if (track) {
+            track.ino = af.ino
+          }
+        }
+        hasUpdates = true
+      }
+    }
+    return hasUpdates
+  }
+
   setData(data) {
     this.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.ino = data.ino || null
+
     this.path = data.path
     this.fullPath = data.fullPath
     this.addedAt = Date.now()
     this.lastUpdate = this.addedAt
 
-    this.otherFiles = data.otherFiles || []
+    if (data.otherFiles) {
+      data.otherFiles.forEach((file) => {
+        this.addOtherFile(file)
+      })
+    }
+
     this.setBook(data)
   }
 
@@ -196,6 +231,20 @@ class Audiobook {
     track.setData(trackData)
     this.tracks.push(track)
     return track
+  }
+
+  addAudioFile(audioFileData) {
+    var audioFile = new AudioFile()
+    audioFile.setData(audioFileData)
+    this.audioFiles.push(audioFile)
+    return audioFile
+  }
+
+  addOtherFile(fileData) {
+    var file = new AudiobookFile()
+    file.setData(fileData)
+    this.otherFiles.push(file)
+    return file
   }
 
   update(payload) {
@@ -241,17 +290,12 @@ class Audiobook {
   }
 
   removeAudioFile(audioFile) {
-    this.tracks = this.tracks.filter(t => t.path !== audioFile.path)
-    this.audioFiles = this.audioFiles.filter(f => f.path !== audioFile.path)
-  }
-
-  audioPartExists(part) {
-    var path = Path.join(this.path, part)
-    return this.audioFiles.find(file => file.path === path)
+    this.tracks = this.tracks.filter(t => t.ino !== audioFile.ino)
+    this.audioFiles = this.audioFiles.filter(f => f.ino !== audioFile.ino)
   }
 
   checkUpdateMissingParts() {
-    var currMissingParts = this.missingParts.join(',')
+    var currMissingParts = (this.missingParts || []).join(',') || ''
 
     var current_index = 1
     var missingParts = []
@@ -268,7 +312,8 @@ class Audiobook {
 
     this.missingParts = missingParts
 
-    var wasUpdated = this.missingParts.join(',') !== currMissingParts
+    var newMissingParts = (this.missingParts || []).join(',') || ''
+    var wasUpdated = newMissingParts !== currMissingParts
     if (wasUpdated && this.missingParts.length) {
       Logger.info(`[Audiobook] "${this.title}" has ${missingParts.length} missing parts`)
     }
@@ -282,16 +327,18 @@ class Audiobook {
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
+
     newOtherFiles.forEach((file) => {
       var existingOtherFile = this.otherFiles.find(f => f.path === file.path)
       if (!existingOtherFile) {
-        Logger.info(`[Audiobook] New other file found on sync ${file.filename}/${file.filetype} | "${this.title}"`)
-        this.otherFiles.push(file)
+        Logger.debug(`[Audiobook] New other file found on sync ${file.filename}/${file.filetype} | "${this.title}"`)
+        this.addOtherFile(file)
       }
     })
 
     var hasUpdates = currOtherFileNum !== this.otherFiles.length
 
+    // Check if cover was a local image and that it still exists
     var imageFiles = this.otherFiles.filter(f => f.filetype === 'image')
     if (this.book.cover && this.book.cover.substr(1).startsWith('local')) {
       var coverStillExists = imageFiles.find(f => comparePaths(f.path, this.book.cover.substr('/local/'.length)))
@@ -302,6 +349,7 @@ class Audiobook {
       }
     }
 
+    // If no cover set and image file exists then use it
     if (!this.book.cover && imageFiles.length) {
       this.book.cover = Path.join('/local', imageFiles[0].path)
       Logger.info(`[Audiobook] Local cover was set | "${this.title}"`)
@@ -310,8 +358,38 @@ class Audiobook {
     return hasUpdates
   }
 
+  syncAudioFile(audioFile, fileScanData) {
+    var hasUpdates = audioFile.syncFile(fileScanData)
+    if (hasUpdates) {
+      var track = this.tracks.find(t => t.ino === audioFile.ino)
+      if (track) {
+        track.syncFile(fileScanData)
+      }
+    }
+    return hasUpdates
+  }
+
+  syncPaths(audiobookData) {
+    var hasUpdates = false
+    var keysToSync = ['path', 'fullPath']
+    keysToSync.forEach((key) => {
+      if (audiobookData[key] !== undefined && audiobookData[key] !== this[key]) {
+        hasUpdates = true
+        this[key] = audiobookData[key]
+      }
+    })
+    if (hasUpdates) {
+      this.book.syncPathsUpdated(audiobookData)
+    }
+    return hasUpdates
+  }
+
   isSearchMatch(search) {
     return this.book.isSearchMatch(search.toLowerCase().trim())
+  }
+
+  getAudioFileByIno(ino) {
+    return this.audioFiles.find(af => af.ino === ino)
   }
 }
 module.exports = Audiobook

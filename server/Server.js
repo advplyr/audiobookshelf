@@ -18,9 +18,9 @@ class Server {
   constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
     this.Port = PORT
     this.Host = '0.0.0.0'
-    this.ConfigPath = CONFIG_PATH
-    this.AudiobookPath = AUDIOBOOK_PATH
-    this.MetadataPath = METADATA_PATH
+    this.ConfigPath = Path.normalize(CONFIG_PATH)
+    this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
+    this.MetadataPath = Path.normalize(METADATA_PATH)
 
     fs.ensureDirSync(CONFIG_PATH)
     fs.ensureDirSync(METADATA_PATH)

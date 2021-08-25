@@ -129,6 +129,18 @@ class Book {
     return hasUpdates
   }
 
+  // If audiobook directory path was changed, check and update properties set from dirnames
+  // May be worthwhile checking if these were manually updated and not override manual updates
+  syncPathsUpdated(audiobookData) {
+    var keysToSync = ['author', 'title', 'series', 'publishYear']
+    var syncPayload = {}
+    keysToSync.forEach((key) => {
+      if (audiobookData[key]) syncPayload[key] = audiobookData[key]
+    })
+    if (!Object.keys(syncPayload).length) return false
+    return this.update(syncPayload)
+  }
+
   isSearchMatch(search) {
     return this._title.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
   }
