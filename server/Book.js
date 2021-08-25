@@ -1,4 +1,6 @@
 const Path = require('path')
+const Logger = require('./Logger')
+const parseAuthors = require('./utils/parseAuthors')
 class Book {
   constructor(book = null) {
     this.olid = null
@@ -55,18 +57,39 @@ class Book {
     }
   }
 
+  setParseAuthor(author) {
+    if (!author) {
+      var hasUpdated = this.authorFL || this.authorLF
+      this.authorFL = null
+      this.authorLF = null
+      return hasUpdated
+    }
+    try {
+      var { authorLF, authorFL } = parseAuthors(author)
+      var hasUpdated = authorLF !== this.authorLF || authorFL !== this.authorFL
+      this.authorFL = authorFL || null
+      this.authorLF = authorLF || null
+      return hasUpdated
+    } catch (err) {
+      Logger.error('[Book] Parse authors failed', err)
+      return false
+    }
+  }
+
   setData(data) {
     this.olid = data.olid || null
     this.title = data.title || null
     this.author = data.author || null
-    this.authorLF = data.authorLF || null
-    this.authorFL = data.authorFL || null
     this.series = data.series || null
     this.volumeNumber = data.volumeNumber || null
     this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.cover = data.cover || null
     this.genres = data.genres || []
+
+    if (data.author) {
+      this.setParseAuthor(this.author)
+    }
 
     // Use first image file as cover
     if (data.otherFiles && data.otherFiles.length) {
@@ -90,23 +113,18 @@ class Book {
           this.genres = payload['genres']
           hasUpdates = true
         }
+      } else if (key === 'author') {
+        if (this.author !== payload.author) {
+          this.author = payload.author || null
+          hasUpdates = true
+        }
+        if (this.setParseAuthor(this.author)) {
+          hasUpdates = true
+        }
       } else if (this[key] !== undefined && payload[key] !== this[key]) {
         this[key] = payload[key]
         hasUpdates = true
       }
-    }
-    return hasUpdates
-  }
-
-  syncAuthorNames(authorFL, authorLF) {
-    var hasUpdates = false
-    if (authorFL !== this.authorFL) {
-      this.authorFL = authorFL
-      hasUpdates = true
-    }
-    if (authorLF !== this.authorLF) {
-      this.authorLF = authorLF
-      hasUpdates = true
     }
     return hasUpdates
   }

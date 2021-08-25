@@ -10,6 +10,10 @@ export default {
     text: {
       type: String,
       required: true
+    },
+    direction: {
+      type: String,
+      default: 'right'
     }
   },
   data() {
@@ -21,11 +25,17 @@ export default {
   methods: {
     createTooltip() {
       var boxChow = this.$refs.box.getBoundingClientRect()
-      var top = boxChow.top
-      var left = boxChow.left + boxChow.width + 4
-
+      var top = 0
+      var left = 0
+      if (this.direction === 'right') {
+        top = boxChow.top
+        left = boxChow.left + boxChow.width + 4
+      } else if (this.direction === 'bottom') {
+        top = boxChow.top + boxChow.height + 4
+        left = boxChow.left
+      }
       var tooltip = document.createElement('div')
-      tooltip.className = 'absolute px-2 bg-black bg-opacity-60 py-1 text-white pointer-events-none text-xs'
+      tooltip.className = 'absolute px-2 bg-black bg-opacity-90 py-1 text-white pointer-events-none text-xs rounded shadow-lg'
       tooltip.style.top = top + 'px'
       tooltip.style.left = left + 'px'
       tooltip.style.zIndex = 100
