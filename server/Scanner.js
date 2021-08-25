@@ -200,6 +200,7 @@ class Scanner {
         audiobook.book.cover = results[0]
         await this.db.updateAudiobook(audiobook)
         found++
+        this.emitter('audiobook_updated', audiobook.toJSONMinified())
       } else {
         notFound++
       }
