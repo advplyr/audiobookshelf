@@ -115,6 +115,9 @@ export default {
   },
   methods: {
     async submitForm() {
+      if (this.isProcessing) {
+        return
+      }
       this.isProcessing = true
       const updatePayload = {
         book: this.details,

@@ -310,10 +310,6 @@ class Audiobook {
     return hasUpdates
   }
 
-  syncAuthorNames(audiobookData) {
-    return this.book.syncAuthorNames(audiobookData.authorFL, audiobookData.authorLF)
-  }
-
   isSearchMatch(search) {
     return this.book.isSearchMatch(search.toLowerCase().trim())
   }

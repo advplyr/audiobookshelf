@@ -1,4 +1,3 @@
-const Path = require('path')
 const Logger = require('./Logger')
 const BookFinder = require('./BookFinder')
 const Audiobook = require('./Audiobook')
@@ -117,11 +116,6 @@ class Scanner {
             }
 
             if (existingAudiobook.syncOtherFiles(audiobookData.otherFiles)) {
-              hasUpdates = true
-            }
-
-            if (audiobookData.author && existingAudiobook.syncAuthorNames(audiobookData)) {
-              Logger.info(`[Scanner] "${existingAudiobook.title}" author names updated, "${existingAudiobook.authorLF}"`)
               hasUpdates = true
             }
 

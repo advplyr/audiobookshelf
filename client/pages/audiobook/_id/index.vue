@@ -13,7 +13,9 @@
             <div class="mb-2">
               <h1 class="text-2xl font-book leading-7">{{ title }}</h1>
               <h3 v-if="series" class="font-book text-gray-300 text-lg leading-7">{{ seriesText }}</h3>
-              <p class="text-sm text-gray-100 leading-7">by {{ author }}</p>
+              <ui-tooltip :text="authorTooltipText" direction="bottom">
+                <p class="text-sm text-gray-100 leading-7">by {{ author }}</p>
+              </ui-tooltip>
             </div>
             <div class="flex-grow" />
           </div>
@@ -136,6 +138,16 @@ export default {
     },
     author() {
       return this.book.author || 'Unknown'
+    },
+    authorFL() {
+      return this.book.authorFL
+    },
+    authorLF() {
+      return this.book.authorLF
+    },
+    authorTooltipText() {
+      var txt = ['FL: ' + this.authorFL || 'Not Set', 'LF: ' + this.authorLF || 'Not Set']
+      return txt.join('\n')
     },
     series() {
       return this.book.series || null
