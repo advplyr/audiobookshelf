@@ -109,6 +109,21 @@ Vue.prototype.$codeToString = (code) => {
   return finalform
 }
 
+function cleanString(str, availableChars) {
+  var _str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+  var cleaned = ''
+  for (let i = 0; i < _str.length; i++) {
+    cleaned += availableChars.indexOf(str[i]) < 0 ? '' : str[i]
+  }
+  return cleaned
+}
+
+export const cleanFilterString = (str) => {
+  var _str = str.toLowerCase().replace(/ /g, '_')
+  _str = cleanString(_str, "0123456789abcdefghijklmnopqrstuvwxyz")
+  return _str
+}
+
 function loadImageBlob(uri) {
   return new Promise((resolve) => {
     const img = document.createElement('img')

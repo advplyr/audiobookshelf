@@ -4,7 +4,10 @@ class Book {
     this.olid = null
     this.title = null
     this.author = null
+    this.authorFL = null
+    this.authorLF = null
     this.series = null
+    this.volumeNumber = null
     this.publishYear = null
     this.publisher = null
     this.description = null
@@ -24,7 +27,10 @@ class Book {
     this.olid = book.olid
     this.title = book.title
     this.author = book.author
+    this.authorFL = book.authorFL || null
+    this.authorLF = book.authorLF || null
     this.series = book.series
+    this.volumeNumber = book.volumeNumber || null
     this.publishYear = book.publishYear
     this.publisher = book.publisher
     this.description = book.description
@@ -37,7 +43,10 @@ class Book {
       olid: this.olid,
       title: this.title,
       author: this.author,
+      authorFL: this.authorFL,
+      authorLF: this.authorLF,
       series: this.series,
+      volumeNumber: this.volumeNumber,
       publishYear: this.publishYear,
       publisher: this.publisher,
       description: this.description,
@@ -50,7 +59,10 @@ class Book {
     this.olid = data.olid || null
     this.title = data.title || null
     this.author = data.author || null
+    this.authorLF = data.authorLF || null
+    this.authorFL = data.authorFL || null
     this.series = data.series || null
+    this.volumeNumber = data.volumeNumber || null
     this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.cover = data.cover || null
@@ -83,7 +95,20 @@ class Book {
         hasUpdates = true
       }
     }
-    return true
+    return hasUpdates
+  }
+
+  syncAuthorNames(authorFL, authorLF) {
+    var hasUpdates = false
+    if (authorFL !== this.authorFL) {
+      this.authorFL = authorFL
+      hasUpdates = true
+    }
+    if (authorLF !== this.authorLF) {
+      this.authorLF = authorLF
+      hasUpdates = true
+    }
+    return hasUpdates
   }
 
   isSearchMatch(search) {

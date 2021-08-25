@@ -115,6 +115,9 @@ export default {
       if (!_sel) return ''
       return _sel.text
     },
+    authors() {
+      return this.$store.getters['audiobooks/getUniqueAuthors']
+    },
     genres() {
       return this.$store.state.audiobooks.genres
     },

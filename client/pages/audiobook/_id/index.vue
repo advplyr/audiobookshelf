@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="ab-page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto p-8">
       <div class="flex max-w-6xl mx-auto">
         <div class="w-52" style="min-width: 208px">
@@ -10,7 +10,11 @@
         </div>
         <div class="flex-grow px-10">
           <div class="flex">
-            <h1 class="text-2xl">{{ title }}</h1>
+            <div class="mb-2">
+              <h1 class="text-2xl font-book leading-7">{{ title }}</h1>
+              <h3 v-if="series" class="font-book text-gray-300 text-lg leading-7">{{ seriesText }}</h3>
+              <p class="text-sm text-gray-100 leading-7">by {{ author }}</p>
+            </div>
             <div class="flex-grow" />
           </div>
           <p class="text-gray-300 text-sm my-1">
@@ -132,6 +136,17 @@ export default {
     },
     author() {
       return this.book.author || 'Unknown'
+    },
+    series() {
+      return this.book.series || null
+    },
+    volumeNumber() {
+      return this.book.volumeNumber || null
+    },
+    seriesText() {
+      if (!this.series) return ''
+      if (!this.volumeNumber) return this.series
+      return `${this.series} #${this.volumeNumber}`
     },
     durationPretty() {
       return this.audiobook.durationPretty

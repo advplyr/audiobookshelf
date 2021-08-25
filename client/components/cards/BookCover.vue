@@ -8,6 +8,7 @@
         <p class="text-center font-book text-error" :style="{ fontSize: titleFontSize + 'rem' }">Invalid Cover</p>
       </div>
     </div>
+
     <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div>
         <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
@@ -26,6 +27,7 @@ export default {
       type: Object,
       default: () => {}
     },
+    authorOverride: String,
     width: {
       type: Number,
       default: 120
@@ -34,6 +36,11 @@ export default {
   data() {
     return {
       imageFailed: false
+    }
+  },
+  watch: {
+    cover() {
+      this.imageFailed = false
     }
   },
   computed: {
@@ -50,6 +57,7 @@ export default {
       return this.title
     },
     author() {
+      if (this.authorOverride) return this.authorOverride
       return this.book.author || 'Unknown'
     },
     authorCleaned() {

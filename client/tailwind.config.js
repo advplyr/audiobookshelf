@@ -16,12 +16,11 @@ module.exports = {
       },
       colors: {
         bg: '#373838',
-        primary: '#262626',
+        primary: '#232323',
         accent: '#1ad691',
         error: '#FF5252',
         info: '#2196F3',
         success: '#4CAF50',
-        successDark: '#3b8a3e',
         warning: '#FB8C00',
         'black-50': '#bbbbbb',
         'black-100': '#666666',
