@@ -1,4 +1,6 @@
 const Path = require('path')
+const fs = require('fs')
+const Logger = require('../Logger')
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
   if (!caseSensitive) {
@@ -48,24 +50,13 @@ module.exports.isObject = (val) => {
   return val !== null && typeof val === 'object'
 }
 
-function normalizePath(path) {
-  const replace = [
-    [/\\/g, '/'],
-    [/(\w):/, '/$1'],
-    [/(\w+)\/\.\.\/?/g, ''],
-    [/^\.\//, ''],
-    [/\/\.\//, '/'],
-    [/\/\.$/, ''],
-    [/\/$/, ''],
-  ]
-  replace.forEach(array => {
-    while (array[0].test(path)) {
-      path = path.replace(array[0], array[1])
-    }
-  })
-  return path
+module.exports.comparePaths = (path1, path2) => {
+  return path1 === path2 || Path.normalize(path1) === Path.normalize(path2)
 }
 
-module.exports.comparePaths = (path1, path2) => {
-  return (path1 === path2) || (normalizePath(path1) === normalizePath(path2))
+module.exports.getIno = (path) => {
+  return fs.promises.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
+    Logger.error('[Utils] Failed to get ino for path', path, error)
+    return null
+  })
 }

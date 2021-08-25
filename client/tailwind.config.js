@@ -4,7 +4,8 @@ module.exports = {
   purge: {
     options: {
       safelist: [
-        'bg-success'
+        'bg-success',
+        'bg-red-600'
       ]
     }
   },

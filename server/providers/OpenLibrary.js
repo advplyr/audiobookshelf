@@ -26,6 +26,12 @@ class OpenLibrary {
 
   async getWorksData(worksKey) {
     var worksData = await this.get(`${worksKey}.json`)
+    if (!worksData) {
+      return {
+        errorMsg: 'Works Data Request failed',
+        errorCode: 500
+      }
+    }
     if (!worksData.covers) worksData.covers = []
     var coverImages = worksData.covers.filter(c => c > 0).map(c => `https://covers.openlibrary.org/b/id/${c}-L.jpg`)
     var description = null

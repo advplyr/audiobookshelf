@@ -3,7 +3,7 @@ const dir = require('node-dir')
 const Logger = require('../Logger')
 const { cleanString } = require('./index')
 
-const AUDIOBOOK_PARTS_FORMATS = ['m4b', 'mp3']
+const AUDIO_FORMATS = ['m4b', 'mp3']
 const INFO_FORMATS = ['nfo']
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'webp']
 const EBOOK_FORMATS = ['epub', 'pdf']
@@ -23,7 +23,7 @@ function getPaths(path) {
 function getFileType(ext) {
   var ext_cleaned = ext.toLowerCase()
   if (ext_cleaned.startsWith('.')) ext_cleaned = ext_cleaned.slice(1)
-  if (AUDIOBOOK_PARTS_FORMATS.includes(ext_cleaned)) return 'abpart'
+  if (AUDIO_FORMATS.includes(ext_cleaned)) return 'audio'
   if (INFO_FORMATS.includes(ext_cleaned)) return 'info'
   if (IMAGE_FORMATS.includes(ext_cleaned)) return 'image'
   if (EBOOK_FORMATS.includes(ext_cleaned)) return 'ebook'
@@ -35,7 +35,7 @@ async function getAllAudiobookFiles(abRootPath) {
   var audiobooks = {}
 
   paths.files.forEach((filepath) => {
-    var relpath = filepath.replace(abRootPath, '').slice(1)
+    var relpath = Path.normalize(filepath).replace(abRootPath, '').slice(1)
     var pathformat = Path.parse(relpath)
     var path = pathformat.dir
 
@@ -71,22 +71,20 @@ async function getAllAudiobookFiles(abRootPath) {
         publishYear: publishYear,
         path: path,
         fullPath: Path.join(abRootPath, path),
-        parts: [],
+        audioFiles: [],
         otherFiles: []
       }
     }
-
-    var filetype = getFileType(pathformat.ext)
-    if (filetype === 'abpart') {
-      audiobooks[path].parts.push(pathformat.base)
+    var fileObj = {
+      filetype: getFileType(pathformat.ext),
+      filename: pathformat.base,
+      path: relpath,
+      fullPath: filepath,
+      ext: pathformat.ext
+    }
+    if (fileObj.filetype === 'audio') {
+      audiobooks[path].audioFiles.push(fileObj)
     } else {
-      var fileObj = {
-        filetype: filetype,
-        filename: pathformat.base,
-        path: relpath,
-        fullPath: filepath,
-        ext: pathformat.ext
-      }
       audiobooks[path].otherFiles.push(fileObj)
     }
   })

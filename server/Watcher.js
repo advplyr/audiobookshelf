@@ -1,6 +1,6 @@
 var EventEmitter = require('events')
 var Logger = require('./Logger')
-var chokidar = require('chokidar')
+var Watcher = require('watcher')
 
 class FolderWatcher extends EventEmitter {
   constructor(audiobookPath) {
@@ -12,15 +12,14 @@ class FolderWatcher extends EventEmitter {
 
   initWatcher() {
     try {
-      Logger.info('[WATCHER] Initializing..')
-      this.watcher = chokidar.watch(this.AudiobookPath, {
-        ignoreInitial: true,
+      Logger.info('[FolderWatcher] Initializing..')
+      this.watcher = new Watcher(this.AudiobookPath, {
         ignored: /(^|[\/\\])\../, // ignore dotfiles
-        persistent: true,
-        awaitWriteFinish: {
-          stabilityThreshold: 2500,
-          pollInterval: 500
-        }
+        renameDetection: true,
+        renameTimeout: 2000,
+        recursive: true,
+        ignoreInitial: true,
+        persistent: true
       })
       this.watcher
         .on('add', (path) => {
@@ -29,10 +28,12 @@ class FolderWatcher extends EventEmitter {
           this.onFileUpdated(path)
         }).on('unlink', path => {
           this.onFileRemoved(path)
+        }).on('rename', (path, pathNext) => {
+          this.onRename(path, pathNext)
         }).on('error', (error) => {
-          Logger.error(`Watcher error: ${error}`)
+          Logger.error(`[FolderWatcher] ${error}`)
         }).on('ready', () => {
-          Logger.info('[WATCHER] Ready')
+          Logger.info('[FolderWatcher] Ready')
         })
     } catch (error) {
       Logger.error('Chokidar watcher failed', error)
@@ -53,7 +54,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   onFileRemoved(path) {
-    Logger.debug('FolderWatcher: File Removed', path)
+    Logger.debug('[FolderWatcher] File Removed', path)
     this.emit('file_removed', {
       path: path.replace(this.AudiobookPath, ''),
       fullPath: path
@@ -61,11 +62,15 @@ class FolderWatcher extends EventEmitter {
   }
 
   onFileUpdated(path) {
-    Logger.debug('FolderWatcher: Updated File', path)
+    Logger.debug('[FolderWatcher] Updated File', path)
     this.emit('file_updated', {
       path: path.replace(this.AudiobookPath, ''),
       fullPath: path
     })
+  }
+
+  onRename(pathFrom, pathTo) {
+    Logger.debug(`[FolderWatcher] Rename ${pathFrom} => ${pathTo}`)
   }
 }
 module.exports = FolderWatcher

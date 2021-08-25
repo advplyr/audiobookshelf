@@ -3,6 +3,8 @@ var { bytesPretty } = require('./utils/fileUtils')
 class AudioTrack {
   constructor(audioTrack = null) {
     this.index = null
+    this.ino = null
+
     this.path = null
     this.fullPath = null
     this.ext = null
@@ -31,6 +33,8 @@ class AudioTrack {
 
   construct(audioTrack) {
     this.index = audioTrack.index
+    this.ino = audioTrack.ino || null
+
     this.path = audioTrack.path
     this.fullPath = audioTrack.fullPath
     this.ext = audioTrack.ext
@@ -45,6 +49,12 @@ class AudioTrack {
     this.timeBase = audioTrack.timeBase
     this.channels = audioTrack.channels
     this.channelLayout = audioTrack.channelLayout
+
+    this.tagAlbum = audioTrack.tagAlbum
+    this.tagArtist = audioTrack.tagArtist
+    this.tagGenre = audioTrack.tagGenre
+    this.tagTitle = audioTrack.tagTitle
+    this.tagTrack = audioTrack.tagTrack
   }
 
   get name() {
@@ -54,6 +64,7 @@ class AudioTrack {
   toJSON() {
     return {
       index: this.index,
+      ino: this.ino,
       path: this.path,
       fullPath: this.fullPath,
       ext: this.ext,
@@ -65,12 +76,19 @@ class AudioTrack {
       language: this.language,
       timeBase: this.timeBase,
       channels: this.channels,
-      channelLayout: this.channelLayout
+      channelLayout: this.channelLayout,
+      tagAlbum: this.tagAlbum,
+      tagArtist: this.tagArtist,
+      tagGenre: this.tagGenre,
+      tagTitle: this.tagTitle,
+      tagTrack: this.tagTrack
     }
   }
 
   setData(probeData) {
     this.index = probeData.index
+    this.ino = probeData.ino || null
+
     this.path = probeData.path
     this.fullPath = probeData.fullPath
     this.ext = probeData.ext
@@ -91,6 +109,18 @@ class AudioTrack {
     this.tagGenre = probeData.file_tag_genre || null
     this.tagTitle = probeData.file_tag_title || null
     this.tagTrack = probeData.file_tag_track || null
+  }
+
+  syncFile(newFile) {
+    var hasUpdates = false
+    var keysToSync = ['path', 'fullPath', 'ext', 'filename']
+    keysToSync.forEach((key) => {
+      if (newFile[key] !== undefined && newFile[key] !== this[key]) {
+        hasUpdates = true
+        this[key] = newFile[key]
+      }
+    })
+    return hasUpdates
   }
 }
 module.exports = AudioTrack

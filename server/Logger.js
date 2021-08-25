@@ -33,6 +33,11 @@ class Logger {
     console.info(`[${this.timestamp}]  INFO:`, ...args)
   }
 
+  note(...args) {
+    if (this.LogLevel > LOG_LEVEL.INFO) return
+    console.log(`[${this.timestamp}] NOTE:`, ...args)
+  }
+
   warn(...args) {
     if (this.LogLevel > LOG_LEVEL.WARN) return
     console.warn(`[${this.timestamp}]  WARN:`, ...args)
