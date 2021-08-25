@@ -3,9 +3,9 @@
     <div id="toolbar" class="absolute top-0 left-0 w-full h-full z-20 flex items-center px-8">
       <p class="font-book">{{ numShowing }} Audiobooks</p>
       <div class="flex-grow" />
-      <controls-filter-select v-model="settings.filterBy" class="w-40 h-7.5" @change="updateFilter" />
+      <controls-filter-select v-model="settings.filterBy" class="w-48 h-7.5" @change="updateFilter" />
       <span class="px-4 text-sm">by</span>
-      <controls-order-select v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-40 h-7.5" @change="updateOrder" />
+      <controls-order-select v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5" @change="updateOrder" />
     </div>
   </div>
 </template>

@@ -3,12 +3,12 @@
     <p class="px-1 text-sm font-semibold">{{ label }}</p>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
-        <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-text">
+        <div ref="inputWrapper" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded px-2 py-2">
           <input ref="input" v-model="textInput" class="h-full w-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
 
-      <ul ref="menu" v-show="isFocused && items.length && (itemsToShow.length || currentSearch)" class="absolute z-50 mt-0 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+      <ul ref="menu" v-show="isFocused && items.length && (itemsToShow.length || currentSearch)" class="absolute z-50 mt-0 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
           <li :key="item" class="text-gray-50 select-none relative py-2 pr-3 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">

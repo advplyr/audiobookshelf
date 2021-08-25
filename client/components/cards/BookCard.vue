@@ -2,7 +2,7 @@
   <nuxt-link :to="`/audiobook/${audiobookId}`" :style="{ height: height + 32 + 'px', width: width + 32 + 'px' }" class="cursor-pointer p-4">
     <div class="rounded-sm h-full overflow-hidden relative bookCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
       <div class="w-full relative" :style="{ height: width * 1.6 + 'px' }">
-        <cards-book-cover :audiobook="audiobook" />
+        <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" />
 
         <div v-show="isHovering" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
           <div class="h-full flex items-center justify-center">
@@ -14,7 +14,6 @@
             <span class="material-icons" style="font-size: 16px">edit</span>
           </div>
         </div>
-
         <div class="absolute bottom-0 left-0 h-1 bg-yellow-400 shadow-sm" :style="{ width: width * userProgressPercent + 'px' }"></div>
       </div>
       <ui-tooltip v-if="showError" :text="errorText" class="absolute top-4 left-0">
@@ -61,6 +60,25 @@ export default {
     },
     author() {
       return this.book.author
+    },
+    authorFL() {
+      return this.book.authorFL || this.author
+    },
+    authorLF() {
+      return this.book.authorLF || this.author
+    },
+    authorFormat() {
+      if (!this.orderBy || !this.orderBy.startsWith('book.author')) return null
+      return this.orderBy === 'book.authorLF' ? this.authorLF : this.authorFL
+    },
+    volumeNumber() {
+      return this.book.volumeNumber || null
+    },
+    orderBy() {
+      return this.$store.getters['user/getUserSetting']('orderBy')
+    },
+    filterBy() {
+      return this.$store.getters['user/getUserSetting']('filterBy')
     },
     userProgressPercent() {
       return this.userProgress ? this.userProgress.progress || 0 : 0

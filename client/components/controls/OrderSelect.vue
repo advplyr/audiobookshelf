@@ -11,7 +11,7 @@
       <template v-for="item in items">
         <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item.value)">
           <div class="flex items-center">
-            <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
+            <span class="font-normal ml-3 block truncate text-xs">{{ item.text }}</span>
           </div>
           <span v-if="item.value === selected" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
             <span class="material-icons text-xl">{{ descending ? 'expand_more' : 'expand_less' }}</span>
@@ -37,8 +37,12 @@ export default {
           value: 'book.title'
         },
         {
-          text: 'Author',
-          value: 'book.author'
+          text: 'Author (First Last)',
+          value: 'book.authorFL'
+        },
+        {
+          text: 'Author (Last, First)',
+          value: 'book.authorLF'
         },
         {
           text: 'Added At',
@@ -73,7 +77,8 @@ export default {
       }
     },
     selectedText() {
-      var _sel = this.items.find((i) => i.value === this.selected)
+      var _selected = this.selected === 'book.author' ? 'book.authorFL' : this.selected
+      var _sel = this.items.find((i) => i.value === _selected)
       if (!_sel) return ''
       return _sel.text
     }

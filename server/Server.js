@@ -42,6 +42,7 @@ class Server {
     this.clients = {}
 
     this.isScanning = false
+    this.isScanningCovers = false
     this.isInitialized = false
   }
 
@@ -64,11 +65,26 @@ class Server {
     Logger.info('[Server] Starting Scan')
     this.isScanning = true
     this.isInitialized = true
-    this.emitter('scan_start')
+    this.emitter('scan_start', 'files')
     var results = await this.scanner.scan()
     this.isScanning = false
-    this.emitter('scan_complete', results)
+    this.emitter('scan_complete', { scanType: 'files', results })
     Logger.info('[Server] Scan complete')
+  }
+
+  async scanCovers() {
+    Logger.info('[Server] Start cover scan')
+    this.isScanningCovers = true
+    this.emitter('scan_start', 'covers')
+    var results = await this.scanner.scanCovers()
+    this.isScanningCovers = false
+    this.emitter('scan_complete', { scanType: 'covers', results })
+    Logger.info('[Server] Cover scan complete')
+  }
+
+  cancelScan() {
+    if (!this.isScanningCovers && !this.isScanning) return
+    this.scanner.cancelScan = true
   }
 
   async init() {
@@ -149,6 +165,8 @@ class Server {
 
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
       socket.on('scan', this.scan.bind(this))
+      socket.on('scan_covers', this.scanCovers.bind(this))
+      socket.on('cancel_scan', this.cancelScan.bind(this))
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))

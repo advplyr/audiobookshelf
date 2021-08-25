@@ -62,6 +62,10 @@ class Audiobook {
     return this.book ? this.book.author : 'Unknown'
   }
 
+  get authorLF() {
+    return this.book ? this.book.authorLF : null
+  }
+
   get genres() {
     return this.book ? this.book.genres || [] : []
   }
@@ -136,9 +140,9 @@ class Audiobook {
   toJSONExpanded() {
     return {
       id: this.id,
-      title: this.title,
-      author: this.author,
-      cover: this.cover,
+      // title: this.title,
+      // author: this.author,
+      // cover: this.cover,
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
@@ -304,6 +308,10 @@ class Audiobook {
       hasUpdates = true
     }
     return hasUpdates
+  }
+
+  syncAuthorNames(audiobookData) {
+    return this.book.syncAuthorNames(audiobookData.authorFL, audiobookData.authorLF)
   }
 
   isSearchMatch(search) {

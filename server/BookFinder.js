@@ -26,7 +26,17 @@ class BookFinder {
     return title
   }
 
+  replaceAccentedChars(str) {
+    try {
+      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+    } catch (error) {
+      Logger.error('[BookFinder] str normalize error', error)
+      return str
+    }
+  }
+
   cleanTitleForCompares(title) {
+    if (!title) return ''
     // Remove subtitle if there (i.e. "Cool Book: Coolest Ever" becomes "Cool Book")
     var stripped = this.stripSubtitle(title)
 
@@ -35,16 +45,34 @@ class BookFinder {
 
     // Remove single quotes (i.e. "Ender's Game" becomes "Enders Game")
     cleaned = cleaned.replace(/'/g, '')
+    cleaned = this.replaceAccentedChars(cleaned)
+    return cleaned.toLowerCase()
+  }
+
+  cleanAuthorForCompares(author) {
+    if (!author) return ''
+    var cleaned = this.replaceAccentedChars(author)
     return cleaned.toLowerCase()
   }
 
   filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance) {
     var searchTitle = this.cleanTitleForCompares(title)
+    var searchAuthor = this.cleanAuthorForCompares(author)
     return books.map(b => {
       b.cleanedTitle = this.cleanTitleForCompares(b.title)
       b.titleDistance = levenshteinDistance(b.cleanedTitle, title)
       if (author) {
-        b.authorDistance = levenshteinDistance(b.author || '', author)
+        if (!b.author) {
+          b.authorDistance = author.length
+        } else {
+          b.cleanedAuthor = this.cleanAuthorForCompares(b.author)
+
+          var cleanedAuthorDistance = levenshteinDistance(b.cleanedAuthor, searchAuthor)
+          var authorDistance = levenshteinDistance(b.author || '', author)
+          // Use best distance
+          if (cleanedAuthorDistance > authorDistance) b.authorDistance = authorDistance
+          else b.authorDistance = cleanedAuthorDistance
+        }
       }
       b.totalDistance = b.titleDistance + (b.authorDistance || 0)
       b.totalPossibleDistance = b.title.length
@@ -142,7 +170,8 @@ class BookFinder {
 
   async findCovers(provider, title, author, options = {}) {
     var searchResults = await this.search(provider, title, author, options)
-    console.log('Find Covers search results', searchResults)
+    Logger.info(`[BookFinder] FindCovers search results: ${searchResults.length}`)
+
     var covers = []
     searchResults.forEach((result) => {
       if (result.covers && result.covers.length) {

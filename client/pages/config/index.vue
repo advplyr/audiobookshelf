@@ -26,10 +26,15 @@
         </table>
       </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
-      <div class="flex items-center py-4 mb-8">
-        <p class="text-2xl">Scanner</p>
-        <div class="flex-grow" />
-        <ui-btn color="success" @click="scan">Scan</ui-btn>
+      <div class="py-4 mb-8">
+        <div class="flex items-start py-2">
+          <p class="text-2xl">Scanner</p>
+          <div class="flex-grow" />
+          <div class="w-40 flex flex-col">
+            <ui-btn color="success" class="mb-4" :loading="isScanning" :disabled="isScanningCovers" @click="scan">Scan</ui-btn>
+            <ui-btn color="primary" small :padding-x="2" :loading="isScanningCovers" :disabled="isScanning" @click="scanCovers">Scan for Covers</ui-btn>
+          </div>
+        </div>
       </div>
 
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
@@ -68,6 +73,12 @@ export default {
   computed: {
     streamAudiobook() {
       return this.$store.state.streamAudiobook
+    },
+    isScanning() {
+      return this.$store.state.isScanning
+    },
+    isScanningCovers() {
+      return this.$store.state.isScanningCovers
     }
   },
   methods: {
@@ -78,6 +89,9 @@ export default {
     },
     scan() {
       this.$root.socket.emit('scan')
+    },
+    scanCovers() {
+      this.$root.socket.emit('scan_covers')
     },
     clickAddUser() {
       this.$toast.info('Under Construction: User management coming soon.')

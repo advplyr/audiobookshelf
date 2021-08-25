@@ -83,21 +83,37 @@ export default {
       }
       this.$store.commit('audiobooks/remove', audiobook)
     },
-    scanComplete(results) {
-      if (!results) results = {}
-      this.$store.commit('setIsScanning', false)
-      var scanResultMsgs = []
-      if (results.added) scanResultMsgs.push(`${results.added} added`)
-      if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
-      if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
-      if (!scanResultMsgs.length) this.$toast.success('Scan Finished\nEverything was up to date')
-      else this.$toast.success('Scan Finished\n' + scanResultMsgs.join('\n'))
+    scanComplete({ scanType, results }) {
+      if (scanType === 'covers') {
+        this.$store.commit('setIsScanningCovers', false)
+        if (results) {
+          this.$toast.success(`Scan Finished\nUpdated ${results.found} covers`)
+        }
+      } else {
+        this.$store.commit('setIsScanning', false)
+        if (results) {
+          var scanResultMsgs = []
+          if (results.added) scanResultMsgs.push(`${results.added} added`)
+          if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
+          if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
+          if (!scanResultMsgs.length) this.$toast.success('Scan Finished\nEverything was up to date')
+          else this.$toast.success('Scan Finished\n' + scanResultMsgs.join('\n'))
+        }
+      }
     },
-    scanStart() {
-      this.$store.commit('setIsScanning', true)
+    scanStart(scanType) {
+      if (scanType === 'covers') {
+        this.$store.commit('setIsScanningCovers', true)
+      } else {
+        this.$store.commit('setIsScanning', true)
+      }
     },
-    scanProgress(progress) {
-      this.$store.commit('setScanProgress', progress)
+    scanProgress({ scanType, progress }) {
+      if (scanType === 'covers') {
+        this.$store.commit('setCoverScanProgress', progress)
+      } else {
+        this.$store.commit('setScanProgress', progress)
+      }
     },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {

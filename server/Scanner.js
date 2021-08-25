@@ -13,6 +13,8 @@ class Scanner {
     this.db = db
     this.emitter = emitter
 
+    this.cancelScan = false
+
     this.bookFinder = new BookFinder()
   }
 
@@ -34,6 +36,11 @@ class Scanner {
     const scanStart = Date.now()
     var audiobookDataFound = await getAllAudiobookFiles(this.AudiobookPath)
 
+    if (this.cancelScan) {
+      this.cancelScan = false
+      return null
+    }
+
     var scanResults = {
       removed: 0,
       updated: 0,
@@ -53,6 +60,10 @@ class Scanner {
         }
         scanResults.removed++
         this.emitter('audiobook_removed', this.audiobooks[i].toJSONMinified())
+      }
+      if (this.cancelScan) {
+        this.cancelScan = false
+        return null
       }
     }
 
@@ -109,6 +120,11 @@ class Scanner {
               hasUpdates = true
             }
 
+            if (audiobookData.author && existingAudiobook.syncAuthorNames(audiobookData)) {
+              Logger.info(`[Scanner] "${existingAudiobook.title}" author names updated, "${existingAudiobook.authorLF}"`)
+              hasUpdates = true
+            }
+
             if (hasUpdates) {
               Logger.info(`[Scanner] "${existingAudiobook.title}" was updated - saving`)
               existingAudiobook.lastUpdate = Date.now()
@@ -138,10 +154,17 @@ class Scanner {
       }
       var progress = Math.round(100 * (i + 1) / audiobookDataFound.length)
       this.emitter('scan_progress', {
-        total: audiobookDataFound.length,
-        done: i + 1,
-        progress
+        scanType: 'files',
+        progress: {
+          total: audiobookDataFound.length,
+          done: i + 1,
+          progress
+        }
       })
+      if (this.cancelScan) {
+        this.cancelScan = false
+        break
+      }
     }
     const scanElapsed = Math.floor((Date.now() - scanStart) / 1000)
     Logger.info(`[Scanned] Finished | ${scanResults.added} added | ${scanResults.updated} updated | ${scanResults.removed} removed | elapsed: ${secondsToTimestamp(scanElapsed)}`)
@@ -159,6 +182,47 @@ class Scanner {
     var firstTrackFullPath = firstTrack.fullPath
     var scanResult = await audioFileScanner.scan(firstTrackFullPath)
     return scanResult
+  }
+
+  async scanCovers() {
+    var audiobooksNeedingCover = this.audiobooks.filter(ab => !ab.cover && ab.author)
+    var found = 0
+    var notFound = 0
+    for (let i = 0; i < audiobooksNeedingCover.length; i++) {
+      var audiobook = audiobooksNeedingCover[i]
+      var options = {
+        titleDistance: 2,
+        authorDistance: 2
+      }
+      var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
+      if (results.length) {
+        Logger.info(`[Scanner] Found best cover for "${audiobook.title}"`)
+        audiobook.book.cover = results[0]
+        await this.db.updateAudiobook(audiobook)
+        found++
+      } else {
+        notFound++
+      }
+
+      var progress = Math.round(100 * (i + 1) / audiobooksNeedingCover.length)
+      this.emitter('scan_progress', {
+        scanType: 'covers',
+        progress: {
+          total: audiobooksNeedingCover.length,
+          done: i + 1,
+          progress
+        }
+      })
+
+      if (this.cancelScan) {
+        this.cancelScan = false
+        break
+      }
+    }
+    return {
+      found,
+      notFound
+    }
   }
 
   async find(req, res) {

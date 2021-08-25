@@ -21,9 +21,14 @@
         </div>
       </div>
 
-      <!-- <ui-text-input-with-label v-model="details.series" label="Series" class="mt-2" /> -->
-
-      <ui-input-dropdown v-model="details.series" label="Series" class="mt-2" :items="series" />
+      <div class="flex mt-2 -mx-1">
+        <div class="w-3/4 px-1">
+          <ui-input-dropdown v-model="details.series" label="Series" :items="series" />
+        </div>
+        <div class="flex-grow px-1">
+          <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" />
+        </div>
+      </div>
 
       <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
 
@@ -61,6 +66,7 @@ export default {
         description: null,
         author: null,
         series: null,
+        volumeNumber: null,
         publishYear: null,
         genres: []
       },
@@ -132,6 +138,7 @@ export default {
       this.details.author = this.book.author
       this.details.genres = this.book.genres || []
       this.details.series = this.book.series
+      this.details.volumeNumber = this.book.volumeNumber
       this.details.publishYear = this.book.publishYear
 
       this.newTags = this.audiobook.tags || []

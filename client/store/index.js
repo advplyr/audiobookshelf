@@ -5,7 +5,9 @@ export const state = () => ({
   selectedAudiobook: null,
   playOnLoad: false,
   isScanning: false,
+  isScanningCovers: false,
   scanProgress: null,
+  coverScanProgress: null,
   developerMode: false
 })
 
@@ -41,9 +43,16 @@ export const mutations = {
   setIsScanning(state, isScanning) {
     state.isScanning = isScanning
   },
-  setScanProgress(state, progress) {
-    if (progress > 0) state.isScanning = true
-    state.scanProgress = progress
+  setScanProgress(state, scanProgress) {
+    if (scanProgress && scanProgress.progress > 0) state.isScanning = true
+    state.scanProgress = scanProgress
+  },
+  setIsScanningCovers(state, isScanningCovers) {
+    state.isScanningCovers = isScanningCovers
+  },
+  setCoverScanProgress(state, coverScanProgress) {
+    if (coverScanProgress && coverScanProgress.progress > 0) state.isScanningCovers = true
+    state.coverScanProgress = coverScanProgress
   },
   setDeveloperMode(state, val) {
     state.developerMode = val
