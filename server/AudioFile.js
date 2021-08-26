@@ -8,6 +8,9 @@ class AudioFile {
     this.fullPath = null
     this.addedAt = null
 
+    this.trackNumFromMeta = null
+    this.trackNumFromFilename = null
+
     this.format = null
     this.duration = null
     this.size = null
@@ -42,6 +45,8 @@ class AudioFile {
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
+      trackNumFromMeta: this.trackNumFromMeta,
+      trackNumFromFilename: this.trackNumFromFilename,
       manuallyVerified: !!this.manuallyVerified,
       invalid: !!this.invalid,
       error: this.error || null,
@@ -73,6 +78,9 @@ class AudioFile {
     this.invalid = !!data.invalid
     this.error = data.error || null
 
+    this.trackNumFromMeta = data.trackNumFromMeta || null
+    this.trackNumFromFilename = data.trackNumFromFilename || null
+
     this.format = data.format
     this.duration = data.duration
     this.size = data.size
@@ -92,12 +100,15 @@ class AudioFile {
 
   setData(data) {
     this.index = data.index || null
-    this.ino = data.ino
+    this.ino = data.ino || null
     this.filename = data.filename
     this.ext = data.ext
     this.path = data.path
     this.fullPath = data.fullPath
     this.addedAt = Date.now()
+
+    this.trackNumFromMeta = data.trackNumFromMeta || null
+    this.trackNumFromFilename = data.trackNumFromFilename || null
 
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid

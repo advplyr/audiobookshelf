@@ -106,28 +106,28 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
       trackNumFromMeta,
       trackNumFromFilename
     }
-    audiobook.addAudioFile(audioFileObj)
+    var audioFile = audiobook.addAudioFile(audioFileObj)
 
     var trackNumber = 1
     if (newAudioFiles.length > 1) {
       trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
       if (trackNumber === null) {
         Logger.error('[AudioFileScanner] Invalid track number for', audioFile.filename)
-        audioFileObj.invalid = true
-        audioFileObj.error = 'Failed to get track number'
+        audioFile.invalid = true
+        audioFile.error = 'Failed to get track number'
         continue;
       }
     }
 
     if (tracks.find(t => t.index === trackNumber)) {
       Logger.error('[AudioFileScanner] Duplicate track number for', audioFile.filename)
-      audioFileObj.invalid = true
-      audioFileObj.error = 'Duplicate track number'
+      audioFile.invalid = true
+      audioFile.error = 'Duplicate track number'
       continue;
     }
 
-    audioFileObj.index = trackNumber
-    tracks.push(audioFileObj)
+    audioFile.index = trackNumber
+    tracks.push(audioFile)
   }
 
   if (!tracks.length) {

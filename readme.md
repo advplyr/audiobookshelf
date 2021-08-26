@@ -4,7 +4,7 @@ AudioBookshelf is a self-hosted audiobook server for managing and playing your a
 
 **Currently in Beta** - **Free & open source Android/iOS app is in development**
 
-<img alt="Screenshot1" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_bookshelf.png" />
+<img alt="Screenshot1" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_streaming.png" />
 
 
 #### Folder Structures Supported:
@@ -27,7 +27,7 @@ Title can start with the publish year like so:
 * Add ability to add/manage additional accounts with varying access levels
 * Then comes the mobile app..
 
-<img alt="Screenshot2" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_streaming.png" />
+<img alt="Screenshot2" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_audiobook.png" />
 
 ## Installation
 
@@ -36,8 +36,6 @@ Built to run in Docker for now (also on Unraid server Community Apps)
 ```bash
 docker run -d -p 1337:80 -v /audiobooks:/audiobooks -v /config:/config -v /metadata:/metadata --name audiobookshelf --rm advplyr/audiobookshelf
 ```
-
-<img alt="Screenshot3" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_audiobook.png" />
 
 ## Contributing
 

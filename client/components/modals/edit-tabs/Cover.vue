@@ -51,11 +51,9 @@
         <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-60 overflow-y-scroll mt-2 max-w-full">
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
-            <ui-tooltip :key="cover" direction="bottom" :text="cover">
-              <div class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
-                <img :src="cover" class="h-24 object-cover" style="width: 60px" />
-              </div>
-            </ui-tooltip>
+            <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
+              <img :src="cover" class="h-24 object-cover" style="width: 60px" />
+            </div>
           </template>
         </div>
       </div>
@@ -163,7 +161,7 @@ export default {
       }
     },
     getSearchQuery() {
-      var searchQuery = `provider=best&title=${this.searchTitle}`
+      var searchQuery = `provider=openlibrary&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
       return searchQuery
     },
