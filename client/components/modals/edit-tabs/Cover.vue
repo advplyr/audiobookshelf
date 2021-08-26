@@ -29,7 +29,9 @@
           <div v-if="showLocalCovers" class="flex items-center justify-center">
             <template v-for="cover in localCovers">
               <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover.localPath)">
-                <img :src="cover.localPath" class="h-24 object-cover" style="width: 60px" />
+                <div class="h-24 bg-primary" style="width: 60px">
+                  <img :src="cover.localPath" class="h-full w-full object-contain" />
+                </div>
               </div>
             </template>
           </div>
@@ -52,7 +54,10 @@
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
             <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
-              <img :src="cover" class="h-24 object-cover" style="width: 60px" />
+              <div class="h-24 bg-primary" style="width: 60px">
+                <img :src="cover" class="h-full w-full object-contain" />
+              </div>
+              <!-- <img :src="cover" class="h-24 object-cover" style="width: 60px" /> -->
             </div>
           </template>
         </div>
