@@ -20,7 +20,6 @@ class Audiobook {
 
     this.tracks = []
     this.missingParts = []
-    this.invalidParts = []
 
     this.audioFiles = []
     this.otherFiles = []
@@ -94,6 +93,10 @@ class Audiobook {
     return elapsedPretty(this.totalDuration)
   }
 
+  get invalidParts() {
+    return (this.audioFiles || []).filter(af => af.invalid).map(af => ({ filename: af.filename, error: af.error || 'Unknown Error' }))
+  }
+
   bookToJSON() {
     return this.book ? this.book.toJSON() : null
   }
@@ -115,7 +118,6 @@ class Audiobook {
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       missingParts: this.missingParts,
-      invalidParts: this.invalidParts,
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
@@ -278,10 +280,9 @@ class Audiobook {
       file.invalid = false
       file.error = null
       file.index = index++
-      return file
+      return new AudioFile(file)
     })
     this.tracks = []
-    this.invalidParts = []
     this.missingParts = []
     this.audioFiles.forEach((file) => {
       this.addTrack(file)
