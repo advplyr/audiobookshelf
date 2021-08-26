@@ -1,6 +1,9 @@
 <template>
   <div class="relative rounded-sm overflow-hidden" :style="{ height: width * 1.6 + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
-    <img ref="cover" :src="cover" @error="imageError" class="w-full h-full object-cover" />
+    <div class="w-full h-full bg-bg relative">
+      <div v-if="showCoverBg" class="absolute top-0 left-0 w-full h-full z-0" ref="coverBg" />
+      <img ref="cover" :src="cover" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
+    </div>
 
     <div v-if="imageFailed" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-red-100" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div class="w-full h-full border-2 border-error flex flex-col items-center justify-center">
@@ -21,6 +24,8 @@
 </template>
 
 <script>
+import Path from 'path'
+
 export default {
   props: {
     audiobook: {
@@ -35,7 +40,8 @@ export default {
   },
   data() {
     return {
-      imageFailed: false
+      imageFailed: false,
+      showCoverBg: false
     }
   },
   watch: {
@@ -66,8 +72,23 @@ export default {
       }
       return this.author
     },
+    placeholderUrl() {
+      return '/book_placeholder.jpg'
+    },
+    fullCoverUrl() {
+      if (!this.cover || this.cover === this.placeholderUrl) return ''
+      if (this.cover.startsWith('http:') || this.cover.startsWith('https:')) return this.cover
+      try {
+        var url = new URL(this.cover, document.baseURI)
+        return url.href
+      } catch (err) {
+        console.error(err)
+        return ''
+      }
+      return `${process.env.serverUrl}/${Path.normalize(this.cover)}`
+    },
     cover() {
-      return this.book.cover || '/book_placeholder.jpg'
+      return this.book.cover || this.placeholderUrl
     },
     hasCover() {
       return !!this.book.cover
@@ -89,6 +110,31 @@ export default {
     }
   },
   methods: {
+    setCoverBg() {
+      if (this.$refs.coverBg) {
+        this.$refs.coverBg.style.backgroundImage = `url("${this.fullCoverUrl}")`
+        this.$refs.coverBg.style.backgroundSize = 'cover'
+        this.$refs.coverBg.style.backgroundPosition = 'center'
+        this.$refs.coverBg.style.opacity = 0.25
+        this.$refs.coverBg.style.filter = 'blur(1px)'
+      }
+    },
+    hideCoverBg() {},
+    imageLoaded() {
+      if (this.$refs.cover && this.cover !== this.placeholderUrl) {
+        var { naturalWidth, naturalHeight } = this.$refs.cover
+        var aspectRatio = naturalHeight / naturalWidth
+        var arDiff = Math.abs(aspectRatio - 1.6)
+
+        // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
+        if (arDiff > 0.15) {
+          this.showCoverBg = true
+          this.$nextTick(this.setCoverBg)
+        } else {
+          this.showCoverBg = false
+        }
+      }
+    },
     imageError(err) {
       console.error('ImgError', err)
       this.imageFailed = true
