@@ -102,6 +102,8 @@ export default {
       this.width = Math.max(0, this.width - this.rowPaddingX * 2)
       var booksPerRow = Math.floor(this.width / this.bookWidth)
       this.booksPerRow = booksPerRow
+      console.warn('this.selectedSizeIndex', this.selectedSizeIndex, 'Book Cover Size', this.bookCoverWidth)
+      console.warn('Books Per Row', this.booksPerRow, 'Width', this.width, 'Book Width', this.bookWidth)
     },
     getAudiobookCard(id) {
       if (this.$refs[`audiobookCard-${id}`] && this.$refs[`audiobookCard-${id}`].length) {
@@ -110,7 +112,9 @@ export default {
       return null
     },
     init() {
-      this.selectedSizeIndex = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      var sizeIndex = this.availableSizes.findIndex((s) => s === bookshelfCoverSize)
+      if (!isNaN(sizeIndex)) this.selectedSizeIndex = sizeIndex
       this.calculateBookshelf()
     },
     resize() {
