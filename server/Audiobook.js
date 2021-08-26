@@ -360,11 +360,9 @@ class Audiobook {
 
   syncAudioFile(audioFile, fileScanData) {
     var hasUpdates = audioFile.syncFile(fileScanData)
-    if (hasUpdates) {
-      var track = this.tracks.find(t => t.ino === audioFile.ino)
-      if (track) {
-        track.syncFile(fileScanData)
-      }
+    var track = this.tracks.find(t => t.ino === audioFile.ino)
+    if (track && track.syncFile(fileScanData)) {
+      hasUpdates = true
     }
     return hasUpdates
   }
