@@ -75,6 +75,10 @@
   box-shadow: 2px 8px 6px #111111aa;
 }
 
+.box-shadow-lg-up {
+  box-shadow: 0px -12px 8px #111111ee;
+}
+
 .box-shadow-xl {
   box-shadow: 2px 14px 8px #111111aa;
 }

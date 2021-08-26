@@ -1,3 +1,4 @@
+import Vue from 'vue'
 
 export const state = () => ({
   streamAudiobook: null,
@@ -8,10 +9,17 @@ export const state = () => ({
   isScanningCovers: false,
   scanProgress: null,
   coverScanProgress: null,
-  developerMode: false
+  developerMode: false,
+  selectedAudiobooks: [],
+  processingBatch: false
 })
 
-export const getters = {}
+export const getters = {
+  getIsAudiobookSelected: state => audiobookId => {
+    return !!state.selectedAudiobooks.includes(audiobookId)
+  },
+  getNumAudiobooksSelected: state => state.selectedAudiobooks.length
+}
 
 export const actions = {}
 
@@ -56,5 +64,18 @@ export const mutations = {
   },
   setDeveloperMode(state, val) {
     state.developerMode = val
+  },
+  setSelectedAudiobooks(state, audiobooks) {
+    state.selectedAudiobooks = audiobooks
+  },
+  toggleAudiobookSelected(state, audiobookId) {
+    if (state.selectedAudiobooks.includes(audiobookId)) {
+      state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
+    } else {
+      state.selectedAudiobooks.push(audiobookId)
+    }
+  },
+  setProcessingBatch(state, val) {
+    state.processingBatch = val
   }
 }

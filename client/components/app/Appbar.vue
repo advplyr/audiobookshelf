@@ -17,6 +17,16 @@
 
         <ui-menu :label="username" :items="menuItems" @action="menuAction" class="ml-5" />
       </div>
+
+      <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
+        <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
+        <ui-btn small class="text-sm mx-2" @click="toggleSelectAll">{{ isAllSelected ? 'Select None' : 'Select All' }}</ui-btn>
+
+        <div class="flex-grow" />
+        <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2" @click="batchEditClick"><span class="material-icons text-gray-200 pt-1">edit</span></ui-btn>
+        <ui-btn color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn>
+        <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+      </div>
     </div>
   </div>
 </template>
@@ -35,7 +45,8 @@ export default {
           value: 'logout',
           text: 'Logout'
         }
-      ]
+      ],
+      processingBatchDelete: false
     }
   },
   computed: {
@@ -47,6 +58,18 @@ export default {
     },
     username() {
       return this.user ? this.user.username : 'err'
+    },
+    numAudiobooksSelected() {
+      return this.selectedAudiobooks.length
+    },
+    selectedAudiobooks() {
+      return this.$store.state.selectedAudiobooks
+    },
+    isAllSelected() {
+      return this.audiobooksShowing.length === this.selectedAudiobooks.length
+    },
+    audiobooksShowing() {
+      return this.$store.getters['audiobooks/getFiltered']()
     }
   },
   methods: {
@@ -56,10 +79,6 @@ export default {
       } else {
         this.$router.push('/')
       }
-    },
-    scan() {
-      console.log('Call Start Init')
-      this.$root.socket.emit('scan')
     },
     logout() {
       this.$axios.$post('/logout').catch((error) => {
@@ -74,6 +93,43 @@ export default {
       if (action === 'logout') {
         this.logout()
       }
+    },
+    cancelSelectionMode() {
+      if (this.processingBatchDelete) return
+      this.$store.commit('setSelectedAudiobooks', [])
+    },
+    toggleSelectAll() {
+      if (this.isAllSelected) {
+        this.cancelSelectionMode()
+      } else {
+        var audiobookIds = this.audiobooksShowing.map((a) => a.id)
+        this.$store.commit('setSelectedAudiobooks', audiobookIds)
+      }
+    },
+    batchDeleteClick() {
+      if (confirm(`Are you sure you want to delete these ${this.numAudiobooksSelected} audiobook(s)?`)) {
+        this.processingBatchDelete = true
+        this.$store.commit('setProcessingBatch', true)
+        this.$axios
+          .$post(`/api/audiobooks/delete`, {
+            audiobookIds: this.selectedAudiobooks
+          })
+          .then(() => {
+            this.$toast.success('Batch delete success!')
+            this.processingBatchDelete = false
+            this.$store.commit('setProcessingBatch', false)
+            this.$store.commit('setSelectedAudiobooks', [])
+          })
+          .catch((error) => {
+            this.$toast.error('Batch delete failed')
+            console.error('Failed to batch delete', error)
+            this.processingBatchDelete = false
+            this.$store.commit('setProcessingBatch', false)
+          })
+      }
+    },
+    batchEditClick() {
+      this.$router.push('/batch')
     }
   },
   mounted() {}

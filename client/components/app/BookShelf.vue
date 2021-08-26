@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-auto relative">
     <!-- Cover size widget -->
-    <div class="fixed bottom-2 right-4 z-20">
+    <div v-show="!isSelectionMode" class="fixed bottom-2 right-4 z-20">
       <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
         <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
@@ -62,6 +62,9 @@ export default {
     },
     bookWidth() {
       return this.bookCoverWidth + this.paddingX * 2
+    },
+    isSelectionMode() {
+      return this.$store.getters['getNumAudiobooksSelected']
     }
   },
   methods: {
@@ -102,8 +105,6 @@ export default {
       this.width = Math.max(0, this.width - this.rowPaddingX * 2)
       var booksPerRow = Math.floor(this.width / this.bookWidth)
       this.booksPerRow = booksPerRow
-      console.warn('this.selectedSizeIndex', this.selectedSizeIndex, 'Book Cover Size', this.bookCoverWidth)
-      console.warn('Books Per Row', this.booksPerRow, 'Width', this.width, 'Book Width', this.bookWidth)
     },
     getAudiobookCard(id) {
       if (this.$refs[`audiobookCard-${id}`] && this.$refs[`audiobookCard-${id}`].length) {

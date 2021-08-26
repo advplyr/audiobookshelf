@@ -21,6 +21,8 @@ class ApiController {
 
     this.router.get('/audiobooks', this.getAudiobooks.bind(this))
     this.router.delete('/audiobooks', this.deleteAllAudiobooks.bind(this))
+    this.router.post('/audiobooks/delete', this.batchDeleteAudiobooks.bind(this))
+    this.router.post('/audiobooks/update', this.batchUpdateAudiobooks.bind(this))
 
     this.router.get('/audiobook/:id', this.getAudiobook.bind(this))
     this.router.delete('/audiobook/:id', this.deleteAudiobook.bind(this))
@@ -88,10 +90,7 @@ class ApiController {
     res.json(audiobook.toJSONExpanded())
   }
 
-  async deleteAudiobook(req, res) {
-    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
-    if (!audiobook) return res.sendStatus(404)
-
+  async handleDeleteAudiobook(audiobook) {
     // Remove audiobook from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
@@ -114,10 +113,64 @@ class ApiController {
       }
     }
 
+    var audiobookJSON = audiobook.toJSONMinified()
     await this.db.removeEntity('audiobook', audiobook.id)
+    this.emitter('audiobook_removed', audiobookJSON)
+  }
 
-    this.emitter('audiobook_removed', audiobook.toJSONMinified())
+  async deleteAudiobook(req, res) {
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook) return res.sendStatus(404)
+
+    await this.handleDeleteAudiobook(audiobook)
     res.sendStatus(200)
+  }
+
+  async batchDeleteAudiobooks(req, res) {
+    var { audiobookIds } = req.body
+    if (!audiobookIds || !audiobookIds.length) {
+      return res.sendStatus(500)
+    }
+
+    var audiobooksToDelete = this.db.audiobooks.filter(ab => audiobookIds.includes(ab.id))
+    if (!audiobooksToDelete.length) {
+      return res.sendStatus(404)
+    }
+    for (let i = 0; i < audiobooksToDelete.length; i++) {
+      Logger.info(`[ApiController] Deleting Audiobook "${audiobooksToDelete[i].title}"`)
+      await this.handleDeleteAudiobook(audiobooksToDelete[i])
+    }
+    res.sendStatus(200)
+  }
+
+  async batchUpdateAudiobooks(req, res) {
+    var audiobooks = req.body
+    if (!audiobooks || !audiobooks.length) {
+      return res.sendStatus(500)
+    }
+
+    var audiobooksUpdated = 0
+    audiobooks = audiobooks.map((ab) => {
+      var _ab = this.db.audiobooks.find(__ab => __ab.id === ab.id)
+      if (!_ab) return null
+      var hasUpdated = _ab.update(ab)
+      if (!hasUpdated) return null
+      audiobooksUpdated++
+      return _ab
+    }).filter(ab => ab)
+
+    if (audiobooksUpdated) {
+      Logger.info(`[ApiController] ${audiobooksUpdated} Audiobooks have updates`)
+      for (let i = 0; i < audiobooks.length; i++) {
+        await this.db.updateAudiobook(audiobooks[i])
+        this.emitter('audiobook_updated', audiobooks[i].toJSONMinified())
+      }
+    }
+
+    res.json({
+      success: true,
+      updates: audiobooksUpdated
+    })
   }
 
   async updateAudiobookTracks(req, res) {
