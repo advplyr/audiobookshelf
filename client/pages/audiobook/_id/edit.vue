@@ -1,5 +1,5 @@
 <template>
-  <div id="ab-page-wrapper" class="bg-bg page overflow-hidden relative" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-hidden relative" :class="streamAudiobook ? 'streaming' : ''">
     <div v-show="saving" class="absolute z-20 w-full h-full flex items-center justify-center">
       <ui-loading-indicator />
     </div>

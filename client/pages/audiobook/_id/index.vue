@@ -1,5 +1,5 @@
 <template>
-  <div id="ab-page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto p-8">
       <div class="flex max-w-6xl mx-auto">
         <div class="w-52" style="min-width: 208px">

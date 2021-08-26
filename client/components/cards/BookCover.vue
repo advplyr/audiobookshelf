@@ -1,7 +1,9 @@
 <template>
   <div class="relative rounded-sm overflow-hidden" :style="{ height: width * 1.6 + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
-    <div class="w-full h-full bg-bg relative">
-      <div v-if="showCoverBg" class="absolute top-0 left-0 w-full h-full z-0" ref="coverBg" />
+    <div class="w-full h-full relative">
+      <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
+        <div class="w-full h-full z-0" ref="coverBg" />
+      </div>
       <img ref="cover" :src="cover" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
     </div>
 
@@ -24,8 +26,6 @@
 </template>
 
 <script>
-import Path from 'path'
-
 export default {
   props: {
     audiobook: {
@@ -85,7 +85,6 @@ export default {
         console.error(err)
         return ''
       }
-      return `${process.env.serverUrl}/${Path.normalize(this.cover)}`
     },
     cover() {
       return this.book.cover || this.placeholderUrl
