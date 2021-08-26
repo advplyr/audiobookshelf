@@ -5,7 +5,8 @@ export const state = () => ({
     orderBy: 'book.title',
     orderDesc: false,
     filterBy: 'all',
-    playbackRate: 1
+    playbackRate: 1,
+    bookshelfCoverSize: 120
   },
   settingsListeners: []
 })

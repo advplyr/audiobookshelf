@@ -1,5 +1,5 @@
 <template>
-  <div class="page p-6" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page p-6" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full max-w-4xl mx-auto">
       <div class="flex items-center mb-2">
         <h1 class="text-2xl">Users</h1>

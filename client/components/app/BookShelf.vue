@@ -1,5 +1,14 @@
 <template>
-  <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-auto">
+  <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-auto relative">
+    <!-- Cover size widget -->
+    <div class="fixed bottom-2 right-4 z-20">
+      <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
+        <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
+        <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
+        <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
+      </div>
+    </div>
+
     <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4">Your Audiobookshelf is empty!</p>
       <ui-btn color="success" @click="scan">Scan your Audiobooks</ui-btn>
@@ -9,7 +18,7 @@
         <div :key="index" class="w-full bookshelfRow relative">
           <div class="flex justify-center items-center">
             <template v-for="audiobook in shelf">
-              <cards-book-card :ref="`audiobookCard-${audiobook.id}`" :key="audiobook.id" :user-progress="userAudiobooks[audiobook.id]" :audiobook="audiobook" />
+              <cards-book-card :ref="`audiobookCard-${audiobook.id}`" :key="audiobook.id" :width="bookCoverWidth" :user-progress="userAudiobooks[audiobook.id]" :audiobook="audiobook" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
@@ -24,10 +33,12 @@ export default {
   data() {
     return {
       width: 0,
-      bookWidth: 176,
       booksPerRow: 0,
       groupedBooks: [],
-      currFilterOrderKey: null
+      currFilterOrderKey: null,
+      availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
+      selectedSizeIndex: 3,
+      rowPaddingX: 40
     }
   },
   computed: {
@@ -39,9 +50,31 @@ export default {
     },
     filterOrderKey() {
       return this.$store.getters['user/getFilterOrderKey']
+    },
+    bookCoverWidth() {
+      return this.availableSizes[this.selectedSizeIndex]
+    },
+    sizeMultiplier() {
+      return this.bookCoverWidth / 120
+    },
+    paddingX() {
+      return 16 * this.sizeMultiplier
+    },
+    bookWidth() {
+      return this.bookCoverWidth + this.paddingX * 2
     }
   },
   methods: {
+    increaseSize() {
+      this.selectedSizeIndex = Math.min(this.availableSizes.length - 1, this.selectedSizeIndex + 1)
+      this.resize()
+      this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
+    },
+    decreaseSize() {
+      this.selectedSizeIndex = Math.max(0, this.selectedSizeIndex - 1)
+      this.resize()
+      this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
+    },
     setGroupedBooks() {
       var groups = []
       var currentRow = 0
@@ -66,6 +99,7 @@ export default {
     },
     calculateBookshelf() {
       this.width = this.$refs.wrapper.clientWidth
+      this.width = Math.max(0, this.width - this.rowPaddingX * 2)
       var booksPerRow = Math.floor(this.width / this.bookWidth)
       this.booksPerRow = booksPerRow
     },
@@ -76,6 +110,7 @@ export default {
       return null
     },
     init() {
+      this.selectedSizeIndex = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
       this.calculateBookshelf()
     },
     resize() {
@@ -88,10 +123,16 @@ export default {
       console.log('[AudioBookshelf] Audiobooks Updated')
       this.setGroupedBooks()
     },
-    settingsUpdated() {
-      // var newSortKey = `${this.orderBy}-${this.orderDesc}`
+    settingsUpdated(settings) {
       if (this.currFilterOrderKey !== this.filterOrderKey) {
         this.setGroupedBooks()
+      }
+      if (settings.bookshelfCoverSize !== this.bookCoverWidth && settings.bookshelfCoverSize !== undefined) {
+        var index = this.availableSizes.indexOf(settings.bookshelfCoverSize)
+        if (index >= 0) {
+          this.selectedSizeIndex = index
+          this.resize()
+        }
       }
     },
     scan() {
