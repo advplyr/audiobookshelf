@@ -95,13 +95,21 @@ class Book {
     if (data.otherFiles && data.otherFiles.length) {
       var imageFile = data.otherFiles.find(f => f.filetype === 'image')
       if (imageFile) {
-        this.cover = Path.join('/local', imageFile.path)
+        this.cover = Path.normalize(Path.join('/local', imageFile.path))
       }
     }
   }
 
   update(payload) {
     var hasUpdates = false
+
+    if (payload.cover) {
+      // If updating to local cover then normalize path
+      if (!payload.cover.startsWith('http:') && !payload.cover.startsWith('https:')) {
+        payload.cover = Path.normalize(payload.cover)
+      }
+    }
+
     for (const key in payload) {
       if (payload[key] === undefined) continue;
 

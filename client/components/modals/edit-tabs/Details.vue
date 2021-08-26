@@ -130,7 +130,6 @@ export default {
       })
       this.isProcessing = false
       if (updatedAudiobook) {
-        console.log('Update Successful', updatedAudiobook)
         this.$toast.success('Update Successful')
         this.$emit('close')
       }

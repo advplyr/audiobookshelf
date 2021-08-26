@@ -1,7 +1,16 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
     <div class="flex">
-      <cards-book-cover :audiobook="audiobook" />
+      <div class="relative">
+        <cards-book-cover :audiobook="audiobook" />
+        <!-- book cover overlay -->
+        <div v-if="book.cover" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
+          <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
+          <div class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
+            <span class="material-icons">delete</span>
+          </div>
+        </div>
+      </div>
       <div class="flex-grow pl-6 pr-2">
         <form @submit.prevent="submitForm">
           <div class="flex items-center">
@@ -19,7 +28,6 @@
 
           <div v-if="showLocalCovers" class="flex items-center justify-center">
             <template v-for="cover in localCovers">
-              <!-- <img :src="`/local/${cover.path}`" :key="cover.path" class="w-20 h-32 object-cover m-0.5" /> -->
               <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover.localPath)">
                 <img :src="cover.localPath" class="h-24 object-cover" style="width: 60px" />
               </div>
@@ -43,9 +51,11 @@
         <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-60 overflow-y-scroll mt-2 max-w-full">
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
-            <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
-              <img :src="cover" class="h-24 object-cover" style="width: 60px" />
-            </div>
+            <ui-tooltip :key="cover" direction="bottom" :text="cover">
+              <div class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
+                <img :src="cover" class="h-24 object-cover" style="width: 60px" />
+              </div>
+            </ui-tooltip>
           </template>
         </div>
       </div>
@@ -78,7 +88,9 @@ export default {
     audiobook: {
       immediate: true,
       handler(newVal) {
-        if (newVal) this.init()
+        if (newVal) {
+          this.init()
+        }
       }
     }
   },
@@ -118,10 +130,22 @@ export default {
       this.searchTitle = this.book.title || ''
       this.searchAuthor = this.book.author || ''
     },
+    removeCover() {
+      if (!this.book.cover) {
+        this.imageUrl = ''
+        return
+      }
+      this.updateCover('')
+    },
     submitForm() {
       this.updateCover(this.imageUrl)
     },
     async updateCover(cover) {
+      if (cover === this.book.cover) {
+        console.warn('Cover has not changed..', cover)
+        return
+      }
+
       this.isProcessing = true
       const updatePayload = {
         book: {
@@ -134,7 +158,6 @@ export default {
       })
       this.isProcessing = false
       if (updatedAudiobook) {
-        console.log('Update Successful', updatedAudiobook)
         this.$toast.success('Update Successful')
         this.$emit('close')
       }
