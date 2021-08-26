@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-20 bg-primary p-4">
+  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-40 bg-primary p-4">
     <div class="absolute -top-16 left-4">
       <cards-book-cover :audiobook="streamAudiobook" :width="88" />
     </div>

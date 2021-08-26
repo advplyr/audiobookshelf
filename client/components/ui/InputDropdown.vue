@@ -91,12 +91,20 @@ export default {
         }
         this.isFocused = false
         if (this.input !== this.textInput) {
-          this.input = this.$cleanString(this.textInput) || null
+          var val = this.$cleanString(this.textInput) || null
+          this.input = val
+          if (val && !this.items.includes(val)) {
+            this.$emit('newItem', val)
+          }
         }
       }, 50)
     },
     submitForm() {
-      this.input = this.$cleanString(this.textInput) || null
+      var val = this.$cleanString(this.textInput) || null
+      this.input = val
+      if (val && !this.items.includes(val)) {
+        this.$emit('newItem', val)
+      }
       this.currentSearch = null
     },
     clickedOption(e, item) {

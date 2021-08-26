@@ -21,6 +21,9 @@ export default {
       if (this.$store.state.showEditModal) {
         this.$store.commit('setShowEditModal', false)
       }
+      if (this.$store.state.selectedAudiobooks) {
+        this.$store.commit('setSelectedAudiobooks', [])
+      }
     }
   },
   computed: {
