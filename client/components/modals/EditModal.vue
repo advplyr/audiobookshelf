@@ -25,18 +25,21 @@ export default {
     return {
       selectedTab: 'details',
       processing: false,
-      audiobook: null
+      audiobook: null,
+      fetchOnShow: false
     }
   },
   watch: {
     show: {
       handler(newVal) {
         if (newVal) {
-          if (this.audiobook && this.audiobook.id === this.selectedAudiobookId) return
+          if (this.audiobook && this.audiobook.id === this.selectedAudiobookId) {
+            if (this.fetchOnShow) this.fetchFull()
+            return
+          }
+          this.fetchOnShow = false
           this.audiobook = null
           this.init()
-        } else {
-          this.$store.commit('audiobooks/removeListener', 'edit-modal')
         }
       }
     }
@@ -75,7 +78,10 @@ export default {
       this.selectedTab = tab
     },
     audiobookUpdated() {
-      this.fetchFull()
+      if (!this.show) this.fetchOnShow = true
+      else {
+        this.fetchFull()
+      }
     },
     init() {
       this.$store.commit('audiobooks/addListener', { meth: this.audiobookUpdated, id: 'edit-modal', audiobookId: this.selectedAudiobookId })

@@ -66,7 +66,7 @@ export default {
   },
   methods: {
     getSearchQuery() {
-      var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
+      var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
       return searchQuery
     },
@@ -129,7 +129,6 @@ export default {
       })
       this.isProcessing = false
       if (updatedAudiobook) {
-        console.log('Update Successful', updatedAudiobook)
         this.$toast.success('Update Successful')
         this.$emit('close')
       }

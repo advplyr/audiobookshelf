@@ -247,7 +247,7 @@ class Scanner {
       }
       var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
       if (results.length) {
-        Logger.info(`[Scanner] Found best cover for "${audiobook.title}"`)
+        Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
         audiobook.book.cover = results[0]
         await this.db.updateAudiobook(audiobook)
         found++
@@ -294,7 +294,10 @@ class Scanner {
 
   async findCovers(req, res) {
     var query = req.query
-    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
+    var options = {
+      fallbackTitleOnly: !!query.fallbackTitleOnly
+    }
+    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null, options)
     res.json(result)
   }
 }
