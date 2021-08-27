@@ -3,7 +3,7 @@ const dir = require('node-dir')
 const Logger = require('../Logger')
 const { cleanString } = require('./index')
 
-const AUDIO_FORMATS = ['m4b', 'mp3']
+const AUDIO_FORMATS = ['m4b', 'mp3', 'm4a']
 const INFO_FORMATS = ['nfo']
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'webp']
 const EBOOK_FORMATS = ['epub', 'pdf']
