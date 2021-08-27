@@ -1,5 +1,6 @@
 const express = require('express')
 const Logger = require('./Logger')
+const User = require('./User')
 const { isObject } = require('./utils/index')
 
 class ApiController {
@@ -33,9 +34,13 @@ class ApiController {
     this.router.patch('/match/:id', this.match.bind(this))
 
     this.router.get('/users', this.getUsers.bind(this))
+    this.router.post('/user', this.createUser.bind(this))
+    this.router.delete('/user/:id', this.deleteUser.bind(this))
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
+
+
 
     this.router.post('/authorize', this.authorize.bind(this))
 
@@ -252,6 +257,53 @@ class ApiController {
     return res.json({
       success: true,
       settings: req.user.settings
+    })
+  }
+
+  async createUser(req, res) {
+    var account = req.body
+    account.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    account.pash = await this.auth.hashPass(account.password)
+    delete account.password
+    account.token = await this.auth.generateAccessToken({ userId: account.id })
+    account.createdAt = Date.now()
+    var newUser = new User(account)
+    var success = await this.db.insertUser(newUser)
+    if (success) {
+      this.emitter('user_added', newUser)
+      res.json({
+        user: newUser.toJSONForBrowser()
+      })
+    } else {
+      res.json({
+        error: 'Failed to save new user'
+      })
+    }
+  }
+
+  async deleteUser(req, res) {
+    if (req.params.id === 'root') {
+      return res.sendStatus(500)
+    }
+    if (req.user.id === req.params.id) {
+      Logger.error('Attempting to delete themselves...')
+      return res.sendStatus(500)
+    }
+    var user = this.db.users.find(u => u.id === req.params.id)
+    if (!user) {
+      Logger.error('User not found')
+      return res.json({
+        error: 'User not found'
+      })
+    }
+
+    // Todo: check if user is logged in and cancel streams
+
+    var userJson = user.toJSONForBrowser()
+    await this.db.removeEntity('user', user.id)
+    this.emitter('user_removed', userJson)
+    res.json({
+      success: true
     })
   }
 

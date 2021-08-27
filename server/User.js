@@ -6,6 +6,7 @@ class User {
     this.type = null
     this.stream = null
     this.token = null
+    this.isActive = true
     this.createdAt = null
     this.audiobooks = null
     this.settings = {}
@@ -34,6 +35,7 @@ class User {
       stream: this.stream,
       token: this.token,
       audiobooks: this.audiobooks,
+      isActive: this.isActive,
       createdAt: this.createdAt,
       settings: this.settings
     }
@@ -47,6 +49,7 @@ class User {
       stream: this.stream,
       token: this.token,
       audiobooks: this.audiobooks,
+      isActive: this.isActive,
       createdAt: this.createdAt,
       settings: this.settings
     }
@@ -57,10 +60,11 @@ class User {
     this.username = user.username
     this.pash = user.pash
     this.type = user.type
-    this.stream = user.stream
+    this.stream = user.stream || null
     this.token = user.token
     this.audiobooks = user.audiobooks || null
-    this.createdAt = user.createdAt
+    this.isActive = (user.isActive === undefined || user.id === 'root') ? true : !!user.isActive
+    this.createdAt = user.createdAt || Date.now()
     this.settings = user.settings || this.getDefaultUserSettings()
   }
 

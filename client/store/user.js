@@ -12,6 +12,7 @@ export const state = () => ({
 })
 
 export const getters = {
+  getIsRoot: (state) => state.user && state.user.type === 'root',
   getToken: (state) => {
     return state.user ? state.user.token : null
   },
