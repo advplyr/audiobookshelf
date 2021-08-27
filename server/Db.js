@@ -58,6 +58,7 @@ class Db {
       pash: '',
       stream: null,
       token,
+      isActive: true,
       createdAt: Date.now()
     })
   }
@@ -115,8 +116,10 @@ class Db {
     return this.usersDb.insert([user]).then((results) => {
       Logger.debug(`[DB] Inserted user ${results.inserted}`)
       this.users.push(user)
+      return true
     }).catch((error) => {
       Logger.error(`[DB] Insert user Failed ${error}`)
+      return false
     })
   }
 

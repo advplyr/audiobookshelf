@@ -15,12 +15,20 @@
             <th>Username</th>
             <th>Account Type</th>
             <th style="width: 200px">Created At</th>
+            <th style="width: 100px"></th>
           </tr>
           <tr v-for="user in users" :key="user.id">
-            <td>{{ user.username }}</td>
+            <td>
+              {{ user.username }} <span class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
+            </td>
             <td>{{ user.type }}</td>
             <td class="text-sm font-mono">
               {{ new Date(user.createdAt).toISOString() }}
+            </td>
+            <td>
+              <div class="w-full flex justify-center">
+                <span v-show="user.type !== 'root'" class="material-icons text-base hover:text-error cursor-pointer" @click="deleteUserClick(user)">delete</span>
+              </div>
             </td>
           </tr>
         </table>
@@ -59,15 +67,24 @@
       </div>
     </div>
     <div class="fixed bottom-0 left-0 w-10 h-10" @dblclick="setDeveloperMode"></div>
+
+    <modals-account-modal v-model="showAccountModal" />
   </div>
 </template>
 
 <script>
 export default {
+  asyncData({ store, redirect }) {
+    if (!store.getters['user/getIsRoot']) {
+      redirect('/?error=unauthorized')
+    }
+  },
   data() {
     return {
       isResettingAudiobooks: false,
-      users: null
+      users: [],
+      showAccountModal: false,
+      isDeletingUser: false
     }
   },
   computed: {
@@ -94,7 +111,8 @@ export default {
       this.$root.socket.emit('scan_covers')
     },
     clickAddUser() {
-      this.$toast.info('Under Construction: User management coming soon.')
+      this.showAccountModal = true
+      // this.$toast.info('Under Construction: User management coming soon.')
     },
     loadUsers() {
       this.$axios
@@ -121,10 +139,64 @@ export default {
             this.$toast.error('Failed to reset audiobooks - stop docker and manually remove appdata')
           })
       }
+    },
+    deleteUserClick(user) {
+      if (this.isDeletingUser) return
+      if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
+        this.isDeletingUser = true
+        this.$axios
+          .$delete(`/api/user/${user.id}`)
+          .then((data) => {
+            this.isDeletingUser = false
+            if (data.error) {
+              this.$toast.error(data.error)
+            } else {
+              this.$toast.success('User deleted')
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to delete user', error)
+            this.$toast.error('Failed to delete user')
+            this.isDeletingUser = false
+          })
+      }
+    },
+    addUpdateUser(user) {
+      if (!this.users) return
+      var index = this.users.find((u) => u.id === user.id)
+      if (index >= 0) {
+        this.users.splice(index, 1, user)
+      } else {
+        this.users.push(user)
+      }
+    },
+    userRemoved(user) {
+      this.users = this.users.filter((u) => u.id !== user.id)
+    },
+    init(attempts = 0) {
+      if (!this.$root.socket) {
+        if (attempts > 10) {
+          return console.error('Failed to setup socket listeners')
+        }
+        setTimeout(() => {
+          this.init(++attempts)
+        }, 250)
+        return
+      }
+      this.$root.socket.on('user_added', this.addUpdateUser)
+      this.$root.socket.on('user_updated', this.addUpdateUser)
+      this.$root.socket.on('user_removed', this.userRemoved)
     }
   },
   mounted() {
     this.loadUsers()
+    this.init()
+  },
+  beforeDestroy() {
+    if (this.$root.socket) {
+      this.$root.socket.off('user_added', this.newUserAdded)
+      this.$root.socket.off('user_updated', this.userUpdated)
+    }
   }
 }
 </script>

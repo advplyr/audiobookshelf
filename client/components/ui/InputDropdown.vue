@@ -4,7 +4,7 @@
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
         <div ref="inputWrapper" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded px-2 py-2">
-          <input ref="input" v-model="textInput" class="h-full w-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input ref="input" v-model="textInput" :readonly="!editable" class="h-full w-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
 
@@ -37,6 +37,10 @@ export default {
     items: {
       type: Array,
       default: () => []
+    },
+    editable: {
+      type: Boolean,
+      default: true
     }
   },
   data() {

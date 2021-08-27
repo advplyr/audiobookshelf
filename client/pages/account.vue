@@ -65,6 +65,9 @@ export default {
       if (this.newPassword !== this.confirmPassword) {
         return this.$toast.error('New password and confirm password do not match')
       }
+      if (this.password === this.newPassword) {
+        return this.$toast.error('Password and New Password cannot be the same')
+      }
       this.changingPassword = true
       this.$axios
         .$patch('/api/user/password', {

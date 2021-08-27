@@ -11,7 +11,7 @@
         <controls-global-search />
         <div class="flex-grow" />
 
-        <nuxt-link to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
+        <nuxt-link v-if="isRootUser" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">settings</span>
         </nuxt-link>
 
@@ -55,6 +55,9 @@ export default {
     },
     user() {
       return this.$store.state.user.user
+    },
+    isRootUser() {
+      return this.$store.getters['user/getIsRoot']
     },
     username() {
       return this.user ? this.user.username : 'err'

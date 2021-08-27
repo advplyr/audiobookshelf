@@ -2,7 +2,6 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
 
-
 class Auth {
   constructor(db) {
     this.db = db
@@ -90,7 +89,7 @@ class Auth {
     var password = req.body.password || ''
     Logger.debug('Check Auth', username, !!password)
 
-    var user = this.users.find(u => u.id === username)
+    var user = this.users.find(u => u.username === username)
 
     if (!user) {
       return res.json({ error: 'User not found' })

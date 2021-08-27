@@ -168,6 +168,11 @@ export default {
   },
   mounted() {
     this.initializeSocket()
+
+    if (this.$route.query.error) {
+      this.$toast.error(this.$route.query.error)
+      this.$router.replace(this.$route.path)
+    }
   }
 }
 </script>
