@@ -133,6 +133,7 @@ class Server {
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
+    // app.use('/hls', this.hlsController.router)
     app.use('/feeds', this.rssFeeds.router)
 
     app.post('/login', (req, res) => this.auth.login(req, res))
@@ -141,6 +142,21 @@ class Server {
       Logger.info('Recieved ping')
       res.json({ success: true })
     })
+
+
+    // Used in development to set-up streams without authentication
+    if (process.env.NODE_ENV !== 'production') {
+      app.use('/test-hls', this.hlsController.router)
+      app.get('/test-stream/:id', async (req, res) => {
+        var uri = await this.streamManager.openTestStream(this.MetadataPath, req.params.id)
+        res.send(uri)
+      })
+      app.get('/catalog.json', (req, res) => {
+        Logger.error('Catalog request made', req.headers)
+        res.json()
+      })
+    }
+
 
     this.server.listen(this.Port, this.Host, () => {
       Logger.info(`Running on http://${this.Host}:${this.Port}`)

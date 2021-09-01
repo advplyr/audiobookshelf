@@ -3,6 +3,7 @@ const express = require('express')
 const ip = require('ip')
 const Logger = require('./Logger')
 
+// Not functional at the moment - just an idea
 class RssFeeds {
   constructor(Port, db) {
     this.Port = Port

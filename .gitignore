@@ -5,6 +5,6 @@ node_modules/
 /audiobooks/
 /audiobooks2/
 /metadata/
-/test/
+test/
 /client/.nuxt/
 /client/dist/

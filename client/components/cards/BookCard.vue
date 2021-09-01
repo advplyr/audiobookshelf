@@ -1,31 +1,41 @@
 <template>
-  <div class="rounded-sm h-full overflow-hidden relative bookCard" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
-    <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
-      <div class="w-full relative" :style="{ height: height + 'px' }">
-        <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
+  <div class="relative">
+    <!-- New Book Flag -->
+    <div v-show="isNew" class="absolute top-4 left-0 w-4 h-10 pr-2 bg-darkgreen box-shadow-xl">
+      <div class="absolute top-0 left-0 w-full h-full transform -rotate-90 flex items-center justify-center">
+        <p class="text-center text-sm">New</p>
+      </div>
+      <div class="absolute -bottom-4 left-0 triangle-right" />
+    </div>
 
-        <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded" :class="overlayWrapperClasslist">
-          <div v-show="!isSelectionMode" class="h-full flex items-center justify-center">
-            <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
-              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
+    <div class="rounded-sm h-full overflow-hidden relative bookCard" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
+      <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
+        <div class="w-full relative" :style="{ height: height + 'px' }">
+          <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
+
+          <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded" :class="overlayWrapperClasslist">
+            <div v-show="!isSelectionMode" class="h-full flex items-center justify-center">
+              <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
+                <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
+              </div>
+            </div>
+            <div v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+              <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
+            </div>
+            <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
+              <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
             </div>
           </div>
-          <div v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
-            <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
-          </div>
-          <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
-            <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
-          </div>
-        </div>
-        <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 bg-yellow-400 shadow-sm" :style="{ width: width * userProgressPercent + 'px' }"></div>
+          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 bg-yellow-400 shadow-sm" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
-        <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
-          <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-            <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
-          </div>
-        </ui-tooltip>
-      </div>
-    </nuxt-link>
+          <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
+            <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
+              <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
+            </div>
+          </ui-tooltip>
+        </div>
+      </nuxt-link>
+    </div>
   </div>
 </template>
 
@@ -51,6 +61,12 @@ export default {
     }
   },
   computed: {
+    isNew() {
+      return this.tags.includes('new')
+    },
+    tags() {
+      return this.audiobook.tags || []
+    },
     audiobookId() {
       return this.audiobook.id
     },
