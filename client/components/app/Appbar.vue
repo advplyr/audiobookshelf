@@ -6,7 +6,7 @@
         <a v-if="showBack" @click="back" class="rounded-full h-12 w-12 flex items-center justify-center hover:bg-white hover:bg-opacity-10 mr-4 cursor-pointer">
           <span class="material-icons text-4xl text-white">arrow_back</span>
         </a>
-        <h1 class="text-2xl font-book">AudioBookshelf</h1>
+        <h1 class="text-2xl font-book mr-6">AudioBookshelf</h1>
 
         <controls-global-search />
         <div class="flex-grow" />

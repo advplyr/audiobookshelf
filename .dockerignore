@@ -8,6 +8,6 @@ npm-debug.log
 /audiobooks2
 /metadata
 dev.js
-/test/
+test/
 /client/.nuxt/
 /client/dist/

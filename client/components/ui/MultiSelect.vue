@@ -103,7 +103,6 @@ export default {
       this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
-      console.log('Recalc menu pos', boundingBox.height)
     },
     unmountMountMenu() {
       if (!this.$refs.menu) return
@@ -138,8 +137,10 @@ export default {
       if (this.$refs.input) this.$refs.input.blur()
     },
     clickedOption(e, itemValue) {
-      e.stopPropagation()
-      e.preventDefault()
+      if (e) {
+        e.stopPropagation()
+        e.preventDefault()
+      }
       if (this.$refs.input) this.$refs.input.focus()
 
       var newSelected = null
@@ -187,7 +188,7 @@ export default {
         return i === cleaned || cleanedKebab === i
       })
       if (matchesItem) {
-        this.clickedOption(matchesItem.value)
+        this.clickedOption(null, matchesItem)
       } else {
         this.insertNewItem(this.textInput)
       }

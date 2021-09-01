@@ -23,6 +23,7 @@ module.exports = {
         info: '#2196F3',
         success: '#4CAF50',
         warning: '#FB8C00',
+        darkgreen: 'rgb(34,127,35)',
         'black-50': '#bbbbbb',
         'black-100': '#666666',
         'black-200': '#555555',
@@ -38,7 +39,12 @@ module.exports = {
       fontFamily: {
         sans: ['Open Sans', ...defaultTheme.fontFamily.sans],
         mono: ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
-        book: ['Gentium Book Basic', 'serif']
+        book: ['Gentium Book Basic', 'serif'],
+        fondamento: 'Fondamento',
+        gentium: 'Gentium Book Basic',
+        kurale: 'Kurale',
+        mate: 'Mate SC',
+        merienda: 'Merienda'
       }
     }
   },

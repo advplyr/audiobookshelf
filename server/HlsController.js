@@ -30,6 +30,12 @@ class HlsController {
     var streamId = req.params.stream
     var fullFilePath = Path.join(this.MetadataPath, streamId, req.params.file)
 
+    // development test stream - ignore
+    if (streamId === 'test') {
+      Logger.debug('Test Stream Request', streamId, req.headers, fullFilePath)
+      return res.sendFile(fullFilePath)
+    }
+
     var exists = await fs.pathExists(fullFilePath)
     if (!exists) {
       Logger.warn('File path does not exist', fullFilePath)

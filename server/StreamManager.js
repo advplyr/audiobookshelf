@@ -1,4 +1,5 @@
 const Stream = require('./Stream')
+const StreamTest = require('./test/StreamTest')
 const Logger = require('./Logger')
 const fs = require('fs-extra')
 const Path = require('path')
@@ -98,6 +99,23 @@ class StreamManager {
     client.user.stream = null
     client.stream = null
     this.db.updateUserStream(client.user.id, null)
+  }
+
+  async openTestStream(streamPath, audiobookId) {
+    Logger.info('Open Stream Test Request', audiobookId)
+    var audiobook = this.audiobooks.find(ab => ab.id === audiobookId)
+    var stream = new StreamTest(streamPath, audiobook)
+
+    stream.on('closed', () => {
+      console.log('Stream closed')
+    })
+
+    var playlistUri = await stream.generatePlaylist()
+    stream.start()
+
+    Logger.info('Stream Playlist', playlistUri)
+    Logger.info('Test Stream Opened for audiobook', audiobook.title, 'with streamId', stream.id)
+    return playlistUri
   }
 
   streamUpdate(socket, { currentTime, streamId }) {

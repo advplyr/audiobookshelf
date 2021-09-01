@@ -62,6 +62,14 @@
   border-right: 6px solid transparent;
   border-top: 6px solid white;
 }
+.triangle-right {
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-top: 8px solid rgb(34,127,35);
+  border-right: 8px solid rgb(34,127,35);
+}
 
 .icon-text {
   font-size: 1.1rem;
