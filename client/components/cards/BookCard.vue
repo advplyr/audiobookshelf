@@ -8,9 +8,9 @@
       <div class="absolute -bottom-4 left-0 triangle-right" />
     </div>
 
-    <div class="rounded-sm h-full overflow-hidden relative bookCard" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
+    <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
       <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
-        <div class="w-full relative" :style="{ height: height + 'px' }">
+        <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }">
           <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
 
           <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded" :class="overlayWrapperClasslist">
@@ -182,9 +182,3 @@ export default {
   mounted() {}
 }
 </script>
-
-<style>
-.bookCard {
-  box-shadow: 4px 1px 8px #11111166, -4px 1px 8px #11111166, 1px -4px 8px #11111166;
-}
-</style>
