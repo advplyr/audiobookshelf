@@ -90,3 +90,7 @@
 .box-shadow-xl {
   box-shadow: 2px 14px 8px #111111aa;
 }
+
+.box-shadow-book {
+  box-shadow: 4px 1px 8px #11111166, -4px 1px 8px #11111166, 1px -4px 8px #11111166;
+}

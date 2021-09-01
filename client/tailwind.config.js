@@ -39,12 +39,7 @@ module.exports = {
       fontFamily: {
         sans: ['Open Sans', ...defaultTheme.fontFamily.sans],
         mono: ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
-        book: ['Gentium Book Basic', 'serif'],
-        fondamento: 'Fondamento',
-        gentium: 'Gentium Book Basic',
-        kurale: 'Kurale',
-        mate: 'Mate SC',
-        merienda: 'Merienda'
+        book: ['Gentium Book Basic', 'serif']
       }
     }
   },

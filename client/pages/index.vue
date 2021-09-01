@@ -7,9 +7,6 @@
 
 <script>
 export default {
-  data() {
-    return {}
-  },
   computed: {
     streamAudiobook() {
       return this.$store.state.streamAudiobook
