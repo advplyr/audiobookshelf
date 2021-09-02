@@ -111,7 +111,7 @@ export default {
       }
     },
     streamClosed(streamId) {
-      if (this.stream && this.stream.id === streamId) {
+      if (this.stream && (this.stream.id === streamId || this.stream === 'n/a')) {
         this.terminateStream()
         this.$store.commit('clearStreamAudiobook', this.stream.audiobook.id)
         this.stream = null

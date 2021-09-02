@@ -7,12 +7,12 @@
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://hub.docker.com/r/advplyr/audiobookshelf/</Support>
+  <Support>https://forums.unraid.net/topic/112698-support-audiobookshelf/</Support>
   <Project>https://github.com/advplyr/audiobookshelf</Project>
-  <Overview>Audiobook manager and player</Overview>
-  <Category>MediaApp:Books MediaServer:Books Status:Beta<</Category>
+  <Overview>**(Beta)** Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free & open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
+  <Category>MediaApp:Books MediaServer:Books Status:Beta</Category>
   <WebUI>http://[IP]:[PORT:80]</WebUI>
-  <TemplateURL/>
+  <TemplateURL>https://raw.githubusercontent.com/advplyr/docker-templates/master/audiobookshelf.xml</TemplateURL>
   <Icon>https://github.com/advplyr/audiobookshelf/raw/master/client/static/Logo.png</Icon>
   <ExtraParams/>
   <PostArgs/>
@@ -20,7 +20,7 @@
   <DateInstalled>1629238508</DateInstalled>
   <DonateText/>
   <DonateLink/>
-  <Description>Audiobook manager and player</Description>
+  <Description>Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free & open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Description>
   <Networking>
     <Mode>bridge</Mode>
     <Publish>
