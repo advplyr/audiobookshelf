@@ -92,6 +92,7 @@ class StreamManager {
     var client = socket.sheepClient
     if (!client || !client.stream) {
       Logger.error('No stream for client', client.user.id)
+      client.socket.emit('stream_closed', 'n/a')
       return
     }
     // var streamId = client.stream.id

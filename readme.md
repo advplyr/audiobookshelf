@@ -24,7 +24,7 @@ Title can start with the publish year like so:
 * Adding new audiobooks require pressing Scan button again (on settings page)
 * Matching is still manual - should auto-match when exact title and author with cover image is found
 * Support different views to see more details of each audiobook
-* Add ability to add/manage additional accounts with varying access levels
+* Downloading audiobooks + merge files and download
 * Then comes the mobile app..
 
 <img alt="Screenshot2" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_audiobook.png" />
