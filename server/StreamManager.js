@@ -91,7 +91,7 @@ class StreamManager {
     Logger.info('Close Stream Request', socket.id)
     var client = socket.sheepClient
     if (!client || !client.stream) {
-      Logger.error('No stream for client', client.user.id)
+      Logger.error('No stream for client', (client && client.user) ? client.user.username : 'No Client')
       client.socket.emit('stream_closed', 'n/a')
       return
     }
