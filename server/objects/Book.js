@@ -1,6 +1,7 @@
 const Path = require('path')
-const Logger = require('./Logger')
-const parseAuthors = require('./utils/parseAuthors')
+const Logger = require('../Logger')
+const parseAuthors = require('../utils/parseAuthors')
+
 class Book {
   constructor(book = null) {
     this.olid = null

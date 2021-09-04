@@ -124,6 +124,41 @@ export default {
         this.$store.commit('user/setSettings', user.settings)
       }
     },
+    downloadStarted(download) {
+      var filename = download.filename
+      this.$toast.success(`Preparing download for "${filename}"`)
+
+      download.isPending = true
+      this.$store.commit('downloads/addUpdateDownload', download)
+    },
+    downloadReady(download) {
+      var filename = download.filename
+      this.$toast.success(`Download "${filename}" is ready!`)
+
+      download.isPending = false
+      this.$store.commit('downloads/addUpdateDownload', download)
+    },
+    downloadFailed(download) {
+      var filename = download.filename
+      this.$toast.error(`Download "${filename}" is failed`)
+
+      download.isFailed = true
+      download.isReady = false
+      download.isPending = false
+      this.$store.commit('downloads/addUpdateDownload', download)
+    },
+    downloadKilled(download) {
+      var filename = download.filename
+      this.$toast.error(`Download "${filename}" was terminated`)
+
+      this.$store.commit('downloads/removeDownload', download)
+    },
+    downloadExpired(download) {
+      download.isExpired = true
+      download.isReady = false
+      download.isPending = false
+      this.$store.commit('downloads/addUpdateDownload', download)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -164,6 +199,13 @@ export default {
       this.socket.on('scan_start', this.scanStart)
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
+
+      // Download Listeners
+      this.socket.on('download_started', this.downloadStarted)
+      this.socket.on('download_ready', this.downloadReady)
+      this.socket.on('download_failed', this.downloadFailed)
+      this.socket.on('download_killed', this.downloadKilled)
+      this.socket.on('download_expired', this.downloadExpired)
     }
   },
   mounted() {

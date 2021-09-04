@@ -1,6 +1,6 @@
 const Logger = require('./Logger')
 const BookFinder = require('./BookFinder')
-const Audiobook = require('./Audiobook')
+const Audiobook = require('./objects/Audiobook')
 const audioFileScanner = require('./utils/audioFileScanner')
 const { getAllAudiobookFiles } = require('./utils/scandir')
 const { comparePaths, getIno } = require('./utils/index')

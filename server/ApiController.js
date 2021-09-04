@@ -1,15 +1,16 @@
 const express = require('express')
 const Logger = require('./Logger')
-const User = require('./User')
+const User = require('./objects/User')
 const { isObject } = require('./utils/index')
 
 class ApiController {
-  constructor(db, scanner, auth, streamManager, rssFeeds, emitter) {
+  constructor(db, scanner, auth, streamManager, rssFeeds, downloadManager, emitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
     this.streamManager = streamManager
     this.rssFeeds = rssFeeds
+    this.downloadManager = downloadManager
     this.emitter = emitter
 
     this.router = express()
@@ -40,13 +41,13 @@ class ApiController {
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
 
-
-
     this.router.post('/authorize', this.authorize.bind(this))
 
     this.router.get('/genres', this.getGenres.bind(this))
 
     this.router.post('/feed', this.openRssFeed.bind(this))
+
+    this.router.get('/download/:id', this.download.bind(this))
   }
 
   find(req, res) {
@@ -304,6 +305,30 @@ class ApiController {
     this.emitter('user_removed', userJson)
     res.json({
       success: true
+    })
+  }
+
+  async download(req, res) {
+    var downloadId = req.params.id
+    Logger.info('Download Request', downloadId)
+    var download = this.downloadManager.getDownload(downloadId)
+    if (!download) {
+      Logger.error('Download request not found', downloadId)
+      return res.sendStatus(404)
+    }
+
+    var options = {
+      headers: {
+        // 'Content-Disposition': `attachment; filename=${download.filename}`,
+        'Content-Type': download.mimeType
+        // 'Content-Length': download.size
+      }
+    }
+    Logger.info('Starting Download', options, 'SIZE', download.size)
+    res.download(download.fullPath, download.filename, options, (err) => {
+      if (err) {
+        Logger.error('Download Error', err)
+      }
     })
   }
 
