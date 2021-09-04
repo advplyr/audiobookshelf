@@ -57,12 +57,12 @@ class Audiobook {
     return this.book ? this.book.title : 'No Title'
   }
 
-  get cover() {
-    return this.book ? this.book.cover : ''
-  }
-
   get author() {
     return this.book ? this.book.author : 'Unknown'
+  }
+
+  get cover() {
+    return this.book ? this.book.cover : ''
   }
 
   get authorLF() {
@@ -273,19 +273,32 @@ class Audiobook {
     return hasUpdates
   }
 
-  updateAudioTracks(files) {
+  updateAudioTracks(orderedFileData) {
     var index = 1
-    this.audioFiles = files.map((file) => {
-      file.manuallyVerified = true
-      file.invalid = false
-      file.error = null
-      file.index = index++
-      return new AudioFile(file)
+    this.audioFiles = orderedFileData.map((fileData) => {
+      var audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
+      audioFile.manuallyVerified = true
+      audioFile.invalid = false
+      audioFile.error = null
+      if (fileData.exclude !== undefined) {
+        audioFile.exclude = !!fileData.exclude
+      }
+      if (audioFile.exclude) {
+        audioFile.index = -1
+      } else {
+        audioFile.index = index++
+      }
+      return audioFile
     })
+
+    this.audioFiles.sort((a, b) => a.index - b.index)
+
     this.tracks = []
     this.missingParts = []
     this.audioFiles.forEach((file) => {
-      this.addTrack(file)
+      if (!file.exclude) {
+        this.addTrack(file)
+      }
     })
     this.lastUpdate = Date.now()
   }

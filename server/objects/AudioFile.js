@@ -29,6 +29,7 @@ class AudioFile {
 
     this.manuallyVerified = false
     this.invalid = false
+    this.exclude = false
     this.error = null
 
     if (data) {
@@ -49,6 +50,7 @@ class AudioFile {
       trackNumFromFilename: this.trackNumFromFilename,
       manuallyVerified: !!this.manuallyVerified,
       invalid: !!this.invalid,
+      exclude: !!this.exclude,
       error: this.error || null,
       format: this.format,
       duration: this.duration,
@@ -76,6 +78,7 @@ class AudioFile {
     this.addedAt = data.addedAt
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid
+    this.exclude = !!data.exclude
     this.error = data.error || null
 
     this.trackNumFromMeta = data.trackNumFromMeta || null
@@ -112,6 +115,7 @@ class AudioFile {
 
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid
+    this.exclude = !!data.exclude
     this.error = data.error || null
 
     this.format = data.format
@@ -129,6 +133,10 @@ class AudioFile {
     this.tagGenre = data.file_tag_genre || null
     this.tagTitle = data.file_tag_title || null
     this.tagTrack = data.file_tag_track || null
+  }
+
+  clone() {
+    return new AudioFile(this.toJSON())
   }
 
   syncFile(newFile) {

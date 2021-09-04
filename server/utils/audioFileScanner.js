@@ -66,8 +66,15 @@ function getTrackNumberFromMeta(scanData) {
   return !isNaN(scanData.trackNumber) && scanData.trackNumber !== null ? Number(scanData.trackNumber) : null
 }
 
-function getTrackNumberFromFilename(filename) {
+function getTrackNumberFromFilename(title, author, series, publishYear, filename) {
   var partbasename = Path.basename(filename, Path.extname(filename))
+
+  // Remove title, author, series, and publishYear from filename if there
+  if (title) partbasename = partbasename.replace(title, '')
+  if (author) partbasename = partbasename.replace(author, '')
+  if (series) partbasename = partbasename.replace(series, '')
+  if (publishYear) partbasename = partbasename.replace(publishYear)
+
   var numbersinpath = partbasename.match(/\d+/g)
   if (!numbersinpath) return null
 
@@ -92,7 +99,8 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     }
 
     var trackNumFromMeta = getTrackNumberFromMeta(scanData)
-    var trackNumFromFilename = getTrackNumberFromFilename(audioFile.filename)
+    var book = audiobook.book || {}
+    var trackNumFromFilename = getTrackNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
 
     var audioFileObj = {
       ino: audioFile.ino,

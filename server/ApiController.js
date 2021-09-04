@@ -182,9 +182,9 @@ class ApiController {
   async updateAudiobookTracks(req, res) {
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
-    var files = req.body.files
+    var orderedFileData = req.body.orderedFileData
     Logger.info(`Updating audiobook tracks called ${audiobook.id}`)
-    audiobook.updateAudioTracks(files)
+    audiobook.updateAudioTracks(orderedFileData)
     await this.db.updateAudiobook(audiobook)
     this.emitter('audiobook_updated', audiobook.toJSONMinified())
     res.json(audiobook.toJSON())
