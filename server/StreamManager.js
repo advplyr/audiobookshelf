@@ -1,4 +1,4 @@
-const Stream = require('./Stream')
+const Stream = require('./objects/Stream')
 const StreamTest = require('./test/StreamTest')
 const Logger = require('./Logger')
 const fs = require('fs-extra')

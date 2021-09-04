@@ -1,5 +1,5 @@
 <template>
-  <button class="btn outline-none rounded-md shadow-md relative border border-gray-600" :disabled="loading" :type="type" :class="classList" @click="click">
+  <button class="btn outline-none rounded-md shadow-md relative border border-gray-600" :disabled="disabled || loading" :type="type" :class="classList" @click="click">
     <slot />
     <div v-if="loading" class="text-white absolute top-0 left-0 w-full h-full flex items-center justify-center text-opacity-100">
       <!-- <span class="material-icons animate-spin">refresh</span> -->
@@ -23,7 +23,8 @@ export default {
     },
     paddingX: Number,
     small: Boolean,
-    loading: Boolean
+    loading: Boolean,
+    disabled: Boolean
   },
   data() {
     return {}

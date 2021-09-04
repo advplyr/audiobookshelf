@@ -2,9 +2,10 @@ const Ffmpeg = require('fluent-ffmpeg')
 const EventEmitter = require('events')
 const Path = require('path')
 const fs = require('fs-extra')
-const Logger = require('./Logger')
-const { secondsToTimestamp } = require('./utils/fileUtils')
-const hlsPlaylistGenerator = require('./utils/hlsPlaylistGenerator')
+const Logger = require('../Logger')
+const { secondsToTimestamp } = require('../utils/fileUtils')
+const { writeConcatFile } = require('../utils/ffmpegHelpers')
+const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 
 class Stream extends EventEmitter {
   constructor(streamPath, client, audiobook) {
@@ -19,7 +20,7 @@ class Stream extends EventEmitter {
     this.streamPath = Path.join(streamPath, this.id)
     this.concatFilesPath = Path.join(this.streamPath, 'files.txt')
     this.playlistPath = Path.join(this.streamPath, 'output.m3u8')
-    this.fakePlaylistPath = Path.join(this.streamPath, 'fake-output.m3u8')
+    this.finalPlaylistPath = Path.join(this.streamPath, 'final-output.m3u8')
     this.startTime = 0
 
     this.ffmpeg = null
@@ -211,29 +212,12 @@ class Stream extends EventEmitter {
     }, 2000)
   }
 
-  escapeSingleQuotes(path) {
-    // return path.replace(/'/g, '\'\\\'\'')
-    return path.replace(/\\/g, '/').replace(/ /g, '\\ ').replace(/'/g, '\\\'')
-  }
-
   async start() {
     Logger.info(`[STREAM] START STREAM - Num Segments: ${this.numSegments}`)
 
     this.ffmpeg = Ffmpeg()
-    var currTrackEnd = 0
-    var startingTrack = this.tracks.find(t => {
-      currTrackEnd += t.duration
-      return this.startTime < currTrackEnd
-    })
-    var trackStartTime = currTrackEnd - startingTrack.duration
 
-    var tracksToInclude = this.tracks.filter(t => t.index >= startingTrack.index)
-    var trackPaths = tracksToInclude.map(t => {
-      var line = 'file ' + this.escapeSingleQuotes(t.fullPath) + '\n' + `duration ${t.duration}`
-      return line
-    })
-    var inputstr = trackPaths.join('\n\n')
-    await fs.writeFile(this.concatFilesPath, inputstr)
+    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, this.startTime)
 
     this.ffmpeg.addInput(this.concatFilesPath)
     this.ffmpeg.inputFormat('concat')
@@ -266,7 +250,7 @@ class Stream extends EventEmitter {
     ])
     var segmentFilename = Path.join(this.streamPath, this.segmentBasename)
     this.ffmpeg.addOption(`-hls_segment_filename ${segmentFilename}`)
-    this.ffmpeg.output(this.fakePlaylistPath)
+    this.ffmpeg.output(this.finalPlaylistPath)
 
     this.ffmpeg.on('start', (command) => {
       Logger.info('[INFO] FFMPEG transcoding started with command: ' + command)

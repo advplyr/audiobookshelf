@@ -1,8 +1,6 @@
 const Path = require('path')
 const Logger = require('../Logger')
 const prober = require('./prober')
-const AudioFile = require('../AudioFile')
-
 
 function getDefaultAudioStream(audioStreams) {
   if (audioStreams.length === 1) return audioStreams[0]

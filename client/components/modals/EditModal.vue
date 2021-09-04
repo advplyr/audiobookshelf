@@ -6,10 +6,9 @@
       </div>
     </template>
     <div class="absolute -top-10 left-0 w-full flex">
-      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'details' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('details')">Details</div>
-      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'cover' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('cover')">Cover</div>
-      <div class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'match' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('match')">Match</div>
-      <div class="w-28 rounded-t-lg flex items-center justify-center cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === 'tracks' ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab('tracks')">Tracks</div>
+      <template v-for="tab in tabs">
+        <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
+      </template>
     </div>
     <div class="px-4 w-full h-full text-sm py-6 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
       <keep-alive>
@@ -26,7 +25,34 @@ export default {
       selectedTab: 'details',
       processing: false,
       audiobook: null,
-      fetchOnShow: false
+      fetchOnShow: false,
+      tabs: [
+        {
+          id: 'details',
+          title: 'Details',
+          component: 'modals-edit-tabs-details'
+        },
+        {
+          id: 'cover',
+          title: 'Cover',
+          component: 'modals-edit-tabs-cover'
+        },
+        {
+          id: 'match',
+          title: 'Match',
+          component: 'modals-edit-tabs-match'
+        },
+        {
+          id: 'tracks',
+          title: 'Tracks',
+          component: 'modals-edit-tabs-tracks'
+        },
+        {
+          id: 'download',
+          title: 'Download',
+          component: 'modals-edit-tabs-download'
+        }
+      ]
     }
   },
   watch: {
@@ -54,11 +80,8 @@ export default {
       }
     },
     tabName() {
-      if (this.selectedTab === 'details') return 'modals-edit-tabs-details'
-      else if (this.selectedTab === 'cover') return 'modals-edit-tabs-cover'
-      else if (this.selectedTab === 'match') return 'modals-edit-tabs-match'
-      else if (this.selectedTab === 'tracks') return 'modals-edit-tabs-tracks'
-      return ''
+      var _tab = this.tabs.find((t) => t.id === this.selectedTab)
+      return _tab ? _tab.component : ''
     },
     selectedAudiobook() {
       return this.$store.state.selectedAudiobook || {}

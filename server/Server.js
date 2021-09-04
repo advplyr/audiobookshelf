@@ -12,6 +12,7 @@ const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
+const DownloadManager = require('./DownloadManager')
 const Logger = require('./Logger')
 
 class Server {
@@ -32,9 +33,9 @@ class Server {
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.emitter.bind(this))
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
-    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.emitter.bind(this))
+    this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.emitter.bind(this))
+    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.MetadataPath)
-
 
     this.server = null
     this.io = null
@@ -90,6 +91,7 @@ class Server {
   async init() {
     Logger.info('[Server] Init')
     await this.streamManager.removeOrphanStreams()
+    await this.downloadManager.removeOrphanDownloads()
     await this.db.init()
     this.auth.init()
 
@@ -186,6 +188,7 @@ class Server {
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
+      socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
       })

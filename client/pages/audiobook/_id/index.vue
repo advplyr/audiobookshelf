@@ -23,9 +23,9 @@
             {{ durationPretty }}<span class="px-4">{{ sizePretty }}</span>
           </p>
           <div class="flex items-center pt-4">
-            <ui-btn color="success" :padding-x="4" class="flex items-center" @click="startStream">
-              <span class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              Play
+            <ui-btn :disabled="streaming" color="success" :padding-x="4" class="flex items-center" @click="startStream">
+              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
+              {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
             <ui-btn :padding-x="4" class="flex items-center ml-4" @click="editClick"><span class="material-icons text-white pr-2" style="font-size: 18px">edit</span>Edit</ui-btn>
 

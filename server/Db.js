@@ -1,10 +1,9 @@
-const fs = require('fs-extra')
 const Path = require('path')
 const njodb = require("njodb")
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
-const Audiobook = require('./Audiobook')
-const User = require('./User')
+const Audiobook = require('./objects/Audiobook')
+const User = require('./objects/User')
 
 class Db {
   constructor(CONFIG_PATH) {

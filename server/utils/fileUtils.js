@@ -17,6 +17,13 @@ async function getFileStat(path) {
 }
 module.exports.getFileStat = getFileStat
 
+async function getFileSize(path) {
+  var stat = await getFileStat(path)
+  if (!stat) return 0
+  return stat.size || 0
+}
+module.exports.getFileSize = getFileSize
+
 function bytesPretty(bytes, decimals = 0) {
   if (bytes === 0) {
     return '0 Bytes'
