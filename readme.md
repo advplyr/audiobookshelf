@@ -2,7 +2,9 @@
 
 AudioBookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
 
-**Currently in Beta** - **Free & open source Android/iOS app is in development**
+Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
+
+**Free & open source Android/iOS app is in development**
 
 <img alt="Screenshot1" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_streaming.png" />
 
@@ -19,13 +21,13 @@ Title can start with the publish year like so:
 ```
 
 
-#### There is still a lot to do:
+#### Features coming soon:
 
-* Adding new audiobooks require pressing Scan button again (on settings page)
-* Matching is still manual - should auto-match when exact title and author with cover image is found
+* Auto add and update audiobooks (currently you need to press scan)
+* User permissions & editing users
 * Support different views to see more details of each audiobook
-* Downloading audiobooks + merge files and download
-* Then comes the mobile app..
+* Option to download all files in a zip file
+* iOS App (Android is in beta [here](https://play.google.com/store/apps/details?id=com.audiobookshelf.app))
 
 <img alt="Screenshot2" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_audiobook.png" />
 
