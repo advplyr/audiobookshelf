@@ -25,7 +25,8 @@ class FolderWatcher extends EventEmitter {
         .on('add', (path) => {
           this.onNewFile(path)
         }).on('change', (path) => {
-          this.onFileUpdated(path)
+          // This is triggered from metadata changes, not what we want
+          // this.onFileUpdated(path)
         }).on('unlink', path => {
           this.onFileRemoved(path)
         }).on('rename', (path, pathNext) => {

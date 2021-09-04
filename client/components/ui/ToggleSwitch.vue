@@ -9,7 +9,15 @@
 <script>
 export default {
   props: {
-    value: Boolean
+    value: Boolean,
+    onColor: {
+      type: String,
+      default: 'success'
+    },
+    offColor: {
+      type: String,
+      default: 'primary'
+    }
   },
   computed: {
     toggleValue: {
@@ -21,12 +29,11 @@ export default {
       }
     },
     toggleColor() {
-      return this.toggleValue ? 'bg-success' : 'bg-primary'
+      return this.toggleValue ? `bg-${this.onColor}` : `bg-${this.offColor}`
     }
   },
   methods: {
     clickToggle() {
-      console.log('click toggle', this.toggleValue)
       this.toggleValue = !this.toggleValue
     }
   }

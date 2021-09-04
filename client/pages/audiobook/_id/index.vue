@@ -209,7 +209,7 @@ export default {
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },
-    isStreaming() {
+    streaming() {
       return this.streamAudiobook && this.streamAudiobook.id === this.audiobookId
     }
   },
