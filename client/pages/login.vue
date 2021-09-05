@@ -27,7 +27,7 @@ export default {
     return {
       error: null,
       processing: false,
-      username: 'root',
+      username: '',
       password: null
     }
   },

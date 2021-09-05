@@ -27,6 +27,7 @@
             </td>
             <td>
               <div class="w-full flex justify-center">
+                <span class="material-icons hover:text-gray-400 cursor-pointer text-base pr-2" @click="editUser(user)">edit</span>
                 <span v-show="user.type !== 'root'" class="material-icons text-base hover:text-error cursor-pointer" @click="deleteUserClick(user)">delete</span>
               </div>
             </td>
@@ -76,7 +77,7 @@
     </div>
     <div class="fixed bottom-0 left-0 w-10 h-10" @dblclick="setDeveloperMode"></div>
 
-    <modals-account-modal v-model="showAccountModal" />
+    <modals-account-modal v-model="showAccountModal" :account="selectedAccount" />
   </div>
 </template>
 
@@ -91,6 +92,7 @@ export default {
     return {
       isResettingAudiobooks: false,
       users: [],
+      selectedAccount: null,
       showAccountModal: false,
       isDeletingUser: false,
       newServerSettings: {}
@@ -145,10 +147,6 @@ export default {
     scanCovers() {
       this.$root.socket.emit('scan_covers')
     },
-    clickAddUser() {
-      this.showAccountModal = true
-      // this.$toast.info('Under Construction: User management coming soon.')
-    },
     loadUsers() {
       this.$axios
         .$get('/api/users')
@@ -175,6 +173,14 @@ export default {
           })
       }
     },
+    clickAddUser() {
+      this.selectedAccount = null
+      this.showAccountModal = true
+    },
+    editUser(user) {
+      this.selectedAccount = user
+      this.showAccountModal = true
+    },
     deleteUserClick(user) {
       if (this.isDeletingUser) return
       if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
@@ -198,7 +204,7 @@ export default {
     },
     addUpdateUser(user) {
       if (!this.users) return
-      var index = this.users.find((u) => u.id === user.id)
+      var index = this.users.findIndex((u) => u.id === user.id)
       if (index >= 0) {
         this.users.splice(index, 1, user)
       } else {

@@ -4,7 +4,7 @@ const User = require('./objects/User')
 const { isObject } = require('./utils/index')
 
 class ApiController {
-  constructor(db, scanner, auth, streamManager, rssFeeds, downloadManager, emitter) {
+  constructor(db, scanner, auth, streamManager, rssFeeds, downloadManager, emitter, clientEmitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
@@ -12,6 +12,7 @@ class ApiController {
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
     this.emitter = emitter
+    this.clientEmitter = clientEmitter
 
     this.router = express()
     this.init()
@@ -34,12 +35,13 @@ class ApiController {
     this.router.get('/metadata/:id/:trackIndex', this.getMetadata.bind(this))
     this.router.patch('/match/:id', this.match.bind(this))
 
-    this.router.get('/users', this.getUsers.bind(this))
-    this.router.post('/user', this.createUser.bind(this))
-    this.router.delete('/user/:id', this.deleteUser.bind(this))
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
+    this.router.get('/users', this.getUsers.bind(this))
+    this.router.post('/user', this.createUser.bind(this))
+    this.router.patch('/user/:id', this.updateUser.bind(this))
+    this.router.delete('/user/:id', this.deleteUser.bind(this))
 
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
 
@@ -273,7 +275,7 @@ class ApiController {
     var newUser = new User(account)
     var success = await this.db.insertUser(newUser)
     if (success) {
-      this.emitter('user_added', newUser)
+      this.clientEmitter(req.user.id, 'user_added', newUser)
       res.json({
         user: newUser.toJSONForBrowser()
       })
@@ -282,6 +284,36 @@ class ApiController {
         error: 'Failed to save new user'
       })
     }
+  }
+
+  async updateUser(req, res) {
+    if (req.user.type !== 'root') {
+      Logger.error('User other than root attempting to update user', req.user)
+      return res.sendStatus(403)
+    }
+
+    var user = this.db.users.find(u => u.id === req.params.id)
+    if (!user) {
+      return res.sendStatus(404)
+    }
+
+    var account = req.body
+    // Updating password
+    if (account.password) {
+      account.pash = await this.auth.hashPass(account.password)
+      delete account.password
+    }
+
+    var hasUpdated = user.update(account)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', user)
+    }
+
+    this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+    res.json({
+      success: true,
+      user: user.toJSONForBrowser()
+    })
   }
 
   async deleteUser(req, res) {
@@ -304,7 +336,7 @@ class ApiController {
 
     var userJson = user.toJSONForBrowser()
     await this.db.removeEntity('user', user.id)
-    this.emitter('user_removed', userJson)
+    this.clientEmitter(req.user.id, 'user_removed', userJson)
     res.json({
       success: true
     })

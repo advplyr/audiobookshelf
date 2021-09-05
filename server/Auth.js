@@ -68,7 +68,7 @@ class Auth {
   }
 
   generateAccessToken(payload) {
-    return jwt.sign(payload, process.env.TOKEN_SECRET, { expiresIn: '1800s' });
+    return jwt.sign(payload, process.env.TOKEN_SECRET);
   }
 
   verifyToken(token) {
