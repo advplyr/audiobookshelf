@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full p-8">
-    <div class="w-full max-w-2xl mx-auto">
+    <div class="w-full max-w-xl mx-auto">
       <h1 class="text-2xl">Account</h1>
 
       <div class="my-4">
@@ -26,6 +26,10 @@
             <ui-btn type="submit" :loading="changingPassword" color="success">Submit</ui-btn>
           </div>
         </form>
+      </div>
+
+      <div class="py-4 mt-8 flex">
+        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-icons mr-4 icon-text">logout</span>Logout</ui-btn>
       </div>
     </div>
   </div>
@@ -56,6 +60,15 @@ export default {
     }
   },
   methods: {
+    logout() {
+      this.$axios.$post('/logout').catch((error) => {
+        console.error(error)
+      })
+      if (localStorage.getItem('token')) {
+        localStorage.removeItem('token')
+      }
+      this.$router.push('/login')
+    },
     resetForm() {
       this.password = null
       this.newPassword = null

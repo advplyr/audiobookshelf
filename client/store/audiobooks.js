@@ -1,14 +1,17 @@
 import { sort } from '@/assets/fastSort'
-import { cleanFilterString } from '@/plugins/init.client'
+import { decode } from '@/plugins/init.client'
 
-const STANDARD_GENRES = ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
+// const STANDARD_GENRES = ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
+
+const STANDARD_GENRES = ['Adventure', 'Autobiography', 'Biography', 'Childrens', 'Comedy', 'Crime', 'Dystopian', 'Fantasy', 'Fiction', 'Health', 'History', 'Horror', 'Mystery', 'New Adult', 'Nonfiction', 'Philosophy', 'Politics', 'Religion', 'Romance', 'Sci-Fi', 'Self-Help', 'Short Story', 'Technology', 'Thriller', 'True Crime', 'Western', 'Young Adult']
 
 export const state = () => ({
   audiobooks: [],
   listeners: [],
   genres: [...STANDARD_GENRES],
   tags: [],
-  series: []
+  series: [],
+  keywordFilter: null
 })
 
 export const getters = {
@@ -20,11 +23,18 @@ export const getters = {
     var searchGroups = ['genres', 'tags', 'series', 'authors']
     var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
-      var filter = filterBy.replace(`${group}.`, '')
+      var filter = decode(filterBy.replace(`${group}.`, ''))
       if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
       else if (group === 'series') filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
       else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.author === filter)
+    }
+    if (state.keywordFilter) {
+      const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrarator']
+      return filtered.filter(ab => {
+        if (!ab.book) return false
+        return !!keywordFilterKeys.find(key => (ab.book[key] && ab.book[key].includes(state.keywordFilter)))
+      })
     }
     return filtered
   },
@@ -40,7 +50,12 @@ export const getters = {
   },
   getUniqueAuthors: (state) => {
     var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.author)).map(ab => ab.book.author)
-    return [...new Set(_authors)]
+    return [...new Set(_authors)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+  },
+  getGenresUsed: (state) => {
+    var _genres = []
+    state.audiobooks.filter(ab => !!(ab.book && ab.book.genres)).forEach(ab => _genres = _genres.concat(ab.book.genres))
+    return [...new Set(_genres)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   }
 }
 
@@ -64,6 +79,9 @@ export const actions = {
 }
 
 export const mutations = {
+  setKeywordFilter(state, val) {
+    state.keywordFilter = val
+  },
   set(state, audiobooks) {
     // GENRES
     var genres = [...state.genres]
