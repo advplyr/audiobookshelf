@@ -80,7 +80,7 @@ class Scanner {
     }
 
     const scanStart = Date.now()
-    var audiobookDataFound = await getAllAudiobookFiles(this.AudiobookPath)
+    var audiobookDataFound = await getAllAudiobookFiles(this.AudiobookPath, this.db.serverSettings)
 
     // Set ino for each ab data as a string
     audiobookDataFound = await this.setAudiobookDataInos(audiobookDataFound)

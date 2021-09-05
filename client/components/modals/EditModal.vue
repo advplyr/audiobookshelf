@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" :width="800" :height="500" :processing="processing">
+  <modals-modal v-model="show" :width="800" :height="height" :processing="processing" :content-margin-top="75">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
@@ -78,6 +78,10 @@ export default {
       set(val) {
         this.$store.commit('setShowEditModal', val)
       }
+    },
+    height() {
+      var maxHeightAllowed = window.innerHeight - 150
+      return Math.min(maxHeightAllowed, 650)
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)

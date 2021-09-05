@@ -41,6 +41,8 @@ class ApiController {
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
 
+    this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
+
     this.router.post('/authorize', this.authorize.bind(this))
 
     this.router.get('/genres', this.getGenres.bind(this))
@@ -305,6 +307,21 @@ class ApiController {
     this.emitter('user_removed', userJson)
     res.json({
       success: true
+    })
+  }
+
+  async updateServerSettings(req, res) {
+    var settingsUpdate = req.body
+    if (!settingsUpdate || !isObject(settingsUpdate)) {
+      return res.sendStatus(500)
+    }
+    var madeUpdates = this.db.serverSettings.update(settingsUpdate)
+    if (madeUpdates) {
+      await this.db.updateEntity('settings', this.db.serverSettings)
+    }
+    return res.json({
+      success: true,
+      serverSettings: this.db.serverSettings
     })
   }
 

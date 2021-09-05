@@ -6,9 +6,11 @@ class Book {
   constructor(book = null) {
     this.olid = null
     this.title = null
+    this.subtitle = null
     this.author = null
     this.authorFL = null
     this.authorLF = null
+    this.narrarator = null
     this.series = null
     this.volumeNumber = null
     this.publishYear = null
@@ -23,15 +25,19 @@ class Book {
   }
 
   get _title() { return this.title || '' }
+  get _subtitle() { return this.subtitle || '' }
+  get _narrarator() { return this.narrarator || '' }
   get _author() { return this.author || '' }
   get _series() { return this.series || '' }
 
   construct(book) {
     this.olid = book.olid
     this.title = book.title
+    this.subtitle = book.subtitle || null
     this.author = book.author
     this.authorFL = book.authorFL || null
     this.authorLF = book.authorLF || null
+    this.narrarator = book.narrarator || null
     this.series = book.series
     this.volumeNumber = book.volumeNumber || null
     this.publishYear = book.publishYear
@@ -45,9 +51,11 @@ class Book {
     return {
       olid: this.olid,
       title: this.title,
+      subtitle: this.subtitle,
       author: this.author,
       authorFL: this.authorFL,
       authorLF: this.authorLF,
+      narrarator: this.narrarator,
       series: this.series,
       volumeNumber: this.volumeNumber,
       publishYear: this.publishYear,
@@ -80,7 +88,9 @@ class Book {
   setData(data) {
     this.olid = data.olid || null
     this.title = data.title || null
+    this.subtitle = data.subtitle || null
     this.author = data.author || null
+    this.narrarator = data.narrarator || null
     this.series = data.series || null
     this.volumeNumber = data.volumeNumber || null
     this.publishYear = data.publishYear || null
@@ -151,7 +161,7 @@ class Book {
   }
 
   isSearchMatch(search) {
-    return this._title.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
+    return this._title.toLowerCase().includes(search) || this._subtitle.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
   }
 }
 module.exports = Book
