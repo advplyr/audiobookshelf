@@ -121,7 +121,6 @@ export default {
       return _sel.text
     },
     genres() {
-      // return this.$store.state.audiobooks.genres
       return this.$store.getters['audiobooks/getGenresUsed']
     },
     tags() {

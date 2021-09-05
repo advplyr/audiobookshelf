@@ -75,7 +75,6 @@ export default {
       }
 
       return this.items.filter((i) => {
-        // var normie = this.$snakeToNormal(i)
         var iValue = String(i).toLowerCase()
         return iValue.includes(this.currentSearch.toLowerCase())
       })
@@ -170,7 +169,6 @@ export default {
       })
     },
     insertNewItem(item) {
-      // var kebabItem = this.$normalToSnake(item)
       this.selected.push(item)
       this.$emit('input', this.selected)
       this.textInput = null
@@ -183,7 +181,6 @@ export default {
       if (!this.textInput) return
 
       var cleaned = this.textInput.toLowerCase().trim()
-      // var cleanedKebab = this.$normalToSnake(cleaned)
       var matchesItem = this.items.find((i) => {
         return i === cleaned
       })
