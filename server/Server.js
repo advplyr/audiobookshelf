@@ -34,7 +34,7 @@ class Server {
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this))
+    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.MetadataPath)
 
     this.server = null
@@ -54,9 +54,25 @@ class Server {
     return this.db.serverSettings
   }
 
+  getClientsForUser(userId) {
+    return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
+  }
+
   emitter(ev, data) {
     // Logger.debug('EMITTER', ev)
     this.io.emit(ev, data)
+  }
+
+  clientEmitter(userId, ev, data) {
+    var clients = this.getClientsForUser(userId)
+    if (!clients.length) {
+      return Logger.error(`[Server] clientEmitter - no clients found for user ${userId}`)
+    }
+    clients.forEach((client) => {
+      if (client.socket) {
+        client.socket.emit(ev, data)
+      }
+    })
   }
 
   async fileAddedUpdated({ path, fullPath }) { }

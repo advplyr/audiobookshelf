@@ -68,6 +68,22 @@ class User {
     this.settings = user.settings || this.getDefaultUserSettings()
   }
 
+  update(payload) {
+    var hasUpdates = false
+    const keysToCheck = ['pash', 'type', 'username', 'isActive']
+    keysToCheck.forEach((key) => {
+      if (payload[key] !== undefined) {
+        if (key === 'isActive' || payload[key]) { // pash, type, username must evaluate to true (cannot be null or empty)
+          if (payload[key] !== this[key]) {
+            hasUpdates = true
+            this[key] = payload[key]
+          }
+        }
+      }
+    })
+    return hasUpdates
+  }
+
   updateAudiobookProgress(stream) {
     if (!this.audiobooks) this.audiobooks = {}
     if (!this.audiobooks[stream.audiobookId]) {

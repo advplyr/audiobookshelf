@@ -94,7 +94,7 @@ class Db {
   }
 
   insertSettings(settings) {
-    return this.settingsDb.insert(settings).then((results) => {
+    return this.settingsDb.insert([settings]).then((results) => {
       Logger.debug(`[DB] Inserted ${results.inserted} settings`)
       this.settings = this.settings.concat(settings)
     }).catch((error) => {

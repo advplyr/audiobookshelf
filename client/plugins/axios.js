@@ -1,6 +1,5 @@
 export default function ({ $axios, store }) {
   $axios.onRequest(config => {
-    // console.log('Making request to ' + config.url)
     if (config.url.startsWith('http:') || config.url.startsWith('https:')) {
       return
     }
@@ -11,6 +10,7 @@ export default function ({ $axios, store }) {
 
     if (process.env.NODE_ENV === 'development') {
       config.url = `/dev${config.url}`
+      console.log('Making request to ' + config.url)
     }
   })
 
