@@ -122,7 +122,7 @@ class StreamManager {
   streamUpdate(socket, { currentTime, streamId }) {
     var client = socket.sheepClient
     if (!client || !client.stream) {
-      Logger.error('No stream for client', client.user.id)
+      Logger.error('No stream for client', (client && client.user) ? client.user.id : 'No Client')
       return
     }
     if (client.stream.id !== streamId) {
