@@ -30,7 +30,9 @@ function getFileType(ext) {
   return 'unknown'
 }
 
-async function getAllAudiobookFiles(abRootPath) {
+async function getAllAudiobookFiles(abRootPath, serverSettings = {}) {
+  var parseSubtitle = !!serverSettings.scannerParseSubtitle
+
   var paths = await getPaths(abRootPath)
   var audiobooks = {}
 
@@ -53,6 +55,7 @@ async function getAllAudiobookFiles(abRootPath) {
     var title = splitDir.shift()
 
     var publishYear = null
+    var subtitle = null
 
     // If Title is of format 1999 - Title, then use 1999 as publish year
     var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
@@ -63,10 +66,17 @@ async function getAllAudiobookFiles(abRootPath) {
       }
     }
 
+    if (parseSubtitle && title.includes(' - ')) {
+      var splitOnSubtitle = title.split(' - ')
+      title = splitOnSubtitle.shift()
+      subtitle = splitOnSubtitle.join(' - ')
+    }
+
     if (!audiobooks[path]) {
       audiobooks[path] = {
-        author: author,
-        title: title,
+        author,
+        title,
+        subtitle,
         series: cleanString(series),
         publishYear: publishYear,
         path: path,

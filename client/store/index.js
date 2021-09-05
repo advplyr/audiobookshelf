@@ -1,6 +1,7 @@
 import Vue from 'vue'
 
 export const state = () => ({
+  serverSettings: null,
   streamAudiobook: null,
   showEditModal: false,
   selectedAudiobook: null,
@@ -21,9 +22,29 @@ export const getters = {
   getNumAudiobooksSelected: state => state.selectedAudiobooks.length
 }
 
-export const actions = {}
+export const actions = {
+  updateServerSettings({ commit }, payload) {
+    var updatePayload = {
+      ...payload
+    }
+    return this.$axios.$patch('/api/serverSettings', updatePayload).then((result) => {
+      if (result.success) {
+        commit('setServerSettings', result.settings)
+        return true
+      } else {
+        return false
+      }
+    }).catch((error) => {
+      console.error('Failed to update server settings', error)
+      return false
+    })
+  }
+}
 
 export const mutations = {
+  setServerSettings(state, settings) {
+    state.serverSettings = settings
+  },
   setStreamAudiobook(state, audiobook) {
     state.playOnLoad = true
     state.streamAudiobook = audiobook

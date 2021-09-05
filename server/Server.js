@@ -50,8 +50,8 @@ class Server {
   get audiobooks() {
     return this.db.audiobooks
   }
-  get settings() {
-    return this.db.settings
+  get serverSettings() {
+    return this.db.serverSettings
   }
 
   emitter(ev, data) {
@@ -239,7 +239,7 @@ class Server {
     }
 
     const initialPayload = {
-      settings: this.settings,
+      serverSettings: this.serverSettings.toJSON(),
       isScanning: this.isScanning,
       isInitialized: this.isInitialized,
       audiobookPath: this.AudiobookPath,

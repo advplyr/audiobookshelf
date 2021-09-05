@@ -1,11 +1,10 @@
 export default function ({ $axios, store }) {
   $axios.onRequest(config => {
-    console.log('Making request to ' + config.url)
+    // console.log('Making request to ' + config.url)
     if (config.url.startsWith('http:') || config.url.startsWith('https:')) {
       return
     }
     var bearerToken = store.state.user.user ? store.state.user.user.token : null
-    // console.log('Bearer token', bearerToken)
     if (bearerToken) {
       config.headers.common['Authorization'] = `Bearer ${bearerToken}`
     }

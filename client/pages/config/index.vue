@@ -35,8 +35,16 @@
       </div>
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
       <div class="py-4 mb-8">
+        <p class="text-2xl">Scanner</p>
         <div class="flex items-start py-2">
-          <p class="text-2xl">Scanner</p>
+          <div class="py-2">
+            <div class="flex items-center">
+              <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" @input="updateScannerParseSubtitle" />
+              <ui-tooltip :text="parseSubtitleTooltip">
+                <p class="pl-4 text-lg">Parse Subtitles <span class="material-icons icon-text">info_outlined</span></p>
+              </ui-tooltip>
+            </div>
+          </div>
           <div class="flex-grow" />
           <div class="w-40 flex flex-col">
             <ui-btn color="success" class="mb-4" :loading="isScanning" :disabled="isScanningCovers" @click="scan">Scan</ui-btn>
@@ -84,10 +92,24 @@ export default {
       isResettingAudiobooks: false,
       users: [],
       showAccountModal: false,
-      isDeletingUser: false
+      isDeletingUser: false,
+      newServerSettings: {}
+    }
+  },
+  watch: {
+    serverSettings(newVal, oldVal) {
+      if (newVal && !oldVal) {
+        this.newServerSettings = { ...this.serverSettings }
+      }
     }
   },
   computed: {
+    parseSubtitleTooltip() {
+      return 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"'
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
+    },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },
@@ -99,6 +121,19 @@ export default {
     }
   },
   methods: {
+    updateScannerParseSubtitle(val) {
+      var payload = {
+        scannerParseSubtitle: val
+      }
+      this.$store
+        .dispatch('updateServerSettings', payload)
+        .then((success) => {
+          console.log('Updated Server Settings', success)
+        })
+        .catch((error) => {
+          console.error('Failed to update server settings', error)
+        })
+    },
     setDeveloperMode() {
       var value = !this.$store.state.developerMode
       this.$store.commit('setDeveloperMode', value)
@@ -186,6 +221,8 @@ export default {
       this.$root.socket.on('user_added', this.addUpdateUser)
       this.$root.socket.on('user_updated', this.addUpdateUser)
       this.$root.socket.on('user_removed', this.userRemoved)
+
+      this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
     }
   },
   mounted() {

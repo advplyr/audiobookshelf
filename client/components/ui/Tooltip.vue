@@ -39,7 +39,7 @@ export default {
       tooltip.style.top = top + 'px'
       tooltip.style.left = left + 'px'
       tooltip.style.zIndex = 100
-      tooltip.innerText = this.text
+      tooltip.innerHTML = this.text
       this.tooltip = tooltip
     },
     showTooltip() {

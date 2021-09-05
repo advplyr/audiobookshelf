@@ -9,6 +9,8 @@
           <div class="flex-grow pl-4">
             <ui-text-input-with-label v-model="audiobook.book.title" label="Title" />
 
+            <ui-text-input-with-label v-model="audiobook.book.subtitle" label="Subtitle" class="mt-2" />
+
             <div class="flex mt-2 -mx-1">
               <div class="w-3/4 px-1">
                 <ui-text-input-with-label v-model="audiobook.book.author" label="Author" />
@@ -35,6 +37,12 @@
               </div>
               <div class="flex-grow px-1">
                 <ui-multi-select v-model="audiobook.tags" label="Tags" :items="tags" />
+              </div>
+            </div>
+
+            <div class="flex mt-2 -mx-1">
+              <div class="w-1/2 px-1">
+                <ui-text-input-with-label v-model="audiobook.book.narrarator" label="Narrarator" />
               </div>
             </div>
           </div>

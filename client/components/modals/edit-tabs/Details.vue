@@ -12,6 +12,8 @@
     <form @submit.prevent="submitForm">
       <ui-text-input-with-label v-model="details.title" label="Title" />
 
+      <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
+
       <div class="flex mt-2 -mx-1">
         <div class="w-3/4 px-1">
           <ui-text-input-with-label v-model="details.author" label="Author" />
@@ -41,7 +43,13 @@
         </div>
       </div>
 
-      <div class="flex py-4">
+      <div class="flex mt-2 -mx-1">
+        <div class="w-1/2 px-1">
+          <ui-text-input-with-label v-model="details.narrarator" label="Narrarator" />
+        </div>
+      </div>
+
+      <div class="flex py-4 mt-2">
         <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
         <div class="flex-grow" />
         <ui-btn type="submit">Submit</ui-btn>
@@ -63,8 +71,10 @@ export default {
     return {
       details: {
         title: null,
+        subtitle: null,
         description: null,
         author: null,
+        narrarator: null,
         series: null,
         volumeNumber: null,
         publishYear: null,
@@ -136,8 +146,10 @@ export default {
     },
     init() {
       this.details.title = this.book.title
+      this.details.subtitle = this.book.subtitle
       this.details.description = this.book.description
       this.details.author = this.book.author
+      this.details.narrarator = this.book.narrarator
       this.details.genres = this.book.genres || []
       this.details.series = this.book.series
       this.details.volumeNumber = this.book.volumeNumber

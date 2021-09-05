@@ -6,7 +6,7 @@
       <span class="material-icons text-4xl">close</span>
     </div>
     <slot name="outer" />
-    <div ref="content" style="min-width: 400px; min-height: 200px" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }" v-click-outside="clickBg">
+    <div ref="content" style="min-width: 400px; min-height: 200px" class="relative text-white" :style="{ height: modalHeight, width: modalWidth, marginTop: contentMarginTop + 'px' }" v-click-outside="clickBg">
       <slot />
       <div v-if="processing" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-black bg-opacity-60 rounded-lg flex items-center justify-center">
         <ui-loading-indicator />
@@ -31,6 +31,10 @@ export default {
     height: {
       type: [String, Number],
       default: 'unset'
+    },
+    contentMarginTop: {
+      type: Number,
+      default: 50
     }
   },
   data() {

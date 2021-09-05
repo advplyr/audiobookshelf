@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
 const Audiobook = require('./objects/Audiobook')
 const User = require('./objects/User')
+const ServerSettings = require('./objects/ServerSettings')
 
 class Db {
   constructor(CONFIG_PATH) {
@@ -19,6 +20,8 @@ class Db {
     this.users = []
     this.audiobooks = []
     this.settings = []
+
+    this.serverSettings = null
   }
 
   getEntityDb(entityName) {
@@ -37,15 +40,6 @@ class Db {
     if (entityName === 'user') return 'users'
     else if (entityName === 'audiobook') return 'audiobooks'
     return 'settings'
-  }
-
-  getDefaultSettings() {
-    return {
-      config: {
-        version: 1,
-        cardSize: 'md'
-      }
-    }
   }
 
   getDefaultUser(token) {
@@ -71,6 +65,11 @@ class Db {
       Logger.debug('Generated default token', token)
       await this.insertUser(this.getDefaultUser(token))
     }
+
+    if (!this.serverSettings) {
+      this.serverSettings = new ServerSettings()
+      await this.insertSettings(this.serverSettings)
+    }
   }
 
   async load() {
@@ -83,9 +82,24 @@ class Db {
       Logger.info(`Users Loaded ${this.users.length}`)
     })
     var p3 = this.settingsDb.select(() => true).then((results) => {
-      this.settings = results
+      if (results.data && results.data.length) {
+        this.settings = results.data
+        var serverSettings = this.settings.find(s => s.id === 'server-settings')
+        if (serverSettings) {
+          this.serverSettings = new ServerSettings(serverSettings)
+        }
+      }
     })
     await Promise.all([p1, p2, p3])
+  }
+
+  insertSettings(settings) {
+    return this.settingsDb.insert(settings).then((results) => {
+      Logger.debug(`[DB] Inserted ${results.inserted} settings`)
+      this.settings = this.settings.concat(settings)
+    }).catch((error) => {
+      Logger.error(`[DB] Insert settings Failed ${error}`)
+    })
   }
 
   insertAudiobook(audiobook) {

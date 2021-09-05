@@ -56,6 +56,9 @@ export default {
         this.$store.commit('user/setUser', payload.user)
         this.$store.commit('user/setSettings', payload.user.settings)
       }
+      if (payload.serverSettings) {
+        this.$store.commit('setServerSettings', payload.serverSettings)
+      }
     },
     streamOpen(stream) {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamOpen(stream)
