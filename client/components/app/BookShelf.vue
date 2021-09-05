@@ -24,6 +24,10 @@
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
         </div>
       </template>
+      <div v-show="!groupedBooks.length" class="w-full py-16 text-center text-xl">
+        <div class="py-4">No Audiobooks</div>
+        <ui-btn v-if="filterBy !== 'all' || keywordFilter" @click="clearFilter">Clear Filter</ui-btn>
+      </div>
     </div>
   </div>
 </template>
@@ -38,10 +42,19 @@ export default {
       currFilterOrderKey: null,
       availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
       selectedSizeIndex: 3,
-      rowPaddingX: 40
+      rowPaddingX: 40,
+      keywordFilterTimeout: null
+    }
+  },
+  watch: {
+    keywordFilter() {
+      this.checkKeywordFilter()
     }
   },
   computed: {
+    keywordFilter() {
+      return this.$store.state.audiobooks.keywordFilter
+    },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
@@ -65,9 +78,28 @@ export default {
     },
     isSelectionMode() {
       return this.$store.getters['getNumAudiobooksSelected']
+    },
+    filterBy() {
+      return this.$store.getters['user/getUserSetting']('filterBy')
     }
   },
   methods: {
+    clearFilter() {
+      this.$store.commit('audiobooks/setKeywordFilter', null)
+      if (this.filterBy !== 'all') {
+        this.$store.dispatch('user/updateUserSettings', {
+          filterBy: 'all'
+        })
+      } else {
+        this.setGroupedBooks()
+      }
+    },
+    checkKeywordFilter() {
+      clearTimeout(this.keywordFilterTimeout)
+      this.keywordFilterTimeout = setTimeout(() => {
+        this.setGroupedBooks()
+      }, 500)
+    },
     increaseSize() {
       this.selectedSizeIndex = Math.min(this.availableSizes.length - 1, this.selectedSizeIndex + 1)
       this.resize()

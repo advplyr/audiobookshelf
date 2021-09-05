@@ -15,7 +15,14 @@
           <span class="material-icons">settings</span>
         </nuxt-link>
 
-        <ui-menu :label="username" :items="menuItems" @action="menuAction" class="ml-5" />
+        <nuxt-link to="/account" class="relative w-32 bg-fg border border-gray-500 rounded shadow-sm ml-5 pl-3 pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer hover:bg-bg hover:bg-opacity-40" aria-haspopup="listbox" aria-expanded="true">
+          <span class="flex items-center">
+            <span class="block truncate">{{ username }}</span>
+          </span>
+          <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+            <span class="material-icons text-gray-100">person</span>
+          </span>
+        </nuxt-link>
       </div>
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
@@ -35,17 +42,6 @@
 export default {
   data() {
     return {
-      menuItems: [
-        {
-          value: 'account',
-          text: 'Account',
-          to: '/account'
-        },
-        {
-          value: 'logout',
-          text: 'Logout'
-        }
-      ],
       processingBatchDelete: false
     }
   },
@@ -81,20 +77,6 @@ export default {
         this.$router.push(`/audiobook/${this.$route.params.id}`)
       } else {
         this.$router.push('/')
-      }
-    },
-    logout() {
-      this.$axios.$post('/logout').catch((error) => {
-        console.error(error)
-      })
-      if (localStorage.getItem('token')) {
-        localStorage.removeItem('token')
-      }
-      this.$router.push('/login')
-    },
-    menuAction(action) {
-      if (action === 'logout') {
-        this.logout()
       }
     },
     cancelSelectionMode() {

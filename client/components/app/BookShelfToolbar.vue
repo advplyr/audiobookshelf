@@ -3,9 +3,12 @@
     <div id="toolbar" class="absolute top-0 left-0 w-full h-full z-20 flex items-center px-8">
       <p class="font-book">{{ numShowing }} Audiobooks</p>
       <div class="flex-grow" />
-      <controls-filter-select v-model="settings.filterBy" class="w-48 h-7.5" @change="updateFilter" />
-      <span class="px-4 text-sm">by</span>
-      <controls-order-select v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5" @change="updateOrder" />
+
+      <ui-text-input v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" class="text-xs w-40" />
+
+      <controls-filter-select v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
+
+      <controls-order-select v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
     </div>
   </div>
 </template>
@@ -21,6 +24,14 @@ export default {
   computed: {
     numShowing() {
       return this.$store.getters['audiobooks/getFiltered']().length
+    },
+    _keywordFilter: {
+      get() {
+        return this.$store.state.audiobooks.keywordFilter
+      },
+      set(val) {
+        this.$store.commit('audiobooks/setKeywordFilter', val)
+      }
     }
   },
   methods: {

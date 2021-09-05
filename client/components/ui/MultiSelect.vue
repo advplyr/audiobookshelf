@@ -8,7 +8,7 @@
             <div class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
               <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item)">close</span>
             </div>
-            {{ $snakeToNormal(item) }}
+            {{ item }}
           </div>
           <input ref="input" v-model="textInput" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
@@ -18,7 +18,7 @@
         <template v-for="item in itemsToShow">
           <li :key="item" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
-              <span class="font-normal ml-3 block truncate">{{ $snakeToNormal(item) }}</span>
+              <span class="font-normal ml-3 block truncate">{{ item }}</span>
             </div>
             <span v-if="selected.includes(item)" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
               <span class="material-icons text-xl">checkmark</span>
@@ -75,8 +75,8 @@ export default {
       }
 
       return this.items.filter((i) => {
-        var normie = this.$snakeToNormal(i)
-        var iValue = String(normie).toLowerCase()
+        // var normie = this.$snakeToNormal(i)
+        var iValue = String(i).toLowerCase()
         return iValue.includes(this.currentSearch.toLowerCase())
       })
     }
@@ -170,8 +170,8 @@ export default {
       })
     },
     insertNewItem(item) {
-      var kebabItem = this.$normalToSnake(item)
-      this.selected.push(kebabItem)
+      // var kebabItem = this.$normalToSnake(item)
+      this.selected.push(item)
       this.$emit('input', this.selected)
       this.textInput = null
       this.currentSearch = null
@@ -183,9 +183,9 @@ export default {
       if (!this.textInput) return
 
       var cleaned = this.textInput.toLowerCase().trim()
-      var cleanedKebab = this.$normalToSnake(cleaned)
+      // var cleanedKebab = this.$normalToSnake(cleaned)
       var matchesItem = this.items.find((i) => {
-        return i === cleaned || cleanedKebab === i
+        return i === cleaned
       })
       if (matchesItem) {
         this.clickedOption(null, matchesItem)

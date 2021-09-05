@@ -57,6 +57,11 @@ Vue.prototype.$normalToSnake = (normie) => {
     .join('_')
 }
 
+const encode = (text) => encodeURIComponent(Buffer.from(text).toString('base64'))
+Vue.prototype.$encode = encode
+const decode = (text) => Buffer.from(decodeURIComponent(text), 'base64').toString()
+Vue.prototype.$decode = decode
+
 const availableChars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 const getCharCode = (char) => availableChars.indexOf(char)
 const getCharFromCode = (code) => availableChars[Number(code)] || -1
@@ -107,21 +112,6 @@ Vue.prototype.$codeToString = (code) => {
     finalform += getCharFromCode(chunk)
   }
   return finalform
-}
-
-function cleanString(str, availableChars) {
-  var _str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-  var cleaned = ''
-  for (let i = 0; i < _str.length; i++) {
-    cleaned += availableChars.indexOf(str[i]) < 0 ? '' : str[i]
-  }
-  return cleaned
-}
-
-export const cleanFilterString = (str) => {
-  var _str = str.toLowerCase().replace(/ /g, '_')
-  _str = cleanString(_str, "0123456789abcdefghijklmnopqrstuvwxyz")
-  return _str
 }
 
 function loadImageBlob(uri) {
@@ -203,4 +193,9 @@ Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement);
   return sanitized
+}
+
+export {
+  encode,
+  decode
 }

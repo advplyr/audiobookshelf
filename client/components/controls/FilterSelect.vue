@@ -42,9 +42,9 @@
           </div>
         </li>
         <template v-for="item in sublistItems">
-          <li :key="item" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" :class="`${sublist}.${item}` === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedSublistOption(item)">
+          <li :key="item.value" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" :class="`${sublist}.${item.value}` === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedSublistOption(item.value)">
             <div class="flex items-center">
-              <span class="font-normal truncate py-2 text-xs">{{ snakeToNormal(item) }}</span>
+              <span class="font-normal truncate py-2 text-xs">{{ item.text }}</span>
             </div>
           </li>
         </template>
@@ -81,6 +81,11 @@ export default {
           text: 'Series',
           value: 'series',
           sublist: true
+        },
+        {
+          text: 'Authors',
+          value: 'authors',
+          sublist: true
         }
       ]
     }
@@ -109,14 +114,15 @@ export default {
       if (!this.selected) return ''
       var parts = this.selected.split('.')
       if (parts.length > 1) {
-        return this.snakeToNormal(parts[1])
+        return this.$decode(parts[1])
       }
       var _sel = this.items.find((i) => i.value === this.selected)
       if (!_sel) return ''
       return _sel.text
     },
     genres() {
-      return this.$store.state.audiobooks.genres
+      // return this.$store.state.audiobooks.genres
+      return this.$store.getters['audiobooks/getGenresUsed']
     },
     tags() {
       return this.$store.state.audiobooks.tags
@@ -124,8 +130,16 @@ export default {
     series() {
       return this.$store.state.audiobooks.series
     },
+    authors() {
+      return this.$store.getters['audiobooks/getUniqueAuthors']
+    },
     sublistItems() {
-      return this[this.sublist] || []
+      return (this[this.sublist] || []).map((item) => {
+        return {
+          text: item,
+          value: this.$encode(item)
+        }
+      })
     }
   },
   methods: {
@@ -133,15 +147,6 @@ export default {
       this.selected = 'all'
       this.showMenu = false
       this.$nextTick(() => this.$emit('change', 'all'))
-    },
-    snakeToNormal(kebab) {
-      if (!kebab) {
-        return 'err'
-      }
-      return String(kebab)
-        .split('_')
-        .map((t) => t.slice(0, 1).toUpperCase() + t.slice(1))
-        .join(' ')
     },
     clickOutside() {
       if (!this.selectedItemSublist) this.sublist = null

@@ -1,5 +1,5 @@
 <template>
-  <input v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="py-2 px-3 rounded bg-primary text-gray-200 focus:border-gray-500 focus:outline-none" :class="transparent ? '' : 'border border-gray-600'" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
+  <input v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="rounded bg-primary text-gray-200 focus:border-gray-500 focus:outline-none border border-gray-600" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
 </template>
 
 <script>
@@ -12,8 +12,15 @@ export default {
       type: String,
       default: 'text'
     },
-    transparent: Boolean,
-    disabled: Boolean
+    disabled: Boolean,
+    paddingY: {
+      type: Number,
+      default: 2
+    },
+    paddingX: {
+      type: Number,
+      default: 3
+    }
   },
   data() {
     return {}
@@ -26,6 +33,12 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    classList() {
+      var _list = []
+      _list.push(`px-${this.paddingX}`)
+      _list.push(`py-${this.paddingY}`)
+      return _list.join(' ')
     }
   },
   methods: {
