@@ -1,7 +1,8 @@
 <template>
   <div class="w-full h-full relative">
-    <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
-      <!-- <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
+    <form class="w-full h-full" @submit.prevent="submitForm">
+      <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
+        <!-- <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
         <div class="w-full flex items-center">
           <p>
             Your progress: <span class="font-mono text-lg">{{ (userProgress * 100).toFixed(0) }}%</span>
@@ -10,7 +11,7 @@
           <ui-btn v-if="!resettingProgress" small :padding-x="2" class="-mr-3" @click="resetProgress">Reset</ui-btn>
         </div>
       </div> -->
-      <form @submit.prevent="submitForm">
+
         <ui-text-input-with-label v-model="details.title" label="Title" />
 
         <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
@@ -49,16 +50,16 @@
             <ui-text-input-with-label v-model="details.narrarator" label="Narrarator" />
           </div>
         </div>
-      </form>
-    </div>
-
-    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-primary border-opacity-50'">
-      <div class="flex px-4">
-        <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
-        <div class="flex-grow" />
-        <ui-btn type="submit">Submit</ui-btn>
       </div>
-    </div>
+
+      <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
+        <div class="flex px-4">
+          <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+          <div class="flex-grow" />
+          <ui-btn type="submit">Submit</ui-btn>
+        </div>
+      </div>
+    </form>
   </div>
 </template>
 
@@ -229,5 +230,6 @@ export default {
 <style scoped>
 .details-form-wrapper {
   height: calc(100% - 70px);
+  max-height: calc(100% - 70px);
 }
 </style>
