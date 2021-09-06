@@ -63,7 +63,7 @@ function isNumber(val) {
 }
 
 function getTrackNumberFromMeta(scanData) {
-  return !isNaN(scanData.trackNumber) && scanData.trackNumber !== null ? Number(scanData.trackNumber) : null
+  return !isNaN(scanData.trackNumber) && scanData.trackNumber !== null ? Math.trunc(Number(scanData.trackNumber)) : null
 }
 
 function getTrackNumberFromFilename(title, author, series, publishYear, filename) {
