@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
+  <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <div class="w-full border border-black-200 p-4 my-4">
       <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
         <span class="text-error">Experimental Feature!</span> If your audiobook is made up of multiple audio files, this will concatenate them into a single file. The file type will be the same as the first track. Preparing downloads can take anywhere from a few seconds to several minutes and will be stored in
@@ -13,8 +13,8 @@
           <p v-if="singleAudioDownloadFailed" class="text-error mb-2">Download Failed</p>
           <p v-if="singleAudioDownloadReady" class="text-success mb-2">Download Ready!</p>
           <p v-if="singleAudioDownloadExpired" class="text-error mb-2">Download Expired</p>
-
-          <ui-btn v-if="!singleAudioDownloadReady" :loading="singleAudioDownloadPending" :disabled="tempDisable" @click="startSingleAudioDownload">Start Download</ui-btn>
+          <a v-if="isSingleTrack" :href="`/local/${singleTrackPath}`" class="btn outline-none rounded-md shadow-md relative border border-gray-600 px-4 py-2 bg-primary">Download Track</a>
+          <ui-btn v-else-if="!singleAudioDownloadReady" :loading="singleAudioDownloadPending" :disabled="tempDisable" @click="startSingleAudioDownload">Start Download</ui-btn>
           <ui-btn v-else @click="downloadWithProgress">Download</ui-btn>
         </div>
       </div>
@@ -81,6 +81,14 @@ export default {
     },
     zipBundleDownload() {
       return this.downloads.find((d) => d.type === 'zipBundle')
+    },
+    isSingleTrack() {
+      if (!this.audiobook.tracks) return false
+      return this.audiobook.tracks.length === 1
+    },
+    singleTrackPath() {
+      if (!this.isSingleTrack) return null
+      return this.audiobook.tracks[0].path
     }
   },
   methods: {

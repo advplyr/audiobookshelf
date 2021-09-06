@@ -83,6 +83,10 @@
   box-shadow: 2px 8px 6px #111111aa;
 }
 
+.box-shadow-md-up {
+  box-shadow: 0px -8px 8px #11111144;
+}
+
 .box-shadow-lg-up {
   box-shadow: 0px -12px 8px #111111ee;
 }

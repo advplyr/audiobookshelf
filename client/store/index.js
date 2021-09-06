@@ -3,6 +3,7 @@ import Vue from 'vue'
 export const state = () => ({
   serverSettings: null,
   streamAudiobook: null,
+  editModalTab: 'details',
   showEditModal: false,
   selectedAudiobook: null,
   playOnLoad: false,
@@ -63,8 +64,17 @@ export const mutations = {
     state.playOnLoad = val
   },
   showEditModal(state, audiobook) {
+    state.editModalTab = 'details'
     state.selectedAudiobook = audiobook
     state.showEditModal = true
+  },
+  showEditModalOnTab(state, { audiobook, tab }) {
+    state.editModalTab = tab
+    state.selectedAudiobook = audiobook
+    state.showEditModal = true
+  },
+  setEditModalTab(state, tab) {
+    state.editModalTab = tab
   },
   setShowEditModal(state, val) {
     state.showEditModal = val

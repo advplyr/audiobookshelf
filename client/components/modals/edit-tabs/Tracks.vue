@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-y-auto overflow-x-hidden">
+  <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="flex mb-4">
       <nuxt-link :to="`/audiobook/${audiobook.id}/edit`">
         <ui-btn color="primary">Edit Track Order</ui-btn>
@@ -11,6 +11,7 @@
         <th class="text-left">Filename</th>
         <th class="text-left">Size</th>
         <th class="text-left">Duration</th>
+        <th class="text-center">Download</th>
       </tr>
       <template v-for="track in tracks">
         <tr :key="track.index">
@@ -25,6 +26,9 @@
           </td>
           <td class="font-mono">
             {{ $secondsToTimestamp(track.duration) }}
+          </td>
+          <td class="font-mono text-center">
+            <a :href="`/local/${track.path}`" download><span class="material-icons icon-text">download</span></a>
           </td>
         </tr>
       </template>

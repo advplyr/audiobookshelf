@@ -5,7 +5,7 @@
         <div class="w-52" style="min-width: 208px">
           <div class="relative">
             <cards-book-cover :audiobook="audiobook" :width="208" />
-            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :style="{ width: 240 * progressPercent + 'px' }"></div>
+            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>
         <div class="flex-grow px-10">
@@ -22,24 +22,40 @@
           <p class="text-gray-300 text-sm my-1">
             {{ durationPretty }}<span class="px-4">{{ sizePretty }}</span>
           </p>
+          <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max" :class="resettingProgress ? 'opacity-25' : ''">
+            <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
+            <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
+            <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
+              <span class="material-icons text-sm">close</span>
+            </div>
+          </div>
+
           <div class="flex items-center pt-4">
-            <ui-btn :disabled="streaming" color="success" :padding-x="4" class="flex items-center" @click="startStream">
+            <ui-btn :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
-            <ui-btn :padding-x="4" class="flex items-center ml-4" @click="editClick"><span class="material-icons text-white pr-2" style="font-size: 18px">edit</span>Edit</ui-btn>
+
+            <ui-tooltip text="Edit" direction="top">
+              <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
+            </ui-tooltip>
+
+            <ui-tooltip text="Download" direction="top">
+              <ui-icon-btn icon="download" class="mx-0.5" @click="downloadClick" />
+            </ui-tooltip>
+
+            <ui-tooltip :text="isRead ? 'Mark as Not Read' : 'Mark as Read'" direction="top">
+              <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" class="mx-0.5" @click="toggleRead" />
+            </ui-tooltip>
 
             <ui-btn v-if="isDeveloperMode" class="mx-2" @click="openRssFeed">Open RSS Feed</ui-btn>
 
-            <div v-if="progressPercent > 0" class="px-4 py-2 bg-primary text-sm font-semibold rounded-md text-gray-200 ml-4 relative" :class="resettingProgress ? 'opacity-25' : ''">
-              <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
-              <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
-              <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
-                <span class="material-icons text-sm">close</span>
-              </div>
-            </div>
+            <div class="flex-grow" />
           </div>
-          <p class="text-sm my-4 text-gray-100">{{ description }}</p>
+
+          <div class="my-4">
+            <p class="text-sm text-gray-100">{{ description }}</p>
+          </div>
 
           <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">
             <p class="text-sm mb-2">
@@ -88,7 +104,17 @@ export default {
   },
   data() {
     return {
-      resettingProgress: false
+      isRead: false,
+      resettingProgress: false,
+      isProcessingReadUpdate: false
+    }
+  },
+  watch: {
+    userIsRead: {
+      immediate: true,
+      handler(newVal) {
+        this.isRead = newVal
+      }
     }
   },
   computed: {
@@ -149,7 +175,7 @@ export default {
     },
     authorTooltipText() {
       var txt = ['FL: ' + this.authorFL || 'Not Set', 'LF: ' + this.authorLF || 'Not Set']
-      return txt.join('\n')
+      return txt.join('<br>')
     },
     series() {
       return this.book.series || null
@@ -189,7 +215,7 @@ export default {
       return this.audiobook.audioFiles || []
     },
     description() {
-      return this.book.description || 'No Description'
+      return this.book.description || ''
     },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
@@ -199,6 +225,9 @@ export default {
     },
     userCurrentTime() {
       return this.userAudiobook ? this.userAudiobook.currentTime : 0
+    },
+    userIsRead() {
+      return this.userAudiobook ? !!this.userAudiobook.isRead : false
     },
     userTimeRemaining() {
       return this.duration - this.userCurrentTime
@@ -214,6 +243,23 @@ export default {
     }
   },
   methods: {
+    toggleRead() {
+      var updatePayload = {
+        isRead: !this.isRead
+      }
+      this.isProcessingReadUpdate = true
+      this.$axios
+        .$patch(`/api/user/audiobook/${this.audiobookId}`, updatePayload)
+        .then(() => {
+          this.isProcessingReadUpdate = false
+          this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.isProcessingReadUpdate = false
+          this.$toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+        })
+    },
     openRssFeed() {
       this.$axios
         .$post('/api/feed', { audiobookId: this.audiobook.id })
@@ -269,6 +315,9 @@ export default {
             this.resettingProgress = false
           })
       }
+    },
+    downloadClick() {
+      this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
     }
   },
   mounted() {

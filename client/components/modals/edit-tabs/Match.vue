@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden">
+  <div class="w-full h-full overflow-hidden px-4 py-6">
     <form @submit.prevent="submitSearch">
       <div class="flex items-center justify-start -mx-1 h-20">
         <div class="w-72 px-1">

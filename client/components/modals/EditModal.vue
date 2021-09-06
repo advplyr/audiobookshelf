@@ -10,7 +10,7 @@
         <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
       </template>
     </div>
-    <div class="px-4 w-full h-full text-sm py-6 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
+    <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
       <keep-alive>
         <component v-if="audiobook" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" />
       </keep-alive>
@@ -22,7 +22,6 @@
 export default {
   data() {
     return {
-      selectedTab: 'details',
       processing: false,
       audiobook: null,
       fetchOnShow: false,
@@ -77,6 +76,14 @@ export default {
       },
       set(val) {
         this.$store.commit('setShowEditModal', val)
+      }
+    },
+    selectedTab: {
+      get() {
+        return this.$store.state.editModalTab
+      },
+      set(val) {
+        this.$store.commit('setEditModalTab', val)
       }
     },
     height() {

@@ -36,6 +36,7 @@ class ApiController {
     this.router.patch('/match/:id', this.match.bind(this))
 
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
+    this.router.patch('/user/audiobook/:id', this.updateUserAudiobookProgress.bind(this))
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
     this.router.get('/users', this.getUsers.bind(this))
@@ -233,7 +234,16 @@ class ApiController {
   async resetUserAudiobookProgress(req, res) {
     req.user.resetAudiobookProgress(req.params.id)
     await this.db.updateEntity('user', req.user)
-    this.emitter('user_updated', req.user.toJSONForBrowser())
+    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    res.sendStatus(200)
+  }
+
+  async updateUserAudiobookProgress(req, res) {
+    var wasUpdated = req.user.updateAudiobookProgress(req.params.id, req.body)
+    if (wasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
     res.sendStatus(200)
   }
 

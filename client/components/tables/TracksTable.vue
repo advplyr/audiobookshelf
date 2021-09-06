@@ -19,6 +19,7 @@
             <th class="text-left">Filename</th>
             <th class="text-left">Size</th>
             <th class="text-left">Duration</th>
+            <th class="text-center">Download</th>
           </tr>
           <template v-for="track in tracks">
             <tr :key="track.index">
@@ -33,6 +34,9 @@
               </td>
               <td class="font-mono">
                 {{ $secondsToTimestamp(track.duration) }}
+              </td>
+              <td class="text-center">
+                <a :href="`/local/${track.path}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>

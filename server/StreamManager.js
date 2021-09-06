@@ -134,11 +134,11 @@ class StreamManager {
       Logger.error('No User for client', client)
       return
     }
-    if (!client.user.updateAudiobookProgress) {
+    if (!client.user.updateAudiobookProgressFromStream) {
       Logger.error('Invalid User for client', client)
       return
     }
-    client.user.updateAudiobookProgress(client.stream)
+    client.user.updateAudiobookProgressFromStream(client.stream)
     this.db.updateEntity('user', client.user)
   }
 }
