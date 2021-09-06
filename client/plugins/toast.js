@@ -1,10 +1,10 @@
-import Vue from "vue";
-import Toast from "vue-toastification";
-import "vue-toastification/dist/index.css";
+import Vue from "vue"
+import Toast from "vue-toastification"
+import "vue-toastification/dist/index.css"
 
 const options = {
-  hideProgressBar: true
-};
+  hideProgressBar: true,
+  draggable: false
+}
 
-
-Vue.use(Toast, options);
+Vue.use(Toast, options)

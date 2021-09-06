@@ -71,6 +71,9 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
+    if (!store.getters['user/getUserCanUpdate']) {
+      return redirect('/?error=unauthorized')
+    }
     var audiobook = await app.$axios.$get(`/api/audiobook/${params.id}`).catch((error) => {
       console.error('Failed', error)
       return false
@@ -82,7 +85,6 @@ export default {
     return {
       audiobook,
       files: audiobook.audioFiles ? audiobook.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
-      // files: audiobook.audioFiles ? audiobook.audioFiles.map((af) => ({ ...af, index: ++index })) : []
     }
   },
   data() {

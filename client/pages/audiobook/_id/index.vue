@@ -36,11 +36,11 @@
               {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
 
-            <ui-tooltip text="Edit" direction="top">
+            <ui-tooltip v-if="userCanUpdate" text="Edit" direction="top">
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip text="Download" direction="top">
+            <ui-tooltip v-if="userCanDownload" text="Download" direction="top">
               <ui-icon-btn icon="download" class="mx-0.5" @click="downloadClick" />
             </ui-tooltip>
 
@@ -240,6 +240,15 @@ export default {
     },
     streaming() {
       return this.streamAudiobook && this.streamAudiobook.id === this.audiobookId
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
     }
   },
   methods: {

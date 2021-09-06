@@ -19,13 +19,16 @@
                 <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
               </div>
             </div>
-            <div v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+
+            <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
               <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
             </div>
-            <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
+
+            <div v-if="userCanUpdate || userCanDelete" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
               <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
             </div>
           </div>
+
           <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
           <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
@@ -156,6 +159,12 @@ export default {
         classes.push('border-2 border-yellow-400')
       }
       return classes
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {

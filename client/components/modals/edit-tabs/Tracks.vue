@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="flex mb-4">
-      <nuxt-link :to="`/audiobook/${audiobook.id}/edit`">
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobook.id}/edit`">
         <ui-btn color="primary">Edit Track Order</ui-btn>
       </nuxt-link>
     </div>
@@ -11,7 +11,7 @@
         <th class="text-left">Filename</th>
         <th class="text-left">Size</th>
         <th class="text-left">Duration</th>
-        <th class="text-center">Download</th>
+        <th v-if="userCanDownload" class="text-center">Download</th>
       </tr>
       <template v-for="track in tracks">
         <tr :key="track.index">
@@ -27,7 +27,7 @@
           <td class="font-mono">
             {{ $secondsToTimestamp(track.duration) }}
           </td>
-          <td class="font-mono text-center">
+          <td v-if="userCanDownload" class="font-mono text-center">
             <a :href="`/local/${track.path}`" download><span class="material-icons icon-text">download</span></a>
           </td>
         </tr>
@@ -58,12 +58,18 @@ export default {
       }
     }
   },
-  computed: {},
+  computed: {
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    }
+  },
   methods: {
     init() {
       this.audioFiles = this.audiobook.audioFiles
       this.tracks = this.audiobook.tracks
-      console.log('INIT', this.audiobook)
     }
   }
 }

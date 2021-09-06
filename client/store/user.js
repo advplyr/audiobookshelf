@@ -24,6 +24,15 @@ export const getters = {
   },
   getFilterOrderKey: (state) => {
     return Object.values(state.settings).join('-')
+  },
+  getUserCanUpdate: (state) => {
+    return state.user && state.user.permissions ? !!state.user.permissions.update : false
+  },
+  getUserCanDelete: (state) => {
+    return state.user && state.user.permissions ? !!state.user.permissions.delete : false
+  },
+  getUserCanDownload: (state) => {
+    return state.user && state.user.permissions ? !!state.user.permissions.download : false
   }
 }
 

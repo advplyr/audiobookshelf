@@ -75,11 +75,11 @@ class Db {
   async load() {
     var p1 = this.audiobooksDb.select(() => true).then((results) => {
       this.audiobooks = results.data.map(a => new Audiobook(a))
-      Logger.info(`Audiobooks Loaded ${this.audiobooks.length}`)
+      Logger.info(`[DB] Audiobooks Loaded ${this.audiobooks.length}`)
     })
     var p2 = this.usersDb.select(() => true).then((results) => {
       this.users = results.data.map(u => new User(u))
-      Logger.info(`Users Loaded ${this.users.length}`)
+      Logger.info(`[DB] Users Loaded ${this.users.length}`)
     })
     var p3 = this.settingsDb.select(() => true).then((results) => {
       if (results.data && results.data.length) {
