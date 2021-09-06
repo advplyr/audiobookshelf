@@ -18,7 +18,7 @@
           </div>
           <div class="flex py-2">
             <div class="px-2">
-              <ui-input-dropdown v-model="newUser.type" label="Account Type" :disabled="isEditingRoot" :editable="false" :items="accountTypes" />
+              <ui-input-dropdown v-model="newUser.type" label="Account Type" :disabled="isEditingRoot" :editable="false" :items="accountTypes" @input="userTypeUpdated" />
             </div>
             <div class="flex-grow" />
             <div v-show="!isEditingRoot" class="flex items-center pt-4 px-2">
@@ -26,6 +26,37 @@
               <ui-toggle-switch v-model="newUser.isActive" :disabled="isEditingRoot" />
             </div>
           </div>
+
+          <div v-if="!isEditingRoot && newUser.permissions" class="w-full border-t border-b border-black-200 py-2 mt-4">
+            <p class="text-lg mb-2">Permissions</p>
+            <div class="flex items-center my-2 max-w-lg">
+              <div class="w-1/2">
+                <p>Can Download</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.download" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-lg">
+              <div class="w-1/2">
+                <p>Can Update</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.update" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-lg">
+              <div class="w-1/2">
+                <p>Can Delete</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.delete" />
+              </div>
+            </div>
+          </div>
+
           <div class="flex pt-4">
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">Submit</ui-btn>
@@ -144,6 +175,13 @@ export default {
     toggleActive() {
       this.newUser.isActive = !this.newUser.isActive
     },
+    userTypeUpdated(type) {
+      this.newUser.permissions = {
+        download: type !== 'guest',
+        update: type === 'admin',
+        delete: type === 'admin'
+      }
+    },
     init() {
       this.isNew = !this.account
       if (this.account) {
@@ -151,14 +189,20 @@ export default {
           username: this.account.username,
           password: this.account.password,
           type: this.account.type,
-          isActive: this.account.isActive
+          isActive: this.account.isActive,
+          permissions: { ...this.account.permissions }
         }
       } else {
         this.newUser = {
           username: null,
           password: null,
           type: 'user',
-          isActive: true
+          isActive: true,
+          permissions: {
+            download: true,
+            update: false,
+            delete: false
+          }
         }
       }
     }

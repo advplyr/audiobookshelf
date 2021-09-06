@@ -11,11 +11,26 @@ class User {
     this.isActive = true
     this.createdAt = null
     this.audiobooks = null
+
     this.settings = {}
+    this.permissions = {}
 
     if (user) {
       this.construct(user)
     }
+  }
+
+  get isRoot() {
+    return this.type === 'root'
+  }
+  get canDelete() {
+    return !!this.permissions.delete
+  }
+  get canUpdate() {
+    return !!this.permissions.update
+  }
+  get canDownload() {
+    return !!this.permissions.download
   }
 
   getDefaultUserSettings() {
@@ -25,6 +40,14 @@ class User {
       filterBy: 'all',
       playbackRate: 1,
       bookshelfCoverSize: 120
+    }
+  }
+
+  getDefaultUserPermissions() {
+    return {
+      download: true,
+      update: true,
+      delete: this.id === 'root'
     }
   }
 
@@ -50,7 +73,8 @@ class User {
       audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       createdAt: this.createdAt,
-      settings: this.settings
+      settings: this.settings,
+      permissions: this.permissions
     }
   }
 
@@ -64,7 +88,8 @@ class User {
       audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       createdAt: this.createdAt,
-      settings: this.settings
+      settings: this.settings,
+      permissions: this.permissions
     }
   }
 
@@ -86,10 +111,12 @@ class User {
     this.isActive = (user.isActive === undefined || user.id === 'root') ? true : !!user.isActive
     this.createdAt = user.createdAt || Date.now()
     this.settings = user.settings || this.getDefaultUserSettings()
+    this.permissions = user.permissions || this.getDefaultUserPermissions()
   }
 
   update(payload) {
     var hasUpdates = false
+    // Update the following keys:
     const keysToCheck = ['pash', 'type', 'username', 'isActive']
     keysToCheck.forEach((key) => {
       if (payload[key] !== undefined) {
@@ -101,6 +128,15 @@ class User {
         }
       }
     })
+    // And update permissions
+    if (payload.permissions) {
+      for (const key in payload.permissions) {
+        if (payload.permissions[key] !== this.permissions[key]) {
+          hasUpdates = true
+          this.permissions[key] = payload.permissions[key]
+        }
+      }
+    }
     return hasUpdates
   }
 

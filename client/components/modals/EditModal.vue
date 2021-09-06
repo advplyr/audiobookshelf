@@ -6,7 +6,7 @@
       </div>
     </template>
     <div class="absolute -top-10 left-0 w-full flex">
-      <template v-for="tab in tabs">
+      <template v-for="tab in availableTabs">
         <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
       </template>
     </div>
@@ -58,6 +58,15 @@ export default {
     show: {
       handler(newVal) {
         if (newVal) {
+          var availableTabIds = this.availableTabs.map((tab) => tab.id)
+          if (!availableTabIds.length) {
+            this.show = false
+            return
+          }
+          if (!availableTabIds.includes(this.selectedTab)) {
+            this.selectedTab = availableTabIds[0]
+          }
+
           if (this.audiobook && this.audiobook.id === this.selectedAudiobookId) {
             if (this.fetchOnShow) this.fetchFull()
             return
@@ -85,6 +94,20 @@ export default {
       set(val) {
         this.$store.commit('setEditModalTab', val)
       }
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
+    availableTabs() {
+      if (!this.userCanUpdate && !this.userCanDownload) return []
+      return this.tabs.filter((tab) => {
+        if ((tab.id === 'download' || tab.id === 'tracks') && this.userCanDownload) return true
+        if (tab.id !== 'download' && tab.id !== 'tracks' && this.userCanUpdate) return true
+        return false
+      })
     },
     height() {
       var maxHeightAllowed = window.innerHeight - 150

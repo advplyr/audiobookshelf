@@ -54,7 +54,7 @@
 
       <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
         <div class="flex px-4">
-          <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+          <ui-btn v-if="userCanDelete" color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
           <div class="flex-grow" />
           <ui-btn type="submit">Submit</ui-btn>
         </div>
@@ -113,12 +113,9 @@ export default {
     book() {
       return this.audiobook ? this.audiobook.book || {} : {}
     },
-    // userAudiobook() {
-    //   return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
-    // },
-    // userProgress() {
-    //   return this.userAudiobook ? this.userAudiobook.progress : 0
-    // },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
     genres() {
       return this.$store.state.audiobooks.genres
     },

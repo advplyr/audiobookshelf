@@ -30,8 +30,10 @@
         <ui-btn small class="text-sm mx-2" @click="toggleSelectAll">{{ isAllSelected ? 'Select None' : 'Select All' }}</ui-btn>
 
         <div class="flex-grow" />
-        <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2" @click="batchEditClick"><span class="material-icons text-gray-200 pt-1">edit</span></ui-btn>
-        <ui-btn color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn>
+        <template v-if="userCanUpdate">
+          <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2" @click="batchEditClick"><span class="material-icons text-gray-200 pt-1">edit</span></ui-btn>
+        </template>
+        <ui-btn v-if="userCanDelete" color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn>
         <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
       </div>
     </div>
@@ -69,6 +71,12 @@ export default {
     },
     audiobooksShowing() {
       return this.$store.getters['audiobooks/getFiltered']()
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {

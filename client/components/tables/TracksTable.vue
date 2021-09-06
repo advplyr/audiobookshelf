@@ -4,7 +4,7 @@
       <p class="pr-4">Audio Tracks</p>
       <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span>
       <div class="flex-grow" />
-      <nuxt-link :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
@@ -19,7 +19,7 @@
             <th class="text-left">Filename</th>
             <th class="text-left">Size</th>
             <th class="text-left">Duration</th>
-            <th class="text-center">Download</th>
+            <th v-if="userCanDownload" class="text-center">Download</th>
           </tr>
           <template v-for="track in tracks">
             <tr :key="track.index">
@@ -35,7 +35,7 @@
               <td class="font-mono">
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
-              <td class="text-center">
+              <td v-if="userCanDownload" class="text-center">
                 <a :href="`/local/${track.path}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
@@ -60,7 +60,14 @@ export default {
       showTracks: false
     }
   },
-  computed: {},
+  computed: {
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    }
+  },
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks

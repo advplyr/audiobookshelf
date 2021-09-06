@@ -89,6 +89,10 @@ class ApiController {
   }
 
   async deleteAllAudiobooks(req, res) {
+    if (!req.user.isRoot) {
+      Logger.warn('User other than root attempted to delete all audiobooks', req.user)
+      return res.sendStatus(403)
+    }
     Logger.info('Removing all Audiobooks')
     var success = await this.db.recreateAudiobookDb()
     if (success) res.sendStatus(200)
@@ -130,6 +134,10 @@ class ApiController {
   }
 
   async deleteAudiobook(req, res) {
+    if (!req.user.canDelete) {
+      Logger.warn('User attempted to delete without permission', req.user)
+      return res.sendStatus(403)
+    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
 
@@ -138,6 +146,10 @@ class ApiController {
   }
 
   async batchDeleteAudiobooks(req, res) {
+    if (!req.user.canDelete) {
+      Logger.warn('User attempted to delete without permission', req.user)
+      return res.sendStatus(403)
+    }
     var { audiobookIds } = req.body
     if (!audiobookIds || !audiobookIds.length) {
       return res.sendStatus(500)
@@ -155,6 +167,10 @@ class ApiController {
   }
 
   async batchUpdateAudiobooks(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to batch update without permission', req.user)
+      return res.sendStatus(403)
+    }
     var audiobooks = req.body
     if (!audiobooks || !audiobooks.length) {
       return res.sendStatus(500)
@@ -185,6 +201,10 @@ class ApiController {
   }
 
   async updateAudiobookTracks(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to update audiotracks without permission', req.user)
+      return res.sendStatus(403)
+    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
     var orderedFileData = req.body.orderedFileData
@@ -196,6 +216,10 @@ class ApiController {
   }
 
   async updateAudiobook(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to update without permission', req.user)
+      return res.sendStatus(403)
+    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
     var hasUpdates = audiobook.update(req.body)
@@ -276,6 +300,10 @@ class ApiController {
   }
 
   async createUser(req, res) {
+    if (!req.user.isRoot) {
+      Logger.warn('Non-root user attempted to create user', req.user)
+      return res.sendStatus(403)
+    }
     var account = req.body
     account.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
     account.pash = await this.auth.hashPass(account.password)
@@ -297,7 +325,7 @@ class ApiController {
   }
 
   async updateUser(req, res) {
-    if (req.user.type !== 'root') {
+    if (!req.user.isRoot) {
       Logger.error('User other than root attempting to update user', req.user)
       return res.sendStatus(403)
     }
@@ -327,6 +355,10 @@ class ApiController {
   }
 
   async deleteUser(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error('User other than root attempting to delete user', req.user)
+      return res.sendStatus(403)
+    }
     if (req.params.id === 'root') {
       return res.sendStatus(500)
     }
@@ -353,6 +385,10 @@ class ApiController {
   }
 
   async updateServerSettings(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error('User other than root attempting to update server settings', req.user)
+      return res.sendStatus(403)
+    }
     var settingsUpdate = req.body
     if (!settingsUpdate || !isObject(settingsUpdate)) {
       return res.sendStatus(500)
@@ -368,6 +404,10 @@ class ApiController {
   }
 
   async download(req, res) {
+    if (!req.user.canDownload) {
+      Logger.error('User attempting to download without permission', req.user)
+      return res.sendStatus(403)
+    }
     var downloadId = req.params.id
     Logger.info('Download Request', downloadId)
     var download = this.downloadManager.getDownload(downloadId)
