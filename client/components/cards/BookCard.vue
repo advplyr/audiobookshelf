@@ -26,7 +26,7 @@
               <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
             </div>
           </div>
-          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 bg-yellow-400 shadow-sm" :style="{ width: width * userProgressPercent + 'px' }"></div>
+          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
           <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
             <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
@@ -124,6 +124,9 @@ export default {
     },
     userProgressPercent() {
       return this.userProgress ? this.userProgress.progress || 0 : 0
+    },
+    userIsRead() {
+      return this.userProgress ? !!this.userProgress.isRead : false
     },
     showError() {
       return this.hasMissingParts || this.hasInvalidParts

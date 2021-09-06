@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
+  <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <div class="flex">
       <div class="relative">
         <cards-book-cover :audiobook="audiobook" />

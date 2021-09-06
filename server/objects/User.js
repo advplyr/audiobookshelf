@@ -1,3 +1,5 @@
+const AudiobookProgress = require('./AudiobookProgress')
+
 class User {
   constructor(user) {
     this.id = null
@@ -26,6 +28,17 @@ class User {
     }
   }
 
+  audiobooksToJSON() {
+    if (!this.audiobooks) return null
+    var _map = {}
+    for (const key in this.audiobooks) {
+      if (this.audiobooks[key]) {
+        _map[key] = this.audiobooks[key].toJSON()
+      }
+    }
+    return _map
+  }
+
   toJSON() {
     return {
       id: this.id,
@@ -34,7 +47,7 @@ class User {
       type: this.type,
       stream: this.stream,
       token: this.token,
-      audiobooks: this.audiobooks,
+      audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       createdAt: this.createdAt,
       settings: this.settings
@@ -48,7 +61,7 @@ class User {
       type: this.type,
       stream: this.stream,
       token: this.token,
-      audiobooks: this.audiobooks,
+      audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       createdAt: this.createdAt,
       settings: this.settings
@@ -62,7 +75,14 @@ class User {
     this.type = user.type
     this.stream = user.stream || null
     this.token = user.token
-    this.audiobooks = user.audiobooks || null
+    if (user.audiobooks) {
+      this.audiobooks = {}
+      for (const key in user.audiobooks) {
+        if (user.audiobooks[key]) {
+          this.audiobooks[key] = new AudiobookProgress(user.audiobooks[key])
+        }
+      }
+    }
     this.isActive = (user.isActive === undefined || user.id === 'root') ? true : !!user.isActive
     this.createdAt = user.createdAt || Date.now()
     this.settings = user.settings || this.getDefaultUserSettings()
@@ -84,18 +104,21 @@ class User {
     return hasUpdates
   }
 
-  updateAudiobookProgress(stream) {
+  updateAudiobookProgressFromStream(stream) {
     if (!this.audiobooks) this.audiobooks = {}
     if (!this.audiobooks[stream.audiobookId]) {
-      this.audiobooks[stream.audiobookId] = {
-        audiobookId: stream.audiobookId,
-        totalDuration: stream.totalDuration,
-        startedAt: Date.now()
-      }
+      this.audiobooks[stream.audiobookId] = new AudiobookProgress()
     }
-    this.audiobooks[stream.audiobookId].lastUpdate = Date.now()
-    this.audiobooks[stream.audiobookId].progress = stream.clientProgress
-    this.audiobooks[stream.audiobookId].currentTime = stream.clientCurrentTime
+    this.audiobooks[stream.audiobookId].updateFromStream(stream)
+  }
+
+  updateAudiobookProgress(audiobookId, updatePayload) {
+    if (!this.audiobooks) this.audiobooks = {}
+    if (!this.audiobooks[audiobookId]) {
+      this.audiobooks[audiobookId] = new AudiobookProgress()
+      this.audiobooks[audiobookId].audiobookId = audiobookId
+    }
+    return this.audiobooks[audiobookId].update(updatePayload)
   }
 
   // Returns Boolean If update was made

@@ -10,7 +10,7 @@
   <Support>https://forums.unraid.net/topic/112698-support-audiobookshelf/</Support>
   <Project>https://github.com/advplyr/audiobookshelf</Project>
   <Overview>**(Android app in beta, try it out)** Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free &amp; open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
-  <Category>MediaApp:Books MediaServer:Books Status:Beta</Category>
+  <Category>MediaApp:Books MediaServer:Books</Category>
   <WebUI>http://[IP]:[PORT:80]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/advplyr/docker-templates/master/audiobookshelf.xml</TemplateURL>
   <Icon>https://github.com/advplyr/audiobookshelf/raw/master/client/static/Logo.png</Icon>

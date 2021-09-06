@@ -1,60 +1,64 @@
 <template>
-  <div class="w-full h-full overflow-hidden overflow-y-auto px-1">
-    <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
-      <div class="w-full flex items-center">
-        <p>
-          Your progress: <span class="font-mono text-lg">{{ (userProgress * 100).toFixed(0) }}%</span>
-        </p>
-        <div class="flex-grow" />
-        <ui-btn v-if="!resettingProgress" small :padding-x="2" class="-mr-3" @click="resetProgress">Reset</ui-btn>
-      </div>
+  <div class="w-full h-full relative">
+    <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
+      <!-- <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
+        <div class="w-full flex items-center">
+          <p>
+            Your progress: <span class="font-mono text-lg">{{ (userProgress * 100).toFixed(0) }}%</span>
+          </p>
+          <div class="flex-grow" />
+          <ui-btn v-if="!resettingProgress" small :padding-x="2" class="-mr-3" @click="resetProgress">Reset</ui-btn>
+        </div>
+      </div> -->
+      <form @submit.prevent="submitForm">
+        <ui-text-input-with-label v-model="details.title" label="Title" />
+
+        <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
+
+        <div class="flex mt-2 -mx-1">
+          <div class="w-3/4 px-1">
+            <ui-text-input-with-label v-model="details.author" label="Author" />
+          </div>
+          <div class="flex-grow px-1">
+            <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
+          </div>
+        </div>
+
+        <div class="flex mt-2 -mx-1">
+          <div class="w-3/4 px-1">
+            <ui-input-dropdown v-model="details.series" label="Series" :items="series" />
+          </div>
+          <div class="flex-grow px-1">
+            <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" />
+          </div>
+        </div>
+
+        <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
+
+        <div class="flex mt-2 -mx-1">
+          <div class="w-1/2 px-1">
+            <ui-multi-select v-model="details.genres" label="Genres" :items="genres" />
+          </div>
+          <div class="flex-grow px-1">
+            <ui-multi-select v-model="newTags" label="Tags" :items="tags" />
+          </div>
+        </div>
+
+        <div class="flex mt-2 -mx-1">
+          <div class="w-1/2 px-1">
+            <ui-text-input-with-label v-model="details.narrarator" label="Narrarator" />
+          </div>
+        </div>
+      </form>
     </div>
-    <form @submit.prevent="submitForm">
-      <ui-text-input-with-label v-model="details.title" label="Title" />
 
-      <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
-
-      <div class="flex mt-2 -mx-1">
-        <div class="w-3/4 px-1">
-          <ui-text-input-with-label v-model="details.author" label="Author" />
-        </div>
-        <div class="flex-grow px-1">
-          <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
-        </div>
-      </div>
-
-      <div class="flex mt-2 -mx-1">
-        <div class="w-3/4 px-1">
-          <ui-input-dropdown v-model="details.series" label="Series" :items="series" />
-        </div>
-        <div class="flex-grow px-1">
-          <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" />
-        </div>
-      </div>
-
-      <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
-
-      <div class="flex mt-2 -mx-1">
-        <div class="w-1/2 px-1">
-          <ui-multi-select v-model="details.genres" label="Genres" :items="genres" />
-        </div>
-        <div class="flex-grow px-1">
-          <ui-multi-select v-model="newTags" label="Tags" :items="tags" />
-        </div>
-      </div>
-
-      <div class="flex mt-2 -mx-1">
-        <div class="w-1/2 px-1">
-          <ui-text-input-with-label v-model="details.narrarator" label="Narrarator" />
-        </div>
-      </div>
-
-      <div class="flex py-4 mt-2">
+    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-primary border-opacity-50'">
+      <div class="flex px-4">
         <ui-btn color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
         <div class="flex-grow" />
         <ui-btn type="submit">Submit</ui-btn>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -81,7 +85,8 @@ export default {
         genres: []
       },
       newTags: [],
-      resettingProgress: false
+      resettingProgress: false,
+      isScrollable: false
     }
   },
   watch: {
@@ -107,12 +112,12 @@ export default {
     book() {
       return this.audiobook ? this.audiobook.book || {} : {}
     },
-    userAudiobook() {
-      return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
-    },
-    userProgress() {
-      return this.userAudiobook ? this.userAudiobook.progress : 0
-    },
+    // userAudiobook() {
+    //   return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
+    // },
+    // userProgress() {
+    //   return this.userAudiobook ? this.userAudiobook.progress : 0
+    // },
     genres() {
       return this.$store.state.audiobooks.genres
     },
@@ -189,7 +194,40 @@ export default {
             this.isProcessing = false
           })
       }
+    },
+    checkIsScrollable() {
+      this.$nextTick(() => {
+        if (this.$refs.formWrapper) {
+          if (this.$refs.formWrapper.scrollHeight > this.$refs.formWrapper.clientHeight) {
+            this.isScrollable = true
+          } else {
+            this.isScrollable = false
+          }
+        }
+      })
+    },
+    setResizeObserver() {
+      try {
+        this.$nextTick(() => {
+          const resizeObserver = new ResizeObserver(() => {
+            this.checkIsScrollable()
+          })
+          resizeObserver.observe(this.$refs.formWrapper)
+        })
+      } catch (error) {
+        console.error('Failed to set resize observer')
+      }
     }
+  },
+  mounted() {
+    // this.init()
+    this.setResizeObserver()
   }
 }
 </script>
+
+<style scoped>
+.details-form-wrapper {
+  height: calc(100% - 70px);
+}
+</style>
