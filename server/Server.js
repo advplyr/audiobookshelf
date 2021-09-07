@@ -14,6 +14,7 @@ const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const Logger = require('./Logger')
+const { ScanResult } = require('./utils/constants')
 
 class Server {
   constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -75,8 +76,21 @@ class Server {
     })
   }
 
-  async fileAddedUpdated({ path, fullPath }) { }
-  async fileRemoved({ path, fullPath }) { }
+  async newFilesAdded({ dir, files }) {
+    Logger.info(files.length, 'New Files Added in dir', dir)
+    var result = await this.scanner.scanAudiobook(dir)
+    Logger.info('New Files Added result', result)
+  }
+  async filesRemoved({ dir, files }) {
+    Logger.info(files.length, 'Files Removed in dir', dir)
+    var result = await this.scanner.scanAudiobook(dir)
+    Logger.info('Files Removed result', result)
+  }
+  async filesRenamed({ dir, files }) {
+    Logger.info(files.length, 'Files Renamed in dir', dir)
+    var result = await this.scanner.scanAudiobook(dir)
+    Logger.info('Files Renamed result', result)
+  }
 
   async scan() {
     Logger.info('[Server] Starting Scan')
@@ -112,9 +126,9 @@ class Server {
     this.auth.init()
 
     this.watcher.initWatcher()
-    this.watcher.on('file_added', this.fileAddedUpdated.bind(this))
-    this.watcher.on('file_removed', this.fileRemoved.bind(this))
-    this.watcher.on('file_updated', this.fileAddedUpdated.bind(this))
+    this.watcher.on('new_files', this.newFilesAdded.bind(this))
+    this.watcher.on('removed_files', this.filesRemoved.bind(this))
+    this.watcher.on('renamed_files', this.filesRenamed.bind(this))
   }
 
   authMiddleware(req, res, next) {

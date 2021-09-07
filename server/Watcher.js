@@ -1,6 +1,8 @@
-var EventEmitter = require('events')
-var Logger = require('./Logger')
-var Watcher = require('watcher')
+const Path = require('path')
+const EventEmitter = require('events')
+const Watcher = require('watcher')
+const Logger = require('./Logger')
+const { getIno } = require('./utils/index')
 
 class FolderWatcher extends EventEmitter {
   constructor(audiobookPath) {
@@ -8,6 +10,11 @@ class FolderWatcher extends EventEmitter {
     this.AudiobookPath = audiobookPath
     this.folderMap = {}
     this.watcher = null
+
+    this.pendingBatchDelay = 4000
+
+    // Audiobook paths with changes
+    this.pendingBatch = {}
   }
 
   initWatcher() {
@@ -46,32 +53,69 @@ class FolderWatcher extends EventEmitter {
     return this.watcher.close()
   }
 
-  onNewFile(path) {
+  // After [pendingBatchDelay] seconds emit batch
+  async onNewFile(path) {
     Logger.debug('FolderWatcher: New File', path)
-    this.emit('file_added', {
-      path: path.replace(this.AudiobookPath, ''),
-      fullPath: path
-    })
+
+    var dir = Path.dirname(path)
+    if (this.pendingBatch[dir]) {
+      this.pendingBatch[dir].files.push(path)
+      clearTimeout(this.pendingBatch[dir].timeout)
+    } else {
+      this.pendingBatch[dir] = {
+        dir,
+        files: [path]
+      }
+    }
+
+    this.pendingBatch[dir].timeout = setTimeout(() => {
+      this.emit('new_files', this.pendingBatch[dir])
+      delete this.pendingBatch[dir]
+    }, this.pendingBatchDelay)
   }
 
   onFileRemoved(path) {
     Logger.debug('[FolderWatcher] File Removed', path)
-    this.emit('file_removed', {
-      path: path.replace(this.AudiobookPath, ''),
-      fullPath: path
-    })
+
+    var dir = Path.dirname(path)
+    if (this.pendingBatch[dir]) {
+      this.pendingBatch[dir].files.push(path)
+      clearTimeout(this.pendingBatch[dir].timeout)
+    } else {
+      this.pendingBatch[dir] = {
+        dir,
+        files: [path]
+      }
+    }
+
+    this.pendingBatch[dir].timeout = setTimeout(() => {
+      this.emit('removed_files', this.pendingBatch[dir])
+      delete this.pendingBatch[dir]
+    }, this.pendingBatchDelay)
   }
 
   onFileUpdated(path) {
     Logger.debug('[FolderWatcher] Updated File', path)
-    this.emit('file_updated', {
-      path: path.replace(this.AudiobookPath, ''),
-      fullPath: path
-    })
   }
 
   onRename(pathFrom, pathTo) {
     Logger.debug(`[FolderWatcher] Rename ${pathFrom} => ${pathTo}`)
+
+    var dir = Path.dirname(pathTo)
+    if (this.pendingBatch[dir]) {
+      this.pendingBatch[dir].files.push(pathTo)
+      clearTimeout(this.pendingBatch[dir].timeout)
+    } else {
+      this.pendingBatch[dir] = {
+        dir,
+        files: [pathTo]
+      }
+    }
+
+    this.pendingBatch[dir].timeout = setTimeout(() => {
+      this.emit('renamed_files', this.pendingBatch[dir])
+      delete this.pendingBatch[dir]
+    }, this.pendingBatchDelay)
   }
 }
 module.exports = FolderWatcher
