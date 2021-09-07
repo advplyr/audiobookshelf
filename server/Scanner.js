@@ -1,10 +1,13 @@
+const fs = require('fs-extra')
 const Logger = require('./Logger')
 const BookFinder = require('./BookFinder')
 const Audiobook = require('./objects/Audiobook')
 const audioFileScanner = require('./utils/audioFileScanner')
-const { getAllAudiobookFiles } = require('./utils/scandir')
+const { getAllAudiobookFileData, getAudiobookFileData } = require('./utils/scandir')
 const { comparePaths, getIno } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
+const { ScanResult } = require('./utils/constants')
+
 
 class Scanner {
   constructor(AUDIOBOOK_PATH, METADATA_PATH, db, emitter) {
@@ -60,6 +63,110 @@ class Scanner {
     return audiobookDataAudioFiles.filter(abdFile => !!abdFile.ino)
   }
 
+  async scanAudiobookData(audiobookData) {
+    var existingAudiobook = this.audiobooks.find(a => a.ino === audiobookData.ino)
+    Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
+
+    if (existingAudiobook) {
+
+      // REMOVE: No valid audio files
+      if (!audiobookData.audioFiles.length) {
+        Logger.error(`[Scanner] "${existingAudiobook.title}" no valid audio files found - removing audiobook`)
+
+        await this.db.removeEntity('audiobook', existingAudiobook.id)
+        this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
+
+        return ScanResult.REMOVED
+      }
+
+      audiobookData.audioFiles = await this.setAudioFileInos(audiobookData.audioFiles, existingAudiobook.audioFiles)
+
+      // Check for audio files that were removed
+      var abdAudioFileInos = audiobookData.audioFiles.map(af => af.ino)
+      var removedAudioFiles = existingAudiobook.audioFiles.filter(file => !abdAudioFileInos.includes(file.ino))
+      if (removedAudioFiles.length) {
+        Logger.info(`[Scanner] ${removedAudioFiles.length} audio files removed for audiobook "${existingAudiobook.title}"`)
+        removedAudioFiles.forEach((af) => existingAudiobook.removeAudioFile(af))
+      }
+
+      // Check for new audio files and sync existing audio files
+      var newAudioFiles = []
+      var hasUpdatedAudioFiles = false
+      audiobookData.audioFiles.forEach((file) => {
+        var existingAudioFile = existingAudiobook.getAudioFileByIno(file.ino)
+        if (existingAudioFile) { // Audio file exists, sync paths
+          if (existingAudiobook.syncAudioFile(existingAudioFile, file)) {
+            hasUpdatedAudioFiles = true
+          }
+        } else {
+          newAudioFiles.push(file)
+        }
+      })
+      if (newAudioFiles.length) {
+        Logger.info(`[Scanner] ${newAudioFiles.length} new audio files were found for audiobook "${existingAudiobook.title}"`)
+        // Scan new audio files found - sets tracks
+        await audioFileScanner.scanAudioFiles(existingAudiobook, newAudioFiles)
+      }
+
+
+      // REMOVE: No valid audio tracks
+      if (!existingAudiobook.tracks.length) {
+        Logger.error(`[Scanner] "${existingAudiobook.title}" has no valid tracks after update - removing audiobook`)
+
+        await this.db.removeEntity('audiobook', existingAudiobook.id)
+        this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
+        return ScanResult.REMOVED
+      }
+
+      var hasUpdates = removedAudioFiles.length || newAudioFiles.length || hasUpdatedAudioFiles
+
+      if (existingAudiobook.checkUpdateMissingParts()) {
+        Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
+        hasUpdates = true
+      }
+
+      if (existingAudiobook.syncOtherFiles(audiobookData.otherFiles)) {
+        hasUpdates = true
+      }
+
+      // Syncs path and fullPath
+      if (existingAudiobook.syncPaths(audiobookData)) {
+        hasUpdates = true
+      }
+
+      if (hasUpdates) {
+        Logger.info(`[Scanner] "${existingAudiobook.title}" was updated - saving`)
+        existingAudiobook.lastUpdate = Date.now()
+        await this.db.updateAudiobook(existingAudiobook)
+        this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
+
+        return ScanResult.UPDATED
+      }
+
+      return ScanResult.UPTODATE
+    }
+
+    // NEW: Check new audiobook
+    if (!audiobookData.audioFiles.length) {
+      Logger.error('[Scanner] No valid audio tracks for Audiobook', audiobookData.path)
+      return ScanResult.NOTHING
+    }
+
+    var audiobook = new Audiobook()
+    audiobook.setData(audiobookData)
+    await audioFileScanner.scanAudioFiles(audiobook, audiobookData.audioFiles)
+    if (!audiobook.tracks.length) {
+      Logger.warn('[Scanner] Invalid audiobook, no valid tracks', audiobook.title)
+      return ScanResult.NOTHING
+    }
+
+    audiobook.checkUpdateMissingParts()
+    Logger.info(`[Scanner] Audiobook "${audiobook.title}" Scanned (${audiobook.sizePretty}) [${audiobook.durationPretty}]`)
+    await this.db.insertAudiobook(audiobook)
+    this.emitter('audiobook_added', audiobook.toJSONMinified())
+    return ScanResult.ADDED
+  }
+
   async scan() {
     // TEMP - fix relative file paths
     // TEMP - update ino for each audiobook
@@ -80,7 +187,7 @@ class Scanner {
     }
 
     const scanStart = Date.now()
-    var audiobookDataFound = await getAllAudiobookFiles(this.AudiobookPath, this.db.serverSettings)
+    var audiobookDataFound = await getAllAudiobookFileData(this.AudiobookPath, this.db.serverSettings)
 
     // Set ino for each ab data as a string
     audiobookDataFound = await this.setAudiobookDataInos(audiobookDataFound)
@@ -112,97 +219,14 @@ class Scanner {
       }
     }
 
+    // Check for new and updated audiobooks
     for (let i = 0; i < audiobookDataFound.length; i++) {
       var audiobookData = audiobookDataFound[i]
-      var existingAudiobook = this.audiobooks.find(a => a.ino === audiobookData.ino)
-      Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
+      var result = await this.scanAudiobookData(audiobookData)
+      if (result === ScanResult.ADDED) scanResults.added++
+      if (result === ScanResult.REMOVED) scanResults.removed++
+      if (result === ScanResult.UPDATED) scanResults.updated++
 
-      if (existingAudiobook) {
-        if (!audiobookData.audioFiles.length) {
-          Logger.error(`[Scanner] "${existingAudiobook.title}" no valid audio files found - removing audiobook`)
-
-          await this.db.removeEntity('audiobook', existingAudiobook.id)
-          this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
-          scanResults.removed++
-        } else {
-          audiobookData.audioFiles = await this.setAudioFileInos(audiobookData.audioFiles, existingAudiobook.audioFiles)
-          var abdAudioFileInos = audiobookData.audioFiles.map(af => af.ino)
-
-          // Check for audio files that were removed
-          var removedAudioFiles = existingAudiobook.audioFiles.filter(file => !abdAudioFileInos.includes(file.ino))
-          if (removedAudioFiles.length) {
-            Logger.info(`[Scanner] ${removedAudioFiles.length} audio files removed for audiobook "${existingAudiobook.title}"`)
-            removedAudioFiles.forEach((af) => existingAudiobook.removeAudioFile(af))
-          }
-
-          // Check for new audio files and sync existing audio files
-          var newAudioFiles = []
-          var hasUpdatedAudioFiles = false
-          audiobookData.audioFiles.forEach((file) => {
-            var existingAudioFile = existingAudiobook.getAudioFileByIno(file.ino)
-            if (existingAudioFile) { // Audio file exists, sync paths
-              if (existingAudiobook.syncAudioFile(existingAudioFile, file)) {
-                hasUpdatedAudioFiles = true
-              }
-            } else {
-              newAudioFiles.push(file)
-            }
-          })
-          if (newAudioFiles.length) {
-            Logger.info(`[Scanner] ${newAudioFiles.length} new audio files were found for audiobook "${existingAudiobook.title}"`)
-            // Scan new audio files found
-            await audioFileScanner.scanAudioFiles(existingAudiobook, newAudioFiles)
-          }
-
-          if (!existingAudiobook.tracks.length) {
-            Logger.error(`[Scanner] "${existingAudiobook.title}" has no valid tracks after update - removing audiobook`)
-
-            await this.db.removeEntity('audiobook', existingAudiobook.id)
-            this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
-          } else {
-            var hasUpdates = removedAudioFiles.length || newAudioFiles.length || hasUpdatedAudioFiles
-
-            if (existingAudiobook.checkUpdateMissingParts()) {
-              Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
-              hasUpdates = true
-            }
-
-            if (existingAudiobook.syncOtherFiles(audiobookData.otherFiles)) {
-              hasUpdates = true
-            }
-
-            // Syncs path and fullPath
-            if (existingAudiobook.syncPaths(audiobookData)) {
-              hasUpdates = true
-            }
-
-            if (hasUpdates) {
-              Logger.info(`[Scanner] "${existingAudiobook.title}" was updated - saving`)
-              existingAudiobook.lastUpdate = Date.now()
-              await this.db.updateAudiobook(existingAudiobook)
-              this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
-              scanResults.updated++
-            }
-          }
-        } // end if update existing
-      } else {
-        if (!audiobookData.audioFiles.length) {
-          Logger.error('[Scanner] No valid audio tracks for Audiobook', audiobookData.path)
-        } else {
-          var audiobook = new Audiobook()
-          audiobook.setData(audiobookData)
-          await audioFileScanner.scanAudioFiles(audiobook, audiobookData.audioFiles)
-          if (!audiobook.tracks.length) {
-            Logger.warn('[Scanner] Invalid audiobook, no valid tracks', audiobook.title)
-          } else {
-            audiobook.checkUpdateMissingParts()
-            Logger.info(`[Scanner] Audiobook "${audiobook.title}" Scanned (${audiobook.sizePretty}) [${audiobook.durationPretty}]`)
-            await this.db.insertAudiobook(audiobook)
-            this.emitter('audiobook_added', audiobook.toJSONMinified())
-            scanResults.added++
-          }
-        } // end if add new
-      }
       var progress = Math.round(100 * (i + 1) / audiobookDataFound.length)
       this.emitter('scan_progress', {
         scanType: 'files',
@@ -220,6 +244,29 @@ class Scanner {
     const scanElapsed = Math.floor((Date.now() - scanStart) / 1000)
     Logger.info(`[Scanned] Finished | ${scanResults.added} added | ${scanResults.updated} updated | ${scanResults.removed} removed | elapsed: ${secondsToTimestamp(scanElapsed)}`)
     return scanResults
+  }
+
+  async scanAudiobook(audiobookPath) {
+    var exists = await fs.pathExists(audiobookPath)
+    if (!exists) {
+      // Audiobook was deleted, TODO: Should confirm this better
+      var audiobook = this.db.audiobooks.find(ab => ab.fullPath === audiobookPath)
+      if (audiobook) {
+        var audiobookJSON = audiobook.toJSONMinified()
+        await this.db.removeEntity('audiobook', audiobook.id)
+        this.emitter('audiobook_removed', audiobookJSON)
+        return ScanResult.REMOVED
+      }
+      Logger.warn('Path was deleted but no audiobook found', audiobookPath)
+      return ScanResult.NOTHING
+    }
+
+    var audiobookData = await getAudiobookFileData(this.AudiobookPath, audiobookPath, this.db.serverSettings)
+    if (!audiobookData) {
+      return ScanResult.NOTHING
+    }
+    audiobookData.ino = await getIno(audiobookData.fullPath)
+    return this.scanAudiobookData(audiobookData)
   }
 
   async fetchMetadata(id, trackIndex = 0) {

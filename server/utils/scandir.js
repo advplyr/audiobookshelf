@@ -30,7 +30,54 @@ function getFileType(ext) {
   return 'unknown'
 }
 
-async function getAllAudiobookFiles(abRootPath, serverSettings = {}) {
+// Input relative filepath, output all details that can be parsed
+function getAudiobookDataFromFilepath(abRootPath, relpath, parseSubtitle = false) {
+  var pathformat = Path.parse(relpath)
+  var path = pathformat.dir
+
+  if (!path) {
+    Logger.error('Ignoring file in root dir', relpath)
+    return null
+  }
+
+  // If relative file directory has 3 folders, then the middle folder will be series
+  var splitDir = path.split(Path.sep)
+  var author = null
+  if (splitDir.length > 1) author = splitDir.shift()
+  var series = null
+  if (splitDir.length > 1) series = splitDir.shift()
+  var title = splitDir.shift()
+
+  var publishYear = null
+  var subtitle = null
+
+  // If Title is of format 1999 - Title, then use 1999 as publish year
+  var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
+  if (publishYearMatch && publishYearMatch.length > 2) {
+    if (!isNaN(publishYearMatch[1])) {
+      publishYear = publishYearMatch[1]
+      title = publishYearMatch[2]
+    }
+  }
+
+  if (parseSubtitle && title.includes(' - ')) {
+    var splitOnSubtitle = title.split(' - ')
+    title = splitOnSubtitle.shift()
+    subtitle = splitOnSubtitle.join(' - ')
+  }
+
+  return {
+    author,
+    title,
+    subtitle,
+    series,
+    publishYear,
+    path, // relative audiobook path i.e. /Author Name/Book Name/..
+    fullPath: Path.join(abRootPath, path) // i.e. /audiobook/Author Name/Book Name/..
+  }
+}
+
+async function getAllAudiobookFileData(abRootPath, serverSettings = {}) {
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
   var paths = await getPaths(abRootPath)
@@ -38,59 +85,26 @@ async function getAllAudiobookFiles(abRootPath, serverSettings = {}) {
 
   paths.files.forEach((filepath) => {
     var relpath = Path.normalize(filepath).replace(abRootPath, '').slice(1)
-    var pathformat = Path.parse(relpath)
-    var path = pathformat.dir
-
-    if (!path) {
-      Logger.error('Ignoring file in root dir', filepath)
-      return
-    }
-
-    // If relative file directory has 3 folders, then the middle folder will be series
-    var splitDir = pathformat.dir.split(Path.sep)
-    var author = null
-    if (splitDir.length > 1) author = splitDir.shift()
-    var series = null
-    if (splitDir.length > 1) series = splitDir.shift()
-    var title = splitDir.shift()
-
-    var publishYear = null
-    var subtitle = null
-
-    // If Title is of format 1999 - Title, then use 1999 as publish year
-    var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
-    if (publishYearMatch && publishYearMatch.length > 2) {
-      if (!isNaN(publishYearMatch[1])) {
-        publishYear = publishYearMatch[1]
-        title = publishYearMatch[2]
-      }
-    }
-
-    if (parseSubtitle && title.includes(' - ')) {
-      var splitOnSubtitle = title.split(' - ')
-      title = splitOnSubtitle.shift()
-      subtitle = splitOnSubtitle.join(' - ')
-    }
+    var parsed = Path.parse(relpath)
+    var path = parsed.dir
 
     if (!audiobooks[path]) {
+      var audiobookData = getAudiobookDataFromFilepath(abRootPath, relpath, parseSubtitle)
+      if (!audiobookData) return
+
       audiobooks[path] = {
-        author,
-        title,
-        subtitle,
-        series: cleanString(series),
-        publishYear: publishYear,
-        path: path,
-        fullPath: Path.join(abRootPath, path),
+        ...audiobookData,
         audioFiles: [],
         otherFiles: []
       }
     }
+
     var fileObj = {
-      filetype: getFileType(pathformat.ext),
-      filename: pathformat.base,
+      filetype: getFileType(parsed.ext),
+      filename: parsed.base,
       path: relpath,
       fullPath: filepath,
-      ext: pathformat.ext
+      ext: parsed.ext
     }
     if (fileObj.filetype === 'audio') {
       audiobooks[path].audioFiles.push(fileObj)
@@ -100,4 +114,44 @@ async function getAllAudiobookFiles(abRootPath, serverSettings = {}) {
   })
   return Object.values(audiobooks)
 }
-module.exports.getAllAudiobookFiles = getAllAudiobookFiles
+module.exports.getAllAudiobookFileData = getAllAudiobookFileData
+
+
+async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = {}) {
+  var parseSubtitle = !!serverSettings.scannerParseSubtitle
+
+  var paths = await getPaths(audiobookPath)
+  var audiobook = null
+
+  paths.files.forEach((filepath) => {
+    var relpath = Path.normalize(filepath).replace(abRootPath, '').slice(1)
+
+    if (!audiobook) {
+      var audiobookData = getAudiobookDataFromFilepath(abRootPath, relpath, parseSubtitle)
+      if (!audiobookData) return
+
+      audiobook = {
+        ...audiobookData,
+        audioFiles: [],
+        otherFiles: []
+      }
+    }
+
+    var extname = Path.extname(filepath)
+    var basename = Path.basename(filepath)
+    var fileObj = {
+      filetype: getFileType(extname),
+      filename: basename,
+      path: relpath,
+      fullPath: filepath,
+      ext: extname
+    }
+    if (fileObj.filetype === 'audio') {
+      audiobook.audioFiles.push(fileObj)
+    } else {
+      audiobook.otherFiles.push(fileObj)
+    }
+  })
+  return audiobook
+}
+module.exports.getAudiobookFileData = getAudiobookFileData

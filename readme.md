@@ -28,8 +28,6 @@ will store "With a Subtitle" as the subtitle
 
 #### Features coming soon:
 
-* Auto add and update audiobooks (currently you need to press scan)
-* User permissions & editing users
 * Support different views to see more details of each audiobook
 * Option to download all files in a zip file
 * iOS App (Android is in beta [here](https://play.google.com/store/apps/details?id=com.audiobookshelf.app))
