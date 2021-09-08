@@ -14,7 +14,6 @@ const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const Logger = require('./Logger')
-const { ScanResult } = require('./utils/constants')
 
 class Server {
   constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {

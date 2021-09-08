@@ -1,4 +1,4 @@
-const DEFAULT_EXPIRATION = 1000 * 60 * 10 // 10 minutes
+const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
 
 class Download {
   constructor(download) {

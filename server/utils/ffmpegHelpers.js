@@ -1,4 +1,5 @@
 const fs = require('fs-extra')
+const package = require('../../package.json')
 
 function escapeSingleQuotes(path) {
   // return path.replace(/'/g, '\'\\\'\'')
@@ -35,3 +36,32 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
   return firstTrackStartTime
 }
 module.exports.writeConcatFile = writeConcatFile
+
+
+async function writeMetadataFile(audiobook, outputPath) {
+  var inputstrs = [
+    ';FFMETADATA1',
+    `title=${audiobook.title}`,
+    `artist=${audiobook.author}`,
+    `date=${audiobook.book.publishYear || ''}`,
+    `comment=AudioBookshelf v${package.version}`,
+    'genre=Audiobook'
+  ]
+
+  if (audiobook.chapters) {
+    audiobook.chapters.forEach((chap) => {
+      const chapterstrs = [
+        '[CHAPTER]',
+        'TIMEBASE=1/1000',
+        `START=${Math.round(chap.start * 1000)}`,
+        `END=${Math.round(chap.end * 1000)}`,
+        `title=${chap.title}`
+      ]
+      inputstrs = inputstrs.concat(chapterstrs)
+    })
+  }
+
+  await fs.writeFile(outputPath, inputstrs.join('\n'))
+  return inputstrs
+}
+module.exports.writeMetadataFile = writeMetadataFile

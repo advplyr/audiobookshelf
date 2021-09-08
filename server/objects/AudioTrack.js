@@ -97,12 +97,12 @@ class AudioTrack {
     this.format = probeData.format
     this.duration = probeData.duration
     this.size = probeData.size
-    this.bitRate = probeData.bit_rate
+    this.bitRate = probeData.bitRate
     this.language = probeData.language
     this.codec = probeData.codec
-    this.timeBase = probeData.time_base
+    this.timeBase = probeData.timeBase
     this.channels = probeData.channels
-    this.channelLayout = probeData.channel_layout
+    this.channelLayout = probeData.channelLayout
 
     this.tagAlbum = probeData.file_tag_album || null
     this.tagArtist = probeData.file_tag_artist || null

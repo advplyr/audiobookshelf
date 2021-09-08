@@ -8,7 +8,16 @@
         <p class="font-mono text-sm">{{ totalDurationPretty }}</p>
       </div>
 
-      <div class="absolute right-24 top-0 bottom-0">
+      <div class="absolute right-20 top-0 bottom-0">
+        <div v-if="chapters.length" class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+          <span class="material-icons text-3xl">format_list_bulleted</span>
+        </div>
+        <div v-else class="flex items-center justify-center text-gray-500">
+          <span class="material-icons text-3xl">format_list_bulleted</span>
+        </div>
+      </div>
+
+      <div class="absolute right-32 top-0 bottom-0">
         <controls-volume-control v-model="volume" @input="updateVolume" />
       </div>
       <div class="flex my-2">
@@ -58,6 +67,8 @@
     </div>
 
     <audio ref="audio" @pause="paused" @playing="playing" @progress="progress" @timeupdate="timeupdate" @loadeddata="audioLoadedData" />
+
+    <modals-chapters-modal v-model="showChaptersModal" :chapters="chapters" @select="selectChapter" />
   </div>
 </template>
 
@@ -66,7 +77,11 @@ import Hls from 'hls.js'
 
 export default {
   props: {
-    loading: Boolean
+    loading: Boolean,
+    chapters: {
+      type: Array,
+      default: () => []
+    }
   },
   data() {
     return {
@@ -84,7 +99,8 @@ export default {
       audioEl: null,
       totalDuration: 0,
       seekedTime: 0,
-      seekLoading: false
+      seekLoading: false,
+      showChaptersModal: false
     }
   },
   computed: {
@@ -96,6 +112,10 @@ export default {
     }
   },
   methods: {
+    selectChapter(chapter) {
+      this.seek(chapter.start)
+      this.showChaptersModal = false
+    },
     seek(time) {
       if (this.loading) {
         return
@@ -110,7 +130,7 @@ export default {
       }
       this.seekedTime = time
       this.seekLoading = true
-      console.warn('SEEK TO', this.$secondsToTimestamp(time))
+
       this.audioEl.currentTime = time
 
       if (this.$refs.playedTrack) {
@@ -361,7 +381,7 @@ export default {
           xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
         }
       }
-      console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
+      // console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
       this.hlsInstance = new Hls(hlsOptions)
       var audio = this.$refs.audio
       audio.volume = this.volume
@@ -386,9 +406,12 @@ export default {
           }
         })
         this.hlsInstance.on(Hls.Events.DESTROYING, () => {
-          console.warn('[HLS] Destroying HLS Instance')
+          console.log('[HLS] Destroying HLS Instance')
         })
       })
+    },
+    showChapters() {
+      this.showChaptersModal = true
     },
     play() {
       if (!this.$refs.audio) {
@@ -410,7 +433,6 @@ export default {
         this.staleHlsInstance = this.hlsInstance
         this.staleHlsInstance.destroy()
         this.hlsInstance = null
-        console.log('Terminated HLS Instance', this.staleHlsInstance)
       }
     },
     async resetStream(startTime) {

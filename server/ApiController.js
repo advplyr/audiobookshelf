@@ -418,12 +418,9 @@ class ApiController {
 
     var options = {
       headers: {
-        // 'Content-Disposition': `attachment; filename=${download.filename}`,
         'Content-Type': download.mimeType
-        // 'Content-Length': download.size
       }
     }
-    Logger.info('Starting Download', options, 'SIZE', download.size)
     res.download(download.fullPath, download.filename, options, (err) => {
       if (err) {
         Logger.error('Download Error', err)

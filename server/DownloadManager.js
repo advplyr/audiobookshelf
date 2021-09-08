@@ -4,7 +4,7 @@ const fs = require('fs-extra')
 const workerThreads = require('worker_threads')
 const Logger = require('./Logger')
 const Download = require('./objects/Download')
-const { writeConcatFile } = require('./utils/ffmpegHelpers')
+const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
 
 class DownloadManager {
@@ -49,14 +49,6 @@ class DownloadManager {
     this.prepareDownload(client, audiobook, options)
   }
 
-  getBestFileType(tracks) {
-    if (!tracks || !tracks.length) {
-      return null
-    }
-    var firstTrack = tracks[0]
-    return firstTrack.ext.substr(1)
-  }
-
   async prepareDownload(client, audiobook, options = {}) {
     var downloadId = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
     var dlpath = Path.join(this.downloadDirPath, downloadId)
@@ -73,7 +65,7 @@ class DownloadManager {
     var audiobookDirname = Path.basename(audiobook.path)
 
     if (downloadType === 'singleAudio') {
-      var audioFileType = options.audioFileType || this.getBestFileType(audiobook.tracks)
+      var audioFileType = options.audioFileType || 'm4b'
       delete options.audioFileType
       filename = audiobookDirname + '.' + audioFileType
       fileext = '.' + audioFileType
@@ -105,21 +97,47 @@ class DownloadManager {
   }
 
   async processSingleAudioDownload(audiobook, download) {
-    // var ffmpeg = Ffmpeg()
     var concatFilePath = Path.join(download.dirpath, 'files.txt')
     await writeConcatFile(audiobook.tracks, concatFilePath)
 
-    var workerData = {
-      input: concatFilePath,
-      inputFormat: 'concat',
-      inputOption: '-safe 0',
-      options: [
-        '-loglevel warning',
-        '-map 0:a',
-        '-c:a copy'
-      ],
-      output: download.fullPath
+    var metadataFilePath = Path.join(download.dirpath, 'metadata.txt')
+    await writeMetadataFile(audiobook, metadataFilePath)
+
+    const ffmpegInputs = [
+      {
+        input: concatFilePath,
+        options: ['-safe 0', '-f concat']
+      },
+      {
+        input: metadataFilePath
+      }
+    ]
+
+    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
+    const ffmpegOptions = [
+      `-loglevel ${logLevel}`,
+      '-map 0:a',
+      '-map_metadata 1',
+      '-acodec aac',
+      '-ac 2',
+      '-b:a 64k',
+      '-id3v2_version 3']
+
+    if (audiobook.book.cover) {
+      ffmpegInputs.push({
+        input: audiobook.book.cover,
+        options: ['-f image2pipe']
+      })
+      ffmpegOptions.push('-vf [2:v]crop=trunc(iw/2)*2:trunc(ih/2)*2')
+      ffmpegOptions.push('-map 2:v')
     }
+
+    var workerData = {
+      inputs: ffmpegInputs,
+      options: ffmpegOptions,
+      output: download.fullPath,
+    }
+
     var worker = new workerThreads.Worker('./server/utils/downloadWorker.js', { workerData })
     worker.on('message', (message) => {
       if (message != null && typeof message === 'object') {
@@ -166,14 +184,14 @@ class DownloadManager {
     }
 
     // Remove files.txt if it was used
-    if (download.type === 'singleAudio') {
-      var concatFilePath = Path.join(download.dirpath, 'files.txt')
-      try {
-        await fs.remove(concatFilePath)
-      } catch (error) {
-        Logger.error('[DownloadManager] Failed to remove files.txt')
-      }
-    }
+    // if (download.type === 'singleAudio') {
+    //   var concatFilePath = Path.join(download.dirpath, 'files.txt')
+    //   try {
+    //     await fs.remove(concatFilePath)
+    //   } catch (error) {
+    //     Logger.error('[DownloadManager] Failed to remove files.txt')
+    //   }
+    // }
 
     result.size = await getFileSize(download.fullPath)
     download.setComplete(result)

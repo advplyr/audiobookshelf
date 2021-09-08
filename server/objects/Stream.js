@@ -191,7 +191,7 @@ class Stream extends EventEmitter {
 
       this.socket.emit('stream_progress', {
         stream: this.id,
-        percentCreated: perc,
+        percent: perc,
         chunks,
         numSegments: this.numSegments
       })
@@ -201,7 +201,7 @@ class Stream extends EventEmitter {
   }
 
   startLoop() {
-    this.socket.emit('stream_progress', { chunks: [], numSegments: 0 })
+    this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
     this.loop = setInterval(() => {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
@@ -230,8 +230,9 @@ class Stream extends EventEmitter {
       this.ffmpeg.inputOption('-noaccurate_seek')
     }
 
+    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
     this.ffmpeg.addOption([
-      '-loglevel warning',
+      `-loglevel ${logLevel}`,
       '-map 0:a',
       '-c:a copy'
     ])
