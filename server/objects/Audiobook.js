@@ -26,6 +26,7 @@ class Audiobook {
 
     this.tags = []
     this.book = null
+    this.chapters = []
 
     if (audiobook) {
       this.construct(audiobook)
@@ -50,6 +51,9 @@ class Audiobook {
     this.tags = audiobook.tags
     if (audiobook.book) {
       this.book = new Book(audiobook.book)
+    }
+    if (audiobook.chapters) {
+      this.chapters = audiobook.chapters.map(c => ({ ...c }))
     }
   }
 
@@ -122,7 +126,8 @@ class Audiobook {
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
       audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
-      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON())
+      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
+      chapters: this.chapters || []
     }
   }
 
@@ -141,7 +146,8 @@ class Audiobook {
       hasBookMatch: !!this.book,
       hasMissingParts: this.missingParts ? this.missingParts.length : 0,
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
-      numTracks: this.tracks.length
+      numTracks: this.tracks.length,
+      chapters: this.chapters || []
     }
   }
 
@@ -162,7 +168,8 @@ class Audiobook {
       otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
       tags: this.tags,
       book: this.bookToJSON(),
-      tracks: this.tracksToJSON()
+      tracks: this.tracksToJSON(),
+      chapters: this.chapters || []
     }
   }
 
@@ -402,6 +409,32 @@ class Audiobook {
 
   getAudioFileByIno(ino) {
     return this.audioFiles.find(af => af.ino === ino)
+  }
+
+  setChaptersFromAudioFile(audioFile) {
+    if (!audioFile.chapters) return []
+    return audioFile.chapters.map(c => ({ ...c }))
+  }
+
+  setChapters() {
+    if (this.audioFiles.length === 1) {
+      if (this.audioFiles[0].chapters) {
+        this.chapters = this.audioFiles[0].chapters.map(c => ({ ...c }))
+      }
+    } else {
+      this.chapters = []
+      var currTrackId = 0
+      var currStartTime = 0
+      this.tracks.forEach((track) => {
+        this.chapters.push({
+          id: currTrackId++,
+          start: currStartTime,
+          end: currStartTime + track.duration,
+          title: `Chapter ${currTrackId}`
+        })
+        currStartTime += track.duration
+      })
+    }
   }
 }
 module.exports = Audiobook

@@ -13,9 +13,11 @@ Logger.info('[DownloadWorker] Starting Worker...')
 const ffmpegCommand = Ffmpeg()
 const startTime = Date.now()
 
-ffmpegCommand.input(workerData.input)
-if (workerData.inputFormat) ffmpegCommand.inputFormat(workerData.inputFormat)
-if (workerData.inputOption) ffmpegCommand.inputOption(workerData.inputOption)
+workerData.inputs.forEach((inputData) => {
+  ffmpegCommand.input(inputData.input)
+  if (inputData.options) ffmpegCommand.inputOption(inputData.options)
+})
+
 if (workerData.options) ffmpegCommand.addOption(workerData.options)
 ffmpegCommand.output(workerData.output)
 

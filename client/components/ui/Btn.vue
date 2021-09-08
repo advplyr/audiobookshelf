@@ -59,7 +59,7 @@ export default {
 </script>
 
 <style>
-button.btn::before {
+.btn::before {
   content: '';
   position: absolute;
   border-radius: 6px;
@@ -70,7 +70,7 @@ button.btn::before {
   background-color: rgba(255, 255, 255, 0);
   transition: all 0.1s ease-in-out;
 }
-button.btn:hover:not(:disabled)::before {
+.btn:hover:not(:disabled)::before {
   background-color: rgba(255, 255, 255, 0.1);
 }
 button:disabled::before {

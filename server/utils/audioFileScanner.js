@@ -33,7 +33,8 @@ async function scan(path) {
     language: audioStream.language,
     channel_layout: audioStream.channel_layout,
     channels: audioStream.channels,
-    sample_rate: audioStream.sample_rate
+    sample_rate: audioStream.sample_rate,
+    chapters: probeData.chapters || []
   }
 
   for (const key in probeData) {

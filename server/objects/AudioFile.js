@@ -20,6 +20,7 @@ class AudioFile {
     this.timeBase = null
     this.channels = null
     this.channelLayout = null
+    this.chapters = []
 
     this.tagAlbum = null
     this.tagArtist = null
@@ -60,6 +61,7 @@ class AudioFile {
       timeBase: this.timeBase,
       channels: this.channels,
       channelLayout: this.channelLayout,
+      chapters: this.chapters,
       tagAlbum: this.tagAlbum,
       tagArtist: this.tagArtist,
       tagGenre: this.tagGenre,
@@ -93,6 +95,7 @@ class AudioFile {
     this.timeBase = data.timeBase
     this.channels = data.channels
     this.channelLayout = data.channelLayout
+    this.chapters = data.chapters
 
     this.tagAlbum = data.tagAlbum
     this.tagArtist = data.tagArtist
@@ -121,12 +124,13 @@ class AudioFile {
     this.format = data.format
     this.duration = data.duration
     this.size = data.size
-    this.bitRate = data.bit_rate
+    this.bitRate = data.bit_rate || null
     this.language = data.language
     this.codec = data.codec
     this.timeBase = data.time_base
     this.channels = data.channels
     this.channelLayout = data.channel_layout
+    this.chapters = data.chapters || []
 
     this.tagAlbum = data.file_tag_album || null
     this.tagArtist = data.file_tag_artist || null

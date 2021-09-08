@@ -14,7 +14,7 @@
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :loading="isLoading" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
   </div>
 </template>
 
@@ -48,6 +48,9 @@ export default {
     },
     book() {
       return this.streamAudiobook ? this.streamAudiobook.book || {} : {}
+    },
+    chapters() {
+      return this.streamAudiobook ? this.streamAudiobook.chapters || [] : []
     },
     title() {
       return this.book.title || 'No Title'
@@ -94,7 +97,7 @@ export default {
     streamProgress(data) {
       if (!data.numSegments) return
       var chunks = data.chunks
-      console.log(`[STREAM-CONTAINER] Stream Progress ${data.percent}`)
+      console.log(`[StreamContainer] Stream Progress ${data.percent}`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setChunksReady(chunks, data.numSegments)
       } else {
@@ -104,7 +107,7 @@ export default {
     streamOpen(stream) {
       this.stream = stream
       if (this.$refs.audioPlayer) {
-        console.log('[STREAM-CONTAINER] streamOpen', stream)
+        console.log('[StreamContainer] streamOpen', stream)
         this.openStream()
       } else if (this.audioPlayerReady) {
         console.error('No Audio Ref')

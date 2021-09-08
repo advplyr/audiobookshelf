@@ -110,9 +110,23 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   return info
 }
 
+function parseChapters(chapters) {
+  if (!chapters) return []
+  return chapters.map(chap => {
+    var title = chap['TAG:title'] || chap.title
+    var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
+    return {
+      id: chap.id,
+      start: !isNaN(chap.start_time) ? chap.start_time : (chap.start / timebase),
+      end: chap.end_time || (chap.end / timebase),
+      title
+    }
+  })
+}
+
 function parseProbeData(data) {
   try {
-    var { format, streams } = data
+    var { format, streams, chapters } = data
     var { format_long_name, duration, size, bit_rate } = format
 
     var sizeBytes = !isNaN(size) ? Number(size) : null
@@ -146,6 +160,8 @@ function parseProbeData(data) {
       }
     }
 
+    cleanedData.chapters = parseChapters(chapters)
+
     return cleanedData
   } catch (error) {
     console.error('Parse failed', error)
@@ -155,7 +171,7 @@ function parseProbeData(data) {
 
 function probe(filepath) {
   return new Promise((resolve) => {
-    Ffmpeg.ffprobe(filepath, (err, raw) => {
+    Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
       if (err) {
         console.error(err)
         resolve(null)

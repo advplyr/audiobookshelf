@@ -47,6 +47,11 @@ export default {
           component: 'modals-edit-tabs-tracks'
         },
         {
+          id: 'chapters',
+          title: 'Chapters',
+          component: 'modals-edit-tabs-chapters'
+        },
+        {
           id: 'download',
           title: 'Download',
           component: 'modals-edit-tabs-download'

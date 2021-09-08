@@ -1,13 +1,17 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <div class="w-full border border-black-200 p-4 my-4">
-      <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
+      <!-- <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
         <span class="text-error">Experimental Feature!</span> If your audiobook is made up of multiple audio files, this will concatenate them into a single file. The file type will be the same as the first track. Preparing downloads can take anywhere from a few seconds to several minutes and will be stored in
         <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 10 minutes then get deleted.
+      </p> -->
+      <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
+        <span class="text-error">Experimental Feature!</span> If your audiobook has multiple tracks, this will merge them into a single M4B audiobook file.<br />Preparing downloads can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be
+        deleted.
       </p>
 
       <div class="flex items-center">
-        <p class="text-lg">Single audio file</p>
+        <p class="text-lg">{{ isSingleTrack ? 'Single Track' : 'M4B Audiobook File' }}</p>
         <div class="flex-grow" />
         <div>
           <p v-if="singleAudioDownloadFailed" class="text-error mb-2">Download Failed</p>

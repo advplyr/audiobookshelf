@@ -177,7 +177,7 @@ export default {
       }
     },
     deleteAudiobook() {
-      if (confirm(`Are you sure you want to remove this audiobook?`)) {
+      if (confirm(`Are you sure you want to remove this audiobook?\n\n*Does not delete your files, only removes the audiobook from AudioBookshelf`)) {
         this.isProcessing = true
         this.$axios
           .$delete(`/api/audiobook/${this.audiobookId}`)

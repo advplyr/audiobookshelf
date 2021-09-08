@@ -135,6 +135,8 @@ class Scanner {
       }
 
       if (hasUpdates) {
+        existingAudiobook.setChapters()
+
         Logger.info(`[Scanner] "${existingAudiobook.title}" was updated - saving`)
         existingAudiobook.lastUpdate = Date.now()
         await this.db.updateAudiobook(existingAudiobook)
@@ -161,6 +163,8 @@ class Scanner {
     }
 
     audiobook.checkUpdateMissingParts()
+    audiobook.setChapters()
+
     Logger.info(`[Scanner] Audiobook "${audiobook.title}" Scanned (${audiobook.sizePretty}) [${audiobook.durationPretty}]`)
     await this.db.insertAudiobook(audiobook)
     this.emitter('audiobook_added', audiobook.toJSONMinified())
