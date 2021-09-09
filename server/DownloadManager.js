@@ -65,10 +65,14 @@ class DownloadManager {
     var audiobookDirname = Path.basename(audiobook.path)
 
     if (downloadType === 'singleAudio') {
-      var audioFileType = options.audioFileType || 'm4b'
+      var audioFileType = options.audioFileType || '.m4b'
       delete options.audioFileType
-      filename = audiobookDirname + '.' + audioFileType
-      fileext = '.' + audioFileType
+      if (audioFileType === 'same') {
+        var firstTrack = audiobook.tracks[0]
+        audioFileType = firstTrack.ext
+      }
+      filename = audiobookDirname + audioFileType
+      fileext = audioFileType
       filepath = Path.join(dlpath, filename)
     }
 
@@ -97,33 +101,47 @@ class DownloadManager {
   }
 
   async processSingleAudioDownload(audiobook, download) {
+
+    // If changing audio file type then encoding is needed
+    var requiresEncode = audiobook.tracks[0].ext !== download.ext || download.includeCover || download.includeMetadata
+
     var concatFilePath = Path.join(download.dirpath, 'files.txt')
     await writeConcatFile(audiobook.tracks, concatFilePath)
-
-    var metadataFilePath = Path.join(download.dirpath, 'metadata.txt')
-    await writeMetadataFile(audiobook, metadataFilePath)
 
     const ffmpegInputs = [
       {
         input: concatFilePath,
         options: ['-safe 0', '-f concat']
-      },
-      {
-        input: metadataFilePath
       }
     ]
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
-    const ffmpegOptions = [
-      `-loglevel ${logLevel}`,
-      '-map 0:a',
-      '-map_metadata 1',
-      '-acodec aac',
-      '-ac 2',
-      '-b:a 64k',
-      '-id3v2_version 3']
+    var ffmpegOptions = [`-loglevel ${logLevel}`]
 
-    if (audiobook.book.cover) {
+    if (requiresEncode) {
+      ffmpegOptions = ffmpegOptions.concat([
+        '-map 0:a',
+        '-acodec aac',
+        '-ac 2',
+        '-b:a 64k',
+        '-id3v2_version 3'
+      ])
+    } else {
+      ffmpegOptions.push('-c copy')
+    }
+
+    if (download.includeMetadata) {
+      var metadataFilePath = Path.join(download.dirpath, 'metadata.txt')
+      await writeMetadataFile(audiobook, metadataFilePath)
+
+      ffmpegInputs.push({
+        input: metadataFilePath
+      })
+
+      ffmpegOptions.push('-map_metadata 1')
+    }
+
+    if (download.includeCover && audiobook.book.cover) {
       ffmpegInputs.push({
         input: audiobook.book.cover,
         options: ['-f image2pipe']
