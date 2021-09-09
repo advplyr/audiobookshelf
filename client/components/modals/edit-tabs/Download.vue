@@ -106,7 +106,9 @@ export default {
 
       var downloadPayload = {
         audiobookId: this.audiobook.id,
-        type: 'singleAudio'
+        type: 'singleAudio',
+        includeMetadata: true,
+        includeCover: true
       }
       this.$root.socket.emit('download', downloadPayload)
     },

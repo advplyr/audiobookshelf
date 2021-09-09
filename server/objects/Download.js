@@ -28,6 +28,14 @@ class Download {
     }
   }
 
+  get includeMetadata() {
+    return !!this.options.includeMetadata
+  }
+
+  get includeCover() {
+    return !!this.options.includeCover
+  }
+
   get mimeType() {
     if (this.ext === '.mp3' || this.ext === '.m4b' || this.ext === '.m4a') {
       return 'audio/mpeg'
