@@ -1,9 +1,10 @@
 const fs = require('fs-extra')
+const Path = require('path')
 const Logger = require('./Logger')
 const BookFinder = require('./BookFinder')
 const Audiobook = require('./objects/Audiobook')
 const audioFileScanner = require('./utils/audioFileScanner')
-const { getAllAudiobookFileData, getAudiobookFileData } = require('./utils/scandir')
+const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('./utils/scandir')
 const { comparePaths, getIno } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
 const { ScanResult } = require('./utils/constants')
@@ -191,7 +192,7 @@ class Scanner {
     }
 
     const scanStart = Date.now()
-    var audiobookDataFound = await getAllAudiobookFileData(this.AudiobookPath, this.db.serverSettings)
+    var audiobookDataFound = await scanRootDir(this.AudiobookPath, this.db.serverSettings)
 
     // Set ino for each ab data as a string
     audiobookDataFound = await this.setAudiobookDataInos(audiobookDataFound)
@@ -251,26 +252,73 @@ class Scanner {
   }
 
   async scanAudiobook(audiobookPath) {
-    var exists = await fs.pathExists(audiobookPath)
-    if (!exists) {
-      // Audiobook was deleted, TODO: Should confirm this better
-      var audiobook = this.db.audiobooks.find(ab => ab.fullPath === audiobookPath)
-      if (audiobook) {
-        var audiobookJSON = audiobook.toJSONMinified()
-        await this.db.removeEntity('audiobook', audiobook.id)
-        this.emitter('audiobook_removed', audiobookJSON)
-        return ScanResult.REMOVED
-      }
-      Logger.warn('Path was deleted but no audiobook found', audiobookPath)
-      return ScanResult.NOTHING
-    }
-
+    Logger.debug('[Scanner] scanAudiobook', audiobookPath)
     var audiobookData = await getAudiobookFileData(this.AudiobookPath, audiobookPath, this.db.serverSettings)
     if (!audiobookData) {
       return ScanResult.NOTHING
     }
     audiobookData.ino = await getIno(audiobookData.fullPath)
     return this.scanAudiobookData(audiobookData)
+  }
+
+  // Files were modified in this directory, check it out
+  async checkDir(dir) {
+    var exists = await fs.pathExists(dir)
+    if (!exists) {
+      // Audiobook was deleted, TODO: Should confirm this better
+      var audiobook = this.db.audiobooks.find(ab => ab.fullPath === dir)
+      if (audiobook) {
+        var audiobookJSON = audiobook.toJSONMinified()
+        await this.db.removeEntity('audiobook', audiobook.id)
+        this.emitter('audiobook_removed', audiobookJSON)
+        return ScanResult.REMOVED
+      }
+
+      // Path inside audiobook was deleted, scan audiobook
+      audiobook = this.db.audiobooks.find(ab => dir.startsWith(ab.fullPath))
+      if (audiobook) {
+        Logger.info(`[Scanner] Path inside audiobook "${audiobook.title}" was deleted: ${dir}`)
+        return this.scanAudiobook(audiobook.fullPath)
+      }
+
+      Logger.warn('[Scanner] Path was deleted but no audiobook found', dir)
+      return ScanResult.NOTHING
+    }
+
+    // Check if this is a subdirectory of an audiobook
+    var audiobook = this.db.audiobooks.find((ab) => dir.startsWith(ab.fullPath))
+    if (audiobook) {
+      Logger.debug(`[Scanner] Check Dir audiobook "${audiobook.title}" found: ${dir}`)
+      return this.scanAudiobook(audiobook.fullPath)
+    }
+
+    // Check if an audiobook is a subdirectory of this dir
+    audiobook = this.db.audiobooks.find(ab => ab.fullPath.startsWith(dir))
+    if (audiobook) {
+      Logger.warn(`[Scanner] Files were added/updated in a root directory of an existing audiobook, ignore files: ${dir}`)
+      return ScanResult.NOTHING
+    }
+
+    // Must be a new audiobook
+    Logger.debug(`[Scanner] Check Dir must be a new audiobook: ${dir}`)
+    return this.scanAudiobook(dir)
+  }
+
+  // Array of files that may have been renamed, removed or added
+  async filesChanged(filepaths) {
+    if (!filepaths.length) return ScanResult.NOTHING
+    var relfilepaths = filepaths.map(path => path.replace(this.AudiobookPath, ''))
+    var fileGroupings = groupFilesIntoAudiobookPaths(relfilepaths)
+
+    var results = []
+    for (const dir in fileGroupings) {
+      Logger.debug(`[Scanner] Check dir ${dir}`)
+      var fullPath = Path.join(this.AudiobookPath, dir)
+      var result = await this.checkDir(fullPath)
+      Logger.debug(`[Scanner] Check dir result ${result}`)
+      results.push(result)
+    }
+    return results
   }
 
   async fetchMetadata(id, trackIndex = 0) {

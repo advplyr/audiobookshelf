@@ -91,7 +91,6 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
   var tracks = []
   for (let i = 0; i < newAudioFiles.length; i++) {
     var audioFile = newAudioFiles[i]
-
     var scanData = await scan(audioFile.fullPath)
     if (!scanData || scanData.error) {
       Logger.error('[AudioFileScanner] Scan failed for', audioFile.path)

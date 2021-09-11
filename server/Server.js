@@ -75,20 +75,10 @@ class Server {
     })
   }
 
-  async newFilesAdded({ dir, files }) {
-    Logger.info(files.length, 'New Files Added in dir', dir)
-    var result = await this.scanner.scanAudiobook(dir)
-    Logger.info('New Files Added result', result)
-  }
-  async filesRemoved({ dir, files }) {
-    Logger.info(files.length, 'Files Removed in dir', dir)
-    var result = await this.scanner.scanAudiobook(dir)
-    Logger.info('Files Removed result', result)
-  }
-  async filesRenamed({ dir, files }) {
-    Logger.info(files.length, 'Files Renamed in dir', dir)
-    var result = await this.scanner.scanAudiobook(dir)
-    Logger.info('Files Renamed result', result)
+  async filesChanged(files) {
+    Logger.info('[Server]', files.length, 'Files Changed')
+    var result = await this.scanner.filesChanged(files)
+    Logger.info('[Server] Files changed result', result)
   }
 
   async scan() {
@@ -125,9 +115,7 @@ class Server {
     this.auth.init()
 
     this.watcher.initWatcher()
-    this.watcher.on('new_files', this.newFilesAdded.bind(this))
-    this.watcher.on('removed_files', this.filesRemoved.bind(this))
-    this.watcher.on('renamed_files', this.filesRenamed.bind(this))
+    this.watcher.on('files', this.filesChanged.bind(this))
   }
 
   authMiddleware(req, res, next) {

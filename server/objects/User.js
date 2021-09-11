@@ -24,13 +24,13 @@ class User {
     return this.type === 'root'
   }
   get canDelete() {
-    return !!this.permissions.delete
+    return !!this.permissions.delete && this.isActive
   }
   get canUpdate() {
-    return !!this.permissions.update
+    return !!this.permissions.update && this.isActive
   }
   get canDownload() {
-    return !!this.permissions.download
+    return !!this.permissions.download && this.isActive
   }
 
   getDefaultUserSettings() {

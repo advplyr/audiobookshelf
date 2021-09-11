@@ -1,8 +1,6 @@
 import { sort } from '@/assets/fastSort'
 import { decode } from '@/plugins/init.client'
 
-// const STANDARD_GENRES = ['adventure', 'autobiography', 'biography', 'childrens', 'comedy', 'crime', 'dystopian', 'fantasy', 'fiction', 'health', 'history', 'horror', 'mystery', 'new_adult', 'nonfiction', 'philosophy', 'politics', 'religion', 'romance', 'sci-fi', 'self-help', 'short_story', 'technology', 'thriller', 'true_crime', 'western', 'young_adult']
-
 const STANDARD_GENRES = ['Adventure', 'Autobiography', 'Biography', 'Childrens', 'Comedy', 'Crime', 'Dystopian', 'Fantasy', 'Fiction', 'Health', 'History', 'Horror', 'Mystery', 'New Adult', 'Nonfiction', 'Philosophy', 'Politics', 'Religion', 'Romance', 'Sci-Fi', 'Self-Help', 'Short Story', 'Technology', 'Thriller', 'True Crime', 'Western', 'Young Adult']
 
 export const state = () => ({
@@ -31,9 +29,10 @@ export const getters = {
     }
     if (state.keywordFilter) {
       const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrarator']
+      const keyworkFilter = state.keywordFilter.toLowerCase()
       return filtered.filter(ab => {
         if (!ab.book) return false
-        return !!keywordFilterKeys.find(key => (ab.book[key] && ab.book[key].includes(state.keywordFilter)))
+        return !!keywordFilterKeys.find(key => (ab.book[key] && ab.book[key].toLowerCase().includes(keyworkFilter)))
       })
     }
     return filtered
