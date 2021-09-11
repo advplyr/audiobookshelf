@@ -2,7 +2,6 @@ const Path = require('path')
 const EventEmitter = require('events')
 const Watcher = require('watcher')
 const Logger = require('./Logger')
-const { getIno } = require('./utils/index')
 
 class FolderWatcher extends EventEmitter {
   constructor(audiobookPath) {
@@ -11,10 +10,9 @@ class FolderWatcher extends EventEmitter {
     this.folderMap = {}
     this.watcher = null
 
-    this.pendingBatchDelay = 4000
-
-    // Audiobook paths with changes
-    this.pendingBatch = {}
+    this.pendingFiles = []
+    this.pendingDelay = 4000
+    this.pendingTimeout = null
   }
 
   initWatcher() {
@@ -46,7 +44,6 @@ class FolderWatcher extends EventEmitter {
     } catch (error) {
       Logger.error('Chokidar watcher failed', error)
     }
-
   }
 
   close() {
@@ -55,43 +52,39 @@ class FolderWatcher extends EventEmitter {
 
   // After [pendingBatchDelay] seconds emit batch
   async onNewFile(path) {
+    if (this.pendingFiles.includes(path)) return
+
     Logger.debug('FolderWatcher: New File', path)
 
     var dir = Path.dirname(path)
-    if (this.pendingBatch[dir]) {
-      this.pendingBatch[dir].files.push(path)
-      clearTimeout(this.pendingBatch[dir].timeout)
-    } else {
-      this.pendingBatch[dir] = {
-        dir,
-        files: [path]
-      }
+    if (dir === this.AudiobookPath) {
+      Logger.debug('New File added to root dir, ignoring it')
+      return
     }
 
-    this.pendingBatch[dir].timeout = setTimeout(() => {
-      this.emit('new_files', this.pendingBatch[dir])
-      delete this.pendingBatch[dir]
-    }, this.pendingBatchDelay)
+    this.pendingFiles.push(path)
+    clearTimeout(this.pendingTimeout)
+    this.pendingTimeout = setTimeout(() => {
+      this.emit('files', this.pendingFiles.map(f => f))
+      this.pendingFiles = []
+    }, this.pendingDelay)
   }
 
   onFileRemoved(path) {
     Logger.debug('[FolderWatcher] File Removed', path)
 
     var dir = Path.dirname(path)
-    if (this.pendingBatch[dir]) {
-      this.pendingBatch[dir].files.push(path)
-      clearTimeout(this.pendingBatch[dir].timeout)
-    } else {
-      this.pendingBatch[dir] = {
-        dir,
-        files: [path]
-      }
+    if (dir === this.AudiobookPath) {
+      Logger.debug('New File added to root dir, ignoring it')
+      return
     }
 
-    this.pendingBatch[dir].timeout = setTimeout(() => {
-      this.emit('removed_files', this.pendingBatch[dir])
-      delete this.pendingBatch[dir]
-    }, this.pendingBatchDelay)
+    this.pendingFiles.push(path)
+    clearTimeout(this.pendingTimeout)
+    this.pendingTimeout = setTimeout(() => {
+      this.emit('files', this.pendingFiles.map(f => f))
+      this.pendingFiles = []
+    }, this.pendingDelay)
   }
 
   onFileUpdated(path) {
@@ -102,20 +95,17 @@ class FolderWatcher extends EventEmitter {
     Logger.debug(`[FolderWatcher] Rename ${pathFrom} => ${pathTo}`)
 
     var dir = Path.dirname(pathTo)
-    if (this.pendingBatch[dir]) {
-      this.pendingBatch[dir].files.push(pathTo)
-      clearTimeout(this.pendingBatch[dir].timeout)
-    } else {
-      this.pendingBatch[dir] = {
-        dir,
-        files: [pathTo]
-      }
+    if (dir === this.AudiobookPath) {
+      Logger.debug('New File added to root dir, ignoring it')
+      return
     }
 
-    this.pendingBatch[dir].timeout = setTimeout(() => {
-      this.emit('renamed_files', this.pendingBatch[dir])
-      delete this.pendingBatch[dir]
-    }, this.pendingBatchDelay)
+    this.pendingFiles.push(pathTo)
+    clearTimeout(this.pendingTimeout)
+    this.pendingTimeout = setTimeout(() => {
+      this.emit('files', this.pendingFiles.map(f => f))
+      this.pendingFiles = []
+    }, this.pendingDelay)
   }
 }
 module.exports = FolderWatcher

@@ -17,7 +17,7 @@
             <th style="width: 200px">Created At</th>
             <th style="width: 100px"></th>
           </tr>
-          <tr v-for="user in users" :key="user.id">
+          <tr v-for="user in users" :key="user.id" :class="user.isActive ? '' : 'bg-error bg-opacity-20'">
             <td>
               {{ user.username }} <span class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
             </td>

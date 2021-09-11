@@ -59,7 +59,7 @@ module.exports.comparePaths = (path1, path2) => {
 
 module.exports.getIno = (path) => {
   return fs.promises.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
-    Logger.error('[Utils] Failed to get ino for path', path, error)
+    Logger.error('[Utils] Failed to get ino for path', path, err)
     return null
   })
 }

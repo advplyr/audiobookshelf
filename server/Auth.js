@@ -48,6 +48,10 @@ class Auth {
     var user = await this.verifyToken(token)
     if (!user) {
       Logger.error('Verify Token User Not Found', token)
+      return res.sendStatus(404)
+    }
+    if (!user.isActive) {
+      Logger.error('Verify Token User is disabled', token, user.username)
       return res.sendStatus(403)
     }
     req.user = user
@@ -93,6 +97,10 @@ class Auth {
 
     if (!user) {
       return res.json({ error: 'User not found' })
+    }
+
+    if (!user.isActive) {
+      return res.json({ error: 'User unavailable' })
     }
 
     // Check passwordless root user
