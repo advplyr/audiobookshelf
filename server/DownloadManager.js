@@ -117,6 +117,7 @@ class DownloadManager {
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
     var ffmpegOptions = [`-loglevel ${logLevel}`]
+    var ffmpegOutputOptions = []
 
     if (requiresEncode) {
       ffmpegOptions = ffmpegOptions.concat([
@@ -128,6 +129,10 @@ class DownloadManager {
       ])
     } else {
       ffmpegOptions.push('-c copy')
+      if (download.ext === '.m4b') {
+        Logger.info('Concat m4b\'s use -f mp4')
+        ffmpegOutputOptions.push('-f mp4')
+      }
     }
 
     if (download.includeMetadata) {
@@ -153,6 +158,7 @@ class DownloadManager {
     var workerData = {
       inputs: ffmpegInputs,
       options: ffmpegOptions,
+      outputOptions: ffmpegOutputOptions,
       output: download.fullPath,
     }
 

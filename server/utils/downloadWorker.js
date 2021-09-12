@@ -19,6 +19,7 @@ workerData.inputs.forEach((inputData) => {
 })
 
 if (workerData.options) ffmpegCommand.addOption(workerData.options)
+if (workerData.outputOptions && workerData.outputOptions.length) ffmpegCommand.addOutputOption(workerData.outputOptions)
 ffmpegCommand.output(workerData.output)
 
 var isKilled = false

@@ -205,6 +205,7 @@ class Server {
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
+      socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket.sheepClient, payload))
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
@@ -228,6 +229,14 @@ class Server {
 
   logout(req, res) {
     res.sendStatus(200)
+  }
+
+  audiobookProgressUpdate(client, progressPayload) {
+    if (!client || !client.user) {
+      Logger.error('[Server] audiobookProgressUpdate invalid socket client')
+      return
+    }
+    client.user.updateAudiobookProgressFromStream(progressPayload)
   }
 
   async authenticateSocket(socket, token) {
