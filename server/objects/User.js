@@ -187,6 +187,20 @@ class User {
     if (!this.audiobooks || !this.audiobooks[audiobookId]) {
       return false
     }
+    return this.updateAudiobookProgress(audiobookId, {
+      progress: 0,
+      currentTime: 0,
+      isRead: false,
+      lastUpdate: Date.now(),
+      startedAt: null,
+      finishedAt: null
+    })
+  }
+
+  deleteAudiobookProgress(audiobookId) {
+    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+      return false
+    }
     delete this.audiobooks[audiobookId]
     return true
   }

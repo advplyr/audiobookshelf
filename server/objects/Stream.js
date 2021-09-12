@@ -205,16 +205,20 @@ class Stream extends EventEmitter {
   }
 
   startLoop() {
+    // Logger.info(`[Stream] ${this.audiobookTitle} (${this.id}) Start Loop`)
     this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
-    this.loop = setInterval(() => {
+
+    clearInterval(this.loop)
+    var intervalId = setInterval(() => {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
       } else {
         Logger.info(`[Stream] ${this.audiobookTitle} sending stream_ready`)
         this.socket.emit('stream_ready')
-        clearInterval(this.loop)
+        clearInterval(intervalId)
       }
     }, 2000)
+    this.loop = intervalId
   }
 
   async start() {
@@ -260,13 +264,16 @@ class Stream extends EventEmitter {
 
     this.ffmpeg.on('start', (command) => {
       Logger.info('[INFO] FFMPEG transcoding started with command: ' + command)
+      Logger.info('')
       if (this.isResetting) {
         setTimeout(() => {
           Logger.info('[STREAM] Clearing isResetting')
           this.isResetting = false
+          this.startLoop()
         }, 500)
+      } else {
+        this.startLoop()
       }
-      this.startLoop()
     })
 
     this.ffmpeg.on('stderr', (stdErrline) => {

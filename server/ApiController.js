@@ -109,7 +109,7 @@ class ApiController {
     // Remove audiobook from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.resetAudiobookProgress(audiobook.id)
+      var madeUpdates = user.deleteAudiobookProgress(audiobook.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }
