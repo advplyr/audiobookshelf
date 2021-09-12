@@ -199,14 +199,23 @@ class Server {
       Logger.info('[SOCKET] Socket Connected', socket.id)
 
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
+
+      // Scanning
       socket.on('scan', this.scan.bind(this))
       socket.on('scan_covers', this.scanCovers.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
+
+      // Streaming
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
+
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket.sheepClient, payload))
+
+      // Downloading
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
+      socket.on('remove_download', (downloadId) => this.downloadManager.removeSocketRequest(socket, downloadId))
+
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
       })

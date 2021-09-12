@@ -49,6 +49,15 @@ class DownloadManager {
     this.prepareDownload(client, audiobook, options)
   }
 
+  removeSocketRequest(socket, downloadId) {
+    var download = this.downloads.find(d => d.id === downloadId)
+    if (!download) {
+      Logger.error('Remove download request download not found ' + downloadId)
+      return
+    }
+    this.removeDownload(download)
+  }
+
   async prepareDownload(client, audiobook, options = {}) {
     var downloadId = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
     var dlpath = Path.join(this.downloadDirPath, downloadId)

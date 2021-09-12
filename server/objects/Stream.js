@@ -43,6 +43,10 @@ class Stream extends EventEmitter {
     return this.audiobook.id
   }
 
+  get audiobookTitle() {
+    return this.audiobook ? this.audiobook.title : null
+  }
+
   get totalDuration() {
     return this.audiobook.totalDuration
   }
@@ -206,8 +210,9 @@ class Stream extends EventEmitter {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
       } else {
+        Logger.info(`[Stream] ${this.audiobookTitle} sending stream_ready`)
         this.socket.emit('stream_ready')
-        clearTimeout(this.loop)
+        clearInterval(this.loop)
       }
     }, 2000)
   }
