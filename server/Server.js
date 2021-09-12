@@ -245,7 +245,7 @@ class Server {
       Logger.error('[Server] audiobookProgressUpdate invalid socket client')
       return
     }
-    client.user.updateAudiobookProgressFromStream(progressPayload)
+    client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
   }
 
   async authenticateSocket(socket, token) {
