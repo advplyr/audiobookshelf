@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Self-hosted audiobook server for managing and playing audiobooks.",
   "main": "index.js",
   "scripts": {
@@ -14,6 +14,7 @@
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
+    "express-fileupload": "^1.2.1",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^10.0.0",
     "ip": "^1.1.5",

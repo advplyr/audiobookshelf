@@ -11,6 +11,10 @@
         <controls-global-search />
         <div class="flex-grow" />
 
+        <nuxt-link v-if="isRootUser" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mr-4">
+          <span class="material-icons">upload</span>
+        </nuxt-link>
+
         <nuxt-link v-if="isRootUser" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">settings</span>
         </nuxt-link>
