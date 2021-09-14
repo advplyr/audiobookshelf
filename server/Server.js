@@ -3,6 +3,7 @@ const express = require('express')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('fs-extra')
+const fileUpload = require('express-fileupload')
 
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
@@ -132,6 +133,7 @@ class Server {
     this.server = http.createServer(app)
 
     app.use(this.auth.cors)
+    app.use(fileUpload())
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
@@ -154,6 +156,39 @@ class Server {
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
     // app.use('/hls', this.hlsController.router)
     app.use('/feeds', this.rssFeeds.router)
+
+    app.post('/upload', this.authMiddleware.bind(this), async (req, res) => {
+      var files = Object.values(req.files)
+      var title = req.body.title
+      var author = req.body.author
+      var series = req.body.series
+
+      if (!files.length || !title || !author) {
+        return res.json({
+          error: 'Invalid post data received'
+        })
+      }
+
+      var outputDirectory = ''
+      if (series && series.length && series !== 'null') {
+        outputDirectory = Path.join(this.AudiobookPath, author, series, title)
+      } else {
+        outputDirectory = Path.join(this.AudiobookPath, author, title)
+      }
+
+      await fs.ensureDir(outputDirectory)
+      Logger.info(`Uploading ${files.length} files to`, outputDirectory)
+
+      for (let i = 0; i < files.length; i++) {
+        var file = files[i]
+
+        var path = Path.join(outputDirectory, file.name)
+        await file.mv(path).catch((error) => {
+          Logger.error('Failed to move file', path, error)
+        })
+      }
+      res.sendStatus(200)
+    })
 
     app.post('/login', (req, res) => this.auth.login(req, res))
     app.post('/logout', this.logout.bind(this))
