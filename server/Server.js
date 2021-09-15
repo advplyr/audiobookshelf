@@ -34,7 +34,7 @@ class Server {
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.emitter.bind(this))
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
-    this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.emitter.bind(this))
+    this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.MetadataPath)
 

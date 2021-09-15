@@ -1,5 +1,5 @@
 const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
-
+const DEFAULT_TIMEOUT = 1000 * 60 * 15 // 15 minutes
 class Download {
   constructor(download) {
     this.id = null
@@ -16,12 +16,17 @@ class Download {
     this.userId = null
     this.socket = null // Socket to notify when complete
     this.isReady = false
+    this.isTimedOut = false
 
     this.startedAt = null
     this.finishedAt = null
     this.expiresAt = null
 
     this.expirationTimeMs = 0
+    this.timeoutTimeMs = 0
+
+    this.timeoutTimer = null
+    this.expirationTimer = null
 
     if (download) {
       this.construct(download)
@@ -88,6 +93,8 @@ class Download {
     this.finishedAt = download.finishedAt || null
 
     this.expirationTimeMs = download.expirationTimeMs || DEFAULT_EXPIRATION
+    this.timeoutTimeMs = download.timeoutTimeMs || DEFAULT_TIMEOUT
+
     this.expiresAt = download.expiresAt || null
   }
 
@@ -105,11 +112,28 @@ class Download {
   }
 
   setExpirationTimer(callback) {
-    setTimeout(() => {
+    this.expirationTimer = setTimeout(() => {
       if (callback) {
         callback(this)
       }
     }, this.expirationTimeMs)
+  }
+
+  setTimeoutTimer(callback) {
+    this.timeoutTimer = setTimeout(() => {
+      if (callback) {
+        this.isTimedOut = true
+        callback(this)
+      }
+    }, this.timeoutTimeMs)
+  }
+
+  clearTimeoutTimer() {
+    clearTimeout(this.timeoutTimer)
+  }
+
+  clearExpirationTimer() {
+    clearTimeout(this.expirationTimer)
   }
 }
 module.exports = Download

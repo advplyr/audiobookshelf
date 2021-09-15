@@ -411,28 +411,48 @@ class Audiobook {
     return this.audioFiles.find(af => af.ino === ino)
   }
 
-  setChaptersFromAudioFile(audioFile) {
-    if (!audioFile.chapters) return []
-    return audioFile.chapters.map(c => ({ ...c }))
-  }
-
   setChapters() {
-    if (this.audioFiles.length === 1) {
-      if (this.audioFiles[0].chapters) {
-        this.chapters = this.audioFiles[0].chapters.map(c => ({ ...c }))
+    // If 1 audio file without chapters, then no chapters will be set
+
+    var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
+    if (includedAudioFiles.length === 1) {
+      // 1 audio file with chapters
+      if (includedAudioFiles[0].chapters) {
+        this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
       }
     } else {
       this.chapters = []
-      var currTrackId = 0
+      var currChapterId = 0
       var currStartTime = 0
-      this.tracks.forEach((track) => {
-        this.chapters.push({
-          id: currTrackId++,
-          start: currStartTime,
-          end: currStartTime + track.duration,
-          title: `Chapter ${currTrackId}`
-        })
-        currStartTime += track.duration
+      includedAudioFiles.forEach((file) => {
+        // If audio file has chapters use chapters
+        if (file.chapters && file.chapters.length) {
+          file.chapters.forEach((chapter) => {
+            var chapterDuration = chapter.end - chapter.start
+            if (chapterDuration > 0) {
+              var title = `Chapter ${currChapterId}`
+              if (chapter.title) {
+                title += ` (${chapter.title})`
+              }
+              this.chapters.push({
+                id: currChapterId++,
+                start: currStartTime,
+                end: currStartTime + chapterDuration,
+                title
+              })
+              currStartTime += chapterDuration
+            }
+          })
+        } else if (file.duration) {
+          // Otherwise just use track has chapter
+          this.chapters.push({
+            id: currChapterId++,
+            start: currStartTime,
+            end: currStartTime + file.duration,
+            title: `Chapter ${currChapterId}`
+          })
+          currStartTime += file.duration
+        }
       })
     }
   }

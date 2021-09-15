@@ -13,6 +13,9 @@ export const state = () => ({
 })
 
 export const getters = {
+  getAudiobook: (state) => id => {
+    return state.audiobooks.find(ab => ab.id === id)
+  },
   getFiltered: (state, getters, rootState) => () => {
     var filtered = state.audiobooks
     var settings = rootState.user.settings || {}

@@ -47,6 +47,7 @@ module.exports = {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    '@/plugins/constants.js',
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
     '@/plugins/toast.js'

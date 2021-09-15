@@ -113,7 +113,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
 function parseChapters(chapters) {
   if (!chapters) return []
   return chapters.map(chap => {
-    var title = chap['TAG:title'] || chap.title
+    var title = chap['TAG:title'] || chap.title || ''
     var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
     return {
       id: chap.id,
