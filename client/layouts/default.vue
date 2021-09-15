@@ -232,10 +232,40 @@ export default {
       this.socket.on('download_failed', this.downloadFailed)
       this.socket.on('download_killed', this.downloadKilled)
       this.socket.on('download_expired', this.downloadExpired)
+    },
+    showUpdateToast(versionData) {
+      var ignoreVersion = localStorage.getItem('ignoreVersion')
+      var latestVersion = versionData.latestVersion
+
+      if (!ignoreVersion || ignoreVersion !== latestVersion) {
+        this.$toast.info(`Update is available!\nCheck release notes for v${versionData.latestVersion}`, {
+          position: 'top-center',
+          toastClassName: 'cursor-pointer',
+          bodyClassName: 'custom-class-1',
+          timeout: 20000,
+          closeOnClick: false,
+          draggable: false,
+          hideProgressBar: false,
+          onClick: () => {
+            window.open(versionData.githubTagUrl, '_blank')
+          },
+          onClose: () => {
+            localStorage.setItem('ignoreVersion', versionData.latestVersion)
+          }
+        })
+      } else {
+        console.warn(`Update is available but user chose to dismiss it! v${versionData.latestVersion}`)
+      }
     }
   },
   mounted() {
     this.initializeSocket()
+    this.$store
+      .dispatch('checkForUpdate')
+      .then((res) => {
+        if (res && res.hasUpdate) this.showUpdateToast(res)
+      })
+      .catch((err) => console.error(err))
 
     if (this.$route.query.error) {
       this.$toast.error(this.$route.query.error)
@@ -244,3 +274,9 @@ export default {
   }
 }
 </script>
+
+<style>
+.Vue-Toastification__toast-body.custom-class-1 {
+  font-size: 14px;
+}
+</style>

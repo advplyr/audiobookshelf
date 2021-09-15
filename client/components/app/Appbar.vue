@@ -11,6 +11,11 @@
         <controls-global-search />
         <div class="flex-grow" />
 
+        <!-- <a v-if="isUpdateAvailable" :href="githubTagUrl" target="_blank" class="flex items-center rounded-full bg-warning p-2 text-sm">
+          <span class="material-icons">notification_important</span>
+          <span class="pl-2">Update is available! Check release notes for v{{ latestVersion }}</span>
+        </a> -->
+
         <nuxt-link v-if="isRootUser" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mr-4">
           <span class="material-icons">upload</span>
         </nuxt-link>
