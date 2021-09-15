@@ -1,6 +1,7 @@
-import Vue from 'vue'
+import { checkForUpdate } from '@/plugins/version'
 
 export const state = () => ({
+  versionData: null,
   serverSettings: null,
   streamAudiobook: null,
   editModalTab: 'details',
@@ -39,10 +40,24 @@ export const actions = {
       console.error('Failed to update server settings', error)
       return false
     })
+  },
+  checkForUpdate({ commit }) {
+    return checkForUpdate()
+      .then((res) => {
+        commit('setVersionData', res)
+        return res
+      })
+      .catch((error) => {
+        console.error('Update check failed', error)
+        return false
+      })
   }
 }
 
 export const mutations = {
+  setVersionData(state, versionData) {
+    state.versionData = versionData
+  },
   setServerSettings(state, settings) {
     state.serverSettings = settings
   },
