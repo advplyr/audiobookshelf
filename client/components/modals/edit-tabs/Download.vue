@@ -1,27 +1,53 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
+    <p class="text-center text-lg mb-4 py-8">Preparing downloads can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be deleted.<br />Download will timeout after 15 minutes.</p>
     <div class="w-full border border-black-200 p-4 my-4">
-      <!-- <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
-        <span class="text-error">Experimental Feature!</span> If your audiobook is made up of multiple audio files, this will concatenate them into a single file. The file type will be the same as the first track. Preparing downloads can take anywhere from a few seconds to several minutes and will be stored in
-        <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 10 minutes then get deleted.
-      </p> -->
-      <p class="text-center text-lg mb-4 pb-8 border-b border-black-200">
-        <span class="text-error">Experimental Feature!</span> If your audiobook has multiple tracks, this will merge them into a single M4B audiobook file.<br />Preparing downloads can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be
-        deleted.
-      </p>
-
       <div class="flex items-center">
-        <p class="text-lg">{{ isSingleTrack ? 'Single Track' : 'M4B Audiobook File' }}</p>
+        <div>
+          <!-- <p class="text-lg">{{ isSingleTrack ? 'Single Track' : 'M4B Audiobook File' }}</p> -->
+          <p class="text-lg">M4B Audiobook File <span class="text-error">*</span></p>
+          <p class="max-w-xs text-sm pt-2 text-gray-300">Generate a .M4B audiobook file with embedded cover image and chapters.</p>
+        </div>
         <div class="flex-grow" />
         <div>
-          <p v-if="singleAudioDownloadFailed" class="text-error mb-2">Download Failed</p>
-          <p v-if="singleAudioDownloadReady" class="text-success mb-2">Download Ready!</p>
-          <p v-if="singleAudioDownloadExpired" class="text-error mb-2">Download Expired</p>
-          <a v-if="isSingleTrack" :href="`/local/${singleTrackPath}`" class="btn outline-none rounded-md shadow-md relative border border-gray-600 px-4 py-2 bg-primary">Download Track</a>
-          <ui-btn v-else-if="!singleAudioDownloadReady" :loading="singleAudioDownloadPending" :disabled="tempDisable" @click="startSingleAudioDownload">Start Download</ui-btn>
-          <ui-btn v-else @click="downloadWithProgress">Download</ui-btn>
+          <p v-if="singleDownloadStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
+          <p v-if="singleDownloadStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
+          <p v-if="singleDownloadStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
+
+          <!-- <a v-if="isSingleTrack" :href="`/local/${singleTrackPath}`" class="btn outline-none rounded-md shadow-md relative border border-gray-600 px-4 py-2 bg-primary">Download Track</a> -->
+          <ui-btn v-if="singleDownloadStatus !== $constants.DownloadStatus.READY" :loading="singleDownloadStatus === $constants.DownloadStatus.PENDING" :disabled="tempDisable" @click="startSingleAudioDownload">Start Download</ui-btn>
+          <div v-else>
+            <ui-btn @click="downloadWithProgress(singleAudioDownload)">Download</ui-btn>
+            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(singleAudioDownload.size) }}</p>
+          </div>
         </div>
       </div>
+    </div>
+    <div class="w-full border border-black-200 p-4 my-4">
+      <div class="flex items-center">
+        <div>
+          <p v-if="totalFiles > 1" class="text-lg">Zip {{ totalFiles }} Files</p>
+          <p v-else>Zip 1 File</p>
+          <p class="max-w-xs text-sm pt-2 text-gray-300">Generate a .ZIP file from the contents of the audiobook directory.</p>
+        </div>
+
+        <div class="flex-grow" />
+        <div>
+          <p v-if="zipDownloadStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
+          <p v-if="zipDownloadStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
+          <p v-if="zipDownloadStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
+
+          <ui-btn v-if="zipDownloadStatus !== $constants.DownloadStatus.READY" :loading="zipDownloadStatus === $constants.DownloadStatus.PENDING" :disabled="tempDisable" @click="startZipDownload">Start Download</ui-btn>
+          <div v-else>
+            <ui-btn @click="downloadWithProgress(zipDownload)">Download</ui-btn>
+            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(zipDownload.size) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full flex items-center justify-center absolute bottom-4 left-0 right-0 text-center">
+      <p class="text-error text-lg">* <strong>Experimental:</strong> Merging multiple .m4b files may have issues. <a href="https://github.com/advplyr/audiobookshelf/issues" class="underline text-blue-600" target="_blank">Report issues here.</a></p>
     </div>
 
     <div v-if="isDownloading" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -55,7 +81,7 @@ export default {
     }
   },
   watch: {
-    singleAudioDownloadPending(newVal) {
+    singleDownloadStatus(newVal) {
       if (newVal) {
         this.tempDisable = false
       }
@@ -71,20 +97,14 @@ export default {
     singleAudioDownload() {
       return this.downloads.find((d) => d.type === 'singleAudio')
     },
-    singleAudioDownloadPending() {
-      return this.singleAudioDownload && this.singleAudioDownload.isPending
+    singleDownloadStatus() {
+      return this.singleAudioDownload ? this.singleAudioDownload.status : false
     },
-    singleAudioDownloadFailed() {
-      return this.singleAudioDownload && this.singleAudioDownload.isFailed
+    zipDownload() {
+      return this.downloads.find((d) => d.type === 'zip')
     },
-    singleAudioDownloadReady() {
-      return this.singleAudioDownload && this.singleAudioDownload.isReady
-    },
-    singleAudioDownloadExpired() {
-      return this.singleAudioDownload && this.singleAudioDownload.isExpired
-    },
-    zipBundleDownload() {
-      return this.downloads.find((d) => d.type === 'zipBundle')
+    zipDownloadStatus() {
+      return this.zipDownload ? this.zipDownload.status : false
     },
     isSingleTrack() {
       if (!this.audiobook.tracks) return false
@@ -93,11 +113,34 @@ export default {
     singleTrackPath() {
       if (!this.isSingleTrack) return null
       return this.audiobook.tracks[0].path
+    },
+    audioFiles() {
+      return this.audiobook ? this.audiobook.audioFiles || [] : []
+    },
+    otherFiles() {
+      return this.audiobook ? this.audiobook.otherFiles || [] : []
+    },
+    totalFiles() {
+      return this.audioFiles.length + this.otherFiles.length
     }
   },
   methods: {
+    startZipDownload() {
+      // console.log('Download request received', this.audiobook)
+
+      this.tempDisable = true
+      setTimeout(() => {
+        this.tempDisable = false
+      }, 1000)
+
+      var downloadPayload = {
+        audiobookId: this.audiobook.id,
+        type: 'zip'
+      }
+      this.$root.socket.emit('download', downloadPayload)
+    },
     startSingleAudioDownload() {
-      console.log('Download request received', this.audiobook)
+      // console.log('Download request received', this.audiobook)
 
       this.tempDisable = true
       setTimeout(() => {
@@ -112,10 +155,10 @@ export default {
       }
       this.$root.socket.emit('download', downloadPayload)
     },
-    downloadWithProgress() {
-      var downloadId = this.singleAudioDownload.id
+    downloadWithProgress(download) {
+      var downloadId = download.id
       var downloadUrl = `${process.env.serverUrl}/api/download/${downloadId}`
-      var filename = this.singleAudioDownload.filename
+      var filename = download.filename
 
       this.isDownloading = true
 

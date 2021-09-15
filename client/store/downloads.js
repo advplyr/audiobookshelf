@@ -6,6 +6,9 @@ export const state = () => ({
 export const getters = {
   getDownloads: (state) => (audiobookId) => {
     return state.downloads.filter(d => d.audiobookId === audiobookId)
+  },
+  getDownload: (state) => (id) => {
+    return state.downloads.find(d => d.id === id)
   }
 }
 

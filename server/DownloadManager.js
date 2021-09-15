@@ -1,5 +1,6 @@
 const Path = require('path')
 const fs = require('fs-extra')
+const archiver = require('archiver')
 
 const workerThreads = require('worker_threads')
 const Logger = require('./Logger')
@@ -8,9 +9,10 @@ const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
 
 class DownloadManager {
-  constructor(db, MetadataPath, emitter) {
+  constructor(db, MetadataPath, AudiobookPath, emitter) {
     this.db = db
     this.MetadataPath = MetadataPath
+    this.AudiobookPath = AudiobookPath
     this.emitter = emitter
 
     this.downloadDirPath = Path.join(this.MetadataPath, 'downloads')
@@ -68,8 +70,7 @@ class DownloadManager {
     var downloadType = options.type || 'singleAudio'
     delete options.type
 
-    var filepath = null
-    var filename = null
+
     var fileext = null
     var audiobookDirname = Path.basename(audiobook.path)
 
@@ -80,18 +81,18 @@ class DownloadManager {
         var firstTrack = audiobook.tracks[0]
         audioFileType = firstTrack.ext
       }
-      filename = audiobookDirname + audioFileType
       fileext = audioFileType
-      filepath = Path.join(dlpath, filename)
+    } else if (downloadType === 'zip') {
+      fileext = '.zip'
     }
-
+    var filename = audiobookDirname + fileext
     var downloadData = {
       id: downloadId,
       audiobookId: audiobook.id,
       type: downloadType,
       options: options,
       dirpath: dlpath,
-      fullPath: filepath,
+      fullPath: Path.join(dlpath, filename),
       filename,
       ext: fileext,
       userId: (client && client.user) ? client.user.id : null,
@@ -99,6 +100,7 @@ class DownloadManager {
     }
     var download = new Download()
     download.setData(downloadData)
+    download.setTimeoutTimer(this.downloadTimedOut.bind(this))
 
     if (downloadData.socket) {
       downloadData.socket.emit('download_started', download.toJSON())
@@ -106,29 +108,105 @@ class DownloadManager {
 
     if (download.type === 'singleAudio') {
       this.processSingleAudioDownload(audiobook, download)
+    } else if (download.type === 'zip') {
+      this.processZipDownload(audiobook, download)
     }
+  }
+
+  async processZipDownload(audiobook, download) {
+    this.pendingDownloads.push({
+      id: download.id,
+      download
+    })
+    Logger.info(`[DownloadManager] Processing Zip download ${download.fullPath}`)
+    var success = await this.zipAudiobookDir(audiobook.fullPath, download.fullPath).then(() => {
+      return true
+    }).catch((error) => {
+      Logger.error('[DownloadManager] Process Zip Failed', error)
+      return false
+    })
+    this.sendResult(download, { success })
+  }
+
+  zipAudiobookDir(audiobookPath, downloadPath) {
+    return new Promise((resolve, reject) => {
+      // create a file to stream archive data to
+      const output = fs.createWriteStream(downloadPath)
+      const archive = archiver('zip', {
+        zlib: { level: 9 } // Sets the compression level.
+      })
+
+      // listen for all archive data to be written
+      // 'close' event is fired only when a file descriptor is involved
+      output.on('close', () => {
+        Logger.info(archive.pointer() + ' total bytes')
+        Logger.debug('archiver has been finalized and the output file descriptor has closed.')
+        resolve()
+      })
+
+      // This event is fired when the data source is drained no matter what was the data source.
+      // It is not part of this library but rather from the NodeJS Stream API.
+      // @see: https://nodejs.org/api/stream.html#stream_event_end
+      output.on('end', () => {
+        Logger.debug('Data has been drained')
+      })
+
+      // good practice to catch warnings (ie stat failures and other non-blocking errors)
+      archive.on('warning', function (err) {
+        if (err.code === 'ENOENT') {
+          // log warning
+          Logger.warn(`[DownloadManager] Archiver warning: ${err.message}`)
+        } else {
+          // throw error
+          Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
+          // throw err
+          reject(err)
+        }
+      })
+      archive.on('error', function (err) {
+        Logger.error(`[DownloadManager] Archiver error: ${err.message}`)
+        reject(err)
+      })
+
+      // pipe archive data to the file
+      archive.pipe(output)
+
+      archive.directory(audiobookPath, false)
+
+      archive.finalize()
+
+    })
   }
 
   async processSingleAudioDownload(audiobook, download) {
 
     // If changing audio file type then encoding is needed
-    var requiresEncode = audiobook.tracks[0].ext !== download.ext || download.includeCover || download.includeMetadata
+    var audioRequiresEncode = audiobook.tracks[0].ext !== download.ext
+    var shouldIncludeCover = download.includeCover && audiobook.book.cover
+    var firstTrackIsM4b = audiobook.tracks[0].ext.toLowerCase() === '.m4b'
+    var isOneTrack = audiobook.tracks.length === 1
 
-    var concatFilePath = Path.join(download.dirpath, 'files.txt')
-    await writeConcatFile(audiobook.tracks, concatFilePath)
+    const ffmpegInputs = []
 
-    const ffmpegInputs = [
-      {
+    if (!isOneTrack) {
+      var concatFilePath = Path.join(download.dirpath, 'files.txt')
+      await writeConcatFile(audiobook.tracks, concatFilePath)
+      ffmpegInputs.push({
         input: concatFilePath,
         options: ['-safe 0', '-f concat']
-      }
-    ]
+      })
+    } else {
+      ffmpegInputs.push({
+        input: audiobook.tracks[0].fullPath,
+        options: firstTrackIsM4b ? ['-f mp4'] : []
+      })
+    }
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
     var ffmpegOptions = [`-loglevel ${logLevel}`]
     var ffmpegOutputOptions = []
 
-    if (requiresEncode) {
+    if (audioRequiresEncode) {
       ffmpegOptions = ffmpegOptions.concat([
         '-map 0:a',
         '-acodec aac',
@@ -137,11 +215,17 @@ class DownloadManager {
         '-id3v2_version 3'
       ])
     } else {
-      ffmpegOptions.push('-c copy')
-      if (download.ext === '.m4b') {
-        Logger.info('Concat m4b\'s use -f mp4')
-        ffmpegOutputOptions.push('-f mp4')
+      ffmpegOptions.push('-max_muxing_queue_size 1000')
+
+      if (isOneTrack && firstTrackIsM4b && !shouldIncludeCover) {
+        ffmpegOptions.push('-c copy')
+      } else {
+        ffmpegOptions.push('-c:a copy')
       }
+    }
+    if (download.ext === '.m4b') {
+      Logger.info('Concat m4b\'s use -f mp4')
+      ffmpegOutputOptions.push('-f mp4')
     }
 
     if (download.includeMetadata) {
@@ -155,9 +239,14 @@ class DownloadManager {
       ffmpegOptions.push('-map_metadata 1')
     }
 
-    if (download.includeCover && audiobook.book.cover) {
+    if (shouldIncludeCover) {
+      var _cover = audiobook.book.cover
+      if (_cover.startsWith(Path.sep + 'local')) {
+        _cover = Path.join(this.AudiobookPath, _cover.replace(Path.sep + 'local', ''))
+        Logger.debug('Local cover url', _cover)
+      }
       ffmpegInputs.push({
-        input: audiobook.book.cover,
+        input: _cover,
         options: ['-f image2pipe']
       })
       ffmpegOptions.push('-vf [2:v]crop=trunc(iw/2)*2:trunc(ih/2)*2')
@@ -175,7 +264,9 @@ class DownloadManager {
     worker.on('message', (message) => {
       if (message != null && typeof message === 'object') {
         if (message.type === 'RESULT') {
-          this.sendResult(download, message)
+          if (!download.isTimedOut) {
+            this.sendResult(download, message)
+          }
         }
       } else {
         Logger.error('Invalid worker message', message)
@@ -188,6 +279,17 @@ class DownloadManager {
     })
   }
 
+  async downloadTimedOut(download) {
+    Logger.info(`[DownloadManager] Download ${download.id} timed out (${download.timeoutTimeMs}ms)`)
+
+    if (download.socket) {
+      var downloadJson = download.toJSON()
+      downloadJson.isTimedOut = true
+      download.socket.emit('download_failed', downloadJson)
+    }
+    this.removeDownload(download)
+  }
+
   async downloadExpired(download) {
     Logger.info(`[DownloadManager] Download ${download.id} expired`)
 
@@ -198,6 +300,8 @@ class DownloadManager {
   }
 
   async sendResult(download, result) {
+    download.clearTimeoutTimer()
+
     // Remove pending download
     this.pendingDownloads = this.pendingDownloads.filter(d => d.id !== download.id)
 
@@ -216,18 +320,8 @@ class DownloadManager {
       return
     }
 
-    // Remove files.txt if it was used
-    // if (download.type === 'singleAudio') {
-    //   var concatFilePath = Path.join(download.dirpath, 'files.txt')
-    //   try {
-    //     await fs.remove(concatFilePath)
-    //   } catch (error) {
-    //     Logger.error('[DownloadManager] Failed to remove files.txt')
-    //   }
-    // }
-
-    result.size = await getFileSize(download.fullPath)
-    download.setComplete(result)
+    var filesize = await getFileSize(download.fullPath)
+    download.setComplete(filesize)
     if (download.socket) {
       download.socket.emit('download_ready', download.toJSON())
     }
@@ -240,15 +334,20 @@ class DownloadManager {
   async removeDownload(download) {
     Logger.info('[DownloadManager] Removing download ' + download.id)
 
+    download.clearTimeoutTimer()
+    download.clearExpirationTimer()
+
     var pendingDl = this.pendingDownloads.find(d => d.id === download.id)
 
     if (pendingDl) {
       this.pendingDownloads = this.pendingDownloads.filter(d => d.id !== download.id)
       Logger.warn(`[DownloadManager] Removing download in progress - stopping worker`)
-      try {
-        pendingDl.worker.postMessage('STOP')
-      } catch (error) {
-        Logger.error('[DownloadManager] Error posting stop message to worker', error)
+      if (pendingDl.worker) {
+        try {
+          pendingDl.worker.postMessage('STOP')
+        } catch (error) {
+          Logger.error('[DownloadManager] Error posting stop message to worker', error)
+        }
       }
     }
 

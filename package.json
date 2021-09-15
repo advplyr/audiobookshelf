@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Self-hosted audiobook server for managing and playing audiobooks.",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,7 @@
   "author": "advplyr",
   "license": "ISC",
   "dependencies": {
+    "archiver": "^5.3.0",
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.5",
