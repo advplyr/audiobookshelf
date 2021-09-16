@@ -96,7 +96,7 @@ export default {
         }
         this.isFocused = false
         if (this.input !== this.textInput) {
-          var val = this.$cleanString(this.textInput) || null
+          var val = this.textInput ? this.textInput.trim() : null
           this.input = val
           if (val && !this.items.includes(val)) {
             this.$emit('newItem', val)
@@ -105,7 +105,7 @@ export default {
       }, 50)
     },
     submitForm() {
-      var val = this.$cleanString(this.textInput) || null
+      var val = this.textInput ? this.textInput.trim() : null
       this.input = val
       if (val && !this.items.includes(val)) {
         this.$emit('newItem', val)
@@ -116,7 +116,7 @@ export default {
       var newValue = this.input === item ? null : item
       this.textInput = null
       this.currentSearch = null
-      this.input = this.$cleanString(newValue) || null
+      this.input = this.textInput ? this.textInput.trim() : null
       if (this.$refs.input) this.$refs.input.blur()
     }
   },

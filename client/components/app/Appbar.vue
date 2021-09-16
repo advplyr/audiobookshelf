@@ -39,10 +39,15 @@
         <ui-btn small class="text-sm mx-2" @click="toggleSelectAll">{{ isAllSelected ? 'Select None' : 'Select All' }}</ui-btn>
 
         <div class="flex-grow" />
+        <ui-tooltip v-if="userCanUpdate" :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
+          <ui-read-icon-btn :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
+        </ui-tooltip>
         <template v-if="userCanUpdate">
-          <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2" @click="batchEditClick"><span class="material-icons text-gray-200 pt-1">edit</span></ui-btn>
+          <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
+          <!-- <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2 w-10 h-10" :padding-y="0" :padding-x="0" @click="batchEditClick"><span class="material-icons text-gray-200 text-base">edit</span></ui-btn> -->
         </template>
-        <ui-btn v-if="userCanDelete" color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn>
+        <ui-icon-btn v-show="userCanDelete" :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
+        <!-- <ui-btn v-if="userCanDelete" color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn> -->
         <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
       </div>
     </div>
@@ -78,6 +83,9 @@ export default {
     isAllSelected() {
       return this.audiobooksShowing.length === this.selectedAudiobooks.length
     },
+    userAudiobooks() {
+      return this.$store.state.user.user.audiobooks || {}
+    },
     audiobooksShowing() {
       return this.$store.getters['audiobooks/getFiltered']()
     },
@@ -86,6 +94,13 @@ export default {
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    selectedIsRead() {
+      // Find an audiobook that is not read, if none then all audiobooks read
+      return !this.selectedAudiobooks.find((ab) => {
+        var userAb = this.userAudiobooks[ab]
+        return !userAb || !userAb.isRead
+      })
     }
   },
   methods: {
@@ -108,8 +123,31 @@ export default {
         this.$store.commit('setSelectedAudiobooks', audiobookIds)
       }
     },
+    toggleBatchRead() {
+      var newIsRead = !this.selectedIsRead
+      var updateProgressPayloads = this.selectedAudiobooks.map((ab) => {
+        return {
+          audiobookId: ab,
+          isRead: newIsRead
+        }
+      })
+      this.$axios
+        .patch(`/api/user/audiobooks`, updateProgressPayloads)
+        .then(() => {
+          this.$toast.success('Batch update success!')
+          this.$store.commit('setProcessingBatch', false)
+          this.$store.commit('setSelectedAudiobooks', [])
+        })
+        .catch((error) => {
+          this.$toast.error('Batch update failed')
+          console.error('Failed to batch update read/not read', error)
+          this.$store.commit('setProcessingBatch', false)
+        })
+    },
     batchDeleteClick() {
-      if (confirm(`Are you sure you want to delete these ${this.numAudiobooksSelected} audiobook(s)?`)) {
+      var audiobookText = this.numAudiobooksSelected > 1 ? `these ${this.numAudiobooksSelected} audiobooks` : 'this audiobook'
+      var confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the audiobooks from AudioBookshelf`
+      if (confirm(confirmMsg)) {
         this.processingBatchDelete = true
         this.$store.commit('setProcessingBatch', true)
         this.$axios

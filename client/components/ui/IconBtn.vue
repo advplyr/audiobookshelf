@@ -1,5 +1,5 @@
 <template>
-  <button class="icon-btn rounded-md bg-primary border border-gray-600 flex items-center justify-center h-9 w-9 relative" @click="clickBtn">
+  <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :class="className" @click="clickBtn">
     <span class="material-icons icon-text">{{ icon }}</span>
   </button>
 </template>
@@ -8,12 +8,22 @@
 export default {
   props: {
     icon: String,
-    disabled: Boolean
+    disabled: Boolean,
+    bgColor: {
+      type: String,
+      default: 'primary'
+    }
   },
   data() {
     return {}
   },
-  computed: {},
+  computed: {
+    className() {
+      var classes = []
+      classes.push(`bg-${this.bgColor}`)
+      return classes.join(' ')
+    }
+  },
   methods: {
     clickBtn(e) {
       if (this.disabled) {
