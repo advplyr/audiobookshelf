@@ -31,30 +31,54 @@ export default {
     updateText() {
       if (this.tooltip) {
         this.tooltip.innerHTML = this.text
+        this.setTooltipPosition(this.tooltip)
       }
+    },
+    getTextWidth() {
+      var styles = {
+        'font-size': '0.75rem'
+      }
+      var size = this.$calculateTextSize(this.text, styles)
+      console.log('Text Size', size.width, size.height)
+      return size.width
     },
     createTooltip() {
       if (!this.$refs.box) return
+      var tooltip = document.createElement('div')
+      tooltip.className = 'absolute px-2 bg-black bg-opacity-90 py-1 text-white pointer-events-none text-xs rounded shadow-lg'
+      tooltip.style.zIndex = 100
+      tooltip.innerHTML = this.text
+
+      this.setTooltipPosition(tooltip)
+
+      this.tooltip = tooltip
+    },
+    setTooltipPosition(tooltip) {
       var boxChow = this.$refs.box.getBoundingClientRect()
+
+      var shouldMount = !tooltip.isConnected
+      // Calculate size of tooltip
+      if (shouldMount) document.body.appendChild(tooltip)
+      var { width, height } = tooltip.getBoundingClientRect()
+      if (shouldMount) tooltip.remove()
+
       var top = 0
       var left = 0
       if (this.direction === 'right') {
-        top = boxChow.top
+        top = boxChow.top - height / 2 + boxChow.height / 2
         left = boxChow.left + boxChow.width + 4
       } else if (this.direction === 'bottom') {
         top = boxChow.top + boxChow.height + 4
-        left = boxChow.left
+        left = boxChow.left - width / 2 + boxChow.width / 2
       } else if (this.direction === 'top') {
-        top = boxChow.top - 24
-        left = boxChow.left
+        top = boxChow.top - height - 4
+        left = boxChow.left - width / 2 + boxChow.width / 2
+      } else if (this.direction === 'left') {
+        top = boxChow.top - height / 2 + boxChow.height / 2
+        left = boxChow.left - width - 4
       }
-      var tooltip = document.createElement('div')
-      tooltip.className = 'absolute px-2 bg-black bg-opacity-90 py-1 text-white pointer-events-none text-xs rounded shadow-lg'
       tooltip.style.top = top + 'px'
       tooltip.style.left = left + 'px'
-      tooltip.style.zIndex = 100
-      tooltip.innerHTML = this.text
-      this.tooltip = tooltip
     },
     showTooltip() {
       if (!this.tooltip) {

@@ -38,13 +38,26 @@ Vue.prototype.$secondsToTimestamp = (seconds) => {
   return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
 }
 
-Vue.prototype.$cleanString = (str) => {
-  if (!str) return ''
+Vue.prototype.$calculateTextSize = (text, styles = {}) => {
+  const el = document.createElement('p')
 
-  // No longer necessary to replace accented chars, full utf-8 charset is supported
-  // replace accented characters: https://stackoverflow.com/a/49901740/7431543
-  // str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-  return str.trim()
+  let attr = 'margin:0px;opacity:1;position:absolute;top:100px;left:100px;z-index:99;'
+  for (const key in styles) {
+    if (styles[key] && String(styles[key]).length > 0) {
+      attr += `${key}:${styles[key]};`
+    }
+  }
+
+  el.setAttribute('style', attr)
+  el.innerText = text
+
+  document.body.appendChild(el)
+  const boundingBox = el.getBoundingClientRect()
+  el.remove()
+  return {
+    height: boundingBox.height,
+    width: boundingBox.width
+  }
 }
 
 function isClickedOutsideEl(clickEvent, elToCheckOutside, ignoreSelectors = [], ignoreElems = []) {

@@ -37,6 +37,8 @@ class ApiController {
 
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
     this.router.patch('/user/audiobook/:id', this.updateUserAudiobookProgress.bind(this))
+    this.router.patch('/user/audiobooks', this.batchUpdateUserAudiobooksProgress.bind(this))
+
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
     this.router.get('/users', this.getUsers.bind(this))
@@ -268,6 +270,26 @@ class ApiController {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
+    res.sendStatus(200)
+  }
+
+  async batchUpdateUserAudiobooksProgress(req, res) {
+    var abProgresses = req.body
+    if (!abProgresses || !abProgresses.length) {
+      return res.sendStatus(500)
+    }
+
+    var shouldUpdate = false
+    abProgresses.forEach((progress) => {
+      var wasUpdated = req.user.updateAudiobookProgress(progress.audiobookId, progress)
+      if (wasUpdated) shouldUpdate = true
+    })
+
+    if (shouldUpdate) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+
     res.sendStatus(200)
   }
 

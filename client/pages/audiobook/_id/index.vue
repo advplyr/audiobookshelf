@@ -69,7 +69,7 @@
               Invalid Parts <span class="text-sm">({{ invalidParts.length }})</span>
             </p>
             <div>
-              <p v-for="part in invalidParts" :key="part" class="text-sm font-mono">{{ part.filename }}: {{ part.error }}</p>
+              <p v-for="part in invalidParts" :key="part.filename" class="text-sm font-mono">{{ part.filename }}: {{ part.error }}</p>
             </div>
           </div>
 
