@@ -39,8 +39,9 @@
         <ui-btn small class="text-sm mx-2" @click="toggleSelectAll">{{ isAllSelected ? 'Select None' : 'Select All' }}</ui-btn>
 
         <div class="flex-grow" />
-        <ui-tooltip v-if="userCanUpdate" :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
-          <ui-read-icon-btn :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
+
+        <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
+          <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate">
           <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
@@ -101,6 +102,9 @@ export default {
         var userAb = this.userAudiobooks[ab]
         return !userAb || !userAb.isRead
       })
+    },
+    processingBatch() {
+      return this.$store.state.processingBatch
     }
   },
   methods: {
@@ -124,6 +128,7 @@ export default {
       }
     },
     toggleBatchRead() {
+      this.$store.commit('setProcessingBatch', true)
       var newIsRead = !this.selectedIsRead
       var updateProgressPayloads = this.selectedAudiobooks.map((ab) => {
         return {
