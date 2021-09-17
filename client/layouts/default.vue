@@ -102,6 +102,7 @@ export default {
           if (results.added) scanResultMsgs.push(`${results.added} added`)
           if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
           if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
+          if (results.missing) scanResultMsgs.push(`${results.missing} missing`)
           if (!scanResultMsgs.length) this.$toast.success('Scan Finished\nEverything was up to date')
           else this.$toast.success('Scan Finished\n' + scanResultMsgs.join('\n'))
         }
@@ -128,19 +129,18 @@ export default {
       }
     },
     downloadToastClick(download) {
-      console.log('Downlaod ready toast click', download)
-      // if (!download || !download.audiobookId) {
-      //   return console.error('Invalid download object', download)
-      // }
-      // var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
-      // if (!audiobook) {
-      //   return console.error('Audiobook not found for download', download)
-      // }
-      // this.$store.commit('showEditModalOnTab', { audiobook, tab: 'download' })
+      if (!download || !download.audiobookId) {
+        return console.error('Invalid download object', download)
+      }
+      var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
+      if (!audiobook) {
+        return console.error('Audiobook not found for download', download)
+      }
+      this.$store.commit('showEditModalOnTab', { audiobook, tab: 'download' })
     },
     downloadStarted(download) {
       download.status = this.$constants.DownloadStatus.PENDING
-      download.toastId = this.$toast(`Preparing download "${download.filename}"`, { timeout: false, draggable: false, closeOnClick: false, onClick: this.downloadToastClick })
+      download.toastId = this.$toast(`Preparing download "${download.filename}"`, { timeout: false, draggable: false, closeOnClick: false, onClick: () => this.downloadToastClick(download) })
       this.$store.commit('downloads/addUpdateDownload', download)
     },
     downloadReady(download) {
@@ -149,7 +149,7 @@ export default {
 
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" is ready!`, options: { timeout: 5000, type: 'success', onClick: this.downloadToastClick } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" is ready!`, options: { timeout: 5000, type: 'success', onClick: () => this.downloadToastClick(download) } }, true)
       } else {
         this.$toast.success(`Download "${download.filename}" is ready!`)
       }
@@ -163,7 +163,7 @@ export default {
 
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" ${failedMsg}`, options: { timeout: 5000, type: 'error', onClick: this.downloadToastClick } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" ${failedMsg}`, options: { timeout: 5000, type: 'error', onClick: () => this.downloadToastClick(download) } }, true)
       } else {
         console.warn('Download failed no existing download', existingDownload)
         this.$toast.error(`Download "${download.filename}" ${failedMsg}`)
@@ -174,7 +174,7 @@ export default {
       var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" was terminated`, options: { timeout: 5000, type: 'error', onClick: this.downloadToastClick } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" was terminated`, options: { timeout: 5000, type: 'error', onClick: () => this.downloadToastClick(download) } }, true)
       } else {
         console.warn('Download killed no existing download found', existingDownload)
         this.$toast.error(`Download "${download.filename}" was terminated`)

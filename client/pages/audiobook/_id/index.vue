@@ -31,17 +31,21 @@
           </div>
 
           <div class="flex items-center pt-4">
-            <ui-btn :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
+            <ui-btn v-if="!isMissing" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? 'Streaming' : 'Play' }}
+            </ui-btn>
+            <ui-btn v-else color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
+              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>
+              Missing
             </ui-btn>
 
             <ui-tooltip v-if="userCanUpdate" text="Edit" direction="top">
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="userCanDownload" text="Download" direction="top">
-              <ui-icon-btn icon="download" class="mx-0.5" @click="downloadClick" />
+            <ui-tooltip v-if="userCanDownload" :disabled="isMissing" text="Download" direction="top">
+              <ui-icon-btn icon="download" :disabled="isMissing" class="mx-0.5" @click="downloadClick" />
             </ui-tooltip>
 
             <ui-tooltip :text="isRead ? 'Mark as Not Read' : 'Mark as Read'" direction="top">
@@ -151,6 +155,9 @@ export default {
         else return `${chunk[0]}-${chunk[chunk.length - 1]}`
       })
       return chunks
+    },
+    isMissing() {
+      return this.audiobook.isMissing
     },
     missingParts() {
       return this.audiobook.missingParts || []

@@ -19,10 +19,16 @@ function getPaths(path) {
   })
 }
 
+function isAudioFile(path) {
+  if (!path) return false
+  var ext = Path.extname(path)
+  if (!ext) return false
+  return AUDIO_FORMATS.includes(ext.slice(1).toLowerCase())
+}
+
 function groupFilesIntoAudiobookPaths(paths) {
   // Step 1: Normalize path, Remove leading "/", Filter out files in root dir
   var pathsFiltered = paths.map(path => Path.normalize(path.slice(1))).filter(path => Path.parse(path).dir)
-
 
   // Step 2: Sort by least number of directories
   pathsFiltered.sort((a, b) => {
@@ -31,21 +37,51 @@ function groupFilesIntoAudiobookPaths(paths) {
     return pathsA - pathsB
   })
 
-  // Step 3: Group into audiobooks
+  // Step 2.5: Seperate audio files and other files
+  var audioFilePaths = []
+  var otherFilePaths = []
+  pathsFiltered.forEach(path => {
+    if (isAudioFile(path)) audioFilePaths.push(path)
+    else otherFilePaths.push(path)
+  })
+
+  // Step 3: Group audio files in audiobooks
   var audiobookGroup = {}
-  pathsFiltered.forEach((path) => {
+  audioFilePaths.forEach((path) => {
     var dirparts = Path.dirname(path).split(Path.sep)
     var numparts = dirparts.length
     var _path = ''
+
+    // Iterate over directories in path
     for (let i = 0; i < numparts; i++) {
       var dirpart = dirparts.shift()
       _path = Path.join(_path, dirpart)
-      if (audiobookGroup[_path]) {
+
+
+      if (audiobookGroup[_path]) { // Directory already has files, add file
         var relpath = Path.join(dirparts.join(Path.sep), Path.basename(path))
         audiobookGroup[_path].push(relpath)
         return
-      } else if (!dirparts.length) {
+      } else if (!dirparts.length) { // This is the last directory, create group
         audiobookGroup[_path] = [Path.basename(path)]
+        return
+      }
+    }
+  })
+
+  // Step 4: Add other files into audiobook groups
+  otherFilePaths.forEach((path) => {
+    var dirparts = Path.dirname(path).split(Path.sep)
+    var numparts = dirparts.length
+    var _path = ''
+
+    // Iterate over directories in path
+    for (let i = 0; i < numparts; i++) {
+      var dirpart = dirparts.shift()
+      _path = Path.join(_path, dirpart)
+      if (audiobookGroup[_path]) { // Directory is audiobook group
+        var relpath = Path.join(dirparts.join(Path.sep), Path.basename(path))
+        audiobookGroup[_path].push(relpath)
         return
       }
     }

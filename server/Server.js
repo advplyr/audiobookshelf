@@ -197,7 +197,6 @@ class Server {
       res.json({ success: true })
     })
 
-
     // Used in development to set-up streams without authentication
     if (process.env.NODE_ENV !== 'production') {
       app.use('/test-hls', this.hlsController.router)

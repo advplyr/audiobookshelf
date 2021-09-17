@@ -89,6 +89,8 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     return
   }
   var tracks = []
+  var numDuplicateTracks = 0
+  var numInvalidTracks = 0
   for (let i = 0; i < newAudioFiles.length; i++) {
     var audioFile = newAudioFiles[i]
     var scanData = await scan(audioFile.fullPath)
@@ -118,17 +120,19 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     if (newAudioFiles.length > 1) {
       trackNumber = isNumber(trackNumFromMeta) ? trackNumFromMeta : trackNumFromFilename
       if (trackNumber === null) {
-        Logger.error('[AudioFileScanner] Invalid track number for', audioFile.filename)
+        Logger.debug('[AudioFileScanner] Invalid track number for', audioFile.filename)
         audioFile.invalid = true
         audioFile.error = 'Failed to get track number'
+        numInvalidTracks++
         continue;
       }
     }
 
     if (tracks.find(t => t.index === trackNumber)) {
-      Logger.error('[AudioFileScanner] Duplicate track number for', audioFile.filename)
+      Logger.debug('[AudioFileScanner] Duplicate track number for', audioFile.filename)
       audioFile.invalid = true
       audioFile.error = 'Duplicate track number'
+      numDuplicateTracks++
       continue;
     }
 
@@ -139,6 +143,13 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
   if (!tracks.length) {
     Logger.warn('[AudioFileScanner] No Tracks for audiobook', audiobook.id)
     return
+  }
+
+  if (numDuplicateTracks > 0) {
+    Logger.warn(`[AudioFileScanner] ${numDuplicateTracks} Duplicate tracks for "${audiobook.title}"`)
+  }
+  if (numInvalidTracks > 0) {
+    Logger.error(`[AudioFileScanner] ${numDuplicateTracks} Invalid tracks for "${audiobook.title}"`)
   }
 
   tracks.sort((a, b) => a.index - b.index)

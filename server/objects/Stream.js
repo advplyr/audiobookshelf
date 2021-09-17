@@ -288,6 +288,7 @@ class Stream extends EventEmitter {
       } else {
         Logger.error('Ffmpeg Err', err.message)
       }
+      clearInterval(this.loop)
     })
 
     this.ffmpeg.on('end', (stdout, stderr) => {
@@ -300,6 +301,7 @@ class Stream extends EventEmitter {
       }
       this.isTranscodeComplete = true
       this.ffmpeg = null
+      clearInterval(this.loop)
     })
 
     this.ffmpeg.run()
