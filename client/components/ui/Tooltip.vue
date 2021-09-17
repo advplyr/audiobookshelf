@@ -14,7 +14,8 @@ export default {
     direction: {
       type: String,
       default: 'right'
-    }
+    },
+    disabled: Boolean
   },
   data() {
     return {
@@ -25,6 +26,11 @@ export default {
   watch: {
     text() {
       this.updateText()
+    },
+    disabled(newVal) {
+      if (newVal && this.isShowing) {
+        this.hideTooltip()
+      }
     }
   },
   methods: {
@@ -81,6 +87,7 @@ export default {
       tooltip.style.left = left + 'px'
     },
     showTooltip() {
+      if (this.disabled) return
       if (!this.tooltip) {
         this.createTooltip()
       }

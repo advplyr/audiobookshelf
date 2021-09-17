@@ -1,5 +1,5 @@
 <template>
-  <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :class="className" @click="clickBtn">
+  <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :disabled="disabled" :class="className" @click="clickBtn">
     <span class="material-icons icon-text">{{ icon }}</span>
   </button>
 </template>
@@ -39,6 +39,9 @@ export default {
 </script>
 
 <style>
+button.icon-btn:disabled {
+  cursor: not-allowed;
+}
 button.icon-btn::before {
   content: '';
   position: absolute;

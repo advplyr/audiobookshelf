@@ -14,7 +14,7 @@
           <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
 
           <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded" :class="overlayWrapperClasslist">
-            <div v-show="!isSelectionMode" class="h-full flex items-center justify-center">
+            <div v-show="!isSelectionMode && !isMissing" class="h-full flex items-center justify-center">
               <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
                 <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
               </div>
@@ -132,7 +132,10 @@ export default {
       return this.userProgress ? !!this.userProgress.isRead : false
     },
     showError() {
-      return this.hasMissingParts || this.hasInvalidParts
+      return this.hasMissingParts || this.hasInvalidParts || this.isMissing
+    },
+    isMissing() {
+      return this.audiobook.isMissing
     },
     hasMissingParts() {
       return this.audiobook.hasMissingParts
@@ -141,6 +144,7 @@ export default {
       return this.audiobook.hasInvalidParts
     },
     errorText() {
+      if (this.isMissing) return 'Audiobook directory is missing!'
       var txt = ''
       if (this.hasMissingParts) {
         txt = `${this.hasMissingParts} missing parts.`

@@ -28,6 +28,9 @@ class Audiobook {
     this.book = null
     this.chapters = []
 
+    // Audiobook was scanned and not found
+    this.isMissing = false
+
     if (audiobook) {
       this.construct(audiobook)
     }
@@ -55,6 +58,8 @@ class Audiobook {
     if (audiobook.chapters) {
       this.chapters = audiobook.chapters.map(c => ({ ...c }))
     }
+
+    this.isMissing = !!audiobook.isMissing
   }
 
   get title() {
@@ -127,7 +132,8 @@ class Audiobook {
       tracks: this.tracksToJSON(),
       audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
       otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
-      chapters: this.chapters || []
+      chapters: this.chapters || [],
+      isMissing: !!this.isMissing
     }
   }
 
@@ -147,7 +153,8 @@ class Audiobook {
       hasMissingParts: this.missingParts ? this.missingParts.length : 0,
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
       numTracks: this.tracks.length,
-      chapters: this.chapters || []
+      chapters: this.chapters || [],
+      isMissing: !!this.isMissing
     }
   }
 
@@ -169,7 +176,8 @@ class Audiobook {
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
-      chapters: this.chapters || []
+      chapters: this.chapters || [],
+      isMissing: !!this.isMissing
     }
   }
 

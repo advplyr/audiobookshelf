@@ -9,7 +9,6 @@ const { comparePaths, getIno } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
 const { ScanResult } = require('./utils/constants')
 
-
 class Scanner {
   constructor(AUDIOBOOK_PATH, METADATA_PATH, db, emitter) {
     this.AudiobookPath = AUDIOBOOK_PATH
@@ -71,6 +70,7 @@ class Scanner {
     if (existingAudiobook) {
 
       // REMOVE: No valid audio files
+      // TODO: Label as incomplete, do not actually delete
       if (!audiobookData.audioFiles.length) {
         Logger.error(`[Scanner] "${existingAudiobook.title}" no valid audio files found - removing audiobook`)
 
@@ -109,8 +109,8 @@ class Scanner {
         await audioFileScanner.scanAudioFiles(existingAudiobook, newAudioFiles)
       }
 
-
       // REMOVE: No valid audio tracks
+      // TODO: Label as incomplete, do not actually delete
       if (!existingAudiobook.tracks.length) {
         Logger.error(`[Scanner] "${existingAudiobook.title}" has no valid tracks after update - removing audiobook`)
 
@@ -133,6 +133,12 @@ class Scanner {
       // Syncs path and fullPath
       if (existingAudiobook.syncPaths(audiobookData)) {
         hasUpdates = true
+      }
+
+      if (existingAudiobook.isMissing) {
+        existingAudiobook.isMissing = false
+        hasUpdates = true
+        Logger.info(`[Scanner] "${existingAudiobook.title}" was missing but now it is found`)
       }
 
       if (hasUpdates) {
@@ -173,23 +179,24 @@ class Scanner {
   }
 
   async scan() {
+    // TODO: This temporary fix from pre-release should be removed soon, including the "fixRelativePath" and "checkUpdateInos"
     // TEMP - fix relative file paths
     // TEMP - update ino for each audiobook
-    if (this.audiobooks.length) {
-      for (let i = 0; i < this.audiobooks.length; i++) {
-        var ab = this.audiobooks[i]
-        var shouldUpdate = ab.fixRelativePath(this.AudiobookPath) || !ab.ino
+    // if (this.audiobooks.length) {
+    //   for (let i = 0; i < this.audiobooks.length; i++) {
+    //     var ab = this.audiobooks[i]
+    //     var shouldUpdate = ab.fixRelativePath(this.AudiobookPath) || !ab.ino
 
-        // Update ino if an audio file has the same ino as the audiobook
-        var shouldUpdateIno = !ab.ino || (ab.audioFiles || []).find(abf => abf.ino === ab.ino)
-        if (shouldUpdateIno) {
-          await ab.checkUpdateInos()
-        }
-        if (shouldUpdate) {
-          await this.db.updateAudiobook(ab)
-        }
-      }
-    }
+    //     // Update ino if an audio file has the same ino as the audiobook
+    //     var shouldUpdateIno = !ab.ino || (ab.audioFiles || []).find(abf => abf.ino === ab.ino)
+    //     if (shouldUpdateIno) {
+    //       await ab.checkUpdateInos()
+    //     }
+    //     if (shouldUpdate) {
+    //       await this.db.updateAudiobook(ab)
+    //     }
+    //   }
+    // }
 
     const scanStart = Date.now()
     var audiobookDataFound = await scanRootDir(this.AudiobookPath, this.db.serverSettings)
@@ -205,18 +212,21 @@ class Scanner {
     var scanResults = {
       removed: 0,
       updated: 0,
-      added: 0
+      added: 0,
+      missing: 0
     }
 
     // Check for removed audiobooks
     for (let i = 0; i < this.audiobooks.length; i++) {
-      var dataFound = audiobookDataFound.find(abd => abd.ino === this.audiobooks[i].ino)
+      var audiobook = this.audiobooks[i]
+      var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino)
       if (!dataFound) {
-        Logger.info(`[Scanner] Removing audiobook "${this.audiobooks[i].title}" - no longer in dir`)
-        var audiobookJSON = this.audiobooks[i].toJSONMinified()
-        await this.db.removeEntity('audiobook', this.audiobooks[i].id)
-        scanResults.removed++
-        this.emitter('audiobook_removed', audiobookJSON)
+        Logger.info(`[Scanner] Audiobook "${audiobook.title}" is missing`)
+        audiobook.isMissing = true
+        audiobook.lastUpdate = Date.now()
+        scanResults.missing++
+        await this.db.updateAudiobook(audiobook)
+        this.emitter('audiobook_updated', audiobook.toJSONMinified())
       }
       if (this.cancelScan) {
         this.cancelScan = false
@@ -247,7 +257,7 @@ class Scanner {
       }
     }
     const scanElapsed = Math.floor((Date.now() - scanStart) / 1000)
-    Logger.info(`[Scanned] Finished | ${scanResults.added} added | ${scanResults.updated} updated | ${scanResults.removed} removed | elapsed: ${secondsToTimestamp(scanElapsed)}`)
+    Logger.info(`[Scanned] Finished | ${scanResults.added} added | ${scanResults.updated} updated | ${scanResults.removed} removed | ${scanResults.missing} missing | elapsed: ${secondsToTimestamp(scanElapsed)}`)
     return scanResults
   }
 

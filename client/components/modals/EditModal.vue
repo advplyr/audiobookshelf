@@ -109,6 +109,7 @@ export default {
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
+        if (tab.id === 'download' && this.isMissing) return false
         if ((tab.id === 'download' || tab.id === 'tracks') && this.userCanDownload) return true
         if (tab.id !== 'download' && tab.id !== 'tracks' && this.userCanUpdate) return true
         return false
@@ -121,6 +122,9 @@ export default {
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
       return _tab ? _tab.component : ''
+    },
+    isMissing() {
+      return this.selectedAudiobook.isMissing
     },
     selectedAudiobook() {
       return this.$store.state.selectedAudiobook || {}
