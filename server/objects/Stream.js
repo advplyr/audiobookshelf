@@ -171,13 +171,11 @@ class Stream extends EventEmitter {
         this.furthestSegmentCreated = lastSegment
       }
 
-      // console.log('SORT', [...this.segmentsCreated].slice(0, 200).join(', '), segments.slice(0, 200).join(', '))
       segments.forEach((seg) => {
         if (!current_chunk.length || last_seg_in_chunk + 1 === seg) {
           last_seg_in_chunk = seg
           current_chunk.push(seg)
         } else {
-          // console.log('Last Seg is not equal to - 1', last_seg_in_chunk, seg)
           if (current_chunk.length === 1) chunks.push(current_chunk[0])
           else chunks.push(`${current_chunk[0]}-${current_chunk[current_chunk.length - 1]}`)
           last_seg_in_chunk = seg

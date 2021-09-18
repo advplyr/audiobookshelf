@@ -315,7 +315,6 @@ export default {
       this.bufferTrackWidth = bufferlen
     },
     timeupdate() {
-      // console.log('Time update', this.audioEl.currentTime)
       if (!this.$refs.playedTrack) {
         console.error('Invalid no played track ref')
         return
