@@ -155,9 +155,7 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
   // If there are at least 2 more directories, next furthest will be the series
   if (splitDir.length > 1) series = splitDir.pop()
   if (splitDir.length > 0) author = splitDir.pop()
-
   // There could be many more directories, but only the top 3 are used for naming /author/series/title/
-
 
   var publishYear = null
   // If Title is of format 1999 - Title, then use 1999 as publish year
@@ -169,7 +167,37 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
     }
   }
 
+  // If in a series directory check for volume number match
+  /* ACCEPTS:
+    Book 2 - Title Here - Subtitle Here
+    Title Here - Subtitle Here - Vol 12
+    Title Here - volume 9 - Subtitle Here
+    Vol. 3 Title Here - Subtitle Here
+    1980 - Book 2-Title Here
+    Title Here-Volume 999-Subtitle Here
+  */
+  var volumeNumber = null
+  if (series) {
+    var volumeMatch = title.match(/(-(?: ?))?\b((?:Book|Vol.?|Volume) \b(\d{1,3}))((?: ?)-)?/i)
+    if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
+      volumeNumber = volumeMatch[3]
+      var replaceChunk = volumeMatch[2]
+
+      // "1980 - Book 2-Title Here"
+      // Group 1 would be "- "
+      // Group 3 would be "-"
+      // Only remove the first group
+      if (volumeMatch[1]) {
+        replaceChunk = volumeMatch[1] + replaceChunk
+      } else if (volumeMatch[4]) {
+        replaceChunk += volumeMatch[4]
+      }
+      title = title.replace(replaceChunk, '').trim()
+    }
+  }
+
   // Subtitle can be parsed from the title if user enabled
+  // Subtitle is everything after " - "
   var subtitle = null
   if (parseSubtitle && title.includes(' - ')) {
     var splitOnSubtitle = title.split(' - ')
@@ -182,6 +210,7 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
     title,
     subtitle,
     series,
+    volumeNumber,
     publishYear,
     path: dir, // relative audiobook path i.e. /Author Name/Book Name/..
     fullPath: Path.join(abRootPath, dir) // i.e. /audiobook/Author Name/Book Name/..

@@ -151,7 +151,7 @@ class Book {
   // If audiobook directory path was changed, check and update properties set from dirnames
   // May be worthwhile checking if these were manually updated and not override manual updates
   syncPathsUpdated(audiobookData) {
-    var keysToSync = ['author', 'title', 'series', 'publishYear']
+    var keysToSync = ['author', 'title', 'series', 'publishYear', 'volumeNumber']
     var syncPayload = {}
     keysToSync.forEach((key) => {
       if (audiobookData[key]) syncPayload[key] = audiobookData[key]

@@ -60,10 +60,8 @@ export const mutations = {
     state.user = user
     if (user) {
       if (user.token) localStorage.setItem('token', user.token)
-      console.log('setUser', user.username)
     } else {
       localStorage.removeItem('token')
-      console.warn('setUser cleared')
     }
   },
   setSettings(state, settings) {
