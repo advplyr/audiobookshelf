@@ -33,6 +33,9 @@ export const getters = {
   },
   getUserCanDownload: (state) => {
     return state.user && state.user.permissions ? !!state.user.permissions.download : false
+  },
+  getUserCanUpload: (state) => {
+    return state.user && state.user.permissions ? !!state.user.permissions.upload : false
   }
 }
 

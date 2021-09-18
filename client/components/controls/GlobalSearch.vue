@@ -18,7 +18,7 @@
         </li>
         <template v-else>
           <template v-for="item in items">
-            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400" role="option" @click="clickedOption(item)">
+            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickedOption(item)">
               <template v-if="item.type === 'audiobook'">
                 <cards-audiobook-search-card :audiobook="item.data" />
               </template>

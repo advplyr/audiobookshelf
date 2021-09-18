@@ -32,6 +32,9 @@ class User {
   get canDownload() {
     return !!this.permissions.download && this.isActive
   }
+  get canUpload() {
+    return !!this.permissions.upload && this.isActive
+  }
 
   getDefaultUserSettings() {
     return {
@@ -47,7 +50,8 @@ class User {
     return {
       download: true,
       update: true,
-      delete: this.id === 'root'
+      delete: this.type === 'root',
+      upload: this.type === 'root' || this.type === 'admin'
     }
   }
 
@@ -112,6 +116,8 @@ class User {
     this.createdAt = user.createdAt || Date.now()
     this.settings = user.settings || this.getDefaultUserSettings()
     this.permissions = user.permissions || this.getDefaultUserPermissions()
+    // Upload permission added v1.1.13, make sure root user has upload permissions
+    if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
   }
 
   update(payload) {
