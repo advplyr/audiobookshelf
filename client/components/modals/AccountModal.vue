@@ -27,9 +27,9 @@
             </div>
           </div>
 
-          <div v-if="!isEditingRoot && newUser.permissions" class="w-full border-t border-b border-black-200 py-2 mt-4">
-            <p class="text-lg mb-2">Permissions</p>
-            <div class="flex items-center my-2 max-w-lg">
+          <div v-if="!isEditingRoot && newUser.permissions" class="w-full border-t border-b border-black-200 py-2 px-3 mt-4">
+            <p class="text-lg mb-2 font-semibold">Permissions</p>
+            <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
                 <p>Can Download</p>
               </div>
@@ -38,7 +38,7 @@
               </div>
             </div>
 
-            <div class="flex items-center my-2 max-w-lg">
+            <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
                 <p>Can Update</p>
               </div>
@@ -47,12 +47,21 @@
               </div>
             </div>
 
-            <div class="flex items-center my-2 max-w-lg">
+            <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
                 <p>Can Delete</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.delete" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
+                <p>Can Upload</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.upload" />
               </div>
             </div>
           </div>
@@ -179,7 +188,8 @@ export default {
       this.newUser.permissions = {
         download: type !== 'guest',
         update: type === 'admin',
-        delete: type === 'admin'
+        delete: type === 'admin',
+        upload: type === 'admin'
       }
     },
     init() {
@@ -201,7 +211,8 @@ export default {
           permissions: {
             download: true,
             update: false,
-            delete: false
+            delete: false,
+            upload: false
           }
         }
       }

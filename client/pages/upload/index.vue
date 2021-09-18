@@ -1,8 +1,8 @@
 <template>
   <div id="page-wrapper" class="page p-6" :class="streamAudiobook ? 'streaming' : ''">
     <main class="container mx-auto h-full max-w-screen-lg p-6">
-      <article class="max-h-full overflow-y-auto relative flex flex-col bg-primary shadow-xl rounded-md" @drop="drop" @dragover="dragover" @dragleave="dragleave" @dragenter="dragenter">
-        <h1 class="text-xl font-book px-4 pt-4 pb-2"><span class="text-error pr-4">(Experimental)</span>Audiobook Uploader</h1>
+      <article class="max-h-full overflow-y-auto relative flex flex-col rounded-md" @drop="drop" @dragover="dragover" @dragleave="dragleave" @dragenter="dragenter">
+        <h1 class="text-xl font-book px-8 pt-4 pb-2">Audiobook Uploader</h1>
 
         <div class="flex my-2 px-6">
           <div class="w-1/2 px-2">
@@ -170,19 +170,16 @@ export default {
       }
     },
     drop(evt) {
-      console.log('Dropped event', evt)
       this.isDragOver = false
       this.preventDefaults(evt)
       const files = [...evt.dataTransfer.files]
       this.filesChanged(files)
     },
     dragover(evt) {
-      console.log('Dragged over', evt)
       this.isDragOver = true
       this.preventDefaults(evt)
     },
     dragleave(evt) {
-      console.log('Dragged leave', evt)
       this.isDragOver = false
       this.preventDefaults(evt)
     },
@@ -195,7 +192,6 @@ export default {
       e.stopPropagation()
     },
     filesChanged(files) {
-      console.log('FilesChanged', files)
       this.showUploader = false
 
       for (let i = 0; i < files.length; i++) {

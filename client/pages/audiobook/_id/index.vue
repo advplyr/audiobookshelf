@@ -13,9 +13,11 @@
             <div class="mb-2">
               <h1 class="text-2xl font-book leading-7">{{ title }}</h1>
               <h3 v-if="series" class="font-book text-gray-300 text-lg leading-7">{{ seriesText }}</h3>
-              <ui-tooltip :text="authorTooltipText" direction="bottom">
-                <p class="text-sm text-gray-100 leading-7">by {{ author }}</p>
-              </ui-tooltip>
+              <div class="w-min">
+                <ui-tooltip :text="authorTooltipText" direction="bottom">
+                  <span class="text-sm text-gray-100 leading-7 whitespace-nowrap">by {{ author }}</span>
+                </ui-tooltip>
+              </div>
             </div>
             <div class="flex-grow" />
           </div>

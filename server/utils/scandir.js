@@ -157,15 +157,6 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
   if (splitDir.length > 0) author = splitDir.pop()
   // There could be many more directories, but only the top 3 are used for naming /author/series/title/
 
-  var publishYear = null
-  // If Title is of format 1999 - Title, then use 1999 as publish year
-  var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
-  if (publishYearMatch && publishYearMatch.length > 2) {
-    if (!isNaN(publishYearMatch[1])) {
-      publishYear = publishYearMatch[1]
-      title = publishYearMatch[2]
-    }
-  }
 
   // If in a series directory check for volume number match
   /* ACCEPTS:
@@ -195,6 +186,18 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
       title = title.replace(replaceChunk, '').trim()
     }
   }
+
+
+  var publishYear = null
+  // If Title is of format 1999 - Title, then use 1999 as publish year
+  var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
+  if (publishYearMatch && publishYearMatch.length > 2) {
+    if (!isNaN(publishYearMatch[1])) {
+      publishYear = publishYearMatch[1]
+      title = publishYearMatch[2]
+    }
+  }
+
 
   // Subtitle can be parsed from the title if user enabled
   // Subtitle is everything after " - "

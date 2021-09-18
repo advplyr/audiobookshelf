@@ -123,6 +123,51 @@ class Server {
     this.auth.authMiddleware(req, res, next)
   }
 
+  async handleUpload(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn('User attempted to upload without permission', req.user)
+      return res.sendStatus(403)
+    }
+    var files = Object.values(req.files)
+    var title = req.body.title
+    var author = req.body.author
+    var series = req.body.series
+
+    if (!files.length || !title || !author) {
+      return res.json({
+        error: 'Invalid post data received'
+      })
+    }
+
+    var outputDirectory = ''
+    if (series && series.length && series !== 'null') {
+      outputDirectory = Path.join(this.AudiobookPath, author, series, title)
+    } else {
+      outputDirectory = Path.join(this.AudiobookPath, author, title)
+    }
+
+    var exists = await fs.pathExists(outputDirectory)
+    if (exists) {
+      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
+      return res.json({
+        error: `Directory "${outputDirectory}" already exists`
+      })
+    }
+
+    await fs.ensureDir(outputDirectory)
+    Logger.info(`Uploading ${files.length} files to`, outputDirectory)
+
+    for (let i = 0; i < files.length; i++) {
+      var file = files[i]
+
+      var path = Path.join(outputDirectory, file.name)
+      await file.mv(path).catch((error) => {
+        Logger.error('Failed to move file', path, error)
+      })
+    }
+    res.sendStatus(200)
+  }
+
   async start() {
     Logger.info('=== Starting Server ===')
 
@@ -157,38 +202,7 @@ class Server {
     // app.use('/hls', this.hlsController.router)
     app.use('/feeds', this.rssFeeds.router)
 
-    app.post('/upload', this.authMiddleware.bind(this), async (req, res) => {
-      var files = Object.values(req.files)
-      var title = req.body.title
-      var author = req.body.author
-      var series = req.body.series
-
-      if (!files.length || !title || !author) {
-        return res.json({
-          error: 'Invalid post data received'
-        })
-      }
-
-      var outputDirectory = ''
-      if (series && series.length && series !== 'null') {
-        outputDirectory = Path.join(this.AudiobookPath, author, series, title)
-      } else {
-        outputDirectory = Path.join(this.AudiobookPath, author, title)
-      }
-
-      await fs.ensureDir(outputDirectory)
-      Logger.info(`Uploading ${files.length} files to`, outputDirectory)
-
-      for (let i = 0; i < files.length; i++) {
-        var file = files[i]
-
-        var path = Path.join(outputDirectory, file.name)
-        await file.mv(path).catch((error) => {
-          Logger.error('Failed to move file', path, error)
-        })
-      }
-      res.sendStatus(200)
-    })
+    app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))
 
     app.post('/login', (req, res) => this.auth.login(req, res))
     app.post('/logout', this.logout.bind(this))
