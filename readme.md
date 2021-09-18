@@ -58,12 +58,10 @@ Becomes:\
 | Volume Number | 1                                 |
 
 
-#### Features coming soon:
+## Features coming soon:
 
 * Support different views to see more details of each audiobook
 * iOS App (Android is in beta [here](https://play.google.com/store/apps/details?id=com.audiobookshelf.app))
-
-<img alt="Screenshot2" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_audiobook.png" />
 
 ## Installation
 
