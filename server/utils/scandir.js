@@ -169,7 +169,7 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
   */
   var volumeNumber = null
   if (series) {
-    var volumeMatch = title.match(/(-(?: ?))?\b((?:Book|Vol.?|Volume) (\d{1,3}))\b((?: ?)-)?/i)
+    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
     if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
       volumeNumber = volumeMatch[3]
       var replaceChunk = volumeMatch[2]
