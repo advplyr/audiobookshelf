@@ -50,7 +50,6 @@ Will save the title as `Hackers` and the subtitle as `Heroes of the Computer Rev
 
 Becomes:\
 | Author        | Steven Levy                       |
-|---------------|-----------------------------------|
 | Series        | The Hacker Series                 |
 | Publish Year  | 1984                              |
 | Title         | Hackers                           |
@@ -58,7 +57,7 @@ Becomes:\
 | Volume Number | 1                                 |
 
 
-## Features coming soon:
+## Features coming soon
 
 * Support different views to see more details of each audiobook
 * iOS App (Android is in beta [here](https://play.google.com/store/apps/details?id=com.audiobookshelf.app))
