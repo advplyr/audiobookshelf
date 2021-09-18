@@ -48,7 +48,7 @@ Will save the title as `Hackers` and the subtitle as `Heroes of the Computer Rev
 
 `/Steven Levy/The Hacker Series/1984 - Hackers - Heroes of the Computer Revolution - Vol. 1/...`
 
-Becomes:\
+**Becomes:**
 | Key           | Value                             |
 |---------------|-----------------------------------|
 | Author        | Steven Levy                       |
