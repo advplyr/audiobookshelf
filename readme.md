@@ -72,6 +72,21 @@ Built to run in Docker for now (also on Unraid server Community Apps)
 docker run -d -p 1337:80 -v /audiobooks:/audiobooks -v /config:/config -v /metadata:/metadata --name audiobookshelf --rm advplyr/audiobookshelf
 ```
 
+## Running on your local
+
+```bash
+git clone https://github.com/advplyr/audiobookshelf.git
+cd audiobookshelf
+
+# All paths default to root directory. Config path is the database.
+# Directories will be created if they don't exist
+# Paths are relative to the root directory, so "../Audiobooks" would be a valid path
+npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
+
+# You only need to use `npm run prod` the first time, after that use `npm run start`
+npm run start -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
+```
+
 ## Contributing
 
 Feel free to help out
