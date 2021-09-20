@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js",
     "client": "cd client && npm install --production && npm run generate",
-    "prod": "npm run client && npm install && node prod.js"
+    "prod": "npm run client && npm install --production && node prod.js",
+    "start": "node prod.js"
   },
   "author": "advplyr",
   "license": "ISC",
@@ -15,6 +15,7 @@
     "archiver": "^5.3.0",
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
+    "command-line-args": "^5.2.0",
     "cookie-parser": "^1.4.5",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
