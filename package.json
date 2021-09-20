@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "node index.js",
-    "client": "cd client && npm install --production && npm run generate",
-    "prod": "npm run client && npm install --production && node prod.js",
+    "client": "cd client && npm install && npm run generate",
+    "prod": "npm run client && npm install && node prod.js",
     "start": "node prod.js"
   },
   "author": "advplyr",
