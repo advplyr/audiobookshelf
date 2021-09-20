@@ -9,7 +9,7 @@
     "start": "nuxt start",
     "generate": "nuxt generate"
   },
-  "author": "",
+  "author": "advplyr",
   "license": "ISC",
   "dependencies": {
     "@nuxtjs/axios": "^5.13.6",
