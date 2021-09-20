@@ -1,6 +1,6 @@
 const Ffmpeg = require('fluent-ffmpeg')
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.FFMPEG_PATH) {
   Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH)
 }
 

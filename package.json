@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
-    "prod": "NODE_ENV=production node index.js"
+    "client": "cd client && npm install --production && npm run generate",
+    "prod": "npm run client && npm install && node prod.js"
   },
   "author": "advplyr",
   "license": "ISC",
