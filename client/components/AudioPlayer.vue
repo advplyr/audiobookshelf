@@ -12,9 +12,6 @@
         <div v-if="chapters.length" class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
-        <div v-else class="flex items-center justify-center text-gray-500">
-          <span class="material-icons text-3xl">format_list_bulleted</span>
-        </div>
       </div>
 
       <div class="absolute right-32 top-0 bottom-0">
@@ -56,6 +53,11 @@
         <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
         <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white bg-opacity-25" />
       </div>
+      <div ref="track" class="w-full h-2 relative overflow-hidden">
+        <template v-for="(tick, index) in chapterTicks">
+          <div :key="index" :style="{ left: tick.left + 'px' }" class="absolute top-0 w-px bg-white bg-opacity-50 h-1 pointer-events-none" />
+        </template>
+      </div>
 
       <!-- Hover timestamp -->
       <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
@@ -68,7 +70,7 @@
 
     <audio ref="audio" @pause="paused" @playing="playing" @progress="progress" @timeupdate="timeupdate" @loadeddata="audioLoadedData" />
 
-    <modals-chapters-modal v-model="showChaptersModal" :chapters="chapters" @select="selectChapter" />
+    <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
   </div>
 </template>
 
@@ -100,7 +102,8 @@ export default {
       totalDuration: 0,
       seekedTime: 0,
       seekLoading: false,
-      showChaptersModal: false
+      showChaptersModal: false,
+      currentTime: 0
     }
   },
   computed: {
@@ -109,6 +112,18 @@ export default {
     },
     totalDurationPretty() {
       return this.$secondsToTimestamp(this.totalDuration)
+    },
+    chapterTicks() {
+      return this.chapters.map((chap) => {
+        var perc = chap.start / this.totalDuration
+        return {
+          title: chap.title,
+          left: perc * this.trackWidth
+        }
+      })
+    },
+    currentChapter() {
+      return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
     }
   },
   methods: {
@@ -175,7 +190,13 @@ export default {
         this.$refs.hoverTimestamp.style.left = offsetX - width / 2 + 'px'
       }
       if (this.$refs.hoverTimestampText) {
-        this.$refs.hoverTimestampText.innerText = this.$secondsToTimestamp(time)
+        var hoverText = this.$secondsToTimestamp(time)
+
+        var chapter = this.chapters.find((chapter) => chapter.start <= time && time < chapter.end)
+        if (chapter && chapter.title) {
+          hoverText += ` - ${chapter.title}`
+        }
+        this.$refs.hoverTimestampText.innerText = hoverText
       }
       if (this.$refs.trackCursor) {
         this.$refs.trackCursor.style.opacity = 1
@@ -289,7 +310,6 @@ export default {
           end: end + offset
         })
       }
-
       return ranges
     },
     getLastBufferedTime() {
@@ -333,6 +353,8 @@ export default {
       }
 
       this.updateTimestamp()
+
+      this.currentTime = this.audioEl.currentTime
 
       var perc = this.audioEl.currentTime / this.audioEl.duration
       var ptWidth = Math.round(perc * this.trackWidth)

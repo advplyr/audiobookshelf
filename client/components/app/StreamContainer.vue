@@ -1,14 +1,14 @@
 <template>
   <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-40 bg-primary p-4">
-    <div class="absolute -top-16 left-4">
+    <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute -top-16 left-4 cursor-pointer">
       <cards-book-cover :audiobook="streamAudiobook" :width="88" />
-    </div>
+    </nuxt-link>
     <div class="flex items-center pl-24">
       <div>
-        <h1>
-          {{ title }} <span v-if="stream" class="text-xs text-gray-400">({{ stream.id }})</span>
-        </h1>
-        <p class="text-gray-400 text-sm">by {{ author }}</p>
+        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer">
+          {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
+        </nuxt-link>
+        <p class="text-gray-400 text-sm hover:underline cursor-pointer" @click="filterByAuthor">by {{ author }}</p>
       </div>
       <div class="flex-grow" />
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
@@ -66,6 +66,15 @@ export default {
     }
   },
   methods: {
+    filterByAuthor() {
+      if (this.$route.name !== 'index') {
+        this.$router.push('/')
+      }
+      var settingsUpdate = {
+        filterBy: `authors.${this.$encode(this.author)}`
+      }
+      this.$store.dispatch('user/updateUserSettings', settingsUpdate)
+    },
     audioPlayerMounted() {
       this.audioPlayerReady = true
       if (this.stream) {

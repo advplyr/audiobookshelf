@@ -74,10 +74,10 @@ export default {
       this.showMenu = false
     },
     leftArrowClick() {
-      this.rateIndex = Math.max(0, this.rateIndex - 4)
+      this.rateIndex = Math.max(0, this.rateIndex - 1)
     },
     rightArrowClick() {
-      this.rateIndex = Math.min(this.rates.length - this.numVisible, this.rateIndex + 4)
+      this.rateIndex = Math.min(this.rates.length - this.numVisible, this.rateIndex + 1)
     }
   },
   mounted() {}

@@ -180,7 +180,7 @@ export default {
     submitForm() {
       if (!this.textInput) return
 
-      var cleaned = this.textInput.toLowerCase().trim()
+      var cleaned = this.textInput.trim()
       var matchesItem = this.items.find((i) => {
         return i === cleaned
       })

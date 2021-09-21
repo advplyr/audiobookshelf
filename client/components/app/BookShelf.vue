@@ -10,8 +10,11 @@
     </div>
 
     <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4">Your Audiobookshelf is empty!</p>
-      <ui-btn color="success" @click="scan">Scan your Audiobooks</ui-btn>
+      <p class="text-center text-2xl font-book mb-4 py-4">Your Audiobookshelf is empty!</p>
+      <div class="flex">
+        <ui-btn to="/config" color="primary" class="w-52 mr-2" @click="scan">Configure Scanner</ui-btn>
+        <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
+      </div>
     </div>
     <div v-else class="w-full flex flex-col items-center">
       <template v-for="(shelf, index) in groupedBooks">
@@ -43,7 +46,8 @@ export default {
       availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
       selectedSizeIndex: 3,
       rowPaddingX: 40,
-      keywordFilterTimeout: null
+      keywordFilterTimeout: null,
+      scannerParseSubtitle: false
     }
   },
   watch: {

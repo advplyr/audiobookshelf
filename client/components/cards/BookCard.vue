@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <!-- New Book Flag -->
-    <div v-show="isNew" class="absolute top-4 left-0 w-4 h-10 pr-2 bg-darkgreen box-shadow-xl">
+    <div v-show="isNew" class="absolute top-4 left-0 w-4 h-10 pr-2 bg-darkgreen box-shadow-xl z-20">
       <div class="absolute top-0 left-0 w-full h-full transform -rotate-90 flex items-center justify-center">
         <p class="text-center text-sm">New</p>
       </div>
@@ -65,7 +65,7 @@ export default {
   },
   computed: {
     isNew() {
-      return this.tags.includes('new')
+      return this.tags.includes('New')
     },
     tags() {
       return this.audiobook.tags || []
