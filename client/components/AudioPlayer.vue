@@ -61,7 +61,9 @@
 
       <!-- Hover timestamp -->
       <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
-        <p ref="hoverTimestampText" class="text-xs font-mono text-center px-2 py-0.5">00:00</p>
+        <p ref="hoverTimestampText" class="text-xs font-mono text-center px-2 py-0.5 truncate whitespace-nowrap">00:00</p>
+      </div>
+      <div ref="hoverTimestampArrow" class="absolute -top-3 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
         <div class="absolute -bottom-1.5 left-0 right-0 w-full flex justify-center">
           <div class="arrow-down" />
         </div>
@@ -103,7 +105,8 @@ export default {
       seekedTime: 0,
       seekLoading: false,
       showChaptersModal: false,
-      currentTime: 0
+      currentTime: 0,
+      trackOffsetLeft: 16 // Track is 16px from edge
     }
   },
   computed: {
@@ -187,7 +190,20 @@ export default {
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth
         this.$refs.hoverTimestamp.style.opacity = 1
-        this.$refs.hoverTimestamp.style.left = offsetX - width / 2 + 'px'
+        var posLeft = offsetX - width / 2
+        if (posLeft + width + this.trackOffsetLeft > window.innerWidth) {
+          posLeft = window.innerWidth - width - this.trackOffsetLeft
+        } else if (posLeft < -this.trackOffsetLeft) {
+          posLeft = -this.trackOffsetLeft
+        }
+        this.$refs.hoverTimestamp.style.left = posLeft + 'px'
+      }
+
+      if (this.$refs.hoverTimestampArrow) {
+        var width = this.$refs.hoverTimestampArrow.clientWidth
+        var posLeft = offsetX - width / 2
+        this.$refs.hoverTimestampArrow.style.opacity = 1
+        this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
       }
       if (this.$refs.hoverTimestampText) {
         var hoverText = this.$secondsToTimestamp(time)
@@ -206,6 +222,9 @@ export default {
     mouseleaveTrack() {
       if (this.$refs.hoverTimestamp) {
         this.$refs.hoverTimestamp.style.opacity = 0
+      }
+      if (this.$refs.hoverTimestampArrow) {
+        this.$refs.hoverTimestampArrow.style.opacity = 0
       }
       if (this.$refs.trackCursor) {
         this.$refs.trackCursor.style.opacity = 0
