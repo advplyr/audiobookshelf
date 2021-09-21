@@ -49,7 +49,12 @@
           <div class="flex-grow" />
           <div class="w-40 flex flex-col">
             <ui-btn color="success" class="mb-4" :loading="isScanning" :disabled="isScanningCovers" @click="scan">Scan</ui-btn>
-            <ui-btn color="primary" small :padding-x="2" :loading="isScanningCovers" :disabled="isScanning" @click="scanCovers">Scan for Covers</ui-btn>
+
+            <div class="w-full">
+              <ui-tooltip direction="bottom" text="Only scans audiobooks without a cover. Covers will be applied if a close match is found." class="w-full">
+                <ui-btn color="primary" class="w-full" small :padding-x="2" :loading="isScanningCovers" :disabled="isScanning" @click="scanCovers">Scan for Covers</ui-btn>
+              </ui-tooltip>
+            </div>
           </div>
         </div>
       </div>

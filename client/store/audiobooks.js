@@ -16,12 +16,12 @@ export const getters = {
   getAudiobook: (state) => id => {
     return state.audiobooks.find(ab => ab.id === id)
   },
-  getFiltered: (state, getters, rootState) => () => {
+  getFiltered: (state, getters, rootState, rootGetters) => () => {
     var filtered = state.audiobooks
     var settings = rootState.user.settings || {}
     var filterBy = settings.filterBy || ''
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors']
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress']
     var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
       var filter = decode(filterBy.replace(`${group}.`, ''))
@@ -29,6 +29,16 @@ export const getters = {
       else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
       else if (group === 'series') filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
       else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.author === filter)
+      else if (group === 'progress') {
+        filtered = filtered.filter(ab => {
+          var userAudiobook = rootGetters['user/getUserAudiobook'](ab.id)
+          var isRead = userAudiobook && userAudiobook.isRead
+          if (filter === 'Read' && isRead) return true
+          if (filter === 'Unread' && !isRead) return true
+          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
+          return false
+        })
+      }
     }
     if (state.keywordFilter) {
       const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrarator']

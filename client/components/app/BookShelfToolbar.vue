@@ -42,7 +42,6 @@ export default {
       this.saveSettings()
     },
     saveSettings() {
-      this.$store.commit('user/setSettings', this.settings) // Immediate update
       this.$store.dispatch('user/updateUserSettings', this.settings)
     },
     init() {

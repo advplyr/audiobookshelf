@@ -113,7 +113,6 @@ export default {
       this.currentSearch = null
     },
     clickedOption(e, item) {
-      var newValue = this.input === item ? null : item
       this.textInput = null
       this.currentSearch = null
       this.input = this.textInput ? this.textInput.trim() : null

@@ -1,5 +1,5 @@
 <template>
-  <div ref="box" class="tooltip-box" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div ref="box" @mouseover="mouseover" @mouseleave="mouseleave">
     <slot />
   </div>
 </template>
@@ -51,8 +51,9 @@ export default {
     createTooltip() {
       if (!this.$refs.box) return
       var tooltip = document.createElement('div')
-      tooltip.className = 'absolute px-2 bg-black bg-opacity-90 py-1 text-white pointer-events-none text-xs rounded shadow-lg'
+      tooltip.className = 'absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs'
       tooltip.style.zIndex = 100
+      tooltip.style.backgroundColor = 'rgba(0,0,0,0.75)'
       tooltip.innerHTML = this.text
 
       this.setTooltipPosition(tooltip)
