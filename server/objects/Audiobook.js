@@ -288,6 +288,12 @@ class Audiobook {
     return hasUpdates
   }
 
+  // Cover Url may be the same, this ensures the lastUpdate is updated
+  updateBookCover(cover) {
+    if (!this.book) return false
+    return this.book.updateCover(cover)
+  }
+
   updateAudioTracks(orderedFileData) {
     var index = 1
     this.audioFiles = orderedFileData.map((fileData) => {

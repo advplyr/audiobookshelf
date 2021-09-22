@@ -4,7 +4,7 @@
       <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
         <div class="w-full h-full z-0" ref="coverBg" />
       </div>
-      <img ref="cover" :src="cover" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
+      <img ref="cover" :src="fullCoverUrl" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
     </div>
 
     <div v-if="imageFailed" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-red-100" :style="{ padding: placeholderCoverPadding + 'rem' }">
@@ -53,6 +53,9 @@ export default {
     book() {
       return this.audiobook.book || {}
     },
+    bookLastUpdate() {
+      return this.book.lastUpdate || Date.now()
+    },
     title() {
       return this.book.title || 'No Title'
     },
@@ -76,11 +79,11 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      if (!this.cover || this.cover === this.placeholderUrl) return ''
+      if (!this.cover || this.cover === this.placeholderUrl) return this.placeholderUrl
       if (this.cover.startsWith('http:') || this.cover.startsWith('https:')) return this.cover
       try {
         var url = new URL(this.cover, document.baseURI)
-        return url.href
+        return url.href + `?token=${this.userToken}&ts=${this.bookLastUpdate}`
       } catch (err) {
         console.error(err)
         return ''
@@ -106,6 +109,9 @@ export default {
     },
     authorBottom() {
       return 0.75 * this.sizeMultiplier
+    },
+    userToken() {
+      return this.$store.getters['user/getToken']
     }
   },
   methods: {

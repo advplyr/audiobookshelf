@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
+  <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6 relative">
     <div class="flex">
       <div class="relative">
         <cards-book-cover :audiobook="audiobook" />
@@ -12,12 +12,15 @@
         </div>
       </div>
       <div class="flex-grow pl-6 pr-2">
-        <form @submit.prevent="submitForm">
-          <div class="flex items-center">
+        <div class="flex items-center">
+          <div v-if="userCanUpload" class="w-40 pr-2" style="min-width: 160px">
+            <ui-file-input ref="fileInput" @change="fileUploadSelected" />
+          </div>
+          <form @submit.prevent="submitForm" class="flex flex-grow">
             <ui-text-input-with-label v-model="imageUrl" label="Cover Image URL" />
             <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-3 w-24">Update</ui-btn>
-          </div>
-        </form>
+          </form>
+        </div>
 
         <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-primary">
           <div class="flex items-center justify-center py-2">
@@ -63,6 +66,18 @@
         </div>
       </div>
     </div>
+
+    <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
+      <p class="text-lg">Preview Cover</p>
+      <span class="absolute top-4 right-4 material-icons text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
+      <div class="flex justify-center py-4">
+        <cards-preview-cover :src="previewUpload" :width="240" />
+      </div>
+      <div class="absolute bottom-0 right-0 flex py-4 px-5">
+        <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">Clear</ui-btn>
+        <ui-btn :loading="processingUpload" color="success" @click="submitCoverUpload">Upload</ui-btn>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -79,12 +94,15 @@ export default {
   },
   data() {
     return {
+      processingUpload: false,
       searchTitle: null,
       searchAuthor: null,
       imageUrl: null,
       coversFound: [],
       hasSearched: false,
-      showLocalCovers: false
+      showLocalCovers: false,
+      previewUpload: null,
+      selectedFile: null
     }
   },
   watch: {
@@ -112,6 +130,9 @@ export default {
     otherFiles() {
       return this.audiobook ? this.audiobook.otherFiles || [] : []
     },
+    userCanUpload() {
+      return this.$store.getters['user/getUserCanUpload']
+    },
     localCovers() {
       return this.otherFiles
         .filter((f) => f.filetype === 'image')
@@ -123,6 +144,39 @@ export default {
     }
   },
   methods: {
+    submitCoverUpload() {
+      this.processingUpload = true
+      var form = new FormData()
+      form.set('cover', this.selectedFile)
+
+      this.$axios
+        .$post(`/api/audiobook/${this.audiobook.id}/cover`, form)
+        .then((data) => {
+          if (data.error) {
+            this.$toast.error(data.error)
+          } else {
+            this.$toast.success('Cover Uploaded')
+            this.resetCoverPreview()
+          }
+          this.processingUpload = false
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Oops, something went wrong...')
+          this.processingUpload = false
+        })
+    },
+    resetCoverPreview() {
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.reset()
+      }
+      this.previewUpload = null
+      this.selectedFile = null
+    },
+    fileUploadSelected(file) {
+      this.previewUpload = URL.createObjectURL(file)
+      this.selectedFile = file
+    },
     init() {
       this.showLocalCovers = false
       if (this.coversFound.length && (this.searchTitle !== this.book.title || this.searchAuthor !== this.book.author)) {

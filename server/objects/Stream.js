@@ -189,7 +189,7 @@ class Stream extends EventEmitter {
 
       var perc = (this.segmentsCreated.size * 100 / this.numSegments).toFixed(2) + '%'
       Logger.info('[STREAM-CHECK] Check Files', this.segmentsCreated.size, 'of', this.numSegments, perc, `Furthest Segment: ${this.furthestSegmentCreated}`)
-      Logger.info('[STREAM-CHECK] Chunks', chunks.join(', '))
+      Logger.debug('[STREAM-CHECK] Chunks', chunks.join(', '))
 
       this.socket.emit('stream_progress', {
         stream: this.id,
@@ -198,7 +198,7 @@ class Stream extends EventEmitter {
         numSegments: this.numSegments
       })
     } catch (error) {
-      Logger.error('Failed checkign files', error)
+      Logger.error('Failed checking files', error)
     }
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.1.14",
+  "version": "1.1.15",
   "description": "Self-hosted audiobook server for managing and playing audiobooks.",
   "main": "index.js",
   "scripts": {

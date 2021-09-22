@@ -18,6 +18,7 @@ class Book {
     this.description = null
     this.cover = null
     this.genres = []
+    this.lastUpdate = null
 
     if (book) {
       this.construct(book)
@@ -45,6 +46,7 @@ class Book {
     this.description = book.description
     this.cover = book.cover
     this.genres = book.genres
+    this.lastUpdate = book.lastUpdate || Date.now()
   }
 
   toJSON() {
@@ -62,7 +64,8 @@ class Book {
       publisher: this.publisher,
       description: this.description,
       cover: this.cover,
-      genres: this.genres
+      genres: this.genres,
+      lastUpdate: this.lastUpdate
     }
   }
 
@@ -97,6 +100,7 @@ class Book {
     this.description = data.description || null
     this.cover = data.cover || null
     this.genres = data.genres || []
+    this.lastUpdate = Date.now()
 
     if (data.author) {
       this.setParseAuthor(this.author)
@@ -145,7 +149,22 @@ class Book {
         hasUpdates = true
       }
     }
+
+    if (hasUpdates) {
+      this.lastUpdate = Date.now()
+    }
+
     return hasUpdates
+  }
+
+  updateCover(cover) {
+    if (!cover) return false
+    if (!cover.startsWith('http:') && !cover.startsWith('https:')) {
+      cover = Path.normalize(cover)
+    }
+    this.cover = cover
+    this.lastUpdate = Date.now()
+    return true
   }
 
   // If audiobook directory path was changed, check and update properties set from dirnames

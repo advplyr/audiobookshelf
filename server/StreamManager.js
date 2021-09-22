@@ -5,11 +5,12 @@ const fs = require('fs-extra')
 const Path = require('path')
 
 class StreamManager {
-  constructor(db, STREAM_PATH) {
+  constructor(db, MetadataPath) {
     this.db = db
 
+    this.MetadataPath = MetadataPath
     this.streams = []
-    this.streamPath = STREAM_PATH
+    this.StreamsPath = Path.join(this.MetadataPath, 'streams')
   }
 
   get audiobooks() {
@@ -25,7 +26,7 @@ class StreamManager {
   }
 
   async openStream(client, audiobook) {
-    var stream = new Stream(this.streamPath, client, audiobook)
+    var stream = new Stream(this.StreamsPath, client, audiobook)
 
     stream.on('closed', () => {
       this.removeStream(stream)
@@ -44,29 +45,53 @@ class StreamManager {
     return stream
   }
 
+  ensureStreamsDir() {
+    return fs.ensureDir(this.StreamsPath)
+  }
+
   removeOrphanStreamFiles(streamId) {
     try {
-      var streamPath = Path.join(this.streamPath, streamId)
-      return fs.remove(streamPath)
+      var StreamsPath = Path.join(this.StreamsPath, streamId)
+      return fs.remove(StreamsPath)
     } catch (error) {
       Logger.debug('No orphan stream', streamId)
       return false
     }
   }
 
-  async removeOrphanStreams() {
+  async tempCheckStrayStreams() {
     try {
-      var dirs = await fs.readdir(this.streamPath)
+      var dirs = await fs.readdir(this.MetadataPath)
       if (!dirs || !dirs.length) return true
 
       await Promise.all(dirs.map(async (dirname) => {
-        var fullPath = Path.join(this.streamPath, dirname)
+        if (dirname !== 'streams' && dirname !== 'books') {
+          var fullPath = Path.join(this.MetadataPath, dirname)
+          Logger.warn(`Removing OLD Orphan Stream ${dirname}`)
+          return fs.remove(fullPath)
+        }
+      }))
+      return true
+    } catch (error) {
+      Logger.debug('No old orphan streams', error)
+      return false
+    }
+  }
+
+  async removeOrphanStreams() {
+    await this.tempCheckStrayStreams()
+    try {
+      var dirs = await fs.readdir(this.StreamsPath)
+      if (!dirs || !dirs.length) return true
+
+      await Promise.all(dirs.map(async (dirname) => {
+        var fullPath = Path.join(this.StreamsPath, dirname)
         Logger.info(`Removing Orphan Stream ${dirname}`)
         return fs.remove(fullPath)
       }))
       return true
     } catch (error) {
-      Logger.debug('No orphan stream', streamId)
+      Logger.debug('No orphan stream', error)
       return false
     }
   }
@@ -102,10 +127,10 @@ class StreamManager {
     this.db.updateUserStream(client.user.id, null)
   }
 
-  async openTestStream(streamPath, audiobookId) {
+  async openTestStream(StreamsPath, audiobookId) {
     Logger.info('Open Stream Test Request', audiobookId)
     // var audiobook = this.audiobooks.find(ab => ab.id === audiobookId)
-    // var stream = new StreamTest(streamPath, audiobook)
+    // var stream = new StreamTest(StreamsPath, audiobook)
 
     // stream.on('closed', () => {
     //   console.log('Stream closed')
