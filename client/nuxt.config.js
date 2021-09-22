@@ -71,7 +71,8 @@ module.exports = {
 
   proxy: {
     '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } },
-    '/local/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/', pathRewrite: { '^/local/': '' } }
+    '/local/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/', pathRewrite: { '^/local/': '' } },
+    '/metadata/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
   },
 
   io: {

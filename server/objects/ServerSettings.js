@@ -1,9 +1,12 @@
+const { CoverDestination } = require('../utils/constants')
+
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
     this.autoTagNew = false
     this.newTagExpireDays = 15
     this.scannerParseSubtitle = false
+    this.coverDestination = CoverDestination.METADATA
 
     if (settings) {
       this.construct(settings)
@@ -14,6 +17,7 @@ class ServerSettings {
     this.autoTagNew = settings.autoTagNew
     this.newTagExpireDays = settings.newTagExpireDays
     this.scannerParseSubtitle = settings.scannerParseSubtitle
+    this.coverDestination = settings.coverDestination || CoverDestination.METADATA
   }
 
   toJSON() {
@@ -21,7 +25,8 @@ class ServerSettings {
       id: this.id,
       autoTagNew: this.autoTagNew,
       newTagExpireDays: this.newTagExpireDays,
-      scannerParseSubtitle: this.scannerParseSubtitle
+      scannerParseSubtitle: this.scannerParseSubtitle,
+      coverDestination: this.coverDestination
     }
   }
 

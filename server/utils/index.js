@@ -63,3 +63,7 @@ module.exports.getIno = (path) => {
     return null
   })
 }
+
+module.exports.isAcceptableCoverMimeType = (mimeType) => {
+  return mimeType && mimeType.startsWith('image/')
+}

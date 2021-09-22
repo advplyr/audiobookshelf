@@ -38,8 +38,16 @@ class Auth {
   }
 
   async authMiddleware(req, res, next) {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
+    var token = null
+
+    // If using a get request, the token can be passed as a query string
+    if (req.method === 'GET' && req.query && req.query.token) {
+      token = req.query.token
+    } else {
+      const authHeader = req.headers['authorization']
+      token = authHeader && authHeader.split(' ')[1]
+    }
+
     if (token == null) {
       Logger.error('Api called without a token', req.path)
       return res.sendStatus(401)

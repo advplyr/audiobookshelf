@@ -5,3 +5,8 @@ module.exports.ScanResult = {
   REMOVED: 3,
   UPTODATE: 4
 }
+
+module.exports.CoverDestination = {
+  METADATA: 0,
+  AUDIOBOOK: 1
+}

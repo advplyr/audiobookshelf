@@ -35,8 +35,8 @@ class Server {
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.MetadataPath)
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     this.server = null
     this.io = null
@@ -110,6 +110,7 @@ class Server {
 
   async init() {
     Logger.info('[Server] Init')
+    await this.streamManager.ensureStreamsDir()
     await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
     await this.db.init()
@@ -188,6 +189,8 @@ class Server {
     } else {
       app.use(express.static(this.AudiobookPath))
     }
+
+    app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
 
     app.use(express.static(this.MetadataPath))
     app.use(express.static(Path.join(global.appRoot, 'static')))
