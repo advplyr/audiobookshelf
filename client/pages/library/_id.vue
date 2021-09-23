@@ -1,17 +1,22 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
-    <app-book-shelf-toolbar />
-    <!-- <div class="flex h-full">
+    <div class="flex h-full">
       <app-side-rail />
-      <div class="flex-grow"> -->
-    <app-book-shelf />
-    <!-- </div> -->
-    <!-- </div> -->
+      <div class="flex-grow">
+        <app-book-shelf-toolbar />
+        <app-book-shelf :page="id || ''" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
+  asyncData({ params }) {
+    return {
+      id: params.id
+    }
+  },
   data() {
     return {}
   },
@@ -21,7 +26,6 @@ export default {
     }
   },
   methods: {},
-  mounted() {},
-  beforeDestroy() {}
+  mounted() {}
 }
 </script>

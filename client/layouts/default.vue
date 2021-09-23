@@ -1,7 +1,9 @@
 <template>
   <div class="text-white max-h-screen h-screen overflow-hidden bg-bg">
     <app-appbar />
+
     <Nuxt />
+
     <app-stream-container ref="streamContainer" />
     <modals-edit-modal />
     <widgets-scan-alert />
