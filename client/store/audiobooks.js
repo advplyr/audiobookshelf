@@ -63,6 +63,23 @@ export const getters = {
       return value
     })
   },
+  getSeriesGroups: (state, getters, rootState) => () => {
+    var series = {}
+    state.audiobooks.forEach((audiobook) => {
+      if (audiobook.book && audiobook.book.series) {
+        if (series[audiobook.book.series]) {
+          series[audiobook.book.series].books.push(audiobook)
+        } else {
+          series[audiobook.book.series] = {
+            type: 'series',
+            name: audiobook.book.series,
+            books: [audiobook]
+          }
+        }
+      }
+    })
+    return Object.values(series)
+  },
   getUniqueAuthors: (state) => {
     var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.author)).map(ab => ab.book.author)
     return [...new Set(_authors)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)

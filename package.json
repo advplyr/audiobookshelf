@@ -7,7 +7,17 @@
     "dev": "node index.js",
     "start": "node index.js",
     "client": "cd client && npm install && npm run generate",
-    "prod": "npm run client && npm install && node prod.js"
+    "prod": "npm run client && npm install && node prod.js",
+    "build-win": "cd client && npm run generate && cd .. && pkg -t node12-win-x64 -o ./dist/app .",
+    "build-linux": "pkg -t node12-linux-arm64 -o ./dist/app ."
+  },
+  "bin": "prod.js",
+  "pkg": {
+    "assets": "client/dist/**/*",
+    "scripts": [
+      "prod.js",
+      "server/**/*.js"
+    ]
   },
   "author": "advplyr",
   "license": "ISC",

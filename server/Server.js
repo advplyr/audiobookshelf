@@ -113,6 +113,7 @@ class Server {
     await this.streamManager.ensureStreamsDir()
     await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
+
     await this.db.init()
     this.auth.init()
 
@@ -171,7 +172,6 @@ class Server {
 
   async start() {
     Logger.info('=== Starting Server ===')
-
     await this.init()
 
     const app = express()

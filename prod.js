@@ -13,6 +13,7 @@ process.env.TOKEN_SECRET = '09f26e402586e2faa8da4c98a35f1b20d6b033c6097befa8be34
 process.env.NODE_ENV = 'production'
 
 const server = require('./server/Server')
+
 global.appRoot = __dirname
 
 var inputConfig = options.config ? Path.resolve(options.config) : null
@@ -24,7 +25,7 @@ const CONFIG_PATH = inputConfig || process.env.CONFIG_PATH || Path.resolve('conf
 const AUDIOBOOK_PATH = inputAudiobook || process.env.AUDIOBOOK_PATH || Path.resolve('audiobooks')
 const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve('metadata')
 
-console.log('Config', CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
+console.log(process.env.NODE_ENV, 'Config', CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 
 const Server = new server(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 Server.start()

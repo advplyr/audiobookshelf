@@ -17,17 +17,18 @@
       </div>
     </div>
     <div v-else class="w-full flex flex-col items-center">
-      <template v-for="(shelf, index) in groupedBooks">
+      <template v-for="(shelf, index) in entities">
         <div :key="index" class="w-full bookshelfRow relative">
           <div class="flex justify-center items-center">
-            <template v-for="audiobook in shelf">
-              <cards-book-card :ref="`audiobookCard-${audiobook.id}`" :key="audiobook.id" :width="bookCoverWidth" :user-progress="userAudiobooks[audiobook.id]" :audiobook="audiobook" />
+            <template v-for="entity in shelf">
+              <cards-group-card v-if="page !== ''" :key="entity.id" :width="bookCoverWidth" :group="entity" />
+              <cards-book-card v-else :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
         </div>
       </template>
-      <div v-show="!groupedBooks.length" class="w-full py-16 text-center text-xl">
+      <div v-show="!entities.length" class="w-full py-16 text-center text-xl">
         <div class="py-4">No Audiobooks</div>
         <ui-btn v-if="filterBy !== 'all' || keywordFilter" @click="clearFilter">Clear Filter</ui-btn>
       </div>
@@ -37,11 +38,14 @@
 
 <script>
 export default {
+  props: {
+    page: String
+  },
   data() {
     return {
       width: 0,
       booksPerRow: 0,
-      groupedBooks: [],
+      entities: [],
       currFilterOrderKey: null,
       availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
       selectedSizeIndex: 3,
@@ -95,13 +99,13 @@ export default {
           filterBy: 'all'
         })
       } else {
-        this.setGroupedBooks()
+        this.setBookshelfEntities()
       }
     },
     checkKeywordFilter() {
       clearTimeout(this.keywordFilterTimeout)
       this.keywordFilterTimeout = setTimeout(() => {
-        this.setGroupedBooks()
+        this.setBookshelfEntities()
       }, 500)
     },
     increaseSize() {
@@ -114,39 +118,40 @@ export default {
       this.resize()
       this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
     },
-    setGroupedBooks() {
+    setBookshelfEntities() {
+      if (this.page === '') {
+        var audiobooksSorted = this.$store.getters['audiobooks/getFilteredAndSorted']()
+        this.currFilterOrderKey = this.filterOrderKey
+        this.setGroupedBooks(audiobooksSorted)
+      } else {
+        var entities = this.$store.getters['audiobooks/getSeriesGroups']()
+        this.setGroupedBooks(entities)
+      }
+    },
+    setGroupedBooks(entities) {
       var groups = []
       var currentRow = 0
       var currentGroup = []
 
-      var audiobooksSorted = this.$store.getters['audiobooks/getFilteredAndSorted']()
-      this.currFilterOrderKey = this.filterOrderKey
-
-      for (let i = 0; i < audiobooksSorted.length; i++) {
+      for (let i = 0; i < entities.length; i++) {
         var row = Math.floor(i / this.booksPerRow)
         if (row > currentRow) {
           groups.push([...currentGroup])
           currentRow = row
           currentGroup = []
         }
-        currentGroup.push(audiobooksSorted[i])
+        currentGroup.push(entities[i])
       }
       if (currentGroup.length) {
         groups.push([...currentGroup])
       }
-      this.groupedBooks = groups
+      this.entities = groups
     },
     calculateBookshelf() {
       this.width = this.$refs.wrapper.clientWidth
       this.width = Math.max(0, this.width - this.rowPaddingX * 2)
       var booksPerRow = Math.floor(this.width / this.bookWidth)
       this.booksPerRow = booksPerRow
-    },
-    getAudiobookCard(id) {
-      if (this.$refs[`audiobookCard-${id}`] && this.$refs[`audiobookCard-${id}`].length) {
-        return this.$refs[`audiobookCard-${id}`][0]
-      }
-      return null
     },
     init() {
       var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
@@ -157,16 +162,16 @@ export default {
     resize() {
       this.$nextTick(() => {
         this.calculateBookshelf()
-        this.setGroupedBooks()
+        this.setBookshelfEntities()
       })
     },
     audiobooksUpdated() {
       console.log('[AudioBookshelf] Audiobooks Updated')
-      this.setGroupedBooks()
+      this.setBookshelfEntities()
     },
     settingsUpdated(settings) {
       if (this.currFilterOrderKey !== this.filterOrderKey) {
-        this.setGroupedBooks()
+        this.setBookshelfEntities()
       }
       if (settings.bookshelfCoverSize !== this.bookCoverWidth && settings.bookshelfCoverSize !== undefined) {
         var index = this.availableSizes.indexOf(settings.bookshelfCoverSize)

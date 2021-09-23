@@ -7,14 +7,15 @@
           <span class="material-icons text-4xl text-white">arrow_back</span>
         </a>
         <h1 class="text-2xl font-book mr-6">AudioBookshelf</h1>
-
+        <!-- <div class="-mb-2">
+          <h1 class="text-lg font-book leading-3 mr-6 px-1">AudioBookshelf</h1>
+          <div class="bg-black bg-opacity-20 rounded-sm py-1.5 px-2 mt-1.5 flex items-center justify-between border border-bg">
+            <p class="text-sm text-gray-400 leading-3">My Library</p>
+            <span class="material-icons text-sm leading-3 text-gray-400">expand_more</span>
+          </div>
+        </div> -->
         <controls-global-search />
         <div class="flex-grow" />
-
-        <!-- <a v-if="isUpdateAvailable" :href="githubTagUrl" target="_blank" class="flex items-center rounded-full bg-warning p-2 text-sm">
-          <span class="material-icons">notification_important</span>
-          <span class="pl-2">Update is available! Check release notes for v{{ latestVersion }}</span>
-        </a> -->
 
         <nuxt-link v-if="userCanUpload" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">upload</span>
@@ -45,10 +46,8 @@
         </ui-tooltip>
         <template v-if="userCanUpdate">
           <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
-          <!-- <ui-btn v-show="!processingBatchDelete" color="warning" small class="mx-2 w-10 h-10" :padding-y="0" :padding-x="0" @click="batchEditClick"><span class="material-icons text-gray-200 text-base">edit</span></ui-btn> -->
         </template>
         <ui-icon-btn v-show="userCanDelete" :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
-        <!-- <ui-btn v-if="userCanDelete" color="error" small class="mx-2" :loading="processingBatchDelete" @click="batchDeleteClick"><span class="material-icons text-gray-200 pt-1">delete</span></ui-btn> -->
         <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
       </div>
     </div>
