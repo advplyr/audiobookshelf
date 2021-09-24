@@ -16,21 +16,22 @@
         <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
       </div>
     </div>
-    <div v-else class="w-full flex flex-col items-center">
-      <template v-for="(shelf, index) in entities">
+    <div v-else id="bookshelf" class="w-full flex flex-col items-center">
+      <template v-for="(shelf, index) in shelves">
         <div :key="index" class="w-full bookshelfRow relative">
           <div class="flex justify-center items-center">
             <template v-for="entity in shelf">
-              <cards-group-card v-if="page !== ''" :key="entity.id" :width="bookCoverWidth" :group="entity" />
+              <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
+              <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
               <cards-book-card v-else :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
         </div>
       </template>
-      <div v-show="!entities.length" class="w-full py-16 text-center text-xl">
-        <div class="py-4">No Audiobooks</div>
-        <ui-btn v-if="filterBy !== 'all' || keywordFilter" @click="clearFilter">Clear Filter</ui-btn>
+      <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
+        <div class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
+        <ui-btn v-if="!showGroups && (filterBy !== 'all' || keywordFilter)" @click="clearFilter">Clear Filter</ui-btn>
       </div>
     </div>
   </div>
@@ -39,13 +40,12 @@
 <script>
 export default {
   props: {
-    page: String
+    page: String,
+    selectedSeries: String
   },
   data() {
     return {
-      width: 0,
-      booksPerRow: 0,
-      entities: [],
+      shelves: [],
       currFilterOrderKey: null,
       availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
       selectedSizeIndex: 3,
@@ -57,6 +57,11 @@ export default {
   watch: {
     keywordFilter() {
       this.checkKeywordFilter()
+    },
+    selectedSeries() {
+      this.$nextTick(() => {
+        this.setBookshelfEntities()
+      })
     }
   },
   computed: {
@@ -89,9 +94,30 @@ export default {
     },
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
+    },
+    showGroups() {
+      return this.page !== '' && !this.selectedSeries
+    },
+    entities() {
+      if (this.page === '') {
+        return this.$store.getters['audiobooks/getFilteredAndSorted']()
+      } else {
+        var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
+        if (this.selectedSeries) {
+          var group = seriesGroups.find((group) => group.name === this.selectedSeries)
+          return group.books
+        }
+        return seriesGroups
+      }
     }
   },
   methods: {
+    clickGroup(group) {
+      this.$emit('update:selectedSeries', group.name)
+    },
+    changeRotation() {
+      this.rotation = 'show-right'
+    },
     clearFilter() {
       this.$store.commit('audiobooks/setKeywordFilter', null)
       if (this.filterBy !== 'all') {
@@ -119,22 +145,16 @@ export default {
       this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
     },
     setBookshelfEntities() {
-      if (this.page === '') {
-        var audiobooksSorted = this.$store.getters['audiobooks/getFilteredAndSorted']()
-        this.currFilterOrderKey = this.filterOrderKey
-        this.setGroupedBooks(audiobooksSorted)
-      } else {
-        var entities = this.$store.getters['audiobooks/getSeriesGroups']()
-        this.setGroupedBooks(entities)
-      }
-    },
-    setGroupedBooks(entities) {
+      var width = Math.max(0, this.$refs.wrapper.clientWidth - this.rowPaddingX * 2)
+      var booksPerRow = Math.floor(width / this.bookWidth)
+
+      var entities = this.entities
       var groups = []
       var currentRow = 0
       var currentGroup = []
 
       for (let i = 0; i < entities.length; i++) {
-        var row = Math.floor(i / this.booksPerRow)
+        var row = Math.floor(i / booksPerRow)
         if (row > currentRow) {
           groups.push([...currentGroup])
           currentRow = row
@@ -145,23 +165,20 @@ export default {
       if (currentGroup.length) {
         groups.push([...currentGroup])
       }
-      this.entities = groups
+      this.shelves = groups
     },
-    calculateBookshelf() {
-      this.width = this.$refs.wrapper.clientWidth
-      this.width = Math.max(0, this.width - this.rowPaddingX * 2)
-      var booksPerRow = Math.floor(this.width / this.bookWidth)
-      this.booksPerRow = booksPerRow
-    },
-    init() {
+    async init() {
       var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
       var sizeIndex = this.availableSizes.findIndex((s) => s === bookshelfCoverSize)
       if (!isNaN(sizeIndex)) this.selectedSizeIndex = sizeIndex
-      this.calculateBookshelf()
+
+      var isLoading = await this.$store.dispatch('audiobooks/load')
+      if (!isLoading) {
+        this.setBookshelfEntities()
+      }
     },
     resize() {
       this.$nextTick(() => {
-        this.calculateBookshelf()
         this.setBookshelfEntities()
       })
     },
@@ -186,17 +203,15 @@ export default {
     }
   },
   mounted() {
+    window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'bookshelf', meth: this.audiobooksUpdated })
     this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
-
-    this.$store.dispatch('audiobooks/load')
     this.init()
-    window.addEventListener('resize', this.resize)
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.resize)
     this.$store.commit('audiobooks/removeListener', 'bookshelf')
     this.$store.commit('user/removeSettingsListener', 'bookshelf')
-    window.removeEventListener('resize', this.resize)
   }
 }
 </script>

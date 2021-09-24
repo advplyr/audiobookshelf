@@ -5,6 +5,7 @@ const STANDARD_GENRES = ['Adventure', 'Autobiography', 'Biography', 'Childrens',
 
 export const state = () => ({
   audiobooks: [],
+  lastLoad: 0,
   listeners: [],
   genres: [...STANDARD_GENRES],
   tags: [],
@@ -88,29 +89,63 @@ export const getters = {
     var _genres = []
     state.audiobooks.filter(ab => !!(ab.book && ab.book.genres)).forEach(ab => _genres = _genres.concat(ab.book.genres))
     return [...new Set(_genres)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+  },
+  getBookCoverSrc: (state, getters, rootState, rootGetters) => (book, placeholder = '/book_placeholder.jpg') => {
+    if (!book || !book.cover || book.cover === placeholder) return placeholder
+    var cover = book.cover
+
+    // Absolute URL covers
+    if (cover.startsWith('http:') || cover.startsWith('https:')) return cover
+
+    // Server hosted covers
+    try {
+      // Ensure cover is refreshed if cached
+      var bookLastUpdate = book.lastUpdate || Date.now()
+      var userToken = rootGetters['user/getToken']
+
+      var url = new URL(cover, document.baseURI)
+      return url.href + `?token=${userToken}&ts=${bookLastUpdate}`
+    } catch (err) {
+      console.error(err)
+      return placeholder
+    }
   }
 }
 
 export const actions = {
-  load({ commit, rootState }) {
+  // Return true if calling load
+  load({ state, commit, rootState }) {
     if (!rootState.user || !rootState.user.user) {
       console.error('audiobooks/load - User not set')
-      return
+      return false
     }
+
+    // Don't load again if already loaded in the last 5 minutes
+    var lastLoadDiff = Date.now() - state.lastLoad
+    if (lastLoadDiff < 5 * 60 * 1000) {
+      // Already up to date
+      return false
+    }
+
     this.$axios
       .$get(`/api/audiobooks`)
       .then((data) => {
         commit('set', data)
+        commit('setLastLoad')
       })
       .catch((error) => {
         console.error('Failed', error)
         commit('set', [])
       })
+    return true
   },
 
 }
 
 export const mutations = {
+  setLastLoad(state) {
+    state.lastLoad = Date.now()
+  },
   setKeywordFilter(state, val) {
     state.keywordFilter = val
   },

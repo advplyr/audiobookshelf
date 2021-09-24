@@ -68,7 +68,7 @@ export default {
   methods: {
     filterByAuthor() {
       if (this.$route.name !== 'index') {
-        this.$router.push('/')
+        this.$router.push('/library')
       }
       var settingsUpdate = {
         filterBy: `authors.${this.$encode(this.author)}`

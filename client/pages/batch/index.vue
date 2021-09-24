@@ -130,7 +130,7 @@ export default {
           this.isProcessing = false
           if (data.updates) {
             this.$toast.success(`Successfully updated ${data.updates} audiobooks`)
-            this.$router.replace('/')
+            this.$router.replace('/library')
           } else {
             this.$toast.warning('No updates were necessary')
           }

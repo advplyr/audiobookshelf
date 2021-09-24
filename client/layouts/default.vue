@@ -86,7 +86,7 @@ export default {
     audiobookRemoved(audiobook) {
       if (this.$route.name.startsWith('audiobook')) {
         if (this.$route.params.id === audiobook.id) {
-          this.$router.replace('/')
+          this.$router.replace('/library')
         }
       }
       this.$store.commit('audiobooks/remove', audiobook)

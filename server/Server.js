@@ -199,6 +199,8 @@ class Server {
 
     // Dynamic routes are not generated on client
     app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)

@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.1.15",
+  "version": "1.2.0",
   "description": "Self-hosted audiobook server for managing and playing audiobooks.",
   "main": "index.js",
   "scripts": {
@@ -8,8 +8,10 @@
     "start": "node index.js",
     "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
-    "build-win": "cd client && npm run generate && cd .. && pkg -t node12-win-x64 -o ./dist/app .",
-    "build-linux": "pkg -t node12-linux-arm64 -o ./dist/app ."
+    "generate": "cd client && npm run generate",
+    "build-win": "pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
+    "build-linuxarm": "pkg -t node12-linux-arm64 -o ./dist/linuxarm/audiobookshelf .",
+    "build-linuxamd": "pkg -t node12-linux-amd64 -o ./dist/linuxamd/audiobookshelf ."
   },
   "bin": "prod.js",
   "pkg": {

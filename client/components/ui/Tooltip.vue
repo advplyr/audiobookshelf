@@ -53,7 +53,7 @@ export default {
       var tooltip = document.createElement('div')
       tooltip.className = 'absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs'
       tooltip.style.zIndex = 100
-      tooltip.style.backgroundColor = 'rgba(0,0,0,0.75)'
+      tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
       tooltip.innerHTML = this.text
 
       this.setTooltipPosition(tooltip)
