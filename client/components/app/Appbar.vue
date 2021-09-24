@@ -63,7 +63,7 @@ export default {
   },
   computed: {
     showBack() {
-      return this.$route.name !== 'index'
+      return this.$route.name !== 'library-id'
     },
     user() {
       return this.$store.state.user.user
@@ -114,7 +114,7 @@ export default {
       if (this.$route.name === 'audiobook-id-edit') {
         this.$router.push(`/audiobook/${this.$route.params.id}`)
       } else {
-        this.$router.push('/')
+        this.$router.push('/library')
       }
     },
     cancelSelectionMode() {

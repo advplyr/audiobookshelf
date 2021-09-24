@@ -82,9 +82,6 @@ cd audiobookshelf
 # Directories will be created if they don't exist
 # Paths are relative to the root directory, so "../Audiobooks" would be a valid path
 npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
-
-# You only need to use `npm run prod` the first time, after that use `npm run start`
-npm run start -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
 ```
 
 ## Contributing

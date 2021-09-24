@@ -1,13 +1,20 @@
 <template>
   <div class="relative">
     <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
-      <nuxt-link :to="`/library`" class="cursor-pointer">
-        <div class="w-full relative box-shadow-book bg-primary" :style="{ height: height + 'px', width: height + 'px' }"></div>
+      <nuxt-link :to="`/library/series?${groupType}=${groupEncode}`" class="cursor-pointer">
+        <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: height + 'px', width: height + 'px' }">
+          <cards-group-cover ref="groupcover" :name="groupName" :book-items="bookItems" :width="height" :height="height" />
+
+          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'">
+            <p class="truncate font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
+          </div>
+
+          <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none">
+            <p class="font-book text-xl">{{ bookItems.length }}</p>
+          </div>
+        </div>
       </nuxt-link>
     </div>
-    <!-- <div :style="{ width: height + 'px', height: height + 'px' }" class="box-shadow-book bg-primary">
-    <p class="text-white">{{ groupName }}</p>
-  </div> -->
   </div>
 </template>
 
@@ -28,6 +35,15 @@ export default {
       isHovering: false
     }
   },
+  watch: {
+    width(newVal) {
+      this.$nextTick(() => {
+        if (this.$refs.groupcover) {
+          this.$refs.groupcover.init()
+        }
+      })
+    }
+  },
   computed: {
     _group() {
       return this.group || {}
@@ -41,15 +57,30 @@ export default {
     paddingX() {
       return 16 * this.sizeMultiplier
     },
-    books() {
+    bookItems() {
       return this._group.books || []
     },
     groupName() {
       return this._group.name || 'No Name'
+    },
+    groupType() {
+      return this._group.type
+    },
+    groupEncode() {
+      return this.$encode(this.groupName)
+    },
+    filter() {
+      return `${this.groupType}.${this.$encode(this.groupName)}`
+    },
+    hasValidCovers() {
+      var validCovers = this.bookItems.map((bookItem) => bookItem.book.cover)
+      return !!validCovers.length
     }
   },
   methods: {
-    clickCard() {}
+    clickCard() {
+      this.$emit('click', this.group)
+    }
   },
   mounted() {}
 }

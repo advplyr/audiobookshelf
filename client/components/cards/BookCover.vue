@@ -79,15 +79,7 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      if (!this.cover || this.cover === this.placeholderUrl) return this.placeholderUrl
-      if (this.cover.startsWith('http:') || this.cover.startsWith('https:')) return this.cover
-      try {
-        var url = new URL(this.cover, document.baseURI)
-        return url.href + `?token=${this.userToken}&ts=${this.bookLastUpdate}`
-      } catch (err) {
-        console.error(err)
-        return ''
-      }
+      return this.$store.getters['audiobooks/getBookCoverSrc'](this.book, this.placeholderUrl)
     },
     cover() {
       return this.book.cover || this.placeholderUrl

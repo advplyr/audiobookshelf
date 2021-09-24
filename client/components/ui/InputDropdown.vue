@@ -115,7 +115,10 @@ export default {
     clickedOption(e, item) {
       this.textInput = null
       this.currentSearch = null
-      this.input = this.textInput ? this.textInput.trim() : null
+      this.input = item
+
+      // this.input = this.textInput ? this.textInput.trim() : null
+      console.log('Clicked option', item)
       if (this.$refs.input) this.$refs.input.blur()
     }
   },

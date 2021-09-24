@@ -125,3 +125,6 @@ export {
   encode,
   decode
 }
+export default ({ app }, inject) => {
+  app.$decode = decode
+}

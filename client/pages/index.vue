@@ -1,10 +1,10 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
-    <app-book-shelf-toolbar />
+    <!-- <app-book-shelf-toolbar /> -->
     <!-- <div class="flex h-full">
       <app-side-rail />
       <div class="flex-grow"> -->
-    <app-book-shelf />
+    <!-- <app-book-shelf /> -->
     <!-- </div> -->
     <!-- </div> -->
   </div>
@@ -12,6 +12,9 @@
 
 <script>
 export default {
+  asyncData({ redirect }) {
+    redirect('/library')
+  },
   data() {
     return {}
   },
