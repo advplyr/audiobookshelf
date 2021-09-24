@@ -1,5 +1,5 @@
 <template>
-  <input v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="rounded bg-primary text-gray-200 focus:border-gray-500 focus:outline-none border border-gray-600" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
+  <input ref="input" v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="rounded bg-primary text-gray-200 focus:border-gray-500 focus:outline-none border border-gray-600" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
 </template>
 
 <script>
@@ -53,6 +53,9 @@ export default {
     },
     keyup(e) {
       this.$emit('keyup', e)
+    },
+    blur() {
+      if (this.$refs.input) this.$refs.input.blur()
     }
   },
   mounted() {}

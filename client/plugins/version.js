@@ -5,7 +5,7 @@ function parseSemver(ver) {
   if (!ver) return null
   var groups = ver.match(/^v((([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)$/)
   if (groups && groups.length > 6) {
-    var total = Number(groups[3]) * 100 + Number(groups[4]) * 10 + Number(groups[5])
+    var total = Number(groups[3]) * 10000 + Number(groups[4]) * 100 + Number(groups[5])
     if (isNaN(total)) {
       console.warn('Invalid version total', groups[3], groups[4], groups[5])
       return null

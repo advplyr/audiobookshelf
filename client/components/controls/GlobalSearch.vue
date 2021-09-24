@@ -1,6 +1,8 @@
 <template>
   <div class="w-64 ml-8 relative">
-    <ui-text-input v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
+    <form @submit.prevent="submitSearch">
+      <ui-text-input ref="input" v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
+    </form>
     <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
       <span v-if="!search" class="material-icons" style="font-size: 1.2rem">search</span>
       <span v-else class="material-icons" style="font-size: 1.2rem">close</span>
@@ -51,6 +53,19 @@ export default {
     }
   },
   methods: {
+    submitSearch() {
+      if (!this.search) return
+      this.$router.push(`/library/search?query=${this.search}`)
+
+      this.search = null
+      this.items = []
+      this.showMenu = false
+      this.$nextTick(() => {
+        if (this.$refs.input) {
+          this.$refs.input.blur()
+        }
+      })
+    },
     focussed() {
       this.isFocused = true
       this.showMenu = true
@@ -73,6 +88,10 @@ export default {
         return []
       })
       this.isFetching = false
+      if (!this.showMenu) {
+        return
+      }
+
       this.items = results.map((res) => {
         return {
           id: res.id,

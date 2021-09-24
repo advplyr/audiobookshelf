@@ -100,7 +100,12 @@ class Scanner {
             hasUpdatedAudioFiles = true
           }
         } else {
-          newAudioFiles.push(file)
+          var audioFileWithMatchingPath = existingAudiobook.getAudioFileByPath(file.fullPath)
+          if (audioFileWithMatchingPath) {
+            Logger.warn(`[Scanner] Audio file with path already exists with different inode, New: "${file.filename}" (${file.ino}) | Existing: ${audioFileWithMatchingPath.filename} (${audioFileWithMatchingPath.ino})`)
+          } else {
+            newAudioFiles.push(file)
+          }
         }
       })
       if (newAudioFiles.length) {

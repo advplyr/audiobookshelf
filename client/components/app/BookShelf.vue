@@ -30,8 +30,10 @@
         </div>
       </template>
       <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
-        <div class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
+        <div v-if="page === 'search'" class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
+        <div v-else class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
         <ui-btn v-if="!showGroups && (filterBy !== 'all' || keywordFilter)" @click="clearFilter">Clear Filter</ui-btn>
+        <ui-btn v-else-if="page === 'search'" to="/library">Back to Library</ui-btn>
       </div>
     </div>
   </div>
@@ -41,7 +43,12 @@
 export default {
   props: {
     page: String,
-    selectedSeries: String
+    selectedSeries: String,
+    searchResults: {
+      type: Array,
+      default: () => []
+    },
+    searchQuery: String
   },
   data() {
     return {
@@ -59,6 +66,11 @@ export default {
       this.checkKeywordFilter()
     },
     selectedSeries() {
+      this.$nextTick(() => {
+        this.setBookshelfEntities()
+      })
+    },
+    searchResults() {
       this.$nextTick(() => {
         this.setBookshelfEntities()
       })
@@ -96,11 +108,13 @@ export default {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
     showGroups() {
-      return this.page !== '' && !this.selectedSeries
+      return this.page !== '' && this.page !== 'search' && !this.selectedSeries
     },
     entities() {
       if (this.page === '') {
         return this.$store.getters['audiobooks/getFilteredAndSorted']()
+      } else if (this.page === 'search') {
+        return this.searchResults || []
       } else {
         var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {
