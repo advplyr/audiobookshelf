@@ -11,3 +11,4 @@ dev.js
 test/
 /client/.nuxt/
 /client/dist/
+/dist/

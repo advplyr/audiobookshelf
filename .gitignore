@@ -8,3 +8,4 @@ node_modules/
 test/
 /client/.nuxt/
 /client/dist/
+/dist/
