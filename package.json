@@ -9,9 +9,12 @@
     "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
     "generate": "cd client && npm run generate",
-    "build-win": "pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
-    "build-linuxarm": "pkg -t node12-linux-arm64 -o ./dist/linuxarm/audiobookshelf .",
-    "build-linuxamd": "pkg -t node12-linux-amd64 -o ./dist/linuxamd/audiobookshelf ."
+    "build-client": "cd client && rm -rf node_modules && npm i && npm run generate",
+    "build-server": "rm -rf node_modules && npm i && npm i ffmpeg-static",
+    "build-prep": "npm run build-client && npm run build-server",
+    "build-win": "npm run build-prep && pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
+    "build-linuxarm": "npm run build-prep && pkg -t node12-linux-arm64 -o ./dist/linuxarm/audiobookshelf .",
+    "build-linux": "npm run build-prep && pkg -t node12-linux-x64 -o ./dist/linux/audiobookshelf ."
   },
   "bin": "prod.js",
   "pkg": {
