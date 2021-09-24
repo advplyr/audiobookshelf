@@ -425,6 +425,10 @@ class Audiobook {
     return this.audioFiles.find(af => af.ino === ino)
   }
 
+  getAudioFileByPath(fullPath) {
+    return this.audioFiles.find(af => af.fullPath === fullPath)
+  }
+
   setChapters() {
     // If 1 audio file without chapters, then no chapters will be set
 

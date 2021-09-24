@@ -29,7 +29,7 @@
             </div>
           </div>
 
-          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
           <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
             <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">

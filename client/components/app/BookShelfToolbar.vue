@@ -1,21 +1,32 @@
 <template>
   <div class="w-full h-10 relative">
     <div id="toolbar" class="absolute top-0 left-0 w-full h-full z-20 flex items-center px-8">
-      <p v-if="!selectedSeries" class="font-book">{{ numShowing }} {{ entityName }}</p>
-      <div v-else class="flex items-center">
-        <div @click="seriesBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
+      <template v-if="page !== 'search'">
+        <p v-if="!selectedSeries" class="font-book">{{ numShowing }} {{ entityName }}</p>
+        <div v-else class="flex items-center">
+          <div @click="seriesBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
+            <span class="material-icons text-3xl text-white">west</span>
+          </div>
+          <!-- <span class="material-icons text-2xl cursor-pointer" @click="seriesBackArrow">west</span> -->
+          <p class="pl-4 font-book text-lg">
+            {{ selectedSeries }} <span class="ml-3 font-mono text-lg bg-black bg-opacity-30 rounded-lg px-1 py-0.5">{{ numShowing }}</span>
+          </p>
+        </div>
+        <div class="flex-grow" />
+
+        <ui-text-input v-show="showSortFilters" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" class="text-xs w-40" />
+        <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
+        <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
+      </template>
+      <template v-else>
+        <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
           <span class="material-icons text-3xl text-white">west</span>
         </div>
-        <!-- <span class="material-icons text-2xl cursor-pointer" @click="seriesBackArrow">west</span> -->
-        <p class="pl-4 font-book text-lg">
-          {{ selectedSeries }} <span class="ml-3 font-mono text-lg bg-black bg-opacity-30 rounded-lg px-1 py-0.5">{{ numShowing }}</span>
-        </p>
-      </div>
-      <div class="flex-grow" />
-
-      <ui-text-input v-show="showSortFilters" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" class="text-xs w-40" />
-      <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
-      <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
+        <!-- <p class="font-book pl-4">{{ numShowing }} showing</p> -->
+        <div class="flex-grow" />
+        <p>Search results for "{{ searchQuery }}"</p>
+        <div class="flex-grow" />
+      </template>
     </div>
   </div>
 </template>
@@ -24,7 +35,12 @@
 export default {
   props: {
     page: String,
-    selectedSeries: String
+    selectedSeries: String,
+    searchResults: {
+      type: Array,
+      default: () => []
+    },
+    searchQuery: String
   },
   data() {
     return {
@@ -39,6 +55,8 @@ export default {
     numShowing() {
       if (this.page === '') {
         return this.$store.getters['audiobooks/getFiltered']().length
+      } else if (this.page === 'search') {
+        return (this.searchResults || []).length
       } else {
         var groups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {
@@ -65,6 +83,9 @@ export default {
     }
   },
   methods: {
+    searchBackArrow() {
+      this.$router.replace('/library')
+    },
     seriesBackArrow() {
       this.$router.replace('/library/series')
       this.$emit('update:selectedSeries', null)
