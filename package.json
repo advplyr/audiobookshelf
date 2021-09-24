@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
-    "client": "cd client && npm install && npm run generate",
+    "client": "cd client && npm install && npm run generate-client",
+    "generate-client": "cd client && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
-    "generate": "cd client && npm run generate",
     "build-client": "cd client && rm -rf node_modules && npm i && npm run generate",
     "build-server": "rm -rf node_modules && npm i && npm i ffmpeg-static",
     "build-prep": "npm run build-client && npm run build-server",
