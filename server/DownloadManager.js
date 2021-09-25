@@ -263,7 +263,6 @@ class DownloadManager {
     var worker = null
     try {
       var workerPath = Path.join(global.appRoot, 'server/utils/downloadWorker.js')
-      Logger.info(`[${TAG}] Worker Path: ${workerPath}`)
       worker = new workerThreads.Worker(workerPath, { workerData })
     } catch (error) {
       Logger.error(`[${TAG}] Start worker thread failed`, error)

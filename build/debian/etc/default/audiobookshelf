@@ -1,4 +1,5 @@
 AUDIOBOOK_PATH=/usr/share/audiobookshelf/audiobooks
 METADATA_PATH=/usr/share/audiobookshelf/metadata
 CONFIG_PATH=/usr/share/audiobookshelf/config
+FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
 PORT=1337
