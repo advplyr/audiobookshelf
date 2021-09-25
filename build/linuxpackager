@@ -8,7 +8,7 @@ cd "$SCRIPT_DIR/.."
 
 # Get package version without double quotes
 VERSION="$( eval echo $( jq '.version' package.json) )"
-OUTPUT_FILE="audiobookshelf_${VERSION}_amd64"
+OUTPUT_FILE="audiobookshelf_${VERSION}_amd64.deb"
 
 echo ">>> Building Client"
 echo "--------------------"
@@ -33,5 +33,6 @@ pkg -t node12-linux-x64 -o build/debian/usr/share/audiobookshelf/audiobookshelf 
 fakeroot dpkg-deb --build build/debian
 
 mv build/debian.deb "build/$OUTPUT_FILE"
+chmod +x "build/$OUTPUT_FILE"
 
 echo "Finished! Filename: $OUTPUT_FILE"
