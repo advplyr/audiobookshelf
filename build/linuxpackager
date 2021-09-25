@@ -8,6 +8,7 @@ cd "$SCRIPT_DIR/.."
 
 # Get package version without double quotes
 VERSION="$( eval echo $( jq '.version' package.json) )"
+DESCRIPTION="$( eval echo $( jq '.description' package.json) )"
 OUTPUT_FILE="audiobookshelf_${VERSION}_amd64.deb"
 
 echo ">>> Building Client"
@@ -28,9 +29,23 @@ npm ci --unsafe-perm=true --allow-root
 echo ">>> Packaging"
 echo "--------------------"
 
+# Create debian control file
+controlfile="Package: audiobookshelf
+Version: $VERSION
+Section: base
+Priority: optional
+Architecture: amd64
+Depends:
+Maintainer: advplyr
+Description: $DESCRIPTION"
+
+echo "$config_text" > dist/debian/DEBIAN/control;
+
 mkdir -p dist
 cp -R build/debian dist/debian
+chmod -R 775 build/debian
 
+# Package debian
 pkg -t node12-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
 
 fakeroot dpkg-deb --build dist/debian
