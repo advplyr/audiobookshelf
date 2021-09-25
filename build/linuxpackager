@@ -28,11 +28,14 @@ npm ci --unsafe-perm=true --allow-root
 echo ">>> Packaging"
 echo "--------------------"
 
-pkg -t node12-linux-x64 -o build/debian/usr/share/audiobookshelf/audiobookshelf .
+mkdir -p dist
+cp -R build/debian dist/debian
 
-fakeroot dpkg-deb --build build/debian
+pkg -t node12-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
 
-mv build/debian.deb "build/$OUTPUT_FILE"
-chmod +x "build/$OUTPUT_FILE"
+fakeroot dpkg-deb --build dist/debian
+
+mv dist/debian.deb "dist/$OUTPUT_FILE"
+chmod +x "dist/$OUTPUT_FILE"
 
 echo "Finished! Filename: $OUTPUT_FILE"
