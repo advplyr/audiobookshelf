@@ -6,8 +6,7 @@
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
-    "client": "cd client && npm install && npm run generate-client",
-    "generate-client": "cd client && npm run generate",
+    "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
     "build-win": "npm run build-prep && pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
     "build-linux": "chmod -R 775 build && build/linuxpackager"

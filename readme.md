@@ -66,13 +66,70 @@ Will save the title as `Hackers` and the subtitle as `Heroes of the Computer Rev
 
 ## Installation
 
-Built to run in Docker for now (also on Unraid server Community Apps)
+### Docker Install
+Available in Unraid Community Apps
 
 ```bash
-docker run -d -p 1337:80 -v /audiobooks:/audiobooks -v /config:/config -v /metadata:/metadata --name audiobookshelf --rm advplyr/audiobookshelf
+docker pull advplyr/audiobookshelf
+
+docker run -d \
+  -p 1337:80 \
+  -v </path/to/audiobooks>:/audiobooks \
+  -v </path/to/config>:/config \
+  -v </path/to/metadata>:/metadata \
+  --name audiobookshelf \
+  --rm advplyr/audiobookshelf
 ```
 
-## Running on your local
+### Linux (amd64) Install
+
+A simple installer is added to setup the initial config. If you already have audiobooks, you can enter the path to your audiobooks during the install. The installer will create a user and group named `audiobookshelf`.
+
+
+
+#### Ubuntu
+
+A PPA is setup on github [here](https://github.com/advplyr/audiobookshelf-ppa).
+```bash
+curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - 
+
+sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" 
+
+sudo apt update 
+
+sudo apt install audiobookshelf
+```
+
+or use a single command
+
+```bash
+curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - && sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" && sudo apt update && sudo apt install audiobookshelf
+```
+
+#### Debian package
+
+All other linux distros can just `wget` the `deb` file.
+
+```bash
+wget https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf_1.2.1_amd64.deb
+
+sudo apt install ./audiobookshelf_1.2.1_amd64.deb
+```
+
+
+#### File locations
+
+Project directory: `/usr/share/audiobookshelf/`
+
+Config file: `/etc/default/audiobookshelf`
+
+System Service: `/lib/systemd/system/audiobookshelf.service`
+
+Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
+
+## Run from source
+
+Note: you will need `npm`, `node12`, and `ffmpeg` to run this project locally
 
 ```bash
 git clone https://github.com/advplyr/audiobookshelf.git
