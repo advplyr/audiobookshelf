@@ -87,9 +87,10 @@ A simple installer is added to setup the initial config. If you already have aud
 
 
 
-#### Ubuntu
+### Ubuntu Install via PPA
 
-A PPA is setup on github [here](https://github.com/advplyr/audiobookshelf-ppa).
+A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa), add and install:
+
 ```bash
 curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - 
 
@@ -106,14 +107,14 @@ or use a single command
 curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - && sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" && sudo apt update && sudo apt install audiobookshelf
 ```
 
-#### Debian package
+### Install via debian package
 
-All other linux distros can just `wget` the `deb` file.
+Get the `deb` file from the [github repo](https://github.com/advplyr/audiobookshelf-ppa).
 
 ```bash
-wget https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf_1.2.1_amd64.deb
+wget https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf_1.2.3_amd64.deb
 
-sudo apt install ./audiobookshelf_1.2.1_amd64.deb
+sudo apt install ./audiobookshelf_1.2.3_amd64.deb
 ```
 
 
