@@ -1,0 +1,95 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+DEFAULT_AUDIOBOOK_PATH="/usr/share/audiobookshelf/audiobooks"
+DEFAULT_DATA_PATH="/usr/share/audiobookshelf"
+DEFAULT_PORT=7331
+
+CONFIG_PATH="/etc/default/audiobookshelf"
+
+install_ffmpeg() {
+  echo "Starting FFMPEG Install"
+
+  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
+  TARGET_DIR="/usr/lib/audiobookshelf-ffmpeg/"
+
+  if ! cd "$TARGET_DIR"; then
+    echo "WARNING: can't access working directory ($TARGET_DIR) creating it" >&2
+    mkdir "$TARGET_DIR"
+    cd "$TARGET_DIR"
+  fi
+
+  $WGET
+  tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1
+  rm ffmpeg-git-amd64-static.tar.xz
+
+  chown -R 'audiobookshelf:audiobookshelf' "$TARGET_DIR"
+
+  echo "Good to go on Ffmpeg... hopefully"
+}
+
+should_build_config() {
+  if [ -f "$CONFIG_PATH" ]; then
+    echo "You already have a config file. Do you want to use it?"
+
+    options=("Yes" "No")
+    select yn in "${options[@]}"
+    do
+      case $yn in
+          "Yes") 
+            false; return
+            ;;
+          "No")
+            true; return
+            ;;
+      esac
+    done
+  else 
+    echo "No existing config found in $CONFIG_PATH"
+    true; return
+  fi
+}
+
+setup_config() {
+  if should_build_config; then
+    echo "Alright then, let's setup a new config."
+
+    AUDIOBOOK_PATH=""
+    read -p "Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]: " AUDIOBOOK_PATH
+
+    if [[ -z "$AUDIOBOOK_PATH" ]]; then
+      AUDIOBOOK_PATH="$DEFAULT_AUDIOBOOK_PATH"
+    fi
+
+    DATA_PATH=""
+    read -p "Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]: " DATA_PATH
+
+    if [[ -z "$DATA_PATH" ]]; then
+      DATA_PATH="$DEFAULT_DATA_PATH"
+    fi
+
+    PORT=""
+    read -p "Port for the web ui [Default: $DEFAULT_PORT]: " PORT
+
+    if [[ -z "$PORT" ]]; then
+      PORT="$DEFAULT_PORT"
+    fi
+  fi
+
+  config_text="AUDIOBOOK_PATH=$AUDIOBOOK_PATH
+METADATA_PATH=$DATA_PATH/metadata
+CONFIG_PATH=$DATA_PATH/config
+FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
+PORT=$PORT"
+
+  echo "$config_text"
+
+  echo "$config_text" > /etc/default/audiobookshelf;
+
+  echo "Config created"
+}
+
+setup_config
+
+install_ffmpeg
