@@ -7,7 +7,7 @@ const Logger = require('./Logger')
 const Download = require('./objects/Download')
 const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
-
+const TAG = 'DownloadManager'
 class DownloadManager {
   constructor(db, MetadataPath, AudiobookPath, emitter) {
     this.db = db
@@ -260,7 +260,22 @@ class DownloadManager {
       output: download.fullPath,
     }
 
-    var worker = new workerThreads.Worker('./server/utils/downloadWorker.js', { workerData })
+    var worker = null
+    try {
+      var workerPath = Path.join(global.appRoot, 'server/utils/downloadWorker.js')
+      Logger.info(`[${TAG}] Worker Path: ${workerPath}`)
+      worker = new workerThreads.Worker(workerPath, { workerData })
+    } catch (error) {
+      Logger.error(`[${TAG}] Start worker thread failed`, error)
+      if (download.socket) {
+        var downloadJson = download.toJSON()
+        download.socket.emit('download_failed', downloadJson)
+      }
+      this.removeDownload(download)
+      return
+    }
+
+
     worker.on('message', (message) => {
       if (message != null && typeof message === 'object') {
         if (message.type === 'RESULT') {
