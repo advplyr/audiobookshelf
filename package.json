@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Self-hosted audiobook server for managing and playing audiobooks",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
     "build-win": "npm run build-prep && pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
-    "build-linux": "chmod -R 775 build && build/linuxpackager"
+    "build-linux": "build/linuxpackager"
   },
   "bin": "prod.js",
   "pkg": {
