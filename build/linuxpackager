@@ -30,6 +30,11 @@ echo ">>> Packaging"
 echo "--------------------"
 
 # Create debian control file
+
+mkdir -p dist
+cp -R build/debian dist/debian
+chmod -R 775 build/debian
+
 controlfile="Package: audiobookshelf
 Version: $VERSION
 Section: base
@@ -40,10 +45,6 @@ Maintainer: advplyr
 Description: $DESCRIPTION"
 
 echo "$config_text" > dist/debian/DEBIAN/control;
-
-mkdir -p dist
-cp -R build/debian dist/debian
-chmod -R 775 build/debian
 
 # Package debian
 pkg -t node12-linux-x64 -o dist/debian/usr/share/audiobookshelf/audiobookshelf .
