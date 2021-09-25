@@ -1,0 +1,37 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+cd "$SCRIPT_DIR/.."
+
+# Get package version without double quotes
+VERSION="$( eval echo $( jq '.version' package.json) )"
+OUTPUT_FILE="audiobookshelf_${VERSION}_amd64"
+
+echo ">>> Building Client"
+echo "--------------------"
+
+cd client
+rm -rf node_modules
+npm ci --unsafe-perm=true --allow-root
+npm run generate
+cd ..
+
+echo ">>> Building Server"
+echo "--------------------"
+
+rm -rf node_modules
+npm ci --unsafe-perm=true --allow-root
+
+echo ">>> Packaging"
+echo "--------------------"
+
+pkg -t node12-linux-x64 -o build/debian/usr/share/audiobookshelf/audiobookshelf .
+
+fakeroot dpkg-deb --build build/debian
+
+mv build/debian.deb "build/$OUTPUT_FILE"
+
+echo "Finished! Filename: $OUTPUT_FILE"
