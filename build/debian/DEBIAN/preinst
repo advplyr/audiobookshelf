@@ -57,8 +57,7 @@ setup_config() {
 
     AUDIOBOOK_PATH=""
     read -p "
-    Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]:
-    " AUDIOBOOK_PATH
+    Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]:" AUDIOBOOK_PATH
 
     if [[ -z "$AUDIOBOOK_PATH" ]]; then
       AUDIOBOOK_PATH="$DEFAULT_AUDIOBOOK_PATH"
@@ -66,8 +65,7 @@ setup_config() {
 
     DATA_PATH=""
     read -p "
-    Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]:
-    " DATA_PATH
+    Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]:" DATA_PATH
 
     if [[ -z "$DATA_PATH" ]]; then
       DATA_PATH="$DEFAULT_DATA_PATH"
@@ -75,25 +73,25 @@ setup_config() {
 
     PORT=""
     read -p "
-    Port for the web ui [Default: $DEFAULT_PORT]:
-    " PORT
+    Port for the web ui [Default: $DEFAULT_PORT]:" PORT
 
     if [[ -z "$PORT" ]]; then
       PORT="$DEFAULT_PORT"
     fi
+
+    config_text="AUDIOBOOK_PATH=$AUDIOBOOK_PATH
+  METADATA_PATH=$DATA_PATH/metadata
+  CONFIG_PATH=$DATA_PATH/config
+  FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
+  PORT=$PORT"
+
+    echo "$config_text"
+
+    echo "$config_text" > /etc/default/audiobookshelf;
+
+    echo "Config created"
+
   fi
-
-  config_text="AUDIOBOOK_PATH=$AUDIOBOOK_PATH
-METADATA_PATH=$DATA_PATH/metadata
-CONFIG_PATH=$DATA_PATH/config
-FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
-PORT=$PORT"
-
-  echo "$config_text"
-
-  echo "$config_text" > /etc/default/audiobookshelf;
-
-  echo "Config created"
 }
 
 setup_config
