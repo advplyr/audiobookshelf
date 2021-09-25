@@ -1,0 +1,8 @@
+Package: audiobookshelf
+Version: 1.2.1
+Section: base
+Priority: optional
+Architecture: amd64
+Depends:
+Maintainer: advplyr
+Description: Self-hosted audiobook server for managing and playing audiobooks

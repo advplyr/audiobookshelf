@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+set -o pipefail
+
+declare -r init_type='auto'
+declare -r service_name='audiobookshelf'
+
+if [[ "$init_type" == 'auto' || "$init_type" == 'systemd' || "$init_type" == 'upstart' || "$init_type" == 'sysv' ]]; then
+  if hash systemctl 2> /dev/null; then
+    systemctl disable "$service_name.service" && \
+    systemctl stop "$service_name.service" || \
+    echo "$service_name wasn't even running!"
+  elif hash service 2> /dev/null; then
+    service "$service_name" stop || echo "$service_name wasn't even running!"
+  elif hash stop 2> /dev/null; then
+    stop "$service_name" || echo "$service_name wasn't even running!"
+  elif hash update-rc.d 2> /dev/null; then
+    {
+      update-rc.d "$service_name" remove && \
+      "/etc/init.d/$service_name" stop
+    } || "$service_name wasn't even running!"
+  else
+    echo "Your system does not appear to use upstart, systemd or sysv, so $service_name could not be stopped"
+    echo 'Unless these systems were removed since install, no processes have been left running'
+  fi
+fi
