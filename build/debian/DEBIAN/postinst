@@ -80,5 +80,6 @@ add_user 'audiobookshelf' '' 'audiobookshelf' 'audiobookshelf user-daemon' '/bin
 
 mkdir -p '/var/log/audiobookshelf'
 chown -R 'audiobookshelf:audiobookshelf' '/var/log/audiobookshelf'
+chown -R 'audiobookshelf:audiobookshelf' '/usr/share/audiobookshelf'
 
 start_service 'audiobookshelf'
