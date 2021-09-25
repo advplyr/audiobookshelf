@@ -53,24 +53,30 @@ should_build_config() {
 
 setup_config() {
   if should_build_config; then
-    echo "Alright then, let's setup a new config."
+    echo "Okay, let's setup a new config."
 
     AUDIOBOOK_PATH=""
-    read -p "Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]: " AUDIOBOOK_PATH
+    read -p "
+    Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]:
+    " AUDIOBOOK_PATH
 
     if [[ -z "$AUDIOBOOK_PATH" ]]; then
       AUDIOBOOK_PATH="$DEFAULT_AUDIOBOOK_PATH"
     fi
 
     DATA_PATH=""
-    read -p "Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]: " DATA_PATH
+    read -p "
+    Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]:
+    " DATA_PATH
 
     if [[ -z "$DATA_PATH" ]]; then
       DATA_PATH="$DEFAULT_DATA_PATH"
     fi
 
     PORT=""
-    read -p "Port for the web ui [Default: $DEFAULT_PORT]: " PORT
+    read -p "
+    Port for the web ui [Default: $DEFAULT_PORT]:
+    " PORT
 
     if [[ -z "$PORT" ]]; then
       PORT="$DEFAULT_PORT"
