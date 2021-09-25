@@ -1,0 +1,4 @@
+AUDIOBOOK_PATH=/usr/share/audiobookshelf/audiobooks
+METADATA_PATH=/usr/share/audiobookshelf/metadata
+CONFIG_PATH=/usr/share/audiobookshelf/config
+PORT=1337
