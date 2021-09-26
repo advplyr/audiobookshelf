@@ -2,6 +2,8 @@
 
 AudioBookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
 
+See [Install guides](https://audiobookshelf.org/install) and docs coming soon to [audiobookshelf.org](https://audiobookshelf.org)
+
 Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
 **Free & open source Android/iOS app is in development**
