@@ -2,7 +2,7 @@
 
 AudioBookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
 
-See [Install guides](https://audiobookshelf.org/install) and docs coming soon to [audiobookshelf.org](https://audiobookshelf.org)
+See [Install guides](https://audiobookshelf.org/install) and [documentation](https://audiobookshelf.org/install)
 
 Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
@@ -12,6 +12,8 @@ Android app is in beta, try it out on the [Google Play Store](https://play.googl
 
 
 ## Directory Structure
+
+ See [documentation](https://audiobookshelf.org/install) for directory structure and naming.
 
 Author, Series, Volume Number, Title and Publish Year can all be parsed from your folder structure.
 
