@@ -26,6 +26,9 @@ export default {
       if (this.$store.state.selectedAudiobooks) {
         this.$store.commit('setSelectedAudiobooks', [])
       }
+      if (this.$store.state.audiobooks.keywordFilter) {
+        this.$store.commit('audiobooks/setKeywordFilter', '')
+      }
     }
   },
   computed: {

@@ -1,6 +1,6 @@
 <template>
   <div ref="wrapper" :style="{ height: height + 'px', width: width + 'px' }" class="relative">
-    <div v-if="noValidCovers" class="absolute top-0 left-0 w-full h-full flex items-center justify-center box-shadow-book">
+    <div v-if="noValidCovers" class="absolute top-0 left-0 w-full h-full flex items-center justify-center box-shadow-book" :style="{ padding: `${sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier + 'rem' }">{{ name }}</p>
     </div>
   </div>

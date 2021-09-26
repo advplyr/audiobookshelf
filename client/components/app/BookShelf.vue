@@ -1,5 +1,5 @@
 <template>
-  <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-auto relative">
+  <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
     <div v-show="!isSelectionMode" class="fixed bottom-2 right-4 z-20">
       <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
@@ -23,7 +23,7 @@
             <template v-for="entity in shelf">
               <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
               <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-              <cards-book-card v-else :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
+              <cards-book-card v-else :key="entity.id" :show-volume-number="selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
@@ -58,7 +58,8 @@ export default {
       selectedSizeIndex: 3,
       rowPaddingX: 40,
       keywordFilterTimeout: null,
-      scannerParseSubtitle: false
+      scannerParseSubtitle: false,
+      wrapperClientWidth: 0
     }
   },
   watch: {
@@ -159,7 +160,8 @@ export default {
       this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
     },
     setBookshelfEntities() {
-      var width = Math.max(0, this.$refs.wrapper.clientWidth - this.rowPaddingX * 2)
+      this.wrapperClientWidth = this.$refs.wrapper.clientWidth
+      var width = Math.max(0, this.wrapperClientWidth - this.rowPaddingX * 2)
       var booksPerRow = Math.floor(width / this.bookWidth)
 
       var entities = this.entities
@@ -182,6 +184,8 @@ export default {
       this.shelves = groups
     },
     async init() {
+      this.wrapperClientWidth = this.$refs.wrapper ? this.$refs.wrapper.clientWidth : 0
+
       var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
       var sizeIndex = this.availableSizes.findIndex((s) => s === bookshelfCoverSize)
       if (!isNaN(sizeIndex)) this.selectedSizeIndex = sizeIndex
@@ -192,9 +196,7 @@ export default {
       }
     },
     resize() {
-      this.$nextTick(() => {
-        this.setBookshelfEntities()
-      })
+      this.$nextTick(this.setBookshelfEntities)
     },
     audiobooksUpdated() {
       console.log('[AudioBookshelf] Audiobooks Updated')
@@ -216,10 +218,18 @@ export default {
       this.$root.socket.emit('scan')
     }
   },
+  updated() {
+    if (this.$refs.wrapper) {
+      if (this.wrapperClientWidth !== this.$refs.wrapper.clientWidth) {
+        this.$nextTick(this.setBookshelfEntities)
+      }
+    }
+  },
   mounted() {
     window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'bookshelf', meth: this.audiobooksUpdated })
     this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
+
     this.init()
   },
   beforeDestroy() {

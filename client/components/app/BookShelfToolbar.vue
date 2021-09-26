@@ -14,7 +14,7 @@
         </div>
         <div class="flex-grow" />
 
-        <ui-text-input v-show="showSortFilters" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" class="text-xs w-40" />
+        <ui-text-input v-show="!selectedSeries" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" class="text-xs w-40" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
       </template>
@@ -121,6 +121,6 @@ export default {
 
 <style>
 #toolbar {
-  box-shadow: 0px 8px 8px #111111aa;
+  box-shadow: 0px 8px 6px #111111aa;
 }
 </style>
