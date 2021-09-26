@@ -73,13 +73,23 @@ export const getters = {
         } else {
           series[audiobook.book.series] = {
             type: 'series',
-            name: audiobook.book.series,
+            name: audiobook.book.series || '',
             books: [audiobook]
           }
         }
       }
     })
-    return Object.values(series)
+    var seriesArray = Object.values(series).map((_series) => {
+      _series.books = sort(_series.books)['asc']((ab) => {
+        return ab.book && ab.book.volumeNumber && !isNaN(ab.book.volumeNumber) ? Number(ab.book.volumeNumber) : null
+      })
+      return _series
+    })
+    if (state.keywordFilter) {
+      const keywordFilter = state.keywordFilter.toLowerCase()
+      return seriesArray.filter((_series) => _series.name.toLowerCase().includes(keywordFilter))
+    }
+    return seriesArray
   },
   getUniqueAuthors: (state) => {
     var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.author)).map(ab => ab.book.author)

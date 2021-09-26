@@ -1,5 +1,6 @@
 <template>
-  <div class="w-20 border-r border-primary bg-bg h-full relative box-shadow-side z-40" style="min-width: 80px">
+  <div class="w-20 bg-bg h-full relative box-shadow-side z-20" style="min-width: 80px">
+    <div class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
     <nuxt-link to="/library" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === '' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />

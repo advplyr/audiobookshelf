@@ -5,12 +5,15 @@
         <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: height + 'px', width: height + 'px' }">
           <cards-group-cover ref="groupcover" :name="groupName" :book-items="bookItems" :width="height" :height="height" />
 
-          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'">
-            <p class="truncate font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
+          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+            <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
           <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none">
             <p class="font-book text-xl">{{ bookItems.length }}</p>
+          </div>
+          <div class="absolute bottom-0 left-0 w-full h-1 flex flex-nowrap">
+            <div v-for="userProgress in userProgressItems" :key="userProgress.audiobookId" class="h-full w-full" :class="userProgress.isRead ? 'bg-success' : userProgress.progress > 0 ? 'bg-yellow-400' : ''" />
           </div>
         </div>
       </nuxt-link>
@@ -60,6 +63,15 @@ export default {
     bookItems() {
       return this._group.books || []
     },
+    userAudiobooks() {
+      return Object.values(this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {})
+    },
+    userProgressItems() {
+      return this.bookItems.map((item) => {
+        var userAudiobook = this.userAudiobooks.find((ab) => ab.audiobookId === item.id)
+        return userAudiobook || {}
+      })
+    },
     groupName() {
       return this._group.name || 'No Name'
     },
@@ -81,7 +93,6 @@ export default {
     clickCard() {
       this.$emit('click', this.group)
     }
-  },
-  mounted() {}
+  }
 }
 </script>
