@@ -1,6 +1,7 @@
 const Path = require('path')
 const dir = require('node-dir')
 const Logger = require('../Logger')
+const { getIno } = require('./index')
 
 const AUDIO_FORMATS = ['m4b', 'mp3', 'm4a']
 const INFO_FORMATS = ['nfo']
@@ -26,7 +27,7 @@ function isAudioFile(path) {
   return AUDIO_FORMATS.includes(ext.slice(1).toLowerCase())
 }
 
-function groupFilesIntoAudiobookPaths(paths) {
+function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
   // Step 1: Normalize path, Remove leading "/", Filter out files in root dir
   var pathsFiltered = paths.map(path => Path.normalize(path.slice(1))).filter(path => Path.parse(path).dir)
 
@@ -37,11 +38,11 @@ function groupFilesIntoAudiobookPaths(paths) {
     return pathsA - pathsB
   })
 
-  // Step 2.5: Seperate audio files and other files
+  // Step 2.5: Seperate audio files and other files (optional)
   var audioFilePaths = []
   var otherFilePaths = []
   pathsFiltered.forEach(path => {
-    if (isAudioFile(path)) audioFilePaths.push(path)
+    if (isAudioFile(path) || useAllFileTypes) audioFilePaths.push(path)
     else otherFilePaths.push(path)
   })
 
@@ -134,7 +135,12 @@ async function scanRootDir(abRootPath, serverSettings = {}) {
     var audiobookData = getAudiobookDataFromDir(abRootPath, audiobookPath, parseSubtitle)
 
     var fileObjs = cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
+    for (let i = 0; i < fileObjs.length; i++) {
+      fileObjs[i].ino = await getIno(fileObjs[i].fullPath)
+    }
+    var audiobookIno = await getIno(audiobookData.fullPath)
     audiobooks.push({
+      ino: audiobookIno,
       ...audiobookData,
       audioFiles: fileObjs.filter(f => f.filetype === 'audio'),
       otherFiles: fileObjs.filter(f => f.filetype !== 'audio')
@@ -241,11 +247,15 @@ async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = 
     otherFiles: []
   }
 
-  filepaths.forEach((filepath) => {
+  for (let i = 0; i < filepaths.length; i++) {
+    var filepath = filepaths[i]
+
     var relpath = Path.normalize(filepath).replace(abRootPath, '').slice(1)
     var extname = Path.extname(filepath)
     var basename = Path.basename(filepath)
+    var ino = await getIno(filepath)
     var fileObj = {
+      ino,
       filetype: getFileType(extname),
       filename: basename,
       path: relpath,
@@ -257,7 +267,7 @@ async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = 
     } else {
       audiobook.otherFiles.push(fileObj)
     }
-  })
+  }
   return audiobook
 }
 module.exports.getAudiobookFileData = getAudiobookFileData

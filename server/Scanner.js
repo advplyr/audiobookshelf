@@ -25,25 +25,6 @@ class Scanner {
     return this.db.audiobooks
   }
 
-  async setAudiobookDataInos(audiobookData) {
-    for (let i = 0; i < audiobookData.length; i++) {
-      var abd = audiobookData[i]
-      var matchingAB = this.db.audiobooks.find(_ab => comparePaths(_ab.path, abd.path))
-      if (matchingAB) {
-        if (!matchingAB.ino) {
-          matchingAB.ino = await getIno(matchingAB.fullPath)
-        }
-        abd.ino = matchingAB.ino
-      } else {
-        abd.ino = await getIno(abd.fullPath)
-        if (!abd.ino) {
-          Logger.error('[Scanner] Invalid ino - ignoring audiobook data', abd.path)
-        }
-      }
-    }
-    return audiobookData.filter(abd => !!abd.ino)
-  }
-
   async setAudioFileInos(audiobookDataAudioFiles, audiobookAudioFiles) {
     for (let i = 0; i < audiobookDataAudioFiles.length; i++) {
       var abdFile = audiobookDataAudioFiles[i]
@@ -68,7 +49,6 @@ class Scanner {
     Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
 
     if (existingAudiobook) {
-
       // REMOVE: No valid audio files
       // TODO: Label as incomplete, do not actually delete
       if (!audiobookData.audioFiles.length) {
@@ -80,7 +60,10 @@ class Scanner {
         return ScanResult.REMOVED
       }
 
-      audiobookData.audioFiles = await this.setAudioFileInos(audiobookData.audioFiles, existingAudiobook.audioFiles)
+      // ino is now set for every file in scandir
+      audiobookData.audioFiles = audiobookData.audioFiles.filter(af => af.ino)
+      // audiobookData.audioFiles = await this.setAudioFileInos(audiobookData.audioFiles, existingAudiobook.audioFiles)
+
 
       // Check for audio files that were removed
       var abdAudioFileInos = audiobookData.audioFiles.map(af => af.ino)
@@ -89,6 +72,14 @@ class Scanner {
         Logger.info(`[Scanner] ${removedAudioFiles.length} audio files removed for audiobook "${existingAudiobook.title}"`)
         removedAudioFiles.forEach((af) => existingAudiobook.removeAudioFile(af))
       }
+
+      // Check for mismatched audio tracks - tracks with no matching audio file
+      var removedAudioTracks = existingAudiobook.tracks.filter(track => !abdAudioFileInos.includes(track.ino))
+      if (removedAudioTracks.length) {
+        Logger.info(`[Scanner] ${removedAudioTracks.length} tracks removed no matching audio file for audiobook "${existingAudiobook.title}"`)
+        removedAudioTracks.forEach((at) => existingAudiobook.removeAudioTrack(at))
+      }
+
 
       // Check for new audio files and sync existing audio files
       var newAudioFiles = []
@@ -124,7 +115,7 @@ class Scanner {
         return ScanResult.REMOVED
       }
 
-      var hasUpdates = removedAudioFiles.length || newAudioFiles.length || hasUpdatedAudioFiles
+      var hasUpdates = removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
 
       if (existingAudiobook.checkUpdateMissingParts()) {
         Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
@@ -187,27 +178,28 @@ class Scanner {
     // TODO: This temporary fix from pre-release should be removed soon, including the "fixRelativePath" and "checkUpdateInos"
     // TEMP - fix relative file paths
     // TEMP - update ino for each audiobook
-    // if (this.audiobooks.length) {
-    //   for (let i = 0; i < this.audiobooks.length; i++) {
-    //     var ab = this.audiobooks[i]
-    //     var shouldUpdate = ab.fixRelativePath(this.AudiobookPath) || !ab.ino
+    if (this.audiobooks.length) {
+      for (let i = 0; i < this.audiobooks.length; i++) {
+        var ab = this.audiobooks[i]
+        // var shouldUpdate = ab.fixRelativePath(this.AudiobookPath) || !ab.ino
 
-    //     // Update ino if an audio file has the same ino as the audiobook
-    //     var shouldUpdateIno = !ab.ino || (ab.audioFiles || []).find(abf => abf.ino === ab.ino)
-    //     if (shouldUpdateIno) {
-    //       await ab.checkUpdateInos()
-    //     }
-    //     if (shouldUpdate) {
-    //       await this.db.updateAudiobook(ab)
-    //     }
-    //   }
-    // }
+        // Update ino if inos are not set
+        var shouldUpdateIno = ab.hasMissingIno
+        if (shouldUpdateIno) {
+          Logger.debug(`Updating inos for ${ab.title}`)
+          var hasUpdates = await ab.checkUpdateInos()
+          if (hasUpdates) {
+            await this.db.updateAudiobook(ab)
+          }
+        }
+      }
+    }
 
     const scanStart = Date.now()
     var audiobookDataFound = await scanRootDir(this.AudiobookPath, this.db.serverSettings)
 
-    // Set ino for each ab data as a string
-    audiobookDataFound = await this.setAudiobookDataInos(audiobookDataFound)
+    // Remove audiobooks with no inode
+    audiobookDataFound = audiobookDataFound.filter(abd => abd.ino)
 
     if (this.cancelScan) {
       this.cancelScan = false
@@ -323,7 +315,11 @@ class Scanner {
   async filesChanged(filepaths) {
     if (!filepaths.length) return ScanResult.NOTHING
     var relfilepaths = filepaths.map(path => path.replace(this.AudiobookPath, ''))
-    var fileGroupings = groupFilesIntoAudiobookPaths(relfilepaths)
+    var fileGroupings = groupFilesIntoAudiobookPaths(relfilepaths, true)
+
+
+    Logger.debug(`[Scanner] fileGroupings `, filepaths, fileGroupings)
+
 
     var results = []
     for (const dir in fileGroupings) {

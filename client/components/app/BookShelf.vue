@@ -23,7 +23,7 @@
             <template v-for="entity in shelf">
               <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
               <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-              <cards-book-card v-else :key="entity.id" :show-volume-number="selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
+              <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />

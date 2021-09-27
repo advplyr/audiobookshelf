@@ -14,6 +14,7 @@ const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
+// const EbookReader = require('./EbookReader')
 const Logger = require('./Logger')
 
 class Server {
@@ -37,6 +38,7 @@ class Server {
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
+    // this.ebookReader = new EbookReader(this.db, this.MetadataPath, this.AudiobookPath)
 
     this.server = null
     this.io = null
@@ -204,7 +206,7 @@ class Server {
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
-    // app.use('/hls', this.hlsController.router)
+    // app.use('/ebook', this.ebookReader.router)
     app.use('/feeds', this.rssFeeds.router)
 
     app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))

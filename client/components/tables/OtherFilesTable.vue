@@ -21,7 +21,7 @@
           <template v-for="file in files">
             <tr :key="file.path">
               <td class="font-book pl-2">
-                {{ file.path }}
+                {{ file.path }}<span class="text-white text-opacity-50 pl-4">({{ file.ino }})</span>
               </td>
               <td class="text-xs">
                 <p>{{ file.filetype }}</p>

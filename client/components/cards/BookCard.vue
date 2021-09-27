@@ -33,6 +33,10 @@
             <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
           </div>
 
+          <!-- <div v-if="true && hasEbook" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+            <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">EBook</p>
+          </div> -->
+
           <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
           <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
@@ -77,6 +81,9 @@ export default {
     },
     audiobookId() {
       return this.audiobook.id
+    },
+    hasEbook() {
+      return this.audiobook.numEbooks
     },
     isSelectionMode() {
       return this.$store.getters['getNumAudiobooksSelected']

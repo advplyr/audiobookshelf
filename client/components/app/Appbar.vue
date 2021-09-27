@@ -37,7 +37,9 @@
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
-        <ui-btn small class="text-sm mx-2" @click="toggleSelectAll">{{ isAllSelected ? 'Select None' : 'Select All' }}</ui-btn>
+        <ui-btn small class="text-sm mx-2" @click="toggleSelectAll"
+          >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ audiobooksShowing.length }})</span></ui-btn
+        >
 
         <div class="flex-grow" />
 
@@ -87,7 +89,8 @@ export default {
       return this.$store.state.user.user.audiobooks || {}
     },
     audiobooksShowing() {
-      return this.$store.getters['audiobooks/getFiltered']()
+      // return this.$store.getters['audiobooks/getFiltered']()
+      return this.$store.getters['audiobooks/getEntitiesShowing']()
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
