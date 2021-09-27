@@ -27,7 +27,7 @@
                 <p>{{ track.index }}</p>
               </td>
               <td class="font-book">
-                {{ track.filename }}<span class="text-white text-opacity-50 pl-4">({{ track.ino }})</span>
+                {{ track.filename }}
               </td>
               <td class="font-mono">
                 {{ $bytesPretty(track.size) }}
