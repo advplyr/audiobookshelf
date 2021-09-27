@@ -106,6 +106,14 @@ class Audiobook {
     return (this.audioFiles || []).filter(af => af.invalid).map(af => ({ filename: af.filename, error: af.error || 'Unknown Error' }))
   }
 
+  get ebooks() {
+    return this.otherFiles.filter(file => file.filetype === 'ebook')
+  }
+
+  get hasMissingIno() {
+    return !this.ino || (this.audioFiles || []).find(abf => !abf.ino) || (this.otherFiles || []).find(f => !f.ino) || (this.tracks || []).find(t => !t.ino)
+  }
+
   bookToJSON() {
     return this.book ? this.book.toJSON() : null
   }
@@ -152,6 +160,7 @@ class Audiobook {
       hasBookMatch: !!this.book,
       hasMissingParts: this.missingParts ? this.missingParts.length : 0,
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
+      numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing
@@ -173,6 +182,7 @@ class Audiobook {
       invalidParts: this.invalidParts,
       audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
       otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
+      ebooks: (this.ebooks || []).map(ebook => ebook.toJSON()),
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
@@ -195,7 +205,8 @@ class Audiobook {
     return false
   }
 
-  // Update was made to add ino values, ensure they are set
+  // Originally files did not store the inode value
+  // this function checks all files and sets the inode
   async checkUpdateInos() {
     var hasUpdates = false
     if (!this.ino) {
@@ -204,15 +215,55 @@ class Audiobook {
     }
     for (let i = 0; i < this.audioFiles.length; i++) {
       var af = this.audioFiles[i]
+      var at = this.tracks.find(t => t.ino === af.ino)
+      if (!at) {
+        at = this.tracks.find(t => comparePaths(t.path, af.path))
+      }
       if (!af.ino || af.ino === this.ino) {
         af.ino = await getIno(af.fullPath)
         if (!af.ino) {
           Logger.error('[Audiobook] checkUpdateInos: Failed to set ino for audio file', af.fullPath)
         } else {
-          var track = this.tracks.find(t => comparePaths(t.path, af.path))
-          if (track) {
-            track.ino = af.ino
+          Logger.debug(`[Audiobook] Set INO For audio file ${af.path}`)
+          if (at) at.ino = af.ino
+        }
+        hasUpdates = true
+      } else if (at && at.ino !== af.ino) {
+        at.ino = af.ino
+        hasUpdates = true
+      }
+    }
+    for (let i = 0; i < this.tracks.length; i++) {
+      var at = this.tracks[i]
+      if (!at.ino) {
+        Logger.debug(`[Audiobook] Track ${at.filename} still does not have ino`)
+        var atino = await getIno(at.fullPath)
+        var af = this.audioFiles.find(_af => _af.ino === atino)
+        if (!af) {
+          Logger.debug(`[Audiobook] Track ${at.filename} no matching audio file with ino ${atino}`)
+          af = this.audioFiles.find(_af => _af.filename === at.filename)
+          if (!af) {
+            Logger.debug(`[Audiobook] Track ${at.filename} no matching audio file with filename`)
+          } else {
+            Logger.debug(`[Audiobook] Track ${at.filename} found matching filename but mismatch ino ${atino}/${af.ino}`)
+            // at.ino = af.ino
+            // at.path = af.path
+            // at.fullPath = af.fullPath
+            // hasUpdates = true
           }
+        } else {
+          Logger.debug(`[Audiobook] Track ${at.filename} found audio file with matching ino ${at.path}/${af.path}`)
+        }
+      }
+    }
+    for (let i = 0; i < this.otherFiles.length; i++) {
+      var file = this.otherFiles[i]
+      if (!file.ino || file.ino === this.ino) {
+        file.ino = await getIno(file.fullPath)
+        if (!file.ino) {
+          Logger.error('[Audiobook] checkUpdateInos: Failed to set ino for other file', file.fullPath)
+        } else {
+          Logger.debug(`[Audiobook] Set INO For other file ${file.path}`)
         }
         hasUpdates = true
       }
@@ -329,6 +380,11 @@ class Audiobook {
     this.audioFiles = this.audioFiles.filter(f => f.ino !== audioFile.ino)
   }
 
+  removeAudioTrack(track) {
+    this.tracks = this.tracks.filter(t => t.ino !== track.ino)
+    this.audioFiles = this.audioFiles.filter(f => f.ino !== track.ino)
+  }
+
   checkUpdateMissingParts() {
     var currMissingParts = (this.missingParts || []).join(',') || ''
 
@@ -363,6 +419,7 @@ class Audiobook {
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
 
+    // TODO: Should use inode
     newOtherFiles.forEach((file) => {
       var existingOtherFile = this.otherFiles.find(f => f.path === file.path)
       if (!existingOtherFile) {

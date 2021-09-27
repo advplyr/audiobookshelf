@@ -77,7 +77,6 @@ export default {
         if (token) {
           this.processing = true
 
-          console.log('Authorize', token)
           this.$axios
             .$post('/api/authorize', null, {
               headers: {

@@ -10,12 +10,31 @@ export const state = () => ({
   genres: [...STANDARD_GENRES],
   tags: [],
   series: [],
-  keywordFilter: null
+  keywordFilter: null,
+  selectedSeries: null,
+  libraryPage: null,
+  searchResults: []
 })
 
 export const getters = {
   getAudiobook: (state) => id => {
     return state.audiobooks.find(ab => ab.id === id)
+  },
+  getEntitiesShowing: (state, getters, rootState, rootGetters) => () => {
+    if (!state.libraryPage) {
+      return getters.getFiltered()
+    } else if (state.libraryPage === 'search') {
+      return state.searchResults
+    } else if (state.libraryPage === 'series') {
+      var series = getters.getSeriesGroups()
+      if (state.selectedSeries) {
+        var _series = series.find(__series => __series.name === state.selectedSeries)
+        if (!_series) return []
+        return _series.books || []
+      }
+      return series
+    }
+    return []
   },
   getFiltered: (state, getters, rootState, rootGetters) => () => {
     var filtered = state.audiobooks
@@ -158,6 +177,15 @@ export const mutations = {
   },
   setKeywordFilter(state, val) {
     state.keywordFilter = val
+  },
+  setSelectedSeries(state, val) {
+    state.selectedSeries = val
+  },
+  setLibraryPage(state, val) {
+    state.libraryPage = val
+  },
+  setSearchResults(state, val) {
+    state.searchResults = val
   },
   set(state, audiobooks) {
     // GENRES

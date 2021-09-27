@@ -85,7 +85,7 @@ function getTrackNumberFromFilename(title, author, series, publishYear, filename
 
 async function scanAudioFiles(audiobook, newAudioFiles) {
   if (!newAudioFiles || !newAudioFiles.length) {
-    Logger.error('[AudioFileScanner] Scan Audio Files no files', audiobook.title)
+    Logger.error('[AudioFileScanner] Scan Audio Files no new files', audiobook.title)
     return
   }
   var tracks = []

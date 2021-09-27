@@ -24,12 +24,18 @@ export default {
         console.error('Search error', error)
         return []
       })
+      store.commit('audiobooks/setSearchResults', searchResults)
     }
+    var selectedSeries = query.series ? app.$decode(query.series) : null
+    store.commit('audiobooks/setSelectedSeries', selectedSeries)
+    var libraryPage = params.id || ''
+    store.commit('audiobooks/setLibraryPage', libraryPage)
+
     return {
-      id: params.id,
+      id: libraryPage,
       searchQuery,
       searchResults,
-      selectedSeries: query.series ? app.$decode(query.series) : null
+      selectedSeries
     }
   },
   data() {
