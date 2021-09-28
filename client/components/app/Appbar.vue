@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-16 bg-primary relative">
-    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-6 py-1 z-30">
+    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-6 py-1 z-40">
       <div class="flex h-full items-center">
         <img v-if="!showBack" src="/Logo48.png" class="w-12 h-12 mr-4" />
         <a v-if="showBack" @click="back" class="rounded-full h-12 w-12 flex items-center justify-center hover:bg-white hover:bg-opacity-10 mr-4 cursor-pointer">
@@ -37,7 +37,7 @@
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
-        <ui-btn small class="text-sm mx-2" @click="toggleSelectAll"
+        <ui-btn v-show="!isHome" small class="text-sm mx-2" @click="toggleSelectAll"
           >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ audiobooksShowing.length }})</span></ui-btn
         >
 
@@ -64,8 +64,11 @@ export default {
     }
   },
   computed: {
+    isHome() {
+      return this.$route.name === 'index'
+    },
     showBack() {
-      return this.$route.name !== 'library-id'
+      return this.$route.name !== 'library-id' && !this.isHome
     },
     user() {
       return this.$store.state.user.user
@@ -73,6 +76,7 @@ export default {
     isRootUser() {
       return this.$store.getters['user/getIsRoot']
     },
+
     username() {
       return this.user ? this.user.username : 'err'
     },
@@ -91,6 +95,9 @@ export default {
     audiobooksShowing() {
       // return this.$store.getters['audiobooks/getFiltered']()
       return this.$store.getters['audiobooks/getEntitiesShowing']()
+    },
+    selectedSeries() {
+      return this.$store.state.audiobooks.selectedSeries
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']

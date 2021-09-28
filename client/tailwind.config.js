@@ -16,6 +16,12 @@ module.exports = {
       height: {
         '7.5': '1.75rem'
       },
+      spacing: {
+        '-54': '-13.5rem'
+      },
+      rotate: {
+        '-60': '-60deg'
+      },
       colors: {
         bg: '#373838',
         primary: '#232323',

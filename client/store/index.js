@@ -1,4 +1,5 @@
 import { checkForUpdate } from '@/plugins/version'
+import Vue from 'vue'
 
 export const state = () => ({
   versionData: null,
@@ -112,13 +113,18 @@ export const mutations = {
     state.developerMode = val
   },
   setSelectedAudiobooks(state, audiobooks) {
-    state.selectedAudiobooks = audiobooks
+    Vue.set(state, 'selectedAudiobooks', audiobooks)
+    // state.selectedAudiobooks = audiobooks
   },
   toggleAudiobookSelected(state, audiobookId) {
     if (state.selectedAudiobooks.includes(audiobookId)) {
       state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
     } else {
-      state.selectedAudiobooks.push(audiobookId)
+      var newSel = state.selectedAudiobooks.concat([audiobookId])
+      // state.selectedAudiobooks = newSel
+      console.log('Setting toggle on sel', newSel)
+      Vue.set(state, 'selectedAudiobooks', newSel)
+      // state.selectedAudiobooks.push(audiobookId)
     }
   },
   setProcessingBatch(state, val) {

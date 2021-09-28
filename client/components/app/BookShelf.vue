@@ -68,11 +68,13 @@ export default {
     },
     selectedSeries() {
       this.$nextTick(() => {
+        this.$store.commit('audiobooks/setSelectedSeries', this.selectedSeries)
         this.setBookshelfEntities()
       })
     },
     searchResults() {
       this.$nextTick(() => {
+        this.$store.commit('audiobooks/setSearchResults', this.searchResults)
         this.setBookshelfEntities()
       })
     }
@@ -129,9 +131,6 @@ export default {
   methods: {
     clickGroup(group) {
       this.$emit('update:selectedSeries', group.name)
-    },
-    changeRotation() {
-      this.rotation = 'show-right'
     },
     clearFilter() {
       this.$store.commit('audiobooks/setKeywordFilter', null)

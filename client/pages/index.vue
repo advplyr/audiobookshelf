@@ -7,14 +7,22 @@
     <!-- <app-book-shelf /> -->
     <!-- </div> -->
     <!-- </div> -->
+
+    <div class="flex h-full">
+      <app-side-rail />
+      <div class="flex-grow">
+        <app-book-shelf-toolbar is-home />
+        <app-book-shelf-categorized />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  asyncData({ redirect }) {
-    redirect('/library')
-  },
+  // asyncData({ redirect }) {
+  //   redirect('/library')
+  // },
   data() {
     return {}
   },
