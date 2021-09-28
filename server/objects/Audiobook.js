@@ -488,7 +488,6 @@ class Audiobook {
 
   setChapters() {
     // If 1 audio file without chapters, then no chapters will be set
-
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
     if (includedAudioFiles.length === 1) {
       // 1 audio file with chapters
@@ -524,7 +523,7 @@ class Audiobook {
             id: currChapterId++,
             start: currStartTime,
             end: currStartTime + file.duration,
-            title: `Chapter ${currChapterId}`
+            title: file.filename ? Path.basename(file.filename, Path.extname(file.filename)) : `Chapter ${currChapterId}`
           })
           currStartTime += file.duration
         }
