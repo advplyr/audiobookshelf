@@ -15,7 +15,9 @@ export const state = () => ({
   coverScanProgress: null,
   developerMode: false,
   selectedAudiobooks: [],
-  processingBatch: false
+  processingBatch: false,
+  previousPath: '/',
+  routeHistory: []
 })
 
 export const getters = {
@@ -52,10 +54,25 @@ export const actions = {
         console.error('Update check failed', error)
         return false
       })
+  },
+  popRoute({ commit, state }) {
+    if (!state.routeHistory.length) {
+      return null
+    }
+    var _history = [...state.routeHistory]
+    var last = _history.pop()
+    commit('setRouteHistory', _history)
+    return last
   }
 }
 
 export const mutations = {
+  setRouteHistory(state, val) {
+    state.routeHistory = val
+  },
+  setPreviousPath(state, val) {
+    state.previousPath = val
+  },
   setVersionData(state, versionData) {
     state.versionData = versionData
   },

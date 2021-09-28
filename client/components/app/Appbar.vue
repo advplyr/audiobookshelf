@@ -120,12 +120,10 @@ export default {
     }
   },
   methods: {
-    back() {
-      if (this.$route.name === 'audiobook-id-edit') {
-        this.$router.push(`/audiobook/${this.$route.params.id}`)
-      } else {
-        this.$router.push('/library')
-      }
+    async back() {
+      var popped = await this.$store.dispatch('popRoute')
+      var backTo = popped || '/'
+      this.$router.push(backTo)
     },
     cancelSelectionMode() {
       if (this.processingBatchDelete) return

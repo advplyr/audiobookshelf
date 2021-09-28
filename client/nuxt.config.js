@@ -40,6 +40,10 @@ module.exports = {
     ]
   },
 
+  router: {
+    middleware: ['routed']
+  },
+
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
     '@/assets/app.css'
