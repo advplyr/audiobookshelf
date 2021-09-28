@@ -37,7 +37,7 @@ export default {
         if (this.$route.query.redirect) {
           this.$router.replace(this.$route.query.redirect)
         } else {
-          this.$router.replace('/library')
+          this.$router.replace('/')
         }
       }
     }

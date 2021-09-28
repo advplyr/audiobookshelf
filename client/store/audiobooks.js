@@ -88,12 +88,15 @@ export const getters = {
     state.audiobooks.forEach((audiobook) => {
       if (audiobook.book && audiobook.book.series) {
         if (series[audiobook.book.series]) {
+          var bookLastUpdate = audiobook.book.lastUpdate
+          if (bookLastUpdate > series[audiobook.book.series].lastUpdate) series[audiobook.book.series].lastUpdate = bookLastUpdate
           series[audiobook.book.series].books.push(audiobook)
         } else {
           series[audiobook.book.series] = {
             type: 'series',
             name: audiobook.book.series || '',
-            books: [audiobook]
+            books: [audiobook],
+            lastUpdate: audiobook.book.lastUpdate
           }
         }
       }
