@@ -117,11 +117,7 @@ curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | su
 
 Get the `deb` file from the [github repo](https://github.com/advplyr/audiobookshelf-ppa).
 
-```bash
-wget https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf_1.2.7_amd64.deb
-
-sudo apt install ./audiobookshelf_1.2.7_amd64.deb
-```
+See [instructions](https://www.audiobookshelf.org/install#debian)
 
 
 #### File locations
