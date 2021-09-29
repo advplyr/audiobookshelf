@@ -70,6 +70,8 @@ Will save the title as `Hackers` and the subtitle as `Heroes of the Computer Rev
 
 ## Installation
 
+** Default username is "root" with no password
+
 ### Docker Install
 Available in Unraid Community Apps
 
