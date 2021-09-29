@@ -55,6 +55,11 @@
       <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
         <div class="flex px-4">
           <ui-btn v-if="userCanDelete" color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+
+          <ui-tooltip text="(Root User Only) Save a NFO metadata file in your audiobooks directory" class="mx-4">
+            <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
+          </ui-tooltip>
+
           <div class="flex-grow" />
           <ui-btn type="submit">Submit</ui-btn>
         </div>
@@ -87,7 +92,8 @@ export default {
       },
       newTags: [],
       resettingProgress: false,
-      isScrollable: false
+      isScrollable: false,
+      savingMetadata: false
     }
   },
   watch: {
@@ -106,6 +112,9 @@ export default {
       set(val) {
         this.$emit('update:processing', val)
       }
+    },
+    isRootUser() {
+      return this.$store.getters['user/getIsRoot']
     },
     audiobookId() {
       return this.audiobook ? this.audiobook.id : null
@@ -127,6 +136,24 @@ export default {
     }
   },
   methods: {
+    saveMetadataComplete(result) {
+      this.savingMetadata = false
+      if (result.error) {
+        this.$toast.error(result.error)
+      } else if (result.audiobookId) {
+        var { savedPath } = result
+        if (!savedPath) {
+          this.$toast.error(`Failed to save metadata file (${result.audiobookId})`)
+        } else {
+          this.$toast.success(`Metadata file saved "${result.audiobookTitle}"`)
+        }
+      }
+    },
+    saveMetadata() {
+      this.savingMetadata = true
+      this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
+      this.$root.socket.emit('save_metadata', this.audiobookId)
+    },
     async submitForm() {
       if (this.isProcessing) {
         return

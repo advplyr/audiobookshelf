@@ -3,10 +3,14 @@ const { CoverDestination } = require('../utils/constants')
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
+
     this.autoTagNew = false
     this.newTagExpireDays = 15
     this.scannerParseSubtitle = false
     this.coverDestination = CoverDestination.METADATA
+    this.saveMetadataFile = false
+    this.rateLimitLoginRequests = 10
+    this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     if (settings) {
       this.construct(settings)
@@ -18,6 +22,9 @@ class ServerSettings {
     this.newTagExpireDays = settings.newTagExpireDays
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.coverDestination = settings.coverDestination || CoverDestination.METADATA
+    this.saveMetadataFile = !!settings.saveMetadataFile
+    this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
+    this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
   }
 
   toJSON() {
@@ -26,7 +33,10 @@ class ServerSettings {
       autoTagNew: this.autoTagNew,
       newTagExpireDays: this.newTagExpireDays,
       scannerParseSubtitle: this.scannerParseSubtitle,
-      coverDestination: this.coverDestination
+      coverDestination: this.coverDestination,
+      saveMetadataFile: !!this.saveMetadataFile,
+      rateLimitLoginRequests: this.rateLimitLoginRequests,
+      rateLimitLoginWindow: this.rateLimitLoginWindow
     }
   }
 

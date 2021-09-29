@@ -127,6 +127,21 @@ export default {
         this.$store.commit('setScanProgress', progress)
       }
     },
+    saveMetadataComplete(result) {
+      if (result.error) {
+        this.$toast.error(result.error)
+      } else if (result.audiobookId) {
+        var { savedPath } = result
+        if (!savedPath) {
+          this.$toast.error(`Failed to save metadata file (${result.audiobookId})`)
+        } else {
+          this.$toast.success(`Metadata file saved (${result.audiobookId})`)
+        }
+      } else {
+        var { success, failed } = result
+        this.$toast.success(`Metadata save complete\n${success} Succeeded\n${failed} Failed`)
+      }
+    },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
         this.$store.commit('user/setUser', user)
@@ -230,6 +245,7 @@ export default {
       this.socket.on('scan_start', this.scanStart)
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
+      // this.socket.on('save_metadata_complete', this.saveMetadataComplete)
 
       // Download Listeners
       this.socket.on('download_started', this.downloadStarted)

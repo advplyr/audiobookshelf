@@ -103,18 +103,18 @@ class Auth {
 
     var user = this.users.find(u => u.username === username)
 
-    if (!user) {
-      return res.json({ error: 'User not found' })
-    }
-
-    if (!user.isActive) {
-      return res.json({ error: 'User unavailable' })
+    if (!user || !user.isActive) {
+      Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)
+      if (req.rateLimit.remaining <= 2) {
+        return res.status(401).send(`Invalid user or password (${req.rateLimit.remaining === 0 ? '1 attempt remaining' : `${req.rateLimit.remaining + 1} attempts remaining`})`)
+      }
+      return res.status(401).send('Invalid user or password')
     }
 
     // Check passwordless root user
     if (user.id === 'root' && (!user.pash || user.pash === '')) {
       if (password) {
-        return res.json({ error: 'Invalid root password (hint: there is none)' })
+        return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
         return res.json({ user: user.toJSONForBrowser() })
       }
@@ -127,10 +127,22 @@ class Auth {
         user: user.toJSONForBrowser()
       })
     } else {
-      res.json({
-        error: 'Invalid Password'
-      })
+      Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)
+      if (req.rateLimit.remaining <= 2) {
+        Logger.error(`[Auth] Failed login attempt for user ${user.username}. Attempts: ${req.rateLimit.current}`)
+        return res.status(401).send(`Invalid user or password (${req.rateLimit.remaining === 0 ? '1 attempt remaining' : `${req.rateLimit.remaining + 1} attempts remaining`})`)
+      }
+      return res.status(401).send('Invalid user or password')
     }
+  }
+
+  // Not in use now
+  lockUser(user) {
+    user.isLocked = true
+    return this.db.updateEntity('user', user).catch((error) => {
+      Logger.error('[Auth] Failed to lock user', user.username, error)
+      return false
+    })
   }
 
   comparePassword(password, user) {

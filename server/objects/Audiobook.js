@@ -1,6 +1,7 @@
 const Path = require('path')
 const { bytesPretty, elapsedPretty } = require('../utils/fileUtils')
 const { comparePaths, getIno } = require('../utils/index')
+const nfoGenerator = require('../utils/nfoGenerator')
 const Logger = require('../Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
@@ -529,6 +530,10 @@ class Audiobook {
         }
       })
     }
+  }
+
+  writeNfoFile(nfoFilename = 'metadata.nfo') {
+    return nfoGenerator(this, nfoFilename)
   }
 }
 module.exports = Audiobook
