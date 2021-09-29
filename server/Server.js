@@ -4,6 +4,7 @@ const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
+const rateLimit = require('express-rate-limit')
 
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
@@ -110,6 +111,14 @@ class Server {
     this.scanner.cancelScan = true
   }
 
+  // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
+  async saveMetadata(socket, audiobookId = null) {
+    Logger.info('[Server] Starting save metadata files')
+    var response = await this.scanner.saveMetadata(audiobookId)
+    Logger.info(`[Server] Finished saving metadata files Successful: ${response.success}, Failed: ${response.failed}`)
+    socket.emit('save_metadata_complete', response)
+  }
+
   async init() {
     Logger.info('[Server] Init')
     await this.streamManager.ensureStreamsDir()
@@ -172,6 +181,21 @@ class Server {
     res.sendStatus(200)
   }
 
+  // First time login rate limit is hit
+  loginLimitReached(req, res, options) {
+    Logger.error(`[Server] Login rate limit (${options.max}) was hit for ip ${req.ip}`)
+    options.message = 'Too many attempts. Login temporarily locked.'
+  }
+
+  getLoginRateLimiter() {
+    return rateLimit({
+      windowMs: this.db.serverSettings.rateLimitLoginWindow, // 5 minutes
+      max: this.db.serverSettings.rateLimitLoginRequests,
+      skipSuccessfulRequests: true,
+      onLimitReached: this.loginLimitReached
+    })
+  }
+
   async start() {
     Logger.info('=== Starting Server ===')
     await this.init()
@@ -206,13 +230,18 @@ class Server {
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
+
+    // Incomplete work in progress
     // app.use('/ebook', this.ebookReader.router)
-    app.use('/feeds', this.rssFeeds.router)
+    // app.use('/feeds', this.rssFeeds.router)
 
     app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))
 
-    app.post('/login', (req, res) => this.auth.login(req, res))
+    var loginRateLimiter = this.getLoginRateLimiter()
+    app.post('/login', loginRateLimiter, (req, res) => this.auth.login(req, res))
+
     app.post('/logout', this.logout.bind(this))
+
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
       res.json({ success: true })
@@ -230,7 +259,6 @@ class Server {
         res.json()
       })
     }
-
 
     this.server.listen(this.Port, this.Host, () => {
       Logger.info(`Running on http://${this.Host}:${this.Port}`)
@@ -259,6 +287,7 @@ class Server {
       socket.on('scan', this.scan.bind(this))
       socket.on('scan_covers', this.scanCovers.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
+      socket.on('save_metadata', (audiobookId) => this.saveMetadata(socket, audiobookId))
 
       // Streaming
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))

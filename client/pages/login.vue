@@ -57,15 +57,14 @@ export default {
         password: this.password || ''
       }
       var authRes = await this.$axios.$post('/login', payload).catch((error) => {
-        console.error('Failed', error)
+        console.error('Failed', error.response)
+        if (error.response) this.error = error.response.data
+        else this.error = 'Unknown Error'
         return false
       })
-      console.log('Auth res', authRes)
-      if (!authRes) {
-        this.error = 'Unknown Failure'
-      } else if (authRes.error) {
+      if (authRes && authRes.error) {
         this.error = authRes.error
-      } else {
+      } else if (authRes) {
         this.$store.commit('user/setUser', authRes.user)
       }
       this.processing = false

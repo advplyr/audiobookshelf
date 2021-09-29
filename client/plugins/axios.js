@@ -16,6 +16,7 @@ export default function ({ $axios, store }) {
 
   $axios.onError(error => {
     const code = parseInt(error.response && error.response.status)
-    console.error('Axios error code', code)
+    const message = error.response ? error.response.data || 'Unknown Error' : 'Unknown Error'
+    console.error('Axios error', code, message)
   })
 }
