@@ -137,7 +137,6 @@ function parseChapters(chapters) {
 
 function parseTags(format) {
   if (!format.tags) {
-    Logger.debug('No Tags')
     return {}
   }
   // Logger.debug('Tags', format.tags)

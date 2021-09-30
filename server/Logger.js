@@ -1,55 +1,110 @@
-const LOG_LEVEL = {
-  TRACE: 0,
-  DEBUG: 1,
-  INFO: 2,
-  WARN: 3,
-  ERROR: 4,
-  FATAL: 5
-}
+const { LogLevel } = require('./utils/constants')
 
 class Logger {
   constructor() {
-    let env_log_level = process.env.LOG_LEVEL || 'TRACE'
-    this.LogLevel = LOG_LEVEL[env_log_level] || LOG_LEVEL.TRACE
-    this.info(`Log Level: ${this.LogLevel}`)
+    this.logLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.TRACE
+    this.socketListeners = []
   }
 
   get timestamp() {
     return (new Date()).toISOString()
   }
 
+  get levelString() {
+    for (const key in LogLevel) {
+      if (LogLevel[key] === this.logLevel) {
+        return key
+      }
+    }
+    return 'UNKNOWN'
+  }
+
+  getLogLevelString(level) {
+    for (const key in LogLevel) {
+      if (LogLevel[key] === level) {
+        return key
+      }
+    }
+    return 'UNKNOWN'
+  }
+
+  addSocketListener(socket, level) {
+    var index = this.socketListeners.findIndex(s => s.id === socket.id)
+    if (index >= 0) {
+      this.socketListeners.splice(index, 1, {
+        id: socket.id,
+        socket,
+        level
+      })
+    } else {
+      this.socketListeners.push({
+        id: socket.id,
+        socket,
+        level
+      })
+    }
+  }
+
+  removeSocketListener(socketId) {
+    this.socketListeners = this.socketListeners.filter(s => s.id !== socketId)
+  }
+
+  logToSockets(level, args) {
+    this.socketListeners.forEach((socketListener) => {
+      if (socketListener.level <= level) {
+        socketListener.socket.emit('log', {
+          timestamp: this.timestamp,
+          message: args.join(' '),
+          levelName: this.getLogLevelString(level),
+          level
+        })
+      }
+    })
+  }
+
+  setLogLevel(level) {
+    this.logLevel = level
+    this.debug(`Set Log Level to ${this.levelString}`)
+  }
+
   trace(...args) {
-    if (this.LogLevel > LOG_LEVEL.TRACE) return
+    if (this.logLevel > LogLevel.TRACE) return
     console.trace(`[${this.timestamp}] TRACE:`, ...args)
+    this.logToSockets(LogLevel.TRACE, args)
   }
 
   debug(...args) {
-    if (this.LogLevel > LOG_LEVEL.DEBUG) return
+    if (this.logLevel > LogLevel.DEBUG) return
     console.debug(`[${this.timestamp}] DEBUG:`, ...args)
+    this.logToSockets(LogLevel.DEBUG, args)
   }
 
   info(...args) {
-    if (this.LogLevel > LOG_LEVEL.INFO) return
+    if (this.logLevel > LogLevel.INFO) return
     console.info(`[${this.timestamp}]  INFO:`, ...args)
-  }
-
-  note(...args) {
-    if (this.LogLevel > LOG_LEVEL.INFO) return
-    console.log(`[${this.timestamp}] NOTE:`, ...args)
+    this.logToSockets(LogLevel.INFO, args)
   }
 
   warn(...args) {
-    if (this.LogLevel > LOG_LEVEL.WARN) return
+    if (this.logLevel > LogLevel.WARN) return
     console.warn(`[${this.timestamp}]  WARN:`, ...args)
+    this.logToSockets(LogLevel.WARN, args)
   }
 
   error(...args) {
-    if (this.LogLevel > LOG_LEVEL.ERROR) return
+    if (this.logLevel > LogLevel.ERROR) return
     console.error(`[${this.timestamp}] ERROR:`, ...args)
+    this.logToSockets(LogLevel.ERROR, args)
   }
 
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args)
+    this.logToSockets(LogLevel.FATAL, args)
+  }
+
+  note(...args) {
+    console.log(`[${this.timestamp}] NOTE:`, ...args)
+    this.logToSockets(LogLevel.NOTE, args)
   }
 }
 module.exports = new Logger()

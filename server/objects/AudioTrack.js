@@ -20,13 +20,6 @@ class AudioTrack {
     this.channels = null
     this.channelLayout = null
 
-    // Storing tags in audio track is unnecessary, tags are stored on audio file
-    // this.tagAlbum = null
-    // this.tagArtist = null
-    // this.tagGenre = null
-    // this.tagTitle = null
-    // this.tagTrack = null
-
     if (audioTrack) {
       this.construct(audioTrack)
     }
@@ -50,12 +43,6 @@ class AudioTrack {
     this.timeBase = audioTrack.timeBase
     this.channels = audioTrack.channels
     this.channelLayout = audioTrack.channelLayout
-
-    // this.tagAlbum = audioTrack.tagAlbum
-    // this.tagArtist = audioTrack.tagArtist
-    // this.tagGenre = audioTrack.tagGenre
-    // this.tagTitle = audioTrack.tagTitle
-    // this.tagTrack = audioTrack.tagTrack
   }
 
   get name() {
@@ -78,11 +65,6 @@ class AudioTrack {
       timeBase: this.timeBase,
       channels: this.channels,
       channelLayout: this.channelLayout,
-      // tagAlbum: this.tagAlbum,
-      // tagArtist: this.tagArtist,
-      // tagGenre: this.tagGenre,
-      // tagTitle: this.tagTitle,
-      // tagTrack: this.tagTrack
     }
   }
 
@@ -104,12 +86,18 @@ class AudioTrack {
     this.timeBase = probeData.timeBase
     this.channels = probeData.channels
     this.channelLayout = probeData.channelLayout
+  }
 
-    // this.tagAlbum = probeData.file_tag_album || null
-    // this.tagArtist = probeData.file_tag_artist || null
-    // this.tagGenre = probeData.file_tag_genre || null
-    // this.tagTitle = probeData.file_tag_title || null
-    // this.tagTrack = probeData.file_tag_track || null
+  syncMetadata(audioFile) {
+    var hasUpdates = false
+    var keysToSync = ['format', 'duration', 'size', 'bitRate', 'language', 'codec', 'timeBase', 'channels', 'channelLayout']
+    keysToSync.forEach((key) => {
+      if (audioFile[key] !== undefined && audioFile[key] !== this[key]) {
+        hasUpdates = true
+        this[key] = audioFile[key]
+      }
+    })
+    return hasUpdates
   }
 
   syncFile(newFile) {

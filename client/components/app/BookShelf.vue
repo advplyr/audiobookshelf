@@ -102,7 +102,8 @@ export default {
       return 16 * this.sizeMultiplier
     },
     bookWidth() {
-      return this.bookCoverWidth + this.paddingX * 2
+      var _width = this.bookCoverWidth + this.paddingX * 2
+      return this.showGroups ? _width * 1.6 : _width
     },
     isSelectionMode() {
       return this.$store.getters['getNumAudiobooksSelected']
@@ -161,6 +162,7 @@ export default {
     setBookshelfEntities() {
       this.wrapperClientWidth = this.$refs.wrapper.clientWidth
       var width = Math.max(0, this.wrapperClientWidth - this.rowPaddingX * 2)
+
       var booksPerRow = Math.floor(width / this.bookWidth)
 
       var entities = this.entities

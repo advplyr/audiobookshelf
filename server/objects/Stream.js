@@ -16,7 +16,6 @@ class Stream extends EventEmitter {
     this.audiobook = audiobook
 
     this.segmentLength = 6
-    this.segmentBasename = 'output-%d.ts'
     this.streamPath = Path.join(streamPath, this.id)
     this.concatFilesPath = Path.join(this.streamPath, 'files.txt')
     this.playlistPath = Path.join(this.streamPath, 'output.m3u8')
@@ -49,6 +48,16 @@ class Stream extends EventEmitter {
 
   get totalDuration() {
     return this.audiobook.totalDuration
+  }
+
+  get hlsSegmentType() {
+    var hasFlac = this.tracks.find(t => t.ext.toLowerCase() === '.flac')
+    return hasFlac ? 'fmp4' : 'mpegts'
+  }
+
+  get segmentBasename() {
+    if (this.hlsSegmentType === 'fmp4') return 'output-%d.m4s'
+    return 'output-%d.ts'
   }
 
   get segmentStartNumber() {
@@ -98,7 +107,7 @@ class Stream extends EventEmitter {
     var userAudiobook = clientUserAudiobooks[this.audiobookId] || null
     if (userAudiobook) {
       var timeRemaining = this.totalDuration - userAudiobook.currentTime
-      Logger.info('[STREAM] User has progress for audiobook', userAudiobook, `Time Remaining: ${timeRemaining}s`)
+      Logger.info('[STREAM] User has progress for audiobook', userAudiobook.progress, `Time Remaining: ${timeRemaining}s`)
       if (timeRemaining > 15) {
         this.startTime = userAudiobook.currentTime
         this.clientCurrentTime = this.startTime
@@ -133,7 +142,7 @@ class Stream extends EventEmitter {
 
   async generatePlaylist() {
     fs.ensureDirSync(this.streamPath)
-    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength)
+    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType)
     return this.clientPlaylistUri
   }
 
@@ -142,7 +151,7 @@ class Stream extends EventEmitter {
       var files = await fs.readdir(this.streamPath)
       files.forEach((file) => {
         var extname = Path.extname(file)
-        if (extname === '.ts') {
+        if (extname === '.ts' || extname === '.m4s') {
           var basename = Path.basename(file, extname)
           var num_part = basename.split('-')[1]
           var part_num = Number(num_part)
@@ -238,24 +247,31 @@ class Stream extends EventEmitter {
     }
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
+    const audioCodec = this.hlsSegmentType === 'fmp4' ? 'aac' : 'copy'
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,
       '-map 0:a',
-      '-c:a copy'
+      `-c:a ${audioCodec}`
     ])
-    this.ffmpeg.addOption([
+    const hlsOptions = [
       '-f hls',
       "-copyts",
       "-avoid_negative_ts disabled",
       "-max_delay 5000000",
       "-max_muxing_queue_size 2048",
       `-hls_time 6`,
-      "-hls_segment_type mpegts",
+      `-hls_segment_type ${this.hlsSegmentType}`,
       `-start_number ${this.segmentStartNumber}`,
       "-hls_playlist_type vod",
       "-hls_list_size 0",
       "-hls_allow_cache 0"
-    ])
+    ]
+    if (this.hlsSegmentType === 'fmp4') {
+      hlsOptions.push('-strict -2')
+      var fmp4InitFilename = Path.join(this.streamPath, 'init.mp4')
+      hlsOptions.push(`-hls_fmp4_init_filename ${fmp4InitFilename}`)
+    }
+    this.ffmpeg.addOption(hlsOptions)
     var segmentFilename = Path.join(this.streamPath, this.segmentBasename)
     this.ffmpeg.addOption(`-hls_segment_filename ${segmentFilename}`)
     this.ffmpeg.output(this.finalPlaylistPath)

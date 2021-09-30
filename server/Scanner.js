@@ -60,11 +60,19 @@ class Scanner {
     return audiobookDataAudioFiles.filter(abdFile => !!abdFile.ino)
   }
 
-  async scanAudiobookData(audiobookData) {
+  async scanAudiobookData(audiobookData, forceAudioFileScan = false) {
     var existingAudiobook = this.audiobooks.find(a => a.ino === audiobookData.ino)
     // Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
 
     if (existingAudiobook) {
+
+      // TEMP: Check if is older audiobook and needs force rescan
+      if (!forceAudioFileScan && existingAudiobook.checkNeedsAudioFileRescan()) {
+        Logger.info(`[Scanner] Re-Scanning all audio files for "${existingAudiobook.title}" (last scan <= 1.3.0)`)
+        forceAudioFileScan = true
+      }
+
+
       // REMOVE: No valid audio files
       // TODO: Label as incomplete, do not actually delete
       if (!audiobookData.audioFiles.length) {
@@ -94,7 +102,6 @@ class Scanner {
         removedAudioTracks.forEach((at) => existingAudiobook.removeAudioTrack(at))
       }
 
-
       // Check for new audio files and sync existing audio files
       var newAudioFiles = []
       var hasUpdatedAudioFiles = false
@@ -113,13 +120,35 @@ class Scanner {
           }
         }
       })
+
+      // Rescan audio file metadata
+      if (forceAudioFileScan) {
+        Logger.info(`[Scanner] Rescanning ${existingAudiobook.audioFiles.length} audio files for "${existingAudiobook.title}"`)
+        var numAudioFilesUpdated = await audioFileScanner.rescanAudioFiles(existingAudiobook)
+        if (numAudioFilesUpdated > 0) {
+          Logger.info(`[Scanner] Rescan complete, ${numAudioFilesUpdated} audio files were updated for "${existingAudiobook.title}"`)
+          hasUpdatedAudioFiles = true
+
+          // Use embedded cover art if audiobook has no cover
+          if (existingAudiobook.hasEmbeddedCoverArt && !existingAudiobook.cover) {
+            var outputCoverDirs = this.getCoverDirectory(existingAudiobook)
+            var relativeDir = await existingAudiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
+            if (relativeDir) {
+              Logger.debug(`[Scanner] Saved embedded cover art "${relativeDir}"`)
+            }
+          }
+        } else {
+          Logger.info(`[Scanner] Rescan complete, audio files were up to date for "${existingAudiobook.title}"`)
+        }
+      }
+
+      // Scan and add new audio files found and set tracks
       if (newAudioFiles.length) {
         Logger.info(`[Scanner] ${newAudioFiles.length} new audio files were found for audiobook "${existingAudiobook.title}"`)
-        // Scan new audio files found - sets tracks
         await audioFileScanner.scanAudioFiles(existingAudiobook, newAudioFiles)
       }
 
-      // REMOVE: No valid audio tracks
+      // If after a scan no valid audio tracks remain
       // TODO: Label as incomplete, do not actually delete
       if (!existingAudiobook.tracks.length) {
         Logger.error(`[Scanner] "${existingAudiobook.title}" has no valid tracks after update - removing audiobook`)
@@ -131,12 +160,14 @@ class Scanner {
 
       var hasUpdates = removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
 
+      // Check that audio tracks are in sequential order with no gaps
       if (existingAudiobook.checkUpdateMissingParts()) {
         Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
         hasUpdates = true
       }
 
-      var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles)
+      // Sync other files (all files that are not audio files)
+      var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles, forceAudioFileScan)
       if (otherFilesUpdated) {
         hasUpdates = true
       }
@@ -202,7 +233,7 @@ class Scanner {
     return ScanResult.ADDED
   }
 
-  async scan() {
+  async scan(forceAudioFileScan = false) {
     // TODO: This temporary fix from pre-release should be removed soon, "checkUpdateInos"
     // TEMP - update ino for each audiobook
     if (this.audiobooks.length) {
@@ -258,8 +289,7 @@ class Scanner {
 
     // Check for new and updated audiobooks
     for (let i = 0; i < audiobookDataFound.length; i++) {
-      var audiobookData = audiobookDataFound[i]
-      var result = await this.scanAudiobookData(audiobookData)
+      var result = await this.scanAudiobookData(audiobookDataFound[i], forceAudioFileScan)
       if (result === ScanResult.ADDED) scanResults.added++
       if (result === ScanResult.REMOVED) scanResults.removed++
       if (result === ScanResult.UPDATED) scanResults.updated++
@@ -283,14 +313,24 @@ class Scanner {
     return scanResults
   }
 
-  async scanAudiobook(audiobookPath) {
+  async scanAudiobookById(audiobookId) {
+    const audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
+    if (!audiobook) {
+      Logger.error(`[Scanner] Scan audiobook by id not found ${audiobookId}`)
+      return ScanResult.NOTHING
+    }
+    Logger.info(`[Scanner] Scanning Audiobook "${audiobook.title}"`)
+    return this.scanAudiobook(audiobook.fullPath, true)
+  }
+
+  async scanAudiobook(audiobookPath, forceAudioFileScan = false) {
     Logger.debug('[Scanner] scanAudiobook', audiobookPath)
     var audiobookData = await getAudiobookFileData(this.AudiobookPath, audiobookPath, this.db.serverSettings)
     if (!audiobookData) {
       return ScanResult.NOTHING
     }
     audiobookData.ino = await getIno(audiobookData.fullPath)
-    return this.scanAudiobookData(audiobookData)
+    return this.scanAudiobookData(audiobookData, forceAudioFileScan)
   }
 
   // Files were modified in this directory, check it out

@@ -75,7 +75,7 @@ async function extractCoverArt(filepath, outputpath) {
 
   return new Promise((resolve) => {
     var ffmpeg = Ffmpeg(filepath)
-    ffmpeg.addOption(['-map 0:v'])
+    ffmpeg.addOption(['-map 0:v', '-frames:v 1'])
     ffmpeg.output(outputpath)
 
     ffmpeg.on('start', (cmd) => {

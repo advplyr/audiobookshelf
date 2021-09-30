@@ -21,7 +21,7 @@ class HlsController {
   }
 
   parseSegmentFilename(filename) {
-    var basename = Path.basename(filename, '.ts')
+    var basename = Path.basename(filename, Path.extname(filename))
     var num_part = basename.split('-')[1]
     return Number(num_part)
   }
@@ -41,7 +41,7 @@ class HlsController {
       Logger.warn('File path does not exist', fullFilePath)
 
       var fileExt = Path.extname(req.params.file)
-      if (fileExt === '.ts') {
+      if (fileExt === '.ts' || fileExt === '.m4s') {
         var segNum = this.parseSegmentFilename(req.params.file)
         var stream = this.streamManager.getStream(streamId)
         if (!stream) {
@@ -66,6 +66,7 @@ class HlsController {
         }
       }
     }
+
     // Logger.info('Sending file', fullFilePath)
     res.sendFile(fullFilePath)
   }

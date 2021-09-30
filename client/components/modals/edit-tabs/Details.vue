@@ -56,8 +56,12 @@
         <div class="flex px-4">
           <ui-btn v-if="userCanDelete" color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
 
-          <ui-tooltip text="(Root User Only) Save a NFO metadata file in your audiobooks directory" class="mx-4">
+          <ui-tooltip text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="ml-4">
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
+          </ui-tooltip>
+
+          <ui-tooltip text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
+            <ui-btn v-if="isRootUser" :loading="rescanning" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
           </ui-tooltip>
 
           <div class="flex-grow" />
@@ -93,7 +97,8 @@ export default {
       newTags: [],
       resettingProgress: false,
       isScrollable: false,
-      savingMetadata: false
+      savingMetadata: false,
+      rescanning: false
     }
   },
   watch: {
@@ -136,6 +141,23 @@ export default {
     }
   },
   methods: {
+    audiobookScanComplete(result) {
+      this.rescanning = false
+      if (!result) {
+        this.$toast.error(`Re-Scan Failed for "${this.title}"`)
+      } else if (result === 'UPDATED') {
+        this.$toast.success(`Re-Scan complete audiobook was updated`)
+      } else if (result === 'UPTODATE') {
+        this.$toast.success(`Re-Scan complete audiobook was up to date`)
+      } else if (result === 'REMOVED') {
+        this.$toast.error(`Re-Scan complete audiobook was removed`)
+      }
+    },
+    rescan() {
+      this.rescanning = true
+      this.$root.socket.once('audiobook_scan_complete', this.audiobookScanComplete)
+      this.$root.socket.emit('scan_audiobook', this.audiobookId)
+    },
     saveMetadataComplete(result) {
       this.savingMetadata = false
       if (result.error) {

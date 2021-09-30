@@ -127,21 +127,6 @@ export default {
         this.$store.commit('setScanProgress', progress)
       }
     },
-    saveMetadataComplete(result) {
-      if (result.error) {
-        this.$toast.error(result.error)
-      } else if (result.audiobookId) {
-        var { savedPath } = result
-        if (!savedPath) {
-          this.$toast.error(`Failed to save metadata file (${result.audiobookId})`)
-        } else {
-          this.$toast.success(`Metadata file saved (${result.audiobookId})`)
-        }
-      } else {
-        var { success, failed } = result
-        this.$toast.success(`Metadata save complete\n${success} Succeeded\n${failed} Failed`)
-      }
-    },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
         this.$store.commit('user/setUser', user)
@@ -205,6 +190,9 @@ export default {
       download.status = this.$constants.DownloadStatus.EXPIRED
       this.$store.commit('downloads/addUpdateDownload', download)
     },
+    logEvtReceived(payload) {
+      this.$store.commit('logs/logEvt', payload)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -245,7 +233,6 @@ export default {
       this.socket.on('scan_start', this.scanStart)
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
-      // this.socket.on('save_metadata_complete', this.saveMetadataComplete)
 
       // Download Listeners
       this.socket.on('download_started', this.downloadStarted)
@@ -253,6 +240,8 @@ export default {
       this.socket.on('download_failed', this.downloadFailed)
       this.socket.on('download_killed', this.downloadKilled)
       this.socket.on('download_expired', this.downloadExpired)
+
+      this.socket.on('log', this.logEvtReceived)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

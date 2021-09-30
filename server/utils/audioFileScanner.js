@@ -83,6 +83,9 @@ function getTrackNumberFromFilename(title, author, series, publishYear, filename
   if (series) partbasename = partbasename.replace(series, '')
   if (publishYear) partbasename = partbasename.replace(publishYear)
 
+  // Remove eg. "disc 1" from path
+  partbasename = partbasename.replace(/ disc \d\d? /i, '')
+
   var numbersinpath = partbasename.match(/\d+/g)
   if (!numbersinpath) return null
 
@@ -95,9 +98,11 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     Logger.error('[AudioFileScanner] Scan Audio Files no new files', audiobook.title)
     return
   }
+
   var tracks = []
   var numDuplicateTracks = 0
   var numInvalidTracks = 0
+
   for (let i = 0; i < newAudioFiles.length; i++) {
     var audioFile = newAudioFiles[i]
     var scanData = await scan(audioFile.fullPath)
@@ -109,6 +114,7 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
 
     var trackNumFromMeta = getTrackNumberFromMeta(scanData)
     var book = audiobook.book || {}
+
     var trackNumFromFilename = getTrackNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
 
     var audioFileObj = {
@@ -183,3 +189,46 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
   }
 }
 module.exports.scanAudioFiles = scanAudioFiles
+
+
+async function rescanAudioFiles(audiobook) {
+
+  var audioFiles = audiobook.audioFiles
+  var updates = 0
+
+  for (let i = 0; i < audioFiles.length; i++) {
+    var audioFile = audioFiles[i]
+    var scanData = await scan(audioFile.fullPath)
+    if (!scanData || scanData.error) {
+      Logger.error('[AudioFileScanner] Scan failed for', audioFile.path)
+      // audiobook.invalidAudioFiles.push(parts[i])
+      continue;
+    }
+    var hasUpdates = audioFile.updateMetadata(scanData)
+    if (hasUpdates) {
+      // Sync audio track with audio file
+      var matchingAudioTrack = audiobook.tracks.find(t => t.ino === audioFile.ino)
+      if (matchingAudioTrack) {
+        matchingAudioTrack.syncMetadata(audioFile)
+      } else if (!audioFile.exclude) { // If audio file is not excluded then it should have an audio track
+
+        // Fallback to checking path
+        matchingAudioTrack = audiobook.tracks.find(t => t.path === audioFile.path)
+        if (matchingAudioTrack) {
+          Logger.warn(`[AudioFileScanner] Audio File mismatch ino with audio track "${audioFile.filename}"`)
+          matchingAudioTrack.ino = audioFile.ino
+          matchingAudioTrack.syncMetadata(audioFile)
+        } else {
+          Logger.error(`[AudioFileScanner] Audio File has no matching Track ${audioFile.filename} for "${audiobook.title}"`)
+
+          // Exclude audio file to prevent further errors
+          // audioFile.exclude = true
+        }
+      }
+      updates++
+    }
+  }
+
+  return updates
+}
+module.exports.rescanAudioFiles = rescanAudioFiles
