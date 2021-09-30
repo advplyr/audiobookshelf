@@ -65,5 +65,33 @@ class AudioFileMetadata {
     this.tagEncoder = payload.file_tag_encoder || null
     this.tagEncodedBy = payload.file_tag_encodedby || null
   }
+
+  updateData(payload) {
+    const dataMap = {
+      tagAlbum: payload.file_tag_album || null,
+      tagArtist: payload.file_tag_artist || null,
+      tagGenre: payload.file_tag_genre || null,
+      tagTitle: payload.file_tag_title || null,
+      tagTrack: payload.file_tag_track || null,
+      tagSubtitle: payload.file_tag_subtitle || null,
+      tagAlbumArtist: payload.file_tag_albumartist || null,
+      tagDate: payload.file_tag_date || null,
+      tagComposer: payload.file_tag_composer || null,
+      tagPublisher: payload.file_tag_publisher || null,
+      tagComment: payload.file_tag_comment || null,
+      tagDescription: payload.file_tag_description || null,
+      tagEncoder: payload.file_tag_encoder || null,
+      tagEncodedBy: payload.file_tag_encodedby || null
+    }
+
+    var hasUpdates = false
+    for (const key in dataMap) {
+      if (dataMap[key] !== this[key]) {
+        this[key] = dataMap[key]
+        hasUpdates = true
+      }
+    }
+    return hasUpdates
+  }
 }
 module.exports = AudioFileMetadata

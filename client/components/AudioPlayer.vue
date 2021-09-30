@@ -440,7 +440,7 @@ export default {
         })
 
         this.hlsInstance.on(Hls.Events.ERROR, (e, data) => {
-          console.error('[HLS] Error', data.type, data.details)
+          console.error('[HLS] Error', data.type, data.details, data)
           if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
             console.error('[HLS] BUFFER STALLED ERROR')
           }

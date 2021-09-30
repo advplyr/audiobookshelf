@@ -205,15 +205,22 @@ class Audiobook {
   // this function checks all files and sets the inode
   async checkUpdateInos() {
     var hasUpdates = false
+
+    // Audiobook folder needs inode
     if (!this.ino) {
       this.ino = await getIno(this.fullPath)
       hasUpdates = true
     }
+
+    // Check audio files have an inode
     for (let i = 0; i < this.audioFiles.length; i++) {
       var af = this.audioFiles[i]
       var at = this.tracks.find(t => t.ino === af.ino)
       if (!at) {
         at = this.tracks.find(t => comparePaths(t.path, af.path))
+        if (!at && !af.exclude) {
+          Logger.warn(`[Audiobook] No matching track for audio file "${af.filename}"`)
+        }
       }
       if (!af.ino || af.ino === this.ino) {
         af.ino = await getIno(af.fullPath)
@@ -229,6 +236,7 @@ class Audiobook {
         hasUpdates = true
       }
     }
+
     for (let i = 0; i < this.tracks.length; i++) {
       var at = this.tracks[i]
       if (!at.ino) {
@@ -252,6 +260,7 @@ class Audiobook {
         }
       }
     }
+
     for (let i = 0; i < this.otherFiles.length; i++) {
       var file = this.otherFiles[i]
       if (!file.ino || file.ino === this.ino) {
@@ -265,6 +274,11 @@ class Audiobook {
       }
     }
     return hasUpdates
+  }
+
+  // Scans in v1.3.0 or lower will need to rescan audiofiles to pickup metadata and embedded cover
+  checkNeedsAudioFileRescan() {
+    return !!(this.audioFiles || []).find(af => af.isOldAudioFile || af.codec === null)
   }
 
   setData(data) {
@@ -409,10 +423,12 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles) {
+  async syncOtherFiles(newOtherFiles, forceRescan = false) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
+
+    var alreadyHadDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
@@ -420,8 +436,9 @@ class Audiobook {
     // Some files are not there anymore and filtered out
     if (currOtherFileNum !== this.otherFiles.length) hasUpdates = true
 
+    // If desc.txt is new or forcing rescan then read it and update description if empty
     var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
-    if (descriptionTxt) {
+    if (descriptionTxt && (!alreadyHadDescTxt || forceRescan)) {
       var newDescription = await readTextFile(descriptionTxt.fullPath)
       if (newDescription) {
         Logger.debug(`[Audiobook] Sync Other File desc.txt: ${newDescription}`)

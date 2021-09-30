@@ -6,6 +6,8 @@ const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
 
+const { ScanResult } = require('./utils/constants')
+
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./Scanner')
@@ -82,18 +84,29 @@ class Server {
   async filesChanged(files) {
     Logger.info('[Server]', files.length, 'Files Changed')
     var result = await this.scanner.filesChanged(files)
-    Logger.info('[Server] Files changed result', result)
+    Logger.debug('[Server] Files changed result', result)
   }
 
-  async scan() {
+  async scan(forceAudioFileScan = false) {
     Logger.info('[Server] Starting Scan')
     this.isScanning = true
     this.isInitialized = true
     this.emitter('scan_start', 'files')
-    var results = await this.scanner.scan()
+    var results = await this.scanner.scan(forceAudioFileScan)
     this.isScanning = false
     this.emitter('scan_complete', { scanType: 'files', results })
     Logger.info('[Server] Scan complete')
+  }
+
+  async scanAudiobook(socket, audiobookId) {
+    var result = await this.scanner.scanAudiobookById(audiobookId)
+    var scanResultName = ''
+    for (const key in ScanResult) {
+      if (ScanResult[key] === result) {
+        scanResultName = key
+      }
+    }
+    socket.emit('audiobook_scan_complete', scanResultName)
   }
 
   async scanCovers() {
@@ -287,6 +300,7 @@ class Server {
       socket.on('scan', this.scan.bind(this))
       socket.on('scan_covers', this.scanCovers.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
+      socket.on('scan_audiobook', (audiobookId) => this.scanAudiobook(socket, audiobookId))
       socket.on('save_metadata', (audiobookId) => this.saveMetadata(socket, audiobookId))
 
       // Streaming
@@ -300,11 +314,15 @@ class Server {
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
       socket.on('remove_download', (downloadId) => this.downloadManager.removeSocketRequest(socket, downloadId))
 
+      socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
       })
 
       socket.on('disconnect', () => {
+        Logger.removeSocketListener(socket.id)
+
         var _client = this.clients[socket.id]
         if (!_client) {
           Logger.warn('[SOCKET] Socket disconnect, no client ' + socket.id)
@@ -368,6 +386,11 @@ class Server {
       stream: client.stream || null
     }
     client.socket.emit('init', initialPayload)
+
+    // Setup log listener for root user
+    if (user.type === 'root') {
+      Logger.addSocketListener(socket, this.db.serverSettings.logLevel || 0)
+    }
   }
 
   async stop() {

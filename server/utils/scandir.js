@@ -3,10 +3,10 @@ const dir = require('node-dir')
 const Logger = require('../Logger')
 const { getIno } = require('./index')
 
-const AUDIO_FORMATS = ['m4b', 'mp3', 'm4a']
+const AUDIO_FORMATS = ['m4b', 'mp3', 'm4a', 'flac']
 const INFO_FORMATS = ['nfo']
 const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'webp']
-const EBOOK_FORMATS = ['epub', 'pdf']
+const EBOOK_FORMATS = ['epub', 'pdf', 'mobi']
 
 function getPaths(path) {
   return new Promise((resolve) => {

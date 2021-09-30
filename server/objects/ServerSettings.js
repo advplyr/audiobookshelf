@@ -1,4 +1,5 @@
 const { CoverDestination } = require('../utils/constants')
+const Logger = require('../Logger')
 
 class ServerSettings {
   constructor(settings) {
@@ -11,6 +12,7 @@ class ServerSettings {
     this.saveMetadataFile = false
     this.rateLimitLoginRequests = 10
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
+    this.logLevel = Logger.logLevel
 
     if (settings) {
       this.construct(settings)
@@ -25,6 +27,11 @@ class ServerSettings {
     this.saveMetadataFile = !!settings.saveMetadataFile
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
+    this.logLevel = settings.logLevel || Logger.logLevel
+
+    if (this.logLevel !== Logger.logLevel) {
+      Logger.setLogLevel(this.logLevel)
+    }
   }
 
   toJSON() {
@@ -36,7 +43,8 @@ class ServerSettings {
       coverDestination: this.coverDestination,
       saveMetadataFile: !!this.saveMetadataFile,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
-      rateLimitLoginWindow: this.rateLimitLoginWindow
+      rateLimitLoginWindow: this.rateLimitLoginWindow,
+      logLevel: this.logLevel
     }
   }
 
@@ -44,6 +52,9 @@ class ServerSettings {
     var hasUpdates = false
     for (const key in payload) {
       if (this[key] !== payload[key]) {
+        if (key === 'logLevel') {
+          Logger.setLogLevel(payload[key])
+        }
         this[key] = payload[key]
         hasUpdates = true
       }

@@ -34,8 +34,10 @@
           </tr>
         </table>
       </div>
+
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
-      <div class="py-4 mb-8">
+
+      <div class="py-4 mb-4">
         <p class="text-2xl">Scanner</p>
         <div class="flex items-start py-2">
           <div class="py-2">
@@ -65,6 +67,8 @@
 
       <div class="flex items-center py-4">
         <ui-btn color="bg" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
+        <div class="flex-grow" />
+        <ui-btn to="/config/log">View Logger</ui-btn>
       </div>
 
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
@@ -134,6 +138,9 @@ export default {
       var payload = {
         scannerParseSubtitle: val
       }
+      this.updateServerSettings(payload)
+    },
+    updateServerSettings(payload) {
       this.$store
         .dispatch('updateServerSettings', payload)
         .then((success) => {
@@ -175,6 +182,7 @@ export default {
           .then(() => {
             this.isResettingAudiobooks = false
             this.$toast.success('Successfully reset audiobooks')
+            location.reload()
           })
           .catch((error) => {
             console.error('failed to reset audiobooks', error)
