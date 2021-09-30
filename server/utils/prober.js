@@ -1,4 +1,6 @@
 var Ffmpeg = require('fluent-ffmpeg')
+const Path = require('path')
+const Logger = require('../Logger')
 
 function tryGrabBitRate(stream, all_streams, total_bit_rate) {
   if (!isNaN(stream.bit_rate) && stream.bit_rate) {
@@ -72,6 +74,15 @@ function tryGrabTag(stream, tag) {
   return stream.tags[tag] || stream.tags[tag.toUpperCase()] || null
 }
 
+function tryGrabTags(stream, ...tags) {
+  if (!stream.tags) return null
+  for (let i = 0; i < tags.length; i++) {
+    var value = stream.tags[tags[i]] || stream.tags[tags[i].toUpperCase()]
+    if (value) return value
+  }
+  return null
+}
+
 function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   var info = {
     index: stream.index,
@@ -124,6 +135,54 @@ function parseChapters(chapters) {
   })
 }
 
+function parseTags(format) {
+  if (!format.tags) {
+    Logger.debug('No Tags')
+    return {}
+  }
+  // Logger.debug('Tags', format.tags)
+  const tags = {
+    file_tag_encoder: tryGrabTags(format, 'encoder', 'tsse', 'tss'),
+    file_tag_encodedby: tryGrabTags(format, 'encoded_by', 'tenc', 'ten'),
+    file_tag_title: tryGrabTags(format, 'title', 'tit2', 'tt2'),
+    file_tag_subtitle: tryGrabTags(format, 'subtitle', 'tit3', 'tt3'),
+    file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
+    file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
+    file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
+    file_tag_albumartist: tryGrabTags(format, 'albumartist', 'tpe2'),
+    file_tag_date: tryGrabTags(format, 'date', 'tyer', 'tye'),
+    file_tag_composer: tryGrabTags(format, 'composer', 'tcom', 'tcm'),
+    file_tag_publisher: tryGrabTags(format, 'publisher', 'tpub', 'tpb'),
+    file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
+    file_tag_description: tryGrabTags(format, 'description', 'desc'),
+    file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
+
+    // Not sure if these are actually used yet or not
+    file_tag_creation_time: tryGrabTag(format, 'creation_time'),
+    file_tag_wwwaudiofile: tryGrabTags(format, 'wwwaudiofile', 'woaf', 'waf'),
+    file_tag_contentgroup: tryGrabTags(format, 'contentgroup', 'tit1', 'tt1'),
+    file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
+    file_tag_movementname: tryGrabTags(format, 'movementname', 'mvnm'),
+    file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
+    file_tag_series: tryGrabTag(format, 'series'),
+    file_tag_seriespart: tryGrabTag(format, 'series-part'),
+    file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
+    file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2')
+  }
+  for (const key in tags) {
+    if (!tags[key]) {
+      delete tags[key]
+    }
+  }
+
+  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
+  var success = keysToLookOutFor.find(key => !!tags[key])
+  if (success) {
+    Logger.debug('Notable!', success)
+  }
+  return tags
+}
+
 function parseProbeData(data) {
   try {
     var { format, streams, chapters } = data
@@ -131,20 +190,16 @@ function parseProbeData(data) {
 
     var sizeBytes = !isNaN(size) ? Number(size) : null
     var sizeMb = sizeBytes !== null ? Number((sizeBytes / (1024 * 1024)).toFixed(2)) : null
+
+    // Logger.debug('Parsing Data for', Path.basename(format.filename))
+    var tags = parseTags(format)
     var cleanedData = {
       format: format_long_name,
       duration: !isNaN(duration) ? Number(duration) : null,
       size: sizeBytes,
       sizeMb,
       bit_rate: !isNaN(bit_rate) ? Number(bit_rate) : null,
-      file_tag_encoder: tryGrabTag(format, 'encoder') || tryGrabTag(format, 'encoded_by'),
-      file_tag_title: tryGrabTag(format, 'title'),
-      file_tag_track: tryGrabTag(format, 'track') || tryGrabTag(format, 'trk'),
-      file_tag_album: tryGrabTag(format, 'album') || tryGrabTag(format, 'tal'),
-      file_tag_artist: tryGrabTag(format, 'artist') || tryGrabTag(format, 'tp1'),
-      file_tag_date: tryGrabTag(format, 'date') || tryGrabTag(format, 'tye'),
-      file_tag_genre: tryGrabTag(format, 'genre'),
-      file_tag_creation_time: tryGrabTag(format, 'creation_time')
+      ...tags
     }
 
     const cleaned_streams = streams.map(s => parseMediaStreamInfo(s, streams, cleanedData.bit_rate))

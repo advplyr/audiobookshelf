@@ -179,7 +179,7 @@ export default {
           .catch((error) => {
             console.error('failed to reset audiobooks', error)
             this.isResettingAudiobooks = false
-            this.$toast.error('Failed to reset audiobooks - stop docker and manually remove appdata')
+            this.$toast.error('Failed to reset audiobooks - manually remove the /config/audiobooks folder')
           })
       }
     },

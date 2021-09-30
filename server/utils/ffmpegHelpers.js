@@ -1,5 +1,8 @@
+const Ffmpeg = require('fluent-ffmpeg')
 const fs = require('fs-extra')
+const Path = require('path')
 const package = require('../../package.json')
+const Logger = require('../Logger')
 
 function escapeSingleQuotes(path) {
   // return path.replace(/'/g, '\'\\\'\'')
@@ -65,3 +68,28 @@ async function writeMetadataFile(audiobook, outputPath) {
   return inputstrs
 }
 module.exports.writeMetadataFile = writeMetadataFile
+
+async function extractCoverArt(filepath, outputpath) {
+  var dirname = Path.dirname(outputpath)
+  await fs.ensureDir(dirname)
+
+  return new Promise((resolve) => {
+    var ffmpeg = Ffmpeg(filepath)
+    ffmpeg.addOption(['-map 0:v'])
+    ffmpeg.output(outputpath)
+
+    ffmpeg.on('start', (cmd) => {
+      Logger.debug(`[FfmpegHelpers] Extract Cover Cmd: ${cmd}`)
+    })
+    ffmpeg.on('error', (err, stdout, stderr) => {
+      Logger.error(`[FfmpegHelpers] Extract Cover Error ${err}`)
+      resolve(false)
+    })
+    ffmpeg.on('end', () => {
+      Logger.debug(`[FfmpegHelpers] Cover Art Extracted Successfully`)
+      resolve(outputpath)
+    })
+    ffmpeg.run()
+  })
+}
+module.exports.extractCoverArt = extractCoverArt
