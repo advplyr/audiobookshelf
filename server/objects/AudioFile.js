@@ -1,3 +1,5 @@
+const AudioFileMetadata = require('./AudioFileMetadata')
+
 class AudioFile {
   constructor(data) {
     this.index = null
@@ -21,12 +23,10 @@ class AudioFile {
     this.channels = null
     this.channelLayout = null
     this.chapters = []
+    this.embeddedCoverArt = null
 
-    this.tagAlbum = null
-    this.tagArtist = null
-    this.tagGenre = null
-    this.tagTitle = null
-    this.tagTrack = null
+    // Tags scraped from the audio file
+    this.metadata = null
 
     this.manuallyVerified = false
     this.invalid = false
@@ -62,11 +62,8 @@ class AudioFile {
       channels: this.channels,
       channelLayout: this.channelLayout,
       chapters: this.chapters,
-      tagAlbum: this.tagAlbum,
-      tagArtist: this.tagArtist,
-      tagGenre: this.tagGenre,
-      tagTitle: this.tagTitle,
-      tagTrack: this.tagTrack
+      embeddedCoverArt: this.embeddedCoverArt,
+      metadata: this.metadata ? this.metadata.toJSON() : {}
     }
   }
 
@@ -96,12 +93,20 @@ class AudioFile {
     this.channels = data.channels
     this.channelLayout = data.channelLayout
     this.chapters = data.chapters
+    this.embeddedCoverArt = data.embeddedCoverArt || null
 
-    this.tagAlbum = data.tagAlbum
-    this.tagArtist = data.tagArtist
-    this.tagGenre = data.tagGenre
-    this.tagTitle = data.tagTitle
-    this.tagTrack = data.tagTrack
+    // Old version of AudioFile used `tagAlbum` etc.
+    var isOldVersion = Object.keys(data).find(key => key.startsWith('tag'))
+    if (isOldVersion) {
+      this.metadata = new AudioFileMetadata(data)
+    } else {
+      this.metadata = new AudioFileMetadata(data.metadata || {})
+    }
+    // this.tagAlbum = data.tagAlbum
+    // this.tagArtist = data.tagArtist
+    // this.tagGenre = data.tagGenre
+    // this.tagTitle = data.tagTitle
+    // this.tagTrack = data.tagTrack
   }
 
   setData(data) {
@@ -131,12 +136,10 @@ class AudioFile {
     this.channels = data.channels
     this.channelLayout = data.channel_layout
     this.chapters = data.chapters || []
+    this.embeddedCoverArt = data.embedded_cover_art || null
 
-    this.tagAlbum = data.file_tag_album || null
-    this.tagArtist = data.file_tag_artist || null
-    this.tagGenre = data.file_tag_genre || null
-    this.tagTitle = data.file_tag_title || null
-    this.tagTrack = data.file_tag_track || null
+    this.metadata = new AudioFileMetadata()
+    this.metadata.setData(data)
   }
 
   clone() {

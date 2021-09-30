@@ -7,7 +7,7 @@ const audioFileScanner = require('./utils/audioFileScanner')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('./utils/scandir')
 const { comparePaths, getIno } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
-const { ScanResult } = require('./utils/constants')
+const { ScanResult, CoverDestination } = require('./utils/constants')
 
 class Scanner {
   constructor(AUDIOBOOK_PATH, METADATA_PATH, db, emitter) {
@@ -25,6 +25,20 @@ class Scanner {
 
   get audiobooks() {
     return this.db.audiobooks
+  }
+
+  getCoverDirectory(audiobook) {
+    if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
+      return {
+        fullPath: audiobook.fullPath,
+        relPath: Path.join('/local', audiobook.path)
+      }
+    } else {
+      return {
+        fullPath: Path.join(this.BookMetadataPath, audiobook.id),
+        relPath: Path.join('/metadata', 'books', audiobook.id)
+      }
+    }
   }
 
   async setAudioFileInos(audiobookDataAudioFiles, audiobookAudioFiles) {
@@ -48,7 +62,7 @@ class Scanner {
 
   async scanAudiobookData(audiobookData) {
     var existingAudiobook = this.audiobooks.find(a => a.ino === audiobookData.ino)
-    Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
+    // Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
 
     if (existingAudiobook) {
       // REMOVE: No valid audio files
@@ -64,8 +78,6 @@ class Scanner {
 
       // ino is now set for every file in scandir
       audiobookData.audioFiles = audiobookData.audioFiles.filter(af => af.ino)
-      // audiobookData.audioFiles = await this.setAudioFileInos(audiobookData.audioFiles, existingAudiobook.audioFiles)
-
 
       // Check for audio files that were removed
       var abdAudioFileInos = audiobookData.audioFiles.map(af => af.ino)
@@ -124,7 +136,8 @@ class Scanner {
         hasUpdates = true
       }
 
-      if (existingAudiobook.syncOtherFiles(audiobookData.otherFiles)) {
+      var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles)
+      if (otherFilesUpdated) {
         hasUpdates = true
       }
 
@@ -167,6 +180,19 @@ class Scanner {
       return ScanResult.NOTHING
     }
 
+    if (audiobook.hasDescriptionTextFile) {
+      await audiobook.saveDescriptionFromTextFile()
+    }
+
+    if (audiobook.hasEmbeddedCoverArt) {
+      var outputCoverDirs = this.getCoverDirectory(audiobook)
+      var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
+      if (relativeDir) {
+        Logger.debug(`[Scanner] Saved embedded cover art "${relativeDir}"`)
+      }
+    }
+
+    audiobook.setDetailsFromFileMetadata()
     audiobook.checkUpdateMissingParts()
     audiobook.setChapters()
 
@@ -177,14 +203,11 @@ class Scanner {
   }
 
   async scan() {
-    // TODO: This temporary fix from pre-release should be removed soon, including the "fixRelativePath" and "checkUpdateInos"
-    // TEMP - fix relative file paths
+    // TODO: This temporary fix from pre-release should be removed soon, "checkUpdateInos"
     // TEMP - update ino for each audiobook
     if (this.audiobooks.length) {
       for (let i = 0; i < this.audiobooks.length; i++) {
         var ab = this.audiobooks[i]
-        // var shouldUpdate = ab.fixRelativePath(this.AudiobookPath) || !ab.ino
-
         // Update ino if inos are not set
         var shouldUpdateIno = ab.hasMissingIno
         if (shouldUpdateIno) {
@@ -319,10 +342,6 @@ class Scanner {
     var relfilepaths = filepaths.map(path => path.replace(this.AudiobookPath, ''))
     var fileGroupings = groupFilesIntoAudiobookPaths(relfilepaths, true)
 
-
-    Logger.debug(`[Scanner] fileGroupings `, filepaths, fileGroupings)
-
-
     var results = []
     for (const dir in fileGroupings) {
       Logger.debug(`[Scanner] Check dir ${dir}`)
@@ -332,19 +351,6 @@ class Scanner {
       results.push(result)
     }
     return results
-  }
-
-  async fetchMetadata(id, trackIndex = 0) {
-    var audiobook = this.audiobooks.find(a => a.id === id)
-    if (!audiobook) {
-      return false
-    }
-    var tracks = audiobook.tracks
-    var index = isNaN(trackIndex) ? 0 : Number(trackIndex)
-    var firstTrack = tracks[index]
-    var firstTrackFullPath = firstTrack.fullPath
-    var scanResult = await audioFileScanner.scan(firstTrackFullPath)
-    return scanResult
   }
 
   async scanCovers() {

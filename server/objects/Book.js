@@ -183,5 +183,47 @@ class Book {
   isSearchMatch(search) {
     return this._title.toLowerCase().includes(search) || this._subtitle.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
   }
+
+  setDetailsFromFileMetadata(audioFileMetadata) {
+    const MetadataMapArray = [
+      {
+        tag: 'tagComposer',
+        key: 'narrarator'
+      },
+      {
+        tag: 'tagDescription',
+        key: 'description'
+      },
+      {
+        tag: 'tagPublisher',
+        key: 'publisher'
+      },
+      {
+        tag: 'tagDate',
+        key: 'publishYear'
+      },
+      {
+        tag: 'tagSubtitle',
+        key: 'subtitle'
+      },
+      {
+        tag: 'tagArtist',
+        key: 'author'
+      }
+    ]
+
+    var updatePayload = {}
+    MetadataMapArray.forEach((mapping) => {
+      if (!this[mapping.key] && audioFileMetadata[mapping.tag]) {
+        updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
+        Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+      }
+    })
+
+    if (Object.keys(updatePayload).length) {
+      return this.update(updatePayload)
+    }
+    return false
+  }
 }
 module.exports = Book

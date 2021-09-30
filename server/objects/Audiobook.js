@@ -1,6 +1,7 @@
 const Path = require('path')
-const { bytesPretty, elapsedPretty } = require('../utils/fileUtils')
+const { bytesPretty, elapsedPretty, readTextFile } = require('../utils/fileUtils')
 const { comparePaths, getIno } = require('../utils/index')
+const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
 const Logger = require('../Logger')
 const Book = require('./Book')
@@ -115,6 +116,14 @@ class Audiobook {
     return !this.ino || (this.audioFiles || []).find(abf => !abf.ino) || (this.otherFiles || []).find(f => !f.ino) || (this.tracks || []).find(t => !t.ino)
   }
 
+  get hasEmbeddedCoverArt() {
+    return !!(this.audioFiles || []).find(af => af.embeddedCoverArt)
+  }
+
+  get hasDescriptionTextFile() {
+    return !!(this.otherFiles || []).find(of => of.filename === 'desc.txt')
+  }
+
   bookToJSON() {
     return this.book ? this.book.toJSON() : null
   }
@@ -190,20 +199,6 @@ class Audiobook {
       chapters: this.chapters || [],
       isMissing: !!this.isMissing
     }
-  }
-
-  // Scanner had a bug that was saving a file path as the audiobook path.
-  // audiobook path should be a directory.
-  // fixing this before a scan prevents audiobooks being removed and re-added
-  fixRelativePath(abRootPath) {
-    var pathExt = Path.extname(this.path)
-    if (pathExt) {
-      this.path = Path.dirname(this.path)
-      this.fullPath = Path.join(abRootPath, this.path)
-      Logger.warn('Audiobook path has extname', pathExt, 'fixed path:', this.path)
-      return true
-    }
-    return false
   }
 
   // Originally files did not store the inode value
@@ -414,22 +409,36 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  syncOtherFiles(newOtherFiles) {
+  async syncOtherFiles(newOtherFiles) {
+    var hasUpdates = false
+
     var currOtherFileNum = this.otherFiles.length
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
 
+    // Some files are not there anymore and filtered out
+    if (currOtherFileNum !== this.otherFiles.length) hasUpdates = true
+
+    var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
+    if (descriptionTxt) {
+      var newDescription = await readTextFile(descriptionTxt.fullPath)
+      if (newDescription) {
+        Logger.debug(`[Audiobook] Sync Other File desc.txt: ${newDescription}`)
+        this.update({ book: { description: newDescription } })
+        hasUpdates = true
+      }
+    }
+
     // TODO: Should use inode
     newOtherFiles.forEach((file) => {
       var existingOtherFile = this.otherFiles.find(f => f.path === file.path)
       if (!existingOtherFile) {
-        Logger.debug(`[Audiobook] New other file found on sync ${file.filename}/${file.filetype} | "${this.title}"`)
+        Logger.debug(`[Audiobook] New other file found on sync ${file.filename} | "${this.title}"`)
         this.addOtherFile(file)
+        hasUpdates = true
       }
     })
-
-    var hasUpdates = currOtherFileNum !== this.otherFiles.length
 
     // Check if cover was a local image and that it still exists
     var imageFiles = this.otherFiles.filter(f => f.filetype === 'image')
@@ -534,6 +543,39 @@ class Audiobook {
 
   writeNfoFile(nfoFilename = 'metadata.nfo') {
     return nfoGenerator(this, nfoFilename)
+  }
+
+  // Return cover filename
+  async saveEmbeddedCoverArt(coverDirFullPath, coverDirRelPath) {
+    var audioFileWithCover = this.audioFiles.find(af => af.embeddedCoverArt)
+    if (!audioFileWithCover) return false
+
+    var coverFilename = audioFileWithCover.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
+    var coverFilePath = Path.join(coverDirFullPath, coverFilename)
+
+    var success = await extractCoverArt(audioFileWithCover.fullPath, coverFilePath)
+    if (success) {
+      var coverRelPath = Path.join(coverDirRelPath, coverFilename)
+      this.update({ book: { cover: coverRelPath } })
+      return coverRelPath
+    }
+    return false
+  }
+
+  // If desc.txt exists then use it as description
+  async saveDescriptionFromTextFile() {
+    var descriptionTextFile = this.otherFiles.find(file => file.filename === 'desc.txt')
+    if (!descriptionTextFile) return false
+    var newDescription = await readTextFile(descriptionTextFile.fullPath)
+    if (!newDescription) return false
+    return this.update({ book: { description: newDescription } })
+  }
+
+  // Audio file metadata tags map to EMPTY book details
+  setDetailsFromFileMetadata() {
+    if (!this.audioFiles.length) return false
+    var audioFile = this.audioFiles[0]
+    return this.book.setDetailsFromFileMetadata(audioFile.metadata)
   }
 }
 module.exports = Audiobook

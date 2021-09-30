@@ -1,4 +1,5 @@
 const fs = require('fs-extra')
+const Logger = require('../Logger')
 
 async function getFileStat(path) {
   try {
@@ -23,6 +24,17 @@ async function getFileSize(path) {
   return stat.size || 0
 }
 module.exports.getFileSize = getFileSize
+
+async function readTextFile(path) {
+  try {
+    var data = await fs.readFile(path)
+    return String(data)
+  } catch (error) {
+    Logger.error(`[FileUtils] ReadTextFile error ${error}`)
+    return ''
+  }
+}
+module.exports.readTextFile = readTextFile
 
 function bytesPretty(bytes, decimals = 0) {
   if (bytes === 0) {

@@ -2,6 +2,8 @@ const Path = require('path')
 const Logger = require('../Logger')
 const prober = require('./prober')
 
+const ImageCodecs = ['mjpeg', 'jpeg', 'png']
+
 function getDefaultAudioStream(audioStreams) {
   if (audioStreams.length === 1) return audioStreams[0]
   var defaultStream = audioStreams.find(a => a.is_default)
@@ -35,6 +37,11 @@ async function scan(path) {
     channels: audioStream.channels,
     sample_rate: audioStream.sample_rate,
     chapters: probeData.chapters || []
+  }
+
+  var hasCoverArt = probeData.video_stream ? ImageCodecs.includes(probeData.video_stream.codec) : false
+  if (hasCoverArt) {
+    finalData.embedded_cover_art = probeData.video_stream.codec
   }
 
   for (const key in probeData) {
@@ -129,7 +136,7 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     }
 
     if (tracks.find(t => t.index === trackNumber)) {
-      Logger.debug('[AudioFileScanner] Duplicate track number for', audioFile.filename)
+      // Logger.debug('[AudioFileScanner] Duplicate track number for', audioFile.filename)
       audioFile.invalid = true
       audioFile.error = 'Duplicate track number'
       numDuplicateTracks++

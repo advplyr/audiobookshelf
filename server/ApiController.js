@@ -37,7 +37,6 @@ class ApiController {
     this.router.post('/audiobook/:id/cover', this.uploadAudiobookCover.bind(this))
     this.router.patch('/audiobook/:id', this.updateAudiobook.bind(this))
 
-    this.router.get('/metadata/:id/:trackIndex', this.getMetadata.bind(this))
     this.router.patch('/match/:id', this.match.bind(this))
 
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
@@ -68,11 +67,6 @@ class ApiController {
 
   findCovers(req, res) {
     this.scanner.findCovers(req, res)
-  }
-
-  async getMetadata(req, res) {
-    var metadata = await this.scanner.fetchMetadata(req.params.id, req.params.trackIndex)
-    res.json(metadata)
   }
 
   authorize(req, res) {

@@ -94,13 +94,17 @@ export default {
       return audiobooks.slice(0, 10)
     },
     shelves() {
-      var shelves = [
-        { books: this.mostRecentPlayed, label: 'Continue Reading' },
-        { books: this.mostRecentAdded, label: 'Recently Added' }
-      ]
+      var shelves = []
+      if (this.mostRecentPlayed.length) {
+        shelves.push({ books: this.mostRecentPlayed, label: 'Continue Reading' })
+      }
+
+      shelves.push({ books: this.mostRecentAdded, label: 'Recently Added' })
+
       if (this.recentlyUpdatedSeries) {
         shelves.push({ books: this.recentlyUpdatedSeries, label: 'Newest Series' })
       }
+
       if (this.booksRecentlyRead.length) {
         shelves.push({ books: this.booksRecentlyRead, label: 'Read Again' })
       }
