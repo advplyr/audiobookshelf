@@ -62,6 +62,7 @@ class AudioTrack {
       size: this.size,
       bitRate: this.bitRate,
       language: this.language,
+      codec: this.codec,
       timeBase: this.timeBase,
       channels: this.channels,
       channelLayout: this.channelLayout,
@@ -82,7 +83,7 @@ class AudioTrack {
     this.size = probeData.size
     this.bitRate = probeData.bitRate
     this.language = probeData.language
-    this.codec = probeData.codec
+    this.codec = probeData.codec || null
     this.timeBase = probeData.timeBase
     this.channels = probeData.channels
     this.channelLayout = probeData.channelLayout

@@ -162,7 +162,11 @@ export default {
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Oops, something went wrong...')
+          if (error.response && error.response.data) {
+            this.$toast.error(error.response.data)
+          } else {
+            this.$toast.error('Oops, something went wrong...')
+          }
           this.processingUpload = false
         })
     },
@@ -204,20 +208,39 @@ export default {
       }
 
       this.isProcessing = true
-      const updatePayload = {
-        book: {
-          cover: cover
+      var success = false
+
+      // Download cover from url and use
+      if (cover.startsWith('http:') || cover.startsWith('https:')) {
+        success = await this.$axios.$post(`/api/audiobook/${this.audiobook.id}/cover`, { url: cover }).catch((error) => {
+          console.error('Failed to download cover from url', error)
+          if (error.response && error.response.data) {
+            this.$toast.error(error.response.data)
+          }
+          return false
+        })
+      } else {
+        // Update local cover url
+        const updatePayload = {
+          book: {
+            cover: cover
+          }
         }
+        success = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
+          console.error('Failed to update', error)
+          if (error.response && error.response.data) {
+            this.$toast.error(error.response.data)
+          }
+          return false
+        })
       }
-      var updatedAudiobook = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
-        console.error('Failed to update', error)
-        return false
-      })
-      this.isProcessing = false
-      if (updatedAudiobook) {
+      if (success) {
         this.$toast.success('Update Successful')
         this.$emit('close')
+      } else {
+        this.imageUrl = this.book.cover || ''
       }
+      this.isProcessing = false
     },
     getSearchQuery() {
       var searchQuery = `provider=openlibrary&title=${this.searchTitle}`

@@ -3,17 +3,17 @@ const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('./Logger')
 const User = require('./objects/User')
-const { isObject, isAcceptableCoverMimeType } = require('./utils/index')
-const { CoverDestination } = require('./utils/constants')
+const { isObject } = require('./utils/index')
 
 class ApiController {
-  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, emitter, clientEmitter) {
+  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, emitter, clientEmitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
     this.streamManager = streamManager
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
+    this.coverController = coverController
     this.emitter = emitter
     this.clientEmitter = clientEmitter
     this.MetadataPath = MetadataPath
@@ -221,77 +221,36 @@ class ApiController {
       Logger.warn('User attempted to upload a cover without permission', req.user)
       return res.sendStatus(403)
     }
-    if (!req.files || !req.files.cover) {
-      return res.status(400).send('No files were uploaded')
-    }
+
     var audiobookId = req.params.id
     var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
     if (!audiobook) {
       return res.status(404).send('Audiobook not found')
     }
 
-    var coverFile = req.files.cover
-    var mimeType = coverFile.mimetype
-    var extname = Path.extname(coverFile.name.toLowerCase()) || '.jpg'
-    if (!isAcceptableCoverMimeType(mimeType)) {
-      return res.status(400).send('Invalid image file type: ' + mimeType)
-    }
-
-    var coverDestination = this.db.serverSettings ? this.db.serverSettings.coverDestination : CoverDestination.METADATA
-    Logger.info(`[ApiController] Cover Upload destination ${coverDestination}`)
-
-    var coverDirpath = audiobook.fullPath
-    var coverRelDirpath = Path.join('/local', audiobook.path)
-    if (coverDestination === CoverDestination.METADATA) {
-      coverDirpath = Path.join(this.MetadataPath, 'books', audiobookId)
-      coverRelDirpath = Path.join('/metadata', 'books', audiobookId)
-      Logger.debug(`[ApiController] storing in metadata | ${coverDirpath}`)
-      await fs.ensureDir(coverDirpath)
+    var result = null
+    if (req.body && req.body.url) {
+      Logger.debug(`[ApiController] Requesting download cover from url "${req.body.url}"`)
+      result = await this.coverController.downloadCoverFromUrl(audiobook, req.body.url)
+    } else if (req.files && req.files.cover) {
+      Logger.debug(`[ApiController] Handling uploaded cover`)
+      var coverFile = req.files.cover
+      result = await this.coverController.uploadCover(audiobook, coverFile)
     } else {
-      Logger.debug(`[ApiController] storing in audiobook | ${coverRelDirpath}`)
+      return res.status(400).send('Invalid request no file or url')
     }
 
-    var coverFilename = `cover${extname}`
-    var coverFullPath = Path.join(coverDirpath, coverFilename)
-    var coverPath = Path.join(coverRelDirpath, coverFilename)
-
-    // If current cover is a metadata cover and does not match replacement, then remove it
-    var currentBookCover = audiobook.book.cover
-    if (currentBookCover && currentBookCover.startsWith(Path.sep + 'metadata')) {
-      Logger.debug(`Current Book Cover is metadata ${currentBookCover}`)
-      if (currentBookCover !== coverPath) {
-        Logger.info(`[ApiController] removing old metadata cover "${currentBookCover}"`)
-        var oldFullBookCoverPath = Path.join(this.MetadataPath, currentBookCover.replace(Path.sep + 'metadata', ''))
-
-        // Metadata path may have changed, check if exists first
-        var exists = await fs.pathExists(oldFullBookCoverPath)
-        if (exists) {
-          try {
-            await fs.remove(oldFullBookCoverPath)
-          } catch (error) {
-            Logger.error(`[ApiController] Failed to remove old metadata book cover ${oldFullBookCoverPath}`)
-          }
-        }
-      }
+    if (result && result.error) {
+      return res.status(400).send(result.error)
+    } else if (!result || !result.cover) {
+      return res.status(500).send('Unknown error occurred')
     }
 
-    var success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
-      Logger.error('Failed to move cover file', path, error)
-      return false
-    })
-
-    if (!success) {
-      return res.status(500).send('Failed to move cover into destination')
-    }
-
-    Logger.info(`[ApiController] Uploaded audiobook cover "${coverPath}" for "${audiobook.title}"`)
-
-    audiobook.updateBookCover(coverPath)
     await this.db.updateAudiobook(audiobook)
     this.emitter('audiobook_updated', audiobook.toJSONMinified())
     res.json({
       success: true,
-      cover: coverPath
+      cover: result.cover
     })
   }
 

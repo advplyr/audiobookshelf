@@ -17,6 +17,7 @@ const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
+const CoverController = require('./CoverController')
 // const EbookReader = require('./EbookReader')
 const Logger = require('./Logger')
 
@@ -38,9 +39,11 @@ class Server {
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.emitter.bind(this))
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
+    this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
+
     // this.ebookReader = new EbookReader(this.db, this.MetadataPath, this.AudiobookPath)
 
     this.server = null
@@ -132,6 +135,33 @@ class Server {
     socket.emit('save_metadata_complete', response)
   }
 
+  // Remove unused /metadata/books/{id} folders
+  async purgeMetadata() {
+    var booksMetadata = Path.join(this.MetadataPath, 'books')
+    var booksMetadataExists = await fs.pathExists(booksMetadata)
+    if (!booksMetadataExists) return
+    var foldersInBooksMetadata = await fs.readdir(booksMetadata)
+
+    var purged = 0
+    await Promise.all(foldersInBooksMetadata.map(async foldername => {
+      var hasMatchingAudiobook = this.audiobooks.find(ab => ab.id === foldername)
+      if (!hasMatchingAudiobook) {
+        var folderPath = Path.join(booksMetadata, foldername)
+        Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
+
+        await fs.remove(folderPath).then(() => {
+          purged++
+        }).catch((err) => {
+          Logger.error(`[Server] Failed to delete folder path ${folderPath}`, err)
+        })
+      }
+    }))
+    if (purged > 0) {
+      Logger.info(`[Server] Purged ${purged} unused audiobook metadata`)
+    }
+    return purged
+  }
+
   async init() {
     Logger.info('[Server] Init')
     await this.streamManager.ensureStreamsDir()
@@ -140,6 +170,8 @@ class Server {
 
     await this.db.init()
     this.auth.init()
+
+    await this.purgeMetadata()
 
     this.watcher.initWatcher()
     this.watcher.on('files', this.filesChanged.bind(this))
