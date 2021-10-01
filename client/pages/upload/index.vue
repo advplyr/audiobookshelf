@@ -31,7 +31,7 @@
 
             <input ref="fileInput" id="hidden-input" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
             <ui-btn @click="clickSelectAudioFiles">Select files</ui-btn>
-            <p class="text-xs text-gray-300 absolute bottom-3 right-3">{{ inputAccept.join(', ') }}</p>
+            <p class="text-xs text-gray-300 absolute bottom-3 right-3">{{ inputAccept }}</p>
           </header>
         </section>
         <section v-else class="h-full overflow-auto px-8 pb-8 w-full flex flex-col">
@@ -120,9 +120,9 @@ export default {
       title: null,
       author: null,
       series: null,
-      acceptedAudioFormats: ['.mp3', '.m4b', '.m4a'],
+      acceptedAudioFormats: ['.mp3', '.m4b', '.m4a', '.flac'],
       acceptedImageFormats: ['image/*'],
-      inputAccept: ['image/*, .mp3, .m4b, .m4a'],
+      inputAccept: 'image/*, .mp3, .m4b, .m4a, .flac',
       isDragOver: false,
       showUploader: true,
       validAudioFiles: [],
