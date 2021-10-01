@@ -2,11 +2,7 @@ const Path = require('path')
 const dir = require('node-dir')
 const Logger = require('../Logger')
 const { getIno } = require('./index')
-
-const AUDIO_FORMATS = ['m4b', 'mp3', 'm4a', 'flac']
-const INFO_FORMATS = ['nfo']
-const IMAGE_FORMATS = ['png', 'jpg', 'jpeg', 'webp']
-const EBOOK_FORMATS = ['epub', 'pdf', 'mobi']
+const globals = require('./globals')
 
 function getPaths(path) {
   return new Promise((resolve) => {
@@ -24,7 +20,7 @@ function isAudioFile(path) {
   if (!path) return false
   var ext = Path.extname(path)
   if (!ext) return false
-  return AUDIO_FORMATS.includes(ext.slice(1).toLowerCase())
+  return globals.SupportedAudioTypes.includes(ext.slice(1).toLowerCase())
 }
 
 function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
@@ -107,10 +103,10 @@ function cleanFileObjects(basepath, abrelpath, files) {
 function getFileType(ext) {
   var ext_cleaned = ext.toLowerCase()
   if (ext_cleaned.startsWith('.')) ext_cleaned = ext_cleaned.slice(1)
-  if (AUDIO_FORMATS.includes(ext_cleaned)) return 'audio'
-  if (INFO_FORMATS.includes(ext_cleaned)) return 'info'
-  if (IMAGE_FORMATS.includes(ext_cleaned)) return 'image'
-  if (EBOOK_FORMATS.includes(ext_cleaned)) return 'ebook'
+  if (globals.SupportedAudioTypes.includes(ext_cleaned)) return 'audio'
+  if (ext_cleaned === 'nfo') return 'info'
+  if (globals.SupportedImageTypes.includes(ext_cleaned)) return 'image'
+  if (globals.SupportedEbookTypes.includes(ext_cleaned)) return 'ebook'
   return 'unknown'
 }
 

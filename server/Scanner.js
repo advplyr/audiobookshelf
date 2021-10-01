@@ -106,14 +106,19 @@ class Scanner {
       // check an audiobook exists with matching path, then update inodes
       existingAudiobook = this.audiobooks.find(a => a.path === audiobookData.path)
       if (existingAudiobook) {
+        existingAudiobook.ino = audiobookData.ino
         hasUpdatedIno = true
-        var filesUpdated = this.syncAudiobookInodeValues(existingAudiobook, audiobookData)
-        Logger.info(`[Scanner] Updating inode value for "${existingAudiobook.title}" - ${filesUpdated} files updated`)
       }
     }
 
-    // Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
     if (existingAudiobook) {
+      // Always sync files and inode values
+      var filesInodeUpdated = this.syncAudiobookInodeValues(existingAudiobook, audiobookData)
+      if (hasUpdatedIno || filesInodeUpdated > 0) {
+        Logger.info(`[Scanner] Updating inode value for "${existingAudiobook.title}" - ${filesInodeUpdated} files updated`)
+        hasUpdatedIno = true
+      }
+
 
       // TEMP: Check if is older audiobook and needs force rescan
       if (!forceAudioFileScan && existingAudiobook.checkNeedsAudioFileRescan()) {

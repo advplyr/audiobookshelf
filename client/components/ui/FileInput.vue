@@ -9,7 +9,7 @@
 export default {
   data() {
     return {
-      inputAccept: 'image/*'
+      inputAccept: '.png, .jpg, .jpeg, .webp'
     }
   },
   computed: {},
