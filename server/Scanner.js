@@ -60,10 +60,59 @@ class Scanner {
     return audiobookDataAudioFiles.filter(abdFile => !!abdFile.ino)
   }
 
+  // Only updates audio files with matching paths
+  syncAudiobookInodeValues(audiobook, { audioFiles, otherFiles }) {
+    var filesUpdated = 0
+
+    // Sync audio files & audio tracks with updated inodes
+    audiobook._audioFiles.forEach((audioFile) => {
+      var matchingAudioFile = audioFiles.find(af => af.ino !== audioFile.ino && af.path === audioFile.path)
+      if (matchingAudioFile) {
+        // Audio Track should always have the same ino as the equivalent audio file (not all audio files have a track)
+        var audioTrack = audiobook.tracks.find(t => t.ino === audioFile.ino)
+        if (audioTrack) {
+          Logger.debug(`[Scanner] Found audio file & track with mismatched inode "${audioFile.filename}" - updating it`)
+          audioTrack.ino = matchingAudioFile.ino
+          filesUpdated++
+        } else {
+          Logger.debug(`[Scanner] Found audio file with mismatched inode "${audioFile.filename}" - updating it`)
+        }
+
+        audioFile.ino = matchingAudioFile.ino
+        filesUpdated++
+      }
+    })
+
+    // Sync other files with updated inodes
+    audiobook._otherFiles.forEach((otherFile) => {
+      var matchingOtherFile = otherFiles.find(of => of.ino !== otherFile.ino && of.path === otherFile.path)
+      if (matchingOtherFile) {
+        Logger.debug(`[Scanner] Found other file with mismatched inode "${otherFile.filename}" - updating it`)
+        otherFile.ino = matchingOtherFile.ino
+        filesUpdated++
+      }
+    })
+
+    return filesUpdated
+  }
+
   async scanAudiobookData(audiobookData, forceAudioFileScan = false) {
     var existingAudiobook = this.audiobooks.find(a => a.ino === audiobookData.ino)
-    // Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
 
+    // inode value may change when using shared drives, update inode if matching path is found
+    // Note: inode will not change on rename
+    var hasUpdatedIno = false
+    if (!existingAudiobook) {
+      // check an audiobook exists with matching path, then update inodes
+      existingAudiobook = this.audiobooks.find(a => a.path === audiobookData.path)
+      if (existingAudiobook) {
+        hasUpdatedIno = true
+        var filesUpdated = this.syncAudiobookInodeValues(existingAudiobook, audiobookData)
+        Logger.info(`[Scanner] Updating inode value for "${existingAudiobook.title}" - ${filesUpdated} files updated`)
+      }
+    }
+
+    // Logger.debug(`[Scanner] Scanning "${audiobookData.title}" (${audiobookData.ino}) - ${!!existingAudiobook ? 'Exists' : 'New'}`)
     if (existingAudiobook) {
 
       // TEMP: Check if is older audiobook and needs force rescan
@@ -158,7 +207,7 @@ class Scanner {
         return ScanResult.REMOVED
       }
 
-      var hasUpdates = removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
+      var hasUpdates = hasUpdatedIno || removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
 
       // Check that audio tracks are in sequential order with no gaps
       if (existingAudiobook.checkUpdateMissingParts()) {
@@ -177,12 +226,14 @@ class Scanner {
         hasUpdates = true
       }
 
+      // If audiobook was missing before, it is now found
       if (existingAudiobook.isMissing) {
         existingAudiobook.isMissing = false
         hasUpdates = true
         Logger.info(`[Scanner] "${existingAudiobook.title}" was missing but now it is found`)
       }
 
+      // Save changes and notify users
       if (hasUpdates) {
         existingAudiobook.setChapters()
 

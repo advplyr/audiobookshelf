@@ -105,23 +105,26 @@ class Audiobook {
   }
 
   get invalidParts() {
-    return (this.audioFiles || []).filter(af => af.invalid).map(af => ({ filename: af.filename, error: af.error || 'Unknown Error' }))
+    return this._audioFiles.filter(af => af.invalid).map(af => ({ filename: af.filename, error: af.error || 'Unknown Error' }))
   }
+
+  get _audioFiles() { return this.audioFiles || [] }
+  get _otherFiles() { return this.otherFiles || [] }
 
   get ebooks() {
     return this.otherFiles.filter(file => file.filetype === 'ebook')
   }
 
   get hasMissingIno() {
-    return !this.ino || (this.audioFiles || []).find(abf => !abf.ino) || (this.otherFiles || []).find(f => !f.ino) || (this.tracks || []).find(t => !t.ino)
+    return !this.ino || this._audioFiles.find(abf => !abf.ino) || this._otherFiles.find(f => !f.ino) || (this.tracks || []).find(t => !t.ino)
   }
 
   get hasEmbeddedCoverArt() {
-    return !!(this.audioFiles || []).find(af => af.embeddedCoverArt)
+    return !!this._audioFiles.find(af => af.embeddedCoverArt)
   }
 
   get hasDescriptionTextFile() {
-    return !!(this.otherFiles || []).find(of => of.filename === 'desc.txt')
+    return !!this._otherFiles.find(of => of.filename === 'desc.txt')
   }
 
   bookToJSON() {
@@ -148,8 +151,8 @@ class Audiobook {
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
-      audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
-      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
+      audioFiles: this._audioFiles.map(audioFile => audioFile.toJSON()),
+      otherFiles: this._otherFiles.map(otherFile => otherFile.toJSON()),
       chapters: this.chapters || [],
       isMissing: !!this.isMissing
     }
