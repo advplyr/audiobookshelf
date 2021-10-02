@@ -6,7 +6,8 @@ module.exports = {
       safelist: [
         'bg-success',
         'bg-red-600',
-        'py-1.5'
+        'py-1.5',
+        'bg-info'
       ]
     }
   },

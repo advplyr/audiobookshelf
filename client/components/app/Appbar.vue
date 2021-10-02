@@ -17,6 +17,8 @@
         <controls-global-search />
         <div class="flex-grow" />
 
+        <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-4">logo_dev</span>
+
         <nuxt-link v-if="userCanUpload" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">upload</span>
         </nuxt-link>
@@ -117,6 +119,9 @@ export default {
     },
     processingBatch() {
       return this.$store.state.processingBatch
+    },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
