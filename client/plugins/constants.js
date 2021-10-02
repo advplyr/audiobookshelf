@@ -5,8 +5,14 @@ const DownloadStatus = {
   FAILED: 3
 }
 
+const CoverDestination = {
+  METADATA: 0,
+  AUDIOBOOK: 1
+}
+
 const Constants = {
-  DownloadStatus
+  DownloadStatus,
+  CoverDestination
 }
 
 export default ({ app }, inject) => {
