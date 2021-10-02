@@ -10,12 +10,13 @@ const { secondsToTimestamp } = require('./utils/fileUtils')
 const { ScanResult, CoverDestination } = require('./utils/constants')
 
 class Scanner {
-  constructor(AUDIOBOOK_PATH, METADATA_PATH, db, emitter) {
+  constructor(AUDIOBOOK_PATH, METADATA_PATH, db, coverController, emitter) {
     this.AudiobookPath = AUDIOBOOK_PATH
     this.MetadataPath = METADATA_PATH
     this.BookMetadataPath = Path.join(this.MetadataPath, 'books')
 
     this.db = db
+    this.coverController = coverController
     this.emitter = emitter
 
     this.cancelScan = false
@@ -453,6 +454,8 @@ class Scanner {
     var audiobooksNeedingCover = this.audiobooks.filter(ab => !ab.cover && ab.author)
     var found = 0
     var notFound = 0
+    var failed = 0
+
     for (let i = 0; i < audiobooksNeedingCover.length; i++) {
       var audiobook = audiobooksNeedingCover[i]
       var options = {
@@ -462,10 +465,15 @@ class Scanner {
       var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
       if (results.length) {
         Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
-        audiobook.book.cover = results[0]
-        await this.db.updateAudiobook(audiobook)
-        found++
-        this.emitter('audiobook_updated', audiobook.toJSONMinified())
+        var coverUrl = results[0]
+        var result = await this.coverController.downloadCoverFromUrl(audiobook, coverUrl)
+        if (result.error) {
+          failed++
+        } else {
+          found++
+          await this.db.updateAudiobook(audiobook)
+          this.emitter('audiobook_updated', audiobook.toJSONMinified())
+        }
       } else {
         notFound++
       }

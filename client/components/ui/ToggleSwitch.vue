@@ -30,7 +30,7 @@ export default {
       }
     },
     className() {
-      if (this.disabled) return 'bg-bg cursor-not-allowed'
+      if (this.disabled) return this.toggleValue ? `bg-${this.onColor} cursor-not-allowed` : `bg-${this.offColor} cursor-not-allowed`
       return this.toggleValue ? `bg-${this.onColor}` : `bg-${this.offColor}`
     },
     switchClassName() {

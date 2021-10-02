@@ -8,7 +8,6 @@ const imageType = require('image-type')
 const globals = require('./utils/globals')
 const { CoverDestination } = require('./utils/constants')
 
-
 class CoverController {
   constructor(db, MetadataPath, AudiobookPath) {
     this.db = db
@@ -52,8 +51,8 @@ class CoverController {
     }
   }
 
-  // Remove covers in metadata/books/{ID} that dont have the same filename as the new cover
-  async checkBookMetadataCovers(dirpath, newCoverExt) {
+  // Remove covers that dont have the same filename as the new cover
+  async removeOldCovers(dirpath, newCoverExt) {
     var filesInDir = await this.getFilesInDirectory(dirpath)
 
     for (let i = 0; i < filesInDir.length; i++) {
@@ -97,16 +96,10 @@ class CoverController {
 
     var { fullPath, relPath } = this.getCoverDirectory(audiobook)
     await fs.ensureDir(fullPath)
-    var isStoringInMetadata = relPath.slice(1).startsWith('metadata')
 
     var coverFilename = `cover${extname}`
     var coverFullPath = Path.join(fullPath, coverFilename)
     var coverPath = Path.join(relPath, coverFilename)
-
-
-    if (isStoringInMetadata) {
-      await this.checkBookMetadataCovers(fullPath, extname)
-    }
 
     // Move cover from temp upload dir to destination
     var success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
@@ -115,11 +108,12 @@ class CoverController {
     })
 
     if (!success) {
-      // return res.status(500).send('Failed to move cover into destination')
       return {
         error: 'Failed to move cover into destination'
       }
     }
+
+    await this.removeOldCovers(fullPath, extname)
 
     Logger.info(`[CoverController] Uploaded audiobook cover "${coverPath}" for "${audiobook.title}"`)
 
@@ -171,10 +165,7 @@ class CoverController {
       var coverFullPath = Path.join(fullPath, coverFilename)
       await fs.rename(temppath, coverFullPath)
 
-      var isStoringInMetadata = relPath.slice(1).startsWith('metadata')
-      if (isStoringInMetadata) {
-        await this.checkBookMetadataCovers(fullPath, '.' + imgtype.ext)
-      }
+      await this.removeOldCovers(fullPath, '.' + imgtype.ext)
 
       Logger.info(`[CoverController] Downloaded audiobook cover "${coverPath}" from url "${url}" for "${audiobook.title}"`)
 
