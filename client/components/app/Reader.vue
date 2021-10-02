@@ -70,7 +70,7 @@ export default {
       }
     },
     fullUrl() {
-      var serverUrl = process.env.serverUrl
+      var serverUrl = process.env.serverUrl || '/local'
       return `${serverUrl}/${this.url}`
     }
   },

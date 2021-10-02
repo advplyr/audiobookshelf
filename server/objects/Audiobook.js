@@ -390,6 +390,7 @@ class Audiobook {
         this.addTrack(file)
       }
     })
+    this.setChapters()
     this.lastUpdate = Date.now()
   }
 

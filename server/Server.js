@@ -439,18 +439,21 @@ class Server {
     })
   }
 
-  testFileSystem(req, res) {
+  async testFileSystem(req, res) {
     Logger.debug(`[Server] Running fs test`)
-    var paths = fs.readdir(global.appRoot)
+    var paths = await fs.readdir(global.appRoot)
     Logger.debug(paths)
     var pathMap = {}
     if (paths && paths.length) {
       for (let i = 0; i < paths.length; i++) {
         var fullPath = Path.join(global.appRoot, paths[i])
         Logger.debug('Checking path', fullPath)
-        var _paths = fs.readdir(fullPath)
-        Logger.debug(_paths)
-        pathMap[paths[i]] = _paths
+        var isDirectory = fs.lstatSync(fullPath).isDirectory()
+        if (isDirectory) {
+          var _paths = await fs.readdir(fullPath)
+          Logger.debug(_paths)
+          pathMap[paths[i]] = _paths
+        }
       }
     }
     Logger.debug('Finished fs test')
