@@ -42,9 +42,9 @@
         <div class="flex items-start py-2">
           <div class="py-2">
             <div class="flex items-center">
-              <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" @input="updateScannerParseSubtitle" />
+              <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
               <ui-tooltip :text="parseSubtitleTooltip">
-                <p class="pl-4 text-lg">Parse Subtitles <span class="material-icons icon-text">info_outlined</span></p>
+                <p class="pl-4 text-lg">Parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
               </ui-tooltip>
             </div>
           </div>
@@ -53,12 +53,30 @@
             <ui-btn color="success" class="mb-4" :loading="isScanning" :disabled="isScanningCovers" @click="scan">Scan</ui-btn>
 
             <div class="w-full mb-4">
-              <ui-tooltip direction="bottom" text="Only scans audiobooks without a cover. Covers will be applied if a close match is found." class="w-full">
+              <ui-tooltip direction="bottom" text="(Warning: Long running task!) Attempts to lookup and match a cover with all audiobooks that don't have one." class="w-full">
                 <ui-btn color="primary" class="w-full" small :padding-x="2" :loading="isScanningCovers" :disabled="isScanning" @click="scanCovers">Scan for Covers</ui-btn>
               </ui-tooltip>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- <ui-btn color="primary" small @click="saveMetadataFiles">Save Metadata</ui-btn> -->
+      <div class="py-4 mb-4">
+        <p class="text-2xl">Metadata</p>
+        <div class="flex items-start py-2">
+          <div class="py-2">
+            <div class="flex items-center">
+              <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
+              <ui-tooltip :text="coverDestinationTooltip">
+                <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
+              </ui-tooltip>
+            </div>
+          </div>
+          <div class="flex-grow" />
+          <div class="w-40 flex flex-col">
+            <ui-tooltip :text="saveMetadataTooltip" direction="bottom" class="w-full">
+              <ui-btn color="primary" small class="w-full" @click="saveMetadataFiles">Save Metadata</ui-btn>
+            </ui-tooltip>
           </div>
         </div>
       </div>
@@ -101,24 +119,33 @@ export default {
   },
   data() {
     return {
+      storeCoversInAudiobookDir: false,
       isResettingAudiobooks: false,
       users: [],
       selectedAccount: null,
       showAccountModal: false,
       isDeletingUser: false,
-      newServerSettings: {}
+      newServerSettings: {},
+      updatingServerSettings: false
     }
   },
   watch: {
     serverSettings(newVal, oldVal) {
       if (newVal && !oldVal) {
         this.newServerSettings = { ...this.serverSettings }
+        this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
       }
     }
   },
   computed: {
     parseSubtitleTooltip() {
       return 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"'
+    },
+    coverDestinationTooltip() {
+      return 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.'
+    },
+    saveMetadataTooltip() {
+      return 'This will write a "metadata.nfo" file in all of your audiobook directories.'
     },
     serverSettings() {
       return this.$store.state.serverSettings
@@ -134,6 +161,12 @@ export default {
     }
   },
   methods: {
+    updateCoverStorageDestination(val) {
+      this.newServerSettings.coverDestination = val ? this.$constants.CoverDestination.AUDIOBOOK : this.$constants.CoverDestination.METADATA
+      this.updateServerSettings({
+        coverDestination: this.newServerSettings.coverDestination
+      })
+    },
     updateScannerParseSubtitle(val) {
       var payload = {
         scannerParseSubtitle: val
@@ -141,13 +174,16 @@ export default {
       this.updateServerSettings(payload)
     },
     updateServerSettings(payload) {
+      this.updatingServerSettings = true
       this.$store
         .dispatch('updateServerSettings', payload)
         .then((success) => {
           console.log('Updated Server Settings', success)
+          this.updatingServerSettings = false
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
+          this.updatingServerSettings = false
         })
     },
     setDeveloperMode() {
@@ -161,7 +197,14 @@ export default {
     scanCovers() {
       this.$root.socket.emit('scan_covers')
     },
+    saveMetadataComplete(result) {
+      this.savingMetadata = false
+      if (!result) return
+      this.$toast.success(`Metadata saved for ${result.success} audiobooks`)
+    },
     saveMetadataFiles() {
+      this.savingMetadata = true
+      this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
       this.$root.socket.emit('save_metadata')
     },
     loadUsers() {
@@ -247,6 +290,7 @@ export default {
       this.$root.socket.on('user_removed', this.userRemoved)
 
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
+      this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
     }
   },
   mounted() {
