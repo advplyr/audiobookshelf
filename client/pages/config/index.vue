@@ -37,7 +37,7 @@
 
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
 
-      <div class="py-4 mb-4">
+      <div class="py-4">
         <p class="text-2xl">Scanner</p>
         <div class="flex items-start py-2">
           <div class="py-2">
@@ -60,6 +60,8 @@
           </div>
         </div>
       </div>
+
+      <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
 
       <div class="py-4 mb-4">
         <p class="text-2xl">Metadata</p>
@@ -103,7 +105,27 @@
           </svg>
         </a>
       </div>
+
+      <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
+
+      <div class="py-12 mb-4 opacity-60 hover:opacity-100">
+        <div class="flex items-center">
+          <div>
+            <div class="flex items-center">
+              <ui-toggle-switch v-model="showExperimentalFeatures" @input="toggleShowExperimentalFeatures" />
+              <ui-tooltip :text="experimentalFeaturesTooltip">
+                <p class="pl-4 text-lg">Experimental Features <span class="material-icons icon-text">info_outlined</span></p>
+              </ui-tooltip>
+            </div>
+          </div>
+          <!-- <div class="flex-grow" /> -->
+          <div>
+            <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
+          </div>
+        </div>
+      </div>
     </div>
+
     <div class="fixed bottom-0 left-0 w-10 h-10" @dblclick="setDeveloperMode"></div>
 
     <modals-account-modal v-model="showAccountModal" :account="selectedAccount" />
@@ -147,6 +169,9 @@ export default {
     saveMetadataTooltip() {
       return 'This will write a "metadata.nfo" file in all of your audiobook directories.'
     },
+    experimentalFeaturesTooltip() {
+      return 'Features in development that could use your feedback and help testing.'
+    },
     serverSettings() {
       return this.$store.state.serverSettings
     },
@@ -158,9 +183,15 @@ export default {
     },
     isScanningCovers() {
       return this.$store.state.isScanningCovers
+    },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
+    toggleShowExperimentalFeatures() {
+      this.$store.commit('setExperimentalFeatures', !this.showExperimentalFeatures)
+    },
     updateCoverStorageDestination(val) {
       this.newServerSettings.coverDestination = val ? this.$constants.CoverDestination.AUDIOBOOK : this.$constants.CoverDestination.METADATA
       this.updateServerSettings({
@@ -190,6 +221,15 @@ export default {
       var value = !this.$store.state.developerMode
       this.$store.commit('setDeveloperMode', value)
       this.$toast.info(`Developer Mode ${value ? 'Enabled' : 'Disabled'}`)
+
+      this.$axios
+        .$get('/test-fs')
+        .then((res) => {
+          console.log('Test FS Result', res)
+        })
+        .catch((error) => {
+          console.error('Failed to test FS', error)
+        })
     },
     scan() {
       this.$root.socket.emit('scan')

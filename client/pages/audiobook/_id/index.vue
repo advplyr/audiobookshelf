@@ -42,10 +42,10 @@
               Missing
             </ui-btn>
 
-            <!-- <ui-btn v-if="ebooks.length" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showExperimentalFeatures && epubEbook" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
-            </ui-btn> -->
+            </ui-btn>
 
             <ui-tooltip v-if="userCanUpdate" text="Edit" direction="top">
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
@@ -91,9 +91,9 @@
           <tables-other-files-table v-if="otherFiles.length" :audiobook-id="audiobook.id" :files="otherFiles" class="mt-6" />
         </div>
       </div>
-
-      <div id="area"></div>
     </div>
+
+    <app-reader v-if="showExperimentalFeatures" v-model="showReader" :url="epubUrl" />
   </div>
 </template>
 
@@ -117,6 +117,7 @@ export default {
   },
   data() {
     return {
+      showReader: false,
       isRead: false,
       resettingProgress: false,
       isProcessingReadUpdate: false
@@ -133,6 +134,9 @@ export default {
   computed: {
     isDeveloperMode() {
       return this.$store.state.developerMode
+    },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
     },
     missingPartChunks() {
       if (this.missingParts === 1) return this.missingParts[0]
@@ -233,6 +237,12 @@ export default {
     ebooks() {
       return this.audiobook.ebooks
     },
+    epubEbook() {
+      return this.audiobook.ebooks.find((eb) => eb.ext === '.epub')
+    },
+    epubUrl() {
+      return this.epubEbook ? this.epubEbook.path : null
+    },
     description() {
       return this.book.description || ''
     },
@@ -272,16 +282,7 @@ export default {
   },
   methods: {
     openEbook() {
-      var ebook = this.ebooks[0]
-      console.log('Ebook', ebook)
-      this.$axios
-        .$get(`/ebook/open/${this.audiobookId}/${ebook.ino}`)
-        .then(() => {
-          console.log('opened')
-        })
-        .catch((error) => {
-          console.error('failed', error)
-        })
+      this.showReader = true
     },
     toggleRead() {
       var updatePayload = {

@@ -50,6 +50,11 @@ class Stream extends EventEmitter {
     return this.audiobook.totalDuration
   }
 
+  get tracksAudioFileType() {
+    if (!this.tracks.length) return null
+    return this.tracks[0].ext.toLowerCase().slice(1)
+  }
+
   get hlsSegmentType() {
     var hasFlac = this.tracks.find(t => t.ext.toLowerCase() === '.flac')
     return hasFlac ? 'fmp4' : 'mpegts'
@@ -247,7 +252,7 @@ class Stream extends EventEmitter {
     }
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
-    const audioCodec = this.hlsSegmentType === 'fmp4' ? 'aac' : 'copy'
+    const audioCodec = (this.hlsSegmentType === 'fmp4' || this.tracksAudioFileType === 'opus') ? 'aac' : 'copy'
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,
       '-map 0:a',

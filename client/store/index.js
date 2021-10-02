@@ -17,7 +17,8 @@ export const state = () => ({
   selectedAudiobooks: [],
   processingBatch: false,
   previousPath: '/',
-  routeHistory: []
+  routeHistory: [],
+  showExperimentalFeatures: false
 })
 
 export const getters = {
@@ -146,5 +147,8 @@ export const mutations = {
   },
   setProcessingBatch(state, val) {
     state.processingBatch = val
+  },
+  setExperimentalFeatures(state, val) {
+    state.showExperimentalFeatures = val
   }
 }
