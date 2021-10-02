@@ -115,6 +115,10 @@ class Audiobook {
     return this.otherFiles.filter(file => file.filetype === 'ebook')
   }
 
+  get hasEpub() {
+    return this.otherFiles.find(file => file.ext === '.epub')
+  }
+
   get hasMissingIno() {
     return !this.ino || this._audioFiles.find(abf => !abf.ino) || this._otherFiles.find(f => !f.ino) || (this.tracks || []).find(t => !t.ino)
   }
@@ -173,7 +177,8 @@ class Audiobook {
       hasBookMatch: !!this.book,
       hasMissingParts: this.missingParts ? this.missingParts.length : 0,
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
-      numEbooks: this.ebooks.length,
+      // numEbooks: this.ebooks.length,
+      numEbooks: this.hasEpub ? 1 : 0,
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing

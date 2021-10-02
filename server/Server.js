@@ -18,7 +18,6 @@ const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
-// const EbookReader = require('./EbookReader')
 const Logger = require('./Logger')
 
 class Server {
@@ -43,8 +42,6 @@ class Server {
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
-
-    // this.ebookReader = new EbookReader(this.db, this.MetadataPath, this.AudiobookPath)
 
     this.server = null
     this.io = null
@@ -277,7 +274,6 @@ class Server {
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
 
     // Incomplete work in progress
-    // app.use('/ebook', this.ebookReader.router)
     // app.use('/feeds', this.rssFeeds.router)
 
     app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))
@@ -291,6 +287,8 @@ class Server {
       Logger.info('Recieved ping')
       res.json({ success: true })
     })
+
+    app.get('/test-fs', this.authMiddleware.bind(this), this.testFileSystem.bind(this))
 
     // Used in development to set-up streams without authentication
     if (process.env.NODE_ENV !== 'production') {
@@ -439,6 +437,24 @@ class Server {
         resolve()
       })
     })
+  }
+
+  testFileSystem(req, res) {
+    Logger.debug(`[Server] Running fs test`)
+    var paths = fs.readdir(global.appRoot)
+    Logger.debug(paths)
+    var pathMap = {}
+    if (paths && paths.length) {
+      for (let i = 0; i < paths.length; i++) {
+        var fullPath = Path.join(global.appRoot, paths[i])
+        Logger.debug('Checking path', fullPath)
+        var _paths = fs.readdir(fullPath)
+        Logger.debug(_paths)
+        pathMap[paths[i]] = _paths
+      }
+    }
+    Logger.debug('Finished fs test')
+    res.json(pathMap)
   }
 }
 module.exports = Server
