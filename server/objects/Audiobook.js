@@ -437,7 +437,10 @@ class Audiobook {
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
 
     // Some files are not there anymore and filtered out
-    if (currOtherFileNum !== this.otherFiles.length) hasUpdates = true
+    if (currOtherFileNum !== this.otherFiles.length) {
+      Logger.debug(`[Audiobook] ${currOtherFileNum - this.otherFiles.length} other files were removed for "${this.title}"`)
+      hasUpdates = true
+    }
 
     // If desc.txt is new or forcing rescan then read it and update description if empty
     var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
