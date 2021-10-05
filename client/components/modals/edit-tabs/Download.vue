@@ -4,7 +4,6 @@
     <div class="w-full border border-black-200 p-4 my-4">
       <div class="flex items-center">
         <div>
-          <!-- <p class="text-lg">{{ isSingleTrack ? 'Single Track' : 'M4B Audiobook File' }}</p> -->
           <p class="text-lg">M4B Audiobook File <span class="text-error">*</span></p>
           <p class="max-w-xs text-sm pt-2 text-gray-300">Generate a .M4B audiobook file with embedded cover image and chapters.</p>
         </div>
@@ -14,7 +13,6 @@
           <p v-if="singleDownloadStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
           <p v-if="singleDownloadStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
 
-          <!-- <a v-if="isSingleTrack" :href="`/local/${singleTrackPath}`" class="btn outline-none rounded-md shadow-md relative border border-gray-600 px-4 py-2 bg-primary">Download Track</a> -->
           <ui-btn v-if="singleDownloadStatus !== $constants.DownloadStatus.READY" :loading="singleDownloadStatus === $constants.DownloadStatus.PENDING" :disabled="tempDisable" @click="startSingleAudioDownload">Start Download</ui-btn>
           <div v-else>
             <ui-btn @click="downloadWithProgress(singleAudioDownload)">Download</ui-btn>

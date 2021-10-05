@@ -8,6 +8,7 @@ class ServerSettings {
     this.autoTagNew = false
     this.newTagExpireDays = 15
     this.scannerParseSubtitle = false
+    this.scannerFindCovers = false
     this.coverDestination = CoverDestination.METADATA
     this.saveMetadataFile = false
     this.rateLimitLoginRequests = 10
@@ -22,6 +23,7 @@ class ServerSettings {
   construct(settings) {
     this.autoTagNew = settings.autoTagNew
     this.newTagExpireDays = settings.newTagExpireDays
+    this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.coverDestination = settings.coverDestination || CoverDestination.METADATA
     this.saveMetadataFile = !!settings.saveMetadataFile
@@ -39,6 +41,7 @@ class ServerSettings {
       id: this.id,
       autoTagNew: this.autoTagNew,
       newTagExpireDays: this.newTagExpireDays,
+      scannerFindCovers: this.scannerFindCovers,
       scannerParseSubtitle: this.scannerParseSubtitle,
       coverDestination: this.coverDestination,
       saveMetadataFile: !!this.saveMetadataFile,

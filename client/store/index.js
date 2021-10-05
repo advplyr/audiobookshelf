@@ -9,10 +9,10 @@ export const state = () => ({
   showEditModal: false,
   selectedAudiobook: null,
   playOnLoad: false,
-  isScanning: false,
-  isScanningCovers: false,
-  scanProgress: null,
-  coverScanProgress: null,
+  // isScanning: false,
+  // isScanningCovers: false,
+  // scanProgress: null,
+  // coverScanProgress: null,
   developerMode: false,
   selectedAudiobooks: [],
   processingBatch: false,
@@ -113,20 +113,20 @@ export const mutations = {
   setShowEditModal(state, val) {
     state.showEditModal = val
   },
-  setIsScanning(state, isScanning) {
-    state.isScanning = isScanning
-  },
-  setScanProgress(state, scanProgress) {
-    if (scanProgress && scanProgress.progress > 0) state.isScanning = true
-    state.scanProgress = scanProgress
-  },
-  setIsScanningCovers(state, isScanningCovers) {
-    state.isScanningCovers = isScanningCovers
-  },
-  setCoverScanProgress(state, coverScanProgress) {
-    if (coverScanProgress && coverScanProgress.progress > 0) state.isScanningCovers = true
-    state.coverScanProgress = coverScanProgress
-  },
+  // setIsScanning(state, isScanning) {
+  //   state.isScanning = isScanning
+  // },
+  // setScanProgress(state, scanProgress) {
+  //   if (scanProgress && scanProgress.progress > 0) state.isScanning = true
+  //   state.scanProgress = scanProgress
+  // },
+  // setIsScanningCovers(state, isScanningCovers) {
+  //   state.isScanningCovers = isScanningCovers
+  // },
+  // setCoverScanProgress(state, coverScanProgress) {
+  //   if (coverScanProgress && coverScanProgress.progress > 0) state.isScanningCovers = true
+  //   state.coverScanProgress = coverScanProgress
+  // },
   setDeveloperMode(state, val) {
     state.developerMode = val
   },

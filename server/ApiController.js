@@ -4,9 +4,10 @@ const fs = require('fs-extra')
 const Logger = require('./Logger')
 const User = require('./objects/User')
 const { isObject } = require('./utils/index')
+const Library = require('./objects/Library')
 
 class ApiController {
-  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, emitter, clientEmitter) {
+  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, watcher, emitter, clientEmitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
@@ -14,6 +15,7 @@ class ApiController {
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
     this.coverController = coverController
+    this.watcher = watcher
     this.emitter = emitter
     this.clientEmitter = clientEmitter
     this.MetadataPath = MetadataPath
@@ -26,7 +28,14 @@ class ApiController {
     this.router.get('/find/covers', this.findCovers.bind(this))
     this.router.get('/find/:method', this.find.bind(this))
 
-    this.router.get('/audiobooks', this.getAudiobooks.bind(this))
+    this.router.get('/libraries', this.getLibraries.bind(this))
+    this.router.get('/library/:id', this.getLibrary.bind(this))
+    this.router.delete('/library/:id', this.deleteLibrary.bind(this))
+    this.router.patch('/library/:id', this.updateLibrary.bind(this))
+    this.router.get('/library/:id/audiobooks', this.getLibraryAudiobooks.bind(this))
+    this.router.post('/library', this.createNewLibrary.bind(this))
+
+    this.router.get('/audiobooks', this.getAudiobooks.bind(this)) // Old route should pass library id
     this.router.delete('/audiobooks', this.deleteAllAudiobooks.bind(this))
     this.router.post('/audiobooks/delete', this.batchDeleteAudiobooks.bind(this))
     this.router.post('/audiobooks/update', this.batchUpdateAudiobooks.bind(this))
@@ -59,6 +68,8 @@ class ApiController {
     this.router.post('/feed', this.openRssFeed.bind(this))
 
     this.router.get('/download/:id', this.download.bind(this))
+
+    this.router.get('/filesystem', this.getFileSystemPaths.bind(this))
   }
 
   find(req, res) {
@@ -75,6 +86,102 @@ class ApiController {
       return res.sendStatus(401)
     }
     res.json({ user: req.user })
+  }
+
+  getLibraries(req, res) {
+    var libraries = this.db.libraries.map(lib => lib.toJSON())
+    res.json(libraries)
+  }
+
+  getLibrary(req, res) {
+    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    return res.json(library.toJSON())
+  }
+
+  async deleteLibrary(req, res) {
+    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+
+    // Remove library watcher
+    this.watcher.removeLibrary(library)
+
+    // Remove audiobooks in this library
+    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    Logger.info(`[Server] deleting library "${library.name}" with ${audiobooks.length} audiobooks"`)
+    for (let i = 0; i < audiobooks.length; i++) {
+      await this.handleDeleteAudiobook(audiobooks[i])
+    }
+
+    var libraryJson = library.toJSON()
+    await this.db.removeEntity('library', library.id)
+    this.emitter('library_removed', libraryJson)
+    return res.json(libraryJson)
+  }
+
+  async updateLibrary(req, res) {
+    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    var hasUpdates = library.update(req.body)
+    if (hasUpdates) {
+      // Update watcher
+      this.watcher.updateLibrary(library)
+
+      // Remove audiobooks no longer in library
+      var audiobooksToRemove = this.db.audiobooks.filter(ab => !library.checkFullPathInLibrary(ab.fullPath))
+      if (audiobooksToRemove.length) {
+        Logger.info(`[Scanner] Updating library, removing ${audiobooksToRemove.length} audiobooks`)
+        for (let i = 0; i < audiobooksToRemove.length; i++) {
+          await this.handleDeleteAudiobook(audiobooksToRemove[i])
+        }
+      }
+      await this.db.updateEntity('library', library)
+      this.emitter('library_updated', library.toJSON())
+    }
+    return res.json(library.toJSON())
+  }
+
+  getLibraryAudiobooks(req, res) {
+    var libraryId = req.params.id
+    var library = this.db.libraries.find(lib => lib.id === libraryId)
+    if (!library) {
+      return res.status(400).send('Library does not exist')
+    }
+
+    var audiobooks = []
+    if (req.query.q) {
+      audiobooks = this.db.audiobooks.filter(ab => {
+        return ab.libraryId === libraryId && ab.isSearchMatch(req.query.q)
+      }).map(ab => ab.toJSONMinified())
+    } else {
+      audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId).map(ab => ab.toJSONMinified())
+    }
+    res.json(audiobooks)
+  }
+
+  async createNewLibrary(req, res) {
+    var newLibraryPayload = {
+      ...req.body
+    }
+    if (!newLibraryPayload.name || !newLibraryPayload.folders || !newLibraryPayload.folders.length) {
+      return res.status(500).send('Invalid request')
+    }
+
+    var library = new Library()
+    library.setData(newLibraryPayload)
+    await this.db.insertEntity('library', library)
+    this.emitter('library_added', library.toJSON())
+
+    // Add library watcher
+    this.watcher.addLibrary(library)
+
+    res.json(library)
   }
 
   getAudiobooks(req, res) {
@@ -370,7 +477,7 @@ class ApiController {
     account.token = await this.auth.generateAccessToken({ userId: account.id })
     account.createdAt = Date.now()
     var newUser = new User(account)
-    var success = await this.db.insertUser(newUser)
+    var success = await this.db.insertEntity('user', newUser)
     if (success) {
       this.clientEmitter(req.user.id, 'user_added', newUser)
       res.json({
@@ -491,6 +598,50 @@ class ApiController {
     res.json({
       genres: this.db.getGenres()
     })
+  }
+
+  async getDirectories(dir, relpath, excludedDirs, level = 0) {
+    try {
+      var paths = await fs.readdir(dir)
+
+      var dirs = await Promise.all(paths.map(async dirname => {
+        var fullPath = Path.join(dir, dirname)
+        var path = Path.join(relpath, dirname)
+
+        var isDir = (await fs.lstat(fullPath)).isDirectory()
+        if (isDir && !excludedDirs.includes(dirname)) {
+          return {
+            path,
+            dirname,
+            fullPath,
+            level,
+            dirs: level < 4 ? (await this.getDirectories(fullPath, path, excludedDirs, level + 1)) : []
+          }
+        } else {
+          return false
+        }
+      }))
+      dirs = dirs.filter(d => d)
+      return dirs
+    } catch (error) {
+      Logger.error('Failed to readdir', dir, error)
+      return []
+    }
+  }
+
+  async getFileSystemPaths(req, res) {
+    var excludedDirs = ['node_modules', 'client', 'server', '.git', 'static', 'build', 'dist', 'metadata', 'config', 'sys', 'proc']
+
+    // Do not include existing mapped library paths in response
+    this.db.libraries.forEach(lib => {
+      lib.folders.forEach((folder) => {
+        excludedDirs.push(Path.basename(folder.fullPath))
+      })
+    })
+
+    Logger.debug(`[Server] get file system paths, excluded: ${excludedDirs.join(', ')}`)
+    var dirs = await this.getDirectories(global.appRoot, '/', excludedDirs)
+    res.json(dirs)
   }
 }
 module.exports = ApiController

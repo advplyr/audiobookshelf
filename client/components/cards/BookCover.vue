@@ -79,7 +79,7 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      return this.$store.getters['audiobooks/getBookCoverSrc'](this.book, this.placeholderUrl)
+      return this.$store.getters['audiobooks/getBookCoverSrc'](this.audiobook, this.placeholderUrl)
     },
     cover() {
       return this.book.cover || this.placeholderUrl

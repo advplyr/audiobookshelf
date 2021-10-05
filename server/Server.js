@@ -6,8 +6,13 @@ const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
 
-const { ScanResult } = require('./utils/constants')
+const { version } = require('../package.json')
 
+// Utils
+const { ScanResult } = require('./utils/constants')
+const Logger = require('./Logger')
+
+// Classes
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./Scanner')
@@ -18,7 +23,7 @@ const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
-const Logger = require('./Logger')
+
 
 class Server {
   constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -32,7 +37,7 @@ class Server {
     fs.ensureDirSync(METADATA_PATH)
     fs.ensureDirSync(AUDIOBOOK_PATH)
 
-    this.db = new Db(this.ConfigPath)
+    this.db = new Db(this.ConfigPath, this.AudiobookPath)
     this.auth = new Auth(this.db)
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
@@ -40,21 +45,23 @@ class Server {
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
+    this.expressApp = null
     this.server = null
     this.io = null
 
     this.clients = {}
 
-    this.isScanning = false
     this.isScanningCovers = false
-    this.isInitialized = false
   }
 
   get audiobooks() {
     return this.db.audiobooks
+  }
+  get libraries() {
+    return this.db.libraries
   }
   get serverSettings() {
     return this.db.serverSettings
@@ -81,86 +88,8 @@ class Server {
     })
   }
 
-  async filesChanged(files) {
-    Logger.info('[Server]', files.length, 'Files Changed')
-    var result = await this.scanner.filesChanged(files)
-    Logger.debug('[Server] Files changed result', result)
-  }
-
-  async scan(forceAudioFileScan = false) {
-    Logger.info('[Server] Starting Scan')
-    this.isScanning = true
-    this.isInitialized = true
-    this.emitter('scan_start', 'files')
-    var results = await this.scanner.scan(forceAudioFileScan)
-    this.isScanning = false
-    this.emitter('scan_complete', { scanType: 'files', results })
-    Logger.info('[Server] Scan complete')
-  }
-
-  async scanAudiobook(socket, audiobookId) {
-    var result = await this.scanner.scanAudiobookById(audiobookId)
-    var scanResultName = ''
-    for (const key in ScanResult) {
-      if (ScanResult[key] === result) {
-        scanResultName = key
-      }
-    }
-    socket.emit('audiobook_scan_complete', scanResultName)
-  }
-
-  async scanCovers() {
-    Logger.info('[Server] Start cover scan')
-    this.isScanningCovers = true
-    this.emitter('scan_start', 'covers')
-    var results = await this.scanner.scanCovers()
-    this.isScanningCovers = false
-    this.emitter('scan_complete', { scanType: 'covers', results })
-    Logger.info('[Server] Cover scan complete')
-  }
-
-  cancelScan() {
-    if (!this.isScanningCovers && !this.isScanning) return
-    this.scanner.cancelScan = true
-  }
-
-  // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
-  async saveMetadata(socket, audiobookId = null) {
-    Logger.info('[Server] Starting save metadata files')
-    var response = await this.scanner.saveMetadata(audiobookId)
-    Logger.info(`[Server] Finished saving metadata files Successful: ${response.success}, Failed: ${response.failed}`)
-    socket.emit('save_metadata_complete', response)
-  }
-
-  // Remove unused /metadata/books/{id} folders
-  async purgeMetadata() {
-    var booksMetadata = Path.join(this.MetadataPath, 'books')
-    var booksMetadataExists = await fs.pathExists(booksMetadata)
-    if (!booksMetadataExists) return
-    var foldersInBooksMetadata = await fs.readdir(booksMetadata)
-
-    var purged = 0
-    await Promise.all(foldersInBooksMetadata.map(async foldername => {
-      var hasMatchingAudiobook = this.audiobooks.find(ab => ab.id === foldername)
-      if (!hasMatchingAudiobook) {
-        var folderPath = Path.join(booksMetadata, foldername)
-        Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
-
-        await fs.remove(folderPath).then(() => {
-          purged++
-        }).catch((err) => {
-          Logger.error(`[Server] Failed to delete folder path ${folderPath}`, err)
-        })
-      }
-    }))
-    if (purged > 0) {
-      Logger.info(`[Server] Purged ${purged} unused audiobook metadata`)
-    }
-    return purged
-  }
-
   async init() {
-    Logger.info('[Server] Init')
+    Logger.info('[Server] Init v' + version)
     await this.streamManager.ensureStreamsDir()
     await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
@@ -170,72 +99,8 @@ class Server {
 
     await this.purgeMetadata()
 
-    this.watcher.initWatcher()
+    this.watcher.initWatcher(this.libraries)
     this.watcher.on('files', this.filesChanged.bind(this))
-  }
-
-  authMiddleware(req, res, next) {
-    this.auth.authMiddleware(req, res, next)
-  }
-
-  async handleUpload(req, res) {
-    if (!req.user.canUpload) {
-      Logger.warn('User attempted to upload without permission', req.user)
-      return res.sendStatus(403)
-    }
-    var files = Object.values(req.files)
-    var title = req.body.title
-    var author = req.body.author
-    var series = req.body.series
-
-    if (!files.length || !title || !author) {
-      return res.json({
-        error: 'Invalid post data received'
-      })
-    }
-
-    var outputDirectory = ''
-    if (series && series.length && series !== 'null') {
-      outputDirectory = Path.join(this.AudiobookPath, author, series, title)
-    } else {
-      outputDirectory = Path.join(this.AudiobookPath, author, title)
-    }
-
-    var exists = await fs.pathExists(outputDirectory)
-    if (exists) {
-      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.json({
-        error: `Directory "${outputDirectory}" already exists`
-      })
-    }
-
-    await fs.ensureDir(outputDirectory)
-    Logger.info(`Uploading ${files.length} files to`, outputDirectory)
-
-    for (let i = 0; i < files.length; i++) {
-      var file = files[i]
-
-      var path = Path.join(outputDirectory, file.name)
-      await file.mv(path).catch((error) => {
-        Logger.error('Failed to move file', path, error)
-      })
-    }
-    res.sendStatus(200)
-  }
-
-  // First time login rate limit is hit
-  loginLimitReached(req, res, options) {
-    Logger.error(`[Server] Login rate limit (${options.max}) was hit for ip ${req.ip}`)
-    options.message = 'Too many attempts. Login temporarily locked.'
-  }
-
-  getLoginRateLimiter() {
-    return rateLimit({
-      windowMs: this.db.serverSettings.rateLimitLoginWindow, // 5 minutes
-      max: this.db.serverSettings.rateLimitLoginRequests,
-      skipSuccessfulRequests: true,
-      onLimitReached: this.loginLimitReached
-    })
   }
 
   async start() {
@@ -243,32 +108,57 @@ class Server {
     await this.init()
 
     const app = express()
+    this.expressApp = app
 
     this.server = http.createServer(app)
 
     app.use(this.auth.cors)
     app.use(fileUpload())
-
-    // Static path to generated nuxt
-    const distPath = Path.join(global.appRoot, '/client/dist')
-    if (process.env.NODE_ENV === 'production') {
-      app.use(express.static(distPath))
-      app.use('/local', express.static(this.AudiobookPath))
-    } else {
-      app.use(express.static(this.AudiobookPath))
-    }
-
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
-
-    app.use(express.static(this.MetadataPath))
-    app.use(express.static(Path.join(global.appRoot, 'static')))
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
 
-    // Dynamic routes are not generated on client
+    // Static path to generated nuxt
+    const distPath = Path.join(global.appRoot, '/client/dist')
+    app.use(express.static(distPath))
+
+    // Old static path for covers
+    app.use('/local', this.authMiddleware.bind(this), express.static(this.AudiobookPath))
+
+    // Metadata folder static path
+    app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
+
+    // Static folder
+    app.use(express.static(Path.join(global.appRoot, 'static')))
+
+    // Static file routes
+    app.get('/lib/:library/:folder/*', this.authMiddleware.bind(this), (req, res) => {
+      var library = this.libraries.find(lib => lib.id === req.params.library)
+      if (!library) return res.sendStatus(404)
+      var folder = library.folders.find(fol => fol.id === req.params.folder)
+      if (!folder) return res.status(404).send('Folder not found')
+
+      var remainingPath = decodeURIComponent(req.params['0'])
+
+      var fullPath = Path.join(folder.fullPath, remainingPath)
+      res.sendFile(fullPath)
+    })
+
+    // Book static file routes
+    app.get('/s/book/:id/*', this.authMiddleware.bind(this), (req, res) => {
+      var audiobook = this.audiobooks.find(ab => ab.id === req.params.id)
+      if (!audiobook) return res.status(404).send('Book not found with id ' + req.params.id)
+
+      var remainingPath = decodeURIComponent(req.params['0'])
+
+      var fullPath = Path.join(audiobook.fullPath, remainingPath)
+      res.sendFile(fullPath)
+    })
+
+    // Client routes
     app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:library/bookshelf/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
@@ -368,6 +258,143 @@ class Server {
     })
   }
 
+  async filesChanged(fileUpdates) {
+    Logger.info('[Server]', fileUpdates.length, 'Files Changed')
+    await this.scanner.filesChanged(fileUpdates)
+    // Logger.debug('[Server] Files changed result', result)
+  }
+
+  async scan(libraryId, forceAudioFileScan = false) {
+    Logger.info('[Server] Starting Scan')
+    await this.scanner.scan(libraryId, forceAudioFileScan)
+    Logger.info('[Server] Scan complete')
+  }
+
+  async scanAudiobook(socket, audiobookId) {
+    var result = await this.scanner.scanAudiobookById(audiobookId)
+    var scanResultName = ''
+    for (const key in ScanResult) {
+      if (ScanResult[key] === result) {
+        scanResultName = key
+      }
+    }
+    socket.emit('audiobook_scan_complete', scanResultName)
+  }
+
+  async scanCovers() {
+    Logger.info('[Server] Start cover scan')
+    this.isScanningCovers = true
+    // this.emitter('scan_start', 'covers')
+    var results = await this.scanner.scanCovers()
+    this.isScanningCovers = false
+    // this.emitter('scan_complete', { scanType: 'covers', results })
+    Logger.info('[Server] Cover scan complete')
+  }
+
+  cancelScan(id) {
+    console.log('Cancel scan', id)
+    this.scanner.cancelLibraryScan[id] = true
+  }
+
+  // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
+  async saveMetadata(socket, audiobookId = null) {
+    Logger.info('[Server] Starting save metadata files')
+    var response = await this.scanner.saveMetadata(audiobookId)
+    Logger.info(`[Server] Finished saving metadata files Successful: ${response.success}, Failed: ${response.failed}`)
+    socket.emit('save_metadata_complete', response)
+  }
+
+  // Remove unused /metadata/books/{id} folders
+  async purgeMetadata() {
+    var booksMetadata = Path.join(this.MetadataPath, 'books')
+    var booksMetadataExists = await fs.pathExists(booksMetadata)
+    if (!booksMetadataExists) return
+    var foldersInBooksMetadata = await fs.readdir(booksMetadata)
+
+    var purged = 0
+    await Promise.all(foldersInBooksMetadata.map(async foldername => {
+      var hasMatchingAudiobook = this.audiobooks.find(ab => ab.id === foldername)
+      if (!hasMatchingAudiobook) {
+        var folderPath = Path.join(booksMetadata, foldername)
+        Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
+
+        await fs.remove(folderPath).then(() => {
+          purged++
+        }).catch((err) => {
+          Logger.error(`[Server] Failed to delete folder path ${folderPath}`, err)
+        })
+      }
+    }))
+    if (purged > 0) {
+      Logger.info(`[Server] Purged ${purged} unused audiobook metadata`)
+    }
+    return purged
+  }
+
+  authMiddleware(req, res, next) {
+    this.auth.authMiddleware(req, res, next)
+  }
+
+  async handleUpload(req, res) {
+    if (!req.user.canUpload) {
+      Logger.warn('User attempted to upload without permission', req.user)
+      return res.sendStatus(403)
+    }
+    var files = Object.values(req.files)
+    var title = req.body.title
+    var author = req.body.author
+    var series = req.body.series
+
+    if (!files.length || !title || !author) {
+      return res.json({
+        error: 'Invalid post data received'
+      })
+    }
+
+    var outputDirectory = ''
+    if (series && series.length && series !== 'null') {
+      outputDirectory = Path.join(this.AudiobookPath, author, series, title)
+    } else {
+      outputDirectory = Path.join(this.AudiobookPath, author, title)
+    }
+
+    var exists = await fs.pathExists(outputDirectory)
+    if (exists) {
+      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
+      return res.json({
+        error: `Directory "${outputDirectory}" already exists`
+      })
+    }
+
+    await fs.ensureDir(outputDirectory)
+    Logger.info(`Uploading ${files.length} files to`, outputDirectory)
+
+    for (let i = 0; i < files.length; i++) {
+      var file = files[i]
+
+      var path = Path.join(outputDirectory, file.name)
+      await file.mv(path).catch((error) => {
+        Logger.error('Failed to move file', path, error)
+      })
+    }
+    res.sendStatus(200)
+  }
+
+  // First time login rate limit is hit
+  loginLimitReached(req, res, options) {
+    Logger.error(`[Server] Login rate limit (${options.max}) was hit for ip ${req.ip}`)
+    options.message = 'Too many attempts. Login temporarily locked.'
+  }
+
+  getLoginRateLimiter() {
+    return rateLimit({
+      windowMs: this.db.serverSettings.rateLimitLoginWindow, // 5 minutes
+      max: this.db.serverSettings.rateLimitLoginRequests,
+      skipSuccessfulRequests: true,
+      onLimitReached: this.loginLimitReached
+    })
+  }
+
   logout(req, res) {
     res.sendStatus(200)
   }
@@ -407,8 +434,6 @@ class Server {
 
     const initialPayload = {
       serverSettings: this.serverSettings.toJSON(),
-      isScanning: this.isScanning,
-      isInitialized: this.isInitialized,
       audiobookPath: this.AudiobookPath,
       metadataPath: this.MetadataPath,
       configPath: this.ConfigPath,

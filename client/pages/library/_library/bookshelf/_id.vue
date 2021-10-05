@@ -12,7 +12,13 @@
 
 <script>
 export default {
-  async asyncData({ params, query, store, app }) {
+  async asyncData({ params, query, store, app, redirect }) {
+    var libraryId = params.library
+    var library = await store.dispatch('libraries/fetch', libraryId)
+    if (!library) {
+      return redirect('/oops?message=Library not found')
+    }
+
     if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
@@ -20,7 +26,7 @@ export default {
     var searchQuery = null
     if (params.id === 'search' && query.query) {
       searchQuery = query.query
-      searchResults = await app.$axios.$get(`/api/audiobooks?q=${query.query}`).catch((error) => {
+      searchResults = await app.$axios.$get(`/api/library/${libraryId}/audiobooks?q=${query.query}`).catch((error) => {
         console.error('Search error', error)
         return []
       })

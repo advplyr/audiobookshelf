@@ -7,13 +7,25 @@
           <span class="material-icons text-4xl text-white">arrow_back</span>
         </a>
         <h1 class="text-2xl font-book mr-6">AudioBookshelf</h1>
-        <!-- <div class="-mb-2">
-          <h1 class="text-lg font-book leading-3 mr-6 px-1">AudioBookshelf</h1>
-          <div class="bg-black bg-opacity-20 rounded-sm py-1.5 px-2 mt-1.5 flex items-center justify-between border border-bg">
-            <p class="text-sm text-gray-400 leading-3">My Library</p>
-            <span class="material-icons text-sm leading-3 text-gray-400">expand_more</span>
-          </div>
-        </div> -->
+        <!-- <div class="-mb-2 mr-6"> -->
+        <!-- <h1 class="text-base font-book leading-3 px-1">AudioBookshelf</h1> -->
+
+        <!-- <div class="bg-black bg-opacity-20 rounded-sm py-1 px-2 flex items-center border border-bg mt-1.5 cursor-pointer" @click="clickLibrary">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white text-opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+
+            <p class="text-sm text-white text-opacity-70 leading-3 font-book pl-2">{{ libraryName }}</p>
+          </div> -->
+        <!-- </div> -->
+        <div class="bg-black bg-opacity-20 rounded-sm py-1.5 px-3 flex items-center border border-bg text-white text-opacity-70 cursor-pointer hover:bg-opacity-10 hover:text-opacity-90" @click="clickLibrary">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+          </svg>
+
+          <p class="text-base leading-3 font-book pl-2">{{ libraryName }}</p>
+        </div>
+
         <controls-global-search />
         <div class="flex-grow" />
 
@@ -66,11 +78,17 @@ export default {
     }
   },
   computed: {
+    currentLibrary() {
+      return this.$store.getters['libraries/getCurrentLibrary']
+    },
+    libraryName() {
+      return this.currentLibrary ? this.currentLibrary.name : 'unknown'
+    },
     isHome() {
-      return this.$route.name === 'index'
+      return this.$route.name === 'library-library'
     },
     showBack() {
-      return this.$route.name !== 'library-id' && !this.isHome
+      return this.$route.name !== 'library-library-bookshelf-id' && !this.isHome
     },
     user() {
       return this.$store.state.user.user
@@ -78,7 +96,6 @@ export default {
     isRootUser() {
       return this.$store.getters['user/getIsRoot']
     },
-
     username() {
       return this.user ? this.user.username : 'err'
     },
@@ -125,6 +142,9 @@ export default {
     }
   },
   methods: {
+    clickLibrary() {
+      this.$store.commit('libraries/setShowModal', true)
+    },
     async back() {
       var popped = await this.$store.dispatch('popRoute')
       var backTo = popped || '/'

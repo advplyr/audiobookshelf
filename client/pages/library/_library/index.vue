@@ -1,13 +1,5 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
-    <!-- <app-book-shelf-toolbar /> -->
-    <!-- <div class="flex h-full">
-      <app-side-rail />
-      <div class="flex-grow"> -->
-    <!-- <app-book-shelf /> -->
-    <!-- </div> -->
-    <!-- </div> -->
-
     <div class="flex h-full">
       <app-side-rail />
       <div class="flex-grow">
@@ -20,10 +12,15 @@
 
 <script>
 export default {
-  asyncData({ redirect, store }) {
-    var currentLibraryId = store.state.libraries.currentLibraryId
-    console.log('Redir', currentLibraryId)
-    redirect(`/library/${currentLibraryId}`)
+  async asyncData({ store, params, redirect }) {
+    var libraryId = params.library
+    var library = await store.dispatch('libraries/fetch', libraryId)
+    if (!library) {
+      return redirect(`/oops?message=Library "${libraryId}" not found`)
+    }
+    return {
+      library
+    }
   },
   data() {
     return {}

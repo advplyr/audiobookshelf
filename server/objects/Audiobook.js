@@ -1,4 +1,5 @@
 const Path = require('path')
+const fs = require('fs-extra')
 const { bytesPretty, elapsedPretty, readTextFile } = require('../utils/fileUtils')
 const { comparePaths, getIno } = require('../utils/index')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
@@ -14,11 +15,15 @@ class Audiobook {
     this.id = null
     this.ino = null // Inode
 
+    this.libraryId = null
+    this.folderId = null
+
     this.path = null
     this.fullPath = null
-
     this.addedAt = null
     this.lastUpdate = null
+    this.lastScan = null
+    this.scanVersion = null
 
     this.tracks = []
     this.missingParts = []
@@ -41,11 +46,14 @@ class Audiobook {
   construct(audiobook) {
     this.id = audiobook.id
     this.ino = audiobook.ino || null
-
+    this.libraryId = audiobook.libraryId || 'main'
+    this.folderId = audiobook.folderId || 'audiobooks'
     this.path = audiobook.path
     this.fullPath = audiobook.fullPath
     this.addedAt = audiobook.addedAt
     this.lastUpdate = audiobook.lastUpdate || this.addedAt
+    this.lastScan = audiobook.lastScan || null
+    this.scanVersion = audiobook.scanVersion || null
 
     this.tracks = audiobook.tracks.map(track => new AudioTrack(track))
     this.missingParts = audiobook.missingParts
@@ -127,10 +135,6 @@ class Audiobook {
     return !!this._audioFiles.find(af => af.embeddedCoverArt)
   }
 
-  get hasDescriptionTextFile() {
-    return !!this._otherFiles.find(of => of.filename === 'desc.txt')
-  }
-
   bookToJSON() {
     return this.book ? this.book.toJSON() : null
   }
@@ -144,6 +148,8 @@ class Audiobook {
     return {
       id: this.id,
       ino: this.ino,
+      libraryId: this.libraryId,
+      folderId: this.folderId,
       title: this.title,
       author: this.author,
       cover: this.cover,
@@ -151,6 +157,8 @@ class Audiobook {
       fullPath: this.fullPath,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
+      lastScan: this.lastScan,
+      scanVersion: this.scanVersion,
       missingParts: this.missingParts,
       tags: this.tags,
       book: this.bookToJSON(),
@@ -166,6 +174,8 @@ class Audiobook {
     return {
       id: this.id,
       ino: this.ino,
+      libraryId: this.libraryId,
+      folderId: this.folderId,
       book: this.bookToJSON(),
       tags: this.tags,
       path: this.path,
@@ -188,6 +198,9 @@ class Audiobook {
   toJSONExpanded() {
     return {
       id: this.id,
+      ino: this.ino,
+      libraryId: this.libraryId,
+      folderId: this.folderId,
       path: this.path,
       fullPath: this.fullPath,
       addedAt: this.addedAt,
@@ -284,13 +297,10 @@ class Audiobook {
     return hasUpdates
   }
 
-  // Scans in v1.3.0 or lower will need to rescan audiofiles to pickup metadata and embedded cover
-  checkNeedsAudioFileRescan() {
-    return !!(this.audioFiles || []).find(af => af.isOldAudioFile || af.codec === null)
-  }
-
   setData(data) {
     this.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.libraryId = data.libraryId || 'main'
+    this.folderId = data.folderId || 'audiobooks'
     this.ino = data.ino || null
 
     this.path = data.path
@@ -307,7 +317,26 @@ class Audiobook {
     this.setBook(data)
   }
 
+  checkHasOldCoverPath() {
+    return this.book.cover && !this.book.coverFullPath
+  }
+
+  setLastScan(version) {
+    this.lastScan = Date.now()
+    this.lastUpdate = Date.now()
+    this.scanVersion = version
+  }
+
   setBook(data) {
+    // Use first image file as cover
+    if (this.otherFiles && this.otherFiles.length) {
+      var imageFile = this.otherFiles.find(f => f.filetype === 'image')
+      if (imageFile) {
+        data.coverFullPath = imageFile.fullPath
+        data.cover = Path.normalize(Path.join(`/s/book/${this.id}`, imageFile.path))
+      }
+    }
+
     this.book = new Book()
     this.book.setData(data)
   }
@@ -432,12 +461,13 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles, forceRescan = false) {
+  async syncOtherFiles(newOtherFiles, metadataPath, forceRescan = false) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
 
-    var alreadyHadDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
+    var alreadyHasDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
+    var alreadyHasReaderTxt = this.otherFiles.find(of => of.filename === 'reader.txt')
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
@@ -448,9 +478,9 @@ class Audiobook {
       hasUpdates = true
     }
 
-    // If desc.txt is new or forcing rescan then read it and update description if empty
-    var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
-    if (descriptionTxt && (!alreadyHadDescTxt || forceRescan)) {
+    // If desc.txt is new or forcing rescan then read it and update description (will overwrite)
+    var descriptionTxt = this.otherFiles.find(file => file.filename === 'desc.txt')
+    if (descriptionTxt && (!alreadyHasDescTxt || forceRescan)) {
       var newDescription = await readTextFile(descriptionTxt.fullPath)
       if (newDescription) {
         Logger.debug(`[Audiobook] Sync Other File desc.txt: ${newDescription}`)
@@ -458,10 +488,19 @@ class Audiobook {
         hasUpdates = true
       }
     }
+    // If reader.txt is new or forcing rescan then read it and update narrarator (will overwrite)
+    var readerTxt = this.otherFiles.find(file => file.filename === 'reader.txt')
+    if (readerTxt && (!alreadyHasReaderTxt || forceRescan)) {
+      var newReader = await readTextFile(readerTxt.fullPath)
+      if (newReader) {
+        Logger.debug(`[Audiobook] Sync Other File reader.txt: ${newReader}`)
+        this.update({ book: { narrarator: newReader } })
+        hasUpdates = true
+      }
+    }
 
-    // TODO: Should use inode
     newOtherFiles.forEach((file) => {
-      var existingOtherFile = this.otherFiles.find(f => f.path === file.path)
+      var existingOtherFile = this.otherFiles.find(f => f.ino === file.ino)
       if (!existingOtherFile) {
         Logger.debug(`[Audiobook] New other file found on sync ${file.filename} | "${this.title}"`)
         this.addOtherFile(file)
@@ -469,21 +508,76 @@ class Audiobook {
       }
     })
 
-    // Check if cover was a local image and that it still exists
+
     var imageFiles = this.otherFiles.filter(f => f.filetype === 'image')
+
+    // OLD Path Check if cover was a local image and that it still exists
     if (this.book.cover && this.book.cover.substr(1).startsWith('local')) {
-      var coverStillExists = imageFiles.find(f => comparePaths(f.path, this.book.cover.substr('/local/'.length)))
+      var coverStripped = this.book.cover.substr('/local/'.length)
+      // Check if was removed first
+      var coverStillExists = imageFiles.find(f => comparePaths(f.path, coverStripped))
       if (!coverStillExists) {
         Logger.info(`[Audiobook] Local cover was removed | "${this.title}"`)
-        this.book.cover = null
+        this.book.removeCover()
+      } else {
+        var oldFormat = this.book.cover
+
+        // Update book cover path to new format
+        this.book.fullCoverPath = Path.join(this.fullPath, this.book.cover.substr(7))
+        this.book.cover = Path.normalize(coverStripped.replace(this.path, `/s/book/${this.id}`))
+        Logger.debug(`[Audiobook] updated book cover to new format "${oldFormat}" => "${this.book.cover}"`)
+      }
+      hasUpdates = true
+    }
+
+    // Check if book was removed from book dir
+    if (this.book.cover && this.book.cover.substr(1).startsWith('s/book/')) {
+      // Fixing old cover paths
+      if (!this.book.coverFullPath) {
+        this.book.coverFullPath = Path.join(this.fullPath, this.book.cover.substr(`/s/book/${this.id}`.length))
+        Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
+      }
+
+      var coverStillExists = imageFiles.find(f => f.fullPath === this.book.coverFullPath)
+      if (!coverStillExists) {
+        Logger.info(`[Audiobook] Local cover "${this.book.cover}" was removed | "${this.title}"`)
+        this.book.removeCover()
+        hasUpdates = true
+      }
+    }
+
+    if (this.book.cover && this.book.cover.substr(1).startsWith('metadata')) {
+      // Fixing old cover paths
+      if (!this.book.coverFullPath) {
+        this.book.coverFullPath = Path.join(metadataPath, this.book.cover.substr('/metadata/'.length))
+        Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
+        hasUpdates = true
+      }
+      var coverStillExists = imageFiles.find(f => f.fullPath === this.book.coverFullPath)
+      if (!coverStillExists) {
+        Logger.info(`[Audiobook] Metadata cover "${this.book.cover}" was removed | "${this.title}"`)
+        this.book.removeCover()
+        hasUpdates = true
+      }
+    }
+
+    if (this.book.cover && !this.book.coverFullPath) {
+      if (this.book.cover.startsWith('http')) {
+        Logger.debug(`[Audiobook] Still using http path for cover "${this.book.cover}" - should update to local`)
+        this.book.coverFullPath = this.book.cover
+        hasUpdates = true
+      } else {
+        Logger.warn(`[Audiobook] Full cover path still not set "${this.book.cover}"`)
       }
     }
 
     // If no cover set and image file exists then use it
     if (!this.book.cover && imageFiles.length) {
-      this.book.cover = Path.join('/local', imageFiles[0].path)
-      Logger.info(`[Audiobook] Local cover was set | "${this.title}"`)
+      var imagePathRelativeToBook = imageFiles[0].path.replace(this.path, '')
+      this.book.cover = Path.join(`/s/book/${this.id}`, imagePathRelativeToBook)
+      this.book.coverFullPath = imageFiles[0].fullPath
+      Logger.info(`[Audiobook] Local cover was set to "${this.book.cover}" | "${this.title}"`)
       hasUpdates = true
     }
     return hasUpdates
@@ -582,6 +676,12 @@ class Audiobook {
     var coverFilename = audioFileWithCover.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
     var coverFilePath = Path.join(coverDirFullPath, coverFilename)
 
+    var coverAlreadyExists = await fs.pathExists(coverFilePath)
+    if (coverAlreadyExists) {
+      Logger.warn(`[Audiobook] Extract embedded cover art but cover already exists for "${this.title}" - bail`)
+      return false
+    }
+
     var success = await extractCoverArt(audioFileWithCover.fullPath, coverFilePath)
     if (success) {
       var coverRelPath = Path.join(coverDirRelPath, coverFilename)
@@ -591,16 +691,32 @@ class Audiobook {
     return false
   }
 
-  // If desc.txt exists then use it as description
-  async saveDescriptionFromTextFile() {
-    var descriptionTextFile = this.otherFiles.find(file => file.filename === 'desc.txt')
-    if (!descriptionTextFile) return false
-    var newDescription = await readTextFile(descriptionTextFile.fullPath)
-    if (!newDescription) return false
-    return this.update({ book: { description: newDescription } })
+  // Look for desc.txt and reader.txt and update details if found
+  async saveDataFromTextFiles() {
+    var bookUpdatePayload = {}
+    var descriptionText = await this.fetchTextFromTextFile('desc.txt')
+    if (descriptionText) {
+      Logger.debug(`[Audiobook] "${this.title}" found desc.txt updating description with "${descriptionText.slice(0, 20)}..."`)
+      bookUpdatePayload.description = descriptionText
+    }
+    var readerText = await this.fetchTextFromTextFile('reader.txt')
+    if (readerText) {
+      Logger.debug(`[Audiobook] "${this.title}" found reader.txt updating narrarator with "${readerText}"`)
+      bookUpdatePayload.narrarator = readerText
+    }
+    if (Object.keys(bookUpdatePayload).length) {
+      return this.update({ book: bookUpdatePayload })
+    }
+    return false
   }
 
-  // Audio file metadata tags map to EMPTY book details
+  fetchTextFromTextFile(textfileName) {
+    var textFile = this.otherFiles.find(file => file.filename === textfileName)
+    if (!textFile) return false
+    return readTextFile(textFile.fullPath)
+  }
+
+  // Audio file metadata tags map to book details (will not overwrite)
   setDetailsFromFileMetadata() {
     if (!this.audioFiles.length) return false
     var audioFile = this.audioFiles[0]

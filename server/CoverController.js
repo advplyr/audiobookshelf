@@ -20,7 +20,7 @@ class CoverController {
     if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
       return {
         fullPath: audiobook.fullPath,
-        relPath: Path.join('/local', audiobook.path)
+        relPath: '/s/book/' + audiobook.id
       }
     } else {
       return {

@@ -192,7 +192,6 @@ module.exports.scanAudioFiles = scanAudioFiles
 
 
 async function rescanAudioFiles(audiobook) {
-
   var audioFiles = audiobook.audioFiles
   var updates = 0
 
@@ -215,7 +214,7 @@ async function rescanAudioFiles(audiobook) {
         // Fallback to checking path
         matchingAudioTrack = audiobook.tracks.find(t => t.path === audioFile.path)
         if (matchingAudioTrack) {
-          Logger.warn(`[AudioFileScanner] Audio File mismatch ino with audio track "${audioFile.filename}"`)
+          Logger.error(`[AudioFileScanner] Audio File mismatch ino with audio track "${audioFile.filename}"`)
           matchingAudioTrack.ino = audioFile.ino
           matchingAudioTrack.syncMetadata(audioFile)
         } else {

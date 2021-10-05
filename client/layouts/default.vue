@@ -5,12 +5,15 @@
     <Nuxt />
 
     <app-stream-container ref="streamContainer" />
+    <modals-libraries-modal />
     <modals-edit-modal />
-    <widgets-scan-alert />
+    <!-- <widgets-scan-alert /> -->
   </div>
 </template>
 
 <script>
+import CloseButton from '@/components/widgets/CloseButton'
+
 export default {
   middleware: 'authenticated',
   data() {
@@ -89,43 +92,62 @@ export default {
     audiobookRemoved(audiobook) {
       if (this.$route.name.startsWith('audiobook')) {
         if (this.$route.params.id === audiobook.id) {
-          this.$router.replace('/library')
+          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
         }
       }
       this.$store.commit('audiobooks/remove', audiobook)
     },
-    scanComplete({ scanType, results }) {
-      if (scanType === 'covers') {
-        this.$store.commit('setIsScanningCovers', false)
-        if (results) {
-          this.$toast.success(`Scan Finished\nUpdated ${results.found} covers`)
-        }
-      } else {
-        this.$store.commit('setIsScanning', false)
-        if (results) {
-          var scanResultMsgs = []
-          if (results.added) scanResultMsgs.push(`${results.added} added`)
-          if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
-          if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
-          if (results.missing) scanResultMsgs.push(`${results.missing} missing`)
-          if (!scanResultMsgs.length) this.$toast.success('Scan Finished\nEverything was up to date')
-          else this.$toast.success('Scan Finished\n' + scanResultMsgs.join('\n'))
-        }
-      }
+    libraryAdded(library) {
+      this.$store.commit('libraries/addUpdate', library)
     },
-    scanStart(scanType) {
-      if (scanType === 'covers') {
-        this.$store.commit('setIsScanningCovers', true)
-      } else {
-        this.$store.commit('setIsScanning', true)
-      }
+    libraryUpdated(library) {
+      this.$store.commit('libraries/addUpdate', library)
     },
-    scanProgress({ scanType, progress }) {
-      if (scanType === 'covers') {
-        this.$store.commit('setCoverScanProgress', progress)
+    libraryRemoved(library) {
+      this.$store.commit('libraries/remove', library)
+    },
+    scanComplete(data) {
+      var message = `Scan "${data.name}" complete!`
+      if (data.results) {
+        var scanResultMsgs = []
+        var results = data.results
+        if (results.added) scanResultMsgs.push(`${results.added} added`)
+        if (results.updated) scanResultMsgs.push(`${results.updated} updated`)
+        if (results.removed) scanResultMsgs.push(`${results.removed} removed`)
+        if (results.missing) scanResultMsgs.push(`${results.missing} missing`)
+        if (!scanResultMsgs.length) message += '\nEverything was up to date'
+        else message += '\n' + scanResultMsgs.join('\n')
       } else {
-        this.$store.commit('setScanProgress', progress)
+        message = `Scan "${data.name}" was canceled`
       }
+
+      var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
+      if (existingScan && !isNaN(existingScan.toastId)) {
+        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: 'success', closeButton: false, position: 'bottom-center' } }, true)
+      } else {
+        this.$toast.success(message, { timeout: 5000, position: 'bottom-center' })
+      }
+
+      this.$store.commit('scanners/remove', data)
+    },
+    onScanToastCancel(id) {
+      console.log('On Scan Toast Cancel', id)
+      this.$root.socket.emit('cancel_scan', id)
+    },
+    scanStart(data) {
+      data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
+      console.log('Scan start toast id', data.toastId)
+      this.$store.commit('scanners/addUpdate', data)
+    },
+    scanProgress(data) {
+      console.log('scan progress', data)
+      var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
+      if (existingScan && !isNaN(existingScan.toastId)) {
+        data.toastId = existingScan.toastId
+        this.$toast.update(existingScan.toastId, { content: `Scanning "${existingScan.name}"... ${data.progress.progress || 0}%`, options: { timeout: false } }, true)
+      }
+
+      this.$store.commit('scanners/addUpdate', data)
     },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
@@ -226,6 +248,11 @@ export default {
       this.socket.on('audiobook_added', this.audiobookAdded)
       this.socket.on('audiobook_removed', this.audiobookRemoved)
 
+      // Library Listeners
+      this.socket.on('library_updated', this.libraryUpdated)
+      this.socket.on('library_added', this.libraryAdded)
+      this.socket.on('library_removed', this.libraryRemoved)
+
       // User Listeners
       this.socket.on('user_updated', this.userUpdated)
 
@@ -270,6 +297,8 @@ export default {
   },
   mounted() {
     this.initializeSocket()
+    this.$store.dispatch('libraries/load')
+
     this.$store
       .dispatch('checkForUpdate')
       .then((res) => {

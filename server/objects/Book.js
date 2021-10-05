@@ -18,6 +18,7 @@ class Book {
     this.publisher = null
     this.description = null
     this.cover = null
+    this.coverFullPath = null
     this.genres = []
     this.lastUpdate = null
 
@@ -46,6 +47,7 @@ class Book {
     this.publisher = book.publisher
     this.description = book.description
     this.cover = book.cover
+    this.coverFullPath = book.coverFullPath || null
     this.genres = book.genres
     this.lastUpdate = book.lastUpdate || Date.now()
   }
@@ -65,6 +67,7 @@ class Book {
       publisher: this.publisher,
       description: this.description,
       cover: this.cover,
+      coverFullPath: this.coverFullPath,
       genres: this.genres,
       lastUpdate: this.lastUpdate
     }
@@ -100,19 +103,12 @@ class Book {
     this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.cover = data.cover || null
+    this.coverFullPath = data.coverFullPath || null
     this.genres = data.genres || []
     this.lastUpdate = Date.now()
 
     if (data.author) {
       this.setParseAuthor(this.author)
-    }
-
-    // Use first image file as cover
-    if (data.otherFiles && data.otherFiles.length) {
-      var imageFile = data.otherFiles.find(f => f.filetype === 'image')
-      if (imageFile) {
-        this.cover = Path.normalize(Path.join('/local', imageFile.path))
-      }
     }
   }
 
@@ -166,6 +162,12 @@ class Book {
     this.cover = cover
     this.lastUpdate = Date.now()
     return true
+  }
+
+  removeCover() {
+    this.cover = null
+    this.coverFullPath = null
+    this.lastUpdate = Date.now()
   }
 
   // If audiobook directory path was changed, check and update properties set from dirnames

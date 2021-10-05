@@ -34,9 +34,6 @@ class AudioFile {
     this.exclude = false
     this.error = null
 
-    // TEMP: For forcing rescan
-    this.isOldAudioFile = false
-
     if (data) {
       this.construct(data)
     }
@@ -103,7 +100,6 @@ class AudioFile {
     // Old version of AudioFile used `tagAlbum` etc.
     var isOldVersion = Object.keys(data).find(key => key.startsWith('tag'))
     if (isOldVersion) {
-      this.isOldAudioFile = true
       this.metadata = new AudioFileMetadata(data)
     } else {
       this.metadata = new AudioFileMetadata(data.metadata || {})

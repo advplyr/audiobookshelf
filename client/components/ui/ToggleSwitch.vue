@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="border rounded-full border-black-100 flex items-center cursor-pointer w-12 justify-start" :class="className" @click="clickToggle">
-      <span class="rounded-full border w-6 h-6 border-black-50 shadow transform transition-transform duration-100" :class="switchClassName"></span>
+    <div class="border rounded-full border-black-100 flex items-center cursor-pointer w-10 justify-start" :class="className" @click="clickToggle">
+      <span class="rounded-full border w-5 h-5 border-black-50 shadow transform transition-transform duration-100" :class="switchClassName"></span>
     </div>
   </div>
 </template>
@@ -35,7 +35,7 @@ export default {
     },
     switchClassName() {
       var bgColor = this.disabled ? 'bg-gray-300' : 'bg-white'
-      return this.toggleValue ? 'translate-x-6 ' + bgColor : bgColor
+      return this.toggleValue ? 'translate-x-5 ' + bgColor : bgColor
     }
   },
   methods: {

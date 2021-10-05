@@ -105,7 +105,7 @@ export default {
         this.coverDiv.remove()
         this.coverDiv = null
       }
-      var validCovers = this.bookItems.map((bookItem) => this.getCoverUrl(bookItem.book)).filter((b) => b !== '')
+      var validCovers = this.bookItems.map((bookItem) => this.getCoverUrl(bookItem)).filter((b) => b !== '')
       if (!validCovers.length) {
         this.noValidCovers = true
         return

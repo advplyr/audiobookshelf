@@ -216,7 +216,7 @@ export default {
       }
     },
     scan() {
-      this.$root.socket.emit('scan')
+      this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
     }
   },
   updated() {

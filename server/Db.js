@@ -4,20 +4,25 @@ const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
 const Audiobook = require('./objects/Audiobook')
 const User = require('./objects/User')
+const Library = require('./objects/Library')
 const ServerSettings = require('./objects/ServerSettings')
 
 class Db {
-  constructor(CONFIG_PATH) {
-    this.ConfigPath = CONFIG_PATH
-    this.AudiobooksPath = Path.join(CONFIG_PATH, 'audiobooks')
-    this.UsersPath = Path.join(CONFIG_PATH, 'users')
-    this.SettingsPath = Path.join(CONFIG_PATH, 'settings')
+  constructor(ConfigPath, AudiobookPath) {
+    this.ConfigPath = ConfigPath
+    this.AudiobookPath = AudiobookPath
+    this.AudiobooksPath = Path.join(ConfigPath, 'audiobooks')
+    this.UsersPath = Path.join(ConfigPath, 'users')
+    this.LibrariesPath = Path.join(ConfigPath, 'libraries')
+    this.SettingsPath = Path.join(ConfigPath, 'settings')
 
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
+    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
 
     this.users = []
+    this.libraries = []
     this.audiobooks = []
     this.settings = []
 
@@ -27,18 +32,14 @@ class Db {
   getEntityDb(entityName) {
     if (entityName === 'user') return this.usersDb
     else if (entityName === 'audiobook') return this.audiobooksDb
+    else if (entityName === 'library') return this.librariesDb
     return this.settingsDb
-  }
-
-  getEntityDbKey(entityName) {
-    if (entityName === 'user') return 'usersDb'
-    else if (entityName === 'audiobook') return 'audiobooksDb'
-    return 'settingsDb'
   }
 
   getEntityArrayKey(entityName) {
     if (entityName === 'user') return 'users'
     else if (entityName === 'audiobook') return 'audiobooks'
+    else if (entityName === 'library') return 'libraries'
     return 'settings'
   }
 
@@ -46,7 +47,6 @@ class Db {
     return new User({
       id: 'root',
       type: 'root',
-
       username: 'root',
       pash: '',
       stream: null,
@@ -56,6 +56,20 @@ class Db {
     })
   }
 
+  getDefaultLibrary() {
+    var defaultLibrary = new Library()
+    defaultLibrary.setData({
+      id: 'main',
+      name: 'Main',
+      folder: { // Generates default folder
+        id: 'audiobooks',
+        fullPath: this.AudiobookPath,
+        libraryId: 'main'
+      }
+    })
+    return defaultLibrary
+  }
+
   async init() {
     await this.load()
 
@@ -63,25 +77,33 @@ class Db {
     if (!this.users.find(u => u.type === 'root')) {
       var token = await jwt.sign({ userId: 'root' }, process.env.TOKEN_SECRET)
       Logger.debug('Generated default token', token)
-      await this.insertUser(this.getDefaultUser(token))
+      await this.insertEntity('user', this.getDefaultUser(token))
+    }
+
+    if (!this.libraries.length) {
+      await this.insertEntity('library', this.getDefaultLibrary())
     }
 
     if (!this.serverSettings) {
       this.serverSettings = new ServerSettings()
-      await this.insertSettings(this.serverSettings)
+      await this.insertEntity('settings', this.serverSettings)
     }
   }
 
   async load() {
     var p1 = this.audiobooksDb.select(() => true).then((results) => {
       this.audiobooks = results.data.map(a => new Audiobook(a))
-      Logger.info(`[DB] Audiobooks Loaded ${this.audiobooks.length}`)
+      Logger.info(`[DB] ${this.audiobooks.length} Audiobooks Loaded`)
     })
     var p2 = this.usersDb.select(() => true).then((results) => {
       this.users = results.data.map(u => new User(u))
-      Logger.info(`[DB] Users Loaded ${this.users.length}`)
+      Logger.info(`[DB] ${this.users.length} Users Loaded`)
     })
-    var p3 = this.settingsDb.select(() => true).then((results) => {
+    var p3 = this.librariesDb.select(() => true).then((results) => {
+      this.libraries = results.data.map(l => new Library(l))
+      Logger.info(`[DB] ${this.libraries.length} Libraries Loaded`)
+    })
+    var p4 = this.settingsDb.select(() => true).then((results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
         var serverSettings = this.settings.find(s => s.id === 'server-settings')
@@ -90,30 +112,21 @@ class Db {
         }
       }
     })
-    await Promise.all([p1, p2, p3])
+    await Promise.all([p1, p2, p3, p4])
   }
 
-  insertSettings(settings) {
-    return this.settingsDb.insert([settings]).then((results) => {
-      Logger.debug(`[DB] Inserted ${results.inserted} settings`)
-      this.settings = this.settings.concat(settings)
-    }).catch((error) => {
-      Logger.error(`[DB] Insert settings Failed ${error}`)
-    })
-  }
+  // insertAudiobook(audiobook) {
+  //   return this.insertAudiobooks([audiobook])
+  // }
 
-  insertAudiobook(audiobook) {
-    return this.insertAudiobooks([audiobook])
-  }
-
-  insertAudiobooks(audiobooks) {
-    return this.audiobooksDb.insert(audiobooks).then((results) => {
-      Logger.debug(`[DB] Inserted ${results.inserted} audiobooks`)
-      this.audiobooks = this.audiobooks.concat(audiobooks)
-    }).catch((error) => {
-      Logger.error(`[DB] Insert audiobooks Failed ${error}`)
-    })
-  }
+  // insertAudiobooks(audiobooks) {
+  //   return this.audiobooksDb.insert(audiobooks).then((results) => {
+  //     Logger.debug(`[DB] Inserted ${results.inserted} audiobooks`)
+  //     this.audiobooks = this.audiobooks.concat(audiobooks)
+  //   }).catch((error) => {
+  //     Logger.error(`[DB] Insert audiobooks Failed ${error}`)
+  //   })
+  // }
 
   updateAudiobook(audiobook) {
     return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
@@ -125,16 +138,25 @@ class Db {
     })
   }
 
-  insertUser(user) {
-    return this.usersDb.insert([user]).then((results) => {
-      Logger.debug(`[DB] Inserted user ${results.inserted}`)
-      this.users.push(user)
-      return true
-    }).catch((error) => {
-      Logger.error(`[DB] Insert user Failed ${error}`)
-      return false
-    })
-  }
+  // insertUser(user) {
+  //   return this.usersDb.insert([user]).then((results) => {
+  //     Logger.debug(`[DB] Inserted user ${results.inserted}`)
+  //     this.users.push(user)
+  //     return true
+  //   }).catch((error) => {
+  //     Logger.error(`[DB] Insert user Failed ${error}`)
+  //     return false
+  //   })
+  // }
+
+  // insertSettings(settings) {
+  //   return this.settingsDb.insert([settings]).then((results) => {
+  //     Logger.debug(`[DB] Inserted ${results.inserted} settings`)
+  //     this.settings = this.settings.concat(settings)
+  //   }).catch((error) => {
+  //     Logger.error(`[DB] Insert settings Failed ${error}`)
+  //   })
+  // }
 
   updateUserStream(userId, streamId) {
     return this.usersDb.update((record) => record.id === userId, (user) => {
@@ -150,6 +172,20 @@ class Db {
       })
     }).catch((error) => {
       Logger.error(`[DB] Update user Failed ${error}`)
+    })
+  }
+
+  insertEntity(entityName, entity) {
+    var entityDb = this.getEntityDb(entityName)
+    return entityDb.insert([entity]).then((results) => {
+      Logger.debug(`[DB] Inserted ${results.inserted} ${entityName}`)
+
+      var arrayKey = this.getEntityArrayKey(entityName)
+      this[arrayKey].push(entity)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Failed to insert ${entityName}`, error)
+      return false
     })
   }
 

@@ -4,107 +4,184 @@ const Watcher = require('watcher')
 const Logger = require('./Logger')
 
 class FolderWatcher extends EventEmitter {
-  constructor(audiobookPath) {
+  constructor() {
     super()
-    this.AudiobookPath = audiobookPath
-    this.folderMap = {}
-    this.watcher = null
+    this.paths = [] // Not used
+    this.pendingFiles = [] // Not used
 
-    this.pendingFiles = []
+    this.libraryWatchers = []
+    this.pendingFileUpdates = []
     this.pendingDelay = 4000
     this.pendingTimeout = null
   }
 
-  initWatcher() {
-    try {
-      Logger.info('[FolderWatcher] Initializing..')
-      this.watcher = new Watcher(this.AudiobookPath, {
-        ignored: /(^|[\/\\])\../, // ignore dotfiles
-        renameDetection: true,
-        renameTimeout: 2000,
-        recursive: true,
-        ignoreInitial: true,
-        persistent: true
+  get pendingFilePaths() {
+    return this.pendingFileUpdates.map(f => f.path)
+  }
+
+  buildLibraryWatcher(library) {
+    if (this.libraryWatchers.find(w => w.id === library.id)) {
+      Logger.warn('[Watcher] Already watching library', library.name)
+      return
+    }
+    Logger.info(`[Watcher] Initializing watcher for "${library.name}"..`)
+    var folderPaths = library.folderPaths
+    var watcher = new Watcher(folderPaths, {
+      ignored: /(^|[\/\\])\../, // ignore dotfiles
+      renameDetection: true,
+      renameTimeout: 2000,
+      recursive: true,
+      ignoreInitial: true,
+      persistent: true
+    })
+    watcher
+      .on('add', (path) => {
+        this.onNewFile(library.id, path)
+      }).on('change', (path) => {
+        // This is triggered from metadata changes, not what we want
+        // this.onFileUpdated(path)
+      }).on('unlink', path => {
+        this.onFileRemoved(library.id, path)
+      }).on('rename', (path, pathNext) => {
+        this.onRename(library.id, path, pathNext)
+      }).on('error', (error) => {
+        Logger.error(`[FolderWatcher] ${error}`)
+      }).on('ready', () => {
+        Logger.info('[FolderWatcher] Ready')
       })
-      this.watcher
-        .on('add', (path) => {
-          this.onNewFile(path)
-        }).on('change', (path) => {
-          // This is triggered from metadata changes, not what we want
-          // this.onFileUpdated(path)
-        }).on('unlink', path => {
-          this.onFileRemoved(path)
-        }).on('rename', (path, pathNext) => {
-          this.onRename(path, pathNext)
-        }).on('error', (error) => {
-          Logger.error(`[FolderWatcher] ${error}`)
-        }).on('ready', () => {
-          Logger.info('[FolderWatcher] Ready')
-        })
-    } catch (error) {
-      Logger.error('Chokidar watcher failed', error)
+
+    this.libraryWatchers.push({
+      id: library.id,
+      name: library.name,
+      folders: library.folders,
+      paths: library.folderPaths,
+      watcher
+    })
+  }
+
+  initWatcher(libraries) {
+    libraries.forEach((lib) => {
+      this.buildLibraryWatcher(lib)
+    })
+  }
+
+  addLibrary(library) {
+    this.buildLibraryWatcher(library)
+  }
+
+  updateLibrary(library) {
+    var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
+    if (libwatcher) {
+      libwatcher.name = library.name
+
+      var pathsToAdd = library.folderPaths.filter(path => !libwatcher.paths.includes(path))
+      if (pathsToAdd.length) {
+        Logger.info(`[Watcher] Adding paths to library watcher "${library.name}"`)
+        libwatcher.paths = library.folderPaths
+        libwatcher.folders = library.folders
+        libwatcher.watcher.watchPaths(pathsToAdd)
+      }
+    }
+  }
+
+  removeLibrary(library) {
+    var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
+    if (libwatcher) {
+      Logger.info(`[Watcher] Removed watcher for "${library.name}"`)
+      libwatcher.watcher.close()
+      this.libraryWatchers = this.libraryWatchers.filter(lib => lib.id !== library.id)
+    } else {
+      Logger.error(`[Watcher] Library watcher not found for "${library.name}"`)
     }
   }
 
   close() {
-    return this.watcher.close()
+    return this.libraryWatchers.map(lib => lib.watcher.close())
   }
 
-  // After [pendingBatchDelay] seconds emit batch
-  async onNewFile(path) {
-    if (this.pendingFiles.includes(path)) return
-
-    Logger.debug('FolderWatcher: New File', path)
-
-    var dir = Path.dirname(path)
-    if (dir === this.AudiobookPath) {
-      Logger.debug('New File added to root dir, ignoring it')
-      return
-    }
-
-    this.pendingFiles.push(path)
-    clearTimeout(this.pendingTimeout)
-    this.pendingTimeout = setTimeout(() => {
-      this.emit('files', this.pendingFiles.map(f => f))
-      this.pendingFiles = []
-    }, this.pendingDelay)
+  onNewFile(libraryId, path) {
+    Logger.debug('[Watcher] File Added', path)
+    this.addFileUpdate(libraryId, path, 'added')
   }
 
-  onFileRemoved(path) {
-    Logger.debug('[FolderWatcher] File Removed', path)
+  onFileRemoved(libraryId, path) {
+    Logger.debug('[Watcher] File Removed', path)
+    this.addFileUpdate(libraryId, path, 'deleted')
+    // var dir = Path.dirname(path)
+    // if (dir === this.AudiobookPath) {
+    //   Logger.debug('New File added to root dir, ignoring it')
+    //   return
+    // }
 
-    var dir = Path.dirname(path)
-    if (dir === this.AudiobookPath) {
-      Logger.debug('New File added to root dir, ignoring it')
-      return
-    }
-
-    this.pendingFiles.push(path)
-    clearTimeout(this.pendingTimeout)
-    this.pendingTimeout = setTimeout(() => {
-      this.emit('files', this.pendingFiles.map(f => f))
-      this.pendingFiles = []
-    }, this.pendingDelay)
+    // this.pendingFiles.push(path)
+    // clearTimeout(this.pendingTimeout)
+    // this.pendingTimeout = setTimeout(() => {
+    //   this.emit('files', this.pendingFiles.map(f => f))
+    //   this.pendingFiles = []
+    // }, this.pendingDelay)
   }
 
   onFileUpdated(path) {
-    Logger.debug('[FolderWatcher] Updated File', path)
+    Logger.debug('[Watcher] Updated File', path)
   }
 
-  onRename(pathFrom, pathTo) {
-    Logger.debug(`[FolderWatcher] Rename ${pathFrom} => ${pathTo}`)
+  onRename(libraryId, pathFrom, pathTo) {
+    Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
+    this.addFileUpdate(libraryId, pathTo, 'renamed')
+    // var dir = Path.dirname(pathTo)
+    // if (dir === this.AudiobookPath) {
+    //   Logger.debug('New File added to root dir, ignoring it')
+    //   return
+    // }
 
-    var dir = Path.dirname(pathTo)
-    if (dir === this.AudiobookPath) {
-      Logger.debug('New File added to root dir, ignoring it')
+    // this.pendingFiles.push(pathTo)
+    // clearTimeout(this.pendingTimeout)
+    // this.pendingTimeout = setTimeout(() => {
+    //   this.emit('files', this.pendingFiles.map(f => f))
+    //   this.pendingFiles = []
+    // }, this.pendingDelay)
+  }
+
+  addFileUpdate(libraryId, path, type) {
+    if (this.pendingFilePaths.includes(path)) return
+
+    // Get file library
+    var libwatcher = this.libraryWatchers.find(lw => lw.id === libraryId)
+    if (!libwatcher) {
+      Logger.error(`[Watcher] Invalid library id from watcher ${libraryId}`)
       return
     }
 
-    this.pendingFiles.push(pathTo)
+    // Get file folder
+    var folder = libwatcher.folders.find(fold => path.startsWith(fold.fullPath))
+    if (!folder) {
+      Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
+      return
+    }
+
+    // Check if file was added to root directory
+    var dir = Path.dirname(path)
+    if (dir === folder.fullPath) {
+      Logger.warn(`[Watcher] New file "${Path.basename(path)}" added to folder root - ignoring it`)
+      return
+    }
+
+    var relPath = path.replace(folder.fullPath, '')
+    Logger.debug(`[Watcher] New File in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
+
+    this.pendingFileUpdates.push({
+      path,
+      relPath,
+      folderId: folder.id,
+      libraryId,
+      type
+    })
+
+    // Notify server of update after "pendingDelay"
     clearTimeout(this.pendingTimeout)
     this.pendingTimeout = setTimeout(() => {
-      this.emit('files', this.pendingFiles.map(f => f))
-      this.pendingFiles = []
+      this.emit('files', this.pendingFileUpdates)
+      this.pendingFileUpdates = []
     }, this.pendingDelay)
   }
 }

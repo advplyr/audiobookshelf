@@ -23,6 +23,8 @@ function isAudioFile(path) {
   return globals.SupportedAudioTypes.includes(ext.slice(1).toLowerCase())
 }
 
+// Input: array of relative file paths
+// Output: map of files grouped into potential audiobook dirs
 function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
   // Step 1: Normalize path, Remove leading "/", Filter out files in root dir
   var pathsFiltered = paths.map(path => Path.normalize(path.slice(1))).filter(path => Path.parse(path).dir)
@@ -110,25 +112,26 @@ function getFileType(ext) {
   return 'unknown'
 }
 
-// Primary scan: abRootPath is /audiobooks
-async function scanRootDir(abRootPath, serverSettings = {}) {
+// Scan folder
+async function scanRootDir(folder, serverSettings = {}) {
+  var folderPath = folder.fullPath
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
-  var pathdata = await getPaths(abRootPath)
+  var pathdata = await getPaths(folderPath)
   var filepaths = pathdata.files.map(filepath => {
-    return Path.normalize(filepath).replace(abRootPath, '')
+    return Path.normalize(filepath).replace(folderPath, '')
   })
 
   var audiobookGrouping = groupFilesIntoAudiobookPaths(filepaths)
 
   if (!Object.keys(audiobookGrouping).length) {
-    Logger.error('Root path has no audiobooks')
+    Logger.error('Root path has no audiobooks', filepaths)
     return []
   }
 
   var audiobooks = []
   for (const audiobookPath in audiobookGrouping) {
-    var audiobookData = getAudiobookDataFromDir(abRootPath, audiobookPath, parseSubtitle)
+    var audiobookData = getAudiobookDataFromDir(folderPath, audiobookPath, parseSubtitle)
 
     var fileObjs = cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
     for (let i = 0; i < fileObjs.length; i++) {
@@ -136,6 +139,8 @@ async function scanRootDir(abRootPath, serverSettings = {}) {
     }
     var audiobookIno = await getIno(audiobookData.fullPath)
     audiobooks.push({
+      folderId: folder.id,
+      libraryId: folder.libraryId,
       ino: audiobookIno,
       ...audiobookData,
       audioFiles: fileObjs.filter(f => f.filetype === 'audio'),
@@ -147,7 +152,7 @@ async function scanRootDir(abRootPath, serverSettings = {}) {
 module.exports.scanRootDir = scanRootDir
 
 // Input relative filepath, output all details that can be parsed
-function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
+function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
   var splitDir = dir.split(Path.sep)
 
   // Audio files will always be in the directory named for the title
@@ -218,11 +223,11 @@ function getAudiobookDataFromDir(abRootPath, dir, parseSubtitle = false) {
     volumeNumber,
     publishYear,
     path: dir, // relative audiobook path i.e. /Author Name/Book Name/..
-    fullPath: Path.join(abRootPath, dir) // i.e. /audiobook/Author Name/Book Name/..
+    fullPath: Path.join(folderPath, dir) // i.e. /audiobook/Author Name/Book Name/..
   }
 }
 
-async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = {}) {
+async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) {
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
   var paths = await getPaths(audiobookPath)
@@ -235,9 +240,11 @@ async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = 
     return pathsA - pathsB
   })
 
-  var audiobookDir = Path.normalize(audiobookPath).replace(abRootPath, '').slice(1)
-  var audiobookData = getAudiobookDataFromDir(abRootPath, audiobookDir, parseSubtitle)
+  var audiobookDir = Path.normalize(audiobookPath).replace(folder.fullPath, '').slice(1)
+  var audiobookData = getAudiobookDataFromDir(folder.fullPath, audiobookDir, parseSubtitle)
   var audiobook = {
+    folderId: folder.id,
+    libraryId: folder.libraryId,
     ...audiobookData,
     audioFiles: [],
     otherFiles: []
@@ -246,7 +253,7 @@ async function getAudiobookFileData(abRootPath, audiobookPath, serverSettings = 
   for (let i = 0; i < filepaths.length; i++) {
     var filepath = filepaths[i]
 
-    var relpath = Path.normalize(filepath).replace(abRootPath, '').slice(1)
+    var relpath = Path.normalize(filepath).replace(folder.fullPath, '').slice(1)
     var extname = Path.extname(filepath)
     var basename = Path.basename(filepath)
     var ino = await getIno(filepath)
