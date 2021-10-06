@@ -140,8 +140,7 @@ class Server {
       var folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
 
-      var remainingPath = decodeURIComponent(req.params['0'])
-
+      var remainingPath = req.params['0']
       var fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })
@@ -151,8 +150,7 @@ class Server {
       var audiobook = this.audiobooks.find(ab => ab.id === req.params.id)
       if (!audiobook) return res.status(404).send('Book not found with id ' + req.params.id)
 
-      var remainingPath = decodeURIComponent(req.params['0'])
-
+      var remainingPath = req.params['0']
       var fullPath = Path.join(audiobook.fullPath, remainingPath)
       res.sendFile(fullPath)
     })

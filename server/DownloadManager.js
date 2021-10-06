@@ -240,8 +240,8 @@ class DownloadManager {
     }
 
     if (shouldIncludeCover) {
-      var _cover = audiobook.book.cover
-      if (_cover.startsWith(Path.sep + 'local')) {
+      var _cover = audiobook.book.coverFullPath
+      if (!_cover && audiobook.book.cover && audiobook.book.cover.startsWith(Path.sep + 'local')) {
         _cover = Path.join(this.AudiobookPath, _cover.replace(Path.sep + 'local', ''))
         Logger.debug('Local cover url', _cover)
       }

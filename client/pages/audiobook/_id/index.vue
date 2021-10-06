@@ -113,6 +113,7 @@ export default {
       console.error('No audiobook...', params.id)
       return redirect('/')
     }
+    store.commit('audiobooks/addUpdate', audiobook)
     return {
       audiobook
     }

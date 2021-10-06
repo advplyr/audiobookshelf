@@ -1,6 +1,5 @@
 import { sort } from '@/assets/fastSort'
 import { decode } from '@/plugins/init.client'
-import Path from 'path'
 
 const STANDARD_GENRES = ['Adventure', 'Autobiography', 'Biography', 'Childrens', 'Comedy', 'Crime', 'Dystopian', 'Fantasy', 'Fiction', 'Health', 'History', 'Horror', 'Mystery', 'New Adult', 'Nonfiction', 'Philosophy', 'Politics', 'Religion', 'Romance', 'Sci-Fi', 'Self-Help', 'Short Story', 'Technology', 'Thriller', 'True Crime', 'Western', 'Young Adult']
 
@@ -138,15 +137,20 @@ export const getters = {
       var bookLastUpdate = book.lastUpdate || Date.now()
       var userToken = rootGetters['user/getToken']
 
+      cover = cover.replace(/\\/g, '/')
+
       // Map old covers to new format /s/book/{bookid}/*
-      if (cover.startsWith('\\local')) {
-        cover = cover.replace('local', `s\\book\\${bookItem.id}`)
-        if (cover.includes(bookItem.path + '\\')) { // Remove book path
-          cover = cover.replace(bookItem.path + '\\', '')
+      if (cover.startsWith('/local')) {
+        cover = cover.replace('local', `s/book/${bookItem.id}`)
+        if (cover.includes(bookItem.path + '/')) { // Remove book path
+          cover = cover.replace(bookItem.path + '/', '')
         }
       }
 
-      var url = new URL(cover, document.baseURI)
+      // Easier to replace these special characters then to encodeUriComponent of the filename
+      var encodedCover = cover.replace(/%/g, '%25').replace(/#/g, '%23')
+
+      var url = new URL(encodedCover, document.baseURI)
       return url.href + `?token=${userToken}&ts=${bookLastUpdate}`
     } catch (err) {
       console.error(err)
@@ -243,6 +247,7 @@ export const mutations = {
   },
   addUpdate(state, audiobook) {
     if (audiobook.libraryId !== state.loadedLibraryId) {
+      console.warn('Invalid library', audiobook)
       return
     }
 

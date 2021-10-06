@@ -163,6 +163,7 @@ export default {
       if (!download || !download.audiobookId) {
         return console.error('Invalid download object', download)
       }
+
       var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
       if (!audiobook) {
         return console.error('Audiobook not found for download', download)
