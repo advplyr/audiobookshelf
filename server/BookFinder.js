@@ -7,6 +7,8 @@ class BookFinder {
   constructor() {
     this.openLibrary = new OpenLibrary()
     this.libGen = new LibGen()
+
+    this.verbose = false
   }
 
   async findByISBN(isbn) {
@@ -92,17 +94,17 @@ class BookFinder {
       return b
     }).filter(b => {
       if (b.includesTitle) { // If search title was found in result title then skip over leven distance check
-        Logger.debug(`Exact title was included in "${b.title}", Search: "${b.includesTitle}"`)
+        if (this.verbose) Logger.debug(`Exact title was included in "${b.title}", Search: "${b.includesTitle}"`)
       } else if (b.titleDistance > maxTitleDistance) {
-        Logger.debug(`Filtering out search result title distance = ${b.titleDistance}: "${b.cleanedTitle}"/"${searchTitle}"`)
+        if (this.verbose) Logger.debug(`Filtering out search result title distance = ${b.titleDistance}: "${b.cleanedTitle}"/"${searchTitle}"`)
         return false
       }
 
       if (author) {
         if (b.includesAuthor) { // If search author was found in result author then skip over leven distance check
-          Logger.debug(`Exact author was included in "${b.author}", Search: "${b.includesAuthor}"`)
+          if (this.verbose) Logger.debug(`Exact author was included in "${b.author}", Search: "${b.includesAuthor}"`)
         } else if (b.authorDistance > maxAuthorDistance) {
-          Logger.debug(`Filtering out search result "${b.author}", author distance = ${b.authorDistance}: "${b.author}"/"${author}"`)
+          if (this.verbose) Logger.debug(`Filtering out search result "${b.author}", author distance = ${b.authorDistance}: "${b.author}"/"${author}"`)
           return false
         }
       }
@@ -115,28 +117,28 @@ class BookFinder {
 
   async getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance) {
     var books = await this.libGen.search(title)
-    Logger.debug(`LibGen Book Search Results: ${books.length || 0}`)
+    if (this.verbose) Logger.debug(`LibGen Book Search Results: ${books.length || 0}`)
     if (books.errorCode) {
       Logger.error(`LibGen Search Error ${books.errorCode}`)
       return []
     }
     var booksFiltered = this.filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance)
     if (!booksFiltered.length && books.length) {
-      Logger.debug(`Search has ${books.length} matches, but no close title matches`)
+      if (this.verbose) Logger.debug(`Search has ${books.length} matches, but no close title matches`)
     }
     return booksFiltered
   }
 
   async getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance) {
     var books = await this.openLibrary.searchTitle(title)
-    Logger.debug(`OpenLib Book Search Results: ${books.length || 0}`)
+    if (this.verbose) Logger.debug(`OpenLib Book Search Results: ${books.length || 0}`)
     if (books.errorCode) {
       Logger.error(`OpenLib Search Error ${books.errorCode}`)
       return []
     }
     var booksFiltered = this.filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance)
     if (!booksFiltered.length && books.length) {
-      Logger.debug(`Search has ${books.length} matches, but no close title matches`)
+      if (this.verbose) Logger.debug(`Search has ${books.length} matches, but no close title matches`)
     }
     return booksFiltered
   }
@@ -145,7 +147,7 @@ class BookFinder {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
-    Logger.debug(`Book Search, title: "${title}", author: "${author}", provider: ${provider}`)
+    Logger.debug(`Cover Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)

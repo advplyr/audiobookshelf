@@ -4,7 +4,9 @@
       <div class="mb-4 flex items-center justify-between">
         <p class="text-2xl">Logger</p>
 
-        <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" />
+        <div class="w-44">
+          <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" />
+        </div>
       </div>
 
       <div class="relative">

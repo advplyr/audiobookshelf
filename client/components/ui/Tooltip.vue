@@ -20,6 +20,7 @@ export default {
   data() {
     return {
       tooltip: null,
+      tooltipId: null,
       isShowing: false
     }
   },
@@ -45,13 +46,14 @@ export default {
         'font-size': '0.75rem'
       }
       var size = this.$calculateTextSize(this.text, styles)
-      console.log('Text Size', size.width, size.height)
       return size.width
     },
     createTooltip() {
       if (!this.$refs.box) return
       var tooltip = document.createElement('div')
-      tooltip.className = 'absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs'
+      this.tooltipId = String(Math.floor(Math.random() * 10000))
+      tooltip.id = this.tooltipId
+      tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs'
       tooltip.style.zIndex = 100
       tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
       tooltip.innerHTML = this.text
@@ -91,8 +93,14 @@ export default {
       if (this.disabled) return
       if (!this.tooltip) {
         this.createTooltip()
+        if (!this.tooltip) return
       }
-      document.body.appendChild(this.tooltip)
+      if (!this.$refs.box) return // Ensure element is not destroyed
+      try {
+        document.body.appendChild(this.tooltip)
+      } catch (error) {
+        console.error(error)
+      }
       this.isShowing = true
     },
     hideTooltip() {

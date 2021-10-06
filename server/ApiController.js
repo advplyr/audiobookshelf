@@ -557,7 +557,7 @@ class ApiController {
     }
     var settingsUpdate = req.body
     if (!settingsUpdate || !isObject(settingsUpdate)) {
-      return res.sendStatus(500)
+      return res.status(500).send('Invalid settings update object')
     }
     var madeUpdates = this.db.serverSettings.update(settingsUpdate)
     if (madeUpdates) {

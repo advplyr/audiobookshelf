@@ -67,6 +67,11 @@ export default {
       if (payload.serverSettings) {
         this.$store.commit('setServerSettings', payload.serverSettings)
       }
+      if (payload.librariesScanning) {
+        payload.librariesScanning.forEach((libraryScan) => {
+          this.scanStart(libraryScan)
+        })
+      }
     },
     streamOpen(stream) {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamOpen(stream)
@@ -123,7 +128,7 @@ export default {
 
       var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
       if (existingScan && !isNaN(existingScan.toastId)) {
-        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: 'success', closeButton: false, position: 'bottom-center' } }, true)
+        this.$toast.update(existingScan.toastId, { content: message, options: { timeout: 5000, type: 'success', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
       } else {
         this.$toast.success(message, { timeout: 5000, position: 'bottom-center' })
       }
@@ -131,20 +136,19 @@ export default {
       this.$store.commit('scanners/remove', data)
     },
     onScanToastCancel(id) {
-      console.log('On Scan Toast Cancel', id)
       this.$root.socket.emit('cancel_scan', id)
     },
     scanStart(data) {
       data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
-      console.log('Scan start toast id', data.toastId)
       this.$store.commit('scanners/addUpdate', data)
     },
     scanProgress(data) {
-      console.log('scan progress', data)
       var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
       if (existingScan && !isNaN(existingScan.toastId)) {
         data.toastId = existingScan.toastId
         this.$toast.update(existingScan.toastId, { content: `Scanning "${existingScan.name}"... ${data.progress.progress || 0}%`, options: { timeout: false } }, true)
+      } else {
+        data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
       }
 
       this.$store.commit('scanners/addUpdate', data)

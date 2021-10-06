@@ -178,8 +178,6 @@ class Server {
       res.json({ success: true })
     })
 
-    app.get('/test-fs', this.authMiddleware.bind(this), this.testFileSystem.bind(this))
-
     // Used in development to set-up streams without authentication
     if (process.env.NODE_ENV !== 'production') {
       app.use('/test-hls', this.hlsController.router)
@@ -292,7 +290,7 @@ class Server {
   }
 
   cancelScan(id) {
-    console.log('Cancel scan', id)
+    Logger.debug('[Server] Cancel scan', id)
     this.scanner.cancelLibraryScan[id] = true
   }
 
@@ -344,26 +342,33 @@ class Server {
     var title = req.body.title
     var author = req.body.author
     var series = req.body.series
+    var libraryId = req.body.library
+    var folderId = req.body.folder
+
+    var library = this.db.libraries.find(lib => lib.id === libraryId)
+    if (!library) {
+      return res.status(500).error(`Library not found with id ${libraryId}`)
+    }
+    var folder = library.folders.find(fold => fold.id === folderId)
+    if (!folder) {
+      return res.status(500).error(`Folder not found with id ${folderId} in library ${library.name}`)
+    }
 
     if (!files.length || !title || !author) {
-      return res.json({
-        error: 'Invalid post data received'
-      })
+      return res.status(500).error(`Invalid post data`)
     }
 
     var outputDirectory = ''
     if (series && series.length && series !== 'null') {
-      outputDirectory = Path.join(this.AudiobookPath, author, series, title)
+      outputDirectory = Path.join(folder.fullPath, author, series, title)
     } else {
-      outputDirectory = Path.join(this.AudiobookPath, author, title)
+      outputDirectory = Path.join(folder.fullPath, author, title)
     }
 
     var exists = await fs.pathExists(outputDirectory)
     if (exists) {
       Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.json({
-        error: `Directory "${outputDirectory}" already exists`
-      })
+      return res.status(500).error(`Directory "${outputDirectory}" already exists`)
     }
 
     await fs.ensureDir(outputDirectory)
@@ -438,7 +443,8 @@ class Server {
       metadataPath: this.MetadataPath,
       configPath: this.ConfigPath,
       user: client.user.toJSONForBrowser(),
-      stream: client.stream || null
+      stream: client.stream || null,
+      librariesScanning: this.scanner.librariesScanning
     }
     client.socket.emit('init', initialPayload)
 
@@ -462,27 +468,6 @@ class Server {
         resolve()
       })
     })
-  }
-
-  async testFileSystem(req, res) {
-    Logger.debug(`[Server] Running fs test`)
-    var paths = await fs.readdir(global.appRoot)
-    Logger.debug(paths)
-    var pathMap = {}
-    if (paths && paths.length) {
-      for (let i = 0; i < paths.length; i++) {
-        var fullPath = Path.join(global.appRoot, paths[i])
-        Logger.debug('Checking path', fullPath)
-        var isDirectory = fs.lstatSync(fullPath).isDirectory()
-        if (isDirectory) {
-          var _paths = await fs.readdir(fullPath)
-          Logger.debug(_paths)
-          pathMap[paths[i]] = _paths
-        }
-      }
-    }
-    Logger.debug('Finished fs test')
-    res.json(pathMap)
   }
 }
 module.exports = Server

@@ -50,12 +50,15 @@ export default {
   computed: {
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
     submitSearch() {
       if (!this.search) return
-      this.$router.push(`/library/search?query=${this.search}`)
+      this.$router.push(`/library/${this.currentLibraryId}/bookshelf/search?query=${this.search}`)
 
       this.search = null
       this.items = []

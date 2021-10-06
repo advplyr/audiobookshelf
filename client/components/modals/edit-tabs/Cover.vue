@@ -33,7 +33,7 @@
             <template v-for="cover in localCovers">
               <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover.localPath)">
                 <div class="h-24 bg-primary" style="width: 60px">
-                  <img :src="cover.localPath" class="h-full w-full object-contain" />
+                  <img :src="`${cover.localPath}?token=${userToken}`" class="h-full w-full object-contain" />
                 </div>
               </div>
             </template>
@@ -124,8 +124,14 @@ export default {
         this.$emit('update:processing', val)
       }
     },
+    audiobookId() {
+      return this.audiobook ? this.audiobook.id : null
+    },
     book() {
       return this.audiobook ? this.audiobook.book || {} : {}
+    },
+    audiobookPath() {
+      return this.audiobook ? this.audiobook.path : null
     },
     otherFiles() {
       return this.audiobook ? this.audiobook.otherFiles || [] : []
@@ -133,12 +139,16 @@ export default {
     userCanUpload() {
       return this.$store.getters['user/getUserCanUpload']
     },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     localCovers() {
       return this.otherFiles
         .filter((f) => f.filetype === 'image')
         .map((file) => {
           var _file = { ...file }
-          _file.localPath = Path.join('local', _file.path)
+          var imgRelPath = _file.path.replace(this.audiobookPath, '')
+          _file.localPath = `/s/book/${this.audiobookId}${imgRelPath}`
           return _file
         })
     }

@@ -5,6 +5,15 @@
         <h1 class="text-xl font-book px-8 pt-4 pb-2">Audiobook Uploader</h1>
 
         <div class="flex my-2 px-6">
+          <div class="w-1/3 px-2">
+            <!-- <ui-text-input-with-label v-model="title" label="Title" /> -->
+            <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" label="Library" @input="libraryChanged" />
+          </div>
+          <div class="w-2/3 px-2">
+            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId" label="Folder" />
+          </div>
+        </div>
+        <div class="flex my-2 px-6">
           <div class="w-1/2 px-2">
             <ui-text-input-with-label v-model="title" label="Title" />
           </div>
@@ -127,7 +136,9 @@ export default {
       showUploader: true,
       validAudioFiles: [],
       validImageFiles: [],
-      invalidFiles: []
+      invalidFiles: [],
+      selectedLibraryId: null,
+      selectedFolderId: null
     }
   },
   computed: {
@@ -140,13 +151,55 @@ export default {
     directory() {
       if (!this.author || !this.title) return ''
       if (this.series) {
-        return Path.join('/audiobooks', this.author, this.series, this.title)
+        return Path.join(this.author, this.series, this.title)
       } else {
-        return Path.join('/audiobooks', this.author, this.title)
+        return Path.join(this.author, this.title)
       }
+    },
+    libraries() {
+      return this.$store.state.libraries.libraries
+    },
+    libraryItems() {
+      return this.libraries.map((lib) => {
+        return {
+          value: lib.id,
+          text: lib.name
+        }
+      })
+    },
+    selectedLibrary() {
+      return this.libraries.find((lib) => lib.id === this.selectedLibraryId)
+    },
+    selectedFolder() {
+      if (!this.selectedLibrary) return null
+      return this.selectedLibrary.folders.find((fold) => fold.id === this.selectedFolderId)
+    },
+    folderItems() {
+      if (!this.selectedLibrary) return []
+      return this.selectedLibrary.folders.map((fold) => {
+        return {
+          value: fold.id,
+          text: fold.fullPath
+        }
+      })
     }
   },
   methods: {
+    libraryChanged() {
+      if (!this.selectedLibrary && this.selectedFolderId) {
+        this.selectedFolderId = null
+      } else if (this.selectedFolderId) {
+        if (!this.selectedLibrary.folders.find((fold) => fold.id === this.selectedFolderId)) {
+          this.selectedFolderId = null
+        }
+      }
+      this.setDefaultFolder()
+    },
+    setDefaultFolder() {
+      if (!this.selectedFolderId && this.selectedLibrary && this.selectedLibrary.folders.length) {
+        this.selectedFolderId = this.selectedLibrary.folders[0].id
+      }
+    },
     reset() {
       this.title = ''
       this.author = ''
@@ -218,12 +271,18 @@ export default {
         this.$toast.error('Must enter a title and author')
         return
       }
+      if (!this.selectedLibraryId || !this.selectedFolderId) {
+        this.$toast.error('Must select a library and folder')
+        return
+      }
       this.processing = true
 
       var form = new FormData()
       form.set('title', this.title)
       form.set('author', this.author)
       form.set('series', this.series)
+      form.set('library', this.selectedLibraryId)
+      form.set('folder', this.selectedFolderId)
 
       var index = 0
       var files = this.validAudioFiles.concat(this.validImageFiles)
@@ -234,21 +293,21 @@ export default {
       this.$axios
         .$post('/upload', form)
         .then((data) => {
-          if (data.error) {
-            this.$toast.error(data.error)
-          } else {
-            this.$toast.success('Audiobook Uploaded Successfully')
-            this.reset()
-          }
+          this.$toast.success('Audiobook Uploaded Successfully')
+          this.reset()
           this.processing = false
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.$toast.error('Oops, something went wrong...')
+          var errorMessage = error.response && error.response.data ? error.response.data : 'Oops, something went wrong...'
+          this.$toast.error(errorMessage)
           this.processing = false
         })
     }
   },
-  mounted() {}
+  mounted() {
+    this.selectedLibraryId = this.$store.state.libraries.currentLibraryId
+    this.setDefaultFolder()
+  }
 }
 </script>

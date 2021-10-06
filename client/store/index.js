@@ -35,7 +35,7 @@ export const actions = {
     }
     return this.$axios.$patch('/api/serverSettings', updatePayload).then((result) => {
       if (result.success) {
-        commit('setServerSettings', result.settings)
+        commit('setServerSettings', result.serverSettings)
         return true
       } else {
         return false
@@ -78,6 +78,7 @@ export const mutations = {
     state.versionData = versionData
   },
   setServerSettings(state, settings) {
+    if (!settings) return
     state.serverSettings = settings
   },
   setStreamAudiobook(state, audiobook) {

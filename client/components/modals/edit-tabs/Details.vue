@@ -60,8 +60,8 @@
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
           </ui-tooltip>
 
-          <ui-tooltip text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
-            <ui-btn v-if="isRootUser" :loading="rescanning" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
+          <ui-tooltip :disabled="libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
+            <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
           </ui-tooltip>
 
           <div class="flex-grow" />
@@ -138,6 +138,13 @@ export default {
     },
     series() {
       return this.$store.state.audiobooks.series
+    },
+    libraryId() {
+      return this.audiobook ? this.audiobook.libraryId : null
+    },
+    libraryScan() {
+      if (!this.libraryId) return null
+      return this.$store.getters['scanners/getLibraryScan'](this.libraryId)
     }
   },
   methods: {
@@ -206,6 +213,8 @@ export default {
       this.details.series = this.book.series
       this.details.volumeNumber = this.book.volumeNumber
       this.details.publishYear = this.book.publishYear
+
+      console.log('INIT', this.details)
 
       this.newTags = this.audiobook.tags || []
     },

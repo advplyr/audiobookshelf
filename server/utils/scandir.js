@@ -107,6 +107,7 @@ function getFileType(ext) {
   if (ext_cleaned.startsWith('.')) ext_cleaned = ext_cleaned.slice(1)
   if (globals.SupportedAudioTypes.includes(ext_cleaned)) return 'audio'
   if (ext_cleaned === 'nfo') return 'info'
+  if (ext_cleaned === 'txt') return 'text'
   if (globals.SupportedImageTypes.includes(ext_cleaned)) return 'image'
   if (globals.SupportedEbookTypes.includes(ext_cleaned)) return 'ebook'
   return 'unknown'
@@ -243,6 +244,7 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
   var audiobookDir = Path.normalize(audiobookPath).replace(folder.fullPath, '').slice(1)
   var audiobookData = getAudiobookDataFromDir(folder.fullPath, audiobookDir, parseSubtitle)
   var audiobook = {
+    ino: await getIno(audiobookData.fullPath),
     folderId: folder.id,
     libraryId: folder.libraryId,
     ...audiobookData,

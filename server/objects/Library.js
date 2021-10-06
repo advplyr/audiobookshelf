@@ -6,6 +6,8 @@ class Library {
     this.name = null
     this.folders = []
 
+    this.lastScan = 0
+
     this.createdAt = null
     this.lastUpdate = null
 
@@ -74,6 +76,7 @@ class Library {
 
       if (newFolders.length) {
         newFolders.forEach((folderData) => {
+          folderData.libraryId = this.id
           var newFolder = new Folder()
           newFolder.setData(folderData)
           this.folders.push(newFolder)
@@ -90,6 +93,10 @@ class Library {
 
   checkFullPathInLibrary(fullPath) {
     return this.folders.find(folder => fullPath.startsWith(folder.fullPath))
+  }
+
+  getFolderById(id) {
+    return this.folders.find(folder => folder.id === id)
   }
 }
 module.exports = Library

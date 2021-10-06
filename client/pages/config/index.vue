@@ -19,7 +19,7 @@
         </div>
 
         <div class="flex items-center py-2">
-          <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updatingServerSettings" />
+          <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updateScannerFindCovers" />
           <ui-tooltip :text="scannerFindCoversTooltip">
             <p class="pl-4 text-lg">Scanner find covers <span class="material-icons icon-text">info_outlined</span></p>
           </ui-tooltip>
@@ -123,8 +123,6 @@
     </div>
 
     <div class="fixed bottom-0 left-0 w-10 h-10" @dblclick="setDeveloperMode"></div>
-
-    
   </div>
 </template>
 
@@ -187,6 +185,11 @@ export default {
     toggleShowExperimentalFeatures() {
       this.$store.commit('setExperimentalFeatures', !this.showExperimentalFeatures)
     },
+    updateScannerFindCovers(val) {
+      this.updateServerSettings({
+        scannerFindCovers: !!val
+      })
+    },
     updateCoverStorageDestination(val) {
       this.newServerSettings.coverDestination = val ? this.$constants.CoverDestination.AUDIOBOOK : this.$constants.CoverDestination.METADATA
       this.updateServerSettings({
@@ -194,10 +197,9 @@ export default {
       })
     },
     updateScannerParseSubtitle(val) {
-      var payload = {
-        scannerParseSubtitle: val
-      }
-      this.updateServerSettings(payload)
+      this.updateServerSettings({
+        scannerParseSubtitle: !!val
+      })
     },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
@@ -216,15 +218,6 @@ export default {
       var value = !this.$store.state.developerMode
       this.$store.commit('setDeveloperMode', value)
       this.$toast.info(`Developer Mode ${value ? 'Enabled' : 'Disabled'}`)
-
-      this.$axios
-        .$get('/test-fs')
-        .then((res) => {
-          console.log('Test FS Result', res)
-        })
-        .catch((error) => {
-          console.error('Failed to test FS', error)
-        })
     },
     scan() {
       this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)

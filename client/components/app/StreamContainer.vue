@@ -63,12 +63,15 @@ export default {
     },
     playlistUrl() {
       return this.stream ? this.stream.clientPlaylistUri : null
+    },
+    libraryId() {
+      return this.streamAudiobook ? this.streamAudiobook.libraryId : null
     }
   },
   methods: {
     filterByAuthor() {
       if (this.$route.name !== 'index') {
-        this.$router.push('/library')
+        this.$router.push(`/library/${this.libraryId || this.$store.state.libraries.currentLibraryId}/bookshelf`)
       }
       var settingsUpdate = {
         filterBy: `authors.${this.$encode(this.author)}`

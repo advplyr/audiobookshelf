@@ -45,9 +45,9 @@ class FolderWatcher extends EventEmitter {
       }).on('rename', (path, pathNext) => {
         this.onRename(library.id, path, pathNext)
       }).on('error', (error) => {
-        Logger.error(`[FolderWatcher] ${error}`)
+        Logger.error(`[Watcher] ${error}`)
       }).on('ready', () => {
-        Logger.info('[FolderWatcher] Ready')
+        Logger.info(`[Watcher] "${library.name}" Ready`)
       })
 
     this.libraryWatchers.push({
@@ -107,18 +107,6 @@ class FolderWatcher extends EventEmitter {
   onFileRemoved(libraryId, path) {
     Logger.debug('[Watcher] File Removed', path)
     this.addFileUpdate(libraryId, path, 'deleted')
-    // var dir = Path.dirname(path)
-    // if (dir === this.AudiobookPath) {
-    //   Logger.debug('New File added to root dir, ignoring it')
-    //   return
-    // }
-
-    // this.pendingFiles.push(path)
-    // clearTimeout(this.pendingTimeout)
-    // this.pendingTimeout = setTimeout(() => {
-    //   this.emit('files', this.pendingFiles.map(f => f))
-    //   this.pendingFiles = []
-    // }, this.pendingDelay)
   }
 
   onFileUpdated(path) {
@@ -128,18 +116,6 @@ class FolderWatcher extends EventEmitter {
   onRename(libraryId, pathFrom, pathTo) {
     Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
     this.addFileUpdate(libraryId, pathTo, 'renamed')
-    // var dir = Path.dirname(pathTo)
-    // if (dir === this.AudiobookPath) {
-    //   Logger.debug('New File added to root dir, ignoring it')
-    //   return
-    // }
-
-    // this.pendingFiles.push(pathTo)
-    // clearTimeout(this.pendingTimeout)
-    // this.pendingTimeout = setTimeout(() => {
-    //   this.emit('files', this.pendingFiles.map(f => f))
-    //   this.pendingFiles = []
-    // }, this.pendingDelay)
   }
 
   addFileUpdate(libraryId, path, type) {
@@ -167,7 +143,7 @@ class FolderWatcher extends EventEmitter {
     }
 
     var relPath = path.replace(folder.fullPath, '')
-    Logger.debug(`[Watcher] New File in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
+    Logger.debug(`[Watcher] Modified file in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
 
     this.pendingFileUpdates.push({
       path,

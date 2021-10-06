@@ -10,8 +10,8 @@
     <p class="text-xl font-book pl-4" :class="mouseover ? 'underline' : ''">{{ library.name }}</p>
     <div class="flex-grow" />
     <ui-btn v-show="mouseover && !libraryScan && canScan" small color="bg" @click.stop="scan">Scan</ui-btn>
-    <span v-show="mouseover && showEdit && canEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4" @click.stop="editClick">edit</span>
-    <span v-show="mouseover && showEdit && canDelete" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50'" @click.stop="deleteClick">delete</span>
+    <span v-show="mouseover && !libraryScan && showEdit && canEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4" @click.stop="editClick">edit</span>
+    <span v-show="!libraryScan && mouseover && showEdit && canDelete" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50'" @click.stop="deleteClick">delete</span>
   </div>
 </template>
 

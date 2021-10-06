@@ -117,7 +117,7 @@ class CoverController {
 
     Logger.info(`[CoverController] Uploaded audiobook cover "${coverPath}" for "${audiobook.title}"`)
 
-    audiobook.updateBookCover(coverPath)
+    audiobook.updateBookCover(coverPath, coverFullPath)
     return {
       cover: coverPath
     }
@@ -169,7 +169,7 @@ class CoverController {
 
       Logger.info(`[CoverController] Downloaded audiobook cover "${coverPath}" from url "${url}" for "${audiobook.title}"`)
 
-      audiobook.updateBookCover(coverPath)
+      audiobook.updateBookCover(coverPath, coverFullPath)
       return {
         cover: coverPath
       }

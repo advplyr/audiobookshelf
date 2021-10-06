@@ -81,14 +81,17 @@ export default {
       set(val) {
         this.$store.commit('audiobooks/setKeywordFilter', val)
       }
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
     searchBackArrow() {
-      this.$router.replace('/library')
+      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
     },
     seriesBackArrow() {
-      this.$router.replace('/library/series')
+      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/series`)
       this.$emit('update:selectedSeries', null)
     },
     updateOrder() {

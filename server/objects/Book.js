@@ -20,7 +20,13 @@ class Book {
     this.cover = null
     this.coverFullPath = null
     this.genres = []
+
     this.lastUpdate = null
+
+    // Should not continue looking up a cover when it is not findable
+    this.lastCoverSearch = null
+    this.lastCoverSearchTitle = null
+    this.lastCoverSearchAuthor = null
 
     if (book) {
       this.construct(book)
@@ -32,6 +38,12 @@ class Book {
   get _narrarator() { return this.narrarator || '' }
   get _author() { return this.author || '' }
   get _series() { return this.series || '' }
+
+  get shouldSearchForCover() {
+    if (this.author !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
+    var timeSinceLastSearch = Date.now() - this.lastCoverSearch
+    return timeSinceLastSearch > 1000 * 60 * 60 * 24 * 7 // every 7 days do another lookup
+  }
 
   construct(book) {
     this.olid = book.olid
@@ -50,6 +62,9 @@ class Book {
     this.coverFullPath = book.coverFullPath || null
     this.genres = book.genres
     this.lastUpdate = book.lastUpdate || Date.now()
+    this.lastCoverSearch = book.lastCoverSearch || null
+    this.lastCoverSearchTitle = book.lastCoverSearchTitle || null
+    this.lastCoverSearchAuthor = book.lastCoverSearchAuthor || null
   }
 
   toJSON() {
@@ -69,7 +84,10 @@ class Book {
       cover: this.cover,
       coverFullPath: this.coverFullPath,
       genres: this.genres,
-      lastUpdate: this.lastUpdate
+      lastUpdate: this.lastUpdate,
+      lastCoverSearch: this.lastCoverSearch,
+      lastCoverSearchTitle: this.lastCoverSearchTitle,
+      lastCoverSearchAuthor: this.lastCoverSearchAuthor
     }
   }
 
@@ -106,6 +124,9 @@ class Book {
     this.coverFullPath = data.coverFullPath || null
     this.genres = data.genres || []
     this.lastUpdate = Date.now()
+    this.lastCoverSearch = data.lastCoverSearch || null
+    this.lastCoverSearchTitle = data.lastCoverSearchTitle || null
+    this.lastCoverSearchAuthor = data.lastCoverSearchAuthor || null
 
     if (data.author) {
       this.setParseAuthor(this.author)
@@ -119,6 +140,7 @@ class Book {
       // If updating to local cover then normalize path
       if (!payload.cover.startsWith('http:') && !payload.cover.startsWith('https:')) {
         payload.cover = Path.normalize(payload.cover)
+        if (payload.coverFullPath) payload.coverFullPath = Path.normalize(payload.coverFullPath)
       }
     }
 
@@ -154,10 +176,19 @@ class Book {
     return hasUpdates
   }
 
-  updateCover(cover) {
+  updateLastCoverSearch(coverWasFound) {
+    this.lastCoverSearch = coverWasFound ? null : Date.now()
+    this.lastCoverSearchAuthor = coverWasFound ? null : this.author
+    this.lastCoverSearchTitle = coverWasFound ? null : this.title
+  }
+
+  updateCover(cover, coverFullPath) {
     if (!cover) return false
     if (!cover.startsWith('http:') && !cover.startsWith('https:')) {
       cover = Path.normalize(cover)
+      this.coverFullPath = Path.normalize(coverFullPath)
+    } else {
+      this.coverFullPath = cover
     }
     this.cover = cover
     this.lastUpdate = Date.now()

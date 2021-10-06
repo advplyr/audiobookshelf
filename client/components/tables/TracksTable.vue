@@ -21,7 +21,7 @@
             <th class="text-left">Duration</th>
             <th v-if="userCanDownload" class="text-center">Download</th>
           </tr>
-          <template v-for="track in tracks">
+          <template v-for="track in tracksCleaned">
             <tr :key="track.index">
               <td class="text-center">
                 <p>{{ track.index }}</p>
@@ -36,7 +36,7 @@
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/local/${track.path}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/book/${audiobook.id}/${track.relativePath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -53,7 +53,10 @@ export default {
       type: Array,
       default: () => []
     },
-    audiobookId: String
+    audiobook: {
+      type: Object,
+      default: () => null
+    }
   },
   data() {
     return {
@@ -61,6 +64,26 @@ export default {
     }
   },
   computed: {
+    audiobookId() {
+      return this.audiobook.id
+    },
+    audiobookPath() {
+      return this.audiobook.path
+    },
+    tracksCleaned() {
+      return this.tracks.map((track) => {
+        var trackPath = track.path.replace(/\\/g, '/')
+        var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
+
+        return {
+          ...track,
+          relativePath: trackPath.replace(audiobookPath)
+        }
+      })
+    },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },

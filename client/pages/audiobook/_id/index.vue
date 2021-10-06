@@ -11,7 +11,9 @@
         <div class="flex-grow px-10">
           <div class="flex">
             <div class="mb-2">
-              <h1 class="text-2xl font-book leading-7">{{ title }}</h1>
+              <h1 class="text-2xl font-book leading-7">
+                {{ title }}<span v-if="isDeveloperMode"> ({{ audiobook.ino }})</span>
+              </h1>
               <h3 v-if="series" class="font-book text-gray-300 text-lg leading-7">{{ seriesText }}</h3>
               <div class="w-min">
                 <ui-tooltip :text="authorTooltipText" direction="bottom">
@@ -84,7 +86,7 @@
             </div>
           </div>
 
-          <tables-tracks-table :tracks="tracks" :audiobook-id="audiobook.id" class="mt-6" />
+          <tables-tracks-table :tracks="tracks" :audiobook="audiobook" class="mt-6" />
 
           <tables-audio-files-table v-if="otherAudioFiles.length" :audiobook-id="audiobook.id" :files="otherAudioFiles" class="mt-6" />
 
