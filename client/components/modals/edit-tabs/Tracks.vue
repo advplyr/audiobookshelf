@@ -69,7 +69,7 @@ export default {
 
         return {
           ...track,
-          relativePath: trackPath.replace(audiobookPath)
+          relativePath: trackPath.replace(audiobookPath, '')
         }
       })
     },

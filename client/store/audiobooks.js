@@ -187,8 +187,7 @@ export const actions = {
         commit('set', [])
       })
     return true
-  },
-
+  }
 }
 
 export const mutations = {

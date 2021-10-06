@@ -127,6 +127,9 @@ class Server {
     // Metadata folder static path
     app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
 
+    // Downloads folder static path
+    app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
+
     // Static folder
     app.use(express.static(Path.join(global.appRoot, 'static')))
 

@@ -26,9 +26,7 @@
               <td class="text-center">
                 <p>{{ track.index }}</p>
               </td>
-              <td class="font-book">
-                {{ track.filename }}
-              </td>
+              <td class="font-book">{{ track.filename }}</td>
               <td class="font-mono">
                 {{ $bytesPretty(track.size) }}
               </td>
@@ -77,7 +75,7 @@ export default {
 
         return {
           ...track,
-          relativePath: trackPath.replace(audiobookPath)
+          relativePath: trackPath.replace(audiobookPath, '')
         }
       })
     },
