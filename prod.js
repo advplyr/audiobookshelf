@@ -24,8 +24,10 @@ const PORT = options.port || process.env.PORT || 3333
 const CONFIG_PATH = inputConfig || process.env.CONFIG_PATH || Path.resolve('config')
 const AUDIOBOOK_PATH = inputAudiobook || process.env.AUDIOBOOK_PATH || Path.resolve('audiobooks')
 const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve('metadata')
+const UID = 99
+const GID = 100
 
 console.log(process.env.NODE_ENV, 'Config', CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 
-const Server = new server(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
+const Server = new server(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 Server.start()

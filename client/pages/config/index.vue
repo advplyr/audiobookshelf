@@ -33,52 +33,6 @@
         </div>
       </div>
 
-      <!-- <div class="py-4">
-        <p class="text-2xl">Scanner</p>
-        <div class="flex items-start py-2">
-          <div class="py-2">
-            <div class="flex items-center">
-              <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
-              <ui-tooltip :text="parseSubtitleTooltip">
-                <p class="pl-4 text-lg">Parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
-              </ui-tooltip>
-            </div>
-          </div>
-          <div class="flex-grow" />
-          <div class="w-40 flex flex-col">
-            <ui-btn color="success" class="mb-4" :loading="isScanning" :disabled="isScanningCovers" @click="scan">Scan</ui-btn>
-
-            <div class="w-full mb-4">
-              <ui-tooltip direction="bottom" text="(Warning: Long running task!) Attempts to lookup and match a cover with all audiobooks that don't have one." class="w-full">
-                <ui-btn color="primary" class="w-full" small :padding-x="2" :loading="isScanningCovers" :disabled="isScanning" @click="scanCovers">Scan for Covers</ui-btn>
-              </ui-tooltip>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
-
-      <div class="py-4 mb-4">
-        <p class="text-2xl">Metadata</p>
-        <div class="flex items-start py-2">
-          <div class="py-2">
-            <div class="flex items-center">
-              <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
-              <ui-tooltip :text="coverDestinationTooltip">
-                <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
-              </ui-tooltip>
-            </div>
-          </div>
-          <div class="flex-grow" />
-          <div class="w-40 flex flex-col">
-            <ui-tooltip :text="saveMetadataTooltip" direction="bottom" class="w-full">
-              <ui-btn color="primary" small class="w-full" @click="saveMetadataFiles">Save Metadata</ui-btn>
-            </ui-tooltip>
-          </div>
-        </div>
-      </div> -->
-
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
 
       <div class="flex items-center py-4">
@@ -108,7 +62,7 @@
         <div class="flex items-center">
           <div>
             <div class="flex items-center">
-              <ui-toggle-switch v-model="showExperimentalFeatures" @input="toggleShowExperimentalFeatures" />
+              <ui-toggle-switch v-model="showExperimentalFeatures" />
               <ui-tooltip :text="experimentalFeaturesTooltip">
                 <p class="pl-4 text-lg">Experimental Features <span class="material-icons icon-text">info_outlined</span></p>
               </ui-tooltip>
@@ -177,14 +131,20 @@ export default {
     isScanningCovers() {
       return this.$store.state.isScanningCovers
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
+    showExperimentalFeatures: {
+      get() {
+        return this.$store.state.showExperimentalFeatures
+      },
+      set(val) {
+        this.$store.commit('setExperimentalFeatures', val)
+      }
     }
   },
   methods: {
-    toggleShowExperimentalFeatures() {
-      this.$store.commit('setExperimentalFeatures', !this.showExperimentalFeatures)
-    },
+    // toggleShowExperimentalFeatures() {
+    //   var newExperimentalValue = !this.showExperimentalFeatures
+    //   this.$store.commit('setExperimentalFeatures', newExperimentalValue)
+    // },
     updateScannerFindCovers(val) {
       this.updateServerSettings({
         scannerFindCovers: !!val
@@ -221,9 +181,6 @@ export default {
     },
     scan() {
       this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
-    },
-    scanCovers() {
-      this.$root.socket.emit('scan_covers')
     },
     saveMetadataComplete(result) {
       this.savingMetadata = false

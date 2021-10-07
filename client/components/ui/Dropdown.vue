@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutside">
     <p class="text-sm text-opacity-75 mb-1">{{ label }}</p>
-    <button type="button" :disabled="disabled" class="relative h-10 w-full bg-fg border border-gray-500 rounded shadow-sm pl-3 pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="relative h-10 w-full bg-fg border border-gray-500 rounded shadow-sm pl-3 pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate">{{ selectedText }}</span>
       </span>

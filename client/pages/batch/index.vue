@@ -42,7 +42,7 @@
 
             <div class="flex mt-2 -mx-1">
               <div class="w-1/2 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.narrarator" label="Narrarator" />
+                <ui-text-input-with-label v-model="audiobook.book.narrator" label="Narrator" />
               </div>
             </div>
           </div>
@@ -94,6 +94,9 @@ export default {
     },
     seriesItems() {
       return [...this.series, ...this.newSeriesItems]
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
@@ -130,7 +133,7 @@ export default {
           this.isProcessing = false
           if (data.updates) {
             this.$toast.success(`Successfully updated ${data.updates} audiobooks`)
-            this.$router.replace('/library')
+            this.$router.replace(`/library/${this.currentLibraryId}`)
           } else {
             this.$toast.warning('No updates were necessary')
           }

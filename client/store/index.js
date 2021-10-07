@@ -9,10 +9,6 @@ export const state = () => ({
   showEditModal: false,
   selectedAudiobook: null,
   playOnLoad: false,
-  // isScanning: false,
-  // isScanningCovers: false,
-  // scanProgress: null,
-  // coverScanProgress: null,
   developerMode: false,
   selectedAudiobooks: [],
   processingBatch: false,
@@ -114,36 +110,18 @@ export const mutations = {
   setShowEditModal(state, val) {
     state.showEditModal = val
   },
-  // setIsScanning(state, isScanning) {
-  //   state.isScanning = isScanning
-  // },
-  // setScanProgress(state, scanProgress) {
-  //   if (scanProgress && scanProgress.progress > 0) state.isScanning = true
-  //   state.scanProgress = scanProgress
-  // },
-  // setIsScanningCovers(state, isScanningCovers) {
-  //   state.isScanningCovers = isScanningCovers
-  // },
-  // setCoverScanProgress(state, coverScanProgress) {
-  //   if (coverScanProgress && coverScanProgress.progress > 0) state.isScanningCovers = true
-  //   state.coverScanProgress = coverScanProgress
-  // },
   setDeveloperMode(state, val) {
     state.developerMode = val
   },
   setSelectedAudiobooks(state, audiobooks) {
     Vue.set(state, 'selectedAudiobooks', audiobooks)
-    // state.selectedAudiobooks = audiobooks
   },
   toggleAudiobookSelected(state, audiobookId) {
     if (state.selectedAudiobooks.includes(audiobookId)) {
       state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
     } else {
       var newSel = state.selectedAudiobooks.concat([audiobookId])
-      // state.selectedAudiobooks = newSel
-      console.log('Setting toggle on sel', newSel)
       Vue.set(state, 'selectedAudiobooks', newSel)
-      // state.selectedAudiobooks.push(audiobookId)
     }
   },
   setProcessingBatch(state, val) {
@@ -151,5 +129,6 @@ export const mutations = {
   },
   setExperimentalFeatures(state, val) {
     state.showExperimentalFeatures = val
+    localStorage.setItem('experimental', val ? 1 : 0)
   }
 }

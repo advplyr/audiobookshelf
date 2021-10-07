@@ -11,7 +11,7 @@ class Book {
     this.author = null
     this.authorFL = null
     this.authorLF = null
-    this.narrarator = null
+    this.narrator = null
     this.series = null
     this.volumeNumber = null
     this.publishYear = null
@@ -35,7 +35,7 @@ class Book {
 
   get _title() { return this.title || '' }
   get _subtitle() { return this.subtitle || '' }
-  get _narrarator() { return this.narrarator || '' }
+  get _narrator() { return this.narrator || '' }
   get _author() { return this.author || '' }
   get _series() { return this.series || '' }
 
@@ -52,7 +52,7 @@ class Book {
     this.author = book.author
     this.authorFL = book.authorFL || null
     this.authorLF = book.authorLF || null
-    this.narrarator = book.narrarator || null
+    this.narrator = book.narrator || book.narrarator || null // Mispelled initially... need to catch those
     this.series = book.series
     this.volumeNumber = book.volumeNumber || null
     this.publishYear = book.publishYear
@@ -75,7 +75,7 @@ class Book {
       author: this.author,
       authorFL: this.authorFL,
       authorLF: this.authorLF,
-      narrarator: this.narrarator,
+      narrator: this.narrator,
       series: this.series,
       volumeNumber: this.volumeNumber,
       publishYear: this.publishYear,
@@ -115,7 +115,7 @@ class Book {
     this.title = data.title || null
     this.subtitle = data.subtitle || null
     this.author = data.author || null
-    this.narrarator = data.narrarator || null
+    this.narrator = data.narrator || data.narrarator || null
     this.series = data.series || null
     this.volumeNumber = data.volumeNumber || null
     this.publishYear = data.publishYear || null
@@ -221,7 +221,7 @@ class Book {
     const MetadataMapArray = [
       {
         tag: 'tagComposer',
-        key: 'narrarator'
+        key: 'narrator'
       },
       {
         tag: 'tagDescription',

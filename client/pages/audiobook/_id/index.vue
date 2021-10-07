@@ -10,22 +10,79 @@
         </div>
         <div class="flex-grow px-10">
           <div class="flex">
-            <div class="mb-2">
-              <h1 class="text-2xl font-book leading-7">
-                {{ title }}<span v-if="isDeveloperMode"> ({{ audiobook.ino }})</span>
-              </h1>
-              <h3 v-if="series" class="font-book text-gray-300 text-lg leading-7">{{ seriesText }}</h3>
-              <div class="w-min">
-                <ui-tooltip :text="authorTooltipText" direction="bottom">
-                  <span class="text-sm text-gray-100 leading-7 whitespace-nowrap">by {{ author }}</span>
-                </ui-tooltip>
+            <div class="mb-4">
+              <div class="flex items-end">
+                <h1 class="text-3xl font-sans">
+                  {{ title }}<span v-if="isDeveloperMode"> ({{ audiobook.ino }})</span>
+                </h1>
+                <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl">{{ subtitle }}</p>
               </div>
+
+              <p class="mb-2 mt-0.5 text-gray-100 text-xl">
+                by <nuxt-link v-if="author" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link
+                ><span v-else>Unknown</span>
+              </p>
+
+              <h3 v-if="series" class="font-sans text-gray-300 text-lg leading-7 mb-4">{{ seriesText }}</h3>
+
+              <!-- <div class="w-min">
+                <ui-tooltip :text="authorTooltipText" direction="bottom">
+                  <span class="text-base text-gray-100 leading-8 whitespace-nowrap"><span class="text-white text-opacity-60">By:</span> {{ author }}</span>
+                </ui-tooltip>
+              </div> -->
+              <div v-if="narrator" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Narrated By</span>
+                </div>
+                <div>
+                  <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link>
+                </div>
+              </div>
+              <div v-if="publishYear" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Publish Year</span>
+                </div>
+                <div>
+                  {{ publishYear }}
+                </div>
+              </div>
+              <div class="flex py-0.5" v-if="genres.length">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Genres</span>
+                </div>
+                <div>
+                  <template v-for="(genre, index) in genres">
+                    <nuxt-link :key="genre" :to="`/library/${libraryId}/bookshelf?filter=genres.${$encode(genre)}`" class="hover:underline">{{ genre }}</nuxt-link
+                    ><span :key="index" v-if="index < genres.length - 1">,&nbsp;</span>
+                  </template>
+                </div>
+              </div>
+              <div class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Duration</span>
+                </div>
+                <div>
+                  {{ durationPretty }}
+                </div>
+              </div>
+              <div class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Size</span>
+                </div>
+                <div>
+                  {{ sizePretty }}
+                </div>
+              </div>
+              <!-- 
+              <p v-if="narrator" class="text-base">
+                <span class="text-white text-opacity-60">By:</span> <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link>
+              </p> -->
+              <!-- <p v-if="narrator" class="text-base"><span class="text-white text-opacity-60">Narrated by:</span> {{ narrator }}</p>
+              <p v-if="publishYear" class="text-base"><span class="text-white text-opacity-60">Publish year:</span> {{ publishYear }}</p>
+              <p v-if="genres.length" class="text-base"><span class="text-white text-opacity-60">Genres:</span> {{ genres.join(', ') }}</p> -->
             </div>
             <div class="flex-grow" />
           </div>
-          <p class="text-gray-300 text-sm my-1">
-            {{ durationPretty }}<span class="px-4">{{ sizePretty }}</span>
-          </p>
           <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max" :class="resettingProgress ? 'opacity-25' : ''">
             <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
             <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
@@ -62,12 +119,10 @@
             </ui-tooltip>
 
             <ui-btn v-if="isDeveloperMode" class="mx-2" @click="openRssFeed">Open RSS Feed</ui-btn>
-
-            <div class="flex-grow" />
           </div>
 
-          <div class="my-4">
-            <p class="text-sm text-gray-100">{{ description }}</p>
+          <div class="my-4 max-w-2xl">
+            <p class="text-base text-gray-100">{{ description }}</p>
           </div>
 
           <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">
@@ -181,11 +236,26 @@ export default {
     invalidParts() {
       return this.audiobook.invalidParts || []
     },
+    libraryId() {
+      return this.audiobook.libraryId
+    },
     audiobookId() {
       return this.audiobook.id
     },
     title() {
       return this.book.title || 'No Title'
+    },
+    publishYear() {
+      return this.book.publishYear
+    },
+    narrator() {
+      return this.book.narrator
+    },
+    subtitle() {
+      return this.book.subtitle
+    },
+    genres() {
+      return this.book.genres || []
     },
     author() {
       return this.book.author || 'Unknown'
@@ -338,6 +408,7 @@ export default {
       this.$axios
         .$get(`/api/audiobook/${this.audiobookId}`)
         .then((audiobook) => {
+          console.log('Updated audiobook', audiobook)
           this.audiobook = audiobook
         })
         .catch((error) => {

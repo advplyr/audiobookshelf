@@ -66,10 +66,10 @@
   background-color: #474747;
 }
 .tracksTable td {
-  padding: 4px;
+  padding: 4px 8px;
 }
 .tracksTable th {
-  padding: 4px;
+  padding: 4px 8px;
   font-size: 0.75rem;
 }
 

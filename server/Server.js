@@ -10,6 +10,7 @@ const { version } = require('../package.json')
 
 // Utils
 const { ScanResult } = require('./utils/constants')
+const filePerms = require('./utils/filePerms')
 const Logger = require('./Logger')
 
 // Classes
@@ -26,16 +27,18 @@ const CoverController = require('./CoverController')
 
 
 class Server {
-  constructor(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
+  constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
     this.Port = PORT
+    this.Uid = isNaN(UID) ? 0 : Number(UID)
+    this.Gid = isNaN(GID) ? 0 : Number(GID)
     this.Host = '0.0.0.0'
     this.ConfigPath = Path.normalize(CONFIG_PATH)
     this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     this.MetadataPath = Path.normalize(METADATA_PATH)
 
-    fs.ensureDirSync(CONFIG_PATH)
-    fs.ensureDirSync(METADATA_PATH)
-    fs.ensureDirSync(AUDIOBOOK_PATH)
+    fs.ensureDirSync(CONFIG_PATH, 0o774)
+    fs.ensureDirSync(METADATA_PATH, 0o774)
+    fs.ensureDirSync(AUDIOBOOK_PATH, 0o774)
 
     this.db = new Db(this.ConfigPath, this.AudiobookPath)
     this.auth = new Auth(this.db)
@@ -217,7 +220,6 @@ class Server {
 
       // Scanning
       socket.on('scan', this.scan.bind(this))
-      socket.on('scan_covers', this.scanCovers.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
       socket.on('scan_audiobook', (audiobookId) => this.scanAudiobook(socket, audiobookId))
       socket.on('save_metadata', (audiobookId) => this.saveMetadata(socket, audiobookId))
@@ -278,16 +280,6 @@ class Server {
       }
     }
     socket.emit('audiobook_scan_complete', scanResultName)
-  }
-
-  async scanCovers() {
-    Logger.info('[Server] Start cover scan')
-    this.isScanningCovers = true
-    // this.emitter('scan_start', 'covers')
-    var results = await this.scanner.scanCovers()
-    this.isScanningCovers = false
-    // this.emitter('scan_complete', { scanType: 'covers', results })
-    Logger.info('[Server] Cover scan complete')
   }
 
   cancelScan(id) {
@@ -359,6 +351,9 @@ class Server {
       return res.status(500).error(`Invalid post data`)
     }
 
+    // For setting permissions recursively
+    var firstDirPath = Path.join(folder.fullPath, author)
+
     var outputDirectory = ''
     if (series && series.length && series !== 'null') {
       outputDirectory = Path.join(folder.fullPath, author, series, title)
@@ -373,16 +368,24 @@ class Server {
     }
 
     await fs.ensureDir(outputDirectory)
+
     Logger.info(`Uploading ${files.length} files to`, outputDirectory)
 
     for (let i = 0; i < files.length; i++) {
       var file = files[i]
 
       var path = Path.join(outputDirectory, file.name)
-      await file.mv(path).catch((error) => {
+      await file.mv(path).then(() => {
+        return true
+      }).catch((error) => {
         Logger.error('Failed to move file', path, error)
+        return false
       })
     }
+
+    Logger.info(`[Server] Setting owner/perms for first dir "${firstDirPath}"`)
+    await filePerms(firstDirPath, 0o774, this.Uid, this.Gid)
+
     res.sendStatus(200)
   }
 

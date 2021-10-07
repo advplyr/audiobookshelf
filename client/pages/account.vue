@@ -23,7 +23,7 @@
           <div class="flex items-center py-2">
             <p v-if="isRoot" class="text-error py-2 text-xs">* Root user is the only user that can have an empty password</p>
             <div class="flex-grow" />
-            <ui-btn type="submit" :loading="changingPassword" color="success">Submit</ui-btn>
+            <ui-btn v-show="password && newPassword && confirmPassword" type="submit" :loading="changingPassword" color="success">Submit</ui-btn>
           </div>
         </form>
       </div>

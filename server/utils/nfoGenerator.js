@@ -26,7 +26,7 @@ async function generate(audiobook, nfoFilename = 'metadata.nfo') {
     'Title': book.title,
     'Subtitle': book.subtitle,
     'Author': book.author,
-    'Narrator': book.narrarator,
+    'Narrator': book.narrator,
     'Series': book.series,
     'Volume Number': book.volumeNumber,
     'Publish Year': book.publishYear,

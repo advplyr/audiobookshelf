@@ -76,3 +76,13 @@ function secondsToTimestamp(seconds) {
   return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
 }
 module.exports.secondsToTimestamp = secondsToTimestamp
+
+function setFileOwner(path, uid, gid) {
+  try {
+    return fs.chown(path, uid, gid).then(() => true)
+  } catch (err) {
+    console.error('Failed set file owner', err)
+    return false
+  }
+}
+module.exports.setFileOwner = setFileOwner

@@ -724,55 +724,55 @@ class Scanner {
     return libraryScanResults
   }
 
-  async scanCovers() {
-    var audiobooksNeedingCover = this.audiobooks.filter(ab => !ab.cover && ab.author)
-    var found = 0
-    var notFound = 0
-    var failed = 0
+  // async scanCovers() {
+  //   var audiobooksNeedingCover = this.audiobooks.filter(ab => !ab.cover && ab.author)
+  //   var found = 0
+  //   var notFound = 0
+  //   var failed = 0
 
-    for (let i = 0; i < audiobooksNeedingCover.length; i++) {
-      var audiobook = audiobooksNeedingCover[i]
-      var options = {
-        titleDistance: 2,
-        authorDistance: 2
-      }
-      var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
-      if (results.length) {
-        Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
-        var coverUrl = results[0]
-        var result = await this.coverController.downloadCoverFromUrl(audiobook, coverUrl)
-        if (result.error) {
-          failed++
-        } else {
-          found++
-          await this.db.updateAudiobook(audiobook)
-          this.emitter('audiobook_updated', audiobook.toJSONMinified())
-        }
-      } else {
-        notFound++
-      }
+  //   for (let i = 0; i < audiobooksNeedingCover.length; i++) {
+  //     var audiobook = audiobooksNeedingCover[i]
+  //     var options = {
+  //       titleDistance: 2,
+  //       authorDistance: 2
+  //     }
+  //     var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
+  //     if (results.length) {
+  //       Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
+  //       var coverUrl = results[0]
+  //       var result = await this.coverController.downloadCoverFromUrl(audiobook, coverUrl)
+  //       if (result.error) {
+  //         failed++
+  //       } else {
+  //         found++
+  //         await this.db.updateAudiobook(audiobook)
+  //         this.emitter('audiobook_updated', audiobook.toJSONMinified())
+  //       }
+  //     } else {
+  //       notFound++
+  //     }
 
-      var progress = Math.round(100 * (i + 1) / audiobooksNeedingCover.length)
-      this.emitter('scan_progress', {
-        scanType: 'covers',
-        progress: {
-          total: audiobooksNeedingCover.length,
-          done: i + 1,
-          progress
-        }
-      })
+  //     var progress = Math.round(100 * (i + 1) / audiobooksNeedingCover.length)
+  //     this.emitter('scan_progress', {
+  //       scanType: 'covers',
+  //       progress: {
+  //         total: audiobooksNeedingCover.length,
+  //         done: i + 1,
+  //         progress
+  //       }
+  //     })
 
-      if (this.cancelScan) {
-        this.cancelScan = false
-        break
-      }
-    }
-    return {
-      found,
-      notFound,
-      failed
-    }
-  }
+  //     if (this.cancelScan) {
+  //       this.cancelScan = false
+  //       break
+  //     }
+  //   }
+  //   return {
+  //     found,
+  //     notFound,
+  //     failed
+  //   }
+  // }
 
   async saveMetadata(audiobookId) {
     if (audiobookId) {

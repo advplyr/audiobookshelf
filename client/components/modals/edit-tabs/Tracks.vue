@@ -1,8 +1,13 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
-    <div class="flex mb-4">
-      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobook.id}/edit`">
-        <ui-btn color="primary">Edit Track Order</ui-btn>
+    <div class="w-full bg-primary px-4 py-2 flex items-center">
+      <div class="h-7 w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+        <span class="text-sm font-mono">{{ tracks.length }}</span>
+      </div>
+      <div class="flex-grow" />
+      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobook.id}/edit`" class="mr-4">
+        <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
     </div>
     <table class="text-sm tracksTable">
@@ -18,9 +23,7 @@
           <td class="text-center">
             <p>{{ track.index }}</p>
           </td>
-          <td class="font-book">
-            {{ track.filename }}
-          </td>
+          <td class="font-sans">{{ showFullPath ? track.fullPath : track.filename }}</td>
           <td class="font-mono">
             {{ $bytesPretty(track.size) }}
           </td>
@@ -47,7 +50,8 @@ export default {
   data() {
     return {
       tracks: null,
-      audioFiles: null
+      audioFiles: null,
+      showFullPath: false
     }
   },
   watch: {

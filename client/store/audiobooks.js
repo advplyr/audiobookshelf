@@ -42,14 +42,19 @@ export const getters = {
     var settings = rootState.user.settings || {}
     var filterBy = settings.filterBy || ''
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress']
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators']
     var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
-      var filter = decode(filterBy.replace(`${group}.`, ''))
+      var filterVal = filterBy.replace(`${group}.`, '')
+      var filter = decode(filterVal)
       if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
-      else if (group === 'series') filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
+      else if (group === 'series') {
+        if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
+        else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
+      }
       else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.author === filter)
+      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narrator === filter)
       else if (group === 'progress') {
         filtered = filtered.filter(ab => {
           var userAudiobook = rootGetters['user/getUserAudiobook'](ab.id)
@@ -62,7 +67,7 @@ export const getters = {
       }
     }
     if (state.keywordFilter) {
-      const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrarator']
+      const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrator']
       const keyworkFilter = state.keywordFilter.toLowerCase()
       return filtered.filter(ab => {
         if (!ab.book) return false
@@ -76,6 +81,7 @@ export const getters = {
     var direction = settings.orderDesc ? 'desc' : 'asc'
 
     var filtered = getters.getFiltered()
+
     var orderByNumber = settings.orderBy === 'book.volumeNumber'
     return sort(filtered)[direction]((ab) => {
       // Supports dot notation strings i.e. "book.title"
@@ -117,6 +123,10 @@ export const getters = {
   getUniqueAuthors: (state) => {
     var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.author)).map(ab => ab.book.author)
     return [...new Set(_authors)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+  },
+  getUniqueNarrators: (state) => {
+    var _narrators = state.audiobooks.filter(ab => !!(ab.book && ab.book.narrator)).map(ab => ab.book.narrator)
+    return [...new Set(_narrators)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   },
   getGenresUsed: (state) => {
     var _genres = []
@@ -246,8 +256,8 @@ export const mutations = {
     })
   },
   addUpdate(state, audiobook) {
-    if (audiobook.libraryId !== state.loadedLibraryId) {
-      console.warn('Invalid library', audiobook)
+    if (state.loadedLibraryId && audiobook.libraryId !== state.loadedLibraryId) {
+      console.warn('Invalid library', audiobook, 'loaded library', state.loadedLibraryId, '"')
       return
     }
 

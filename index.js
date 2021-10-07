@@ -18,8 +18,10 @@ const PORT = process.env.PORT || 80
 const CONFIG_PATH = process.env.CONFIG_PATH || '/config'
 const AUDIOBOOK_PATH = process.env.AUDIOBOOK_PATH || '/audiobooks'
 const METADATA_PATH = process.env.METADATA_PATH || '/metadata'
+const UID = process.env.AUDIOBOOKSHELF_UID || 99
+const GID = process.env.AUDIOBOOKSHELF_GID || 100
 
 console.log('Config', CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 
-const Server = new server(PORT, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
+const Server = new server(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 Server.start()

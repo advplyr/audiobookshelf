@@ -56,6 +56,9 @@ export default {
       if (this.paddingX !== undefined) {
         list.push(`px-${this.paddingX}`)
       }
+      if (this.disabled) {
+        list.push('cursor-not-allowed')
+      }
       return list
     }
   },

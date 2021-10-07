@@ -498,13 +498,13 @@ class Audiobook {
         hasUpdates = true
       }
     }
-    // If reader.txt is new or forcing rescan then read it and update narrarator (will overwrite)
+    // If reader.txt is new or forcing rescan then read it and update narrator (will overwrite)
     var readerTxt = newOtherFiles.find(file => file.filename === 'reader.txt')
     if (readerTxt && (!alreadyHasReaderTxt || forceRescan)) {
       var newReader = await readTextFile(readerTxt.fullPath)
       if (newReader) {
         Logger.debug(`[Audiobook] Sync Other File reader.txt: ${newReader}`)
-        this.update({ book: { narrarator: newReader } })
+        this.update({ book: { narrator: newReader } })
         hasUpdates = true
       }
     }
@@ -712,8 +712,8 @@ class Audiobook {
     }
     var readerText = await this.fetchTextFromTextFile('reader.txt')
     if (readerText) {
-      Logger.debug(`[Audiobook] "${this.title}" found reader.txt updating narrarator with "${readerText}"`)
-      bookUpdatePayload.narrarator = readerText
+      Logger.debug(`[Audiobook] "${this.title}" found reader.txt updating narrator with "${readerText}"`)
+      bookUpdatePayload.narrator = readerText
     }
     if (Object.keys(bookUpdatePayload).length) {
       return this.update({ book: bookUpdatePayload })

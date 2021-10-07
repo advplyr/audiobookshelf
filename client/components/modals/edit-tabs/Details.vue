@@ -47,7 +47,7 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-1/2 px-1">
-            <ui-text-input-with-label v-model="details.narrarator" label="Narrarator" />
+            <ui-text-input-with-label v-model="details.narrator" label="Narrator" />
           </div>
         </div>
       </div>
@@ -88,7 +88,7 @@ export default {
         subtitle: null,
         description: null,
         author: null,
-        narrarator: null,
+        narrator: null,
         series: null,
         volumeNumber: null,
         publishYear: null,
@@ -208,7 +208,7 @@ export default {
       this.details.subtitle = this.book.subtitle
       this.details.description = this.book.description
       this.details.author = this.book.author
-      this.details.narrarator = this.book.narrarator
+      this.details.narrator = this.book.narrator
       this.details.genres = this.book.genres || []
       this.details.series = this.book.series
       this.details.volumeNumber = this.book.volumeNumber

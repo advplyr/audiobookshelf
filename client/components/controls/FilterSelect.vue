@@ -41,6 +41,11 @@
             <span class="font-normal block truncate py-2">No {{ sublist }}</span>
           </div>
         </li>
+        <li v-else-if="sublist === 'series'" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" role="option" @click="clickedSublistOption($encode('No Series'))">
+          <div class="flex items-center">
+            <span class="font-normal block truncate py-2 text-xs text-white text-opacity-80">No Series</span>
+          </div>
+        </li>
         <template v-for="item in sublistItems">
           <li :key="item.value" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" :class="`${sublist}.${item.value}` === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedSublistOption(item.value)">
             <div class="flex items-center">
@@ -85,6 +90,11 @@ export default {
         {
           text: 'Authors',
           value: 'authors',
+          sublist: true
+        },
+        {
+          text: 'Narrator',
+          value: 'narrators',
           sublist: true
         },
         {
@@ -136,6 +146,9 @@ export default {
     },
     authors() {
       return this.$store.getters['audiobooks/getUniqueAuthors']
+    },
+    narrators() {
+      return this.$store.getters['audiobooks/getUniqueNarrators']
     },
     progress() {
       return ['Read', 'Unread', 'In Progress']

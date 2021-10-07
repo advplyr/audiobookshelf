@@ -30,11 +30,12 @@
       <p class="text-gray-300">Note: folders already mapped will not be shown</p>
     </div>
 
-    <div class="absolute bottom-0 left-0 w-full py-4 px-4">
-      <div class="flex items-center">
+    <div class="absolute bottom-0 left-0 w-full py-4 px-8">
+      <ui-btn :disabled="!selectedPath" color="primary" class="w-full mt-2" @click="selectFolder">Select Folder Path</ui-btn>
+      <!-- <div class="flex items-center">
         <div class="flex-grow" />
         <ui-btn color="success" @click="selectFolder">Select</ui-btn>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

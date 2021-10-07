@@ -9,7 +9,7 @@
   <Privileged>false</Privileged>
   <Support>https://forums.unraid.net/topic/112698-support-audiobookshelf/</Support>
   <Project>https://github.com/advplyr/audiobookshelf</Project>
-  <Overview>**(Android app in beta, try it out)** Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free &amp; open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
+  <Overview>**(Android app is live)** Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free &amp; open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
   <Category>MediaApp:Books MediaServer:Books</Category>
   <WebUI>http://[IP]:[PORT:80]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/advplyr/docker-templates/master/audiobookshelf.xml</TemplateURL>
@@ -48,7 +48,18 @@
       <Mode>rw</Mode>
     </Volume>
   </Data>
-  <Environment/>
+  <Environment>
+    <Variable>
+      <Value>99</Value>
+      <Name>AUDIOBOOKSHELF_UID</Name>
+      <Mode/>
+    </Variable>
+    <Variable>
+      <Value>100</Value>
+      <Name>AUDIOBOOKSHELF_GID</Name>
+      <Mode/>
+    </Variable>
+  </Environment>
   <Labels/>
   <Config Name="Audiobooks" Target="/audiobooks" Default="" Mode="rw" Description="Container Path: /audiobooks" Type="Path" Display="always" Required="true" Mask="false" />
   <Config Name="Config" Target="/config" Default="/mnt/user/appdata/audiobookshelf/config/" Mode="rw" Description="Container Path: /config" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/config/</Config>

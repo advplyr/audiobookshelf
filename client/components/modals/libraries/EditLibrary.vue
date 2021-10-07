@@ -14,7 +14,7 @@
           <!-- <ui-text-input :value="folder.fullPath" type="text" class="w-full" /> -->
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text v-model="folder.fullPath" type="text" class="w-full" />
-          <span class="material-icons ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
+          <span v-show="folders.length > 1" class="material-icons ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
         </div>
         <p v-if="!folders.length" class="text-sm text-gray-300 px-1 py-2">No folders</p>
         <ui-btn class="w-full mt-2" color="primary" @click="showDirectoryPicker = true">Browse for Folder</ui-btn>
@@ -22,7 +22,7 @@
       <div class="absolute bottom-0 left-0 w-full py-4 px-4">
         <div class="flex items-center">
           <div class="flex-grow" />
-          <ui-btn color="success" @click="submit">{{ library ? 'Update Library' : 'Create Library' }}</ui-btn>
+          <ui-btn v-show="!disableSubmit" color="success" :disabled="disableSubmit" @click="submit">{{ library ? 'Update Library' : 'Create Library' }}</ui-btn>
         </div>
       </div>
     </div>
@@ -43,8 +43,7 @@ export default {
     return {
       name: '',
       folders: [],
-      showDirectoryPicker: false,
-      newLibraryName: ''
+      showDirectoryPicker: false
     }
   },
   computed: {
@@ -54,6 +53,18 @@ export default {
     },
     folderPaths() {
       return this.folders.map((f) => f.fullPath)
+    },
+    disableSubmit() {
+      if (!this.library) {
+        return false
+      }
+      var newfolderpaths = this.folderPaths.join(',')
+      var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
+      console.log(newfolderpaths)
+      console.log(origfolderpaths)
+      console.log(newfolderpaths === origfolderpaths)
+
+      return newfolderpaths === origfolderpaths && this.name === this.library.name
     }
   },
   methods: {

@@ -304,6 +304,12 @@ export default {
     this.initializeSocket()
     this.$store.dispatch('libraries/load')
 
+    // If experimental features set in local storage
+    var experimentalFeaturesSaved = localStorage.getItem('experimental')
+    if (experimentalFeaturesSaved === '1') {
+      this.$store.commit('setExperimentalFeatures', true)
+    }
+
     this.$store
       .dispatch('checkForUpdate')
       .then((res) => {

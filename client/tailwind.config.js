@@ -45,7 +45,7 @@ module.exports = {
         none: 'none'
       },
       fontFamily: {
-        sans: ['Open Sans', ...defaultTheme.fontFamily.sans],
+        sans: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],
         mono: ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
         book: ['Gentium Book Basic', 'serif']
       }

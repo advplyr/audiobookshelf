@@ -2,11 +2,14 @@
   <div class="w-full my-2">
     <div class="w-full bg-primary px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
       <p class="pr-4">Other Files</p>
-      <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ files.length }}</span>
+      <div class="h-7 w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+        <span class="text-sm font-mono">{{ files.length }}</span>
+      </div>
       <div class="flex-grow" />
       <!-- <nuxt-link :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link> -->
+      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
       </div>
@@ -15,13 +18,13 @@
       <div class="w-full" v-show="showFiles">
         <table class="text-sm tracksTable">
           <tr class="font-book">
-            <th class="text-left">Path</th>
-            <th class="text-left">Filetype</th>
+            <th class="text-left px-4">Path</th>
+            <th class="text-left px-4">Filetype</th>
           </tr>
           <template v-for="file in files">
             <tr :key="file.path">
               <td class="font-book pl-2">
-                {{ file.path }}
+                {{ showFullPath ? file.fullPath : file.path }}
               </td>
               <td class="text-xs">
                 <p>{{ file.filetype }}</p>
@@ -45,7 +48,8 @@ export default {
   },
   data() {
     return {
-      showFiles: false
+      showFiles: false,
+      showFullPath: false
     }
   },
   computed: {},

@@ -53,7 +53,7 @@ export default {
   data() {
     return {
       shelves: [],
-      currFilterOrderKey: null,
+      currSearchParams: null,
       availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
       selectedSizeIndex: 3,
       rowPaddingX: 40,
@@ -89,9 +89,6 @@ export default {
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
     },
-    filterOrderKey() {
-      return this.$store.getters['user/getFilterOrderKey']
-    },
     bookCoverWidth() {
       return this.availableSizes[this.selectedSizeIndex]
     },
@@ -110,6 +107,12 @@ export default {
     },
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
+    },
+    orderBy() {
+      return this.$store.getters['user/getUserSetting']('orderBy')
+    },
+    orderDesc() {
+      return this.$store.getters['user/getUserSetting']('orderDesc')
     },
     showGroups() {
       return this.page !== '' && this.page !== 'search' && !this.selectedSeries
@@ -165,6 +168,8 @@ export default {
 
       var booksPerRow = Math.floor(width / this.bookWidth)
 
+      this.currSearchParams = this.buildSearchParams()
+
       var entities = this.entities
       var groups = []
       var currentRow = 0
@@ -185,6 +190,8 @@ export default {
       this.shelves = groups
     },
     async init() {
+      this.checkUpdateSearchParams()
+
       this.wrapperClientWidth = this.$refs.wrapper ? this.$refs.wrapper.clientWidth : 0
 
       var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
@@ -203,10 +210,41 @@ export default {
       console.log('[AudioBookshelf] Audiobooks Updated')
       this.setBookshelfEntities()
     },
-    settingsUpdated(settings) {
-      if (this.currFilterOrderKey !== this.filterOrderKey) {
-        this.setBookshelfEntities()
+    buildSearchParams() {
+      if (this.page === 'search' || this.page === 'series') {
+        return ''
       }
+
+      let searchParams = new URLSearchParams()
+      if (this.filterBy && this.filterBy !== 'all') {
+        searchParams.set('filter', this.filterBy)
+      }
+      if (this.orderBy) {
+        searchParams.set('order', this.orderBy)
+        searchParams.set('orderdesc', this.orderDesc ? 1 : 0)
+      }
+      return searchParams.toString()
+    },
+    checkUpdateSearchParams() {
+      var newSearchParams = this.buildSearchParams()
+      var currentQueryString = window.location.search
+
+      if (newSearchParams === '') {
+        return false
+      }
+
+      if (newSearchParams !== this.currSearchParams || newSearchParams !== currentQueryString) {
+        let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + newSearchParams
+        window.history.replaceState({ path: newurl }, '', newurl)
+        return true
+      }
+
+      return false
+    },
+    settingsUpdated(settings) {
+      var wasUpdated = this.checkUpdateSearchParams()
+      if (wasUpdated) this.setBookshelfEntities()
+
       if (settings.bookshelfCoverSize !== this.bookCoverWidth && settings.bookshelfCoverSize !== undefined) {
         var index = this.availableSizes.indexOf(settings.bookshelfCoverSize)
         if (index >= 0) {
