@@ -36,11 +36,11 @@ export default {
           title: 'Cover',
           component: 'modals-edit-tabs-cover'
         },
-        {
-          id: 'match',
-          title: 'Match',
-          component: 'modals-edit-tabs-match'
-        },
+        // {
+        //   id: 'match',
+        //   title: 'Match',
+        //   component: 'modals-edit-tabs-match'
+        // },
         {
           id: 'tracks',
           title: 'Tracks',
