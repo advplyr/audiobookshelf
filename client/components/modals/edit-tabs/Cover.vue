@@ -13,8 +13,8 @@
       </div>
       <div class="flex-grow pl-6 pr-2">
         <div class="flex items-center">
-          <div v-if="userCanUpload" class="w-40 pr-2" style="min-width: 160px">
-            <ui-file-input ref="fileInput" @change="fileUploadSelected" />
+          <div v-if="userCanUpload" class="w-40 pr-2 pt-4" style="min-width: 160px">
+            <ui-file-input ref="fileInput" @change="fileUploadSelected">Upload Cover</ui-file-input>
           </div>
           <form @submit.prevent="submitForm" class="flex flex-grow">
             <ui-text-input-with-label v-model="imageUrl" label="Cover Image URL" />
@@ -24,7 +24,7 @@
 
         <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-primary">
           <div class="flex items-center justify-center py-2">
-            <p>{{ localCovers.length }} local image(s)</p>
+            <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
             <div class="flex-grow" />
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? 'Hide' : 'Show' }}</ui-btn>
           </div>

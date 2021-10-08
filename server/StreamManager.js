@@ -65,7 +65,7 @@ class StreamManager {
       if (!dirs || !dirs.length) return true
 
       await Promise.all(dirs.map(async (dirname) => {
-        if (dirname !== 'streams' && dirname !== 'books' && dirname !== 'downloads') {
+        if (dirname !== 'streams' && dirname !== 'books' && dirname !== 'downloads' && dirname !== 'backups') {
           var fullPath = Path.join(this.MetadataPath, dirname)
           Logger.warn(`Removing OLD Orphan Stream ${dirname}`)
           return fs.remove(fullPath)

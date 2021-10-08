@@ -72,6 +72,9 @@ export default {
           this.scanStart(libraryScan)
         })
       }
+      if (payload.backups && payload.backups.length) {
+        this.$store.commit('setBackups', payload.backups)
+      }
     },
     streamOpen(stream) {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamOpen(stream)
@@ -220,6 +223,10 @@ export default {
     logEvtReceived(payload) {
       this.$store.commit('logs/logEvt', payload)
     },
+    backupApplied() {
+      // Force refresh
+      location.reload()
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -274,6 +281,8 @@ export default {
       this.socket.on('download_expired', this.downloadExpired)
 
       this.socket.on('log', this.logEvtReceived)
+
+      this.socket.on('backup_applied', this.backupApplied)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

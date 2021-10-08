@@ -18,13 +18,13 @@ const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./Scanner')
 const Db = require('./Db')
+const BackupManager = require('./BackupManager')
 const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
-
 
 class Server {
   constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -42,13 +42,14 @@ class Server {
 
     this.db = new Db(this.ConfigPath, this.AudiobookPath)
     this.auth = new Auth(this.db)
+    this.backupManager = new BackupManager(this.MetadataPath, this.Uid, this.Gid, this.db)
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
     this.streamManager = new StreamManager(this.db, this.MetadataPath)
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     this.expressApp = null
@@ -101,6 +102,7 @@ class Server {
     this.auth.init()
 
     await this.purgeMetadata()
+    await this.backupManager.init()
 
     this.watcher.initWatcher(this.libraries)
     this.watcher.on('files', this.filesChanged.bind(this))
@@ -155,6 +157,18 @@ class Server {
 
       var remainingPath = req.params['0']
       var fullPath = Path.join(audiobook.fullPath, remainingPath)
+      res.sendFile(fullPath)
+    })
+
+    // EBook static file routes
+    app.get('/ebook/:library/:folder/*', (req, res) => {
+      var library = this.libraries.find(lib => lib.id === req.params.library)
+      if (!library) return res.sendStatus(404)
+      var folder = library.folders.find(fol => fol.id === req.params.folder)
+      if (!folder) return res.status(404).send('Folder not found')
+
+      var remainingPath = req.params['0']
+      var fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })
 
@@ -235,7 +249,12 @@ class Server {
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
       socket.on('remove_download', (downloadId) => this.downloadManager.removeSocketRequest(socket, downloadId))
 
+      // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+
+      // Backups
+      socket.on('create_backup', () => this.backupManager.requestCreateBackup(socket))
+      socket.on('apply_backup', (id) => this.backupManager.requestApplyBackup(socket, id))
 
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
@@ -448,7 +467,8 @@ class Server {
       configPath: this.ConfigPath,
       user: client.user.toJSONForBrowser(),
       stream: client.stream || null,
-      librariesScanning: this.scanner.librariesScanning
+      librariesScanning: this.scanner.librariesScanning,
+      backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }
     client.socket.emit('init', initialPayload)
 

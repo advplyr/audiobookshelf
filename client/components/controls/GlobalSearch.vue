@@ -7,7 +7,7 @@
       <span v-if="!search" class="material-icons" style="font-size: 1.2rem">search</span>
       <span v-else class="material-icons" style="font-size: 1.2rem">close</span>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-10 -mt-px w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
           <p>Typing...</p>

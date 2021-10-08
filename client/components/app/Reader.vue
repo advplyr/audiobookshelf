@@ -15,7 +15,7 @@
     </div>
     <div class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden">
-        <span v-show="hasPrev" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @click="pageLeft">chevron_left</span>
+        <span v-show="hasPrev" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageLeft">chevron_left</span>
       </div>
       <div id="frame" class="w-full" style="height: 650px">
         <div id="viewer" class="spreads"></div>
@@ -25,7 +25,7 @@
         </div>
       </div>
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden">
-        <span v-show="hasNext" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @click="pageRight">chevron_right</span>
+        <span v-show="hasNext" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageRight">chevron_right</span>
       </div>
     </div>
   </div>
@@ -69,10 +69,13 @@ export default {
         this.$emit('input', val)
       }
     },
-    fullUrl() {
-      var serverUrl = process.env.serverUrl || '/local'
-      return `${serverUrl}/${this.url}`
+    userToken() {
+      return this.$store.getters['user/getToken']
     }
+    // fullUrl() {
+    // var serverUrl = process.env.serverUrl || `/s/book/${this.audiobookId}`
+    // return `${serverUrl}/${this.url}`
+    // }
   },
   methods: {
     changedChapter() {
@@ -113,7 +116,13 @@ export default {
     init() {
       this.registerListeners()
 
-      var book = ePub(this.fullUrl)
+      console.log('epub', this.url)
+      // var book = ePub(this.url, {
+      //   requestHeaders: {
+      //     Authorization: `Bearer ${this.userToken}`
+      //   }
+      // })
+      var book = ePub(this.url)
       this.book = book
 
       this.rendition = book.renderTo('viewer', {

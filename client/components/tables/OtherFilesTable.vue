@@ -19,15 +19,19 @@
         <table class="text-sm tracksTable">
           <tr class="font-book">
             <th class="text-left px-4">Path</th>
-            <th class="text-left px-4">Filetype</th>
+            <th class="text-left px-4 w-24">Filetype</th>
+            <th v-if="userCanDownload" class="text-center w-20">Download</th>
           </tr>
-          <template v-for="file in files">
+          <template v-for="file in otherFilesCleaned">
             <tr :key="file.path">
               <td class="font-book pl-2">
                 {{ showFullPath ? file.fullPath : file.path }}
               </td>
               <td class="text-xs">
                 <p>{{ file.filetype }}</p>
+              </td>
+              <td v-if="userCanDownload" class="text-center">
+                <a :href="`/s/book/${audiobookId}/${file.relativePath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -44,7 +48,10 @@ export default {
       type: Array,
       default: () => []
     },
-    audiobookId: String
+    audiobook: {
+      type: Object,
+      default: () => null
+    }
   },
   data() {
     return {
@@ -52,7 +59,34 @@ export default {
       showFullPath: false
     }
   },
-  computed: {},
+  computed: {
+    audiobookId() {
+      return this.audiobook.id
+    },
+    audiobookPath() {
+      return this.audiobook.path
+    },
+    otherFilesCleaned() {
+      return this.files.map((file) => {
+        var filePath = file.path.replace(/\\/g, '/')
+        var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
+
+        return {
+          ...file,
+          relativePath: filePath
+            .replace(audiobookPath + '/', '')
+            .replace(/%/g, '%25')
+            .replace(/#/g, '%23')
+        }
+      })
+    },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    }
+  },
   methods: {
     clickBar() {
       this.showFiles = !this.showFiles

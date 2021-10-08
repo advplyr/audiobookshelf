@@ -33,6 +33,7 @@
             <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
           </div>
 
+          <!-- EBook Icon -->
           <div v-if="showExperimentalFeatures && hasEbook" class="absolute rounded-full bg-blue-500 w-6 h-6 flex items-center justify-center bg-opacity-90" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
             <!-- <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">EBook</p> -->
             <span class="material-icons text-white text-base">auto_stories</span>

@@ -1,16 +1,20 @@
 <template>
   <div>
-    <input ref="fileInput" id="hidden-input" type="file" :accept="inputAccept" class="hidden" @change="inputChanged" />
-    <ui-btn @click="clickUpload" color="primary" type="text">Upload Cover</ui-btn>
+    <input ref="fileInput" id="hidden-input" type="file" :accept="accept" class="hidden" @change="inputChanged" />
+    <ui-btn @click="clickUpload" color="primary" type="text"><slot /></ui-btn>
   </div>
 </template>
 
 <script>
 export default {
-  data() {
-    return {
-      inputAccept: '.png, .jpg, .jpeg, .webp'
+  props: {
+    accept: {
+      type: String,
+      default: '.png, .jpg, .jpeg, .webp'
     }
+  },
+  data() {
+    return {}
   },
   computed: {},
   methods: {

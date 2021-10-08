@@ -223,6 +223,7 @@ class Audiobook {
       audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
       otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
       ebooks: (this.ebooks || []).map(ebook => ebook.toJSON()),
+      numEbooks: this.hasEpub ? 1 : 0,
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),

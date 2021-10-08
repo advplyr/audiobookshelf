@@ -35,6 +35,31 @@
 
       <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
 
+      <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+        <div class="flex items-center mb-2">
+          <h1 class="text-xl">Backups</h1>
+        </div>
+
+        <p class="text-base mb-4 text-gray-300">Backups include users, user progress, book details, server settings and covers stored in <span class="font-mono text-gray-100">/metadata/books</span>. <br />Backups <strong>do not</strong> include any files stored in your library folders.</p>
+
+        <div class="flex items-center py-2">
+          <ui-toggle-switch v-model="dailyBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
+          <ui-tooltip :text="dailyBackupsTooltip">
+            <p class="pl-4 text-lg">Run daily backups <span class="material-icons icon-text">info_outlined</span></p>
+          </ui-tooltip>
+        </div>
+
+        <div class="flex items-center py-2">
+          <ui-text-input type="number" v-model="backupsToKeep" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
+
+          <p class="pl-4 text-lg">Number of backups to keep</p>
+        </div>
+
+        <tables-backups-table />
+      </div>
+
+      <div class="h-0.5 bg-primary bg-opacity-50 w-full" />
+
       <div class="flex items-center py-4">
         <ui-btn color="bg" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
         <div class="flex-grow" />
@@ -92,14 +117,16 @@ export default {
       storeCoversInAudiobookDir: false,
       isResettingAudiobooks: false,
       newServerSettings: {},
-      updatingServerSettings: false
+      updatingServerSettings: false,
+      dailyBackups: true,
+      backupsToKeep: 2
     }
   },
   watch: {
     serverSettings(newVal, oldVal) {
       if (newVal && !oldVal) {
         this.newServerSettings = { ...this.serverSettings }
-        this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
+        this.initServerSettings()
       }
     }
   },
@@ -118,6 +145,12 @@ export default {
     },
     experimentalFeaturesTooltip() {
       return 'Features in development that could use your feedback and help testing.'
+    },
+    dailyBackupsTooltip() {
+      return 'Runs at 1am every day (your server time). Saved in /metadata/backups.'
+    },
+    backupsToKeepTooltip() {
+      return ''
     },
     serverSettings() {
       return this.$store.state.serverSettings
@@ -141,10 +174,17 @@ export default {
     }
   },
   methods: {
-    // toggleShowExperimentalFeatures() {
-    //   var newExperimentalValue = !this.showExperimentalFeatures
-    //   this.$store.commit('setExperimentalFeatures', newExperimentalValue)
-    // },
+    updateBackupsSettings() {
+      if (isNaN(this.backupsToKeep) || this.backupsToKeep <= 0 || this.backupsToKeep > 99) {
+        this.$toast.error('Invalid number of backups to keep')
+        return
+      }
+      var updatePayload = {
+        backupSchedule: this.dailyBackups ? '0 1 * * *' : false,
+        backupsToKeep: Number(this.backupsToKeep)
+      }
+      this.updateServerSettings(updatePayload)
+    },
     updateScannerFindCovers(val) {
       this.updateServerSettings({
         scannerFindCovers: !!val
@@ -211,7 +251,13 @@ export default {
     },
     init() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
+      this.initServerSettings()
+    },
+    initServerSettings() {
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
+      this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
+      this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
+      this.dailyBackups = !!this.newServerSettings.backupSchedule
     }
   },
   mounted() {
@@ -219,34 +265,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#accounts {
-  table-layout: fixed;
-  border-collapse: collapse;
-  width: 100%;
-}
-
-#accounts td,
-#accounts th {
-  border: 1px solid #2e2e2e;
-  padding: 8px 8px;
-  text-align: left;
-}
-
-#accounts tr:nth-child(even) {
-  background-color: #3a3a3a;
-}
-
-#accounts tr:hover {
-  background-color: #444;
-}
-
-#accounts th {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  background-color: #333;
-}
-</style>

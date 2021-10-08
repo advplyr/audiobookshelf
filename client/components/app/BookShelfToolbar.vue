@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-10 relative">
-    <div id="toolbar" class="absolute top-0 left-0 w-full h-full z-40 flex items-center px-8">
+    <div id="toolbar" class="absolute top-0 left-0 w-full h-full z-20 flex items-center px-8">
       <template v-if="page !== 'search' && !isHome">
         <p v-if="!selectedSeries" class="font-book">{{ numShowing }} {{ entityName }}</p>
         <div v-else class="flex items-center">

@@ -73,7 +73,10 @@ export default {
 
         return {
           ...track,
-          relativePath: trackPath.replace(audiobookPath, '').replace(/%/g, '%25').replace(/#/g, '%23')
+          relativePath: trackPath
+            .replace(audiobookPath + '/', '')
+            .replace(/%/g, '%25')
+            .replace(/#/g, '%23')
         }
       })
     },

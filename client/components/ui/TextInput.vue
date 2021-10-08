@@ -26,6 +26,8 @@ export default {
       type: Number,
       default: 3
     },
+    noSpinner: Boolean,
+    textCenter: Boolean,
     clearable: Boolean
   },
   data() {
@@ -44,6 +46,8 @@ export default {
       var _list = []
       _list.push(`px-${this.paddingX}`)
       _list.push(`py-${this.paddingY}`)
+      if (this.noSpinner) _list.push('no-spinner')
+      if (this.textCenter) _list.push('text-center')
       return _list.join(' ')
     }
   },

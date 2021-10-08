@@ -14,7 +14,8 @@ export const state = () => ({
   processingBatch: false,
   previousPath: '/',
   routeHistory: [],
-  showExperimentalFeatures: false
+  showExperimentalFeatures: false,
+  backups: []
 })
 
 export const getters = {
@@ -130,5 +131,8 @@ export const mutations = {
   setExperimentalFeatures(state, val) {
     state.showExperimentalFeatures = val
     localStorage.setItem('experimental', val ? 1 : 0)
+  },
+  setBackups(state, val) {
+    state.backups = val.sort((a, b) => b.createdAt - a.createdAt)
   }
 }

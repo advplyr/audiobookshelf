@@ -98,6 +98,7 @@ export default {
       if (!this.$refs.box) return // Ensure element is not destroyed
       try {
         document.body.appendChild(this.tooltip)
+        this.setTooltipPosition(this.tooltip)
       } catch (error) {
         console.error(error)
       }

@@ -53,9 +53,6 @@ export default {
     book() {
       return this.audiobook.book || {}
     },
-    bookLastUpdate() {
-      return this.book.lastUpdate || Date.now()
-    },
     title() {
       return this.book.title || 'No Title'
     },

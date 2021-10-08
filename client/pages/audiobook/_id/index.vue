@@ -145,7 +145,7 @@
 
           <tables-audio-files-table v-if="otherAudioFiles.length" :audiobook-id="audiobook.id" :files="otherAudioFiles" class="mt-6" />
 
-          <tables-other-files-table v-if="otherFiles.length" :audiobook-id="audiobook.id" :files="otherFiles" class="mt-6" />
+          <tables-other-files-table v-if="otherFiles.length" :audiobook="audiobook" :files="otherFiles" class="mt-6" />
         </div>
       </div>
     </div>
@@ -239,6 +239,9 @@ export default {
     libraryId() {
       return this.audiobook.libraryId
     },
+    folderId() {
+      return this.audiobook.folderId
+    },
     audiobookId() {
       return this.audiobook.id
     },
@@ -313,8 +316,15 @@ export default {
     epubEbook() {
       return this.audiobook.ebooks.find((eb) => eb.ext === '.epub')
     },
-    epubUrl() {
+    epubPath() {
       return this.epubEbook ? this.epubEbook.path : null
+    },
+    epubUrl() {
+      if (!this.epubPath) return null
+      return `/ebook/${this.libraryId}/${this.folderId}/${this.epubPath}`
+    },
+    userToken() {
+      return this.$store.getters['user/getToken']
     },
     description() {
       return this.book.description || ''

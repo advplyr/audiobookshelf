@@ -128,3 +128,34 @@ export default {
   }
 }
 </script>
+
+<style>
+#accounts {
+  table-layout: fixed;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#accounts td,
+#accounts th {
+  border: 1px solid #2e2e2e;
+  padding: 8px 8px;
+  text-align: left;
+}
+
+#accounts tr:nth-child(even) {
+  background-color: #3a3a3a;
+}
+
+#accounts tr:hover {
+  background-color: #444;
+}
+
+#accounts th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background-color: #333;
+}
+</style>

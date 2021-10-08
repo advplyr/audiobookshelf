@@ -70,6 +70,14 @@ class Db {
     return defaultLibrary
   }
 
+  reinit() {
+    this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
+    this.usersDb = new njodb.Database(this.UsersPath)
+    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
+    this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
+    return this.init()
+  }
+
   async init() {
     await this.load()
 

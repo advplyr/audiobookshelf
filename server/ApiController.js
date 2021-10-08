@@ -7,7 +7,7 @@ const { isObject } = require('./utils/index')
 const Library = require('./objects/Library')
 
 class ApiController {
-  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, watcher, emitter, clientEmitter) {
+  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, emitter, clientEmitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
@@ -15,6 +15,7 @@ class ApiController {
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
     this.coverController = coverController
+    this.backupManager = backupManager
     this.watcher = watcher
     this.emitter = emitter
     this.clientEmitter = clientEmitter
@@ -60,6 +61,9 @@ class ApiController {
     this.router.delete('/user/:id', this.deleteUser.bind(this))
 
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
+
+    this.router.delete('/backup/:id', this.deleteBackup.bind(this))
+    this.router.post('/backup/upload', this.uploadBackup.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
 
@@ -567,6 +571,31 @@ class ApiController {
       success: true,
       serverSettings: this.db.serverSettings
     })
+  }
+
+  async deleteBackup(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[ApiController] Non-Root user attempting to delete backup`, req.user)
+      return res.sendStatus(403)
+    }
+    var backup = this.backupManager.backups.find(b => b.id === req.params.id)
+    if (!backup) {
+      return res.sendStatus(404)
+    }
+    await this.backupManager.removeBackup(backup)
+    res.json(this.backupManager.backups.map(b => b.toJSON()))
+  }
+
+  async uploadBackup(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[ApiController] Non-Root user attempting to upload backup`, req.user)
+      return res.sendStatus(403)
+    }
+    if (!req.files.file) {
+      Logger.error('[ApiController] Upload backup invalid')
+      return res.sendStatus(500)
+    }
+    this.backupManager.uploadBackup(req, res)
   }
 
   async download(req, res) {
