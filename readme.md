@@ -1,17 +1,36 @@
-<h1 align="center">
-  <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/abbanner.svg" width="650">
-</h1>
+<br />
+<div align="center">
+   <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/banner.svg" width="600">
 
-AudioBookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
+  <p align="center">
+    <br />
+    <a href="https://audiobookshelf.org/docs">Documentation</a>
+    ·
+    <a href="https://audiobookshelf.org/install">Install Guides</a>
+    ·
+    <a href="https://audiobookshelf.org/showcase">Showcase</a>
+  </p>
+</div>
 
-See [Install guides](https://audiobookshelf.org/install) and [documentation](https://audiobookshelf.org/docs)
+## About
+
+Audiobookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
+
+### Features
+
+* Fully **open-source**, including the [android app](https://github.com/advplyr/audiobookshelf-app) *(in beta)*
+* Stream all audiobook formats on the fly
+* Multi-user support w/ custom permissions
+* Keeps progress per user and syncs across devices
+* Auto-detects library updates, no need to re-scan
+* Upload full audiobooks and covers
+* Backup your metadata + automated daily backups
+
+Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new)
 
 Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
-**Free & open source Android/iOS app is in development**
-
-<img alt="Screenshot1" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_streaming.png" />
-
+<img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStream.png" />
 
 ## Organizing your audiobooks
 
