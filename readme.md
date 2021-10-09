@@ -1,4 +1,7 @@
-# AudioBookshelf
+<img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/ss_streaming.png" width="580">
+<h1 align="center">
+   audiobookshelf
+</h1>
 
 AudioBookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
 
