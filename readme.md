@@ -1,4 +1,6 @@
-<!-- <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/Banner2.png" width="580"> -->
+<p align="center">
+  <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/banner.svg" width="580">
+</p>
 <h1 align="center">
    audiobookshelf
 </h1>
