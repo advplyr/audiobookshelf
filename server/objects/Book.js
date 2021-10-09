@@ -5,7 +5,6 @@ const parseAuthors = require('../utils/parseAuthors')
 
 class Book {
   constructor(book = null) {
-    this.olid = null
     this.title = null
     this.subtitle = null
     this.author = null
@@ -46,7 +45,6 @@ class Book {
   }
 
   construct(book) {
-    this.olid = book.olid
     this.title = book.title
     this.subtitle = book.subtitle || null
     this.author = book.author
@@ -69,7 +67,6 @@ class Book {
 
   toJSON() {
     return {
-      olid: this.olid,
       title: this.title,
       subtitle: this.subtitle,
       author: this.author,
@@ -111,7 +108,6 @@ class Book {
   }
 
   setData(data) {
-    this.olid = data.olid || null
     this.title = data.title || null
     this.subtitle = data.subtitle || null
     this.author = data.author || null
@@ -215,6 +211,17 @@ class Book {
 
   isSearchMatch(search) {
     return this._title.toLowerCase().includes(search) || this._subtitle.toLowerCase().includes(search) || this._author.toLowerCase().includes(search) || this._series.toLowerCase().includes(search)
+  }
+
+  getQueryMatches(search) {
+    var titleMatch = this._title.toLowerCase().includes(search) || this._subtitle.toLowerCase().includes(search)
+    var authorMatch = this._author.toLowerCase().includes(search)
+    var seriesMatch = this._series.toLowerCase().includes(search)
+    return {
+      book: titleMatch ? 'title' : authorMatch ? 'author' : seriesMatch ? 'series' : false,
+      author: authorMatch ? this._author : false,
+      series: seriesMatch ? this._series : false
+    }
   }
 
   setDetailsFromFileMetadata(audioFileMetadata) {

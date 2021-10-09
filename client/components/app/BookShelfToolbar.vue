@@ -4,13 +4,16 @@
       <template v-if="page !== 'search' && !isHome">
         <p v-if="!selectedSeries" class="font-book">{{ numShowing }} {{ entityName }}</p>
         <div v-else class="flex items-center">
-          <div @click="seriesBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
-            <span class="material-icons text-3xl text-white">west</span>
+          <div @click="seriesBackArrow" class="rounded-full h-9 w-9 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
+            <span class="material-icons text-2xl text-white">west</span>
           </div>
           <!-- <span class="material-icons text-2xl cursor-pointer" @click="seriesBackArrow">west</span> -->
           <p class="pl-4 font-book text-lg">
-            {{ selectedSeries }} <span class="ml-3 font-mono text-lg bg-black bg-opacity-30 rounded-lg px-1 py-0.5">{{ numShowing }}</span>
+            {{ selectedSeries }}
           </p>
+          <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
+            <span class="font-mono">{{ numShowing }}</span>
+          </div>
         </div>
         <div class="flex-grow" />
 

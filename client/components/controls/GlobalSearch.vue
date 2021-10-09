@@ -1,5 +1,5 @@
 <template>
-  <div class="w-64 ml-8 relative">
+  <div class="w-80 ml-6 relative">
     <form @submit.prevent="submitSearch">
       <ui-text-input ref="input" v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
     </form>
@@ -7,23 +7,42 @@
       <span v-if="!search" class="material-icons" style="font-size: 1.2rem">search</span>
       <span v-else class="material-icons" style="font-size: 1.2rem">close</span>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu">
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
-          <p>Typing...</p>
+          <p>Thinking...</p>
         </li>
         <li v-else-if="isFetching" class="py-2 px-2">
           <p>Fetching...</p>
         </li>
-        <li v-else-if="!items.length" class="py-2 px-2">
+        <li v-else-if="!totalResults" class="py-2 px-2">
           <p>No Results</p>
         </li>
         <template v-else>
-          <template v-for="item in items">
-            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickedOption(item)">
-              <template v-if="item.type === 'audiobook'">
-                <cards-audiobook-search-card :audiobook="item.data" />
-              </template>
+          <p class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
+          <template v-for="item in audiobookResults">
+            <li :key="item.audiobook.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/audiobook/${item.audiobook.id}`">
+                <cards-audiobook-search-card :audiobook="item.audiobook" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Authors</p>
+          <template v-for="item in authorResults">
+            <li :key="item.author" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.author)}`">
+                <cards-author-search-card :author="item.author" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="seriesResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Series</p>
+          <template v-for="item in seriesResults">
+            <li :key="item.series" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickedOption(item.series)">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series?series=${$encode(item.series)}`">
+                <cards-series-search-card :series="item.series" :book-items="item.audiobooks" />
+              </nuxt-link>
             </li>
           </template>
         </template>
@@ -42,7 +61,9 @@ export default {
       isTyping: false,
       isFetching: false,
       search: null,
-      items: [],
+      audiobookResults: [],
+      authorResults: [],
+      seriesResults: [],
       searchTimeout: null,
       lastSearch: null
     }
@@ -53,6 +74,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    totalResults() {
+      return this.audiobookResults.length + this.seriesResults.length + this.authorResults.length
     }
   },
   methods: {
@@ -61,7 +85,9 @@ export default {
       this.$router.push(`/library/${this.currentLibraryId}/bookshelf/search?query=${this.search}`)
 
       this.search = null
-      this.items = []
+      this.audiobookResults = []
+      this.authorResults = []
+      this.seriesResults = []
       this.showMenu = false
       this.$nextTick(() => {
         if (this.$refs.input) {
@@ -86,22 +112,19 @@ export default {
         return
       }
       this.isFetching = true
-      var results = await this.$axios.$get(`/api/audiobooks?q=${value}`).catch((error) => {
+
+      var searchResults = await this.$axios.$get(`/api/library/${this.currentLibraryId}/search?q=${value}`).catch((error) => {
         console.error('Search error', error)
         return []
       })
+      this.audiobookResults = searchResults.audiobooks || []
+      this.authorResults = searchResults.authors || []
+      this.seriesResults = searchResults.series || []
+
       this.isFetching = false
       if (!this.showMenu) {
         return
       }
-
-      this.items = results.map((res) => {
-        return {
-          id: res.id,
-          data: res,
-          type: 'audiobook'
-        }
-      })
     },
     inputUpdate(val) {
       clearTimeout(this.searchTimeout)
@@ -114,17 +137,15 @@ export default {
       this.searchTimeout = setTimeout(() => {
         this.isTyping = false
         this.runSearch(val)
-      }, 1000)
-    },
-    clickedOption(option) {
-      if (option.type === 'audiobook') {
-        this.$router.push(`/audiobook/${option.data.id}`)
-      }
+      }, 750)
     },
     clickClear() {
       if (this.search) {
         this.search = null
-        this.items = []
+        this.lastSearch = null
+        this.audiobookResults = []
+        this.authorResults = []
+        this.seriesResults = []
         this.showMenu = false
       }
     }
@@ -132,3 +153,9 @@ export default {
   mounted() {}
 }
 </script>
+
+<style>
+.globalSearchMenu {
+  max-height: 80vh;
+}
+</style>

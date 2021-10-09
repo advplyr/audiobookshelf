@@ -77,6 +77,11 @@ export default {
         this.$store.commit('audiobooks/setSearchResults', this.searchResults)
         this.setBookshelfEntities()
       })
+    },
+    '$route.query.filter'() {
+      if (this.$route.query.filter && this.$route.query.filter !== this.filterBy) {
+        this.$store.dispatch('user/updateUserSettings', { filterBy: this.$route.query.filter })
+      }
     }
   },
   computed: {
@@ -171,6 +176,7 @@ export default {
       this.currSearchParams = this.buildSearchParams()
 
       var entities = this.entities
+
       var groups = []
       var currentRow = 0
       var currentGroup = []

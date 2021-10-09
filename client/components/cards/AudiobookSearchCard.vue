@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
-    <cards-book-cover :audiobook="audiobook" :width="40" />
+    <cards-book-cover :audiobook="audiobook" :width="50" />
     <div class="flex-grow px-2 searchCardContent h-full">
       <p class="truncate text-sm">{{ title }}</p>
       <p class="text-xs text-gray-200 truncate">by {{ author }}</p>
@@ -38,7 +38,7 @@ export default {
 <style>
 .searchCardContent {
   width: calc(100% - 80px);
-  height: calc(40px * 1.5);
+  height: calc(50px * 1.5);
   display: flex;
   flex-direction: column;
   justify-content: center;

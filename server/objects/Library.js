@@ -5,6 +5,7 @@ class Library {
     this.id = null
     this.name = null
     this.folders = []
+    this.icon = 'database'
 
     this.lastScan = 0
 
@@ -24,6 +25,8 @@ class Library {
     this.id = library.id
     this.name = library.name
     this.folders = (library.folders || []).map(f => new Folder(f))
+    this.icon = library.icon || 'database'
+
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
   }
@@ -33,6 +36,7 @@ class Library {
       id: this.id,
       name: this.name,
       folders: (this.folders || []).map(f => f.toJSON()),
+      icon: this.icon,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
@@ -55,6 +59,7 @@ class Library {
         return newFolder
       })
     }
+    this.icon = data.icon || 'database'
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
   }

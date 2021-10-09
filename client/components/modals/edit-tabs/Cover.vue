@@ -53,14 +53,11 @@
             </div>
           </div>
         </form>
-        <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-60 overflow-y-scroll mt-2 max-w-full">
+        <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
             <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
-              <div class="h-24 bg-primary" style="width: 60px">
-                <img :src="cover" class="h-full w-full object-contain" />
-              </div>
-              <!-- <img :src="cover" class="h-24 object-cover" style="width: 60px" /> -->
+              <cards-preview-cover :src="cover" :width="80" show-open-new-tab />
             </div>
           </template>
         </div>

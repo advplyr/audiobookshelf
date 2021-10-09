@@ -623,6 +623,10 @@ class Audiobook {
     return this.book.isSearchMatch(search.toLowerCase().trim())
   }
 
+  searchQuery(search) {
+    return this.book.getQueryMatches(search.toLowerCase().trim())
+  }
+
   getAudioFileByIno(ino) {
     return this.audioFiles.find(af => af.ino === ino)
   }

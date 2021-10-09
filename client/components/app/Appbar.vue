@@ -18,7 +18,7 @@
             <p class="text-sm text-white text-opacity-70 leading-3 font-book pl-2">{{ libraryName }}</p>
           </div> -->
         <!-- </div> -->
-        <div class="bg-black bg-opacity-20 rounded-sm py-1.5 px-3 flex items-center border border-bg text-white text-opacity-70 cursor-pointer hover:bg-opacity-10 hover:text-opacity-90" @click="clickLibrary">
+        <div class="bg-black bg-opacity-20 rounded-md py-1.5 px-3 flex items-center text-white text-opacity-70 cursor-pointer hover:bg-opacity-10 hover:text-opacity-90" @click="clickLibrary">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
           </svg>

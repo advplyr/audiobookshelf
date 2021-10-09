@@ -21,6 +21,8 @@ class BackupManager {
     this.Gid = Gid
     this.db = db
 
+    this.scheduleTask = null
+
     this.backups = []
   }
 
@@ -28,7 +30,7 @@ class BackupManager {
     return this.db.serverSettings || {}
   }
 
-  async init(overrideCron = null) {
+  async init() {
     var backupsDirExists = await fs.pathExists(this.BackupPath)
     if (!backupsDirExists) {
       await fs.ensureDir(this.BackupPath)
@@ -36,16 +38,34 @@ class BackupManager {
     }
 
     await this.loadBackups()
+    this.scheduleCron()
+  }
 
+  scheduleCron() {
     if (!this.serverSettings.backupSchedule) {
       Logger.info(`[BackupManager] Auto Backups are disabled`)
       return
     }
     try {
-      var cronSchedule = overrideCron || this.serverSettings.backupSchedule
-      cron.schedule(cronSchedule, this.runBackup.bind(this))
+      var cronSchedule = this.serverSettings.backupSchedule
+      this.scheduleTask = cron.schedule(cronSchedule, this.runBackup.bind(this))
     } catch (error) {
-      Logger.error(`[BackupManager] Failed to schedule backup cron ${this.serverSettings.backupSchedule}`)
+      Logger.error(`[BackupManager] Failed to schedule backup cron ${this.serverSettings.backupSchedule}`, error)
+    }
+  }
+
+  updateCronSchedule() {
+    if (this.scheduleTask && !this.serverSettings.backupSchedule) {
+      Logger.info(`[BackupManager] Disabling backup schedule`)
+      if (this.scheduleTask.destroy) this.scheduleTask.destroy()
+      this.scheduleTask = null
+    } else if (!this.scheduleTask && this.serverSettings.backupSchedule) {
+      Logger.info(`[BackupManager] Starting backup schedule ${this.serverSettings.backupSchedule}`)
+      this.scheduleCron()
+    } else if (this.serverSettings.backupSchedule) {
+      Logger.info(`[BackupManager] Restarting backup schedule ${this.serverSettings.backupSchedule}`)
+      if (this.scheduleTask.destroy) this.scheduleTask.destroy()
+      this.scheduleCron()
     }
   }
 

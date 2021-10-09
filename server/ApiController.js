@@ -30,6 +30,7 @@ class ApiController {
     this.router.get('/find/:method', this.find.bind(this))
 
     this.router.get('/libraries', this.getLibraries.bind(this))
+    this.router.get('/library/:id/search', this.searchLibrary.bind(this))
     this.router.get('/library/:id', this.getLibrary.bind(this))
     this.router.delete('/library/:id', this.deleteLibrary.bind(this))
     this.router.patch('/library/:id', this.updateLibrary.bind(this))
@@ -95,6 +96,53 @@ class ApiController {
   getLibraries(req, res) {
     var libraries = this.db.libraries.map(lib => lib.toJSON())
     res.json(libraries)
+  }
+
+  searchLibrary(req, res) {
+    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    if (!req.query.q) {
+      return res.status(400).send('No query string')
+    }
+    var maxResults = req.query.max || 3
+
+    var bookMatches = []
+    var authorMatches = {}
+    var seriesMatches = {}
+
+    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    audiobooksInLibrary.forEach((ab) => {
+      var queryResult = ab.searchQuery(req.query.q)
+      if (queryResult.book) {
+        bookMatches.push({
+          audiobook: ab,
+          matchKey: queryResult.book
+        })
+      }
+      if (queryResult.author && !authorMatches[queryResult.author]) {
+        authorMatches[queryResult.author] = {
+          author: queryResult.author
+        }
+      }
+      if (queryResult.series) {
+        if (!seriesMatches[queryResult.series]) {
+          seriesMatches[queryResult.series] = {
+            series: queryResult.series,
+            audiobooks: [ab]
+          }
+        } else {
+          seriesMatches[queryResult.series].audiobooks.push(ab)
+        }
+      }
+    })
+
+    res.json({
+      audiobooks: bookMatches.slice(0, maxResults),
+      authors: Object.values(authorMatches).slice(0, maxResults),
+      series: Object.values(seriesMatches).slice(0, maxResults)
+    })
   }
 
   getLibrary(req, res) {
@@ -563,8 +611,14 @@ class ApiController {
     if (!settingsUpdate || !isObject(settingsUpdate)) {
       return res.status(500).send('Invalid settings update object')
     }
+
     var madeUpdates = this.db.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
+      // If backup schedule is updated - update backup manager
+      if (settingsUpdate.backupSchedule !== undefined) {
+        this.backupManager.updateCronSchedule()
+      }
+
       await this.db.updateEntity('settings', this.db.serverSettings)
     }
     return res.json({
