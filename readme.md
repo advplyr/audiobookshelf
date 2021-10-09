@@ -1,5 +1,5 @@
 <p align="center">
-  <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/banner.svg" width="580">
+  <img alt="Audiobookshelf Banner" src="https://github.com/advplyr/audiobookshelf/raw/master/images/banner2.svg" width="700">
 </p>
 <h1 align="center">
    audiobookshelf
