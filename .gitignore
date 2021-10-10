@@ -4,6 +4,7 @@ node_modules/
 /config/
 /audiobooks/
 /audiobooks2/
+/media/
 /metadata/
 test/
 /client/.nuxt/

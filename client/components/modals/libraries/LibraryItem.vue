@@ -11,7 +11,12 @@
     <div class="flex-grow" />
     <ui-btn v-show="mouseover && !libraryScan && canScan" small color="bg" @click.stop="scan">Scan</ui-btn>
     <span v-show="mouseover && !libraryScan && showEdit && canEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4" @click.stop="editClick">edit</span>
-    <span v-show="!libraryScan && mouseover && showEdit && canDelete" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50'" @click.stop="deleteClick">delete</span>
+    <span v-show="!libraryScan && mouseover && showEdit && canDelete && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50'" @click.stop="deleteClick">delete</span>
+    <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50'" @click.stop="deleteClick">
+      <svg viewBox="0 0 24 24" class="w-6 h-6">
+        <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
+      </svg>
+    </div>
   </div>
 </template>
 
@@ -27,7 +32,8 @@ export default {
   },
   data() {
     return {
-      mouseover: false
+      mouseover: false,
+      isDeleting: false
     }
   },
   computed: {
@@ -54,12 +60,29 @@ export default {
     editClick() {
       this.$emit('edit', this.library)
     },
-    deleteClick() {
-      if (this.isMain) return
-      this.$emit('delete', this.library)
-    },
     scan() {
       this.$root.socket.emit('scan', this.library.id)
+    },
+    deleteClick() {
+      if (this.isMain) return
+      if (confirm(`Are you sure you want to permanently delete library "${this.library.name}"?`)) {
+        this.isDeleting = true
+        this.$axios
+          .$delete(`/api/library/${this.library.id}`)
+          .then((data) => {
+            this.isDeleting = false
+            if (data.error) {
+              this.$toast.error(data.error)
+            } else {
+              this.$toast.success('Library deleted')
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to delete library', error)
+            this.$toast.error('Failed to delete library')
+            this.isDeleting = false
+          })
+      }
     }
   },
   mounted() {}

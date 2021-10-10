@@ -143,18 +143,21 @@ class Scanner {
       forceAudioFileScan = true
     }
 
-    // ino is now set for every file in scandir
+    // inode is required
     audiobookData.audioFiles = audiobookData.audioFiles.filter(af => af.ino)
 
-    // REMOVE: No valid audio files
-    // TODO: Label as incomplete, do not actually delete
-    if (!audiobookData.audioFiles.length) {
-      Logger.error(`[Scanner] "${existingAudiobook.title}" no valid audio files found - removing audiobook`)
-
-      await this.db.removeEntity('audiobook', existingAudiobook.id)
-      this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
-
-      return ScanResult.REMOVED
+    // No valid ebook and audio files found, mark as incomplete
+    var ebookFiles = audiobookData.otherFiles.filter(f => f.filetype === 'ebook')
+    if (!audiobookData.audioFiles.length && !ebookFiles.length) {
+      Logger.error(`[Scanner] "${existingAudiobook.title}" no valid book files found - marking as incomplete`)
+      existingAudiobook.setLastScan(version)
+      existingAudiobook.isIncomplete = true
+      await this.db.updateAudiobook(existingAudiobook)
+      this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
+      return ScanResult.UPDATED
+    } else if (existingAudiobook.isIncomplete) { // Was incomplete but now is not
+      Logger.info(`[Scanner] "${existingAudiobook.title}" was incomplete but now has book files`)
+      existingAudiobook.isIncomplete = false
     }
 
     // Check for audio files that were removed
@@ -219,14 +222,15 @@ class Scanner {
       await audioFileScanner.scanAudioFiles(existingAudiobook, newAudioFiles)
     }
 
-    // If after a scan no valid audio tracks remain
-    // TODO: Label as incomplete, do not actually delete
-    if (!existingAudiobook.tracks.length) {
-      Logger.error(`[Scanner] "${existingAudiobook.title}" has no valid tracks after update - removing audiobook`)
-
-      await this.db.removeEntity('audiobook', existingAudiobook.id)
-      this.emitter('audiobook_removed', existingAudiobook.toJSONMinified())
-      return ScanResult.REMOVED
+    // After scanning audio files, some may no longer be valid
+    //   so make sure the directory still has valid book files
+    if (!existingAudiobook.tracks.length && !ebookFiles.length) {
+      Logger.error(`[Scanner] "${existingAudiobook.title}" no valid book files found after update - marking as incomplete`)
+      existingAudiobook.setLastScan(version)
+      existingAudiobook.isIncomplete = true
+      await this.db.updateAudiobook(existingAudiobook)
+      this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
+      return ScanResult.UPDATED
     }
 
     var hasUpdates = hasUpdatedIno || hasUpdatedLibraryOrFolder || removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
@@ -269,8 +273,9 @@ class Scanner {
   }
 
   async scanNewAudiobook(audiobookData) {
-    if (!audiobookData.audioFiles.length) {
-      Logger.error('[Scanner] No valid audio tracks for Audiobook', audiobookData.path)
+    var ebookFiles = audiobookData.otherFiles.map(f => f.filetype === 'ebook')
+    if (!audiobookData.audioFiles.length && !ebookFiles.length) {
+      Logger.error('[Scanner] No valid audio files and ebooks for Audiobook', audiobookData.path)
       return null
     }
 
@@ -279,8 +284,9 @@ class Scanner {
 
     // Scan audio files and set tracks, pulls metadata
     await audioFileScanner.scanAudioFiles(audiobook, audiobookData.audioFiles)
-    if (!audiobook.tracks.length) {
-      Logger.warn('[Scanner] Invalid audiobook, no valid tracks', audiobook.title)
+
+    if (!audiobook.tracks.length && !audiobook.ebooks.length) {
+      Logger.warn('[Scanner] Invalid audiobook, no valid audio tracks and ebook files', audiobook.title)
       return null
     }
 

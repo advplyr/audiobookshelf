@@ -7,6 +7,7 @@ export const state = () => ({
   streamAudiobook: null,
   editModalTab: 'details',
   showEditModal: false,
+  showEReader: false,
   selectedAudiobook: null,
   playOnLoad: false,
   developerMode: false,
@@ -110,6 +111,14 @@ export const mutations = {
   },
   setShowEditModal(state, val) {
     state.showEditModal = val
+  },
+  showEReader(state, audiobook) {
+    console.log('Show EReader', audiobook)
+    state.selectedAudiobook = audiobook
+    state.showEReader = true
+  },
+  setShowEReader(state, val) {
+    state.showEReader = val
   },
   setDeveloperMode(state, val) {
     state.developerMode = val

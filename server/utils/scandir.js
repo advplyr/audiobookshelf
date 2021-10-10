@@ -16,11 +16,12 @@ function getPaths(path) {
   })
 }
 
-function isAudioFile(path) {
+function isBookFile(path) {
   if (!path) return false
   var ext = Path.extname(path)
   if (!ext) return false
-  return globals.SupportedAudioTypes.includes(ext.slice(1).toLowerCase())
+  var extclean = ext.slice(1).toLowerCase()
+  return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
 // Input: array of relative file paths
@@ -36,17 +37,18 @@ function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
     return pathsA - pathsB
   })
 
-  // Step 2.5: Seperate audio files and other files (optional)
-  var audioFilePaths = []
+  // Step 2.5: Seperate audio/ebook files and other files (optional)
+  //              - Directories without an audio or ebook file will not be included
+  var bookFilePaths = []
   var otherFilePaths = []
   pathsFiltered.forEach(path => {
-    if (isAudioFile(path) || useAllFileTypes) audioFilePaths.push(path)
+    if (isBookFile(path) || useAllFileTypes) bookFilePaths.push(path)
     else otherFilePaths.push(path)
   })
 
   // Step 3: Group audio files in audiobooks
   var audiobookGroup = {}
-  audioFilePaths.forEach((path) => {
+  bookFilePaths.forEach((path) => {
     var dirparts = Path.dirname(path).split(Path.sep)
     var numparts = dirparts.length
     var _path = ''

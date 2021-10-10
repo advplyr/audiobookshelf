@@ -57,7 +57,7 @@
                   </template>
                 </div>
               </div>
-              <div class="flex py-0.5">
+              <div v-if="tracks.length" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Duration</span>
                 </div>
@@ -65,7 +65,7 @@
                   {{ durationPretty }}
                 </div>
               </div>
-              <div class="flex py-0.5">
+              <div v-if="tracks.length" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Size</span>
                 </div>
@@ -73,16 +73,20 @@
                   {{ sizePretty }}
                 </div>
               </div>
-              <!-- 
-              <p v-if="narrator" class="text-base">
-                <span class="text-white text-opacity-60">By:</span> <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link>
-              </p> -->
-              <!-- <p v-if="narrator" class="text-base"><span class="text-white text-opacity-60">Narrated by:</span> {{ narrator }}</p>
-              <p v-if="publishYear" class="text-base"><span class="text-white text-opacity-60">Publish year:</span> {{ publishYear }}</p>
-              <p v-if="genres.length" class="text-base"><span class="text-white text-opacity-60">Genres:</span> {{ genres.join(', ') }}</p> -->
             </div>
             <div class="flex-grow" />
           </div>
+
+          <!-- Alerts -->
+          <div v-show="showExperimentalReadAlert" class="bg-error p-4 rounded-xl flex items-center">
+            <span class="material-icons text-2xl">warning_amber</span>
+            <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
+          </div>
+          <div v-show="showEpubAlert" class="bg-error p-4 rounded-xl flex items-center mt-2">
+            <span class="material-icons text-2xl">warning_amber</span>
+            <p class="ml-4">Book has valid ebook files, but the experimental e-reader currently only supports epub files.</p>
+          </div>
+
           <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max" :class="resettingProgress ? 'opacity-25' : ''">
             <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
             <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
@@ -92,13 +96,13 @@
           </div>
 
           <div class="flex items-center pt-4">
-            <ui-btn v-if="!isMissing" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
+            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
-            <ui-btn v-else color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
+            <ui-btn v-else-if="isMissing || isIncomplete" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>
-              Missing
+              {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
             <ui-btn v-if="showExperimentalFeatures && epubEbook" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
@@ -141,7 +145,7 @@
             </div>
           </div>
 
-          <tables-tracks-table :tracks="tracks" :audiobook="audiobook" class="mt-6" />
+          <tables-tracks-table v-if="tracks.length" :tracks="tracks" :audiobook="audiobook" class="mt-6" />
 
           <tables-audio-files-table v-if="otherAudioFiles.length" :audiobook-id="audiobook.id" :files="otherAudioFiles" class="mt-6" />
 
@@ -150,7 +154,7 @@
       </div>
     </div>
 
-    <app-reader v-if="showExperimentalFeatures" v-model="showReader" :url="epubUrl" />
+    <!-- <app-reader v-if="showExperimentalFeatures" v-model="showReader" :url="epubUrl" /> -->
   </div>
 </template>
 
@@ -175,7 +179,6 @@ export default {
   },
   data() {
     return {
-      showReader: false,
       isRead: false,
       resettingProgress: false,
       isProcessingReadUpdate: false
@@ -229,6 +232,12 @@ export default {
     },
     isMissing() {
       return this.audiobook.isMissing
+    },
+    isIncomplete() {
+      return this.audiobook.isIncomplete
+    },
+    showPlayButton() {
+      return !this.isMissing && !this.isIncomplete && this.tracks.length
     },
     missingParts() {
       return this.audiobook.missingParts || []
@@ -313,15 +322,14 @@ export default {
     ebooks() {
       return this.audiobook.ebooks
     },
+    showEpubAlert() {
+      return this.ebooks.length && !this.epubEbook && !this.tracks.length
+    },
+    showExperimentalReadAlert() {
+      return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
+    },
     epubEbook() {
       return this.audiobook.ebooks.find((eb) => eb.ext === '.epub')
-    },
-    epubPath() {
-      return this.epubEbook ? this.epubEbook.path : null
-    },
-    epubUrl() {
-      if (!this.epubPath) return null
-      return `/ebook/${this.libraryId}/${this.folderId}/${this.epubPath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']
@@ -365,7 +373,7 @@ export default {
   },
   methods: {
     openEbook() {
-      this.showReader = true
+      this.$store.commit('showEReader', this.audiobook)
     },
     toggleRead() {
       var updatePayload = {

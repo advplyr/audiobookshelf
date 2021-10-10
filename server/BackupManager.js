@@ -24,6 +24,9 @@ class BackupManager {
     this.scheduleTask = null
 
     this.backups = []
+
+    // If backup exceeds this value it will be aborted
+    this.MaxBytesBeforeAbort = 1000000000 // ~ 1GB
   }
 
   get serverSettings() {
@@ -191,6 +194,7 @@ class BackupManager {
   }
 
   async runBackup() {
+    // Check if Metadata Path is inside Config Path (otherwise there will be an infinite loop as the archiver tries to zip itself)
     Logger.info(`[BackupManager] Running Backup`)
     var metadataBooksPath = this.serverSettings.backupMetadataCovers ? Path.join(this.MetadataPath, 'books') : null
 
@@ -233,6 +237,7 @@ class BackupManager {
 
   async removeBackup(backup) {
     try {
+      Logger.debug(`[BackupManager] Removing Backup "${backup.fullPath}"`)
       await fs.remove(backup.fullPath)
       this.backups = this.backups.filter(b => b.id !== backup.id)
       Logger.info(`[BackupManager] Backup "${backup.id}" Removed`)
@@ -263,6 +268,15 @@ class BackupManager {
         Logger.debug('Data has been drained')
       })
 
+      output.on('finish', () => {
+        Logger.debug('Write Stream Finished')
+      })
+
+      output.on('error', (err) => {
+        Logger.debug('Write Stream Error', err)
+        reject(err)
+      })
+
       // good practice to catch warnings (ie stat failures and other non-blocking errors)
       archive.on('warning', function (err) {
         if (err.code === 'ENOENT') {
@@ -278,6 +292,16 @@ class BackupManager {
       archive.on('error', function (err) {
         Logger.error(`[BackupManager] Archiver error: ${err.message}`)
         reject(err)
+      })
+      archive.on('progress', ({ fs: fsobj }) => {
+        if (fsobj.processedBytes > this.MaxBytesBeforeAbort) {
+          Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
+          archive.abort()
+          setTimeout(() => {
+            this.removeBackup(backup)
+            output.destroy('Backup too large') // Promise is reject in write stream error evt
+          }, 500)
+        }
       })
 
       // pipe archive data to the file

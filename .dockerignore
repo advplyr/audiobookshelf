@@ -6,6 +6,7 @@ npm-debug.log
 /config
 /audiobooks
 /audiobooks2
+/media/
 /metadata
 dev.js
 test/

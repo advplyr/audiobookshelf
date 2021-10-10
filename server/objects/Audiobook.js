@@ -37,6 +37,8 @@ class Audiobook {
 
     // Audiobook was scanned and not found
     this.isMissing = false
+    // Audiobook no longer has "book" files
+    this.isInvalid = false
 
     if (audiobook) {
       this.construct(audiobook)
@@ -70,6 +72,7 @@ class Audiobook {
     }
 
     this.isMissing = !!audiobook.isMissing
+    this.isInvalid = !!audiobook.isInvalid
   }
 
   get title() {
@@ -175,7 +178,8 @@ class Audiobook {
       audioFiles: this._audioFiles.map(audioFile => audioFile.toJSON()),
       otherFiles: this._otherFiles.map(otherFile => otherFile.toJSON()),
       chapters: this.chapters || [],
-      isMissing: !!this.isMissing
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid
     }
   }
 
@@ -197,10 +201,12 @@ class Audiobook {
       hasMissingParts: this.missingParts ? this.missingParts.length : 0,
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
       // numEbooks: this.ebooks.length,
-      numEbooks: this.hasEpub ? 1 : 0,
+      ebooks: this.ebooks.map(ebook => ebook.toJSON()),
+      numEbooks: this.hasEpub ? 1 : 0, // Only supporting epubs in the reader currently
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
-      isMissing: !!this.isMissing
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid
     }
   }
 
@@ -220,15 +226,16 @@ class Audiobook {
       sizePretty: this.sizePretty,
       missingParts: this.missingParts,
       invalidParts: this.invalidParts,
-      audioFiles: (this.audioFiles || []).map(audioFile => audioFile.toJSON()),
-      otherFiles: (this.otherFiles || []).map(otherFile => otherFile.toJSON()),
-      ebooks: (this.ebooks || []).map(ebook => ebook.toJSON()),
+      audioFiles: this._audioFiles.map(audioFile => audioFile.toJSON()),
+      otherFiles: this._otherFiles.map(otherFile => otherFile.toJSON()),
+      ebooks: this.ebooks.map(ebook => ebook.toJSON()),
       numEbooks: this.hasEpub ? 1 : 0,
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
       chapters: this.chapters || [],
-      isMissing: !!this.isMissing
+      isMissing: !!this.isMissing,
+      isInvalid: !!this.isInvalid
     }
   }
 

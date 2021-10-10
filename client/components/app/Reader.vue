@@ -1,5 +1,5 @@
 <template>
-  <div v-if="value" class="w-screen h-screen fixed top-0 left-0 z-50 bg-white text-black">
+  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-50 bg-white text-black">
     <div class="absolute top-4 right-4 z-10">
       <span class="material-icons cursor-pointer text-4xl" @click="show = false">close</span>
     </div>
@@ -35,10 +35,6 @@
 import ePub from 'epubjs'
 
 export default {
-  props: {
-    value: Boolean,
-    url: String
-  },
   data() {
     return {
       book: null,
@@ -63,11 +59,33 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.showEReader
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('setShowEReader', val)
       }
+    },
+    selectedAudiobook() {
+      return this.$store.state.selectedAudiobook
+    },
+    libraryId() {
+      return this.selectedAudiobook.libraryId
+    },
+    folderId() {
+      return this.selectedAudiobook.folderId
+    },
+    ebooks() {
+      return this.selectedAudiobook.ebooks || []
+    },
+    epubEbook() {
+      return this.ebooks.find((eb) => eb.ext === '.epub')
+    },
+    epubPath() {
+      return this.epubEbook ? this.epubEbook.path : null
+    },
+    url() {
+      if (!this.epubPath) return null
+      return `/ebook/${this.libraryId}/${this.folderId}/${this.epubPath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']
@@ -116,7 +134,7 @@ export default {
     init() {
       this.registerListeners()
 
-      console.log('epub', this.url)
+      console.log('epub', this.url, this.epubEbook, this.ebooks)
       // var book = ePub(this.url, {
       //   requestHeaders: {
       //     Authorization: `Bearer ${this.userToken}`

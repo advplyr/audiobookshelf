@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <p class="text-center text-lg mb-4 py-8">Preparing downloads can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be deleted.<br />Download will timeout after 15 minutes.</p>
-    <div class="w-full border border-black-200 p-4 my-4">
+    <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-4">
       <div class="flex items-center">
         <div>
           <p class="text-lg">M4B Audiobook File <span class="text-error">*</span></p>
@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <div class="w-full flex items-center justify-center absolute bottom-4 left-0 right-0 text-center">
+    <div v-if="showM4bDownload" class="w-full flex items-center justify-center absolute bottom-4 left-0 right-0 text-center">
       <p class="text-error text-lg">* <strong>Experimental:</strong> Merging multiple .m4b files may have issues. <a href="https://github.com/advplyr/audiobookshelf/issues" class="underline text-blue-600" target="_blank">Report issues here.</a></p>
     </div>
 
@@ -89,6 +89,9 @@ export default {
     audiobookId() {
       return this.audiobook ? this.audiobook.id : null
     },
+    _audiobook() {
+      return this.audiobook || {}
+    },
     downloads() {
       return this.$store.getters['downloads/getDownloads'](this.audiobookId)
     },
@@ -120,6 +123,9 @@ export default {
     },
     totalFiles() {
       return this.audioFiles.length + this.otherFiles.length
+    },
+    showM4bDownload() {
+      return !this._audiobook.isMissing && !this._audiobook.isIncomplete && this._audiobook.tracks.length
     }
   },
   methods: {

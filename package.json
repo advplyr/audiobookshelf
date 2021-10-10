@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Self-hosted audiobook server for managing and playing audiobooks",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "node index.js",
     "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
-    "build-win": "npm run build-prep && pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
+    "build-win": "pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
     "build-linux": "build/linuxpackager"
   },
   "bin": "prod.js",
@@ -26,7 +26,6 @@
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
     "command-line-args": "^5.2.0",
-    "cookie-parser": "^1.4.5",
     "date-and-time": "^2.0.1",
     "epub": "^1.2.1",
     "express": "^4.17.1",

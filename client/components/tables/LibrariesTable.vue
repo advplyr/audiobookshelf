@@ -8,7 +8,7 @@
     </div>
 
     <template v-for="library in libraries">
-      <modals-libraries-library-item :key="library.id" :library="library" :selected="currentLibraryId === library.id" :show-edit="true" @edit="editLibrary" @delete="deleteLibrary" @click="clickLibrary" />
+      <modals-libraries-library-item :key="library.id" :library="library" :selected="currentLibraryId === library.id" :show-edit="true" @edit="editLibrary" @click="clickLibrary" />
     </template>
     <modals-edit-library-modal v-model="showLibraryModal" :library="selectedLibrary" />
   </div>
@@ -37,27 +37,6 @@ export default {
     async clickLibrary(library) {
       await this.$store.dispatch('libraries/fetch', library.id)
       this.$router.push(`/library/${library.id}`)
-    },
-    deleteLibrary(library) {
-      if (library.id === 'main') return
-      // if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
-      //   this.isDeletingUser = true
-      //   this.$axios
-      //     .$delete(`/api/user/${user.id}`)
-      //     .then((data) => {
-      //       this.isDeletingUser = false
-      //       if (data.error) {
-      //         this.$toast.error(data.error)
-      //       } else {
-      //         this.$toast.success('User deleted')
-      //       }
-      //     })
-      //     .catch((error) => {
-      //       console.error('Failed to delete user', error)
-      //       this.$toast.error('Failed to delete user')
-      //       this.isDeletingUser = false
-      //     })
-      // }
     },
     clickAddLibrary() {
       this.selectedLibrary = null

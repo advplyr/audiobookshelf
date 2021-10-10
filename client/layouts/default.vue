@@ -7,6 +7,7 @@
     <app-stream-container ref="streamContainer" />
     <modals-libraries-modal />
     <modals-edit-modal />
+    <app-reader />
     <!-- <widgets-scan-alert /> -->
   </div>
 </template>
