@@ -456,11 +456,12 @@ class Audiobook {
 
     var current_index = 1
     var missingParts = []
+
     for (let i = 0; i < this.tracks.length; i++) {
       var _track = this.tracks[i]
       if (_track.index > current_index) {
         var num_parts_missing = _track.index - current_index
-        for (let x = 0; x < num_parts_missing; x++) {
+        for (let x = 0; x < num_parts_missing && x < 9999; x++) {
           missingParts.push(current_index + x)
         }
       }

@@ -12,6 +12,7 @@ function getDefaultAudioStream(audioStreams) {
 }
 
 async function scan(path) {
+  Logger.debug(`Scanning path "${path}"`)
   var probeData = await prober(path)
   if (!probeData || !probeData.audio_streams || !probeData.audio_streams.length) {
     return {
@@ -86,7 +87,7 @@ function getTrackNumberFromFilename(title, author, series, publishYear, filename
   // Remove eg. "disc 1" from path
   partbasename = partbasename.replace(/ disc \d\d? /i, '')
 
-  var numbersinpath = partbasename.match(/\d+/g)
+  var numbersinpath = partbasename.match(/\d{1,4}/g)
   if (!numbersinpath) return null
 
   var number = numbersinpath.length ? parseInt(numbersinpath[0]) : null
@@ -98,6 +99,8 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     Logger.error('[AudioFileScanner] Scan Audio Files no new files', audiobook.title)
     return
   }
+
+  Logger.debug('[AudioFileScanner] Scanning audio files')
 
   var tracks = []
   var numDuplicateTracks = 0

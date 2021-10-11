@@ -1,4 +1,5 @@
 const Path = require('path')
+const fs = require('fs-extra')
 const dir = require('node-dir')
 const Logger = require('../Logger')
 const { getIno } = require('./index')
@@ -119,6 +120,12 @@ function getFileType(ext) {
 async function scanRootDir(folder, serverSettings = {}) {
   var folderPath = folder.fullPath
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
+
+  var pathExists = await fs.pathExists(folderPath)
+  if (!pathExists) {
+    Logger.error(`[scandir] Invalid folder path does not exist "${folderPath}"`)
+    return []
+  }
 
   var pathdata = await getPaths(folderPath)
   var filepaths = pathdata.files.map(filepath => {

@@ -5,7 +5,7 @@
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 200px; max-height: 80vh">
+    <div v-if="show" class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 200px; max-height: 80vh">
       <div v-if="!showAddLibrary" class="w-full h-full flex flex-col justify-center px-4">
         <div class="flex items-center mb-4">
           <p>{{ libraries.length }} Libraries</p>

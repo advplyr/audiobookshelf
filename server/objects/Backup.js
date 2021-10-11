@@ -67,7 +67,6 @@ class Backup {
     this.filename = this.id + '.audiobookshelf'
     this.path = Path.join('backups', this.filename)
     this.fullPath = Path.join(this.backupDirPath, this.filename)
-    console.log('Backup fullpath', this.fullPath)
 
     this.createdAt = Date.now()
   }

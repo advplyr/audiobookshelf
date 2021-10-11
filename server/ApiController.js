@@ -692,7 +692,7 @@ class ApiController {
         var path = Path.join(relpath, dirname)
 
         var isDir = (await fs.lstat(fullPath)).isDirectory()
-        if (isDir && !excludedDirs.includes(dirname)) {
+        if (isDir && !excludedDirs.includes(path) && dirname !== 'node_modules') {
           return {
             path,
             dirname,
@@ -713,12 +713,16 @@ class ApiController {
   }
 
   async getFileSystemPaths(req, res) {
-    var excludedDirs = ['node_modules', 'client', 'server', '.git', 'static', 'build', 'dist', 'metadata', 'config', 'sys', 'proc']
+    var excludedDirs = ['node_modules', 'client', 'server', '.git', 'static', 'build', 'dist', 'metadata', 'config', 'sys', 'proc'].map(dirname => {
+      return Path.sep + dirname
+    })
 
     // Do not include existing mapped library paths in response
     this.db.libraries.forEach(lib => {
       lib.folders.forEach((folder) => {
-        excludedDirs.push(Path.basename(folder.fullPath))
+        var dir = folder.fullPath
+        if (dir.includes(global.appRoot)) dir = dir.replace(global.appRoot, '')
+        excludedDirs.push(dir)
       })
     })
 
