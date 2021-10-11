@@ -113,7 +113,6 @@ export const mutations = {
     state.showEditModal = val
   },
   showEReader(state, audiobook) {
-    console.log('Show EReader', audiobook)
     state.selectedAudiobook = audiobook
     state.showEReader = true
   },

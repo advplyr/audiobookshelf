@@ -9,11 +9,14 @@
       </select>
     </div> -->
     <div class="absolute top-4 left-4 font-book">
-      <h1 class="text-2xl mb-1">{{ title }}</h1>
-
-      <p v-if="author">by {{ author }}</p>
+      <h1 class="text-2xl mb-1">{{ title || abTitle }}</h1>
+      <p v-if="author || abAuthor">by {{ author || abAuthor }}</p>
     </div>
-    <div class="h-full flex items-center">
+    <div v-if="!epubEbook && mobiEbook" class="absolute top-4 left-0 w-full flex justify-center">
+      <p class="text-error font-semibold">Warning: Reading mobi & azw3 files is in the very early stages</p>
+    </div>
+
+    <div v-if="epubEbook" class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden">
         <span v-show="hasPrev" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageLeft">chevron_left</span>
       </div>
@@ -28,11 +31,17 @@
         <span v-show="hasNext" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageRight">chevron_right</span>
       </div>
     </div>
+    <div v-else class="h-full flex items-center justify-center">
+      <div class="w-full max-w-4xl overflow-y-auto border border-black border-opacity-10 p-4" style="max-height: 80vh">
+        <div id="viewer" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import ePub from 'epubjs'
+import mobijs from '@/assets/mobi.js'
 
 export default {
   data() {
@@ -65,6 +74,12 @@ export default {
         this.$store.commit('setShowEReader', val)
       }
     },
+    abTitle() {
+      return this.selectedAudiobook.book.title
+    },
+    abAuthor() {
+      return this.selectedAudiobook.book.author
+    },
     selectedAudiobook() {
       return this.$store.state.selectedAudiobook
     },
@@ -82,6 +97,16 @@ export default {
     },
     epubPath() {
       return this.epubEbook ? this.epubEbook.path : null
+    },
+    mobiEbook() {
+      return this.ebooks.find((eb) => eb.ext === '.mobi' || eb.ext === '.azw3')
+    },
+    mobiPath() {
+      return this.mobiEbook ? this.mobiEbook.path : null
+    },
+    mobiUrl() {
+      if (!this.mobiPath) return null
+      return `/ebook/${this.libraryId}/${this.folderId}/${this.mobiPath}`
     },
     url() {
       if (!this.epubPath) return null
@@ -134,7 +159,24 @@ export default {
     init() {
       this.registerListeners()
 
-      console.log('epub', this.url, this.epubEbook, this.ebooks)
+      if (this.epubEbook) {
+        this.initEpub()
+      } else if (this.mobiEbook) {
+        this.initMobi()
+      }
+    },
+    async initMobi() {
+      var buff = await this.$axios.$get(this.mobiUrl, {
+        responseType: 'blob'
+      })
+      var reader = new FileReader()
+      reader.onload = function (event) {
+        var file_content = event.target.result
+        new mobijs(file_content).render_to('viewer')
+      }
+      reader.readAsArrayBuffer(buff)
+    },
+    initEpub() {
       // var book = ePub(this.url, {
       //   requestHeaders: {
       //     Authorization: `Bearer ${this.userToken}`

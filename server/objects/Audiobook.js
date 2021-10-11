@@ -131,6 +131,10 @@ class Audiobook {
     return this.otherFiles.find(file => file.ext === '.epub')
   }
 
+  get hasMobi() {
+    return this.otherFiles.find(file => file.ext === '.mobi' || file.ext === '.azw3')
+  }
+
   get hasMissingIno() {
     return !this.ino || this._audioFiles.find(abf => !abf.ino) || this._otherFiles.find(f => !f.ino) || this._tracks.find(t => !t.ino)
   }
@@ -202,7 +206,7 @@ class Audiobook {
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
       // numEbooks: this.ebooks.length,
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
-      numEbooks: this.hasEpub ? 1 : 0, // Only supporting epubs in the reader currently
+      numEbooks: (this.hasEpub || this.hasMobi) ? 1 : 0, // Only supporting epubs in the reader currently
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,

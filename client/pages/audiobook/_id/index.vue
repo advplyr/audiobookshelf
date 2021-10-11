@@ -22,8 +22,7 @@
                 by <nuxt-link v-if="author" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link
                 ><span v-else>Unknown</span>
               </p>
-
-              <h3 v-if="series" class="font-sans text-gray-300 text-lg leading-7 mb-4">{{ seriesText }}</h3>
+              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf?filter=series.${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>
 
               <!-- <div class="w-min">
                 <ui-tooltip :text="authorTooltipText" direction="bottom">
@@ -105,7 +104,7 @@
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
-            <ui-btn v-if="showExperimentalFeatures && epubEbook" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showExperimentalFeatures && (epubEbook || mobiEbook)" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
             </ui-btn>
@@ -329,7 +328,10 @@ export default {
       return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
     epubEbook() {
-      return this.audiobook.ebooks.find((eb) => eb.ext === '.epub')
+      return this.ebooks.find((eb) => eb.ext === '.epub')
+    },
+    mobiEbook() {
+      return this.ebooks.find((eb) => eb.ext === '.mobi' || eb.ext === '.azw3')
     },
     userToken() {
       return this.$store.getters['user/getToken']
@@ -455,6 +457,11 @@ export default {
   },
   mounted() {
     this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
+
+    // If a library has not yet been loaded, use this audiobooks library id as the current
+    if (!this.$store.state.audiobooks.loadedLibraryId && this.libraryId) {
+      this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
+    }
   },
   beforeDestroy() {
     this.$store.commit('audiobooks/removeListener', 'audiobook')
