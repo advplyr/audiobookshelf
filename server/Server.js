@@ -92,6 +92,10 @@ class Server {
     })
   }
 
+  authMiddleware(req, res, next) {
+    this.auth.authMiddleware(req, res, next)
+  }
+
   async init() {
     Logger.info('[Server] Init v' + version)
     await this.streamManager.ensureStreamsDir()
@@ -270,6 +274,8 @@ class Server {
           Logger.info('[SOCKET] Unauth socket disconnected ' + socket.id)
           delete this.clients[socket.id]
         } else {
+          socket.broadcast.emit('user_offline', _client.user.toJSONForPublic(this.streamManager.streams))
+
           const disconnectTime = Date.now() - _client.connected_at
           Logger.info(`[SOCKET] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
           delete this.clients[socket.id]
@@ -339,10 +345,6 @@ class Server {
       Logger.info(`[Server] Purged ${purged} unused audiobook metadata`)
     }
     return purged
-  }
-
-  authMiddleware(req, res, next) {
-    this.auth.authMiddleware(req, res, next)
   }
 
   async handleUpload(req, res) {
@@ -459,6 +461,11 @@ class Server {
         await this.db.updateUserStream(client.user.id, null)
       }
     }
+
+    socket.broadcast.emit('user_online', client.user.toJSONForPublic(this.streamManager.streams))
+
+    user.lastSeen = Date.now()
+    await this.db.updateEntity('user', user)
 
     const initialPayload = {
       serverSettings: this.serverSettings.toJSON(),

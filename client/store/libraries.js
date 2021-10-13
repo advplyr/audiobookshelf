@@ -11,6 +11,9 @@ export const state = () => ({
 export const getters = {
   getCurrentLibrary: state => {
     return state.libraries.find(lib => lib.id === state.currentLibraryId)
+  },
+  getSortedLibraries: state => () => {
+    return state.libraries.map(lib => ({ ...lib })).sort((a, b) => a.displayOrder - b.displayOrder)
   }
 }
 

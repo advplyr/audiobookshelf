@@ -12,10 +12,8 @@
       <h1 class="text-2xl mb-1">{{ title || abTitle }}</h1>
       <p v-if="author || abAuthor">by {{ author || abAuthor }}</p>
     </div>
-    <div v-if="!epubEbook && mobiEbook" class="absolute top-4 left-0 w-full flex justify-center">
-      <p class="text-error font-semibold">Warning: Reading mobi & azw3 files is in the very early stages</p>
-    </div>
 
+    <!-- EPUB -->
     <div v-if="epubEbook" class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden">
         <span v-show="hasPrev" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageLeft">chevron_left</span>
@@ -31,9 +29,10 @@
         <span v-show="hasNext" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageRight">chevron_right</span>
       </div>
     </div>
-    <div v-else class="h-full flex items-center justify-center">
-      <div class="w-full max-w-4xl overflow-y-auto border border-black border-opacity-10 p-4" style="max-height: 80vh">
-        <div id="viewer" />
+    <!-- MOBI/AZW3 -->
+    <div v-else class="h-full max-h-full w-full">
+      <div class="ebook-viewer absolute overflow-y-scroll left-0 right-0 top-12 w-full max-w-4xl m-auto z-10 border border-black border-opacity-20">
+        <iframe title="html-viewer" width="100%"> Loading </iframe>
       </div>
     </div>
   </div>
@@ -41,11 +40,14 @@
 
 <script>
 import ePub from 'epubjs'
-import mobijs from '@/assets/mobi.js'
+import MobiParser from '@/assets/ebooks/mobi.js'
+import HtmlParser from '@/assets/ebooks/htmlParser.js'
+import defaultCss from '@/assets/ebooks/basic.js'
 
 export default {
   data() {
     return {
+      scale: 1,
       book: null,
       rendition: null,
       chapters: [],
@@ -115,10 +117,6 @@ export default {
     userToken() {
       return this.$store.getters['user/getToken']
     }
-    // fullUrl() {
-    // var serverUrl = process.env.serverUrl || `/s/book/${this.audiobookId}`
-    // return `${serverUrl}/${this.url}`
-    // }
   },
   methods: {
     changedChapter() {
@@ -165,14 +163,85 @@ export default {
         this.initMobi()
       }
     },
+    addHtmlCss() {
+      let iframe = document.getElementsByTagName('iframe')[0]
+      if (!iframe) return
+      let doc = iframe.contentDocument
+      if (!doc) return
+      let style = doc.createElement('style')
+      style.id = 'default-style'
+      style.textContent = defaultCss
+      doc.head.appendChild(style)
+    },
+    handleIFrameHeight(iFrame) {
+      const isElement = (obj) => !!(obj && obj.nodeType === 1)
+
+      var body = iFrame.contentWindow.document.body,
+        html = iFrame.contentWindow.document.documentElement
+      iFrame.height = Math.max(body.scrollHeight, body.offsetHeight, html.clientHeight, html.scrollHeight, html.offsetHeight) * 2
+
+      setTimeout(() => {
+        let lastchild = body.lastElementChild
+        let lastEle = body.lastChild
+
+        let itemAs = body.querySelectorAll('a')
+        let itemPs = body.querySelectorAll('p')
+        let lastItemA = itemAs[itemAs.length - 1]
+        let lastItemP = itemPs[itemPs.length - 1]
+        let lastItem
+        if (isElement(lastItemA) && isElement(lastItemP)) {
+          if (lastItemA.clientHeight + lastItemA.offsetTop > lastItemP.clientHeight + lastItemP.offsetTop) {
+            lastItem = lastItemA
+          } else {
+            lastItem = lastItemP
+          }
+        }
+
+        if (!lastchild && !lastItem && !lastEle) return
+        if (lastEle.nodeType === 3 && !lastchild && !lastItem) return
+
+        let nodeHeight = 0
+        if (lastEle.nodeType === 3 && document.createRange) {
+          let range = document.createRange()
+          range.selectNodeContents(lastEle)
+          if (range.getBoundingClientRect) {
+            let rect = range.getBoundingClientRect()
+            if (rect) {
+              nodeHeight = rect.bottom - rect.top
+            }
+          }
+        }
+        var lastChildHeight = isElement(lastchild) ? lastchild.clientHeight + lastchild.offsetTop : 0
+        var lastEleHeight = isElement(lastEle) ? lastEle.clientHeight + lastEle.offsetTop : 0
+        var lastItemHeight = isElement(lastItem) ? lastItem.clientHeight + lastItem.offsetTop : 0
+        iFrame.height = Math.max(lastChildHeight, lastEleHeight, lastItemHeight) + 100 + nodeHeight
+      }, 500)
+    },
     async initMobi() {
+      // Fetch mobi file as blob
       var buff = await this.$axios.$get(this.mobiUrl, {
         responseType: 'blob'
       })
       var reader = new FileReader()
-      reader.onload = function (event) {
+      reader.onload = async (event) => {
         var file_content = event.target.result
-        new mobijs(file_content).render_to('viewer')
+
+        let mobiFile = new MobiParser(file_content)
+
+        let content = await mobiFile.render()
+        let htmlParser = new HtmlParser(new DOMParser().parseFromString(content.outerHTML, 'text/html'))
+        var anchoredDoc = htmlParser.getAnchoredDoc()
+
+        let iFrame = document.getElementsByTagName('iframe')[0]
+        iFrame.contentDocument.body.innerHTML = anchoredDoc.documentElement.outerHTML
+
+        // Add css
+        let style = iFrame.contentDocument.createElement('style')
+        style.id = 'default-style'
+        style.textContent = defaultCss
+        iFrame.contentDocument.head.appendChild(style)
+
+        this.handleIFrameHeight(iFrame)
       }
       reader.readAsArrayBuffer(buff)
     },
@@ -249,3 +318,10 @@ export default {
   }
 }
 </script>
+
+<style>
+/* @import url(@/assets/calibre/basic.css); */
+.ebook-viewer {
+  height: calc(100% - 96px);
+}
+</style>

@@ -30,6 +30,7 @@ class ApiController {
     this.router.get('/find/:method', this.find.bind(this))
 
     this.router.get('/libraries', this.getLibraries.bind(this))
+    this.router.patch('/libraries/order', this.reorderLibraries.bind(this))
     this.router.get('/library/:id/search', this.searchLibrary.bind(this))
     this.router.get('/library/:id', this.getLibrary.bind(this))
     this.router.delete('/library/:id', this.deleteLibrary.bind(this))
@@ -94,6 +95,36 @@ class ApiController {
   }
 
   getLibraries(req, res) {
+    var libraries = this.db.libraries.map(lib => lib.toJSON())
+    res.json(libraries)
+  }
+
+  async reorderLibraries(req, res) {
+    if (!req.user || !req.user.isRoot) {
+      Logger.error('[ApiController] ReorderLibraries invalid user', req.user)
+      return res.sendStatus(401)
+    }
+
+    var orderdata = req.body
+    var hasUpdates = false
+    for (let i = 0; i < orderdata.length; i++) {
+      var library = this.db.libraries.find(lib => lib.id === orderdata[i].id)
+      if (!library) {
+        Logger.error(`[ApiController] Invalid library not found in reorder ${orderdata[i].id}`)
+        return res.sendStatus(500)
+      }
+      if (library.update({ displayOrder: orderdata[i].newOrder })) {
+        hasUpdates = true
+        await this.db.updateEntity('library', library)
+      }
+    }
+
+    if (hasUpdates) {
+      Logger.info(`[ApiController] Updated library display orders`)
+    } else {
+      Logger.info(`[ApiController] Library orders were up to date`)
+    }
+
     var libraries = this.db.libraries.map(lib => lib.toJSON())
     res.json(libraries)
   }
@@ -226,6 +257,7 @@ class ApiController {
     }
 
     var library = new Library()
+    newLibraryPayload.displayOrder = this.db.libraries.length + 1
     library.setData(newLibraryPayload)
     await this.db.insertEntity('library', library)
     this.emitter('library_added', library.toJSON())

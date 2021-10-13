@@ -163,6 +163,15 @@ export default {
         this.$store.commit('user/setSettings', user.settings)
       }
     },
+    userOnline(user) {
+      this.$store.commit('users/updateUser', user)
+    },
+    userOffline(user) {
+      this.$store.commit('users/removeUser', user)
+    },
+    userStreamUpdate(user) {
+      this.$store.commit('users/updateUser', user)
+    },
     downloadToastClick(download) {
       if (!download || !download.audiobookId) {
         return console.error('Invalid download object', download)
@@ -268,6 +277,9 @@ export default {
 
       // User Listeners
       this.socket.on('user_updated', this.userUpdated)
+      this.socket.on('user_online', this.userOnline)
+      this.socket.on('user_offline', this.userOffline)
+      this.socket.on('user_stream_update', this.userStreamUpdate)
 
       // Scan Listeners
       this.socket.on('scan_start', this.scanStart)

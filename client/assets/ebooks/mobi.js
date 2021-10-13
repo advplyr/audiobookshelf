@@ -1,3 +1,7 @@
+/*
+This is borrowed from koodo-reader https://github.com/troyeguo/koodo-reader/tree/master/src
+*/
+
 function ab2str(buf) {
   if (buf instanceof ArrayBuffer) {
     buf = new Uint8Array(buf);
@@ -8,9 +12,14 @@ function ab2str(buf) {
 var domParser = new DOMParser();
 
 class Buffer {
+  capacity;
+  fragment_list;
+  imageArray;
+  cur_fragment;
   constructor(capacity) {
     this.capacity = capacity;
     this.fragment_list = [];
+    this.imageArray = [];
     this.cur_fragment = new Fragment(capacity);
     this.fragment_list.push(this.cur_fragment);
   }
@@ -57,23 +66,26 @@ class Buffer {
   }
 }
 
-var combine_uint8array = function (buffers) {
+var copagesne_uint8array = function (buffers) {
   var total_size = 0;
-  for (var i = 0; i < buffers.length; i++) {
+  for (let i = 0; i < buffers.length; i++) {
     var buffer = buffers[i];
     total_size += buffer.length;
   }
   var total_buffer = new Uint8Array(total_size);
   var offset = 0;
-  for (var i = 0; i < buffers.length; i++) {
-    var buffer = buffers[i];
+  for (let i = 0; i < buffers.length; i++) {
+    buffer = buffers[i];
     total_buffer.set(buffer, offset);
     offset += buffer.length;
   }
   return total_buffer;
-}
+};
 
 class Fragment {
+  buffer;
+  capacity;
+  size;
   constructor(capacity) {
     this.buffer = new Uint8Array(capacity);
     this.capacity = capacity;
@@ -98,14 +110,14 @@ class Fragment {
 
 var uncompression_lz77 = function (data) {
   var length = data.length;
-  var offset = 0;   // Current offset into data
+  var offset = 0; // Current offset into data
   var buffer = new Buffer(data.length);
 
   while (offset < length) {
     var char = data[offset];
     offset += 1;
 
-    if (char == 0) {
+    if (char === 0) {
       buffer.write(char);
     } else if (char <= 8) {
       for (var i = offset; i < offset + char; i++) {
@@ -117,12 +129,12 @@ var uncompression_lz77 = function (data) {
     } else if (char <= 0xbf) {
       var next = data[offset];
       offset += 1;
-      var distance = ((char << 8 | next) >> 3) & 0x7ff;
+      var distance = (((char << 8) | next) >> 3) & 0x7ff;
       var lz_length = (next & 0x7) + 3;
 
       var buffer_size = buffer.size();
-      for (var i = 0; i < lz_length; i++) {
-        buffer.write(buffer.get(buffer_size - distance))
+      for (let i = 0; i < lz_length; i++) {
+        buffer.write(buffer.get(buffer_size - distance));
         buffer_size += 1;
       }
     } else {
@@ -134,6 +146,13 @@ var uncompression_lz77 = function (data) {
 };
 
 class MobiFile {
+  view;
+  buffer;
+  offset;
+  header;
+  palm_header;
+  mobi_header;
+  reclist;
   constructor(data) {
     this.view = new DataView(data);
     this.buffer = this.view.buffer;
@@ -141,9 +160,7 @@ class MobiFile {
     this.header = null;
   }
 
-  parse() {
-
-  }
+  parse() { }
 
   getUint8() {
     var v = this.view.getUint8(this.offset);
@@ -220,14 +237,14 @@ class MobiFile {
     }
     return [size, l, pos];
   }
-
+  // 读出文本内容
   read_text() {
     var text_end = this.palm_header.record_count;
     var buffers = [];
     for (var i = 1; i <= text_end; i++) {
       buffers.push(this.read_text_record(i));
     }
-    var all = combine_uint8array(buffers)
+    var all = copagesne_uint8array(buffers);
     return ab2str(all);
   }
 
@@ -236,7 +253,7 @@ class MobiFile {
     var begin = this.reclist[i].offset;
     var end = this.reclist[i + 1].offset;
 
-    var data = new Uint8Array(this.buffer.slice(begin, end))
+    var data = new Uint8Array(this.buffer.slice(begin, end));
     var ex = this.get_record_extrasize(data, flags);
 
     data = new Uint8Array(this.buffer.slice(begin, end - ex));
@@ -247,12 +264,12 @@ class MobiFile {
       return data;
     }
   }
-
+  // 从buffer中读出image
   read_image(idx) {
     var first_image_idx = this.mobi_header.first_image_idx;
     var begin = this.reclist[first_image_idx + idx].offset;
     var end = this.reclist[first_image_idx + idx + 1].offset;
-    var data = new Uint8Array(this.buffer.slice(begin, end))
+    var data = new Uint8Array(this.buffer.slice(begin, end));
     return new Blob([data.buffer]);
   }
 
@@ -278,7 +295,6 @@ class MobiFile {
     header.uid = this.getUint32();
     header.next_rec = this.getUint32();
     header.record_num = this.getUint16();
-
     return header;
   }
 
@@ -287,7 +303,7 @@ class MobiFile {
     for (var i = 0; i < this.header.record_num; i++) {
       var record = {};
       record.offset = this.getUint32();
-      // TODO(zz) change 
+      // TODO(zz) change
       record.attr = this.getUint32();
       reclist.push(record);
     }
@@ -361,7 +377,7 @@ class MobiFile {
 
     mobi_header.extra_flags = this.getUint16();
 
-    this.setoffset(start_offset + mobi_header.header_length)
+    this.setoffset(start_offset + mobi_header.header_length);
 
     return mobi_header;
   }
@@ -369,36 +385,66 @@ class MobiFile {
     // TODO
     return {};
   }
-
-  render_to(id) {
-    this.load();
-    var content = this.read_text();
-
-    var bookDom = document.getElementById(id);
-    while (bookDom.firstChild) {
-      bookDom.removeChild(bookDom.firstChild);
-    }
-
-    var bookDoc = domParser.parseFromString(content, "text/html");
-    bookDoc.body.childNodes.forEach(function (x) {
-      if (x instanceof Element) {
-        bookDom.appendChild(x);
+  extractContent(s) {
+    var span = document.createElement("span");
+    span.innerHTML = s;
+    return span.textContent || span.innerText;
+  }
+  render(isElectron = false) {
+    return new Promise((resolve, reject) => {
+      this.load();
+      var content = this.read_text();
+      var bookDoc = domParser.parseFromString(content, "text/html")
+        .documentElement;
+      let lines = Array.from(
+        bookDoc.querySelectorAll("p,b,font,h3,h2,h1")
+      );
+      let parseContent = [];
+      for (let i = 0, len = lines.length; i < len - 1; i++) {
+        lines[i].innerText &&
+          lines[i].innerText !== parseContent[parseContent.length - 1] &&
+          parseContent.push(lines[i].innerText);
+        let imgDoms = lines[i].getElementsByTagName("img");
+        if (imgDoms.length > 0) {
+          for (let i = 0; i < imgDoms.length; i++) {
+            parseContent.push("#image");
+          }
+        }
       }
+      const handleImage = async () => {
+        var imgDoms = bookDoc.getElementsByTagName("img");
+        parseContent.push("~image");
+        for (let i = 0; i < imgDoms.length; i++) {
+          const src = await this.render_image(imgDoms, i);
+          parseContent.push(
+            src + " " + imgDoms[i].width + " " + imgDoms[i].height
+          );
+        }
+        if (imgDoms.length > 200 || !isElectron) {
+          resolve(bookDoc);
+        } else {
+          resolve(parseContent.join("\n    \n"));
+        }
+      };
+      handleImage();
     });
-
-    var imgDoms = bookDom.getElementsByTagName("img");
-    for (var i = 0; i < imgDoms.length; i++) {
-      this.render_image(imgDoms, i);
-    }
   }
-  render_image(imgDoms, i) {
-    var imgDom = imgDoms[i];
-    var idx = +imgDom.getAttribute("recindex");
-    var blob = this.read_image(idx - 1);
-    var imgReader = new FileReader();
-    imgReader.onload = function (e) {
-      imgDom.src = e.target.result;
-    };
-    imgReader.readAsDataURL(blob);
-  }
+  render_image = (imgDoms, i) => {
+    return new Promise((resolve, reject) => {
+      var imgDom = imgDoms[i];
+      var idx = +imgDom.getAttribute("recindex");
+      var blob = this.read_image(idx - 1);
+      var imgReader = new FileReader();
+      imgReader.onload = (e) => {
+        imgDom.src = e.target?.result;
+        resolve(e.target?.result);
+      };
+      imgReader.onerror = function (err) {
+        reject(err);
+      };
+      imgReader.readAsDataURL(blob);
+    });
+  };
 }
+
+export default MobiFile;

@@ -10,6 +10,7 @@ class User {
     this.token = null
     this.isActive = true
     this.isLocked = false
+    this.lastSeen = null
     this.createdAt = null
     this.audiobooks = null
 
@@ -78,6 +79,7 @@ class User {
       audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       isLocked: this.isLocked,
+      lastSeen: this.lastSeen,
       createdAt: this.createdAt,
       settings: this.settings,
       permissions: this.permissions
@@ -94,9 +96,22 @@ class User {
       audiobooks: this.audiobooksToJSON(),
       isActive: this.isActive,
       isLocked: this.isLocked,
+      lastSeen: this.lastSeen,
       createdAt: this.createdAt,
       settings: this.settings,
       permissions: this.permissions
+    }
+  }
+
+  toJSONForPublic(streams) {
+    var stream = this.stream && streams ? streams.find(s => s.id === this.stream) : null
+    return {
+      id: this.id,
+      username: this.username,
+      type: this.type,
+      stream: stream ? stream.toJSON() : null,
+      lastSeen: this.lastSeen,
+      createdAt: this.createdAt
     }
   }
 
@@ -117,6 +132,7 @@ class User {
     }
     this.isActive = (user.isActive === undefined || user.type === 'root') ? true : !!user.isActive
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
+    this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
     this.settings = user.settings || this.getDefaultUserSettings()
     this.permissions = user.permissions || this.getDefaultUserPermissions()

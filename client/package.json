@@ -1,10 +1,11 @@
 {
   "name": "audiobookshelf-client",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Audiobook manager and player",
   "main": "index.js",
   "scripts": {
     "dev": "nuxt",
+    "dev2": "nuxt --hostname localhost --port 1337",
     "build": "nuxt build",
     "start": "nuxt start",
     "generate": "nuxt generate"
@@ -15,6 +16,7 @@
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/proxy": "^2.1.0",
     "core-js": "^3.16.0",
+    "date-fns": "^2.25.0",
     "epubjs": "^0.3.88",
     "hls.js": "^1.0.7",
     "nuxt": "^2.15.7",

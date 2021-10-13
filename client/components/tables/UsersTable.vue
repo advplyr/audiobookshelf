@@ -11,17 +11,43 @@
       <table id="accounts">
         <tr>
           <th>Username</th>
-          <th>Account Type</th>
-          <th style="width: 200px">Created At</th>
-          <th style="width: 100px"></th>
+          <th class="w-20">Type</th>
+          <th>Activity</th>
+          <th class="w-32">Last Seen</th>
+          <th class="w-32">Created</th>
+          <th class="w-32"></th>
         </tr>
         <tr v-for="user in users" :key="user.id" :class="user.isActive ? '' : 'bg-error bg-opacity-20'">
           <td>
-            {{ user.username }} <span class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
+            <div class="flex items-center">
+              <span v-if="usersOnline[user.id]" class="w-3 h-3 text-sm mr-2 text-success animate-pulse"
+                ><svg viewBox="0 0 24 24">
+                  <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg
+              ></span>
+              <svg v-else class="w-3 h-3 mr-2 text-white text-opacity-20" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
+              </svg>
+              {{ user.username }} <span v-show="$isDev" class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
+            </div>
           </td>
-          <td>{{ user.type }}</td>
-          <td class="text-sm font-mono">
-            {{ new Date(user.createdAt).toISOString() }}
+          <td class="text-sm">{{ user.type }}</td>
+          <td>
+            <div v-if="usersOnline[user.id] && usersOnline[user.id].stream && usersOnline[user.id].stream.audiobook && usersOnline[user.id].stream.audiobook.book">
+              <p class="truncate text-xs">Reading: {{ usersOnline[user.id].stream.audiobook.book.title || '' }}</p>
+            </div>
+            <div v-else-if="user.audiobooks && getLastRead(user.audiobooks)">
+              <p class="truncate text-xs">Last: {{ getLastRead(user.audiobooks) }}</p>
+            </div>
+          </td>
+          <td class="text-xs font-mono">
+            <ui-tooltip v-if="user.lastSeen" direction="top" :text="$formatDate(user.lastSeen, 'MMMM do, yyyy HH:mm')">
+              {{ $dateDistanceFromNow(user.lastSeen) }}
+            </ui-tooltip>
+          </td>
+          <td class="text-xs font-mono">
+            <ui-tooltip direction="top" :text="$formatDate(user.createdAt, 'MMMM do, yyyy HH:mm')">
+              {{ $formatDate(user.createdAt, 'MMM d, yyyy') }}
+            </ui-tooltip>
           </td>
           <td>
             <div class="w-full flex justify-center">
@@ -47,8 +73,41 @@ export default {
       isDeletingUser: false
     }
   },
-  computed: {},
+  computed: {
+    currentUserId() {
+      return this.$store.state.user.user.id
+    },
+    userStream() {
+      return this.$store.state.streamAudiobook
+    },
+    usersOnline() {
+      var _users = this.$store.state.users.users
+
+      var currUserStream = null
+      if (this.userStream) {
+        currUserStream = {
+          audiobook: this.userStream
+        }
+      }
+      var usermap = {
+        [this.currentUserId]: {
+          online: true,
+          stream: currUserStream
+        }
+      }
+      _users.forEach((u) => (usermap[u.id] = { online: true, stream: u.stream }))
+      return usermap
+    }
+  },
   methods: {
+    getLastRead(audiobooks) {
+      var abs = Object.values(audiobooks)
+      if (abs.length) {
+        abs = abs.sort((a, b) => a.lastUpdate - b.lastUpdate)
+        return abs[0] && abs[0].audiobookTitle ? abs[0].audiobookTitle : null
+      }
+      return null
+    },
     deleteUserClick(user) {
       if (this.isDeletingUser) return
       if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {

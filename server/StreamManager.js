@@ -111,6 +111,8 @@ class StreamManager {
 
     var stream = await this.openStream(client, audiobook)
     this.db.updateUserStream(client.user.id, stream.id)
+
+    socket.broadcast.emit('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   async closeStreamRequest(socket) {
@@ -126,6 +128,8 @@ class StreamManager {
     client.user.stream = null
     client.stream = null
     this.db.updateUserStream(client.user.id, null)
+
+    socket.broadcast.emit('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   async openTestStream(StreamsPath, audiobookId) {

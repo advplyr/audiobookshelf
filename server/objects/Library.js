@@ -5,6 +5,7 @@ class Library {
     this.id = null
     this.name = null
     this.folders = []
+    this.displayOrder = 1
     this.icon = 'database'
 
     this.lastScan = 0
@@ -25,6 +26,7 @@ class Library {
     this.id = library.id
     this.name = library.name
     this.folders = (library.folders || []).map(f => new Folder(f))
+    this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
 
     this.createdAt = library.createdAt
@@ -36,6 +38,7 @@ class Library {
       id: this.id,
       name: this.name,
       folders: (this.folders || []).map(f => f.toJSON()),
+      displayOrder: this.displayOrder,
       icon: this.icon,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
@@ -59,6 +62,7 @@ class Library {
         return newFolder
       })
     }
+    this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
@@ -68,6 +72,10 @@ class Library {
     var hasUpdates = false
     if (payload.name && payload.name !== this.name) {
       this.name = payload.name
+      hasUpdates = true
+    }
+    if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {
+      this.displayOrder = Number(payload.displayOrder)
       hasUpdates = true
     }
     if (payload.folders) {

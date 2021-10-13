@@ -22,7 +22,7 @@
                 by <nuxt-link v-if="author" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link
                 ><span v-else>Unknown</span>
               </p>
-              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf?filter=series.${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>
+              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>
 
               <!-- <div class="w-min">
                 <ui-tooltip :text="authorTooltipText" direction="bottom">

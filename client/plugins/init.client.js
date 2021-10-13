@@ -1,5 +1,16 @@
 import Vue from 'vue'
+import { formatDistance, format } from 'date-fns'
+
 Vue.prototype.$isDev = process.env.NODE_ENV !== 'production'
+
+Vue.prototype.$dateDistanceFromNow = (unixms) => {
+  if (!unixms) return ''
+  return formatDistance(unixms, Date.now(), { addSuffix: true })
+}
+Vue.prototype.$formatDate = (unixms, fnsFormat = 'MM/dd/yyyy HH:mm') => {
+  if (!unixms) return ''
+  return format(unixms, fnsFormat)
+}
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (bytes === 0) {
