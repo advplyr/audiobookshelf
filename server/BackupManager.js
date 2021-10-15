@@ -307,7 +307,16 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      archive.directory(configPath, 'config')
+      var audiobooksDbDir = Path.join(configPath, 'audiobooks')
+      var librariesDbDir = Path.join(configPath, 'libraries')
+      var settingsDbDir = Path.join(configPath, 'settings')
+      var usersDbDir = Path.join(configPath, 'users')
+
+      archive.directory(audiobooksDbDir, 'config/audiobooks')
+      archive.directory(librariesDbDir, 'config/libraries')
+      archive.directory(settingsDbDir, 'config/settings')
+      archive.directory(usersDbDir, 'config/users')
+
       if (metadataBooksPath) {
         Logger.debug(`[BackupManager] Backing up Metadata Books "${metadataBooksPath}"`)
         archive.directory(metadataBooksPath, 'metadata-books')
