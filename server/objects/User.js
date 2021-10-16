@@ -43,6 +43,9 @@ class User {
 
   getDefaultUserSettings() {
     return {
+      mobileOrderBy: 'recent',
+      mobileOrderDesc: true,
+      mobileFilterBy: 'all',
       orderBy: 'book.title',
       orderDesc: false,
       filterBy: 'all',
