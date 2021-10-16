@@ -82,10 +82,14 @@ class Db {
     await this.load()
 
     // Insert Defaults
-    if (!this.users.find(u => u.type === 'root')) {
+    var rootUser = this.users.find(u => u.type === 'root')
+    if (!rootUser) {
       var token = await jwt.sign({ userId: 'root' }, process.env.TOKEN_SECRET)
       Logger.debug('Generated default token', token)
+      Logger.info('[Db] Root user created')
       await this.insertEntity('user', this.getDefaultUser(token))
+    } else {
+      Logger.info(`[Db] Root user exists, pw: ${rootUser.hasPw}`)
     }
 
     if (!this.libraries.length) {
@@ -123,19 +127,6 @@ class Db {
     await Promise.all([p1, p2, p3, p4])
   }
 
-  // insertAudiobook(audiobook) {
-  //   return this.insertAudiobooks([audiobook])
-  // }
-
-  // insertAudiobooks(audiobooks) {
-  //   return this.audiobooksDb.insert(audiobooks).then((results) => {
-  //     Logger.debug(`[DB] Inserted ${results.inserted} audiobooks`)
-  //     this.audiobooks = this.audiobooks.concat(audiobooks)
-  //   }).catch((error) => {
-  //     Logger.error(`[DB] Insert audiobooks Failed ${error}`)
-  //   })
-  // }
-
   updateAudiobook(audiobook) {
     return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
       Logger.debug(`[DB] Audiobook updated ${results.updated}`)
@@ -145,26 +136,6 @@ class Db {
       return false
     })
   }
-
-  // insertUser(user) {
-  //   return this.usersDb.insert([user]).then((results) => {
-  //     Logger.debug(`[DB] Inserted user ${results.inserted}`)
-  //     this.users.push(user)
-  //     return true
-  //   }).catch((error) => {
-  //     Logger.error(`[DB] Insert user Failed ${error}`)
-  //     return false
-  //   })
-  // }
-
-  // insertSettings(settings) {
-  //   return this.settingsDb.insert([settings]).then((results) => {
-  //     Logger.debug(`[DB] Inserted ${results.inserted} settings`)
-  //     this.settings = this.settings.concat(settings)
-  //   }).catch((error) => {
-  //     Logger.error(`[DB] Insert settings Failed ${error}`)
-  //   })
-  // }
 
   updateUserStream(userId, streamId) {
     return this.usersDb.update((record) => record.id === userId, (user) => {

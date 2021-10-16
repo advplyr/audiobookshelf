@@ -111,7 +111,6 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
     var scanData = await scan(audioFile.fullPath)
     if (!scanData || scanData.error) {
       Logger.error('[AudioFileScanner] Scan failed for', audioFile.path)
-      // audiobook.invalidAudioFiles.push(parts[i])
       continue;
     }
 
@@ -234,3 +233,26 @@ async function rescanAudioFiles(audiobook) {
   return updates
 }
 module.exports.rescanAudioFiles = rescanAudioFiles
+
+async function scanTrackNumbers(audiobook) {
+  var tracks = audiobook.tracks || []
+  var scannedTrackNumData = []
+  for (let i = 0; i < tracks.length; i++) {
+    var track = tracks[i]
+    var scanData = await scan(track.fullPath)
+
+    var trackNumFromMeta = getTrackNumberFromMeta(scanData)
+    var book = audiobook.book || {}
+    var trackNumFromFilename = getTrackNumberFromFilename(book.title, book.author, book.series, book.publishYear, track.filename)
+    Logger.info(`[AudioFileScanner] Track # for "${track.filename}", Metadata: "${trackNumFromMeta}", Filename: "${trackNumFromFilename}", Current: "${track.index}"`)
+    scannedTrackNumData.push({
+      filename: track.filename,
+      currentTrackNum: track.index,
+      trackNumFromFilename,
+      trackNumFromMeta,
+      scanDataTrackNum: scanData.file_tag_track
+    })
+  }
+  return scannedTrackNumData
+}
+module.exports.scanTrackNumbers = scanTrackNumbers

@@ -1,10 +1,13 @@
 const express = require('express')
 const Path = require('path')
 const fs = require('fs-extra')
+
 const Logger = require('./Logger')
-const User = require('./objects/User')
 const { isObject } = require('./utils/index')
+const audioFileScanner = require('./utils/audioFileScanner')
+
 const Library = require('./objects/Library')
+const User = require('./objects/User')
 
 class ApiController {
   constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, emitter, clientEmitter) {
@@ -77,6 +80,8 @@ class ApiController {
     this.router.get('/download/:id', this.download.bind(this))
 
     this.router.get('/filesystem', this.getFileSystemPaths.bind(this))
+
+    this.router.get('/scantracks/:id', this.scanAudioTrackNums.bind(this))
   }
 
   find(req, res) {
@@ -782,6 +787,19 @@ class ApiController {
     Logger.debug(`[Server] get file system paths, excluded: ${excludedDirs.join(', ')}`)
     var dirs = await this.getDirectories(global.appRoot, '/', excludedDirs)
     res.json(dirs)
+  }
+
+  async scanAudioTrackNums(req, res) {
+    if (!req.user || !req.user.isRoot) {
+      return res.sendStatus(403)
+    }
+    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
+    if (!audiobook) {
+      return res.status(404).send('Audiobook not found')
+    }
+
+    var scandata = await audioFileScanner.scanTrackNumbers(audiobook)
+    res.json(scandata)
   }
 }
 module.exports = ApiController

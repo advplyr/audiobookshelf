@@ -37,6 +37,9 @@ class User {
   get canUpload() {
     return !!this.permissions.upload && this.isActive
   }
+  get hasPw() {
+    return !!this.pash && !!this.pash.length
+  }
 
   getDefaultUserSettings() {
     return {
