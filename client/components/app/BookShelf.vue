@@ -23,7 +23,7 @@
             <template v-for="entity in shelf">
               <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
               <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-              <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" />
+              <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
             </template>
           </div>
           <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
@@ -138,6 +138,11 @@ export default {
     }
   },
   methods: {
+    editBook(audiobook) {
+      var bookIds = this.entities.map((e) => e.id)
+      this.$store.commit('setBookshelfBookIds', bookIds)
+      this.$store.commit('showEditModal', audiobook)
+    },
     clickGroup(group) {
       this.$emit('update:selectedSeries', group.name)
     },

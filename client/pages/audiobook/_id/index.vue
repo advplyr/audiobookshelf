@@ -411,6 +411,7 @@ export default {
       this.$root.socket.emit('open_stream', this.audiobook.id)
     },
     editClick() {
+      this.$store.commit('setBookshelfBookIds', [])
       this.$store.commit('showEditModal', this.audiobook)
     },
     lookupMetadata(index) {

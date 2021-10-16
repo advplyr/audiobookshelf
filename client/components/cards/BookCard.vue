@@ -228,7 +228,8 @@ export default {
       this.$root.socket.emit('open_stream', this.audiobookId)
     },
     editClick() {
-      this.$store.commit('showEditModal', this.audiobook)
+      // this.$store.commit('showEditModal', this.audiobook)
+      this.$emit('edit', this.audiobook)
     },
     clickCard(e) {
       if (this.isSelectionMode) {

@@ -21,9 +21,7 @@
 <script>
 export default {
   asyncData({ redirect, store }) {
-    var currentLibraryId = store.state.libraries.currentLibraryId
-    console.log('Redir', currentLibraryId)
-    redirect(`/library/${currentLibraryId}`)
+    redirect(`/library/${store.state.libraries.currentLibraryId}`)
   },
   data() {
     return {}

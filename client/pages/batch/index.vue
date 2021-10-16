@@ -33,10 +33,10 @@
 
             <div class="flex mt-2 -mx-1">
               <div class="w-1/2 px-1">
-                <ui-multi-select v-model="audiobook.book.genres" label="Genres" :items="genres" />
+                <ui-multi-select v-model="audiobook.book.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" />
               </div>
               <div class="flex-grow px-1">
-                <ui-multi-select v-model="audiobook.tags" label="Tags" :items="tags" />
+                <ui-multi-select v-model="audiobook.tags" label="Tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" />
               </div>
             </div>
 
@@ -76,7 +76,9 @@ export default {
       isProcessing: false,
       audiobookCopies: [],
       isScrollable: false,
-      newSeriesItems: []
+      newSeriesItems: [],
+      newTagItems: [],
+      newGenreItems: []
     }
   },
   computed: {
@@ -86,8 +88,14 @@ export default {
     genres() {
       return this.$store.state.audiobooks.genres
     },
+    genreItems() {
+      return this.genres.concat(this.newGenreItems)
+    },
     tags() {
       return this.$store.state.audiobooks.tags
+    },
+    tagItems() {
+      return this.tags.concat(this.newTagItems)
     },
     series() {
       return this.$store.state.audiobooks.series
@@ -100,9 +108,42 @@ export default {
     }
   },
   methods: {
+    newTagItem(item) {
+      if (item && !this.newTagItems.includes(item)) {
+        this.newTagItems.push(item)
+      }
+    },
+    removedTagItem(item) {
+      // If newly added, remove if not used on any other audiobooks
+      if (item && this.newTagItems.includes(item)) {
+        var usedByOtherAb = this.audiobookCopies.find((ab) => {
+          return ab.tags && ab.tags.includes(item)
+        })
+        if (!usedByOtherAb) {
+          this.newTagItems = this.newTagItems.filter((t) => t !== item)
+        }
+      }
+    },
+    newGenreItem(item) {
+      if (item && !this.newGenreItems.includes(item)) {
+        this.newGenreItems.push(item)
+      }
+    },
+    removedGenreItem(item) {
+      // If newly added, remove if not used on any other audiobooks
+      if (item && this.newGenreItems.includes(item)) {
+        var usedByOtherAb = this.audiobookCopies.find((ab) => {
+          return ab.book.genres && ab.book.genres.includes(item)
+        })
+        if (!usedByOtherAb) {
+          this.newGenreItems = this.newGenreItems.filter((t) => t !== item)
+        }
+      }
+    },
     newSeriesItem(item) {
-      if (!item) return
-      this.newSeriesItems.push(item)
+      if (item && !this.newSeriesItems.includes(item)) {
+        this.newSeriesItems.push(item)
+      }
     },
     seriesChanged() {
       this.newSeriesItems = this.newSeriesItems.filter((item) => {

@@ -9,6 +9,7 @@ export const state = () => ({
   showEditModal: false,
   showEReader: false,
   selectedAudiobook: null,
+  selectedAudiobookFile: null,
   playOnLoad: false,
   developerMode: false,
   selectedAudiobooks: [],
@@ -16,7 +17,8 @@ export const state = () => ({
   previousPath: '/',
   routeHistory: [],
   showExperimentalFeatures: false,
-  backups: []
+  backups: [],
+  bookshelfBookIds: []
 })
 
 export const getters = {
@@ -66,6 +68,9 @@ export const actions = {
 }
 
 export const mutations = {
+  setBookshelfBookIds(state, val) {
+    state.bookshelfBookIds = val || []
+  },
   setRouteHistory(state, val) {
     state.routeHistory = val
   },
@@ -113,7 +118,15 @@ export const mutations = {
     state.showEditModal = val
   },
   showEReader(state, audiobook) {
+    state.selectedAudiobookFile = null
     state.selectedAudiobook = audiobook
+
+    state.showEReader = true
+  },
+  showEReaderForFile(state, { audiobook, file }) {
+    state.selectedAudiobookFile = file
+    state.selectedAudiobook = audiobook
+
     state.showEReader = true
   },
   setShowEReader(state, val) {

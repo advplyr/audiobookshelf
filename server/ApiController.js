@@ -47,6 +47,7 @@ class ApiController {
     this.router.delete('/audiobook/:id', this.deleteAudiobook.bind(this))
     this.router.patch('/audiobook/:id/tracks', this.updateAudiobookTracks.bind(this))
     this.router.post('/audiobook/:id/cover', this.uploadAudiobookCover.bind(this))
+    this.router.patch('/audiobook/:id/coverfile', this.updateAudiobookCoverFromFile.bind(this))
     this.router.patch('/audiobook/:id', this.updateAudiobook.bind(this))
 
     this.router.patch('/match/:id', this.match.bind(this))
@@ -443,6 +444,26 @@ class ApiController {
       success: true,
       cover: result.cover
     })
+  }
+
+  async updateAudiobookCoverFromFile(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to update without permission', req.user)
+      return res.sendStatus(403)
+    }
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook) return res.sendStatus(404)
+
+    var coverFile = req.body
+    var updated = await audiobook.setCoverFromFile(coverFile)
+
+    if (updated) {
+      await this.db.updateAudiobook(audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONMinified())
+    }
+
+    if (updated) res.status(200).send('Cover updated successfully')
+    else res.status(200).send('No update was made to cover')
   }
 
   async updateAudiobook(req, res) {

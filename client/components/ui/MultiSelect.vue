@@ -127,6 +127,7 @@ export default {
           return
         }
         this.isFocused = false
+        if (this.textInput) this.submitForm()
       }, 50)
     },
     focus() {
@@ -145,6 +146,7 @@ export default {
       var newSelected = null
       if (this.selected.includes(itemValue)) {
         newSelected = this.selected.filter((s) => s !== itemValue)
+        this.$emit('removedItem', itemValue)
       } else {
         newSelected = this.selected.concat([itemValue])
       }
@@ -164,6 +166,7 @@ export default {
     removeItem(item) {
       var remaining = this.selected.filter((i) => i !== item)
       this.$emit('input', remaining)
+      this.$emit('removedItem', item)
       this.$nextTick(() => {
         this.recalcMenuPos()
       })
@@ -171,6 +174,7 @@ export default {
     insertNewItem(item) {
       this.selected.push(item)
       this.$emit('input', this.selected)
+      this.$emit('newItem', item)
       this.textInput = null
       this.currentSearch = null
       this.$nextTick(() => {

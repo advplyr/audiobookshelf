@@ -31,6 +31,7 @@ export default {
         return []
       })
       store.commit('audiobooks/setSearchResults', searchResults)
+      if (searchResults.length) searchResults.forEach((ab) => store.commit('audiobooks/addUpdate', ab))
     }
     var selectedSeries = query.series ? app.$decode(query.series) : null
     store.commit('audiobooks/setSelectedSeries', selectedSeries)

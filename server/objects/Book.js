@@ -132,12 +132,18 @@ class Book {
   update(payload) {
     var hasUpdates = false
 
+    // Normalize cover paths if passed
     if (payload.cover) {
-      // If updating to local cover then normalize path
       if (!payload.cover.startsWith('http:') && !payload.cover.startsWith('https:')) {
         payload.cover = Path.normalize(payload.cover)
         if (payload.coverFullPath) payload.coverFullPath = Path.normalize(payload.coverFullPath)
+        else {
+          Logger.warn(`[Book] "${this.title}" updating book cover to "${payload.cover}" but no full path was passed`)
+        }
       }
+    } else if (payload.coverFullPath) {
+      Logger.warn(`[Book] "${this.title}" updating book full cover path to "${payload.coverFullPath}" but no relative path was passed`)
+      payload.coverFullPath = Path.normalize(payload.coverFullPath)
     }
 
     for (const key in payload) {

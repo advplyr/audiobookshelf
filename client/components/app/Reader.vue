@@ -14,7 +14,7 @@
     </div>
 
     <!-- EPUB -->
-    <div v-if="epubEbook" class="h-full flex items-center">
+    <div v-if="ebookType === 'epub'" class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden">
         <span v-show="hasPrev" class="material-icons text-black text-opacity-30 hover:text-opacity-80 cursor-pointer text-8xl" @mousedown.prevent @click="pageLeft">chevron_left</span>
       </div>
@@ -30,11 +30,17 @@
       </div>
     </div>
     <!-- MOBI/AZW3 -->
-    <div v-else class="h-full max-h-full w-full">
+    <div v-else-if="ebookType === 'mobi'" class="h-full max-h-full w-full">
       <div class="ebook-viewer absolute overflow-y-scroll left-0 right-0 top-12 w-full max-w-4xl m-auto z-10 border border-black border-opacity-20">
         <iframe title="html-viewer" width="100%"> Loading </iframe>
       </div>
     </div>
+    <!-- PDF -->
+    <div v-else-if="ebookType === 'pdf'" class="h-full flex items-center">
+      <app-pdf-reader :src="ebookUrl" />
+    </div>
+
+    <div class="absolute bottom-2 left-2">{{ ebookType }}</div>
   </div>
 </template>
 
@@ -55,7 +61,9 @@ export default {
       author: '',
       progress: 0,
       hasNext: true,
-      hasPrev: false
+      hasPrev: false,
+      ebookType: '',
+      ebookUrl: ''
     }
   },
   watch: {
@@ -97,28 +105,23 @@ export default {
     epubEbook() {
       return this.ebooks.find((eb) => eb.ext === '.epub')
     },
-    epubPath() {
-      return this.epubEbook ? this.epubEbook.path : null
-    },
     mobiEbook() {
       return this.ebooks.find((eb) => eb.ext === '.mobi' || eb.ext === '.azw3')
     },
-    mobiPath() {
-      return this.mobiEbook ? this.mobiEbook.path : null
-    },
-    mobiUrl() {
-      if (!this.mobiPath) return null
-      return `/ebook/${this.libraryId}/${this.folderId}/${this.mobiPath}`
-    },
-    url() {
-      if (!this.epubPath) return null
-      return `/ebook/${this.libraryId}/${this.folderId}/${this.epubPath}`
+    pdfEbook() {
+      return this.ebooks.find((eb) => eb.ext === '.pdf')
     },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    selectedAudiobookFile() {
+      return this.$store.state.selectedAudiobookFile
     }
   },
   methods: {
+    getEbookUrl(path) {
+      return `/ebook/${this.libraryId}/${this.folderId}/${path}`
+    },
     changedChapter() {
       if (this.rendition) {
         this.rendition.display(this.selectedChapter)
@@ -156,11 +159,28 @@ export default {
     },
     init() {
       this.registerListeners()
-
-      if (this.epubEbook) {
+      if (this.selectedAudiobookFile) {
+        this.ebookUrl = this.getEbookUrl(this.selectedAudiobookFile.path)
+        if (this.selectedAudiobookFile.ext === '.pdf') {
+          this.ebookType = 'pdf'
+        } else if (this.selectedAudiobookFile.ext === '.mobi' || this.selectedAudiobookFile.ext === '.azw3') {
+          this.ebookType = 'mobi'
+          this.initMobi()
+        } else if (this.selectedAudiobookFile.ext === '.epub') {
+          this.ebookType = 'epub'
+          this.initEpub()
+        }
+      } else if (this.epubEbook) {
+        this.ebookType = 'epub'
+        this.ebookUrl = this.getEbookUrl(this.epubEbook.path)
         this.initEpub()
       } else if (this.mobiEbook) {
+        this.ebookType = 'mobi'
+        this.ebookUrl = this.getEbookUrl(this.mobiEbook.path)
         this.initMobi()
+      } else if (this.pdfEbook) {
+        this.ebookType = 'pdf'
+        this.ebookUrl = this.getEbookUrl(this.pdfEbook.path)
       }
     },
     addHtmlCss() {
@@ -219,7 +239,7 @@ export default {
     },
     async initMobi() {
       // Fetch mobi file as blob
-      var buff = await this.$axios.$get(this.mobiUrl, {
+      var buff = await this.$axios.$get(this.ebookUrl, {
         responseType: 'blob'
       })
       var reader = new FileReader()
@@ -251,7 +271,7 @@ export default {
       //     Authorization: `Bearer ${this.userToken}`
       //   }
       // })
-      var book = ePub(this.url)
+      var book = ePub(this.ebookUrl)
       this.book = book
 
       this.rendition = book.renderTo('viewer', {

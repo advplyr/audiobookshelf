@@ -214,8 +214,6 @@ export default {
       this.details.volumeNumber = this.book.volumeNumber
       this.details.publishYear = this.book.publishYear
 
-      console.log('INIT', this.details)
-
       this.newTags = this.audiobook.tags || []
     },
     resetProgress() {

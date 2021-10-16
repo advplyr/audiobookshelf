@@ -31,7 +31,7 @@
 
           <div v-if="showLocalCovers" class="flex items-center justify-center">
             <template v-for="cover in localCovers">
-              <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover.localPath)">
+              <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.localPath === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
                 <div class="h-24 bg-primary" style="width: 60px">
                   <img :src="`${cover.localPath}?token=${userToken}`" class="h-full w-full object-contain" />
                 </div>
@@ -265,8 +265,24 @@ export default {
       this.isProcessing = false
       this.hasSearched = true
     },
-    setCover(cover) {
-      this.updateCover(cover)
+    setCover(coverFile) {
+      this.isProcessing = true
+      this.$axios
+        .$patch(`/api/audiobook/${this.audiobook.id}/coverfile`, coverFile)
+        .then((data) => {
+          console.log('response data', data)
+          if (data && typeof data === 'string') {
+            this.$toast.success(data)
+          }
+          this.isProcessing = false
+        })
+        .catch((error) => {
+          console.error('Failed to update', error)
+          if (error.response && error.response.data) {
+            this.$toast.error(error.response.data)
+          }
+          this.isProcessing = false
+        })
     }
   }
 }

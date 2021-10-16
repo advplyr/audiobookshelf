@@ -4,7 +4,7 @@
       <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
         <div class="flex items-center -mb-2">
           <template v-for="entity in shelf.books">
-            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" />
+            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" @edit="editBook" />
           </template>
         </div>
       </div>
@@ -53,6 +53,11 @@ export default {
     }
   },
   methods: {
+    editBook(audiobook) {
+      var bookIds = this.shelf.books.map((e) => e.id)
+      this.$store.commit('setBookshelfBookIds', bookIds)
+      this.$store.commit('showEditModal', audiobook)
+    },
     scrolled() {
       clearTimeout(this.scrollTimer)
       this.scrollTimer = setTimeout(() => {

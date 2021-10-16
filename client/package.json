@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "description": "Audiobook manager and player",
   "main": "index.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "hls.js": "^1.0.7",
     "nuxt": "^2.15.7",
     "nuxt-socket-io": "^1.1.18",
+    "vue-pdf": "^4.3.0",
     "vue-toastification": "^1.7.11",
     "vuedraggable": "^2.24.3"
   },

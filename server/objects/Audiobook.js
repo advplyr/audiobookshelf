@@ -128,11 +128,15 @@ class Audiobook {
   }
 
   get hasEpub() {
-    return this.otherFiles.find(file => file.ext === '.epub')
+    return this.ebooks.find(file => file.ext === '.epub')
   }
 
   get hasMobi() {
-    return this.otherFiles.find(file => file.ext === '.mobi' || file.ext === '.azw3')
+    return this.ebooks.find(file => file.ext === '.mobi' || file.ext === '.azw3')
+  }
+
+  get hasPdf() {
+    return this.ebooks.find(file => file.ext === '.pdf')
   }
 
   get hasMissingIno() {
@@ -206,7 +210,7 @@ class Audiobook {
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
       // numEbooks: this.ebooks.length,
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
-      numEbooks: (this.hasEpub || this.hasMobi) ? 1 : 0, // Only supporting epubs in the reader currently
+      numEbooks: (this.hasEpub || this.hasMobi || this.hasPdf) ? 1 : 0, // Only supporting epubs in the reader currently
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
@@ -233,7 +237,8 @@ class Audiobook {
       audioFiles: this._audioFiles.map(audioFile => audioFile.toJSON()),
       otherFiles: this._otherFiles.map(otherFile => otherFile.toJSON()),
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
-      numEbooks: this.hasEpub ? 1 : 0,
+      numEbooks: (this.hasEpub || this.hasMobi || this.hasPdf) ? 1 : 0,
+      numTracks: this.tracks.length,
       tags: this.tags,
       book: this.bookToJSON(),
       tracks: this.tracksToJSON(),
@@ -361,6 +366,19 @@ class Audiobook {
 
     this.book = new Book()
     this.book.setData(data)
+  }
+
+  setCoverFromFile(file) {
+    if (!file || !file.fullPath || !file.path) {
+      Logger.error(`[Audiobook] "${this.title}" Invalid file for setCoverFromFile`, file)
+      return false
+    }
+    var updateBookPayload = {}
+    updateBookPayload.coverFullPath = Path.normalize(file.fullPath)
+    // Set ab local static path from file relative path
+    var relImagePath = file.path.replace(this.path, '')
+    updateBookPayload.cover = Path.normalize(Path.join(`/s/book/${this.id}`, relImagePath))
+    return this.book.update(updateBookPayload)
   }
 
   addTrack(trackData) {

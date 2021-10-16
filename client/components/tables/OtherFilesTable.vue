@@ -20,7 +20,7 @@
           <tr class="font-book">
             <th class="text-left px-4">Path</th>
             <th class="text-left px-4 w-24">Filetype</th>
-            <th v-if="userCanDownload" class="text-center w-20">Download</th>
+            <th v-if="userCanDownload && !isMissing" class="text-center w-20">Download</th>
           </tr>
           <template v-for="file in otherFilesCleaned">
             <tr :key="file.path">
@@ -28,9 +28,12 @@
                 {{ showFullPath ? file.fullPath : file.path }}
               </td>
               <td class="text-xs">
-                <p>{{ file.filetype }}</p>
+                <div class="flex items-center">
+                  <span v-if="file.filetype === 'ebook'" class="material-icons text-base mr-1 cursor-pointer text-white text-opacity-60 hover:text-opacity-100" @click="readEbookClick(file)">auto_stories </span>
+                  <p>{{ file.filetype }}</p>
+                </div>
               </td>
-              <td v-if="userCanDownload" class="text-center">
+              <td v-if="userCanDownload && !isMissing" class="text-center">
                 <a :href="`/s/book/${audiobookId}/${file.relativePath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
@@ -83,11 +86,17 @@ export default {
     userToken() {
       return this.$store.getters['user/getToken']
     },
+    isMissing() {
+      return this.audiobook.isMissing
+    },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     }
   },
   methods: {
+    readEbookClick(file) {
+      this.$store.commit('showEReaderForFile', { audiobook: this.audiobook, file })
+    },
     clickBar() {
       this.showFiles = !this.showFiles
     }

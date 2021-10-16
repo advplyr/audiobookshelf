@@ -53,7 +53,6 @@ export default {
   data() {
     return {
       tracks: null,
-      audioFiles: null,
       showFullPath: false
     }
   },
@@ -104,7 +103,6 @@ export default {
   },
   methods: {
     init() {
-      this.audioFiles = this.audiobook.audioFiles
       this.tracks = this.audiobook.tracks
     }
   }
