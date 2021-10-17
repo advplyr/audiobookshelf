@@ -104,7 +104,7 @@
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
-            <ui-btn v-if="showExperimentalFeatures && (epubEbook || mobiEbook)" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showExperimentalFeatures && numEbooks" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
             </ui-btn>
@@ -322,16 +322,14 @@ export default {
       return this.audiobook.ebooks
     },
     showEpubAlert() {
-      return this.ebooks.length && !this.epubEbook && !this.tracks.length
+      return this.ebooks.length && !this.numEbooks && !this.tracks.length
     },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
-    epubEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.epub')
-    },
-    mobiEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.mobi' || eb.ext === '.azw3')
+    numEbooks() {
+      // Number of currently supported for reading ebooks, not all ebooks
+      return this.audiobook.numEbooks
     },
     userToken() {
       return this.$store.getters['user/getToken']

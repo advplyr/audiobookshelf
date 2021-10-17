@@ -19,7 +19,7 @@ module.exports = {
 
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
-    title: 'AudioBookshelf',
+    title: 'Audiobookshelf',
     htmlAttrs: {
       lang: 'en'
     },
@@ -98,8 +98,7 @@ module.exports = {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {
-  },
+  build: {},
   watchers: {
     webpack: {
       aggregateTimeout: 300,

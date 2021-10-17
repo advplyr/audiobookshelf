@@ -39,6 +39,10 @@
     <div v-else-if="ebookType === 'pdf'" class="h-full flex items-center">
       <app-pdf-reader :src="ebookUrl" />
     </div>
+    <!-- COMIC -->
+    <div v-else-if="ebookType === 'comic'" class="h-full flex items-center">
+      <app-comic-reader :src="ebookUrl" @close="show = false" />
+    </div>
 
     <div class="absolute bottom-2 left-2">{{ ebookType }}</div>
   </div>
@@ -111,6 +115,9 @@ export default {
     pdfEbook() {
       return this.ebooks.find((eb) => eb.ext === '.pdf')
     },
+    comicEbook() {
+      return this.ebooks.find((eb) => eb.ext === '.cbz' || eb.ext === '.cbr')
+    },
     userToken() {
       return this.$store.getters['user/getToken']
     },
@@ -158,7 +165,6 @@ export default {
       document.removeEventListener('keyup', this.keyUp)
     },
     init() {
-      this.registerListeners()
       if (this.selectedAudiobookFile) {
         this.ebookUrl = this.getEbookUrl(this.selectedAudiobookFile.path)
         if (this.selectedAudiobookFile.ext === '.pdf') {
@@ -169,6 +175,8 @@ export default {
         } else if (this.selectedAudiobookFile.ext === '.epub') {
           this.ebookType = 'epub'
           this.initEpub()
+        } else if (this.selectedAudiobookFile.ext === '.cbr' || this.selectedAudiobookFile.ext === '.cbz') {
+          this.ebookType = 'comic'
         }
       } else if (this.epubEbook) {
         this.ebookType = 'epub'
@@ -181,6 +189,9 @@ export default {
       } else if (this.pdfEbook) {
         this.ebookType = 'pdf'
         this.ebookUrl = this.getEbookUrl(this.pdfEbook.path)
+      } else if (this.comicEbook) {
+        this.ebookType = 'comic'
+        this.ebookUrl = this.getEbookUrl(this.comicEbook.path)
       }
     },
     addHtmlCss() {
@@ -266,6 +277,7 @@ export default {
       reader.readAsArrayBuffer(buff)
     },
     initEpub() {
+      this.registerListeners()
       // var book = ePub(this.url, {
       //   requestHeaders: {
       //     Authorization: `Bearer ${this.userToken}`
@@ -327,14 +339,16 @@ export default {
       })
     },
     close() {
-      this.unregisterListeners()
+      if (this.ebookType === 'epub') {
+        this.unregisterListeners()
+      }
     }
   },
   mounted() {
     if (this.show) this.init()
   },
   beforeDestroy() {
-    this.unregisterListeners()
+    this.close()
   }
 }
 </script>
