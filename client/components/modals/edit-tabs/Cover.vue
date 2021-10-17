@@ -56,7 +56,7 @@
         <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
-            <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="setCover(cover)">
+            <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
               <cards-preview-cover :src="cover" :width="80" show-open-new-tab />
             </div>
           </template>

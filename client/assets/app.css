@@ -1,5 +1,6 @@
-@import url('./transitions.css');
-@import url('./draggable.css');
+@import './fonts.css';
+@import './transitions.css';
+@import './draggable.css';
 
 .page {
   width: 100%;
