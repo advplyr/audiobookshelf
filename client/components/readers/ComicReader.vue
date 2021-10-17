@@ -1,29 +1,42 @@
 <template>
-  <div class="w-full">
-    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 right-20 rounded-md overflow-y-auto bg-white shadow-lg z-20 border border-gray-400">
-      <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-gray-200 px-2 py-1" @click="setPage(index)">
-        <p class="text-sm">{{ file }}</p>
+  <div class="w-full h-full">
+    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 right-20 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-52">
+      <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index)">
+        <p class="text-sm truncate">{{ file }}</p>
+      </div>
+    </div>
+    <div v-show="showInfoMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 right-10 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-96">
+      <div v-for="key in comicMetadataKeys" :key="key" class="w-full px-2 py-1">
+        <p class="text-xs">
+          <strong>{{ key }}</strong
+          >: {{ comicMetadata[key] }}
+        </p>
       </div>
     </div>
 
-    <div class="absolute top-0 right-40 border-b border-l border-r border-gray-400 hover:bg-gray-200 cursor-pointer rounded-b-md bg-gray-50 w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showPageMenu = !showPageMenu">
-      <span class="material-icons">menu</span>
+    <div v-if="comicMetadata" class="absolute top-0 right-52 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showInfoMenu = !showInfoMenu">
+      <span class="material-icons text-xl">more</span>
     </div>
-    <div class="absolute top-0 right-20 border-b border-l border-r border-gray-400 rounded-b-md bg-gray-50 px-2 h-9 flex items-center text-center">
+    <div class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" style="right: 156px" @mousedown.prevent @click.stop.prevent="showPageMenu = !showPageMenu">
+      <span class="material-icons text-xl">menu</span>
+    </div>
+    <div class="absolute top-0 right-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <p class="font-mono">{{ page + 1 }} / {{ numPages }}</p>
     </div>
 
     <div class="overflow-hidden m-auto comicwrapper relative">
-      <div class="flex items-center justify-center">
-        <div class="px-12">
-          <span v-show="loadedFirstPage" class="material-icons text-5xl text-black" :class="!canGoPrev ? 'text-opacity-10' : 'cursor-pointer text-opacity-30 hover:text-opacity-90'" @click.stop.prevent="goPrevPage" @mousedown.prevent>arrow_back_ios</span>
+      <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
+        <div class="flex items-center justify-center h-full w-1/2">
+          <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
         </div>
-
+      </div>
+      <div v-show="canGoNext" class="absolute top-0 right-0 h-full w-1/2 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
+        <div class="flex items-center justify-center h-full w-1/2 ml-auto">
+          <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
+        </div>
+      </div>
+      <div class="h-full flex justify-center">
         <img v-if="mainImg" :src="mainImg" class="object-contain comicimg" />
-
-        <div class="px-12">
-          <span v-show="loadedFirstPage" class="material-icons text-5xl text-black" :class="!canGoNext ? 'text-opacity-10' : 'cursor-pointer text-opacity-30 hover:text-opacity-90'" @click.stop.prevent="goNextPage" @mousedown.prevent>arrow_forward_ios</span>
-        </div>
       </div>
 
       <div v-show="loading" class="w-full h-full absolute top-0 left-0 flex items-center justify-center z-10">
@@ -44,11 +57,10 @@ import { Archive } from 'libarchive.js/main.js'
 Archive.init({
   workerUrl: '/libarchive/worker-bundle.js'
 })
-// Archive.init()
 
 export default {
   props: {
-    src: String
+    url: String
   },
   data() {
     return {
@@ -59,19 +71,24 @@ export default {
       page: 0,
       numPages: 0,
       showPageMenu: false,
+      showInfoMenu: false,
       loadTimeout: null,
-      loadedFirstPage: false
+      loadedFirstPage: false,
+      comicMetadata: null
     }
   },
   watch: {
-    src: {
+    url: {
       immediate: true,
-      handler(newVal) {
+      handler() {
         this.extract()
       }
     }
   },
   computed: {
+    comicMetadataKeys() {
+      return this.comicMetadata ? Object.keys(this.comicMetadata) : []
+    },
     canGoNext() {
       return this.page < this.numPages - 1
     },
@@ -82,12 +99,13 @@ export default {
   methods: {
     clickOutside() {
       if (this.showPageMenu) this.showPageMenu = false
+      if (this.showInfoMenu) this.showInfoMenu = false
     },
-    goNextPage() {
+    next() {
       if (!this.canGoNext) return
       this.setPage(this.page + 1)
     },
-    goPrevPage() {
+    prev() {
       if (!this.canGoPrev) return
       this.setPage(this.page - 1)
     },
@@ -126,15 +144,18 @@ export default {
     },
     async extract() {
       this.loading = true
-      console.log('Extracting', this.src)
+      console.log('Extracting', this.url)
 
-      var buff = await this.$axios.$get(this.src, {
+      var buff = await this.$axios.$get(this.url, {
         responseType: 'blob'
       })
       const archive = await Archive.open(buff)
       this.filesObject = await archive.getFilesObject()
       var filenames = Object.keys(this.filesObject)
       this.parseFilenames(filenames)
+
+      var xmlFile = filenames.find((f) => (Path.extname(f) || '').toLowerCase() === '.xml')
+      if (xmlFile) await this.extractXmlFile(xmlFile)
 
       this.numPages = this.pages.length
 
@@ -145,6 +166,23 @@ export default {
       } else {
         this.$toast.error('Unable to extract pages')
         this.loading = false
+      }
+    },
+    async extractXmlFile(filename) {
+      console.log('extracting xml filename', filename)
+      try {
+        var file = await this.filesObject[filename].extract()
+        var reader = new FileReader()
+        reader.onload = (e) => {
+          this.comicMetadata = this.$xmlToJson(e.target.result)
+          console.log('Metadata', this.comicMetadata)
+        }
+        reader.onerror = (e) => {
+          console.error(e)
+        }
+        reader.readAsText(file)
+      } catch (error) {
+        console.error(error)
       }
     },
     parseImageFilename(filename) {
@@ -177,30 +215,10 @@ export default {
       orderedImages = orderedImages.concat(noNumImages.map((i) => i.filename))
 
       this.pages = orderedImages
-    },
-    keyUp(e) {
-      if ((e.keyCode || e.which) == 37) {
-        this.goPrevPage()
-      } else if ((e.keyCode || e.which) == 39) {
-        this.goNextPage()
-      } else if ((e.keyCode || e.which) == 27) {
-        this.unregisterListeners()
-        this.$emit('close')
-      }
-    },
-    registerListeners() {
-      document.addEventListener('keyup', this.keyUp)
-    },
-    unregisterListeners() {
-      document.removeEventListener('keyup', this.keyUp)
     }
   },
-  mounted() {
-    this.registerListeners()
-  },
-  beforeDestroy() {
-    this.unregisterListeners()
-  }
+  mounted() {},
+  beforeDestroy() {}
 }
 </script>
 
@@ -213,7 +231,8 @@ export default {
   margin: auto;
 }
 .comicwrapper {
-  width: calc(100vw - 300px);
+  width: 100vw;
   height: calc(100vh - 40px);
+  margin-top: 20px;
 }
 </style>

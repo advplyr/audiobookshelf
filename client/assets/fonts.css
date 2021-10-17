@@ -11,7 +11,6 @@
   font-weight: normal;
   font-style: normal;
   line-height: 1;
-  font-size: 1.5rem;
   letter-spacing: normal;
   text-transform: none;
   display: inline-block;
@@ -21,12 +20,7 @@
   -webkit-font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
-.material-icons.text-icon {
-  font-size: 1.15rem;
-}
-.material-icons.text-base {
-  font-size: 1rem;
-}
+
 
 @font-face {
   font-family: 'Gentium Book Basic';

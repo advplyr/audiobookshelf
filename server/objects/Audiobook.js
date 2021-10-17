@@ -127,22 +127,6 @@ class Audiobook {
     return this.otherFiles.filter(file => file.filetype === 'ebook')
   }
 
-  get hasEpub() {
-    return this.ebooks.find(file => file.ext === '.epub')
-  }
-
-  get hasMobi() {
-    return this.ebooks.find(file => file.ext === '.mobi' || file.ext === '.azw3')
-  }
-
-  get hasPdf() {
-    return this.ebooks.find(file => file.ext === '.pdf')
-  }
-
-  get hasComic() {
-    return this.ebooks.find(file => file.ext === '.cbr' || file.ext === '.cbz')
-  }
-
   get hasMissingIno() {
     return !this.ino || this._audioFiles.find(abf => !abf.ino) || this._otherFiles.find(f => !f.ino) || this._tracks.find(t => !t.ino)
   }
@@ -214,7 +198,7 @@ class Audiobook {
       hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
       // numEbooks: this.ebooks.length,
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
-      numEbooks: (this.hasEpub || this.hasMobi || this.hasPdf || this.hasComic) ? 1 : 0,
+      numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
@@ -241,7 +225,7 @@ class Audiobook {
       audioFiles: this._audioFiles.map(audioFile => audioFile.toJSON()),
       otherFiles: this._otherFiles.map(otherFile => otherFile.toJSON()),
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
-      numEbooks: (this.hasEpub || this.hasMobi || this.hasPdf || this.hasComic) ? 1 : 0,
+      numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
       tags: this.tags,
       book: this.bookToJSON(),

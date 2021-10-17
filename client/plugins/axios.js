@@ -1,5 +1,9 @@
 export default function ({ $axios, store }) {
   $axios.onRequest(config => {
+    if (!config.url) {
+      console.error('Axios request invalid config', config)
+      return
+    }
     if (config.url.startsWith('http:') || config.url.startsWith('https:')) {
       return
     }

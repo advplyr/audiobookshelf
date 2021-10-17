@@ -24,11 +24,6 @@
               </p>
               <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>
 
-              <!-- <div class="w-min">
-                <ui-tooltip :text="authorTooltipText" direction="bottom">
-                  <span class="text-base text-gray-100 leading-8 whitespace-nowrap"><span class="text-white text-opacity-60">By:</span> {{ author }}</span>
-                </ui-tooltip>
-              </div> -->
               <div v-if="narrator" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Narrated By</span>
@@ -80,10 +75,6 @@
           <div v-show="showExperimentalReadAlert" class="bg-error p-4 rounded-xl flex items-center">
             <span class="material-icons text-2xl">warning_amber</span>
             <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
-          </div>
-          <div v-show="showEpubAlert" class="bg-error p-4 rounded-xl flex items-center mt-2">
-            <span class="material-icons text-2xl">warning_amber</span>
-            <p class="ml-4">Book has valid ebook files, but the experimental e-reader currently only supports epub files.</p>
           </div>
 
           <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max" :class="resettingProgress ? 'opacity-25' : ''">
@@ -152,8 +143,6 @@
         </div>
       </div>
     </div>
-
-    <!-- <app-reader v-if="showExperimentalFeatures" v-model="showReader" :url="epubUrl" /> -->
   </div>
 </template>
 
@@ -321,14 +310,10 @@ export default {
     ebooks() {
       return this.audiobook.ebooks
     },
-    showEpubAlert() {
-      return this.ebooks.length && !this.numEbooks && !this.tracks.length
-    },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
     numEbooks() {
-      // Number of currently supported for reading ebooks, not all ebooks
       return this.audiobook.numEbooks
     },
     userToken() {

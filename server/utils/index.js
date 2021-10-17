@@ -29,26 +29,6 @@ const levenshteinDistance = (str1, str2, caseSensitive = false) => {
 }
 module.exports.levenshteinDistance = levenshteinDistance
 
-const cleanString = (str) => {
-  if (!str) return ''
-
-  // Now supporting all utf-8 characters, can remove this method in future
-
-  // replace accented characters: https://stackoverflow.com/a/49901740/7431543
-  // str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-
-  // const availableChars = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-  // const cleanChar = (char) => availableChars.indexOf(char) < 0 ? '?' : char
-
-  // var cleaned = ''
-  // for (let i = 0; i < str.length; i++) {
-  //   cleaned += cleanChar(str[i])
-  // }
-
-  return cleaned.trim()
-}
-module.exports.cleanString = cleanString
-
 module.exports.isObject = (val) => {
   return val !== null && typeof val === 'object'
 }
