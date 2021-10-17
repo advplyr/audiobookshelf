@@ -63,6 +63,7 @@ export default {
 
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
       if (this.matchKey === 'author') return `by ${html}`
+      if (this.matchKey === 'series') return `<p class="truncate">Series: ${html}</p>`
       return `${html}`
     }
   },
