@@ -1,8 +1,10 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
-    <img src="/icons/NoUserPhoto.png" class="w-40 h-40 max-h-40 object-contain" style="max-height: 40px; max-width: 40px" />
-    <div class="flex-grow px-2 authorSearchCardContent h-full">
-      <p class="truncate text-sm">{{ author }}</p>
+    <div class="w-10 h-10 flex items-center justify-center">
+      <span class="material-icons text-2xl text-gray-200">local_offer</span>
+    </div>
+    <div class="flex-grow px-2 tagSearchCardContent h-full">
+      <p class="truncate text-sm">{{ tag }}</p>
     </div>
   </div>
 </template>
@@ -10,7 +12,7 @@
 <script>
 export default {
   props: {
-    author: String
+    tag: String
   },
   data() {
     return {}
@@ -22,8 +24,8 @@ export default {
 </script>
 
 <style>
-.authorSearchCardContent {
-  width: calc(100% - 80px);
+.tagSearchCardContent {
+  width: calc(100% - 40px);
   height: 40px;
   display: flex;
   flex-direction: column;

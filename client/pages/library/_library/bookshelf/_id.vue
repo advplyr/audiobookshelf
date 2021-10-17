@@ -19,27 +19,37 @@ export default {
       return redirect('/oops?message=Library not found')
     }
 
+    // Set filter by
     if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
-    var searchResults = []
+
+    // Search page
+    var searchResults = {}
+    var audiobookSearchResults = []
     var searchQuery = null
     if (params.id === 'search' && query.query) {
       searchQuery = query.query
-      searchResults = await app.$axios.$get(`/api/library/${libraryId}/audiobooks?q=${query.query}`).catch((error) => {
+
+      searchResults = await app.$axios.$get(`/api/library/${libraryId}/search?q=${searchQuery}`).catch((error) => {
         console.error('Search error', error)
-        return []
+        return {}
       })
+      audiobookSearchResults = searchResults.audiobooks || []
       store.commit('audiobooks/setSearchResults', searchResults)
-      if (searchResults.length) searchResults.forEach((ab) => store.commit('audiobooks/addUpdate', ab))
+      if (audiobookSearchResults.length) audiobookSearchResults.forEach((ab) => store.commit('audiobooks/addUpdate', ab.audiobook))
     }
+
+    // Series page
     var selectedSeries = query.series ? app.$decode(query.series) : null
     store.commit('audiobooks/setSelectedSeries', selectedSeries)
+
     var libraryPage = params.id || ''
     store.commit('audiobooks/setLibraryPage', libraryPage)
 
     return {
       id: libraryPage,
+      libraryId,
       searchQuery,
       searchResults,
       selectedSeries
@@ -65,9 +75,9 @@ export default {
   methods: {
     async newQuery() {
       var query = this.$route.query.query
-      this.searchResults = await this.$axios.$get(`/api/audiobooks?q=${query}`).catch((error) => {
+      this.searchResults = await this.$axios.$get(`/api/library/${this.libraryId}/search?q=${query}`).catch((error) => {
         console.error('Search error', error)
-        return []
+        return {}
       })
       this.searchQuery = query
     }

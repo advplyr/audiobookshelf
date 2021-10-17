@@ -14,7 +14,8 @@ export const state = () => ({
   keywordFilter: null,
   selectedSeries: null,
   libraryPage: null,
-  searchResults: []
+  searchResults: {},
+  searchResultAudiobooks: []
 })
 
 export const getters = {
@@ -25,7 +26,7 @@ export const getters = {
     if (!state.libraryPage) {
       return getters.getFiltered()
     } else if (state.libraryPage === 'search') {
-      return state.searchResults
+      return state.searchResultAudiobooks
     } else if (state.libraryPage === 'series') {
       var series = getters.getSeriesGroups()
       if (state.selectedSeries) {
@@ -222,6 +223,7 @@ export const mutations = {
   },
   setSearchResults(state, val) {
     state.searchResults = val
+    state.searchResultAudiobooks = val && val.audiobooks ? val.audiobooks.map(ab => ab.audiobook) : []
   },
   set(state, audiobooks) {
     // GENRES

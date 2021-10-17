@@ -23,7 +23,7 @@
           <template v-for="item in audiobookResults">
             <li :key="item.audiobook.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
               <nuxt-link :to="`/audiobook/${item.audiobook.id}`">
-                <cards-audiobook-search-card :audiobook="item.audiobook" />
+                <cards-audiobook-search-card :audiobook="item.audiobook" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
             </li>
           </template>
@@ -39,9 +39,18 @@
 
           <p v-if="seriesResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Series</p>
           <template v-for="item in seriesResults">
-            <li :key="item.series" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickedOption(item.series)">
+            <li :key="item.series" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series?series=${$encode(item.series)}`">
                 <cards-series-search-card :series="item.series" :book-items="item.audiobooks" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="tagResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Tags</p>
+          <template v-for="item in tagResults">
+            <li :key="item.tag" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.tag)}`">
+                <cards-tag-search-card :tag="item.tag" />
               </nuxt-link>
             </li>
           </template>
@@ -64,6 +73,7 @@ export default {
       audiobookResults: [],
       authorResults: [],
       seriesResults: [],
+      tagResults: [],
       searchTimeout: null,
       lastSearch: null
     }
@@ -76,19 +86,27 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.audiobookResults.length + this.seriesResults.length + this.authorResults.length
+      return this.audiobookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length
     }
   },
   methods: {
     submitSearch() {
       if (!this.search) return
-      this.$router.push(`/library/${this.currentLibraryId}/bookshelf/search?query=${this.search}`)
-
+      var search = this.search
+      this.clearResults()
+      this.$router.push(`/library/${this.currentLibraryId}/bookshelf/search?query=${search}`)
+    },
+    clearResults() {
       this.search = null
+      this.lastSearch = null
       this.audiobookResults = []
       this.authorResults = []
       this.seriesResults = []
+      this.tagResults = []
       this.showMenu = false
+      this.isFetching = false
+      this.isTyping = false
+      clearTimeout(this.searchTimeout)
       this.$nextTick(() => {
         if (this.$refs.input) {
           this.$refs.input.blur()
@@ -117,9 +135,14 @@ export default {
         console.error('Search error', error)
         return []
       })
+
+      // Search was canceled
+      if (!this.isFetching) return
+
       this.audiobookResults = searchResults.audiobooks || []
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []
+      this.tagResults = searchResults.tags || []
 
       this.isFetching = false
       if (!this.showMenu) {
@@ -135,19 +158,15 @@ export default {
       }
       this.isTyping = true
       this.searchTimeout = setTimeout(() => {
+        // Canceled search
+        if (!this.isTyping) return
+
         this.isTyping = false
         this.runSearch(val)
       }, 750)
     },
     clickClear() {
-      if (this.search) {
-        this.search = null
-        this.lastSearch = null
-        this.audiobookResults = []
-        this.authorResults = []
-        this.seriesResults = []
-        this.showMenu = false
-      }
+      this.clearResults()
     }
   },
   mounted() {}

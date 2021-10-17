@@ -51,9 +51,6 @@ export default {
     sizeMultiplier() {
       return this.bookCoverWidth / 120
     },
-    signSizeMultiplier() {
-      return (1 - this.sizeMultiplier) / 2 + this.sizeMultiplier
-    },
     paddingX() {
       return 16 * this.sizeMultiplier
     },

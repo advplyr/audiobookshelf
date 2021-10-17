@@ -654,11 +654,22 @@ class Audiobook {
   }
 
   isSearchMatch(search) {
-    return this.book.isSearchMatch(search.toLowerCase().trim())
+    var tagMatch = this.tags.filter(tag => {
+      return tag.toLowerCase().includes(search.toLowerCase().trim())
+    })
+    return this.book.isSearchMatch(search.toLowerCase().trim()) || tagMatch.length
   }
 
   searchQuery(search) {
-    return this.book.getQueryMatches(search.toLowerCase().trim())
+    var matches = this.book.getQueryMatches(search.toLowerCase().trim())
+    matches.tags = this.tags.filter(tag => {
+      return tag.toLowerCase().includes(search.toLowerCase().trim())
+    })
+    if (!matches.book && matches.tags.length) {
+      matches.book = 'tags'
+      matches.bookMatchText = matches.tags.join(', ')
+    }
+    return matches
   }
 
   getAudioFileByIno(ino) {

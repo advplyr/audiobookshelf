@@ -220,11 +220,16 @@ class Book {
   }
 
   getQueryMatches(search) {
-    var titleMatch = this._title.toLowerCase().includes(search) || this._subtitle.toLowerCase().includes(search)
+    var titleMatch = this._title.toLowerCase().includes(search)
+    var subtitleMatch = this._subtitle.toLowerCase().includes(search)
     var authorMatch = this._author.toLowerCase().includes(search)
     var seriesMatch = this._series.toLowerCase().includes(search)
+
+    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorMatch ? 'author' : seriesMatch ? 'series' : false
+    var bookMatchText = bookMatchKey ? this[bookMatchKey] : ''
     return {
-      book: titleMatch ? 'title' : authorMatch ? 'author' : seriesMatch ? 'series' : false,
+      book: bookMatchKey,
+      bookMatchText,
       author: authorMatch ? this._author : false,
       series: seriesMatch ? this._series : false
     }

@@ -79,8 +79,6 @@
 </template>
 
 <script>
-import Path from 'path'
-
 export default {
   props: {
     processing: Boolean,

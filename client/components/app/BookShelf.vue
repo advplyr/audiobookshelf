@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
-    <div v-show="!isSelectionMode" class="fixed bottom-2 right-4 z-20">
+    <div v-show="!isSelectionMode" class="fixed bottom-2 right-4 z-30">
       <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
         <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
@@ -14,6 +14,14 @@
       <div class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2" @click="scan">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
+      </div>
+    </div>
+    <div v-else-if="page === 'search'" id="bookshelf-categorized" class="w-full flex flex-col items-center">
+      <template v-for="(shelf, index) in categorizedShelves">
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" />
+      </template>
+      <div v-show="!categorizedShelves.length" class="w-full py-16 text-center text-xl">
+        <div class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
       </div>
     </div>
     <div v-else id="bookshelf" class="w-full flex flex-col items-center">
@@ -45,8 +53,8 @@ export default {
     page: String,
     selectedSeries: String,
     searchResults: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     searchQuery: String
   },
@@ -74,7 +82,7 @@ export default {
     },
     searchResults() {
       this.$nextTick(() => {
-        this.$store.commit('audiobooks/setSearchResults', this.searchResults)
+        // this.$store.commit('audiobooks/setSearchResults', this.searchResults)
         this.setBookshelfEntities()
       })
     },
@@ -93,6 +101,9 @@ export default {
     },
     audiobooks() {
       return this.$store.state.audiobooks.audiobooks
+    },
+    sizeMultiplier() {
+      return this.bookCoverWidth / 120
     },
     bookCoverWidth() {
       return this.availableSizes[this.selectedSizeIndex]
@@ -122,11 +133,54 @@ export default {
     showGroups() {
       return this.page !== '' && this.page !== 'search' && !this.selectedSeries
     },
+    categorizedShelves() {
+      if (this.page !== 'search') return []
+      var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
+      const shelves = []
+
+      if (audiobookSearchResults.length) {
+        shelves.push({
+          label: 'Books',
+          books: audiobookSearchResults.map((absr) => absr.audiobook)
+        })
+      }
+
+      if (this.searchResults.series && this.searchResults.series.length) {
+        var seriesGroups = this.searchResults.series.map((seriesResult) => {
+          return {
+            type: 'series',
+            name: seriesResult.series || '',
+            books: seriesResult.audiobooks || []
+          }
+        })
+        shelves.push({
+          label: 'Series',
+          series: seriesGroups
+        })
+      }
+
+      if (this.searchResults.tags && this.searchResults.tags.length) {
+        var tagGroups = this.searchResults.tags.map((tagResult) => {
+          return {
+            type: 'tags',
+            name: tagResult.tag || '',
+            books: tagResult.audiobooks || []
+          }
+        })
+        shelves.push({
+          label: 'Tags',
+          series: tagGroups
+        })
+      }
+
+      return shelves
+    },
     entities() {
       if (this.page === '') {
         return this.$store.getters['audiobooks/getFilteredAndSorted']()
       } else if (this.page === 'search') {
-        return this.searchResults || []
+        var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
+        return audiobookSearchResults.map((absr) => absr.audiobook)
       } else {
         var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {

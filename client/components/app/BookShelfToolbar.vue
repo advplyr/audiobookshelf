@@ -41,8 +41,8 @@ export default {
     isHome: Boolean,
     selectedSeries: String,
     searchResults: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => {}
     },
     searchQuery: String
   },
@@ -60,7 +60,8 @@ export default {
       if (this.page === '') {
         return this.$store.getters['audiobooks/getFiltered']().length
       } else if (this.page === 'search') {
-        return (this.searchResults || []).length
+        var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
+        return audiobookSearchResults.length
       } else {
         var groups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {

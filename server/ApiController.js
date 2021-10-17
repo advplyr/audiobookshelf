@@ -148,15 +148,18 @@ class ApiController {
     var bookMatches = []
     var authorMatches = {}
     var seriesMatches = {}
+    var tagMatches = {}
 
     var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
     audiobooksInLibrary.forEach((ab) => {
       var queryResult = ab.searchQuery(req.query.q)
       if (queryResult.book) {
-        bookMatches.push({
+        var bookMatchObj = {
           audiobook: ab,
-          matchKey: queryResult.book
-        })
+          matchKey: queryResult.book,
+          matchText: queryResult.bookMatchText
+        }
+        bookMatches.push(bookMatchObj)
       }
       if (queryResult.author && !authorMatches[queryResult.author]) {
         authorMatches[queryResult.author] = {
@@ -173,10 +176,23 @@ class ApiController {
           seriesMatches[queryResult.series].audiobooks.push(ab)
         }
       }
+      if (queryResult.tags && queryResult.tags.length) {
+        queryResult.tags.forEach((tag) => {
+          if (!tagMatches[tag]) {
+            tagMatches[tag] = {
+              tag,
+              audiobooks: [ab]
+            }
+          } else {
+            tagMatches[tag].audiobooks.push(ab)
+          }
+        })
+      }
     })
 
     res.json({
       audiobooks: bookMatches.slice(0, maxResults),
+      tags: Object.values(tagMatches).slice(0, maxResults),
       authors: Object.values(authorMatches).slice(0, maxResults),
       series: Object.values(seriesMatches).slice(0, maxResults)
     })

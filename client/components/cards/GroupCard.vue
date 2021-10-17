@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
-      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series?${groupType}=${groupEncode}`" class="cursor-pointer">
+      <nuxt-link :to="groupTo" class="cursor-pointer">
         <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: height + 'px', width: height + 'px' }">
           <cards-group-cover ref="groupcover" :name="groupName" :book-items="bookItems" :width="height" :height="height" />
 
@@ -53,6 +53,16 @@ export default {
     },
     _group() {
       return this.group || {}
+    },
+    groupType() {
+      return this._group.type
+    },
+    groupTo() {
+      if (this.groupType === 'series') {
+        return `/library/${this.currentLibraryId}/bookshelf/series?series=${this.groupEncode}`
+      } else {
+        return `/library/${this.currentLibraryId}/bookshelf?filter=tags.${this.groupEncode}`
+      }
     },
     height() {
       return this.width * 1.6
