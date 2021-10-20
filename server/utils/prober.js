@@ -135,11 +135,13 @@ function parseChapters(chapters) {
   })
 }
 
-function parseTags(format) {
+function parseTags(format, verbose) {
   if (!format.tags) {
     return {}
   }
-  // Logger.debug('Tags', format.tags)
+  if (verbose) {
+    Logger.debug('Tags', format.tags)
+  }
   const tags = {
     file_tag_encoder: tryGrabTags(format, 'encoder', 'tsse', 'tss'),
     file_tag_encodedby: tryGrabTags(format, 'encoded_by', 'tenc', 'ten'),
@@ -166,7 +168,8 @@ function parseTags(format) {
     file_tag_series: tryGrabTag(format, 'series'),
     file_tag_seriespart: tryGrabTag(format, 'series-part'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
-    file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2')
+    file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
+    file_tag_genre: tryGrabTags(format, 'genre', 'genre')
   }
   for (const key in tags) {
     if (!tags[key]) {
@@ -174,7 +177,7 @@ function parseTags(format) {
     }
   }
 
-  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
+  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_genre', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
   var success = keysToLookOutFor.find(key => !!tags[key])
   if (success) {
     Logger.debug('Notable!', success)
@@ -182,7 +185,7 @@ function parseTags(format) {
   return tags
 }
 
-function parseProbeData(data) {
+function parseProbeData(data, verbose = false) {
   try {
     var { format, streams, chapters } = data
     var { format_long_name, duration, size, bit_rate } = format
@@ -191,7 +194,7 @@ function parseProbeData(data) {
     var sizeMb = sizeBytes !== null ? Number((sizeBytes / (1024 * 1024)).toFixed(2)) : null
 
     // Logger.debug('Parsing Data for', Path.basename(format.filename))
-    var tags = parseTags(format)
+    var tags = parseTags(format, verbose)
     var cleanedData = {
       format: format_long_name,
       duration: !isNaN(duration) ? Number(duration) : null,
@@ -199,6 +202,9 @@ function parseProbeData(data) {
       sizeMb,
       bit_rate: !isNaN(bit_rate) ? Number(bit_rate) : null,
       ...tags
+    }
+    if (verbose && format.tags) {
+      cleanedData.rawTags = format.tags
     }
 
     const cleaned_streams = streams.map(s => parseMediaStreamInfo(s, streams, cleanedData.bit_rate))
@@ -223,14 +229,14 @@ function parseProbeData(data) {
   }
 }
 
-function probe(filepath) {
+function probe(filepath, verbose = false) {
   return new Promise((resolve) => {
     Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
       if (err) {
         console.error(err)
         resolve(null)
       } else {
-        resolve(parseProbeData(raw))
+        resolve(parseProbeData(raw, verbose))
       }
     })
   })

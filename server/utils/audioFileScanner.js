@@ -11,9 +11,9 @@ function getDefaultAudioStream(audioStreams) {
   return defaultStream
 }
 
-async function scan(path) {
+async function scan(path, verbose = false) {
   Logger.debug(`Scanning path "${path}"`)
-  var probeData = await prober(path)
+  var probeData = await prober(path, verbose)
   if (!probeData || !probeData.audio_streams || !probeData.audio_streams.length) {
     return {
       error: 'Invalid audio file'
@@ -60,6 +60,10 @@ async function scan(path) {
     if (trackParts.length > 1) {
       finalData.trackTotal = trackParts[1]
     }
+  }
+
+  if (verbose && probeData.rawTags) {
+    finalData.rawTags = probeData.rawTags
   }
 
   return finalData
@@ -239,7 +243,7 @@ async function scanTrackNumbers(audiobook) {
   var scannedTrackNumData = []
   for (let i = 0; i < tracks.length; i++) {
     var track = tracks[i]
-    var scanData = await scan(track.fullPath)
+    var scanData = await scan(track.fullPath, true)
 
     var trackNumFromMeta = getTrackNumberFromMeta(scanData)
     var book = audiobook.book || {}
@@ -250,7 +254,8 @@ async function scanTrackNumbers(audiobook) {
       currentTrackNum: track.index,
       trackNumFromFilename,
       trackNumFromMeta,
-      scanDataTrackNum: scanData.file_tag_track
+      scanDataTrackNum: scanData.file_tag_track,
+      rawTags: scanData.rawTags || null
     })
   }
   return scannedTrackNumData

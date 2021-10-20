@@ -91,7 +91,7 @@ export default {
     return {
       hlsInstance: null,
       staleHlsInstance: null,
-      volume: 0.5,
+      volume: 1,
       playbackRate: 1,
       trackWidth: 0,
       isPaused: true,

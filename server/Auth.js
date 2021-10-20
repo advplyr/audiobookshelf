@@ -97,11 +97,11 @@ class Auth {
   }
 
   async login(req, res) {
-    var username = req.body.username
+    var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
     Logger.debug('Check Auth', username, !!password)
 
-    var user = this.users.find(u => u.username === username)
+    var user = this.users.find(u => u.username.toLowerCase() === username)
 
     if (!user || !user.isActive) {
       Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)

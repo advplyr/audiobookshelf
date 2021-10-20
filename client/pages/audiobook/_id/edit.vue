@@ -67,6 +67,7 @@
               <th class="w-32"># From Metadata</th>
               <th class="w-32"># From Filename</th>
               <th class="w-32"># From Probe</th>
+              <th class="w-32">Raw Tags</th>
             </tr>
             <tr v-for="trackData in trackNumData" :key="trackData.filename">
               <td class="text-xs">{{ trackData.filename }}</td>
@@ -74,6 +75,7 @@
               <td class="text-center">{{ trackData.trackNumFromMeta }}</td>
               <td class="text-center">{{ trackData.trackNumFromFilename }}</td>
               <td class="text-center">{{ trackData.scanDataTrackNum }}</td>
+              <td class="text-left text-xs">{{ JSON.stringify(trackData.rawTags || '') }}</td>
             </tr>
           </table>
         </div>

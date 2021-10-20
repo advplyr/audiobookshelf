@@ -151,9 +151,10 @@ export default {
           }
         })
         .catch((error) => {
-          console.error('Failed to update account', error)
           this.processing = false
-          this.$toast.error('Failed to update account')
+          console.error('Failed to update account', error)
+          var errMsg = error.response ? error.response.data || '' : ''
+          this.$toast.error(errMsg || 'Failed to update account')
         })
     },
     submitCreateAccount() {
@@ -176,9 +177,10 @@ export default {
           }
         })
         .catch((error) => {
-          console.error('Failed to create account', error)
           this.processing = false
-          this.$toast.error('Failed to create account')
+          console.error('Failed to create account', error)
+          var errMsg = error.response ? error.response.data || '' : ''
+          this.$toast.error(errMsg || 'Failed to create account')
         })
     },
     toggleActive() {

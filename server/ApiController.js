@@ -597,6 +597,13 @@ class ApiController {
       return res.sendStatus(403)
     }
     var account = req.body
+
+    var username = account.username
+    var usernameExists = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
+    if (usernameExists) {
+      return res.status(500).send('Username already taken')
+    }
+
     account.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
     account.pash = await this.auth.hashPass(account.password)
     delete account.password
@@ -610,9 +617,7 @@ class ApiController {
         user: newUser.toJSONForBrowser()
       })
     } else {
-      res.json({
-        error: 'Failed to save new user'
-      })
+      return res.status(500).send('Failed to save new user')
     }
   }
 
@@ -628,6 +633,14 @@ class ApiController {
     }
 
     var account = req.body
+
+    if (account.username !== undefined && account.username !== user.username) {
+      var usernameExists = this.db.users.find(u => u.username.toLowerCase() === account.username.toLowerCase())
+      if (usernameExists) {
+        return res.status(500).send('Username already taken')
+      }
+    }
+
     // Updating password
     if (account.password) {
       account.pash = await this.auth.hashPass(account.password)
