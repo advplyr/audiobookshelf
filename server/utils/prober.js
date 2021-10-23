@@ -157,6 +157,8 @@ function parseTags(format, verbose) {
     file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
+    file_tag_series: tryGrabTag(format, 'series'),
+    file_tag_seriespart: tryGrabTag(format, 'series-part'),
 
     // Not sure if these are actually used yet or not
     file_tag_creation_time: tryGrabTag(format, 'creation_time'),
@@ -165,8 +167,6 @@ function parseTags(format, verbose) {
     file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
     file_tag_movementname: tryGrabTags(format, 'movementname', 'mvnm'),
     file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
-    file_tag_series: tryGrabTag(format, 'series'),
-    file_tag_seriespart: tryGrabTag(format, 'series-part'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
   }
@@ -176,11 +176,12 @@ function parseTags(format, verbose) {
     }
   }
 
-  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_genre', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
-  var success = keysToLookOutFor.find(key => !!tags[key])
-  if (success) {
-    Logger.debug('Notable!', success)
-  }
+  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
+  keysToLookOutFor.forEach((key) => {
+    if (tags[key]) {
+      Logger.debug(`Notable! ${key} => ${tags[key]}`)
+    }
+  })
   return tags
 }
 

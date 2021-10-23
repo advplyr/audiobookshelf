@@ -4,6 +4,8 @@ class AudioFileMetadata {
     this.tagArtist = null
     this.tagGenre = null
     this.tagTitle = null
+    this.tagSeries = null
+    this.tagSeriesPart = null
     this.tagTrack = null
     this.tagSubtitle = null
     this.tagAlbumArtist = null
@@ -36,6 +38,8 @@ class AudioFileMetadata {
     this.tagArtist = metadata.tagArtist || null
     this.tagGenre = metadata.tagGenre || null
     this.tagTitle = metadata.tagTitle || null
+    this.tagSeries = metadata.tagSeries || null
+    this.tagSeriesPart = metadata.tagSeriesPart || null
     this.tagTrack = metadata.tagTrack || null
     this.tagSubtitle = metadata.tagSubtitle || null
     this.tagAlbumArtist = metadata.tagAlbumArtist || null
@@ -54,6 +58,8 @@ class AudioFileMetadata {
     this.tagArtist = payload.file_tag_artist || null
     this.tagGenre = payload.file_tag_genre || null
     this.tagTitle = payload.file_tag_title || null
+    this.tagSeries = payload.file_tag_series || null
+    this.tagSeriesPart = payload.file_tag_seriespart || null
     this.tagTrack = payload.file_tag_track || null
     this.tagSubtitle = payload.file_tag_subtitle || null
     this.tagAlbumArtist = payload.file_tag_albumartist || null
@@ -72,6 +78,8 @@ class AudioFileMetadata {
       tagArtist: payload.file_tag_artist || null,
       tagGenre: payload.file_tag_genre || null,
       tagTitle: payload.file_tag_title || null,
+      tagSeries: payload.file_tag_series || null,
+      tagSeriesPart: payload.file_tag_seriespart || null,
       tagTrack: payload.file_tag_track || null,
       tagSubtitle: payload.file_tag_subtitle || null,
       tagAlbumArtist: payload.file_tag_albumartist || null,

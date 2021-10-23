@@ -275,10 +275,19 @@ class Book {
       {
         tag: 'tagGenre',
         key: 'genres'
+      },
+      {
+        tag: 'tagSeries',
+        key: 'series'
+      },
+      {
+        tag: 'tagSeriesPart',
+        key: 'volumeNumber'
       }
     ]
 
     var updatePayload = {}
+    // Metadata is only mapped to the book if it is empty
     MetadataMapArray.forEach((mapping) => {
       if (audioFileMetadata[mapping.tag]) {
         // Genres can contain multiple
