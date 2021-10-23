@@ -199,6 +199,14 @@ class Scanner {
     if (forceAudioFileScan) {
       Logger.info(`[Scanner] Rescanning ${existingAudiobook.audioFiles.length} audio files for "${existingAudiobook.title}"`)
       var numAudioFilesUpdated = await audioFileScanner.rescanAudioFiles(existingAudiobook)
+
+      // Set book details from metadata pulled from audio files
+      var bookMetadataUpdated = existingAudiobook.setDetailsFromFileMetadata()
+      if (bookMetadataUpdated) {
+        Logger.debug(`[Scanner] Book Metadata Updated for "${existingAudiobook.title}"`)
+        hasUpdatedAudioFiles = true
+      }
+
       if (numAudioFilesUpdated > 0) {
         Logger.info(`[Scanner] Rescan complete, ${numAudioFilesUpdated} audio files were updated for "${existingAudiobook.title}"`)
         hasUpdatedAudioFiles = true
@@ -580,49 +588,6 @@ class Scanner {
     return this.scanAudiobookData(audiobookData, forceAudioFileScan)
   }
 
-  // Files were modified in this directory, check it out
-  // async checkDir(dir) {
-  //   var exists = await fs.pathExists(dir)
-  //   if (!exists) {
-  //     // Audiobook was deleted, TODO: Should confirm this better
-  //     var audiobook = this.db.audiobooks.find(ab => ab.fullPath === dir)
-  //     if (audiobook) {
-  //       var audiobookJSON = audiobook.toJSONMinified()
-  //       await this.db.removeEntity('audiobook', audiobook.id)
-  //       this.emitter('audiobook_removed', audiobookJSON)
-  //       return ScanResult.REMOVED
-  //     }
-
-  //     // Path inside audiobook was deleted, scan audiobook
-  //     audiobook = this.db.audiobooks.find(ab => dir.startsWith(ab.fullPath))
-  //     if (audiobook) {
-  //       Logger.info(`[Scanner] Path inside audiobook "${audiobook.title}" was deleted: ${dir}`)
-  //       return this.scanAudiobook(audiobook.fullPath)
-  //     }
-
-  //     Logger.warn('[Scanner] Path was deleted but no audiobook found', dir)
-  //     return ScanResult.NOTHING
-  //   }
-
-  //   // Check if this is a subdirectory of an audiobook
-  //   var audiobook = this.db.audiobooks.find((ab) => dir.startsWith(ab.fullPath))
-  //   if (audiobook) {
-  //     Logger.debug(`[Scanner] Check Dir audiobook "${audiobook.title}" found: ${dir}`)
-  //     return this.scanAudiobook(audiobook.fullPath)
-  //   }
-
-  //   // Check if an audiobook is a subdirectory of this dir
-  //   audiobook = this.db.audiobooks.find(ab => ab.fullPath.startsWith(dir))
-  //   if (audiobook) {
-  //     Logger.warn(`[Scanner] Files were added/updated in a root directory of an existing audiobook, ignore files: ${dir}`)
-  //     return ScanResult.NOTHING
-  //   }
-
-  //   // Must be a new audiobook
-  //   Logger.debug(`[Scanner] Check Dir must be a new audiobook: ${dir}`)
-  //   return this.scanAudiobook(dir)
-  // }
-
   async scanFolderUpdates(libraryId, folderId, fileUpdateBookGroup) {
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
@@ -729,56 +694,6 @@ class Scanner {
     Logger.debug(`[Scanner] Finished scanning file changes, results:`, libraryScanResults)
     return libraryScanResults
   }
-
-  // async scanCovers() {
-  //   var audiobooksNeedingCover = this.audiobooks.filter(ab => !ab.cover && ab.author)
-  //   var found = 0
-  //   var notFound = 0
-  //   var failed = 0
-
-  //   for (let i = 0; i < audiobooksNeedingCover.length; i++) {
-  //     var audiobook = audiobooksNeedingCover[i]
-  //     var options = {
-  //       titleDistance: 2,
-  //       authorDistance: 2
-  //     }
-  //     var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
-  //     if (results.length) {
-  //       Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
-  //       var coverUrl = results[0]
-  //       var result = await this.coverController.downloadCoverFromUrl(audiobook, coverUrl)
-  //       if (result.error) {
-  //         failed++
-  //       } else {
-  //         found++
-  //         await this.db.updateAudiobook(audiobook)
-  //         this.emitter('audiobook_updated', audiobook.toJSONMinified())
-  //       }
-  //     } else {
-  //       notFound++
-  //     }
-
-  //     var progress = Math.round(100 * (i + 1) / audiobooksNeedingCover.length)
-  //     this.emitter('scan_progress', {
-  //       scanType: 'covers',
-  //       progress: {
-  //         total: audiobooksNeedingCover.length,
-  //         done: i + 1,
-  //         progress
-  //       }
-  //     })
-
-  //     if (this.cancelScan) {
-  //       this.cancelScan = false
-  //       break
-  //     }
-  //   }
-  //   return {
-  //     found,
-  //     notFound,
-  //     failed
-  //   }
-  // }
 
   async saveMetadata(audiobookId) {
     if (audiobookId) {

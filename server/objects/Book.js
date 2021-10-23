@@ -280,12 +280,12 @@ class Book {
 
     var updatePayload = {}
     MetadataMapArray.forEach((mapping) => {
-      if (!this[mapping.key] && audioFileMetadata[mapping.tag]) {
+      if (audioFileMetadata[mapping.tag]) {
         // Genres can contain multiple
-        if (mapping.key === 'genres') {
+        if (mapping.key === 'genres' && (!this[mapping.key].length || !this[mapping.key])) {
           updatePayload[mapping.key] = this.parseGenresTag(audioFileMetadata[mapping.tag])
           Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
-        } else {
+        } else if (!this[mapping.key]) {
           updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
           Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
         }
