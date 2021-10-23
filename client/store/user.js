@@ -33,6 +33,19 @@ export const getters = {
   },
   getUserCanUpload: (state) => {
     return state.user && state.user.permissions ? !!state.user.permissions.upload : false
+  },
+  getUserCanAccessAllLibraries: (state) => {
+    return state.user && state.user.permissions ? !!state.user.permissions.accessAllLibraries : false
+  },
+  getLibrariesAccessible: (state, getters) => {
+    if (!state.user) return []
+    if (getters.getUserCanAccessAllLibraries) return []
+    return state.user.librariesAccessible || []
+  },
+  getCanAccessLibrary: (state, getters) => (libraryId) => {
+    if (!state.user) return false
+    if (getters.getUserCanAccessAllLibraries) return true
+    return getters.getLibrariesAccessible.includes(libraryId)
   }
 }
 
@@ -60,6 +73,7 @@ export const actions = {
 export const mutations = {
   setUser(state, user) {
     state.user = user
+
     if (user) {
       if (user.token) localStorage.setItem('token', user.token)
     } else {

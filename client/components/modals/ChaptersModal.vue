@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" :width="500" :height="'unset'">
+  <modals-modal v-model="show" name="chapters" :width="500" :height="'unset'">
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <template v-for="chap in chapters">
         <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer hover:bg-bg relative" :class="chap.id === currentChapterId ? 'bg-bg bg-opacity-80' : 'bg-opacity-20'" @click="clickChapter(chap)">

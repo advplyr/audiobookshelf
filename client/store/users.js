@@ -4,7 +4,9 @@ export const state = () => ({
 })
 
 export const getters = {
-
+  getIsUserOnline: state => id => {
+    return state.users.find(u => u.id === id)
+  }
 }
 
 export const actions = {
@@ -12,6 +14,9 @@ export const actions = {
 }
 
 export const mutations = {
+  resetUsers(state) {
+    state.users = []
+  },
   updateUser(state, user) {
     var index = state.users.findIndex(u => u.id === user.id)
     if (index >= 0) {

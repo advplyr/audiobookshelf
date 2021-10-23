@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" :width="800" :height="height" :processing="processing" :content-margin-top="75">
+  <modals-modal v-model="show" name="edit-book" :width="800" :height="height" :processing="processing" :content-margin-top="75">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>

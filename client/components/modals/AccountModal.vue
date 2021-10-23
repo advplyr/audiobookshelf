@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" :width="800" :height="'unset'" :processing="processing">
+  <modals-modal v-model="show" name="account" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
@@ -64,6 +64,19 @@
                 <ui-toggle-switch v-model="newUser.permissions.upload" />
               </div>
             </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
+                <p>Can Access All Libraries</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.accessAllLibraries" @input="accessAllLibrariesToggled" />
+              </div>
+            </div>
+
+            <div v-if="!newUser.permissions.accessAllLibraries" class="my-4">
+              <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" label="Libraries Accessible to User" />
+            </div>
           </div>
 
           <div class="flex pt-4">
@@ -116,12 +129,29 @@ export default {
     },
     isEditingRoot() {
       return this.account && this.account.type === 'root'
+    },
+    libraries() {
+      return this.$store.state.libraries.libraries
+    },
+    libraryItems() {
+      return this.libraries.map((lib) => ({ text: lib.name, value: lib.id }))
     }
   },
   methods: {
+    accessAllLibrariesToggled(val) {
+      if (!val && !this.newUser.librariesAccessible.length) {
+        this.newUser.librariesAccessible = this.libraries.map((l) => l.id)
+      } else if (val && this.newUser.librariesAccessible.length) {
+        this.newUser.librariesAccessible = []
+      }
+    },
     submitForm() {
       if (!this.newUser.username) {
         this.$toast.error('Enter a username')
+        return
+      }
+      if (!this.newUser.permissions.accessAllLibraries && !this.newUser.librariesAccessible.length) {
+        this.$toast.error('Must select at least one library')
         return
       }
 
@@ -139,6 +169,7 @@ export default {
       if (account.type === 'root' && !account.isActive) return
 
       this.processing = true
+      console.log('Calling update', account)
       this.$axios
         .$patch(`/api/user/${this.account.id}`, account)
         .then((data) => {
@@ -146,6 +177,7 @@ export default {
           if (data.error) {
             this.$toast.error(`Failed to update account: ${data.error}`)
           } else {
+            console.log('Account updated', data.user)
             this.$toast.success('Account updated')
             this.show = false
           }
@@ -197,12 +229,14 @@ export default {
     init() {
       this.isNew = !this.account
       if (this.account) {
+        var librariesAccessible = this.account.librariesAccessible || []
         this.newUser = {
           username: this.account.username,
           password: this.account.password,
           type: this.account.type,
           isActive: this.account.isActive,
-          permissions: { ...this.account.permissions }
+          permissions: { ...this.account.permissions },
+          librariesAccessible: [...librariesAccessible]
         }
       } else {
         this.newUser = {
@@ -214,8 +248,10 @@ export default {
             download: true,
             update: false,
             delete: false,
-            upload: false
-          }
+            upload: false,
+            accessAllLibraries: true
+          },
+          librariesAccessible: []
         }
       }
     }

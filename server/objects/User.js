@@ -16,6 +16,7 @@ class User {
 
     this.settings = {}
     this.permissions = {}
+    this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
 
     if (user) {
       this.construct(user)
@@ -36,6 +37,9 @@ class User {
   }
   get canUpload() {
     return !!this.permissions.upload && this.isActive
+  }
+  get canAccessAllLibraries() {
+    return !!this.permissions.accessAllLibraries && this.isActive
   }
   get hasPw() {
     return !!this.pash && !!this.pash.length
@@ -59,7 +63,8 @@ class User {
       download: true,
       update: true,
       delete: this.type === 'root',
-      upload: this.type === 'root' || this.type === 'admin'
+      upload: this.type === 'root' || this.type === 'admin',
+      accessAllLibraries: true
     }
   }
 
@@ -88,7 +93,8 @@ class User {
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
       settings: this.settings,
-      permissions: this.permissions
+      permissions: this.permissions,
+      librariesAccessible: [...this.librariesAccessible]
     }
   }
 
@@ -105,10 +111,12 @@ class User {
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
       settings: this.settings,
-      permissions: this.permissions
+      permissions: this.permissions,
+      librariesAccessible: [...this.librariesAccessible]
     }
   }
 
+  // Data broadcasted
   toJSONForPublic(streams) {
     var stream = this.stream && streams ? streams.find(s => s.id === this.stream) : null
     return {
@@ -144,6 +152,11 @@ class User {
     this.permissions = user.permissions || this.getDefaultUserPermissions()
     // Upload permission added v1.1.13, make sure root user has upload permissions
     if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
+
+    // Library restriction permissions added v1.4.14, defaults to all libraries
+    if (this.permissions.accessAllLibraries === undefined) this.permissions.accessAllLibraries = true
+
+    this.librariesAccessible = (user.librariesAccessible || []).map(l => l)
   }
 
   update(payload) {
@@ -169,6 +182,18 @@ class User {
         }
       }
     }
+    // Update accessible libraries
+    if (payload.librariesAccessible !== undefined) {
+      if (payload.librariesAccessible.length) {
+        if (payload.librariesAccessible.join(',') !== this.librariesAccessible.join(',')) {
+          hasUpdates = true
+          this.librariesAccessible = [...payload.librariesAccessible]
+        }
+      } else if (this.librariesAccessible.length > 0) {
+        hasUpdates = true
+        this.librariesAccessible = []
+      }
+    }
     return hasUpdates
   }
 
@@ -180,13 +205,13 @@ class User {
     this.audiobooks[stream.audiobookId].updateFromStream(stream)
   }
 
-  updateAudiobookProgress(audiobookId, updatePayload) {
+  updateAudiobookProgress(audiobook, updatePayload) {
     if (!this.audiobooks) this.audiobooks = {}
-    if (!this.audiobooks[audiobookId]) {
-      this.audiobooks[audiobookId] = new AudiobookProgress()
-      this.audiobooks[audiobookId].audiobookId = audiobookId
+    if (!this.audiobooks[audiobook.id]) {
+      this.audiobooks[audiobook.id] = new AudiobookProgress()
+      this.audiobooks[audiobook.id].audiobookId = audiobook.id
     }
-    return this.audiobooks[audiobookId].update(updatePayload)
+    return this.audiobooks[audiobook.id].update(updatePayload)
   }
 
   // Returns Boolean If update was made
@@ -215,11 +240,11 @@ class User {
     return madeUpdates
   }
 
-  resetAudiobookProgress(audiobookId) {
-    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+  resetAudiobookProgress(audiobook) {
+    if (!this.audiobooks || !this.audiobooks[audiobook.id]) {
       return false
     }
-    return this.updateAudiobookProgress(audiobookId, {
+    return this.updateAudiobookProgress(audiobook, {
       progress: 0,
       currentTime: 0,
       isRead: false,
@@ -235,6 +260,12 @@ class User {
     }
     delete this.audiobooks[audiobookId]
     return true
+  }
+
+  checkCanAccessLibrary(libraryId) {
+    if (this.permissions.accessAllLibraries) return true
+    if (!this.librariesAccessible) return false
+    return this.librariesAccessible.includes(libraryId)
   }
 }
 module.exports = User

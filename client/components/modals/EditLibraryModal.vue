@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" :width="700" :height="'unset'" :processing="processing">
+  <modals-modal v-model="show" name="edit-library" :width="700" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>

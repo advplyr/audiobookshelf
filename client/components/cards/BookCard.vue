@@ -164,11 +164,14 @@ export default {
     showError() {
       return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isIncomplete
     },
+    isStreaming() {
+      return this.$store.getters['getAudiobookIdStreaming'] === this.audiobookId
+    },
     showReadButton() {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isIncomplete && this.hasTracks
+      return !this.isSelectionMode && !this.isMissing && !this.isIncomplete && this.hasTracks && !this.isStreaming
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook

@@ -61,7 +61,11 @@ export default {
   },
   methods: {
     logout() {
-      this.$axios.$post('/logout').catch((error) => {
+      var rootSocket = this.$root.socket || {}
+      const logoutPayload = {
+        socketId: rootSocket.id
+      }
+      this.$axios.$post('/logout', logoutPayload).catch((error) => {
         console.error(error)
       })
       if (localStorage.getItem('token')) {

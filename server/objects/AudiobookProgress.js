@@ -1,7 +1,8 @@
 class AudiobookProgress {
   constructor(progress) {
     this.audiobookId = null
-    this.audiobookTitle = null
+
+    this.id = null
     this.totalDuration = null // seconds
     this.progress = null // 0 to 1
     this.currentTime = null // seconds
@@ -18,7 +19,6 @@ class AudiobookProgress {
   toJSON() {
     return {
       audiobookId: this.audiobookId,
-      audiobookTitle: this.audiobookTitle,
       totalDuration: this.totalDuration,
       progress: this.progress,
       currentTime: this.currentTime,
@@ -31,7 +31,6 @@ class AudiobookProgress {
 
   construct(progress) {
     this.audiobookId = progress.audiobookId
-    this.audiobookTitle = progress.audiobookTitle || null
     this.totalDuration = progress.totalDuration
     this.progress = progress.progress
     this.currentTime = progress.currentTime
@@ -43,7 +42,6 @@ class AudiobookProgress {
 
   updateFromStream(stream) {
     this.audiobookId = stream.audiobookId
-    this.audiobookTitle = stream.audiobookTitle
     this.totalDuration = stream.totalDuration
     this.progress = stream.clientProgress
     this.currentTime = stream.clientCurrentTime
@@ -88,6 +86,9 @@ class AudiobookProgress {
     }
     if (!this.startedAt) {
       this.startedAt = Date.now()
+    }
+    if (hasUpdates) {
+      this.lastUpdate = Date.now()
     }
     return hasUpdates
   }

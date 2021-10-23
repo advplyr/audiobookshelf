@@ -5,8 +5,10 @@ const fs = require('fs-extra')
 const Path = require('path')
 
 class StreamManager {
-  constructor(db, MetadataPath) {
+  constructor(db, MetadataPath, emitter) {
     this.db = db
+
+    this.emitter = emitter
 
     this.MetadataPath = MetadataPath
     this.streams = []
@@ -112,7 +114,7 @@ class StreamManager {
     var stream = await this.openStream(client, audiobook)
     this.db.updateUserStream(client.user.id, stream.id)
 
-    socket.broadcast.emit('user_stream_update', client.user.toJSONForPublic(this.streams))
+    this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   async closeStreamRequest(socket) {
@@ -129,24 +131,7 @@ class StreamManager {
     client.stream = null
     this.db.updateUserStream(client.user.id, null)
 
-    socket.broadcast.emit('user_stream_update', client.user.toJSONForPublic(this.streams))
-  }
-
-  async openTestStream(StreamsPath, audiobookId) {
-    Logger.info('Open Stream Test Request', audiobookId)
-    // var audiobook = this.audiobooks.find(ab => ab.id === audiobookId)
-    // var stream = new StreamTest(StreamsPath, audiobook)
-
-    // stream.on('closed', () => {
-    //   console.log('Stream closed')
-    // })
-
-    // var playlistUri = await stream.generatePlaylist()
-    // stream.start()
-
-    // Logger.info('Stream Playlist', playlistUri)
-    // Logger.info('Test Stream Opened for audiobook', audiobook.title, 'with streamId', stream.id)
-    // return playlistUri
+    this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   streamUpdate(socket, { currentTime, streamId }) {

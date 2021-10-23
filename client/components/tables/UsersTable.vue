@@ -17,17 +17,11 @@
           <th class="w-32">Created</th>
           <th class="w-32"></th>
         </tr>
-        <tr v-for="user in users" :key="user.id" :class="user.isActive ? '' : 'bg-error bg-opacity-20'">
+        <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : 'bg-error bg-opacity-20'" @click="$router.push(`/config/users/${user.id}`)">
           <td>
             <div class="flex items-center">
-              <span v-if="usersOnline[user.id]" class="w-3 h-3 text-sm mr-2 text-success animate-pulse"
-                ><svg viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg
-              ></span>
-              <svg v-else class="w-3 h-3 mr-2 text-white text-opacity-20" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
-              </svg>
-              {{ user.username }} <span v-show="$isDev" class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
+              <widgets-online-indicator :value="!!usersOnline[user.id]" />
+              <span class="pl-2">{{ user.username }}</span> <span v-show="$isDev" class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
             </div>
           </td>
           <td class="text-sm">{{ user.type }}</td>
@@ -49,10 +43,15 @@
               {{ $formatDate(user.createdAt, 'MMM d, yyyy') }}
             </ui-tooltip>
           </td>
-          <td>
+          <td class="py-0">
             <div class="w-full flex justify-center">
-              <span class="material-icons hover:text-gray-400 cursor-pointer text-base pr-2" @click="editUser(user)">edit</span>
-              <span v-show="user.type !== 'root'" class="material-icons text-base hover:text-error cursor-pointer" @click="deleteUserClick(user)">delete</span>
+              <!-- <span class="material-icons hover:text-gray-400 cursor-pointer text-base pr-2" @click.stop="editUser(user)">edit</span> -->
+              <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-opacity-100 cursor-pointer" @click.stop="editUser(user)">
+                <span class="material-icons text-base">edit</span>
+              </div>
+              <div v-show="user.type !== 'root'" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="deleteUserClick(user)">
+                <span class="material-icons text-base">delete</span>
+              </div>
             </div>
           </td>
         </tr>
@@ -81,21 +80,8 @@ export default {
       return this.$store.state.streamAudiobook
     },
     usersOnline() {
-      var _users = this.$store.state.users.users
-
-      var currUserStream = null
-      if (this.userStream) {
-        currUserStream = {
-          audiobook: this.userStream
-        }
-      }
-      var usermap = {
-        [this.currentUserId]: {
-          online: true,
-          stream: currUserStream
-        }
-      }
-      _users.forEach((u) => (usermap[u.id] = { online: true, stream: u.stream }))
+      var usermap = {}
+      this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, stream: u.stream }))
       return usermap
     }
   },
@@ -104,7 +90,9 @@ export default {
       var abs = Object.values(audiobooks)
       if (abs.length) {
         abs = abs.sort((a, b) => a.lastUpdate - b.lastUpdate)
-        return abs[0] && abs[0].audiobookTitle ? abs[0].audiobookTitle : null
+        // Book object is attached on request
+        if (abs[0].book) return abs[0].book.title
+        return abs[0].audiobookTitle ? abs[0].audiobookTitle : null
       }
       return null
     },
@@ -141,7 +129,9 @@ export default {
       this.$axios
         .$get('/api/users')
         .then((users) => {
-          this.users = users
+          this.users = users.sort((a, b) => {
+            return a.createdAt - b.createdAt
+          })
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -192,14 +182,19 @@ export default {
 #accounts {
   table-layout: fixed;
   border-collapse: collapse;
+  border: 1px solid #474747;
   width: 100%;
 }
 
 #accounts td,
 #accounts th {
-  border: 1px solid #2e2e2e;
+  /* border: 1px solid #2e2e2e; */
   padding: 8px 8px;
   text-align: left;
+}
+
+#accounts td.py-0 {
+  padding: 0px 8px;
 }
 
 #accounts tr:nth-child(even) {

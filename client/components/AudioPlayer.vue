@@ -15,7 +15,7 @@
       </div>
 
       <div class="absolute right-32 top-0 bottom-0">
-        <controls-volume-control v-model="volume" @input="updateVolume" />
+        <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
       </div>
       <div class="flex my-2">
         <div class="flex-grow" />
@@ -496,14 +496,39 @@ export default {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
         this.updatePlaybackRate(settings.playbackRate)
       }
+    },
+    volumeUp() {
+      if (this.volume >= 1) return
+      this.volume = Math.min(1, this.volume + 0.1)
+      this.updateVolume(this.volume)
+    },
+    volumeDown() {
+      if (this.volume <= 0) return
+      this.volume = Math.max(0, this.volume - 0.1)
+      this.updateVolume(this.volume)
+    },
+    toggleMute() {
+      if (this.$refs.volumeControl && this.$refs.volumeControl.toggleMute) {
+        this.$refs.volumeControl.toggleMute()
+      }
+    },
+    hotkey(keyCode) {
+      if (keyCode === this.$hotkeys.PLAY_PAUSE) this.playPauseClick()
+      else if (keyCode === this.$hotkeys.JUMP_FORWARD) this.forward10()
+      else if (keyCode === this.$hotkeys.JUMP_BACKWARD) this.backward10()
+      else if (keyCode === this.$hotkeys.VOLUME_UP) this.volumeUp()
+      else if (keyCode === this.$hotkeys.VOLUME_DOWN) this.volumeDown()
+      else if (keyCode === this.$hotkeys.MUTE) this.toggleMute()
     }
   },
   mounted() {
     this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
     this.init()
+    this.$eventBus.$on('player-hotkey', this.hotkey)
   },
   beforeDestroy() {
     this.$store.commit('user/removeSettingsListener', 'audioplayer')
+    this.$eventBus.$off('player-hotkey', this.hotkey)
   }
 }
 </script>

@@ -114,6 +114,9 @@ export default {
         this.volume = this.lastValue || 0.5
       }
     },
+    toggleMute() {
+      this.clickVolumeIcon()
+    },
     clickVolumeTrack(e) {
       var vol = e.offsetX / this.trackWidth
       vol = Math.min(Math.max(vol, 0), 1)

@@ -5,10 +5,9 @@
     <Nuxt />
 
     <app-stream-container ref="streamContainer" />
-    <modals-libraries-modal />
+
     <modals-edit-modal />
     <readers-reader />
-    <!-- <widgets-scan-alert /> -->
   </div>
 </template>
 
@@ -75,6 +74,12 @@ export default {
       }
       if (payload.backups && payload.backups.length) {
         this.$store.commit('setBackups', payload.backups)
+      }
+      if (payload.usersOnline) {
+        this.$store.commit('users/resetUsers')
+        payload.usersOnline.forEach((user) => {
+          this.$store.commit('users/updateUser', user)
+        })
       }
     },
     streamOpen(stream) {
@@ -320,9 +325,38 @@ export default {
       } else {
         console.warn(`Update is available but user chose to dismiss it! v${versionData.latestVersion}`)
       }
+    },
+    checkActiveElementIsInput() {
+      var activeElement = document.activeElement
+      var inputs = ['input', 'select', 'button', 'textarea']
+      return activeElement && inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1
+    },
+    keyUp(e) {
+      if (!this.$store.state.showExperimentalFeatures) {
+        return
+      }
+      var keyCode = e.keyCode || e.which
+
+      // If an input is focused then ignore key press
+      if (this.checkActiveElementIsInput()) {
+        return
+      }
+
+      // Modal is open ignore key press
+      if (this.$store.state.openModal) {
+        // console.log('Modal is open', this.$store.state.openModal)
+        return
+      }
+
+      // Playing audiobook
+      if (this.$store.state.streamAudiobook) {
+        this.$eventBus.$emit('player-hotkey', keyCode)
+      }
     }
   },
   mounted() {
+    document.addEventListener('keyup', this.keyUp)
+
     this.initializeSocket()
     this.$store.dispatch('libraries/load')
 
@@ -343,6 +377,9 @@ export default {
       this.$toast.error(this.$route.query.error)
       this.$router.replace(this.$route.path)
     }
+  },
+  beforeDestroy() {
+    document.removeEventListener('keyup', this.keyUp)
   }
 }
 </script>

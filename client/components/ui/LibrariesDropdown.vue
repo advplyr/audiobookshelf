@@ -1,6 +1,6 @@
 <template>
   <div v-if="currentLibrary" class="relative w-36 h-8" v-click-outside="clickOutside">
-    <button type="button" :disabled="disabled" class="relative h-full w-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm pl-3 pr-10 text-left focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="relative h-full w-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <widgets-library-icon :icon="currentLibraryIcon" class="mr-2" />
         <span class="block truncate text-sm">{{ currentLibrary.name }}</span>
@@ -9,7 +9,7 @@
 
     <transition name="menu">
       <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox">
-        <template v-for="library in libraries">
+        <template v-for="library in librariesFiltered">
           <li :key="library.id" class="text-gray-100 select-none relative py-2 cursor-pointer hover:bg-black-400" id="listbox-option-0" role="option" @click="selectLibrary(library)">
             <div class="flex items-center px-3">
               <widgets-library-icon :icon="currentLibraryIcon" class="mr-2" />
@@ -43,8 +43,17 @@ export default {
     libraries() {
       return this.$store.getters['libraries/getSortedLibraries']()
     },
-    libraryItems() {
-      return this.libraries.map((lib) => ({ value: lib.id, text: lib.name }))
+    canUserAccessAllLibraries() {
+      return this.$store.getters['user/getUserCanAccessAllLibraries']
+    },
+    userLibrariesAccessible() {
+      return this.$store.getters['user/getLibrariesAccessible']
+    },
+    librariesFiltered() {
+      if (this.canUserAccessAllLibraries) return this.libraries
+      return this.libraries.filter((lib) => {
+        return this.userLibrariesAccessible.includes(lib.id)
+      })
     }
   },
   methods: {

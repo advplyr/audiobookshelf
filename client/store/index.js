@@ -18,14 +18,18 @@ export const state = () => ({
   routeHistory: [],
   showExperimentalFeatures: false,
   backups: [],
-  bookshelfBookIds: []
+  bookshelfBookIds: [],
+  openModal: null
 })
 
 export const getters = {
   getIsAudiobookSelected: state => audiobookId => {
     return !!state.selectedAudiobooks.includes(audiobookId)
   },
-  getNumAudiobooksSelected: state => state.selectedAudiobooks.length
+  getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
+  getAudiobookIdStreaming: state => {
+    return state.streamAudiobook ? state.streamAudiobook.id : null
+  }
 }
 
 export const actions = {
@@ -155,5 +159,8 @@ export const mutations = {
   },
   setBackups(state, val) {
     state.backups = val.sort((a, b) => b.createdAt - a.createdAt)
+  },
+  setOpenModal(state, val) {
+    state.openModal = val
   }
 }

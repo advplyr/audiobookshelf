@@ -2,7 +2,7 @@
   <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 flex items-center justify-center z-40 opacity-0">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
 
-    <div class="absolute top-5 right-5 h-12 w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300" @click="show = false">
+    <div class="absolute top-5 right-5 h-12 w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300" @click="clickClose">
       <span class="material-icons text-4xl">close</span>
     </div>
     <slot name="outer" />
@@ -18,6 +18,7 @@
 <script>
 export default {
   props: {
+    name: String,
     value: Boolean,
     processing: Boolean,
     persistent: {
@@ -73,6 +74,9 @@ export default {
     }
   },
   methods: {
+    clickClose() {
+      this.show = false
+    },
     clickBg(vm, ev) {
       if (this.processing && this.persistent) return
       if (vm.srcElement.classList.contains('modal-bg')) {
@@ -85,11 +89,15 @@ export default {
         this.content.style.transform = 'scale(1)'
       }, 10)
       document.documentElement.classList.add('modal-open')
+
+      this.$store.commit('setOpenModal', this.name)
     },
     setHide() {
       this.content.style.transform = 'scale(0)'
       this.el.remove()
       document.documentElement.classList.remove('modal-open')
+
+      this.$store.commit('setOpenModal', null)
     }
   },
   mounted() {

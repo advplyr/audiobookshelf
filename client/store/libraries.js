@@ -3,7 +3,6 @@ export const state = () => ({
   lastLoad: 0,
   listeners: [],
   currentLibraryId: 'main',
-  showModal: false,
   folders: [],
   folderLastUpdate: 0
 })
@@ -42,9 +41,15 @@ export const actions = {
         return []
       })
   },
-  fetch({ state, commit, rootState }, libraryId) {
+  fetch({ state, commit, rootState, rootGetters }, libraryId) {
     if (!rootState.user || !rootState.user.user) {
       console.error('libraries/fetch - User not set')
+      return false
+    }
+
+    var canUserAccessLibrary = rootGetters['user/getCanAccessLibrary'](libraryId)
+    if (!canUserAccessLibrary) {
+      console.warn('Access not allowed to library')
       return false
     }
 
@@ -101,9 +106,6 @@ export const mutations = {
   },
   setFoldersLastUpdate(state) {
     state.folderLastUpdate = Date.now()
-  },
-  setShowModal(state, val) {
-    state.showModal = val
   },
   setLastLoad(state) {
     state.lastLoad = Date.now()

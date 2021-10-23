@@ -46,7 +46,7 @@ class Server {
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
-    this.streamManager = new StreamManager(this.db, this.MetadataPath)
+    this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
@@ -57,8 +57,6 @@ class Server {
     this.io = null
 
     this.clients = {}
-
-    this.isScanningCovers = false
   }
 
   get audiobooks() {
@@ -69,6 +67,11 @@ class Server {
   }
   get serverSettings() {
     return this.db.serverSettings
+  }
+  get usersOnline() {
+    return Object.values(this.clients).filter(c => c.user).map(client => {
+      return client.user.toJSONForPublic(this.streamManager.streams)
+    })
   }
 
   getClientsForUser(userId) {
@@ -83,6 +86,7 @@ class Server {
   clientEmitter(userId, ev, data) {
     var clients = this.getClientsForUser(userId)
     if (!clients.length) {
+      console.log('clients', clients)
       return Logger.error(`[Server] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
@@ -193,7 +197,7 @@ class Server {
     var loginRateLimiter = this.getLoginRateLimiter()
     app.post('/login', loginRateLimiter, (req, res) => this.auth.login(req, res))
 
-    app.post('/logout', this.logout.bind(this))
+    app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
 
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
@@ -203,10 +207,6 @@ class Server {
     // Used in development to set-up streams without authentication
     if (process.env.NODE_ENV !== 'production') {
       app.use('/test-hls', this.hlsController.router)
-      app.get('/test-stream/:id', async (req, res) => {
-        var uri = await this.streamManager.openTestStream(this.MetadataPath, req.params.id)
-        res.send(uri)
-      })
       app.get('/catalog.json', (req, res) => {
         Logger.error('Catalog request made', req.headers)
         res.json()
@@ -269,15 +269,16 @@ class Server {
 
         var _client = this.clients[socket.id]
         if (!_client) {
-          Logger.warn('[SOCKET] Socket disconnect, no client ' + socket.id)
+          Logger.warn('[Server] Socket disconnect, no client ' + socket.id)
         } else if (!_client.user) {
-          Logger.info('[SOCKET] Unauth socket disconnected ' + socket.id)
+          Logger.info('[Server] Unauth socket disconnected ' + socket.id)
           delete this.clients[socket.id]
         } else {
-          socket.broadcast.emit('user_offline', _client.user.toJSONForPublic(this.streamManager.streams))
+          Logger.debug('[Server] User Offline ' + _client.user.username)
+          this.io.emit('user_offline', _client.user.toJSONForPublic(this.streamManager.streams))
 
           const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[SOCKET] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
+          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
           delete this.clients[socket.id]
         }
       })
@@ -426,6 +427,27 @@ class Server {
   }
 
   logout(req, res) {
+    var { socketId } = req.body
+    Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
+
+    // Strip user and client from client and client socket
+    if (socketId && this.clients[socketId]) {
+      var client = this.clients[socketId]
+      var clientSocket = client.socket
+      Logger.debug(`[Server] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
+
+      if (client.user) {
+        Logger.debug('[Server] User Offline ' + client.user.username)
+        this.io.emit('user_offline', client.user.toJSONForPublic(null))
+      }
+
+      delete this.clients[socketId].user
+      delete this.clients[socketId].stream
+      if (clientSocket && clientSocket.sheepClient) delete this.clients[socketId].socket.sheepClient
+    } else if (socketId) {
+      Logger.warn(`[Server] No client for socket ${socketId}`)
+    }
+
     res.sendStatus(200)
   }
 
@@ -444,6 +466,11 @@ class Server {
       return socket.emit('invalid_token')
     }
     var client = this.clients[socket.id]
+
+    if (client.user !== undefined) {
+      Logger.debug(`[Server] Authenticating socket client already has user`, client.user)
+    }
+
     client.user = user
 
     if (!client.user.toJSONForBrowser) {
@@ -462,7 +489,8 @@ class Server {
       }
     }
 
-    socket.broadcast.emit('user_online', client.user.toJSONForPublic(this.streamManager.streams))
+    Logger.debug(`[Server] User Online ${client.user.username}`)
+    this.io.emit('user_online', client.user.toJSONForPublic(this.streamManager.streams))
 
     user.lastSeen = Date.now()
     await this.db.updateEntity('user', user)
@@ -476,6 +504,9 @@ class Server {
       stream: client.stream || null,
       librariesScanning: this.scanner.librariesScanning,
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
+    }
+    if (user.type === 'root') {
+      initialPayload.usersOnline = this.usersOnline
     }
     client.socket.emit('init', initialPayload)
 

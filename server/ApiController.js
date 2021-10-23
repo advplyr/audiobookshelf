@@ -63,6 +63,7 @@ class ApiController {
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
     this.router.get('/users', this.getUsers.bind(this))
     this.router.post('/user', this.createUser.bind(this))
+    this.router.get('/user/:id', this.getUser.bind(this))
     this.router.patch('/user/:id', this.updateUser.bind(this))
     this.router.delete('/user/:id', this.deleteUser.bind(this))
 
@@ -314,8 +315,17 @@ class ApiController {
   }
 
   getAudiobook(req, res) {
+    if (!req.user) {
+      return res.sendStatus(403)
+    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
+
+    // Check user can access this audiobooks library
+    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
+      return res.sendStatus(403)
+    }
+
     res.json(audiobook.toJSONExpanded())
   }
 
@@ -522,20 +532,23 @@ class ApiController {
     res.sendStatus(200)
   }
 
-  getUsers(req, res) {
-    if (req.user.type !== 'root') return res.sendStatus(403)
-    return res.json(this.db.users.map(u => u.toJSONForBrowser()))
-  }
-
   async resetUserAudiobookProgress(req, res) {
-    req.user.resetAudiobookProgress(req.params.id)
+    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
+    if (!audiobook) {
+      return res.status(404).send('Audiobook not found')
+    }
+    req.user.resetAudiobookProgress(audiobook)
     await this.db.updateEntity('user', req.user)
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }
 
   async updateUserAudiobookProgress(req, res) {
-    var wasUpdated = req.user.updateAudiobookProgress(req.params.id, req.body)
+    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
+    if (!audiobook) {
+      return res.status(404).send('Audiobook not found')
+    }
+    var wasUpdated = req.user.updateAudiobookProgress(audiobook, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -551,8 +564,11 @@ class ApiController {
 
     var shouldUpdate = false
     abProgresses.forEach((progress) => {
-      var wasUpdated = req.user.updateAudiobookProgress(progress.audiobookId, progress)
-      if (wasUpdated) shouldUpdate = true
+      var audiobook = this.db.audiobooks.find(ab => ab.id === progress.audiobookId)
+      if (audiobook) {
+        var wasUpdated = req.user.updateAudiobookProgress(audiobook, progress)
+        if (wasUpdated) shouldUpdate = true
+      }
     })
 
     if (shouldUpdate) {
@@ -591,6 +607,30 @@ class ApiController {
     })
   }
 
+  userJsonWithBookProgressDetails(user) {
+    var json = user.toJSONForBrowser()
+
+    // User audiobook progress attach book details
+    if (json.audiobooks && Object.keys(json.audiobooks).length) {
+      for (const audiobookId in json.audiobooks) {
+        var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
+        if (!audiobook) {
+          Logger.error('[ApiController] Audiobook not found for users progress ' + audiobookId)
+        } else {
+          json.audiobooks[audiobookId].book = audiobook.book.toJSON()
+        }
+      }
+    }
+
+    return json
+  }
+
+  getUsers(req, res) {
+    if (req.user.type !== 'root') return res.sendStatus(403)
+    var users = this.db.users.map(u => this.userJsonWithBookProgressDetails(u))
+    res.json(users)
+  }
+
   async createUser(req, res) {
     if (!req.user.isRoot) {
       Logger.warn('Non-root user attempted to create user', req.user)
@@ -619,6 +659,20 @@ class ApiController {
     } else {
       return res.status(500).send('Failed to save new user')
     }
+  }
+
+  async getUser(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error('User other than root attempting to get user', req.user)
+      return res.sendStatus(403)
+    }
+
+    var user = this.db.users.find(u => u.id === req.params.id)
+    if (!user) {
+      return res.sendStatus(404)
+    }
+
+    res.json(this.userJsonWithBookProgressDetails(user))
   }
 
   async updateUser(req, res) {

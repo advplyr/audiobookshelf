@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import { formatDistance, format } from 'date-fns'
 
+Vue.prototype.$eventBus = new Vue()
+
 Vue.prototype.$isDev = process.env.NODE_ENV !== 'production'
 
 Vue.prototype.$dateDistanceFromNow = (unixms) => {

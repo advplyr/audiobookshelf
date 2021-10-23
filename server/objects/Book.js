@@ -235,6 +235,17 @@ class Book {
     }
   }
 
+  parseGenresTag(genreTag) {
+    if (!genreTag || !genreTag.length) return []
+    var separators = ['/', '//', ';']
+    for (let i = 0; i < separators.length; i++) {
+      if (genreTag.includes(separators[i])) {
+        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
+      }
+    }
+    return [genreTag]
+  }
+
   setDetailsFromFileMetadata(audioFileMetadata) {
     const MetadataMapArray = [
       {
@@ -260,14 +271,24 @@ class Book {
       {
         tag: 'tagArtist',
         key: 'author'
+      },
+      {
+        tag: 'tagGenre',
+        key: 'genres'
       }
     ]
 
     var updatePayload = {}
     MetadataMapArray.forEach((mapping) => {
       if (!this[mapping.key] && audioFileMetadata[mapping.tag]) {
-        updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
-        Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+        // Genres can contain multiple
+        if (mapping.key === 'genres') {
+          updatePayload[mapping.key] = this.parseGenresTag(audioFileMetadata[mapping.tag])
+          Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
+        } else {
+          updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
+          Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+        }
       }
     })
 

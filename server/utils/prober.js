@@ -169,7 +169,6 @@ function parseTags(format, verbose) {
     file_tag_seriespart: tryGrabTag(format, 'series-part'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
-    file_tag_genre: tryGrabTags(format, 'genre', 'genre')
   }
   for (const key in tags) {
     if (!tags[key]) {
