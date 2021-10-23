@@ -451,7 +451,8 @@ export default {
       })
     },
     showChapters() {
-      this.showChaptersModal = true
+      if (!this.chapters.length) return
+      this.showChaptersModal = !this.showChaptersModal
     },
     play() {
       if (!this.$refs.audio) {
@@ -486,6 +487,9 @@ export default {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
 
       this.audioEl = this.$refs.audio
+      this.setTrackWidth()
+    },
+    setTrackWidth() {
       if (this.$refs.track) {
         this.trackWidth = this.$refs.track.clientWidth
       } else {
@@ -512,21 +516,48 @@ export default {
         this.$refs.volumeControl.toggleMute()
       }
     },
-    hotkey(keyCode) {
-      if (keyCode === this.$hotkeys.PLAY_PAUSE) this.playPauseClick()
-      else if (keyCode === this.$hotkeys.JUMP_FORWARD) this.forward10()
-      else if (keyCode === this.$hotkeys.JUMP_BACKWARD) this.backward10()
-      else if (keyCode === this.$hotkeys.VOLUME_UP) this.volumeUp()
-      else if (keyCode === this.$hotkeys.VOLUME_DOWN) this.volumeDown()
-      else if (keyCode === this.$hotkeys.MUTE) this.toggleMute()
+    increasePlaybackRate() {
+      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
+      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
+      if (currentRateIndex >= rates.length - 1) return
+      this.playbackRate = rates[currentRateIndex + 1] || 1
+      this.playbackRateChanged(this.playbackRate)
+    },
+    decreasePlaybackRate() {
+      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
+      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
+      if (currentRateIndex <= 0) return
+      this.playbackRate = rates[currentRateIndex - 1] || 1
+      this.playbackRateChanged(this.playbackRate)
+    },
+    closePlayer() {
+      if (this.loading) return
+      this.$emit('close')
+    },
+    hotkey(action) {
+      if (action === 'Space') this.playPauseClick()
+      else if (action === 'ArrowRight') this.forward10()
+      else if (action === 'ArrowLeft') this.backward10()
+      else if (action === 'ArrowUp') this.volumeUp()
+      else if (action === 'ArrowDown') this.volumeDown()
+      else if (action === 'KeyM') this.toggleMute()
+      else if (action === 'KeyL') this.showChapters()
+      else if (action === 'Shift-ArrowUp') this.increasePlaybackRate()
+      else if (action === 'Shift-ArrowDown') this.decreasePlaybackRate()
+      else if (action === 'Escape') this.closePlayer()
+    },
+    windowResize() {
+      this.setTrackWidth()
     }
   },
   mounted() {
+    window.addEventListener('resize', this.windowResize)
     this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
     this.init()
     this.$eventBus.$on('player-hotkey', this.hotkey)
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.windowResize)
     this.$store.commit('user/removeSettingsListener', 'audioplayer')
     this.$eventBus.$off('player-hotkey', this.hotkey)
   }

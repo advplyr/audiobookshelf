@@ -102,11 +102,17 @@ export default {
       this.libraryCopies = this.libraries.map((lib) => {
         return { ...lib }
       })
+    },
+    librariesUpdated() {
+      this.init()
     }
   },
   mounted() {
+    this.$store.commit('libraries/addListener', { id: 'libraries-table', meth: this.librariesUpdated })
     this.init()
   },
-  beforeDestroy() {}
+  beforeDestroy() {
+    this.$store.commit('libraries/removeListener', 'libraries-table')
+  }
 }
 </script>

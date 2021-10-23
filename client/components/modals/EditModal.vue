@@ -93,6 +93,9 @@ export default {
           this.fetchOnShow = false
           this.audiobook = null
           this.init()
+          this.registerListeners()
+        } else {
+          this.unregisterListeners()
         }
       }
     }
@@ -179,7 +182,8 @@ export default {
       }
     },
     goNextBook() {
-      if (this.currentBookshelfIndex >= this.bookshelfBookIds.length) return
+      if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
+
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
       var nextBook = this.$store.getters['audiobooks/getAudiobook'](nextBookId)
       if (nextBook) {
@@ -212,9 +216,25 @@ export default {
         this.processing = false
         this.show = false
       }
+    },
+    hotkey(action) {
+      if (action === 'ArrowRight') {
+        this.goNextBook()
+      } else if (action === 'ArrowLeft') {
+        this.goPrevBook()
+      }
+    },
+    registerListeners() {
+      this.$eventBus.$on('modal-hotkey', this.hotkey)
+    },
+    unregisterListeners() {
+      this.$eventBus.$off('modal-hotkey', this.hotkey)
     }
   },
-  mounted() {}
+  mounted() {},
+  beforeDestroy() {
+    this.unregisterListeners()
+  }
 }
 </script>
 

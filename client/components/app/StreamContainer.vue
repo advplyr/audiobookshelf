@@ -14,7 +14,7 @@
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" @close="cancelStream" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
   </div>
 </template>
 

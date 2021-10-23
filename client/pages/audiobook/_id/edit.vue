@@ -10,9 +10,18 @@
       </div>
       <div class="w-full flex items-center text-sm py-4 bg-primary border-l border-r border-t border-gray-600">
         <div class="font-book text-center px-4 w-12">New</div>
-        <div class="font-book text-center px-4 w-12">Old</div>
-        <div class="font-book text-center px-4 w-32">Track Parsed from Filename</div>
-        <div class="font-book text-center px-4 w-32">Track From Metadata</div>
+        <div class="font-book text-center px-4 w-24 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByCurrent" @mousedown.prevent>
+          <span class="text-white">Current</span>
+          <span class="material-icons ml-1" :class="currentSort === 'current' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'current' ? 'expand_more' : 'unfold_more' }}</span>
+        </div>
+        <div class="font-book text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByFilenameTrack" @mousedown.prevent>
+          <span class="text-white">Track From Filename</span>
+          <span class="material-icons ml-1" :class="currentSort === 'filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'filename' ? 'expand_more' : 'unfold_more' }}</span>
+        </div>
+        <div class="font-book text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByMetadataTrack" @mousedown.prevent>
+          <span class="text-white">Track From Metadata</span>
+          <span class="material-icons ml-1" :class="currentSort === 'metadata' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'metadata' ? 'expand_more' : 'unfold_more' }}</span>
+        </div>
         <div class="font-book truncate px-4 flex-grow">Filename</div>
 
         <div class="font-mono w-20 text-center">Size</div>
@@ -21,13 +30,13 @@
         <div class="font-mono w-56">Notes</div>
         <div class="font-book w-40">Include in Tracklist</div>
       </div>
-      <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false">
+      <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
         <transition-group type="transition" :name="!drag ? 'flip-list' : null">
           <li v-for="(audio, index) in files" :key="audio.path" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center">
             <div class="font-book text-center px-4 py-1 w-12">
               {{ audio.include ? index - numExcluded + 1 : -1 }}
             </div>
-            <div class="font-book text-center px-4 w-12">{{ audio.index }}</div>
+            <div class="font-book text-center px-4 w-24">{{ audio.index }}</div>
             <div class="font-book text-center px-2 w-32">
               {{ audio.trackNumFromFilename }}
             </div>
@@ -121,7 +130,8 @@ export default {
       },
       saving: false,
       checkingTrackNumbers: false,
-      trackNumData: []
+      trackNumData: [],
+      currentSort: 'current'
     }
   },
   computed: {
@@ -204,12 +214,35 @@ export default {
     }
   },
   methods: {
+    draggableUpdate(e) {
+      this.currentSort = ''
+    },
+    sortByCurrent() {
+      this.files.sort((a, b) => {
+        if (a.index === null) return 1
+        return a.index - b.index
+      })
+      this.currentSort = 'current'
+    },
+    sortByMetadataTrack() {
+      this.files.sort((a, b) => {
+        if (a.trackNumFromMeta === null) return 1
+        return a.trackNumFromMeta - b.trackNumFromMeta
+      })
+      this.currentSort = 'metadata'
+    },
+    sortByFilenameTrack() {
+      this.files.sort((a, b) => {
+        if (a.trackNumFromFilename === null) return 1
+        return a.trackNumFromFilename - b.trackNumFromFilename
+      })
+      this.currentSort = 'filename'
+    },
     checkTrackNumbers() {
       this.checkingTrackNumbers = true
       this.$axios
         .$get(`/api/scantracks/${this.audiobookId}`)
         .then((res) => {
-          console.log('RES', res)
           this.trackNumData = res
           this.checkingTrackNumbers = false
         })

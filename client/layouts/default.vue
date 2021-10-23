@@ -332,25 +332,49 @@ export default {
       return activeElement && inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1
     },
     keyUp(e) {
-      if (!this.$store.state.showExperimentalFeatures) {
+      var keyCode = e.keyCode || e.which
+      if (!this.$keynames[keyCode]) {
+        // Unused hotkey
         return
       }
-      var keyCode = e.keyCode || e.which
 
-      // If an input is focused then ignore key press
+      var keyName = this.$keynames[keyCode]
+      var name = keyName
+      if (e.shiftKey) name = 'Shift-' + keyName
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Hotkey command', name)
+      }
+
+      // Input is focused then ignore key press
       if (this.checkActiveElementIsInput()) {
         return
       }
 
-      // Modal is open ignore key press
+      // Modal is open
       if (this.$store.state.openModal) {
-        // console.log('Modal is open', this.$store.state.openModal)
+        this.$eventBus.$emit('modal-hotkey', name)
+        return
+      }
+
+      // EReader is open
+      if (this.$store.state.showEReader) {
+        this.$eventBus.$emit('reader-hotkey', name)
+        return
+      }
+
+      // Batch selecting
+      if (this.$store.getters['getNumAudiobooksSelected']) {
+        // ESCAPE key cancels batch selection
+        if (name === 'Escape') {
+          this.$store.commit('setSelectedAudiobooks', [])
+        }
         return
       }
 
       // Playing audiobook
       if (this.$store.state.streamAudiobook) {
-        this.$eventBus.$emit('player-hotkey', keyCode)
+        this.$eventBus.$emit('player-hotkey', name)
       }
     }
   },

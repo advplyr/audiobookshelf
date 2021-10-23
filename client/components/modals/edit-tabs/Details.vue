@@ -60,8 +60,8 @@
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
           </ui-tooltip>
 
-          <ui-tooltip :disabled="libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
-            <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
+          <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
+            <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
           </ui-tooltip>
 
           <div class="flex-grow" />

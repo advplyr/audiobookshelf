@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-50 bg-primary text-white">
     <div class="absolute top-4 right-4 z-20">
-      <span class="material-icons cursor-pointer text-4xl" @click="show = false">close</span>
+      <span class="material-icons cursor-pointer text-4xl" @click="close">close</span>
     </div>
 
     <div class="absolute top-4 left-4 font-book">
@@ -27,8 +27,6 @@ export default {
     show(newVal) {
       if (newVal) {
         this.init()
-      } else {
-        this.close()
       }
     }
   },
@@ -89,27 +87,23 @@ export default {
     getEbookUrl(path) {
       return `/ebook/${this.libraryId}/${this.folderId}/${path}`
     },
-    keyUp(e) {
-      if (!this.$refs.readerComponent) {
-        return
-      }
-      if ((e.keyCode || e.which) == 37) {
-        if (this.$refs.readerComponent.prev) {
-          this.$refs.readerComponent.prev()
-        }
-      } else if ((e.keyCode || e.which) == 39) {
-        if (this.$refs.readerComponent.next) {
-          this.$refs.readerComponent.next()
-        }
-      } else if ((e.keyCode || e.which) == 27) {
-        this.show = false
+    hotkey(action) {
+      console.log('Reader hotkey', action)
+      if (!this.$refs.readerComponent) return
+
+      if (action === 'ArrowRight') {
+        if (this.$refs.readerComponent.next) this.$refs.readerComponent.next()
+      } else if (action === 'ArrowLeft') {
+        if (this.$refs.readerComponent.prev) this.$refs.readerComponent.prev()
+      } else if (action === 'Escape') {
+        this.close()
       }
     },
     registerListeners() {
-      document.addEventListener('keyup', this.keyUp)
+      this.$eventBus.$on('reader-hotkey', this.hotkey)
     },
     unregisterListeners() {
-      document.removeEventListener('keyup', this.keyUp)
+      this.$eventBus.$off('reader-hotkey', this.hotkey)
     },
     init() {
       this.registerListeners()
@@ -144,16 +138,15 @@ export default {
       }
     },
     close() {
-      if (this.ebookType === 'epub') {
-        this.unregisterListeners()
-      }
+      this.unregisterListeners()
+      this.show = false
     }
   },
   mounted() {
     if (this.show) this.init()
   },
   beforeDestroy() {
-    this.close()
+    this.unregisterListeners()
   }
 }
 </script>

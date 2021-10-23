@@ -83,6 +83,11 @@ export default {
         this.show = false
       }
     },
+    hotkey(action) {
+      if (action === 'Escape') {
+        this.show = false
+      }
+    },
     setShow() {
       document.body.appendChild(this.el)
       setTimeout(() => {
@@ -90,6 +95,7 @@ export default {
       }, 10)
       document.documentElement.classList.add('modal-open')
 
+      this.$eventBus.$on('modal-hotkey', this.hotkey)
       this.$store.commit('setOpenModal', this.name)
     },
     setHide() {
@@ -97,6 +103,7 @@ export default {
       this.el.remove()
       document.documentElement.classList.remove('modal-open')
 
+      this.$eventBus.$off('modal-hotkey', this.hotkey)
       this.$store.commit('setOpenModal', null)
     }
   },
