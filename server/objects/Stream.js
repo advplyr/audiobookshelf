@@ -261,7 +261,7 @@ class Stream extends EventEmitter {
     const hlsOptions = [
       '-f hls',
       "-copyts",
-      "-avoid_negative_ts disabled",
+      "-avoid_negative_ts make_non_negative",
       "-max_delay 5000000",
       "-max_muxing_queue_size 2048",
       `-hls_time 6`,
