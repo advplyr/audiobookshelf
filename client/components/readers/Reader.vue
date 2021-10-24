@@ -91,11 +91,11 @@ export default {
       console.log('Reader hotkey', action)
       if (!this.$refs.readerComponent) return
 
-      if (action === 'ArrowRight') {
+      if (action === this.$hotkeys.EReader.NEXT_PAGE) {
         if (this.$refs.readerComponent.next) this.$refs.readerComponent.next()
-      } else if (action === 'ArrowLeft') {
+      } else if (action === this.$hotkeys.EReader.PREV_PAGE) {
         if (this.$refs.readerComponent.prev) this.$refs.readerComponent.prev()
-      } else if (action === 'Escape') {
+      } else if (action === this.$hotkeys.EReader.CLOSE) {
         this.close()
       }
     },
@@ -114,21 +114,17 @@ export default {
           this.ebookType = 'pdf'
         } else if (this.selectedAudiobookFile.ext === '.mobi' || this.selectedAudiobookFile.ext === '.azw3') {
           this.ebookType = 'mobi'
-          // this.initMobi()
         } else if (this.selectedAudiobookFile.ext === '.epub') {
           this.ebookType = 'epub'
-          // this.initEpub()
         } else if (this.selectedAudiobookFile.ext === '.cbr' || this.selectedAudiobookFile.ext === '.cbz') {
           this.ebookType = 'comic'
         }
       } else if (this.epubEbook) {
         this.ebookType = 'epub'
         this.ebookUrl = this.getEbookUrl(this.epubEbook.path)
-        // this.initEpub()
       } else if (this.mobiEbook) {
         this.ebookType = 'mobi'
         this.ebookUrl = this.getEbookUrl(this.mobiEbook.path)
-        // this.initMobi()
       } else if (this.pdfEbook) {
         this.ebookType = 'pdf'
         this.ebookUrl = this.getEbookUrl(this.pdfEbook.path)

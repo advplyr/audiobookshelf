@@ -88,7 +88,8 @@ class Stream extends EventEmitter {
 
   get clientProgress() {
     if (!this.clientCurrentTime) return 0
-    return Number((this.clientCurrentTime / this.totalDuration).toFixed(3))
+    var prog = Math.max(1, this.clientCurrentTime / this.totalDuration)
+    return Number(prog.toFixed(3))
   }
 
   toJSON() {

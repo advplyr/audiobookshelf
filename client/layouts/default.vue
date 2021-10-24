@@ -331,20 +331,24 @@ export default {
       var inputs = ['input', 'select', 'button', 'textarea']
       return activeElement && inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1
     },
-    keyUp(e) {
+    getHotkeyName(e) {
       var keyCode = e.keyCode || e.which
       if (!this.$keynames[keyCode]) {
         // Unused hotkey
-        return
+        return null
       }
 
       var keyName = this.$keynames[keyCode]
       var name = keyName
       if (e.shiftKey) name = 'Shift-' + keyName
-
       if (process.env.NODE_ENV !== 'production') {
         console.log('Hotkey command', name)
       }
+      return name
+    },
+    keyDown(e) {
+      var name = this.getHotkeyName(e)
+      if (!name) return
 
       // Input is focused then ignore key press
       if (this.checkActiveElementIsInput()) {
@@ -352,34 +356,36 @@ export default {
       }
 
       // Modal is open
-      if (this.$store.state.openModal) {
+      if (this.$store.state.openModal && Object.values(this.$hotkeys.Modal).includes(name)) {
         this.$eventBus.$emit('modal-hotkey', name)
+        e.preventDefault()
         return
       }
 
       // EReader is open
-      if (this.$store.state.showEReader) {
+      if (this.$store.state.showEReader && Object.values(this.$hotkeys.EReader).includes(name)) {
         this.$eventBus.$emit('reader-hotkey', name)
+        e.preventDefault()
         return
       }
 
       // Batch selecting
-      if (this.$store.getters['getNumAudiobooksSelected']) {
+      if (this.$store.getters['getNumAudiobooksSelected'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
-        if (name === 'Escape') {
-          this.$store.commit('setSelectedAudiobooks', [])
-        }
+        this.$store.commit('setSelectedAudiobooks', [])
+        e.preventDefault()
         return
       }
 
       // Playing audiobook
-      if (this.$store.state.streamAudiobook) {
+      if (this.$store.state.streamAudiobook && Object.values(this.$hotkeys.AudioPlayer).includes(name)) {
         this.$eventBus.$emit('player-hotkey', name)
+        e.preventDefault()
       }
     }
   },
   mounted() {
-    document.addEventListener('keyup', this.keyUp)
+    window.addEventListener('keydown', this.keyDown)
 
     this.initializeSocket()
     this.$store.dispatch('libraries/load')
@@ -403,7 +409,7 @@ export default {
     }
   },
   beforeDestroy() {
-    document.removeEventListener('keyup', this.keyUp)
+    window.removeEventListener('keydown', this.keyDown)
   }
 }
 </script>

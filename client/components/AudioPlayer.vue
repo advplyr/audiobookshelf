@@ -346,7 +346,7 @@ export default {
         return
       }
       var lastbuff = this.getLastBufferedTime()
-      this.sendStreamUpdate()
+
       var bufferlen = (lastbuff / this.audioEl.duration) * this.trackWidth
       bufferlen = Math.round(bufferlen)
       if (this.bufferTrackWidth === bufferlen || !this.$refs.bufferTrack) return
@@ -372,6 +372,7 @@ export default {
       }
 
       this.updateTimestamp()
+      this.sendStreamUpdate()
 
       this.currentTime = this.audioEl.currentTime
 
@@ -535,16 +536,16 @@ export default {
       this.$emit('close')
     },
     hotkey(action) {
-      if (action === 'Space') this.playPauseClick()
-      else if (action === 'ArrowRight') this.forward10()
-      else if (action === 'ArrowLeft') this.backward10()
-      else if (action === 'ArrowUp') this.volumeUp()
-      else if (action === 'ArrowDown') this.volumeDown()
-      else if (action === 'KeyM') this.toggleMute()
-      else if (action === 'KeyL') this.showChapters()
-      else if (action === 'Shift-ArrowUp') this.increasePlaybackRate()
-      else if (action === 'Shift-ArrowDown') this.decreasePlaybackRate()
-      else if (action === 'Escape') this.closePlayer()
+      if (action === this.$hotkeys.AudioPlayer.PLAY_PAUSE) this.playPauseClick()
+      else if (action === this.$hotkeys.AudioPlayer.JUMP_FORWARD) this.forward10()
+      else if (action === this.$hotkeys.AudioPlayer.JUMP_BACKWARD) this.backward10()
+      else if (action === this.$hotkeys.AudioPlayer.VOLUME_UP) this.volumeUp()
+      else if (action === this.$hotkeys.AudioPlayer.VOLUME_DOWN) this.volumeDown()
+      else if (action === this.$hotkeys.AudioPlayer.MUTE_UNMUTE) this.toggleMute()
+      else if (action === this.$hotkeys.AudioPlayer.SHOW_CHAPTERS) this.showChapters()
+      else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE) this.increasePlaybackRate()
+      else if (action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE) this.decreasePlaybackRate()
+      else if (action === this.$hotkeys.AudioPlayer.CLOSE) this.closePlayer()
     },
     windowResize() {
       this.setTrackWidth()

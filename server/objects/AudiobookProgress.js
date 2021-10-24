@@ -54,11 +54,9 @@ class AudiobookProgress {
     // If has < 10 seconds remaining mark as read
     var timeRemaining = this.totalDuration - this.currentTime
     if (timeRemaining < 10) {
-      if (!this.isRead) {
-        this.isRead = true
-        this.progress = 1
-        this.finishedAt = Date.now()
-      }
+      this.isRead = true
+      this.progress = 1
+      this.finishedAt = Date.now()
     } else {
       this.isRead = false
       this.finishedAt = null

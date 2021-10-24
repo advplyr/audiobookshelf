@@ -84,7 +84,7 @@ export default {
       }
     },
     hotkey(action) {
-      if (action === 'Escape') {
+      if (action === this.$hotkeys.Modal.CLOSE) {
         this.show = false
       }
     },

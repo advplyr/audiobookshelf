@@ -218,9 +218,9 @@ export default {
       }
     },
     hotkey(action) {
-      if (action === 'ArrowRight') {
+      if (action === this.$hotkeys.Modal.NEXT_PAGE) {
         this.goNextBook()
-      } else if (action === 'ArrowLeft') {
+      } else if (action === this.$hotkeys.Modal.PREV_PAGE) {
         this.goPrevBook()
       }
     },
