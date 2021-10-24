@@ -241,13 +241,20 @@ class Stream extends EventEmitter {
     var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, this.startTime)
 
     this.ffmpeg.addInput(this.concatFilesPath)
+    // seek_timestamp : https://ffmpeg.org/ffmpeg.html
+    // the argument to the -ss option is considered an actual timestamp, and is not offset by the start time of the file
+    //   note: this may result in the same thing as output seeking, fixes https://github.com/advplyr/audiobookshelf/issues/116
+    this.ffmpeg.inputOption('-seek_timestamp 1')
     this.ffmpeg.inputFormat('concat')
     this.ffmpeg.inputOption('-safe 0')
 
     if (this.startTime > 0) {
       const shiftedStartTime = this.startTime - trackStartTime
+      // Issues using exact fractional seconds i.e. 29.49814 - changing to 29.5s
+      var startTimeS = Math.round(shiftedStartTime * 10) / 10 + 's'
       Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(this.startTime)} and Segment #${this.segmentStartNumber}`)
-      this.ffmpeg.inputOption(`-ss ${shiftedStartTime}`)
+      this.ffmpeg.inputOption(`-ss ${startTimeS}`)
+
       this.ffmpeg.inputOption('-noaccurate_seek')
     }
 
@@ -262,6 +269,7 @@ class Stream extends EventEmitter {
       '-f hls',
       "-copyts",
       "-avoid_negative_ts make_non_negative",
+      // '-start_at_zero',
       "-max_delay 5000000",
       "-max_muxing_queue_size 2048",
       `-hls_time 6`,
