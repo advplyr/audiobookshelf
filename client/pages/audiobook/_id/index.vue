@@ -397,16 +397,6 @@ export default {
       this.$store.commit('setBookshelfBookIds', [])
       this.$store.commit('showEditModal', this.audiobook)
     },
-    lookupMetadata(index) {
-      this.$axios
-        .$get(`/api/metadata/${this.audiobookId}/${index}`)
-        .then((metadata) => {
-          console.log('Metadata for ' + index, metadata)
-        })
-        .catch((error) => {
-          console.error(error)
-        })
-    },
     audiobookUpdated() {
       console.log('Audiobook Updated - Fetch full audiobook')
       this.$axios

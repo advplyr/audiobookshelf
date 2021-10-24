@@ -1,4 +1,6 @@
 
+import Vue from 'vue'
+
 export const state = () => ({
   user: null,
   settings: {
@@ -79,6 +81,13 @@ export const mutations = {
     } else {
       localStorage.removeItem('token')
     }
+  },
+  updateUserAudiobook(state, { id, data }) {
+    if (!state.user) return
+    if (!state.user.audiobooks) {
+      Vue.set(state.user, 'audiobooks', {})
+    }
+    Vue.set(state.user.audiobooks, id, data)
   },
   setSettings(state, settings) {
     if (!settings) return

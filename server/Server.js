@@ -86,7 +86,6 @@ class Server {
   clientEmitter(userId, ev, data) {
     var clients = this.getClientsForUser(userId)
     if (!clients.length) {
-      console.log('clients', clients)
       return Logger.error(`[Server] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
@@ -247,7 +246,7 @@ class Server {
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
 
-      socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket.sheepClient, payload))
+      socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
 
       // Downloading
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
@@ -451,12 +450,20 @@ class Server {
     res.sendStatus(200)
   }
 
-  audiobookProgressUpdate(client, progressPayload) {
+  audiobookProgressUpdate(socket, progressPayload) {
+    var client = socket.sheepClient
     if (!client || !client.user) {
       Logger.error('[Server] audiobookProgressUpdate invalid socket client')
       return
     }
-    client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
+    var hasUpdates = client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
+    if (hasUpdates) {
+      var userAudiobook = client.user.getAudiobookJSON(progressPayload.audiobookId)
+      socket.emit('current_user_audiobook_update', {
+        id: progressPayload.audiobookId,
+        data: userAudiobook || null
+      })
+    }
   }
 
   async authenticateSocket(socket, token) {

@@ -153,8 +153,15 @@ class StreamManager {
       Logger.error('Invalid User for client', client)
       return
     }
-    client.user.updateAudiobookProgressFromStream(client.stream)
+    var userAudiobook = client.user.updateAudiobookProgressFromStream(client.stream)
     this.db.updateEntity('user', client.user)
+
+    if (userAudiobook) {
+      socket.emit('current_user_audiobook_update', {
+        id: userAudiobook.audiobookId,
+        data: userAudiobook.toJSON()
+      })
+    }
   }
 }
 module.exports = StreamManager

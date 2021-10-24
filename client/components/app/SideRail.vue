@@ -11,14 +11,14 @@
       <div v-show="homePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
-    <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === '' && !homePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+    <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="showLibrary ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
       </svg>
 
       <p class="font-book pt-1.5" style="font-size: 1rem">Library</p>
 
-      <div v-show="paramId === '' && !homePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      <div v-show="showLibrary" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
     <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'series' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
@@ -31,6 +31,16 @@
       <div v-show="paramId === 'series'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
+    <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">
+      <span class="material-icons text-2xl">warning</span>
+
+      <p class="font-book pt-1.5" style="font-size: 1rem">Issues</p>
+
+      <div v-show="showingIssues" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      <div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
+        <p class="text-xs font-mono pb-0.5">{{ numIssues }}</p>
+      </div>
+    </nuxt-link>
     <!-- <nuxt-link to="/library/collections" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -80,6 +90,19 @@ export default {
     },
     homePage() {
       return this.$route.name === 'library-library'
+    },
+    libraryBookshelfPage() {
+      return this.$route.name === 'library-library-bookshelf-id'
+    },
+    showLibrary() {
+      return this.libraryBookshelfPage && this.paramId === '' && !this.showingIssues
+    },
+    showingIssues() {
+      if (!this.$route.query) return false
+      return this.libraryBookshelfPage && this.$route.query.filter === 'issues'
+    },
+    numIssues() {
+      return this.$store.getters['audiobooks/getAudiobooksWithIssues'].length
     }
   },
   methods: {},

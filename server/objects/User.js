@@ -203,6 +203,7 @@ class User {
       this.audiobooks[stream.audiobookId] = new AudiobookProgress()
     }
     this.audiobooks[stream.audiobookId].updateFromStream(stream)
+    return this.audiobooks[stream.audiobookId]
   }
 
   updateAudiobookProgress(audiobook, updatePayload) {
@@ -266,6 +267,10 @@ class User {
     if (this.permissions.accessAllLibraries) return true
     if (!this.librariesAccessible) return false
     return this.librariesAccessible.includes(libraryId)
+  }
+
+  getAudiobookJSON(audiobookId) {
+    return this.audiobooks[audiobookId] ? this.audiobooks[audiobookId].toJSON() : null
   }
 }
 module.exports = User

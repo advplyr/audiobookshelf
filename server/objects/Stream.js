@@ -88,7 +88,7 @@ class Stream extends EventEmitter {
 
   get clientProgress() {
     if (!this.clientCurrentTime) return 0
-    var prog = Math.max(1, this.clientCurrentTime / this.totalDuration)
+    var prog = Math.min(1, this.clientCurrentTime / this.totalDuration)
     return Number(prog.toFixed(3))
   }
 
@@ -248,6 +248,7 @@ class Stream extends EventEmitter {
     this.ffmpeg.inputOption('-seek_timestamp 1')
     this.ffmpeg.inputFormat('concat')
     this.ffmpeg.inputOption('-safe 0')
+    // this.ffmpeg.inputOption('-segment_time_metadata 1')
 
     if (this.startTime > 0) {
       const shiftedStartTime = this.startTime - trackStartTime
@@ -259,7 +260,7 @@ class Stream extends EventEmitter {
       this.ffmpeg.inputOption('-noaccurate_seek')
     }
 
-    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
+    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'error'
     const audioCodec = (this.hlsSegmentType === 'fmp4' || this.tracksAudioFileType === 'opus') ? 'aac' : 'copy'
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,
@@ -270,7 +271,6 @@ class Stream extends EventEmitter {
       '-f hls',
       "-copyts",
       "-avoid_negative_ts make_non_negative",
-      // '-start_at_zero',
       "-max_delay 5000000",
       "-max_muxing_queue_size 2048",
       `-hls_time 6`,

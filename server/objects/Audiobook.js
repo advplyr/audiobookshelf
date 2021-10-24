@@ -193,16 +193,14 @@ class Audiobook {
       lastUpdate: this.lastUpdate,
       duration: this.totalDuration,
       size: this.totalSize,
-      hasBookMatch: !!this.book,
-      hasMissingParts: this.missingParts ? this.missingParts.length : 0,
-      hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0,
-      // numEbooks: this.ebooks.length,
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
       numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
-      isInvalid: !!this.isInvalid
+      isInvalid: !!this.isInvalid,
+      hasMissingParts: this.missingParts ? this.missingParts.length : 0,
+      hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0
     }
   }
 
@@ -232,7 +230,9 @@ class Audiobook {
       tracks: this.tracksToJSON(),
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
-      isInvalid: !!this.isInvalid
+      isInvalid: !!this.isInvalid,
+      hasMissingParts: this.missingParts ? this.missingParts.length : 0,
+      hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0
     }
   }
 

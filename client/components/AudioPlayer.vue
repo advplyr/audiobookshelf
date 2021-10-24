@@ -232,6 +232,7 @@ export default {
     },
     restart() {
       this.seek(0)
+      this.$nextTick(this.sendStreamUpdate)
     },
     backward10() {
       var newTime = this.audioEl.currentTime - 10
@@ -372,7 +373,13 @@ export default {
       }
 
       this.updateTimestamp()
-      this.sendStreamUpdate()
+
+      // Send update to server when currentTime > 0
+      //   this prevents errors when seeking to position not yet transcoded
+      //   seeking to position not yet transcoded will cause audio element to set currentTime to 0
+      if (this.audioEl.currentTime) {
+        this.sendStreamUpdate()
+      }
 
       this.currentTime = this.audioEl.currentTime
 

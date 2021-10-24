@@ -177,6 +177,9 @@ export default {
     userStreamUpdate(user) {
       this.$store.commit('users/updateUser', user)
     },
+    currentUserAudiobookUpdate(payload) {
+      this.$store.commit('user/updateUserAudiobook', payload)
+    },
     downloadToastClick(download) {
       if (!download || !download.audiobookId) {
         return console.error('Invalid download object', download)
@@ -285,6 +288,7 @@ export default {
       this.socket.on('user_online', this.userOnline)
       this.socket.on('user_offline', this.userOffline)
       this.socket.on('user_stream_update', this.userStreamUpdate)
+      this.socket.on('current_user_audiobook_update', this.currentUserAudiobookUpdate)
 
       // Scan Listeners
       this.socket.on('scan_start', this.scanStart)

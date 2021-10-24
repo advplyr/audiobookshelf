@@ -148,10 +148,7 @@ export default {
           currentTime,
           streamId: this.streamId
         }
-        console.log('Stream update', updatePayload.currentTime)
         this.$root.socket.emit('stream_update', updatePayload)
-      } else {
-        console.log('Do not update time', diff)
       }
     },
     streamReset({ startTime, streamId }) {

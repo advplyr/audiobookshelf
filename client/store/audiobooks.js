@@ -22,6 +22,11 @@ export const getters = {
   getAudiobook: (state) => id => {
     return state.audiobooks.find(ab => ab.id === id)
   },
+  getAudiobooksWithIssues: (state) => {
+    return state.audiobooks.filter(ab => {
+      return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
+    })
+  },
   getEntitiesShowing: (state, getters, rootState, rootGetters) => () => {
     if (!state.libraryPage) {
       return getters.getFiltered()
@@ -66,7 +71,12 @@ export const getters = {
           return false
         })
       }
+    } else if (filterBy === 'issues') {
+      filtered = filtered.filter(ab => {
+        return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
+      })
     }
+
     if (state.keywordFilter) {
       const keywordFilterKeys = ['title', 'subtitle', 'author', 'series', 'narrator']
       const keyworkFilter = state.keywordFilter.toLowerCase()

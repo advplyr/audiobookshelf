@@ -101,6 +101,11 @@ export default {
           text: 'Progress',
           value: 'progress',
           sublist: true
+        },
+        {
+          text: 'Issues',
+          value: 'issues',
+          sublist: false
         }
       ]
     }

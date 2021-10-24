@@ -89,6 +89,8 @@ export default {
     '$route.query.filter'() {
       if (this.$route.query.filter && this.$route.query.filter !== this.filterBy) {
         this.$store.dispatch('user/updateUserSettings', { filterBy: this.$route.query.filter })
+      } else if (!this.$route.query.filter && this.filterBy) {
+        this.$store.dispatch('user/updateUserSettings', { filterBy: 'all' })
       }
     }
   },
