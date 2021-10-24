@@ -39,8 +39,6 @@ Android app is in beta, try it out on the [Google Play Store](https://play.googl
  See [documentation](https://audiobookshelf.org/docs) for supported directory structure, folder naming conventions, and audio file metadata usage.
 
 
-
-
 ## Installation
 
 ** Default username is "root" with no password
@@ -103,23 +101,11 @@ System Service: `/lib/systemd/system/audiobookshelf.service`
 
 Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
 
-## Run from source
+## Reverse Proxy Set Up
 
-Note: you will need `npm`, `node12`, and `ffmpeg` to run this project locally
+### NGINX Reverse Proxy
 
-```bash
-git clone https://github.com/advplyr/audiobookshelf.git
-cd audiobookshelf
-
-# All paths default to root directory. Config path is the database.
-# Directories will be created if they don't exist
-# Paths are relative to the root directory, so "../Audiobooks" would be a valid path
-npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
-```
-
-### nginx Reverse Proxy
-
-Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted the path to you certificates.
+Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
 
 
 ```bash
@@ -151,7 +137,8 @@ server
 
 ### Apache Reverse Proxy
 
-Add this to the site config file on your Apache server after you have changed the relevant parts in the <> brackets, and inserted the path to you certificates.
+Add this to the site config file on your Apache server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
+
 For this to work you must enable at least the following mods using `a2enmod`:
   - `ssl`
   - `proxy_module`
@@ -181,6 +168,19 @@ For this to work you must enable at least the following mods using `a2enmod`:
 </IfModule>
 ```
 
+## Run from source
+
+Note: you will need `npm`, `node12`, and `ffmpeg` to run this project locally
+
+```bash
+git clone https://github.com/advplyr/audiobookshelf.git
+cd audiobookshelf
+
+# All paths default to root directory. Config path is the database.
+# Directories will be created if they don't exist
+# Paths are relative to the root directory, so "../Audiobooks" would be a valid path
+npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
+```
 
 ## Contributing
 
