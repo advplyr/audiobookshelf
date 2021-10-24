@@ -89,13 +89,37 @@ function getTrackNumberFromFilename(title, author, series, publishYear, filename
   if (publishYear) partbasename = partbasename.replace(publishYear)
 
   // Remove eg. "disc 1" from path
-  partbasename = partbasename.replace(/ disc \d\d? /i, '')
+  partbasename = partbasename.replace(/\bdisc \d\d?\b/i, '')
+
+  // Remove "cd01" or "cd 01" from path
+  partbasename = partbasename.replace(/\bcd ?\d\d?\b/i, '')
 
   var numbersinpath = partbasename.match(/\d{1,4}/g)
   if (!numbersinpath) return null
 
   var number = numbersinpath.length ? parseInt(numbersinpath[0]) : null
   return number
+}
+
+function getCdNumberFromFilename(title, author, series, publishYear, filename) {
+  var partbasename = Path.basename(filename, Path.extname(filename))
+
+  // Remove title, author, series, and publishYear from filename if there
+  if (title) partbasename = partbasename.replace(title, '')
+  if (author) partbasename = partbasename.replace(author, '')
+  if (series) partbasename = partbasename.replace(series, '')
+  if (publishYear) partbasename = partbasename.replace(publishYear)
+
+  var cdNumber = null
+
+  var cdmatch = partbasename.match(/\b(disc|cd) ?(\d\d?)\b/i)
+  if (cdmatch && cdmatch.length > 2 && cdmatch[2]) {
+    if (!isNaN(cdmatch[2])) {
+      cdNumber = Number(cdmatch[2])
+    }
+  }
+
+  return cdNumber
 }
 
 async function scanAudioFiles(audiobook, newAudioFiles) {
@@ -123,6 +147,14 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
 
     var trackNumFromFilename = getTrackNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
 
+    var cdNumFromFilename = getCdNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
+
+    // IF CD num was found but no track num - USE cd num as track num
+    if (!trackNumFromFilename && cdNumFromFilename) {
+      trackNumFromFilename = cdNumFromFilename
+      cdNumFromFilename = null
+    }
+
     var audioFileObj = {
       ino: audioFile.ino,
       filename: audioFile.filename,
@@ -131,7 +163,8 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
       ext: audioFile.ext,
       ...scanData,
       trackNumFromMeta,
-      trackNumFromFilename
+      trackNumFromFilename,
+      cdNumFromFilename
     }
     var audioFile = audiobook.addAudioFile(audioFileObj)
 
@@ -172,6 +205,7 @@ async function scanAudioFiles(audiobook, newAudioFiles) {
   }
 
   tracks.sort((a, b) => a.index - b.index)
+
   audiobook.audioFiles.sort((a, b) => {
     var aNum = isNumber(a.trackNumFromMeta) ? a.trackNumFromMeta : isNumber(a.trackNumFromFilename) ? a.trackNumFromFilename : 0
     var bNum = isNumber(b.trackNumFromMeta) ? b.trackNumFromMeta : isNumber(b.trackNumFromFilename) ? b.trackNumFromFilename : 0
@@ -209,7 +243,27 @@ async function rescanAudioFiles(audiobook) {
       // audiobook.invalidAudioFiles.push(parts[i])
       continue;
     }
-    var hasUpdates = audioFile.updateMetadata(scanData)
+
+    var trackNumFromMeta = getTrackNumberFromMeta(scanData)
+    var book = audiobook.book || {}
+
+    var trackNumFromFilename = getTrackNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
+
+    var cdNumFromFilename = getCdNumberFromFilename(book.title, book.author, book.series, book.publishYear, audioFile.filename)
+
+    // IF CD num was found but no track num - USE cd num as track num
+    if (!trackNumFromFilename && cdNumFromFilename) {
+      trackNumFromFilename = cdNumFromFilename
+      cdNumFromFilename = null
+    }
+
+    var metadataUpdate = {
+      ...scanData,
+      trackNumFromMeta,
+      trackNumFromFilename,
+      cdNumFromFilename
+    }
+    var hasUpdates = audioFile.updateMetadata(metadataUpdate)
     if (hasUpdates) {
       // Sync audio track with audio file
       var matchingAudioTrack = audiobook.tracks.find(t => t.ino === audioFile.ino)

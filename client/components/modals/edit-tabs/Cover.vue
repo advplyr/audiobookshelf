@@ -188,13 +188,13 @@ export default {
     },
     init() {
       this.showLocalCovers = false
-      if (this.coversFound.length && (this.searchTitle !== this.book.title || this.searchAuthor !== this.book.author)) {
+      if (this.coversFound.length && (this.searchTitle !== this.book.title || this.searchAuthor !== this.book.authorFL)) {
         this.coversFound = []
         this.hasSearched = false
       }
       this.imageUrl = this.book.cover || ''
       this.searchTitle = this.book.title || ''
-      this.searchAuthor = this.book.author || ''
+      this.searchAuthor = this.book.authorFL || ''
     },
     removeCover() {
       if (!this.book.cover) {

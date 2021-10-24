@@ -19,7 +19,7 @@
               </div>
 
               <p class="mb-2 mt-0.5 text-gray-100 text-xl">
-                by <nuxt-link v-if="author" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}</nuxt-link
+                by <nuxt-link v-if="authorFL" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(authorFL)}`" class="hover:underline">{{ authorFL }}</nuxt-link
                 ><span v-else>Unknown</span>
               </p>
               <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>

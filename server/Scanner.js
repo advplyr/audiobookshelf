@@ -109,7 +109,7 @@ class Scanner {
       titleDistance: 2,
       authorDistance: 2
     }
-    var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.author, options)
+    var results = await this.bookFinder.findCovers('openlibrary', audiobook.title, audiobook.authorFL, options)
     if (results.length) {
       Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
 

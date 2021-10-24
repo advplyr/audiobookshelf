@@ -35,11 +35,11 @@ class Book {
   get _title() { return this.title || '' }
   get _subtitle() { return this.subtitle || '' }
   get _narrator() { return this.narrator || '' }
-  get _author() { return this.author || '' }
+  get _author() { return this.authorFL || '' }
   get _series() { return this.series || '' }
 
   get shouldSearchForCover() {
-    if (this.author !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
+    if (this.authorFL !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
     var timeSinceLastSearch = Date.now() - this.lastCoverSearch
     return timeSinceLastSearch > 1000 * 60 * 60 * 24 * 7 // every 7 days do another lookup
   }
@@ -180,7 +180,7 @@ class Book {
 
   updateLastCoverSearch(coverWasFound) {
     this.lastCoverSearch = coverWasFound ? null : Date.now()
-    this.lastCoverSearchAuthor = coverWasFound ? null : this.author
+    this.lastCoverSearchAuthor = coverWasFound ? null : this.authorFL
     this.lastCoverSearchTitle = coverWasFound ? null : this.title
   }
 
@@ -225,7 +225,7 @@ class Book {
     var authorMatch = this._author.toLowerCase().includes(search)
     var seriesMatch = this._series.toLowerCase().includes(search)
 
-    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorMatch ? 'author' : seriesMatch ? 'series' : false
+    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorMatch ? 'authorFL' : seriesMatch ? 'series' : false
     var bookMatchText = bookMatchKey ? this[bookMatchKey] : ''
     return {
       book: bookMatchKey,

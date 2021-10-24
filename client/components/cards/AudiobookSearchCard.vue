@@ -7,7 +7,7 @@
 
       <p v-if="matchKey === 'subtitle'" class="truncate text-xs text-gray-300">{{ matchHtml }}</p>
 
-      <p v-if="matchKey !== 'author'" class="text-xs text-gray-200 truncate">by {{ author }}</p>
+      <p v-if="matchKey !== 'authorFL'" class="text-xs text-gray-200 truncate">by {{ authorFL }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
 
       <div v-if="matchKey === 'series' || matchKey === 'tags'" class="m-0 p-0 truncate" v-html="matchHtml" />
@@ -39,8 +39,8 @@ export default {
     subtitle() {
       return this.book ? this.book.subtitle : ''
     },
-    author() {
-      return this.book ? this.book.author : 'Unknown'
+    authorFL() {
+      return this.book ? this.book.authorFL : 'Unknown'
     },
     matchHtml() {
       if (!this.matchText || !this.search) return ''
@@ -62,7 +62,7 @@ export default {
       html += lastPart
 
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
-      if (this.matchKey === 'author') return `by ${html}`
+      if (this.matchKey === 'authorFL') return `by ${html}`
       if (this.matchKey === 'series') return `<p class="truncate">Series: ${html}</p>`
       return `${html}`
     }

@@ -206,9 +206,16 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
 
 
   var publishYear = null
-  // If Title is of format 1999 - Title, then use 1999 as publish year
-  var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
-  if (publishYearMatch && publishYearMatch.length > 2) {
+  // OLD regex (not matching parentheses)
+  // var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
+
+  // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
+  var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
+  if (publishYearMatch && publishYearMatch.length > 2 && publishYearMatch[1]) {
+    // Strip parentheses 
+    if (publishYearMatch[1].startsWith('(') && publishYearMatch[1].endsWith(')')) {
+      publishYearMatch[1] = publishYearMatch[1].slice(1, -1)
+    }
     if (!isNaN(publishYearMatch[1])) {
       publishYear = publishYearMatch[1]
       title = publishYearMatch[2]

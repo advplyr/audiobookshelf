@@ -16,13 +16,18 @@
         </div>
         <div class="font-book text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByFilenameTrack" @mousedown.prevent>
           <span class="text-white">Track From Filename</span>
-          <span class="material-icons ml-1" :class="currentSort === 'filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'filename' ? 'expand_more' : 'unfold_more' }}</span>
+          <span class="material-icons ml-1" :class="currentSort === 'track-filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'track-filename' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
         <div class="font-book text-center px-4 w-32 flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByMetadataTrack" @mousedown.prevent>
           <span class="text-white">Track From Metadata</span>
           <span class="material-icons ml-1" :class="currentSort === 'metadata' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'metadata' ? 'expand_more' : 'unfold_more' }}</span>
         </div>
-        <div class="font-book truncate px-4 flex-grow">Filename</div>
+        <div class="font-mono w-20 text-center">CD From Filename</div>
+        <div class="font-book text-center px-4 flex-grow flex items-center cursor-pointer text-white text-opacity-40 hover:text-opacity-100" @click="sortByFilename" @mousedown.prevent>
+          <span class="text-white">Filename</span>
+          <span class="material-icons ml-1" :class="currentSort === 'filename' ? 'text-white text-opacity-100 text-lg' : 'text-sm'">{{ currentSort === 'filename' ? 'expand_more' : 'unfold_more' }}</span>
+        </div>
+        <!-- <div class="font-book truncate px-4 flex-grow">Filename</div> -->
 
         <div class="font-mono w-20 text-center">Size</div>
         <div class="font-mono w-20 text-center">Duration</div>
@@ -42,6 +47,9 @@
             </div>
             <div class="font-book text-center w-32">
               {{ audio.trackNumFromMeta }}
+            </div>
+            <div class="font-book truncate px-4 w-20">
+              {{ audio.cdNumFromFilename }}
             </div>
             <div class="font-book truncate px-4 flex-grow">
               {{ audio.filename }}
@@ -235,6 +243,12 @@ export default {
       this.files.sort((a, b) => {
         if (a.trackNumFromFilename === null) return 1
         return a.trackNumFromFilename - b.trackNumFromFilename
+      })
+      this.currentSort = 'track-filename'
+    },
+    sortByFilename() {
+      this.files.sort((a, b) => {
+        return (a.filename || '').toLowerCase().localeCompare((b.filename || '').toLowerCase())
       })
       this.currentSort = 'filename'
     },

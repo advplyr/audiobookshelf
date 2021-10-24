@@ -13,6 +13,7 @@ class AudioFile {
 
     this.trackNumFromMeta = null
     this.trackNumFromFilename = null
+    this.cdNumFromFilename = null
 
     this.format = null
     this.duration = null
@@ -39,6 +40,16 @@ class AudioFile {
     }
   }
 
+  // Sort number takes cd num into account
+  // get sortNumber() {
+  //   if (this.manuallyVerified) return this.index
+  //   var num = this.index
+  //   if (this.cdNumFromFilename && !isNaN(this.cdNumFromFilename)) {
+  //     num += (Number(this.cdNumFromFilename) * 1000)
+  //   }
+  //   return num
+  // }
+
   toJSON() {
     return {
       index: this.index,
@@ -50,6 +61,7 @@ class AudioFile {
       addedAt: this.addedAt,
       trackNumFromMeta: this.trackNumFromMeta,
       trackNumFromFilename: this.trackNumFromFilename,
+      cdNumFromFilename: this.cdNumFromFilename,
       manuallyVerified: !!this.manuallyVerified,
       invalid: !!this.invalid,
       exclude: !!this.exclude,
@@ -84,6 +96,7 @@ class AudioFile {
 
     this.trackNumFromMeta = data.trackNumFromMeta || null
     this.trackNumFromFilename = data.trackNumFromFilename || null
+    this.cdNumFromFilename = data.cdNumFromFilename || null
 
     this.format = data.format
     this.duration = data.duration
@@ -117,6 +130,7 @@ class AudioFile {
 
     this.trackNumFromMeta = data.trackNumFromMeta || null
     this.trackNumFromFilename = data.trackNumFromFilename || null
+    this.cdNumFromFilename = data.cdNumFromFilename || null
 
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid
@@ -178,7 +192,10 @@ class AudioFile {
       channels: data.channels,
       channelLayout: data.channel_layout,
       chapters: data.chapters || [],
-      embeddedCoverArt: data.embedded_cover_art || null
+      embeddedCoverArt: data.embedded_cover_art || null,
+      trackNumFromMeta: data.trackNumFromMeta,
+      trackNumFromFilename: data.trackNumFromFilename,
+      cdNumFromFilename: data.cdNumFromFilename
     }
 
     var hasUpdates = false

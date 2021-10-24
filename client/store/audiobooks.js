@@ -54,7 +54,7 @@ export const getters = {
         if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
         else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
       }
-      else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.author === filter)
+      else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL === filter)
       else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narrator === filter)
       else if (group === 'progress') {
         filtered = filtered.filter(ab => {
@@ -122,7 +122,7 @@ export const getters = {
     return seriesArray
   },
   getUniqueAuthors: (state) => {
-    var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.author)).map(ab => ab.book.author)
+    var _authors = state.audiobooks.filter(ab => !!(ab.book && ab.book.authorFL)).map(ab => ab.book.authorFL)
     return [...new Set(_authors)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   },
   getUniqueNarrators: (state) => {
