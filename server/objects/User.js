@@ -272,5 +272,14 @@ class User {
   getAudiobookJSON(audiobookId) {
     return this.audiobooks[audiobookId] ? this.audiobooks[audiobookId].toJSON() : null
   }
+
+  createBookmark({ audiobookId, time, title }) {
+    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+      return false
+    }
+    var success = this.audiobooks[audiobookId].createBookmark(time, title)
+    if (success) return this.audiobooks[audiobookId]
+    return null
+  }
 }
 module.exports = User

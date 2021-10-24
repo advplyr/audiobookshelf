@@ -1,20 +1,23 @@
 <template>
-  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-40 bg-primary p-4">
+  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-40 bg-primary px-4 pb-4 pt-2">
     <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute -top-16 left-4 cursor-pointer">
       <cards-book-cover :audiobook="streamAudiobook" :width="88" />
     </nuxt-link>
     <div class="flex items-center pl-24">
       <div>
-        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer">
+        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-lg">
           {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
         </nuxt-link>
-        <p class="text-gray-400 text-sm hover:underline cursor-pointer" @click="filterByAuthor">by {{ author }}</p>
+        <p class="text-gray-200 text-base hover:underline cursor-pointer" @click="filterByAuthor">by {{ author }}</p>
+        <p class="font-mono text-sm text-gray-200">{{ totalDurationPretty }}</p>
       </div>
       <div class="flex-grow" />
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" @close="cancelStream" @updateTime="updateTime" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @updateTime="updateTime" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @hook:mounted="audioPlayerMounted" />
+
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" @create="createBookmark" />
   </div>
 </template>
 
@@ -24,7 +27,12 @@ export default {
     return {
       audioPlayerReady: false,
       lastServerUpdateSentSeconds: 0,
-      stream: null
+      stream: null,
+      totalDuration: 0,
+      showBookmarksModal: false,
+      bookmarkCurrentTime: 0,
+      bookmarkAudiobookId: null,
+      bookmarkTimeCreating: 0
     }
   },
   computed: {
@@ -34,6 +42,14 @@ export default {
     },
     user() {
       return this.$store.state.user.user
+    },
+    userAudiobook() {
+      if (!this.audiobookId) return
+      return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
+    },
+    bookmarks() {
+      if (!this.userAudiobook) return []
+      return this.userAudiobook.bookmarks || []
     },
     isLoading() {
       if (!this.streamAudiobook) return false
@@ -45,6 +61,9 @@ export default {
     },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
+    },
+    audiobookId() {
+      return this.streamAudiobook ? this.streamAudiobook.id : null
     },
     book() {
       return this.streamAudiobook ? this.streamAudiobook.book || {} : {}
@@ -66,9 +85,35 @@ export default {
     },
     libraryId() {
       return this.streamAudiobook ? this.streamAudiobook.libraryId : null
+    },
+    totalDurationPretty() {
+      return this.$secondsToTimestamp(this.totalDuration)
     }
   },
   methods: {
+    showBookmarks(currentTime) {
+      this.bookmarkAudiobookId = this.audiobookId
+      this.bookmarkCurrentTime = currentTime
+      this.showBookmarksModal = true
+    },
+    bookmarkCreated(time) {
+      if (time === this.bookmarkTimeCreating) {
+        this.bookmarkTimeCreating = 0
+        this.$toast.success(`${this.$secondsToTimestamp(time)} Bookmarked`)
+      }
+    },
+    createBookmark(bookmark) {
+      this.bookmarkTimeCreating = bookmark.time
+      this.$root.socket.once('bookmark_created', this.bookmarkCreated)
+      this.$root.socket.emit('create_bookmark', bookmark)
+      this.showBookmarksModal = false
+    },
+    selectBookmark(bookmark) {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.selectBookmark(bookmark)
+      }
+      this.showBookmarksModal = false
+    },
     filterByAuthor() {
       if (this.$route.name !== 'index') {
         this.$router.push(`/library/${this.libraryId || this.$store.state.libraries.currentLibraryId}/bookshelf`)

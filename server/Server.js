@@ -259,6 +259,9 @@ class Server {
       socket.on('create_backup', () => this.backupManager.requestCreateBackup(socket))
       socket.on('apply_backup', (id) => this.backupManager.requestApplyBackup(socket, id))
 
+      // Bookmarks
+      socket.on('create_bookmark', (payload) => this.createBookmark(socket, payload))
+
       socket.on('test', () => {
         socket.emit('test_received', socket.id)
       })
@@ -461,6 +464,23 @@ class Server {
       var userAudiobook = client.user.getAudiobookJSON(progressPayload.audiobookId)
       socket.emit('current_user_audiobook_update', {
         id: progressPayload.audiobookId,
+        data: userAudiobook || null
+      })
+    }
+  }
+
+  async createBookmark(socket, payload) {
+    var client = socket.sheepClient
+    if (!client || !client.user) {
+      Logger.error('[Server] createBookmark invalid socket client')
+      return
+    }
+    var userAudiobook = client.user.createBookmark(payload)
+    if (userAudiobook) {
+      await this.db.updateEntity('user', client.user)
+      socket.emit('bookmark_created', payload.time)
+      socket.emit('current_user_audiobook_update', {
+        id: userAudiobook.audiobookId,
         data: userAudiobook || null
       })
     }

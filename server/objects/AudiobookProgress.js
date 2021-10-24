@@ -1,3 +1,5 @@
+const AudioBookmark = require('./AudioBookmark')
+
 class AudiobookProgress {
   constructor(progress) {
     this.audiobookId = null
@@ -10,10 +12,16 @@ class AudiobookProgress {
     this.lastUpdate = null
     this.startedAt = null
     this.finishedAt = null
+    this.bookmarks = []
 
     if (progress) {
       this.construct(progress)
     }
+  }
+
+  bookmarksToJSON() {
+    if (!this.bookmarks) return []
+    return this.bookmarks.map(b => b.toJSON())
   }
 
   toJSON() {
@@ -25,7 +33,8 @@ class AudiobookProgress {
       isRead: this.isRead,
       lastUpdate: this.lastUpdate,
       startedAt: this.startedAt,
-      finishedAt: this.finishedAt
+      finishedAt: this.finishedAt,
+      bookmarks: this.bookmarksToJSON()
     }
   }
 
@@ -38,6 +47,11 @@ class AudiobookProgress {
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null
+    if (progress.bookmarks) {
+      this.bookmarks = progress.bookmarks.map(b => new AudioBookmark(b))
+    } else {
+      this.bookmarks = []
+    }
   }
 
   updateFromStream(stream) {
@@ -89,6 +103,13 @@ class AudiobookProgress {
       this.lastUpdate = Date.now()
     }
     return hasUpdates
+  }
+
+  createBookmark(time, title) {
+    var newBookmark = new AudioBookmark()
+    newBookmark.setData(time, title)
+    this.bookmarks.push(newBookmark)
+    return newBookmark
   }
 }
 module.exports = AudiobookProgress

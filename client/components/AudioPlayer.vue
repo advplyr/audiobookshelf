@@ -1,25 +1,29 @@
 <template>
-  <div class="w-full">
-    <div class="w-full relative mb-4">
-      <div class="absolute left-2 top-0 bottom-0 h-full flex items-center">
-        <p ref="currentTimestamp" class="font-mono text-sm">00:00:00</p>
-      </div>
-      <div class="absolute right-2 top-0 bottom-0 h-full flex items-center">
-        <p class="font-mono text-sm">{{ totalDurationPretty }}</p>
+  <div class="w-full -mt-4">
+    <div class="w-full relative mb-2">
+      <div class="absolute top-0 left-0 w-full h-full bg-red flex items-end pointer-events-none">
+        <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
+        <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
+        <div class="flex-grow" />
+        <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
       </div>
 
-      <div class="absolute right-20 top-0 bottom-0">
-        <div v-if="chapters.length" class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+      <div v-if="chapters.length" class="absolute right-20 top-0 bottom-0 h-full flex items-end">
+        <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
       </div>
-
-      <div class="absolute right-32 top-0 bottom-0">
+      <div v-if="showExperimentalFeatures" class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
+        <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showBookmarks">
+          <span class="material-icons text-3xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+        </div>
+      </div>
+      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="!showExperimentalFeatures ? (chapters.length ? ' right-32' : 'right-20') : chapters.length ? ' right-44' : 'right-32'">
         <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
       </div>
-      <div class="flex my-2">
-        <div class="flex-grow" />
 
+      <div class="flex pb-2">
+        <div class="flex-grow" />
         <template v-if="!loading">
           <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">
             <span class="material-icons text-3xl">first_page</span>
@@ -85,6 +89,10 @@ export default {
     chapters: {
       type: Array,
       default: () => []
+    },
+    bookmarks: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -116,6 +124,17 @@ export default {
     totalDurationPretty() {
       return this.$secondsToTimestamp(this.totalDuration)
     },
+    timeRemaining() {
+      if (!this.audioEl) return 0
+      return this.totalDuration - this.currentTime
+    },
+    timeRemainingPretty() {
+      return '-' + this.$secondsToTimestamp(this.timeRemaining)
+    },
+    progressPercent() {
+      if (!this.totalDuration) return 0
+      return Math.round((100 * this.currentTime) / this.totalDuration)
+    },
     chapterTicks() {
       return this.chapters.map((chap) => {
         var perc = chap.start / this.totalDuration
@@ -127,12 +146,20 @@ export default {
     },
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
+    },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
     selectChapter(chapter) {
       this.seek(chapter.start)
       this.showChaptersModal = false
+    },
+    selectBookmark(bookmark) {
+      if (bookmark) {
+        this.seek(bookmark.time)
+      }
     },
     seek(time) {
       if (this.loading) {
@@ -407,6 +434,7 @@ export default {
     },
     audioLoadedData() {
       this.totalDuration = this.audioEl.duration
+      this.$emit('loaded', this.totalDuration)
     },
     set(url, currentTime, playOnLoad = false) {
       if (this.hlsInstance) {
@@ -461,6 +489,9 @@ export default {
     showChapters() {
       if (!this.chapters.length) return
       this.showChaptersModal = !this.showChaptersModal
+    },
+    showBookmarks() {
+      this.$emit('showBookmarks', this.currentTime)
     },
     play() {
       if (!this.$refs.audio) {
