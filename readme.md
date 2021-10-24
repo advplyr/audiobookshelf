@@ -117,6 +117,39 @@ cd audiobookshelf
 npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
 ```
 
+### nginx Reverse Proxy
+
+Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted the path to you certificates.
+
+
+```bash
+server
+{
+        listen 443 ssl;
+        server_name <sub>.<domain>.<tld>;
+
+        access_log /var/log/nginx/audiobookshelf.access.log;
+        error_log /var/log/nginx/audiobookshelf.error.log;
+
+        ssl_certificate      /path/to/certificate;
+        ssl_certificate_key  /path/to/key;
+
+        location / {
+                     proxy_set_header X-Forwarded-For    $proxy_add_x_forwarded_for;
+                     proxy_set_header  X-Forwarded-Proto $scheme;
+                     proxy_set_header  Host              $host;
+                     proxy_set_header Upgrade            $http_upgrade;
+                     proxy_set_header Connection         "upgrade";
+
+                     proxy_http_version                  1.1;
+
+                     proxy_pass                          http://<URL_to_forward_to>;
+                     proxy_redirect                      http:// https://;
+                   }
+}
+``` 
+
+
 ## Contributing
 
 Feel free to help out
