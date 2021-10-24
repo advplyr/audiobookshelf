@@ -123,9 +123,8 @@ Add this to the site config file on your nginx server after you have changed the
 
 
 ```bash
- server
+server
 {
-
         listen 443 ssl;
         server_name <sub>.<domain>.<tld>;
 
@@ -148,9 +147,7 @@ Add this to the site config file on your nginx server after you have changed the
                      proxy_redirect                      http:// https://;
                    }
 }
- 
- 
- 
+``` 
 
 
 ## Contributing
