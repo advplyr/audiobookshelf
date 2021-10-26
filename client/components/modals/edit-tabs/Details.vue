@@ -53,18 +53,19 @@
       </div>
 
       <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
-        <div class="flex px-4">
-          <ui-btn v-if="userCanDelete" color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+        <div class="flex items-center px-4">
+          <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
 
-          <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="ml-4">
+          <div class="flex-grow" />
+
+          <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4">
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
           </ui-tooltip>
 
-          <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="ml-4">
+          <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
             <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
           </ui-tooltip>
 
-          <div class="flex-grow" />
           <ui-btn type="submit">Submit</ui-btn>
         </div>
       </div>
