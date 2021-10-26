@@ -31,12 +31,24 @@ export default {
     return {
       updatingServerSettings: false,
       dailyBackups: true,
-      backupsToKeep: 2
+      backupsToKeep: 2,
+      newServerSettings: {}
+    }
+  },
+  watch: {
+    serverSettings(newVal, oldVal) {
+      if (newVal && !oldVal) {
+        this.newServerSettings = { ...this.serverSettings }
+        this.initServerSettings()
+      }
     }
   },
   computed: {
     dailyBackupsTooltip() {
       return 'Runs at 1am every day (your server time). Saved in /metadata/backups.'
+    },
+    serverSettings() {
+      return this.$store.state.serverSettings
     }
   },
   methods: {
@@ -63,8 +75,16 @@ export default {
           console.error('Failed to update server settings', error)
           this.updatingServerSettings = false
         })
+    },
+    initServerSettings() {
+      this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
+
+      this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
+      this.dailyBackups = !!this.newServerSettings.backupSchedule
     }
   },
-  mounted() {}
+  mounted() {
+    this.initServerSettings()
+  }
 }
 </script>

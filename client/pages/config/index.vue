@@ -145,8 +145,6 @@ export default {
 
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
-      this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
-      this.dailyBackups = !!this.newServerSettings.backupSchedule
     },
     resetAudiobooks() {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
