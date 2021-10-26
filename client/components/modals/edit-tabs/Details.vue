@@ -56,7 +56,7 @@
         <div class="flex px-4">
           <ui-btn v-if="userCanDelete" color="error" type="button" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
 
-          <ui-tooltip text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="ml-4">
+          <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="ml-4">
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
           </ui-tooltip>
 
@@ -120,6 +120,9 @@ export default {
     },
     isRootUser() {
       return this.$store.getters['user/getIsRoot']
+    },
+    isMissing() {
+      return !!this.audiobook && !!this.audiobook.isMissing
     },
     audiobookId() {
       return this.audiobook ? this.audiobook.id : null
