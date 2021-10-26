@@ -1,3 +1,4 @@
+const Logger = require('../Logger')
 const AudioBookmark = require('./AudioBookmark')
 
 class AudiobookProgress {
@@ -79,6 +80,7 @@ class AudiobookProgress {
 
   update(payload) {
     var hasUpdates = false
+    Logger.debug(`[AudiobookProgress] Update called ${JSON.stringify(payload)}`)
     for (const key in payload) {
       if (payload[key] !== this[key]) {
         if (key === 'isRead') {

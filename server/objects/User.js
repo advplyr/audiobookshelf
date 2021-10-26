@@ -1,3 +1,4 @@
+const Logger = require('../Logger')
 const AudiobookProgress = require('./AudiobookProgress')
 
 class User {
@@ -212,7 +213,12 @@ class User {
       this.audiobooks[audiobook.id] = new AudiobookProgress()
       this.audiobooks[audiobook.id].audiobookId = audiobook.id
     }
-    return this.audiobooks[audiobook.id].update(updatePayload)
+    var wasUpdated = this.audiobooks[audiobook.id].update(updatePayload)
+    if (wasUpdated) {
+      Logger.debug(`[User] Audiobook progress was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
+      return this.audiobooks[audiobook.id]
+    }
+    return false
   }
 
   // Returns Boolean If update was made

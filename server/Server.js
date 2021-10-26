@@ -46,7 +46,7 @@ class Server {
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
-    this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this))
+    this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
@@ -453,18 +453,23 @@ class Server {
     res.sendStatus(200)
   }
 
-  audiobookProgressUpdate(socket, progressPayload) {
+  async audiobookProgressUpdate(socket, progressPayload) {
     var client = socket.sheepClient
     if (!client || !client.user) {
       Logger.error('[Server] audiobookProgressUpdate invalid socket client')
       return
     }
-    var hasUpdates = client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
-    if (hasUpdates) {
-      var userAudiobook = client.user.getAudiobookJSON(progressPayload.audiobookId)
-      socket.emit('current_user_audiobook_update', {
+    var audiobookProgress = client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
+    if (audiobookProgress) {
+      await this.db.updateEntity('user', client.user)
+
+      // This audiobook progress is out of date, why?
+      // var userAudiobook = client.user.getAudiobookJSON(progressPayload.audiobookId)
+      // Logger.debug(`[Server] Emitting audiobook progress update to clients ${this.getClientsForUser(client.user.id).length}: ${JSON.stringify(userAudiobook)}`)
+
+      this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
         id: progressPayload.audiobookId,
-        data: userAudiobook || null
+        data: audiobookProgress || null
       })
     }
   }
@@ -478,8 +483,9 @@ class Server {
     var userAudiobook = client.user.createBookmark(payload)
     if (userAudiobook) {
       await this.db.updateEntity('user', client.user)
-      socket.emit('bookmark_created', payload.time)
-      socket.emit('current_user_audiobook_update', {
+
+      this.clientEmitter(client.user.id, 'bookmark_created', payload.time)
+      this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
         id: userAudiobook.audiobookId,
         data: userAudiobook || null
       })

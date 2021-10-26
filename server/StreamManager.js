@@ -5,10 +5,11 @@ const fs = require('fs-extra')
 const Path = require('path')
 
 class StreamManager {
-  constructor(db, MetadataPath, emitter) {
+  constructor(db, MetadataPath, emitter, clientEmitter) {
     this.db = db
 
     this.emitter = emitter
+    this.clientEmitter = clientEmitter
 
     this.MetadataPath = MetadataPath
     this.streams = []
@@ -157,7 +158,7 @@ class StreamManager {
     this.db.updateEntity('user', client.user)
 
     if (userAudiobook) {
-      socket.emit('current_user_audiobook_update', {
+      this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
         id: userAudiobook.audiobookId,
         data: userAudiobook.toJSON()
       })

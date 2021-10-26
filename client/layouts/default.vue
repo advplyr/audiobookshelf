@@ -178,6 +178,7 @@ export default {
       this.$store.commit('users/updateUser', user)
     },
     currentUserAudiobookUpdate(payload) {
+      // console.log('Received user audiobook update', payload)
       this.$store.commit('user/updateUserAudiobook', payload)
     },
     downloadToastClick(download) {
