@@ -68,7 +68,7 @@ class Stream extends EventEmitter {
 
   get segmentStartNumber() {
     if (!this.startTime) return 0
-    return Math.floor((this.startTime >= this.maxSeekBackTime ? (this.startTime - this.maxSeekBackTime) : 0) / this.segmentLength)
+    return Math.floor(Math.max(this.startTime - this.maxSeekBackTime, 0) / this.segmentLength)
   }
 
   get numSegments() {
@@ -81,6 +81,18 @@ class Stream extends EventEmitter {
 
   get tracks() {
     return this.audiobook.tracks
+  }
+
+  get clientUser() {
+    return this.client.user || {}
+  }
+
+  get clientUserAudiobooks() {
+    return this.clientUser.audiobooks || {}
+  }
+
+  get clientUserAudiobookData() {
+    return this.clientUserAudiobooks[this.audiobookId]
   }
 
   get clientPlaylistUri() {
@@ -106,18 +118,16 @@ class Stream extends EventEmitter {
       startTime: this.startTime,
       segmentStartNumber: this.segmentStartNumber,
       isTranscodeComplete: this.isTranscodeComplete,
-      lastUpdate: this.client.user.audiobooks[this.audiobook.id].lastUpdate
+      lastUpdate: this.clientUserAudiobookData ? this.clientUserAudiobookData.lastUpdate : 0
     }
   }
 
   init() {
-    var clientUserAudiobooks = this.client.user ? this.client.user.audiobooks || {} : {}
-    var userAudiobook = clientUserAudiobooks[this.audiobookId] || null
-    if (userAudiobook) {
-      var timeRemaining = this.totalDuration - userAudiobook.currentTime
-      Logger.info('[STREAM] User has progress for audiobook', userAudiobook.progress, `Time Remaining: ${timeRemaining}s`)
+    if (this.clientUserAudiobookData) {
+      var timeRemaining = this.totalDuration - this.clientUserAudiobookData.currentTime
+      Logger.info('[STREAM] User has progress for audiobook', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
       if (timeRemaining > 15) {
-        this.startTime = userAudiobook.currentTime
+        this.startTime = this.clientUserAudiobookData.currentTime
         this.clientCurrentTime = this.startTime
       }
     }
@@ -241,23 +251,22 @@ class Stream extends EventEmitter {
 
     this.ffmpeg = Ffmpeg()
 
-    var timeStart = this.startTime >= this.maxSeekBackTime ? (this.startTime - this.maxSeekBackTime) : 0
-    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, timeStart)
+    var adjustedStartTime = Math.max(this.startTime - this.maxSeekBackTime, 0)
+    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, adjustedStartTime)
 
     this.ffmpeg.addInput(this.concatFilesPath)
     // seek_timestamp : https://ffmpeg.org/ffmpeg.html
     // the argument to the -ss option is considered an actual timestamp, and is not offset by the start time of the file
-    //   note: this may result in the same thing as output seeking, fixes https://github.com/advplyr/audiobookshelf/issues/116
+    //   fixes https://github.com/advplyr/audiobookshelf/issues/116
     this.ffmpeg.inputOption('-seek_timestamp 1')
     this.ffmpeg.inputFormat('concat')
     this.ffmpeg.inputOption('-safe 0')
-    // this.ffmpeg.inputOption('-segment_time_metadata 1')
 
-    if (timeStart > 0) {
-      const shiftedStartTime = timeStart - trackStartTime
+    if (adjustedStartTime > 0) {
+      const shiftedStartTime = adjustedStartTime - trackStartTime
       // Issues using exact fractional seconds i.e. 29.49814 - changing to 29.5s
       var startTimeS = Math.round(shiftedStartTime * 10) / 10 + 's'
-      Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(timeStart)} (User startTime ${secondsToTimestamp(this.startTime)}) and Segment #${this.segmentStartNumber}`)
+      Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(adjustedStartTime)} (User startTime ${secondsToTimestamp(this.startTime)}) and Segment #${this.segmentStartNumber}`)
       this.ffmpeg.inputOption(`-ss ${startTimeS}`)
 
       this.ffmpeg.inputOption('-noaccurate_seek')
