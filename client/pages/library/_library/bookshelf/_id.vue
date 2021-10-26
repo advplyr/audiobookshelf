@@ -64,6 +64,17 @@ export default {
         if (this.$route.query.query !== this.searchQuery) {
           this.newQuery()
         }
+      } else if (this.id === 'series') {
+        if (this.selectedSeries && this.$route.query.series && this.$route.query.series !== this.$encode(this.selectedSeries)) {
+          // Series changed
+          this.selectedSeries = this.$decode(this.$route.query.series)
+        } else if (!this.selectedSeries && this.$route.query.series) {
+          // Series selected
+          this.selectedSeries = this.$decode(this.$route.query.series)
+        } else if (this.selectedSeries && !this.$route.query.series) {
+          // Series unselected
+          this.selectedSeries = null
+        }
       }
     }
   },
