@@ -257,7 +257,7 @@ class Stream extends EventEmitter {
       const shiftedStartTime = timeStart - trackStartTime
       // Issues using exact fractional seconds i.e. 29.49814 - changing to 29.5s
       var startTimeS = Math.round(shiftedStartTime * 10) / 10 + 's'
-      Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(this.startTime)} and Segment #${this.segmentStartNumber}`)
+      Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(timeStart)} (User startTime ${secondsToTimestamp(this.startTime)}) and Segment #${this.segmentStartNumber}`)
       this.ffmpeg.inputOption(`-ss ${startTimeS}`)
 
       this.ffmpeg.inputOption('-noaccurate_seek')
