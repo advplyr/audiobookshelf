@@ -16,6 +16,7 @@ class Stream extends EventEmitter {
     this.audiobook = audiobook
 
     this.segmentLength = 6
+    this.maxSeekBackTime = 30
     this.streamPath = Path.join(streamPath, this.id)
     this.concatFilesPath = Path.join(this.streamPath, 'files.txt')
     this.playlistPath = Path.join(this.streamPath, 'output.m3u8')
@@ -67,7 +68,7 @@ class Stream extends EventEmitter {
 
   get segmentStartNumber() {
     if (!this.startTime) return 0
-    return Math.floor(this.startTime / this.segmentLength)
+    return Math.floor((this.startTime >= this.maxSeekBackTime ? (this.startTime - this.maxSeekBackTime) : 0) / this.segmentLength)
   }
 
   get numSegments() {
@@ -104,7 +105,8 @@ class Stream extends EventEmitter {
       clientCurrentTime: this.clientCurrentTime,
       startTime: this.startTime,
       segmentStartNumber: this.segmentStartNumber,
-      isTranscodeComplete: this.isTranscodeComplete
+      isTranscodeComplete: this.isTranscodeComplete,
+      lastUpdate: this.client.user.audiobooks[this.audiobook.id].lastUpdate
     }
   }
 
@@ -239,7 +241,8 @@ class Stream extends EventEmitter {
 
     this.ffmpeg = Ffmpeg()
 
-    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, this.startTime)
+    var timeStart = this.startTime >= this.maxSeekBackTime ? (this.startTime - this.maxSeekBackTime) : 0
+    var trackStartTime = await writeConcatFile(this.tracks, this.concatFilesPath, timeStart)
 
     this.ffmpeg.addInput(this.concatFilesPath)
     // seek_timestamp : https://ffmpeg.org/ffmpeg.html
@@ -250,8 +253,8 @@ class Stream extends EventEmitter {
     this.ffmpeg.inputOption('-safe 0')
     // this.ffmpeg.inputOption('-segment_time_metadata 1')
 
-    if (this.startTime > 0) {
-      const shiftedStartTime = this.startTime - trackStartTime
+    if (timeStart > 0) {
+      const shiftedStartTime = timeStart - trackStartTime
       // Issues using exact fractional seconds i.e. 29.49814 - changing to 29.5s
       var startTimeS = Math.round(shiftedStartTime * 10) / 10 + 's'
       Logger.info(`[STREAM] Starting Stream at startTime ${secondsToTimestamp(this.startTime)} and Segment #${this.segmentStartNumber}`)
