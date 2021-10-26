@@ -8,8 +8,15 @@
         <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-lg">
           {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
         </nuxt-link>
-        <p class="text-gray-200 text-base hover:underline cursor-pointer" @click="filterByAuthor">by {{ author }}</p>
-        <p class="font-mono text-sm text-gray-200">{{ totalDurationPretty }}</p>
+        <div class="text-gray-400 flex items-center">
+          <span class="material-icons text-sm">person</span>
+          <p class="text-base hover:underline cursor-pointer pl-2" @click="filterByAuthor">{{ author }}</p>
+        </div>
+
+        <div class="text-gray-400 flex items-center">
+          <span class="material-icons text-xs">schedule</span>
+          <p class="font-mono text-sm pl-2 pb-px">{{ totalDurationPretty }}</p>
+        </div>
       </div>
       <div class="flex-grow" />
       <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
