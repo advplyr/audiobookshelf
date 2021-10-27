@@ -6,7 +6,7 @@
           <div class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-white hover:bg-opacity-10 cursor-pointer" @click="showBookmarkTitleInput = false">
             <span class="material-icons text-3xl">arrow_back</span>
           </div>
-          <p class="text-xl pl-2">New Bookmark</p>
+          <p class="text-xl pl-2">{{ selectedBookmark ? 'Edit Bookmark' : 'New Bookmark' }}</p>
           <div class="flex-grow" />
           <p class="text-xl font-mono">
             {{ this.$secondsToTimestamp(currentTime) }}
@@ -15,25 +15,18 @@
         <form @submit.prevent="submitBookmark">
           <ui-text-input-with-label v-model="newBookmarkTitle" label="Note" />
           <div class="flex justify-end mt-6">
-            <ui-btn color="success" class="w-1/2" type="submit">Create Bookmark</ui-btn>
+            <ui-btn color="success" class="w-1/2" type="submit">{{ selectedBookmark ? 'Update' : 'Create' }} Bookmark</ui-btn>
           </div>
         </form>
       </div>
       <div class="w-full h-full" v-show="!showBookmarkTitleInput">
         <template v-for="bookmark in bookmarks">
-          <div :key="bookmark.id" :id="`bookmark-row-${bookmark.id}`" class="flex items-center px-4 py-4 justify-start cursor-pointer bg-opacity-20 hover:bg-bg relative" @click="clickBookmark(bookmark)">
-            <span class="material-icons text-white text-opacity-60">bookmark_border</span>
-            <p class="pl-2 pr-16 truncate">{{ bookmark.title }}</p>
-
-            <div class="absolute right-0 top-0 h-full flex items-center pr-4">
-              <span class="font-mono text-sm text-gray-300">{{ $secondsToTimestamp(bookmark.time) }}</span>
-            </div>
-          </div>
+          <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" @click="clickBookmark" @edit="editBookmark" @delete="deleteBookmark" />
         </template>
         <div v-if="!bookmarks.length" class="flex h-32 items-center justify-center">
           <p class="text-xl">No Bookmarks</p>
         </div>
-        <div class="flex px-4 py-2 items-center text-center justify-between border-b border-white border-opacity-10 bg-blue-500 bg-opacity-20 cursor-pointer text-white text-opacity-80 hover:bg-opacity-40 hover:text-opacity-100" @click="createBookmark">
+        <div v-show="canCreateBookmark" class="flex px-4 py-2 items-center text-center justify-between border-b border-white border-opacity-10 bg-blue-500 bg-opacity-20 cursor-pointer text-white text-opacity-80 hover:bg-opacity-40 hover:text-opacity-100" @click="createBookmark">
           <span class="material-icons">add</span>
           <p class="text-base pl-2">Create Bookmark</p>
           <p class="text-sm font-mono">
@@ -61,6 +54,7 @@ export default {
   },
   data() {
     return {
+      selectedBookmark: null,
       showBookmarkTitleInput: false,
       newBookmarkTitle: ''
     }
@@ -81,22 +75,45 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    canCreateBookmark() {
+      return !this.bookmarks.find((bm) => bm.time === this.currentTime)
     }
   },
   methods: {
+    editBookmark(bm) {
+      this.selectedBookmark = bm
+      this.newBookmarkTitle = bm.title
+      this.showBookmarkTitleInput = true
+    },
+    deleteBookmark(bm) {
+      var bookmark = { ...bm, audiobookId: this.audiobookId }
+      this.$emit('delete', bookmark)
+    },
     clickBookmark(bm) {
       this.$emit('select', bm)
     },
     createBookmark() {
+      this.selectedBookmark = null
+      this.newBookmarkTitle = this.$formatDate(Date.now(), 'MMM dd, yyyy HH:mm')
       this.showBookmarkTitleInput = true
     },
     submitBookmark() {
-      var bookmark = {
-        audiobookId: this.audiobookId,
-        title: this.newBookmarkTitle,
-        time: this.currentTime
+      if (this.selectedBookmark) {
+        if (this.selectedBookmark.title !== this.newBookmarkTitle) {
+          var bookmark = { ...this.selectedBookmark }
+          bookmark.audiobookId = this.audiobookId
+          bookmark.title = this.newBookmarkTitle
+          this.$emit('update', bookmark)
+        }
+      } else {
+        var bookmark = {
+          audiobookId: this.audiobookId,
+          title: this.newBookmarkTitle,
+          time: this.currentTime
+        }
+        this.$emit('create', bookmark)
       }
-      this.$emit('create', bookmark)
       this.newBookmarkTitle = ''
       this.showBookmarkTitleInput = false
     }

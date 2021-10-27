@@ -107,11 +107,26 @@ class AudiobookProgress {
     return hasUpdates
   }
 
+  checkBookmarkExists(time) {
+    return this.bookmarks.find(bm => bm.time === time)
+  }
+
   createBookmark(time, title) {
     var newBookmark = new AudioBookmark()
     newBookmark.setData(time, title)
     this.bookmarks.push(newBookmark)
     return newBookmark
+  }
+
+  updateBookmark(time, title) {
+    var bookmark = this.bookmarks.find(bm => bm.time === time)
+    if (!bookmark) return false
+    bookmark.title = title
+    return bookmark
+  }
+
+  deleteBookmark(time) {
+    this.bookmarks = this.bookmarks.filter(bm => bm.time !== time)
   }
 }
 module.exports = AudiobookProgress

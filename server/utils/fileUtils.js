@@ -69,7 +69,7 @@ function secondsToTimestamp(seconds) {
   _seconds -= _minutes * 60
   var _hours = Math.floor(_minutes / 60)
   _minutes -= _hours * 60
-  _seconds = Math.round(_seconds)
+  _seconds = Math.floor(_seconds)
   if (!_hours) {
     return `${_minutes}:${_seconds.toString().padStart(2, '0')}`
   }

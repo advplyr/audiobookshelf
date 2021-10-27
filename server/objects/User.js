@@ -281,11 +281,52 @@ class User {
 
   createBookmark({ audiobookId, time, title }) {
     if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-      return false
+      return {
+        error: 'Invalid Audiobook'
+      }
     }
+    if (this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+      return {
+        error: 'Bookmark already exists'
+      }
+    }
+
     var success = this.audiobooks[audiobookId].createBookmark(time, title)
     if (success) return this.audiobooks[audiobookId]
     return null
+  }
+
+  updateBookmark({ audiobookId, time, title }) {
+    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+      return {
+        error: 'Invalid Audiobook'
+      }
+    }
+    if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+      return {
+        error: 'Bookmark does not exist'
+      }
+    }
+
+    var success = this.audiobooks[audiobookId].updateBookmark(time, title)
+    if (success) return this.audiobooks[audiobookId]
+    return null
+  }
+
+  deleteBookmark({ audiobookId, time }) {
+    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+      return {
+        error: 'Invalid Audiobook'
+      }
+    }
+    if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+      return {
+        error: 'Bookmark does not exist'
+      }
+    }
+
+    this.audiobooks[audiobookId].deleteBookmark(time)
+    return this.audiobooks[audiobookId]
   }
 }
 module.exports = User

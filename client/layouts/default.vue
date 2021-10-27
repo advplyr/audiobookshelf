@@ -239,6 +239,12 @@ export default {
       download.status = this.$constants.DownloadStatus.EXPIRED
       this.$store.commit('downloads/addUpdateDownload', download)
     },
+    showErrorToast(message) {
+      this.$toast.error(message)
+    },
+    showSuccessToast(message) {
+      this.$toast.success(message)
+    },
     logEvtReceived(payload) {
       this.$store.commit('logs/logEvt', payload)
     },
@@ -302,6 +308,10 @@ export default {
       this.socket.on('download_failed', this.downloadFailed)
       this.socket.on('download_killed', this.downloadKilled)
       this.socket.on('download_expired', this.downloadExpired)
+
+      // Toast Listeners
+      this.socket.on('show_error_toast', this.showErrorToast)
+      this.socket.on('show_success_toast', this.showSuccessToast)
 
       this.socket.on('log', this.logEvtReceived)
 
