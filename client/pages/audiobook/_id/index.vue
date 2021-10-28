@@ -413,7 +413,7 @@ export default {
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$delete(`/api/user/audiobook/${this.audiobookId}`)
+          .$patch(`/api/user/audiobook/${this.audiobookId}/reset-progress`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)

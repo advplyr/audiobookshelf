@@ -462,14 +462,9 @@ class Server {
       Logger.error('[Server] audiobookProgressUpdate invalid socket client')
       return
     }
-    var audiobookProgress = client.user.updateAudiobookProgress(progressPayload.audiobookId, progressPayload)
+    var audiobookProgress = client.user.updateAudiobookData(progressPayload.audiobookId, progressPayload)
     if (audiobookProgress) {
       await this.db.updateEntity('user', client.user)
-
-      // This audiobook progress is out of date, why?
-      // var userAudiobook = client.user.getAudiobookJSON(progressPayload.audiobookId)
-      // Logger.debug(`[Server] Emitting audiobook progress update to clients ${this.getClientsForUser(client.user.id).length}: ${JSON.stringify(userAudiobook)}`)
-
       this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
         id: progressPayload.audiobookId,
         data: audiobookProgress || null

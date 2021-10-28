@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const AudiobookProgress = require('./AudiobookProgress')
+const UserAudiobookData = require('./UserAudiobookData')
 
 class User {
   constructor(user) {
@@ -141,7 +141,7 @@ class User {
       this.audiobooks = {}
       for (const key in user.audiobooks) {
         if (user.audiobooks[key]) {
-          this.audiobooks[key] = new AudiobookProgress(user.audiobooks[key])
+          this.audiobooks[key] = new UserAudiobookData(user.audiobooks[key])
         }
       }
     }
@@ -201,21 +201,21 @@ class User {
   updateAudiobookProgressFromStream(stream) {
     if (!this.audiobooks) this.audiobooks = {}
     if (!this.audiobooks[stream.audiobookId]) {
-      this.audiobooks[stream.audiobookId] = new AudiobookProgress()
+      this.audiobooks[stream.audiobookId] = new UserAudiobookData()
     }
-    this.audiobooks[stream.audiobookId].updateFromStream(stream)
+    this.audiobooks[stream.audiobookId].updateProgressFromStream(stream)
     return this.audiobooks[stream.audiobookId]
   }
 
-  updateAudiobookProgress(audiobook, updatePayload) {
+  updateAudiobookData(audiobook, updatePayload) {
     if (!this.audiobooks) this.audiobooks = {}
     if (!this.audiobooks[audiobook.id]) {
-      this.audiobooks[audiobook.id] = new AudiobookProgress()
+      this.audiobooks[audiobook.id] = new UserAudiobookData()
       this.audiobooks[audiobook.id].audiobookId = audiobook.id
     }
     var wasUpdated = this.audiobooks[audiobook.id].update(updatePayload)
     if (wasUpdated) {
-      Logger.debug(`[User] Audiobook progress was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
+      Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
       return this.audiobooks[audiobook.id]
     }
     return false
@@ -251,7 +251,7 @@ class User {
     if (!this.audiobooks || !this.audiobooks[audiobook.id]) {
       return false
     }
-    return this.updateAudiobookProgress(audiobook, {
+    return this.updateAudiobookData(audiobook, {
       progress: 0,
       currentTime: 0,
       isRead: false,
@@ -261,7 +261,7 @@ class User {
     })
   }
 
-  deleteAudiobookProgress(audiobookId) {
+  deleteAudiobookData(audiobookId) {
     if (!this.audiobooks || !this.audiobooks[audiobookId]) {
       return false
     }

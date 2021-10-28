@@ -60,9 +60,12 @@ class ApiController {
 
     this.router.patch('/match/:id', this.match.bind(this))
 
+    // Old Route : Wait until refactor of mobile app to replace with path /reset-progress
     this.router.delete('/user/audiobook/:id', this.resetUserAudiobookProgress.bind(this))
-    this.router.patch('/user/audiobook/:id', this.updateUserAudiobookProgress.bind(this))
-    this.router.patch('/user/audiobooks', this.batchUpdateUserAudiobooksProgress.bind(this))
+
+    this.router.patch('/user/audiobook/:id/reset-progress', this.resetUserAudiobookProgress.bind(this))
+    this.router.patch('/user/audiobook/:id', this.updateUserAudiobookData.bind(this))
+    this.router.patch('/user/audiobooks', this.batchUpdateUserAudiobookData.bind(this))
 
     this.router.patch('/user/password', this.userChangePassword.bind(this))
     this.router.patch('/user/settings', this.userUpdateSettings.bind(this))
@@ -342,7 +345,7 @@ class ApiController {
     // Remove audiobook from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.deleteAudiobookProgress(audiobook.id)
+      var madeUpdates = user.deleteAudiobookData(audiobook.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }
@@ -564,12 +567,12 @@ class ApiController {
     res.sendStatus(200)
   }
 
-  async updateUserAudiobookProgress(req, res) {
+  async updateUserAudiobookData(req, res) {
     var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
     if (!audiobook) {
       return res.status(404).send('Audiobook not found')
     }
-    var wasUpdated = req.user.updateAudiobookProgress(audiobook, req.body)
+    var wasUpdated = req.user.updateAudiobookData(audiobook, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -577,17 +580,17 @@ class ApiController {
     res.sendStatus(200)
   }
 
-  async batchUpdateUserAudiobooksProgress(req, res) {
-    var abProgresses = req.body
-    if (!abProgresses || !abProgresses.length) {
+  async batchUpdateUserAudiobookData(req, res) {
+    var userAbDataPayloads = req.body
+    if (!userAbDataPayloads || !userAbDataPayloads.length) {
       return res.sendStatus(500)
     }
 
     var shouldUpdate = false
-    abProgresses.forEach((progress) => {
-      var audiobook = this.db.audiobooks.find(ab => ab.id === progress.audiobookId)
+    userAbDataPayloads.forEach((userAbData) => {
+      var audiobook = this.db.audiobooks.find(ab => ab.id === userAbData.audiobookId)
       if (audiobook) {
-        var wasUpdated = req.user.updateAudiobookProgress(audiobook, progress)
+        var wasUpdated = req.user.updateAudiobookData(audiobook, userAbData)
         if (wasUpdated) shouldUpdate = true
       }
     })

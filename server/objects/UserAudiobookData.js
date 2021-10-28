@@ -1,7 +1,7 @@
 const Logger = require('../Logger')
 const AudioBookmark = require('./AudioBookmark')
 
-class AudiobookProgress {
+class UserAudiobookData {
   constructor(progress) {
     this.audiobookId = null
 
@@ -24,7 +24,7 @@ class AudiobookProgress {
     if (!this.bookmarks) return []
     return this.bookmarks.filter((b) => {
       if (!b.toJSON) {
-        Logger.error(`[AudiobookProgress] Invalid bookmark ${JSON.stringify(b)}`)
+        Logger.error(`[UserAudiobookData] Invalid bookmark ${JSON.stringify(b)}`)
         return false
       }
       return true
@@ -61,7 +61,7 @@ class AudiobookProgress {
     }
   }
 
-  updateFromStream(stream) {
+  updateProgressFromStream(stream) {
     this.audiobookId = stream.audiobookId
     this.totalDuration = stream.totalDuration
     this.progress = stream.clientProgress
@@ -86,7 +86,7 @@ class AudiobookProgress {
 
   update(payload) {
     var hasUpdates = false
-    Logger.debug(`[AudiobookProgress] Update called ${JSON.stringify(payload)}`)
+    Logger.debug(`[UserAudiobookData] Update called ${JSON.stringify(payload)}`)
     for (const key in payload) {
       if (payload[key] !== this[key]) {
         if (key === 'isRead') {
@@ -135,4 +135,4 @@ class AudiobookProgress {
     this.bookmarks = this.bookmarks.filter(bm => bm.time !== time)
   }
 }
-module.exports = AudiobookProgress
+module.exports = UserAudiobookData
