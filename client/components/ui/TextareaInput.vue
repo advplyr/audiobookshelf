@@ -38,10 +38,11 @@ export default {
 </script>
 
 <style scoped>
-input {
+textarea {
   border-style: inherit !important;
 }
-input:read-only {
-  background-color: #eee;
+textarea:read-only {
+  color: #aaa;
+  background-color: #444;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
-    <p class="px-1 text-sm font-semibold">{{ label }}</p>
-    <ui-textarea-input v-model="inputValue" :rows="rows" class="w-full" />
+    <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</p>
+    <ui-textarea-input v-model="inputValue" :disabled="disabled" :rows="rows" class="w-full" />
   </div>
 </template>
 
@@ -10,6 +10,7 @@ export default {
   props: {
     value: [String, Number],
     label: String,
+    disabled: Boolean,
     rows: {
       type: Number,
       default: 2

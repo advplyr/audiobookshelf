@@ -1,4 +1,3 @@
-const fs = require('fs-extra')
 const Path = require('path')
 const Logger = require('../Logger')
 const parseAuthors = require('../utils/parseAuthors')
@@ -16,6 +15,7 @@ class Book {
     this.publishYear = null
     this.publisher = null
     this.description = null
+    this.isbn = null
     this.cover = null
     this.coverFullPath = null
     this.genres = []
@@ -56,6 +56,7 @@ class Book {
     this.publishYear = book.publishYear
     this.publisher = book.publisher
     this.description = book.description
+    this.isbn = book.isbn || null
     this.cover = book.cover
     this.coverFullPath = book.coverFullPath || null
     this.genres = book.genres
@@ -78,6 +79,7 @@ class Book {
       publishYear: this.publishYear,
       publisher: this.publisher,
       description: this.description,
+      isbn: this.isbn,
       cover: this.cover,
       coverFullPath: this.coverFullPath,
       genres: this.genres,
@@ -116,6 +118,7 @@ class Book {
     this.volumeNumber = data.volumeNumber || null
     this.publishYear = data.publishYear || null
     this.description = data.description || null
+    this.isbn = data.isbn || null
     this.cover = data.cover || null
     this.coverFullPath = data.coverFullPath || null
     this.genres = data.genres || []

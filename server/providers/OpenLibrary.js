@@ -51,12 +51,21 @@ class OpenLibrary {
     }
   }
 
+  parsePublishYear(doc, worksData) {
+    if (doc.first_publish_year && !isNaN(doc.first_publish_year)) return doc.first_publish_year
+    if (worksData.first_publish_date) {
+      var year = worksData.first_publish_date.split('-')[0]
+      if (!isNaN(year)) return year
+    }
+    return null
+  }
+
   async cleanSearchDoc(doc) {
     var worksData = await this.getWorksData(doc.key)
     return {
       title: doc.title,
       author: doc.author_name ? doc.author_name.join(', ') : null,
-      year: doc.first_publish_year,
+      publishYear: this.parsePublishYear(doc, worksData),
       edition: doc.cover_edition_key,
       cover: doc.cover_edition_key ? `https://covers.openlibrary.org/b/OLID/${doc.cover_edition_key}-L.jpg` : null,
       ...worksData

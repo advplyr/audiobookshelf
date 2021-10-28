@@ -91,6 +91,10 @@ class Audiobook {
     return this.book ? this.book.authorLF : null
   }
 
+  get authorFL() {
+    return this.book ? this.book.authorFL : null
+  }
+
   get genres() {
     return this.book ? this.book.genres || [] : []
   }

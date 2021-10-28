@@ -6,11 +6,11 @@
         <div class="flex items-center">
           <h1>{{ book.title }}</h1>
           <div class="flex-grow" />
-          <p>{{ book.year || book.first_publish_date }}</p>
+          <p>{{ book.publishYear }}</p>
         </div>
         <p class="text-gray-400">{{ book.author }}</p>
         <div class="w-full max-h-12 overflow-hidden">
-          <p class="text-gray-500 text-xs" v-html="book.description"></p>
+          <p class="text-gray-500 text-xs">{{ book.description }}</p>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@ export default {
     }
   },
   mounted() {
-    this.selectedCover = this.bookCovers.length ? this.bookCovers[0] : null
+    this.selectedCover = this.bookCovers.length ? this.bookCovers[0] : this.book.cover || null
   }
 }
 </script>

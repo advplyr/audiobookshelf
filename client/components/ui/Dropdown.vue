@@ -1,9 +1,9 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutside">
-    <p class="text-sm text-opacity-75 mb-1">{{ label }}</p>
-    <button type="button" :disabled="disabled" class="relative h-10 w-full border border-gray-500 rounded shadow-sm pl-3 pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <p class="text-sm font-semibold">{{ label }}</p>
+    <button type="button" :disabled="disabled" class="relative w-full border border-gray-500 rounded shadow-sm pl-3 pr-8 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" :class="small ? 'h-9' : 'h-10'" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
-        <span class="block truncate">{{ selectedText }}</span>
+        <span class="block truncate" :class="small ? 'text-sm' : ''">{{ selectedText }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
         <span class="material-icons text-gray-100">expand_more</span>
@@ -36,7 +36,8 @@ export default {
       type: Array,
       default: () => []
     },
-    disabled: Boolean
+    disabled: Boolean,
+    small: Boolean
   },
   data() {
     return {

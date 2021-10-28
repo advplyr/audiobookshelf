@@ -10,7 +10,6 @@ const { comparePaths, getIno } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
 const { ScanResult, CoverDestination } = require('./utils/constants')
 
-// Classes
 const BookFinder = require('./BookFinder')
 const Audiobook = require('./objects/Audiobook')
 

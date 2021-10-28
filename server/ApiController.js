@@ -6,6 +6,8 @@ const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
 const audioFileScanner = require('./utils/audioFileScanner')
 
+const BookFinder = require('./BookFinder')
+
 const Library = require('./objects/Library')
 const User = require('./objects/User')
 
@@ -23,6 +25,8 @@ class ApiController {
     this.emitter = emitter
     this.clientEmitter = clientEmitter
     this.MetadataPath = MetadataPath
+
+    this.bookFinder = new BookFinder()
 
     this.router = express()
     this.init()
@@ -51,6 +55,7 @@ class ApiController {
     this.router.patch('/audiobook/:id/tracks', this.updateAudiobookTracks.bind(this))
     this.router.post('/audiobook/:id/cover', this.uploadAudiobookCover.bind(this))
     this.router.patch('/audiobook/:id/coverfile', this.updateAudiobookCoverFromFile.bind(this))
+    this.router.get('/audiobook/:id/match', this.matchAudiobookBook.bind(this))
     this.router.patch('/audiobook/:id', this.updateAudiobook.bind(this))
 
     this.router.patch('/match/:id', this.match.bind(this))
@@ -85,8 +90,12 @@ class ApiController {
     this.router.get('/scantracks/:id', this.scanAudioTrackNums.bind(this))
   }
 
-  find(req, res) {
-    this.scanner.find(req, res)
+  async find(req, res) {
+    var provider = req.query.provider || 'google'
+    var title = req.query.title || ''
+    var author = req.query.author || ''
+    var results = await this.bookFinder.search(provider, title, author)
+    res.json(results)
   }
 
   findCovers(req, res) {
@@ -495,6 +504,18 @@ class ApiController {
 
     if (updated) res.status(200).send('Cover updated successfully')
     else res.status(200).send('No update was made to cover')
+  }
+
+  async matchAudiobookBook(req, res) {
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook) return res.sendStatus(404)
+
+    var provider = req.query.provider || 'google'
+    var excludeAuthor = req.query.excludeAuthor === '1'
+    var authorSearch = excludeAuthor ? null : audiobook.authorFL
+
+    var results = await this.bookFinder.search(provider, audiobook.title, authorSearch)
+    res.json(results)
   }
 
   async updateAudiobook(req, res) {

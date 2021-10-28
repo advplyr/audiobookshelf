@@ -1,5 +1,6 @@
 const OpenLibrary = require('./providers/OpenLibrary')
 const LibGen = require('./providers/LibGen')
+const GoogleBooks = require('./providers/GoogleBooks')
 const Logger = require('./Logger')
 const { levenshteinDistance } = require('./utils/index')
 
@@ -7,6 +8,7 @@ class BookFinder {
   constructor() {
     this.openLibrary = new OpenLibrary()
     this.libGen = new LibGen()
+    this.googleBooks = new GoogleBooks()
 
     this.verbose = false
   }
@@ -143,13 +145,26 @@ class BookFinder {
     return booksFiltered
   }
 
+  async getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance) {
+    var books = await this.googleBooks.search(title, author)
+    if (this.verbose) Logger.debug(`GoogleBooks Book Search Results: ${books.length || 0}`)
+    if (books.errorCode) {
+      Logger.error(`GoogleBooks Search Error ${books.errorCode}`)
+      return []
+    }
+    // Google has good sort
+    return books
+  }
+
   async search(provider, title, author, options = {}) {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
     Logger.debug(`Cover Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
-    if (provider === 'libgen') {
+    if (provider === 'google') {
+      return this.getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance)
+    } else if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {
       books = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)

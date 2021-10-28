@@ -20,7 +20,7 @@
 
     <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
       <keep-alive>
-        <component v-if="audiobook" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" />
+        <component v-if="audiobook" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
       </keep-alive>
     </div>
   </modals-modal>
@@ -44,11 +44,6 @@ export default {
           title: 'Cover',
           component: 'modals-edit-tabs-cover'
         },
-        // {
-        //   id: 'match',
-        //   title: 'Match',
-        //   component: 'modals-edit-tabs-match'
-        // },
         {
           id: 'tracks',
           title: 'Tracks',
@@ -68,6 +63,11 @@ export default {
           id: 'download',
           title: 'Download',
           component: 'modals-edit-tabs-download'
+        },
+        {
+          id: 'match',
+          title: 'Match',
+          component: 'modals-edit-tabs-match'
         }
       ]
     }
@@ -123,12 +123,16 @@ export default {
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.id === 'download' && this.isMissing) return false
         if ((tab.id === 'download' || tab.id === 'tracks') && this.userCanDownload) return true
         if (tab.id !== 'download' && tab.id !== 'tracks' && this.userCanUpdate) return true
+        if (tab.id === 'match' && this.showExperimentalFeatures) return true
         return false
       })
     },
@@ -194,7 +198,9 @@ export default {
       }
     },
     selectTab(tab) {
-      this.selectedTab = tab
+      if (this.availableTabs.find((t) => t.id === tab)) {
+        this.selectedTab = tab
+      }
     },
     audiobookUpdated() {
       if (!this.show) this.fetchOnShow = true
