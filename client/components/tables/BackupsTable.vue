@@ -102,7 +102,7 @@ export default {
     applyBackupComplete(success) {
       if (success) {
         // this.$toast.success('Backup Applied, refresh the page')
-        location.replace('/config?backup=1')
+        location.replace('/config/backups?backup=1')
       } else {
         this.$toast.error('Failed to apply backup')
       }
