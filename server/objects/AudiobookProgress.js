@@ -22,7 +22,13 @@ class AudiobookProgress {
 
   bookmarksToJSON() {
     if (!this.bookmarks) return []
-    return this.bookmarks.map(b => b.toJSON())
+    return this.bookmarks.filter((b) => {
+      if (!b.toJSON) {
+        Logger.error(`[AudiobookProgress] Invalid bookmark ${JSON.stringify(b)}`)
+        return false
+      }
+      return true
+    }).map(b => b.toJSON())
   }
 
   toJSON() {
