@@ -20,7 +20,12 @@ export default {
   data() {
     return {
       noValidCovers: false,
-      coverDiv: null
+      coverDiv: null,
+      isHovering: false,
+      coverImageEls: [],
+      coverWidth: 0,
+      offsetIncrement: 0,
+      isFannedOut: false
     }
   },
   watch: {
@@ -40,10 +45,59 @@ export default {
     }
   },
   methods: {
+    setHover(val) {
+      if (val && !this.isHovering) {
+        this.fanOutCovers()
+      } else if (!val && this.isHovering) {
+        this.reverseFan()
+      }
+      this.isHovering = val
+    },
+    fanOutCovers() {
+      if (this.coverImageEls.length < 2 || this.isFannedOut) return
+      this.isFannedOut = true
+      var fanCoverWidth = this.coverWidth * 0.75
+      var fanWidth = (this.coverImageEls.length - 1) * fanCoverWidth
+      var offsetLeft = (-1 * fanWidth) / 2
+      for (let i = 0; i < this.coverImageEls.length; i++) {
+        var coverEl = this.coverImageEls[i]
+        coverEl.style.transform = `translateX(${offsetLeft}px)`
+        offsetLeft += fanCoverWidth
+
+        var coverOverlay = document.createElement('div')
+        coverOverlay.className = 'absolute top-0 left-0 w-full h-full hover:bg-black hover:bg-opacity-40 text-white text-opacity-0 hover:text-opacity-100 flex items-center justify-center'
+
+        if (coverEl.dataset.volumeNumber) {
+          var pEl = document.createElement('p')
+          pEl.className = 'text-2xl'
+          pEl.textContent = `#${coverEl.dataset.volumeNumber}`
+          coverOverlay.appendChild(pEl)
+        }
+
+        let audiobookId = coverEl.dataset.audiobookId
+        coverOverlay.addEventListener('click', (e) => {
+          this.$router.push(`/audiobook/${audiobookId}`)
+          e.stopPropagation()
+          e.preventDefault()
+        })
+        coverEl.appendChild(coverOverlay)
+      }
+    },
+    reverseFan() {
+      if (this.coverImageEls.length < 2 || !this.isFannedOut) return
+      this.isFannedOut = false
+      for (let i = 0; i < this.coverImageEls.length; i++) {
+        var coverEl = this.coverImageEls[i]
+        coverEl.style.transform = 'translateX(0px)'
+        if (coverEl.lastChild) coverEl.lastChild.remove()
+      }
+    },
     getCoverUrl(book) {
       return this.$store.getters['audiobooks/getBookCoverSrc'](book, '')
     },
-    async buildCoverImg(src, bgCoverWidth, offsetLeft, forceCoverBg = false) {
+    async buildCoverImg(coverData, bgCoverWidth, offsetLeft, zIndex, forceCoverBg = false) {
+      var src = coverData.coverUrl
+
       var showCoverBg =
         forceCoverBg ||
         (await new Promise((resolve) => {
@@ -72,8 +126,11 @@ export default {
       imgdiv.style.height = this.height + 'px'
       imgdiv.style.width = bgCoverWidth + 'px'
       imgdiv.style.left = offsetLeft + 'px'
-      imgdiv.className = 'absolute top-0 box-shadow-book'
-      imgdiv.style.boxShadow = '-4px 0px 4px #11111166'
+      imgdiv.style.zIndex = zIndex
+      imgdiv.dataset.audiobookId = coverData.id
+      imgdiv.dataset.volumeNumber = coverData.volumeNumber || ''
+      imgdiv.className = 'absolute top-0 box-shadow-book transition-transform'
+      imgdiv.style.boxShadow = '4px 0px 4px #11111166'
       // imgdiv.style.transform = 'skew(0deg, 15deg)'
 
       if (showCoverBg) {
@@ -105,7 +162,15 @@ export default {
         this.coverDiv.remove()
         this.coverDiv = null
       }
-      var validCovers = this.bookItems.map((bookItem) => this.getCoverUrl(bookItem)).filter((b) => b !== '')
+      var validCovers = this.bookItems
+        .map((bookItem) => {
+          return {
+            id: bookItem.id,
+            volumeNumber: bookItem.book ? bookItem.book.volumeNumber : null,
+            coverUrl: this.getCoverUrl(bookItem)
+          }
+        })
+        .filter((b) => b.coverUrl !== '')
       if (!validCovers.length) {
         this.noValidCovers = true
         return
@@ -118,15 +183,21 @@ export default {
         coverWidth = this.height / 1.6
         widthPer = (this.width - coverWidth) / (validCovers.length - 1)
       }
+      this.coverWidth = coverWidth
+      this.offsetIncrement = widthPer
 
       var outerdiv = document.createElement('div')
       outerdiv.className = 'w-full h-full relative'
 
+      var coverImageEls = []
       for (let i = 0; i < validCovers.length; i++) {
         var offsetLeft = widthPer * i
-        var img = await this.buildCoverImg(validCovers[i], coverWidth, offsetLeft, validCovers.length === 1)
+        var zIndex = validCovers.length - i
+        var img = await this.buildCoverImg(validCovers[i], coverWidth, offsetLeft, zIndex, validCovers.length === 1)
         outerdiv.appendChild(img)
+        coverImageEls.push(img)
       }
+      this.coverImageEls = coverImageEls
 
       if (this.$refs.wrapper) {
         this.coverDiv = outerdiv

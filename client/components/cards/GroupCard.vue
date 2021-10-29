@@ -1,11 +1,11 @@
 <template>
   <div class="relative">
-    <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="isHovering = true" @mouseleave="isHovering = false" @click="clickCard">
+    <div class="rounded-sm h-full relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
         <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: height + 'px', width: height + 'px' }">
           <cards-group-cover ref="groupcover" :name="groupName" :book-items="bookItems" :width="height" :height="height" />
 
-          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
             <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
@@ -103,6 +103,14 @@ export default {
     }
   },
   methods: {
+    mouseoverCard() {
+      this.isHovering = true
+      // if (this.$refs.groupcover) this.$refs.groupcover.setHover(true)
+    },
+    mouseleaveCard() {
+      this.isHovering = false
+      // if (this.$refs.groupcover) this.$refs.groupcover.setHover(false)
+    },
     clickCard() {
       this.$emit('click', this.group)
     }
