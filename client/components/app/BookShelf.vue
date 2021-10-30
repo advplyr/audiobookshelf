@@ -1,57 +1,56 @@
 <template>
-  <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
-    <!-- Cover size widget -->
-    <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
-      <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
-        <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
-        <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
-        <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
+  <div class="bookshelf overflow-hidden relative block max-h-full">
+    <div ref="wrapper" class="h-full w-full relative" :class="isGridMode ? 'overflow-y-scroll' : 'overflow-hidden'">
+      <!-- Cover size widget -->
+      <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
+        <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
+          <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
+          <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
+          <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
+        </div>
       </div>
-    </div>
 
-    <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4 py-4">Your Audiobookshelf is empty!</p>
-      <div class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2" @click="scan">Configure Scanner</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
+      <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
+        <p class="text-center text-2xl font-book mb-4 py-4">Your Audiobookshelf is empty!</p>
+        <div class="flex">
+          <ui-btn to="/config" color="primary" class="w-52 mr-2" @click="scan">Configure Scanner</ui-btn>
+          <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
+        </div>
       </div>
-    </div>
-    <div v-else-if="page === 'search'" id="bookshelf-categorized" class="w-full flex flex-col items-center">
-      <template v-for="(shelf, index) in categorizedShelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" />
-      </template>
-      <div v-show="!categorizedShelves.length" class="w-full py-16 text-center text-xl">
-        <div class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
+      <div v-else-if="page === 'search'" id="bookshelf-categorized" class="w-full flex flex-col items-center">
+        <template v-for="(shelf, index) in categorizedShelves">
+          <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" />
+        </template>
+        <div v-show="!categorizedShelves.length" class="w-full py-16 text-center text-xl">
+          <div class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
+        </div>
       </div>
-    </div>
-    <div v-else id="bookshelf" class="w-full flex flex-col items-center">
-      <template v-if="viewMode === 'grid'">
-        <template v-for="(shelf, index) in shelves">
-          <div :key="index" class="w-full bookshelfRow relative">
-            <div class="flex justify-center items-center">
-              <template v-for="entity in shelf">
-                <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
-                <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-                <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
-              </template>
-            </div>
-            <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
+      <div v-else class="w-full">
+        <template v-if="viewMode === 'grid'">
+          <div class="w-full flex flex-col items-center">
+            <template v-for="(shelf, index) in shelves">
+              <div :key="index" class="w-full bookshelfRow relative">
+                <div class="flex justify-center items-center">
+                  <template v-for="entity in shelf">
+                    <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
+                    <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
+                    <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
+                  </template>
+                </div>
+                <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
+              </div>
+            </template>
           </div>
         </template>
-      </template>
-      <template v-else>
-        <template v-for="(entity, index) in entities">
-          <div :key="index" class="w-full bookshelfRow relative">
-            <app-bookshelf-list-row :book-item="entity" :book-cover-width="bookCoverWidth" :user-audiobook="userAudiobooks[entity.id]" />
-            <div class="bookshelfDivider h-3 w-full absolute bottom-0 left-0 right-0 z-10" />
-          </div>
+        <template v-else>
+          <app-book-list :books="entities" />
         </template>
-      </template>
-      <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
-        <div v-if="page === 'search'" class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
-        <div v-else class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
-        <ui-btn v-if="!showGroups && (filterBy !== 'all' || keywordFilter)" @click="clearFilter">Clear Filter</ui-btn>
-        <ui-btn v-else-if="page === 'search'" to="/library">Back to Library</ui-btn>
+        <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
+          <div v-if="page === 'search'" class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
+          <div v-else class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
+          <ui-btn v-if="!showGroups && (filterBy !== 'all' || keywordFilter)" @click="clearFilter">Clear Filter</ui-btn>
+          <ui-btn v-else-if="page === 'search'" to="/library">Back to Library</ui-btn>
+        </div>
       </div>
     </div>
   </div>
@@ -122,7 +121,6 @@ export default {
       return this.bookCoverWidth / 120
     },
     bookCoverWidth() {
-      if (this.viewMode === 'list') return 60
       var coverWidth = this.availableSizes[this.selectedSizeIndex]
       return coverWidth
     },
@@ -363,8 +361,9 @@ export default {
 </script>
 
 <style>
-#bookshelf {
+.bookshelf {
   height: calc(100% - 40px);
+  width: calc(100vw - 80px);
 }
 .bookshelfRow {
   background-image: url(/wood_panels.jpg);

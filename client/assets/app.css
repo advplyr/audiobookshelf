@@ -19,6 +19,9 @@
 ::-webkit-scrollbar {
   width: 8px;
 }
+::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
 /* ::-webkit-scrollbar:horizontal { */
   /* height: 16px; */
   /* height: 24px;
