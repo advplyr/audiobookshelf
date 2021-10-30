@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
-    <div v-show="!isSelectionMode" class="fixed bottom-2 right-4 z-30">
+    <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
       <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
         <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
@@ -25,17 +25,27 @@
       </div>
     </div>
     <div v-else id="bookshelf" class="w-full flex flex-col items-center">
-      <template v-for="(shelf, index) in shelves">
-        <div :key="index" class="w-full bookshelfRow relative">
-          <div class="flex justify-center items-center">
-            <template v-for="entity in shelf">
-              <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
-              <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-              <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
-            </template>
+      <template v-if="viewMode === 'grid'">
+        <template v-for="(shelf, index) in shelves">
+          <div :key="index" class="w-full bookshelfRow relative">
+            <div class="flex justify-center items-center">
+              <template v-for="entity in shelf">
+                <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
+                <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
+                <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
+              </template>
+            </div>
+            <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
           </div>
-          <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
-        </div>
+        </template>
+      </template>
+      <template v-else>
+        <template v-for="(entity, index) in entities">
+          <div :key="index" class="w-full bookshelfRow relative">
+            <app-bookshelf-list-row :book-item="entity" :book-cover-width="bookCoverWidth" :user-audiobook="userAudiobooks[entity.id]" />
+            <div class="bookshelfDivider h-3 w-full absolute bottom-0 left-0 right-0 z-10" />
+          </div>
+        </template>
       </template>
       <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
         <div v-if="page === 'search'" class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
@@ -56,7 +66,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    searchQuery: String
+    searchQuery: String,
+    viewMode: String
   },
   data() {
     return {
@@ -95,6 +106,9 @@ export default {
     }
   },
   computed: {
+    isGridMode() {
+      return this.viewMode === 'grid'
+    },
     keywordFilter() {
       return this.$store.state.audiobooks.keywordFilter
     },
@@ -108,7 +122,9 @@ export default {
       return this.bookCoverWidth / 120
     },
     bookCoverWidth() {
-      return this.availableSizes[this.selectedSizeIndex]
+      if (this.viewMode === 'list') return 60
+      var coverWidth = this.availableSizes[this.selectedSizeIndex]
+      return coverWidth
     },
     sizeMultiplier() {
       return this.bookCoverWidth / 120

@@ -150,6 +150,15 @@ export const mutations = {
       Vue.set(state, 'selectedAudiobooks', newSel)
     }
   },
+  setAudiobookSelected(state, { audiobookId, selected }) {
+    var isThere = state.selectedAudiobooks.includes(audiobookId)
+    if (isThere && !selected) {
+      state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
+    } else if (selected && !isThere) {
+      var newSel = state.selectedAudiobooks.concat([audiobookId])
+      Vue.set(state, 'selectedAudiobooks', newSel)
+    }
+  },
   setProcessingBatch(state, val) {
     state.processingBatch = val
   },

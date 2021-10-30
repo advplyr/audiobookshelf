@@ -316,9 +316,6 @@ export default {
     numEbooks() {
       return this.audiobook.numEbooks
     },
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     description() {
       return this.book.description || ''
     },

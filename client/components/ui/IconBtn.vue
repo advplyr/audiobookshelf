@@ -1,6 +1,6 @@
 <template>
   <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :disabled="disabled" :class="className" @click="clickBtn">
-    <span class="material-icons icon-text">{{ icon }}</span>
+    <span class="material-icons" :style="{ fontSize }">{{ icon }}</span>
   </button>
 </template>
 
@@ -22,6 +22,10 @@ export default {
       var classes = []
       classes.push(`bg-${this.bgColor}`)
       return classes.join(' ')
+    },
+    fontSize() {
+      if (this.icon === 'edit') return '1.25rem'
+      return '1.4rem'
     }
   },
   methods: {

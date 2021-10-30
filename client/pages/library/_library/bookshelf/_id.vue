@@ -3,8 +3,8 @@
     <div class="flex h-full">
       <app-side-rail />
       <div class="flex-grow">
-        <app-book-shelf-toolbar :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" />
-        <app-book-shelf :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" />
+        <app-book-shelf-toolbar :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode.sync="viewMode" />
+        <app-book-shelf :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode="viewMode" />
       </div>
     </div>
   </div>
@@ -56,7 +56,9 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      viewMode: 'grid'
+    }
   },
   watch: {
     '$route.query'(newVal) {
