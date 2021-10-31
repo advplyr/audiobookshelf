@@ -19,6 +19,8 @@ class RssFeeds {
   }
 
   getFeed(req, res) {
+    Logger.info('Get Feed', req.params.id, this.feeds[req.params.id])
+
     var feed = this.feeds[req.params.id]
     if (!feed) return null
     var xml = feed.buildXml()
@@ -27,15 +29,16 @@ class RssFeeds {
   }
 
   openFeed(audiobook) {
-    var serverAddress = 'http://' + ip.address('public', 'ipv4') + ':' + this.Port
+    var ipAddress = ip.address('public', 'ipv4')
+    var serverAddress = 'http://' + ipAddress + ':' + this.Port
     Logger.info('Open RSS Feed', 'Server address', serverAddress)
 
     var feedId = (Date.now() + Math.floor(Math.random() * 1000)).toString(36)
     const feed = new Podcast({
       title: audiobook.title,
       description: 'AudioBookshelf RSS Feed',
-      feedUrl: `${serverAddress}/feeds/${feedId}`,
-      imageUrl: `${serverAddress}/Logo.png`,
+      feed_url: `${serverAddress}/feeds/${feedId}`,
+      image_url: `${serverAddress}/Logo.png`,
       author: 'advplyr',
       language: 'en'
     })

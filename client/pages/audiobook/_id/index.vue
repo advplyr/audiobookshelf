@@ -13,7 +13,7 @@
             <div class="mb-4">
               <div class="flex items-end">
                 <h1 class="text-3xl font-sans">
-                  {{ title }}<span v-if="isDeveloperMode"> ({{ audiobook.ino }})</span>
+                  {{ title }}
                 </h1>
                 <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl">{{ subtitle }}</p>
               </div>

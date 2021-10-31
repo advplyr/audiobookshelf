@@ -11,9 +11,9 @@
       <cards-book-cover :width="24" :audiobook="book" />
     </td>
     <td class="body-cell min-w-64 max-w-64 px-2">
-      <p class="truncate">
+      <nuxt-link :to="`/audiobook/${book.id}`" class="truncate hover:underline">
         {{ book.book.title }}<span v-if="book.book.subtitle">: {{ book.book.subtitle }}</span>
-      </p>
+      </nuxt-link>
     </td>
     <td class="body-cell min-w-48 max-w-48 px-2">
       <p class="truncate">{{ book.book.authorFL }}</p>
