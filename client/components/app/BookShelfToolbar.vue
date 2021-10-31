@@ -20,7 +20,7 @@
         <ui-text-input v-show="!selectedSeries" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
-        <div v-if="showExperimentalFeatures" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
+        <div class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
           <div class="h-full px-2 text-white flex items-center rounded-l-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'grid')">
             <span class="material-icons" style="font-size: 1.4rem">view_module</span>
           </div>
@@ -62,9 +62,6 @@ export default {
     }
   },
   computed: {
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     isGridMode() {
       return this.viewMode === 'grid'
     },
