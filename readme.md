@@ -63,7 +63,7 @@ docker run -d \
 ```bash
 ### docker-compose.yml ###
 services:
-  app:
+  audiobookshelf:
     image: advplyr/audiobookshelf
     ports:
       - 13378:80
