@@ -13,12 +13,12 @@
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
       </div>
-      <div v-if="showExperimentalFeatures" class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
+      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
         <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showBookmarks">
           <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
         </div>
       </div>
-      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="!showExperimentalFeatures ? (chapters.length ? ' right-32' : 'right-20') : chapters.length ? ' right-44' : 'right-32'">
+      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-44' : 'right-32'">
         <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
       </div>
 
