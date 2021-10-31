@@ -37,6 +37,7 @@ class Book {
   get _narrator() { return this.narrator || '' }
   get _author() { return this.authorFL || '' }
   get _series() { return this.series || '' }
+  get _authorsList() { return this._author.split(', ') }
 
   get shouldSearchForCover() {
     if (this.authorFL !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
@@ -225,15 +226,18 @@ class Book {
   getQueryMatches(search) {
     var titleMatch = this._title.toLowerCase().includes(search)
     var subtitleMatch = this._subtitle.toLowerCase().includes(search)
-    var authorMatch = this._author.toLowerCase().includes(search)
+
+    var authorsMatched = this._authorsList.filter(auth => auth.toLowerCase().includes(search))
+
+    // var authorMatch = this._author.toLowerCase().includes(search)
     var seriesMatch = this._series.toLowerCase().includes(search)
 
-    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorMatch ? 'authorFL' : seriesMatch ? 'series' : false
+    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : false
     var bookMatchText = bookMatchKey ? this[bookMatchKey] : ''
     return {
       book: bookMatchKey,
       bookMatchText,
-      author: authorMatch ? this._author : false,
+      authors: authorsMatched.length ? authorsMatched : false,
       series: seriesMatch ? this._series : false
     }
   }

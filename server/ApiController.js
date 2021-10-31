@@ -174,10 +174,14 @@ class ApiController {
         }
         bookMatches.push(bookMatchObj)
       }
-      if (queryResult.author && !authorMatches[queryResult.author]) {
-        authorMatches[queryResult.author] = {
-          author: queryResult.author
-        }
+      if (queryResult.authors) {
+        queryResult.authors.forEach((author) => {
+          if (!authorMatches[author]) {
+            authorMatches[author] = {
+              author: author
+            }
+          }
+        })
       }
       if (queryResult.series) {
         if (!seriesMatches[queryResult.series]) {

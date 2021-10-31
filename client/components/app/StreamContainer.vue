@@ -10,7 +10,10 @@
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p class="text-base hover:underline cursor-pointer pl-2" @click="filterByAuthor">{{ author }}</p>
+          <p v-if="authorFL" class="pl-1.5 text-base">
+            <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
+          </p>
+          <p v-else class="text-base cursor-pointer pl-2">Unknown</p>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -82,6 +85,12 @@ export default {
     },
     author() {
       return this.book.author || 'Unknown'
+    },
+    authorFL() {
+      return this.book.authorFL
+    },
+    authorsList() {
+      return this.authorFL ? this.authorFL.split(', ') : []
     },
     streamId() {
       return this.stream ? this.stream.id : null
