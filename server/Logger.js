@@ -3,7 +3,10 @@ const { LogLevel } = require('./utils/constants')
 class Logger {
   constructor() {
     this.logLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.TRACE
+    this.logFileLevel = LogLevel.INFO
     this.socketListeners = []
+
+    this.logManager = null
   }
 
   get timestamp() {
@@ -49,15 +52,21 @@ class Logger {
     this.socketListeners = this.socketListeners.filter(s => s.id !== socketId)
   }
 
-  logToSockets(level, args) {
+  handleLog(level, args) {
+    const logObj = {
+      timestamp: this.timestamp,
+      message: args.join(' '),
+      levelName: this.getLogLevelString(level),
+      level
+    }
+
+    if (level >= this.logFileLevel && this.logManager) {
+      this.logManager.logToFile(logObj)
+    }
+
     this.socketListeners.forEach((socketListener) => {
       if (socketListener.level <= level) {
-        socketListener.socket.emit('log', {
-          timestamp: this.timestamp,
-          message: args.join(' '),
-          levelName: this.getLogLevelString(level),
-          level
-        })
+        socketListener.socket.emit('log', logObj)
       }
     })
   }
@@ -70,41 +79,41 @@ class Logger {
   trace(...args) {
     if (this.logLevel > LogLevel.TRACE) return
     console.trace(`[${this.timestamp}] TRACE:`, ...args)
-    this.logToSockets(LogLevel.TRACE, args)
+    this.handleLog(LogLevel.TRACE, args)
   }
 
   debug(...args) {
     if (this.logLevel > LogLevel.DEBUG) return
     console.debug(`[${this.timestamp}] DEBUG:`, ...args)
-    this.logToSockets(LogLevel.DEBUG, args)
+    this.handleLog(LogLevel.DEBUG, args)
   }
 
   info(...args) {
     if (this.logLevel > LogLevel.INFO) return
     console.info(`[${this.timestamp}]  INFO:`, ...args)
-    this.logToSockets(LogLevel.INFO, args)
+    this.handleLog(LogLevel.INFO, args)
   }
 
   warn(...args) {
     if (this.logLevel > LogLevel.WARN) return
     console.warn(`[${this.timestamp}]  WARN:`, ...args)
-    this.logToSockets(LogLevel.WARN, args)
+    this.handleLog(LogLevel.WARN, args)
   }
 
   error(...args) {
     if (this.logLevel > LogLevel.ERROR) return
     console.error(`[${this.timestamp}] ERROR:`, ...args)
-    this.logToSockets(LogLevel.ERROR, args)
+    this.handleLog(LogLevel.ERROR, args)
   }
 
   fatal(...args) {
     console.error(`[${this.timestamp}] FATAL:`, ...args)
-    this.logToSockets(LogLevel.FATAL, args)
+    this.handleLog(LogLevel.FATAL, args)
   }
 
   note(...args) {
     console.log(`[${this.timestamp}] NOTE:`, ...args)
-    this.logToSockets(LogLevel.NOTE, args)
+    this.handleLog(LogLevel.NOTE, args)
   }
 }
 module.exports = new Logger()

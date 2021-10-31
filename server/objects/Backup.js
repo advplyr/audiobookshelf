@@ -47,7 +47,6 @@ class Backup {
       backupMetadataCovers: this.backupMetadataCovers,
       backupDirPath: this.backupDirPath,
       datePretty: this.datePretty,
-      path: this.path,
       fullPath: this.fullPath,
       path: this.path,
       filename: this.filename,

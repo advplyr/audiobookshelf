@@ -27,6 +27,10 @@ class ServerSettings {
     this.backupsToKeep = 2
     this.backupMetadataCovers = true
 
+    // Logger
+    this.loggerDailyLogsToKeep = 7
+    this.loggerScannerLogsToKeep = 2
+
     this.logLevel = Logger.logLevel
 
     if (settings) {
@@ -47,6 +51,9 @@ class ServerSettings {
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
     this.backupMetadataCovers = settings.backupMetadataCovers !== false
+
+    this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
+    this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
     this.logLevel = settings.logLevel || Logger.logLevel
 
@@ -69,6 +76,8 @@ class ServerSettings {
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
       backupMetadataCovers: this.backupMetadataCovers,
+      loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
+      loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       logLevel: this.logLevel
     }
   }

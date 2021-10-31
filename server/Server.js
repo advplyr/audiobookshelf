@@ -20,6 +20,7 @@ const Watcher = require('./Watcher')
 const Scanner = require('./Scanner')
 const Db = require('./Db')
 const BackupManager = require('./BackupManager')
+const LogManager = require('./LogManager')
 const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
@@ -44,6 +45,7 @@ class Server {
     this.db = new Db(this.ConfigPath, this.AudiobookPath)
     this.auth = new Auth(this.db)
     this.backupManager = new BackupManager(this.MetadataPath, this.Uid, this.Gid, this.db)
+    this.logManager = new LogManager(this.MetadataPath, this.db)
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
@@ -52,6 +54,8 @@ class Server {
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
     this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
+
+    Logger.logManager = this.logManager
 
     this.expressApp = null
     this.server = null
@@ -111,6 +115,7 @@ class Server {
 
     await this.purgeMetadata()
     await this.backupManager.init()
+    await this.logManager.init()
 
     this.watcher.initWatcher(this.libraries)
     this.watcher.on('files', this.filesChanged.bind(this))
