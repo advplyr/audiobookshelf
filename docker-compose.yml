@@ -1,0 +1,12 @@
+### EXAMPLE DOCKER COMPOSE ###
+version: "3.7"
+
+services:
+  app:
+    image: advplyr/audiobookshelf
+    ports:
+      - 13378:80
+    volumes:
+      - /audiobooks:/audiobooks
+      - /metadata:/metadata
+      - /config:/config

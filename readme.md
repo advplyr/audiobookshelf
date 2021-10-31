@@ -58,6 +58,22 @@ docker run -d \
   --rm advplyr/audiobookshelf
 ```
 
+### Running with Docker Compose
+
+```bash
+### docker-compose.yml ###
+services:
+  app:
+    image: advplyr/audiobookshelf
+    ports:
+      - 13378:80
+    volumes:
+      - <path/to/your/audiobooks>:/audiobooks
+      - <path/to/metadata>:/metadata
+      - <path/to/config>:/config
+```
+
+
 ### Linux (amd64) Install
 
 A simple installer is added to setup the initial config. If you already have audiobooks, you can enter the path to your audiobooks during the install. The installer will create a user and group named `audiobookshelf`.
