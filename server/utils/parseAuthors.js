@@ -24,34 +24,42 @@ function checkIsALastName(name) {
 
 module.exports = (author) => {
   if (!author) return null
-  var splitByComma = author.split(', ')
+
+  var splitAuthors = []
+  // Example &LF: Friedman, Milton & Friedman, Rose
+  if (author.includes('&')) {
+    author.split('&').forEach((asa) => splitAuthors = splitAuthors.concat(asa.split(',')))
+  } else {
+    splitAuthors = author.split(',')
+  }
+  if (splitAuthors.length) splitAuthors = splitAuthors.map(a => a.trim())
 
   var authors = []
 
   // 1 author FIRST LAST
-  if (splitByComma.length === 1) {
+  if (splitAuthors.length === 1) {
     authors.push(parseName(author))
   } else {
-    var firstChunkIsALastName = checkIsALastName(splitByComma[0])
-    var isEvenNum = splitByComma.length % 2 === 0
+    var firstChunkIsALastName = checkIsALastName(splitAuthors[0])
+    var isEvenNum = splitAuthors.length % 2 === 0
 
     if (!isEvenNum && firstChunkIsALastName) {
       // console.error('Multi-author LAST,FIRST entry has a straggler (could be roman numerals or a suffix), ignore it', splitByComma[splitByComma.length - 1])
-      splitByComma = splitByComma.slice(0, splitByComma.length - 1)
+      splitAuthors = splitAuthors.slice(0, splitAuthors.length - 1)
     }
 
     if (firstChunkIsALastName) {
-      var numAuthors = splitByComma.length / 2
+      var numAuthors = splitAuthors.length / 2
       for (let i = 0; i < numAuthors; i++) {
-        var last = splitByComma.shift()
-        var first = splitByComma.shift()
+        var last = splitAuthors.shift()
+        var first = splitAuthors.shift()
         authors.push({
           first_name: first,
           last_name: last
         })
       }
     } else {
-      splitByComma.forEach((segment) => {
+      splitAuthors.forEach((segment) => {
         authors.push(parseName(segment))
       })
     }

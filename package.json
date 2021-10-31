@@ -9,7 +9,8 @@
     "client": "cd client && npm install && npm run generate",
     "prod": "npm run client && npm install && node prod.js",
     "build-win": "pkg -t node12-win-x64 -o ./dist/win/audiobookshelf .",
-    "build-linux": "build/linuxpackager"
+    "build-linux": "build/linuxpackager",
+    "docker": "docker buildx build -t advplyr/audiobookshelf --platform linux/amd64,linux/arm64 --push ."
   },
   "bin": "prod.js",
   "pkg": {
