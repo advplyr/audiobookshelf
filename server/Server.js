@@ -260,6 +260,7 @@ class Server {
 
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+      socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
 
       // Backups
       socket.on('create_backup', () => this.backupManager.requestCreateBackup(socket))

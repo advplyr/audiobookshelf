@@ -60,15 +60,14 @@ class DailyLog {
 
     var oneBigLog = ''
     buffered.forEach((logLine) => {
-      oneBigLog += logLine + '\n'
+      oneBigLog += logLine
     })
-
     this.appendLogLine(oneBigLog)
   }
 
   async appendLog(logObj) {
     this.logs.push(logObj)
-    var line = JSON.stringify(logObj)
+    var line = JSON.stringify(logObj) + '\n'
     this.appendLogLine(line)
   }
 
@@ -97,16 +96,31 @@ class DailyLog {
     }
 
     var text = await readTextFile(this.fullPath)
+
+    var hasFailures = false
+
     this.logs = text.split(/\r?\n/).map(t => {
+      if (!t) {
+        hasFailures = true
+        return null
+      }
       try {
         return JSON.parse(t)
       } catch (err) {
         console.error('Failed to parse log line', t, err)
+        hasFailures = true
         return null
       }
     }).filter(l => !!l)
 
-    Logger.info(`[DailyLog] ${this.id}: Loaded ${this.logs.length} Logs`)
+    // Rewrite log file to remove errors
+    if (hasFailures) {
+      var newLogLines = this.logs.map(l => JSON.stringify(l)).join('\n') + '\n'
+      await fs.writeFile(this.fullPath, newLogLines)
+      console.log('Re-Saved log file to remove bad lines')
+    }
+
+    Logger.debug(`[DailyLog] ${this.id}: Loaded ${this.logs.length} Logs`)
   }
 }
 module.exports = DailyLog

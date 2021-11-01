@@ -4,7 +4,6 @@ const fs = require('fs-extra')
 const DailyLog = require('./objects/DailyLog')
 
 const Logger = require('./Logger')
-const { getFileSize } = require('./utils/fileUtils')
 
 const TAG = '[LogManager]'
 
@@ -50,14 +49,16 @@ class LogManager {
 
     if (this.dailyLogFiles.includes(currentDailyLogFilename)) {
       Logger.debug(TAG, `Daily log file already exists - set in Logger`)
-      this.currentDailyLog.loadLogs()
+      await this.currentDailyLog.loadLogs()
     } else {
       this.dailyLogFiles.push(this.currentDailyLog.filename)
     }
 
     // Log buffered Logs
     if (this.dailyLogBuffer.length) {
-      this.dailyLogBuffer.forEach((logObj) => this.currentDailyLog.appendLog(logObj))
+      this.dailyLogBuffer.forEach((logObj) => {
+        this.currentDailyLog.appendLog(logObj)
+      })
       this.dailyLogBuffer = []
     }
   }
@@ -68,7 +69,7 @@ class LogManager {
     if (dailyFiles && dailyFiles.length) {
       dailyFiles.forEach((logFile) => {
         if (Path.extname(logFile) === '.txt') {
-          Logger.info('Daily Log file found', logFile)
+          Logger.debug('Daily Log file found', logFile)
           this.dailyLogFiles.push(logFile)
         } else {
           Logger.debug(TAG, 'Unknown File in Daily log files dir', logFile)
@@ -119,6 +120,15 @@ class LogManager {
 
     // Append log line to log file
     this.currentDailyLog.appendLog(logObj)
+  }
+
+  socketRequestDailyLogs(socket) {
+    if (!this.currentDailyLog) {
+      return
+    }
+
+    var lastLogs = this.currentDailyLog.logs.slice(-5000)
+    socket.emit('daily_logs', lastLogs)
   }
 }
 module.exports = LogManager

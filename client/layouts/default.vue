@@ -245,9 +245,6 @@ export default {
     showSuccessToast(message) {
       this.$toast.success(message)
     },
-    logEvtReceived(payload) {
-      this.$store.commit('logs/logEvt', payload)
-    },
     backupApplied() {
       // Force refresh
       location.reload()
@@ -312,8 +309,6 @@ export default {
       // Toast Listeners
       this.socket.on('show_error_toast', this.showErrorToast)
       this.socket.on('show_success_toast', this.showSuccessToast)
-
-      this.socket.on('log', this.logEvtReceived)
 
       this.socket.on('backup_applied', this.backupApplied)
     },
