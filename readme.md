@@ -184,6 +184,11 @@ For this to work you must enable at least the following mods using `a2enmod`:
 </IfModule>
 ```
 
+
+### SWAG Reverse Proxy
+
+[See this solution](https://forums.unraid.net/topic/112698-support-audiobookshelf/?do=findComment&comment=1049637)
+
 ## Run from source
 
 Note: you will need `npm`, `node12`, and `ffmpeg` to run this project locally
