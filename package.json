@@ -38,7 +38,7 @@
     "ip": "^1.1.5",
     "jsonwebtoken": "^8.5.1",
     "libgen": "^2.1.0",
-    "njodb": "^0.4.21",
+    "njodb": "^0.4.22",
     "node-cron": "^3.0.0",
     "node-dir": "^0.1.17",
     "node-stream-zip": "^1.15.0",

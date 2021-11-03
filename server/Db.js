@@ -170,7 +170,15 @@ class Db {
 
   updateEntity(entityName, entity) {
     var entityDb = this.getEntityDb(entityName)
-    return entityDb.update((record) => record.id === entity.id, () => entity).then((results) => {
+
+    var jsonEntity = entity
+    if (entity && entity.toJSON) {
+      jsonEntity = entity.toJSON()
+    } else {
+      console.log('Entity has no json', jsonEntity)
+    }
+
+    return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
       Logger.debug(`[DB] Updated entity ${entityName}: ${results.updated}`)
       var arrayKey = this.getEntityArrayKey(entityName)
       this[arrayKey] = this[arrayKey].map(e => {

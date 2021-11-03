@@ -27,7 +27,7 @@
 
     <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @updateTime="updateTime" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @hook:mounted="audioPlayerMounted" />
 
-    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" @create="createBookmark" @update="updateBookmark" @delete="deleteBookmark" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" />
   </div>
 </template>
 
@@ -58,7 +58,7 @@ export default {
     },
     bookmarks() {
       if (!this.userAudiobook) return []
-      return this.userAudiobook.bookmarks || []
+      return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
     },
     isLoading() {
       if (!this.streamAudiobook) return false
@@ -111,36 +111,10 @@ export default {
       this.bookmarkCurrentTime = currentTime
       this.showBookmarksModal = true
     },
-    // bookmarkCreated(time) {
-    //   if (time === this.bookmarkTimeProcessing) {
-    //     this.bookmarkTimeProcessing = 0
-    //     this.$toast.success(`${this.$secondsToTimestamp(time)} Bookmarked`)
-    //   }
-    // },
-    createBookmark(bookmark) {
-      // this.bookmarkTimeProcessing = bookmark.time
-      this.$root.socket.emit('create_bookmark', bookmark)
-      this.showBookmarksModal = false
-    },
-    // bookmarkUpdated(time) {
-    //   if (time === this.bookmarkTimeProcessing) {
-    //     this.bookmarkTimeProcessing = 0
-    //     this.$toast.success(`Bookmark @${this.$secondsToTimestamp(time)} Updated`)
-    //   }
-    // },
-    updateBookmark(bookmark) {
-      // this.bookmarkTimeProcessing = bookmark.time
-      this.$root.socket.emit('update_bookmark', bookmark)
-      this.showBookmarksModal = false
-    },
     selectBookmark(bookmark) {
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.selectBookmark(bookmark)
       }
-      this.showBookmarksModal = false
-    },
-    deleteBookmark(bookmark) {
-      this.$root.socket.emit('delete_bookmark', bookmark)
       this.showBookmarksModal = false
     },
     filterByAuthor() {
