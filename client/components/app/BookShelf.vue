@@ -1,5 +1,5 @@
 <template>
-  <div class="bookshelf overflow-hidden relative block max-h-full">
+  <div id="bookshelf" class="bookshelf overflow-hidden relative block max-h-full">
     <div ref="wrapper" class="h-full w-full relative" :class="isGridMode ? 'overflow-y-scroll' : 'overflow-hidden'">
       <!-- Cover size widget -->
       <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
@@ -362,9 +362,16 @@ export default {
 
 <style>
 .bookshelf {
-  height: calc(100% - 40px);
+  /* height: calc(100% - 40px); */
   width: calc(100vw - 80px);
 }
+@media (max-width: 768px) {
+  .bookshelf {
+    /* height: calc(100% - 80px); */
+    width: 100vw;
+  }
+}
+
 .bookshelfRow {
   background-image: url(/wood_panels.jpg);
 }

@@ -13,7 +13,8 @@
         <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }" @click="clickCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
           <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
 
-          <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded" :class="overlayWrapperClasslist">
+          <!-- Hidden SM and DOWN -->
+          <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
             <div v-show="showPlayButton" class="h-full flex items-center justify-center">
               <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
                 <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>

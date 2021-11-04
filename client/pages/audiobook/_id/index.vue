@@ -1,29 +1,31 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
-    <div class="w-full h-full overflow-y-auto p-8">
-      <div class="flex max-w-6xl mx-auto">
-        <div class="w-52" style="min-width: 208px">
-          <div class="relative">
-            <cards-book-cover :audiobook="audiobook" :width="208" />
+    <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
+      <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
+        <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
+          <div class="relative" style="height: fit-content">
+            <cards-book-cover :audiobook="audiobook" :width="bookCoverWidth" />
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>
-        <div class="flex-grow px-10">
+        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
           <div class="flex">
             <div class="mb-4">
-              <div class="flex items-end">
-                <h1 class="text-3xl font-sans">
+              <div class="flex sm:items-end flex-col sm:flex-row">
+                <h1 class="text-2xl md:text-3xl font-sans">
                   {{ title }}
                 </h1>
-                <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl">{{ subtitle }}</p>
+                <p v-if="subtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ subtitle }}</p>
               </div>
-              <p v-if="authorFL" class="mb-2 mt-0.5 text-gray-200 text-xl">
+              <!-- <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl block sm:hidden">{{ subtitle }}</p> -->
+
+              <p v-if="authorFL" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7 mb-4"> {{ seriesText }}</nuxt-link>
+              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ seriesText }}</nuxt-link>
 
-              <div v-if="narrator" class="flex py-0.5">
+              <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Narrated By</span>
                 </div>
@@ -168,7 +170,8 @@ export default {
     return {
       isRead: false,
       resettingProgress: false,
-      isProcessingReadUpdate: false
+      isProcessingReadUpdate: false,
+      windowWidth: 0
     }
   },
   watch: {
@@ -180,6 +183,9 @@ export default {
     }
   },
   computed: {
+    bookCoverWidth() {
+      return this.windowWidth < 800 ? 176 : 208
+    },
     isDeveloperMode() {
       return this.$store.state.developerMode
     },
@@ -426,9 +432,13 @@ export default {
     },
     downloadClick() {
       this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+    },
+    resize() {
+      this.windowWidth = window.innerWidth
     }
   },
   mounted() {
+    window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
 
     // If a library has not yet been loaded, use this audiobooks library id as the current
@@ -437,6 +447,7 @@ export default {
     }
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.resize)
     this.$store.commit('audiobooks/removeListener', 'audiobook')
   }
 }

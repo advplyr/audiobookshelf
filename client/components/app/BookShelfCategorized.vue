@@ -16,7 +16,7 @@
         <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
       </div>
     </div>
-    <div v-else id="bookshelf" class="w-full flex flex-col items-center">
+    <div v-else class="w-full flex flex-col items-center">
       <template v-for="(shelf, index) in shelves">
         <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" />
       </template>

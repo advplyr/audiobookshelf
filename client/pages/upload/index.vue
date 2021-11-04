@@ -1,7 +1,7 @@
 <template>
-  <div id="page-wrapper" class="page p-6" :class="streamAudiobook ? 'streaming' : ''">
-    <main class="container mx-auto h-full max-w-screen-lg p-6">
-      <article class="max-h-full overflow-y-auto relative flex flex-col rounded-md" @drop="drop" @dragover="dragover" @dragleave="dragleave" @dragenter="dragenter">
+  <div id="page-wrapper" class="page p-0 sm:p-6 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+    <main class="md:container mx-auto md:h-full max-w-screen-lg p-0 md:p-6">
+      <article class="max-h-full md:overflow-y-auto relative flex flex-col rounded-md" @drop="drop" @dragover="dragover" @dragleave="dragleave" @dragenter="dragenter">
         <h1 class="text-xl font-book px-8 pt-4 pb-2">Audiobook Uploader</h1>
 
         <div class="flex my-2 px-6">

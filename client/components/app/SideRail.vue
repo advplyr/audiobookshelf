@@ -85,9 +85,6 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    selectedClassName() {
-      return ''
-    },
     homePage() {
       return this.$route.name === 'library-library'
     },

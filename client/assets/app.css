@@ -14,6 +14,11 @@
 #bookshelf {
   height: calc(100% - 40px);
 }
+@media (max-width: 768px) {
+  #bookshelf {
+    height: calc(100% - 80px);
+  }
+}
 
 /* width */
 ::-webkit-scrollbar {

@@ -8,21 +8,21 @@
         <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
       </div>
 
-      <div v-if="chapters.length" class="absolute right-20 top-0 bottom-0 h-full flex items-end">
+      <div v-if="chapters.length" class="hidden md:flex absolute right-20 top-0 bottom-0 h-full items-end">
         <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
       </div>
-      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
+      <div class="absolute top-0 bottom-0 h-full hidden md:flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
         <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showBookmarks">
           <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
         </div>
       </div>
-      <div class="absolute top-0 bottom-0 h-full flex items-end" :class="chapters.length ? ' right-44' : 'right-32'">
+      <div class="absolute top-0 bottom-0 h-full hidden md:flex items-end" :class="chapters.length ? ' right-44' : 'right-32'">
         <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
       </div>
 
-      <div class="flex pb-2">
+      <div class="flex pb-8 sm:pb-4 md:pb-2">
         <div class="flex-grow" />
         <template v-if="!loading">
           <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">

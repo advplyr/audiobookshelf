@@ -1,19 +1,19 @@
 <template>
-  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-40 z-40 bg-primary px-4 pb-4 pt-2">
+  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-4 pt-2">
     <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute -top-16 left-4 cursor-pointer">
-      <cards-book-cover :audiobook="streamAudiobook" :width="88" />
+      <cards-book-cover :audiobook="streamAudiobook" :width="bookCoverWidth" />
     </nuxt-link>
-    <div class="flex items-start pl-24">
+    <div class="flex items-start pl-24 mb-6 md:mb-0">
       <div>
-        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-lg">
+        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
           {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="authorFL" class="pl-1.5 text-base">
+          <p v-if="authorFL" class="pl-1.5 text-sm sm:text-base">
             <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
           </p>
-          <p v-else class="text-base cursor-pointer pl-2">Unknown</p>
+          <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -45,6 +45,9 @@ export default {
     }
   },
   computed: {
+    bookCoverWidth() {
+      return 88
+    },
     cover() {
       if (this.streamAudiobook && this.streamAudiobook.cover) return this.streamAudiobook.cover
       return 'Logo.png'

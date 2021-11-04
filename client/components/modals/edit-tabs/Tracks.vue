@@ -6,7 +6,7 @@
           <span class="text-sm font-mono">{{ tracks.length }}</span>
         </div>
         <div class="flex-grow" />
-        <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
+        <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
         <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobook.id}/edit`" class="mr-4">
           <ui-btn small color="primary">Manage Tracks</ui-btn>
         </nuxt-link>

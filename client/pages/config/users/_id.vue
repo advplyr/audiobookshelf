@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <nuxt-link to="/config/users" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full">
+    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-0 sm:p-4 mb-8">
+      <nuxt-link to="/config/users" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
         <div class="flex items-center">
           <div class="h-10 w-10 flex items-center justify-center">
             <span class="material-icons text-2xl">arrow_back</span>
@@ -9,20 +9,20 @@
           <p class="pl-1">All Users</p>
         </div>
       </nuxt-link>
-      <div class="flex items-center mb-2 mt-4">
+      <div class="flex items-center mb-2 mt-4 px-2 sm:px-0">
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90">Reading Progress</h1>
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Reading Progress</h1>
         <table v-if="userAudiobooks.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="w-16 text-left">Book</th>
             <th class="text-left"></th>
             <th class="w-32">Progress</th>
-            <th class="w-40">Started At</th>
-            <th class="w-40">Last Update</th>
+            <th class="w-40 hidden sm:table-cell">Started At</th>
+            <th class="w-40 hidden sm:table-cell">Last Update</th>
           </tr>
           <tr v-for="ab in userAudiobooks" :key="ab.audiobookId" :class="!ab.isRead ? '' : 'isRead'">
             <td>
@@ -33,12 +33,12 @@
               <p v-if="ab.book && ab.book.author" class="text-white text-opacity-50 text-sm font-sans">by {{ ab.book.author }}</p>
             </td>
             <td class="text-center">{{ Math.floor(ab.progress * 100) }}%</td>
-            <td class="text-center">
+            <td class="text-center hidden sm:table-cell">
               <ui-tooltip v-if="ab.startedAt" direction="top" :text="$formatDate(ab.startedAt, 'MMMM do, yyyy HH:mm')">
                 <p class="text-sm">{{ $dateDistanceFromNow(ab.startedAt) }}</p>
               </ui-tooltip>
             </td>
-            <td class="text-center">
+            <td class="text-center hidden sm:table-cell">
               <ui-tooltip v-if="ab.lastUpdate" direction="top" :text="$formatDate(ab.lastUpdate, 'MMMM do, yyyy HH:mm')">
                 <p class="text-sm">{{ $dateDistanceFromNow(ab.lastUpdate) }}</p>
               </ui-tooltip>

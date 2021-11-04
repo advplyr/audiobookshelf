@@ -29,7 +29,8 @@ export default {
       offsetIncrement: 0,
       isFannedOut: false,
       isDetached: false,
-      isAttaching: false
+      isAttaching: false,
+      windowWidth: 0
     }
   },
   watch: {
@@ -49,14 +50,17 @@ export default {
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
+    },
+    showCoverFan() {
+      return this.showExperimentalFeatures && this.windowWidth > 1024
     }
   },
   methods: {
     mouseoverCover() {
-      if (this.showExperimentalFeatures) this.setHover(true)
+      if (this.showCoverFan) this.setHover(true)
     },
     mouseleaveCover() {
-      if (this.showExperimentalFeatures) this.setHover(false)
+      if (this.showCoverFan) this.setHover(false)
     },
     detchCoverWrapper() {
       if (!this.coverWrapperEl || !this.$refs.wrapper || this.isDetached) return
@@ -82,7 +86,7 @@ export default {
       this.coverWrapperEl.style.width = this.$refs.wrapper.clientWidth + 'px'
 
       this.$refs.wrapper.appendChild(this.coverWrapperEl)
-      console.log('Appended to wrapper', this.$refs.wrapper.children)
+
       this.isDetached = false
     },
     updatePosition() {
@@ -310,7 +314,7 @@ export default {
         coverImageEls.push(img)
       }
 
-      if (this.showExperimentalFeatures) {
+      if (this.showCoverFan) {
         var seriesNameCover = this.createSeriesNameCover(offsetLeft)
         outerdiv.appendChild(seriesNameCover)
         coverImageEls.push(seriesNameCover)
@@ -324,7 +328,9 @@ export default {
       }
     }
   },
-  mounted() {},
+  mounted() {
+    this.windowWidth = window.innerWidth
+  },
   beforeDestroy() {
     if (this.coverWrapperEl) this.coverWrapperEl.remove()
   }

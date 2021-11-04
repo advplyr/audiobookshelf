@@ -1,12 +1,12 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail />
+    <!-- <div class="flex h-full">
+      <app-side-rail class="hidden md:block" />
       <div class="flex-grow">
         <app-book-shelf-toolbar is-home />
         <app-book-shelf-categorized />
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

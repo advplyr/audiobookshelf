@@ -12,9 +12,9 @@
         <tr>
           <th>Username</th>
           <th class="w-20">Type</th>
-          <th>Activity</th>
-          <th class="w-32">Last Seen</th>
-          <th class="w-32">Created</th>
+          <th class="hidden lg:table-cell">Activity</th>
+          <th class="w-32 hidden sm:table-cell">Last Seen</th>
+          <th class="w-32 hidden sm:table-cell">Created</th>
           <th class="w-32"></th>
         </tr>
         <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : 'bg-error bg-opacity-20'" @click="$router.push(`/config/users/${user.id}`)">
@@ -25,7 +25,7 @@
             </div>
           </td>
           <td class="text-sm">{{ user.type }}</td>
-          <td>
+          <td class="hidden lg:table-cell">
             <div v-if="usersOnline[user.id] && usersOnline[user.id].stream && usersOnline[user.id].stream.audiobook && usersOnline[user.id].stream.audiobook.book">
               <p class="truncate text-xs">Reading: {{ usersOnline[user.id].stream.audiobook.book.title || '' }}</p>
             </div>
@@ -33,12 +33,12 @@
               <p class="truncate text-xs">Last: {{ getLastRead(user.audiobooks) }}</p>
             </div>
           </td>
-          <td class="text-xs font-mono">
+          <td class="text-xs font-mono hidden sm:table-cell">
             <ui-tooltip v-if="user.lastSeen" direction="top" :text="$formatDate(user.lastSeen, 'MMMM do, yyyy HH:mm')">
               {{ $dateDistanceFromNow(user.lastSeen) }}
             </ui-tooltip>
           </td>
-          <td class="text-xs font-mono">
+          <td class="text-xs font-mono hidden sm:table-cell">
             <ui-tooltip direction="top" :text="$formatDate(user.createdAt, 'MMMM do, yyyy HH:mm')">
               {{ $formatDate(user.createdAt, 'MMM d, yyyy') }}
             </ui-tooltip>

@@ -1,15 +1,15 @@
 <template>
   <div class="w-full my-2">
-    <div class="w-full bg-primary px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
-      <p class="pr-4">Other Files</p>
-      <div class="h-7 w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
+    <div class="w-full bg-primary px-4 md:px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
+      <p class="pr-2 md:pr-4">Other Files</p>
+      <div class="h-5 md:h-7 w-5 md:w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
         <span class="text-sm font-mono">{{ files.length }}</span>
       </div>
       <div class="flex-grow" />
       <!-- <nuxt-link :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link> -->
-      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
+      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
       </div>

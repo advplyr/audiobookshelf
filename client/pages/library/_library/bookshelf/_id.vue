@@ -1,7 +1,7 @@
 <template>
   <div class="page" :class="streamAudiobook ? 'streaming' : ''">
     <div class="flex h-full">
-      <app-side-rail />
+      <app-side-rail class="hidden md:block" />
       <div class="flex-grow">
         <app-book-shelf-toolbar :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode.sync="viewMode" />
         <app-book-shelf :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode="viewMode" />

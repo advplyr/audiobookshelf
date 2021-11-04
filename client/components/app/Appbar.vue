@@ -1,33 +1,33 @@
 <template>
   <div class="w-full h-16 bg-primary relative">
-    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-6 py-1 z-40">
+    <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-40">
       <div class="flex h-full items-center">
-        <img v-if="!showBack" src="/Logo48.png" class="w-12 h-12 mr-4" />
+        <img v-if="!showBack" src="/Logo48.png" class="w-10 h-10 md:w-12 md:h-12 mr-4" />
         <a v-if="showBack" @click="back" class="rounded-full h-12 w-12 flex items-center justify-center hover:bg-white hover:bg-opacity-10 mr-4 cursor-pointer">
           <span class="material-icons text-4xl text-white">arrow_back</span>
         </a>
-        <h1 class="text-2xl font-book mr-6">audiobookshelf</h1>
+        <h1 class="text-2xl font-book mr-6 hidden lg:block">audiobookshelf</h1>
 
         <ui-libraries-dropdown />
 
-        <controls-global-search />
+        <controls-global-search class="hidden md:block" />
         <div class="flex-grow" />
 
-        <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-4">logo_dev</span>
+        <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
 
         <nuxt-link v-if="userCanUpload" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center">
           <span class="material-icons">upload</span>
         </nuxt-link>
 
-        <nuxt-link v-if="isRootUser" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center ml-4">
+        <nuxt-link v-if="isRootUser" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center ml-0 sm:ml-2 md:ml-4">
           <span class="material-icons">settings</span>
         </nuxt-link>
 
-        <nuxt-link to="/account" class="relative w-32 bg-fg border border-gray-500 rounded shadow-sm ml-5 pl-3 pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer hover:bg-bg hover:bg-opacity-40" aria-haspopup="listbox" aria-expanded="true">
-          <span class="flex items-center">
+        <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded shadow-sm ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer hover:bg-bg hover:bg-opacity-40" aria-haspopup="listbox" aria-expanded="true">
+          <span class="items-center hidden md:flex">
             <span class="block truncate">{{ username }}</span>
           </span>
-          <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+          <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
             <span class="material-icons text-gray-100">person</span>
           </span>
         </nuxt-link>

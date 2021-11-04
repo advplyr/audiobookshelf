@@ -32,7 +32,7 @@
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
     <div class="flex items-center py-4">
-      <ui-btn color="bg" small :padding-x="4" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">Report bugs, request features, provide feedback, and contribute on <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>.</p>
       <a href="https://github.com/advplyr/audiobookshelf" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
@@ -56,7 +56,7 @@
             </ui-tooltip>
           </div>
         </div>
-        <div>
+        <div class="hidden md:block">
           <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
         </div>
       </div>

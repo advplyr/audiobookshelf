@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <div ref="shelf" class="w-full max-w-full bookshelfRowCategorized relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: 2.5 * sizeMultiplier + 'rem' }" @scroll="scrolled">
+    <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem' }" @scroll="scrolled">
       <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
         <div v-if="shelf.books" class="flex items-center -mb-2">
           <template v-for="entity in shelf.books">
@@ -22,7 +22,7 @@
       </div>
     </div>
 
-    <div class="absolute text-center categoryPlacard font-book transform z-30 bottom-0.5 left-8 w-36 rounded-md" style="height: 22px">
+    <div class="absolute text-center categoryPlacard font-book transform z-30 bottom-0.5 left-4 md:left-8 w-36 rounded-md" style="height: 22px">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border">
         <p class="transform text-sm">{{ shelf.label }}</p>
       </div>
@@ -62,6 +62,10 @@ export default {
   computed: {
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
+    },
+    paddingLeft() {
+      if (window.innerWidth < 768) return 1
+      return 2.5
     }
   },
   methods: {
@@ -117,11 +121,17 @@ export default {
 </script>
 
 <style>
-.bookshelfRowCategorized {
+.categorizedBookshelfRow {
   scroll-behavior: smooth;
   width: calc(100vw - 80px);
   background-image: url(/wood_panels.jpg);
 }
+@media (max-width: 768px) {
+  .categorizedBookshelfRow {
+    width: 100vw;
+  }
+}
+
 .bookshelfDividerCategorized {
   background: rgb(149, 119, 90);
   /* background: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%); */
