@@ -11,8 +11,8 @@
         <div class="w-full h-px bg-white bg-opacity-10" />
         <form @submit.prevent="submitCreateBookmark">
           <div v-show="canCreateBookmark" class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
-            <div class="w-16 text-center">
-              <p class="text-sm font-mono">
+            <div class="w-16 max-w-16 text-center">
+              <p class="text-sm font-mono text-gray-400">
                 {{ this.$secondsToTimestamp(currentTime) }}
               </p>
             </div>

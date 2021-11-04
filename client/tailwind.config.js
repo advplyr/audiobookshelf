@@ -20,6 +20,7 @@ module.exports = {
       maxWidth: {
         '6': '1.5rem',
         '12': '3rem',
+        '16': '4rem',
         '24': '6rem',
         '32': '8rem',
         '48': '12rem',

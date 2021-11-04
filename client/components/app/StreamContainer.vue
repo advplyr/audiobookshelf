@@ -3,7 +3,7 @@
     <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute -top-16 left-4 cursor-pointer">
       <cards-book-cover :audiobook="streamAudiobook" :width="88" />
     </nuxt-link>
-    <div class="flex items-center pl-24">
+    <div class="flex items-start pl-24">
       <div>
         <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-lg">
           {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
@@ -22,7 +22,7 @@
         </div>
       </div>
       <div class="flex-grow" />
-      <span v-if="stream" class="material-icons px-4 cursor-pointer" @click="cancelStream">close</span>
+      <span v-if="stream" class="material-icons p-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
     <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @updateTime="updateTime" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @hook:mounted="audioPlayerMounted" />

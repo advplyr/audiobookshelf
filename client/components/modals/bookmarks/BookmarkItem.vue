@@ -1,12 +1,12 @@
 <template>
   <div :key="bookmark.id" :id="`bookmark-row-${bookmark.id}`" class="flex items-center px-4 py-4 justify-start relative hover:bg-bg" :class="wrapperClass" @click="click" @mouseover="mouseover" @mouseleave="mouseleave">
     <!-- <span class="material-icons" :class="highlight ? 'text-success' : 'text-white text-opacity-80'">{{ highlight ? 'bookmark' : 'bookmark_border' }}</span> -->
-    <div class="w-12 min-w-12 text-center">
-      <p class="text-sm font-mono text-white text-opacity-80">
+    <div class="w-16 max-w-16 text-center">
+      <p class="text-sm font-mono text-gray-400">
         {{ this.$secondsToTimestamp(bookmark.time) }}
       </p>
     </div>
-    <div class="flex-grow overflow-hidden">
+    <div class="flex-grow overflow-hidden px-2">
       <template v-if="isEditing">
         <form @submit.prevent="submitUpdate">
           <div class="flex items-center">
