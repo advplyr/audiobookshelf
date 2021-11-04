@@ -99,7 +99,10 @@ class DailyLog {
 
     var hasFailures = false
 
-    this.logs = text.split(/\r?\n/).map(t => {
+    var logLines = text.split(/\r?\n/)
+    // remove last log if empty
+    if (logLines.length && !logLines[logLines.length - 1]) logLines = logLines.slice(0, -1)
+    this.logs = logLines.map(t => {
       if (!t) {
         hasFailures = true
         return null

@@ -258,9 +258,16 @@ class Db {
           var orphanOldPath = Path.join(dbdatadir, orphanOld)
           await fs.unlink(orphanOldPath)
           console.log('Removed .old file')
-          var lockdirpath = Path.join(dbdatadir, `data.${dbnum}.lock`)
-          await fs.rmdir(lockdirpath)
-          console.log('Removed lock dir')
+
+          // Removing lock dir throws error in proper-lockfile
+          // var lockdirpath = Path.join(dbdatadir, `data.${dbnum}.json.lock`)
+          // var lockdirexists = await fs.pathExists(lockdirpath)
+          // if (lockdirexists) {
+          //   await fs.rmdir(lockdirpath)
+          //   console.log('Removed lock dir')
+          // } else {
+          //   console.log('No lock dir found', lockdirpath)
+          // }
         }
       }
     } catch (error) {
