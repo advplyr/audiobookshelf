@@ -438,6 +438,7 @@ export default {
     }
   },
   mounted() {
+    this.windowWidth = window.innerWidth
     window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
 
