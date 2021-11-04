@@ -280,10 +280,10 @@ class User {
   }
 
   createBookmark({ audiobookId, time, title }) {
-    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-      return {
-        error: 'Invalid Audiobook'
-      }
+    if (!this.audiobooks) this.audiobooks = {}
+    if (!this.audiobooks[audiobookId]) {
+      this.audiobooks[audiobookId] = new UserAudiobookData()
+      this.audiobooks[audiobookId].audiobookId = audiobookId
     }
     if (this.audiobooks[audiobookId].checkBookmarkExists(time)) {
       return {

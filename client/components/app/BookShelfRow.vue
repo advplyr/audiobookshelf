@@ -4,7 +4,7 @@
       <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
         <div v-if="shelf.books" class="flex items-center -mb-2">
           <template v-for="entity in shelf.books">
-            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" @edit="editBook" />
+            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" :padding-y="24" @edit="editBook" />
           </template>
         </div>
         <div v-else-if="shelf.series" class="flex items-center -mb-2">

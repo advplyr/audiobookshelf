@@ -255,7 +255,8 @@ class Db {
 
           console.log('Data recovery successful -- unlinking old')
 
-          await fs.unlink(orphanOld)
+          var orphanOldPath = Path.join(dbdatadir, orphanOld)
+          await fs.unlink(orphanOldPath)
           console.log('Removed .old file')
           var lockdirpath = Path.join(dbdatadir, `data.${dbnum}.lock`)
           await fs.rmdir(lockdirpath)
