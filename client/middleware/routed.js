@@ -11,7 +11,7 @@ export default function (context) {
       return
     }
 
-    if (route.name.startsWith('config') || route.name === 'upload' || route.name === 'account' || route.name.startsWith('audiobook-id')) {
+    if (route.name.startsWith('config') || route.name === 'upload' || route.name === 'account' || route.name.startsWith('audiobook-id') || route.name.startsWith('collection-id')) {
       if (from.name !== route.name && from.name !== 'audiobook-id-edit' && !from.name.startsWith('config') && from.name !== 'upload' && from.name !== 'account') {
         var _history = [...store.state.routeHistory]
         if (!_history.length || _history[_history.length - 1] !== from.fullPath) {

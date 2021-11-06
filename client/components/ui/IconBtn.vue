@@ -1,6 +1,6 @@
 <template>
   <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :disabled="disabled" :class="className" @click="clickBtn">
-    <span class="material-icons" :style="{ fontSize }">{{ icon }}</span>
+    <span :class="outlined ? 'material-icons-outlined' : 'material-icons'" :style="{ fontSize }">{{ icon }}</span>
   </button>
 </template>
 
@@ -12,7 +12,8 @@ export default {
     bgColor: {
       type: String,
       default: 'primary'
-    }
+    },
+    outlined: Boolean
   },
   data() {
     return {}

@@ -139,6 +139,9 @@ export const mutations = {
   setDeveloperMode(state, val) {
     state.developerMode = val
   },
+  setSelectedAudiobook(state, val) {
+    Vue.set(state, 'selectedAudiobook', val)
+  },
   setSelectedAudiobooks(state, audiobooks) {
     Vue.set(state, 'selectedAudiobooks', audiobooks)
   },

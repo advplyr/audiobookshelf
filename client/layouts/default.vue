@@ -7,6 +7,7 @@
     <app-stream-container ref="streamContainer" />
 
     <modals-edit-modal />
+    <modals-user-collections-modal />
     <readers-reader />
   </div>
 </template>
@@ -181,6 +182,15 @@ export default {
       // console.log('Received user audiobook update', payload)
       this.$store.commit('user/updateUserAudiobook', payload)
     },
+    collectionAdded(collection) {
+      this.$store.commit('user/addUpdateCollection', collection)
+    },
+    collectionUpdated(collection) {
+      this.$store.commit('user/addUpdateCollection', collection)
+    },
+    collectionRemoved(collection) {
+      this.$store.commit('user/removeCollection', collection)
+    },
     downloadToastClick(download) {
       if (!download || !download.audiobookId) {
         return console.error('Invalid download object', download)
@@ -293,6 +303,11 @@ export default {
       this.socket.on('user_offline', this.userOffline)
       this.socket.on('user_stream_update', this.userStreamUpdate)
       this.socket.on('current_user_audiobook_update', this.currentUserAudiobookUpdate)
+
+      // User Collection Listeners
+      this.socket.on('collection_added', this.collectionAdded)
+      this.socket.on('collection_updated', this.collectionUpdated)
+      this.socket.on('collection_removed', this.collectionRemoved)
 
       // Scan Listeners
       this.socket.on('scan_start', this.scanStart)

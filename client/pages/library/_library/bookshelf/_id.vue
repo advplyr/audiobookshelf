@@ -47,6 +47,10 @@ export default {
     var libraryPage = params.id || ''
     store.commit('audiobooks/setLibraryPage', libraryPage)
 
+    if (libraryPage === 'collections') {
+      store.dispatch('user/loadUserCollections')
+    }
+
     return {
       id: libraryPage,
       libraryId,

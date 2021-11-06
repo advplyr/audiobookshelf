@@ -10,7 +10,9 @@ export const state = () => ({
     playbackRate: 1,
     bookshelfCoverSize: 120
   },
-  settingsListeners: []
+  settingsListeners: [],
+  collections: [],
+  collectionsLoaded: false
 })
 
 export const getters = {
@@ -69,6 +71,20 @@ export const actions = {
       console.error('Failed to update settings', error)
       return false
     })
+  },
+  loadUserCollections({ state, commit }) {
+    if (state.collectionsLoaded) {
+      console.log('Collections already loaded')
+      return state.collections
+    }
+
+    return this.$axios.$get('/api/collections').then((collections) => {
+      commit('setCollections', collections)
+      return collections
+    }).catch((error) => {
+      console.error('Failed to get collections', error)
+      return []
+    })
   }
 }
 
@@ -112,5 +128,20 @@ export const mutations = {
   },
   removeSettingsListener(state, listenerId) {
     state.settingsListeners = state.settingsListeners.filter(l => l.id !== listenerId)
+  },
+  setCollections(state, collections) {
+    state.collectionsLoaded = true
+    state.collections = collections
+  },
+  addUpdateCollection(state, collection) {
+    var index = state.collections.findIndex(c => c.id === collection.id)
+    if (index >= 0) {
+      state.collections.splice(index, 1, collection)
+    } else {
+      state.collections.push(collection)
+    }
+  },
+  removeCollection(state, collection) {
+    state.collections = state.collections.filter(c => c.id !== collection.id)
   }
 }

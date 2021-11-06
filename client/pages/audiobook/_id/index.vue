@@ -113,6 +113,10 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" class="mx-0.5" @click="toggleRead" />
             </ui-tooltip>
 
+            <ui-tooltip v-if="showExperimentalFeatures" text="Collections" direction="top">
+              <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
+            </ui-tooltip>
+
             <ui-btn v-if="isDeveloperMode" class="mx-2" @click="openRssFeed">Open RSS Feed</ui-btn>
           </div>
 
@@ -432,6 +436,10 @@ export default {
     },
     downloadClick() {
       this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+    },
+    collectionsClick() {
+      this.$store.commit('setSelectedAudiobook', this.audiobook)
+      this.$store.commit('globals/setShowUserCollectionsModal', true)
     },
     resize() {
       this.windowWidth = window.innerWidth

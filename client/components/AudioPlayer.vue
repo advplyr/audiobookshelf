@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <audio ref="audio" @pause="paused" @playing="playing" @progress="progress" @timeupdate="timeupdate" @loadeddata="audioLoadedData" />
+    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadeddata="audioLoadedData" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
   </div>
@@ -114,7 +114,8 @@ export default {
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
-      trackOffsetLeft: 16 // Track is 16px from edge
+      trackOffsetLeft: 16, // Track is 16px from edge
+      playStartTime: 0
     }
   },
   computed: {
@@ -152,6 +153,33 @@ export default {
     }
   },
   methods: {
+    audioPlayed() {
+      if (!this.$refs.audio) return
+      console.log('Audio Played', this.$refs.audio.paused, this.$refs.audio.currentTime)
+      this.playStartTime = Date.now()
+      this.isPaused = this.$refs.audio.paused
+    },
+    audioPaused() {
+      if (!this.$refs.audio) return
+      console.log('Audio Paused', this.$refs.audio.paused, this.$refs.audio.currentTime)
+      this.isPaused = this.$refs.audio.paused
+    },
+    audioError(err) {
+      if (!this.$refs.audio) return
+      console.error('Audio Error', this.$refs.audio.paused, this.$refs.audio.currentTime, err)
+    },
+    audioEnded() {
+      if (!this.$refs.audio) return
+      console.log('Audio Ended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    },
+    audioStalled() {
+      if (!this.$refs.audio) return
+      console.warn('Audio Ended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    },
+    audioSuspended() {
+      if (!this.$refs.audio) return
+      console.warn('Audio Suspended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    },
     selectChapter(chapter) {
       this.seek(chapter.start)
       this.showChaptersModal = false
@@ -418,20 +446,6 @@ export default {
       this.$refs.playedTrack.style.width = ptWidth + 'px'
       this.playedTrackWidth = ptWidth
     },
-    paused() {
-      if (!this.$refs.audio) {
-        console.error('No audio on paused()')
-        return
-      }
-      this.isPaused = this.$refs.audio.paused
-    },
-    playing() {
-      if (!this.$refs.audio) {
-        console.error('No audio on playing()')
-        return
-      }
-      this.isPaused = this.$refs.audio.paused
-    },
     audioLoadedData() {
       this.totalDuration = this.audioEl.duration
       this.$emit('loaded', this.totalDuration)
@@ -477,6 +491,11 @@ export default {
 
         this.hlsInstance.on(Hls.Events.ERROR, (e, data) => {
           console.error('[HLS] Error', data.type, data.details, data)
+
+          if (this.$refs.audio) {
+            console.log('Hls error check audio', this.$refs.audio.paused, this.$refs.audio.currentTime, this.$refs.audio.readyState)
+          }
+
           if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
             console.error('[HLS] BUFFER STALLED ERROR')
           }

@@ -7,6 +7,8 @@ const { secondsToTimestamp } = require('../utils/fileUtils')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 
+// const UserListeningSession = require('./UserListeningSession')
+
 class Stream extends EventEmitter {
   constructor(streamPath, client, audiobook) {
     super()
@@ -31,6 +33,9 @@ class Stream extends EventEmitter {
     this.segmentsCreated = new Set()
     this.furthestSegmentCreated = 0
     this.clientCurrentTime = 0
+
+    // this.listeningSession = new UserListeningSession()
+    // this.listeningSession.setData(audiobook, client.user)
 
     this.init()
   }

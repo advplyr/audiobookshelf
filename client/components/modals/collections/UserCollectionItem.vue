@@ -1,13 +1,13 @@
 <template>
-  <div class="flex items-center px-4 py-4 justify-start relative hover:bg-bg" :class="wrapperClass" @click="click" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" :class="wrapperClass" @mouseover="mouseover" @mouseleave="mouseleave">
+    <div v-if="isBookIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
     <!-- <span class="material-icons" :class="highlight ? 'text-success' : 'text-white text-opacity-80'">{{ highlight ? 'bookmark' : 'bookmark_border' }}</span> -->
     <div class="w-16 max-w-16 text-center">
-      <p class="text-sm font-mono text-gray-400">
-        {{ this.$secondsToTimestamp(bookmark.time) }}
-      </p>
+      <!-- <img src="/Logo.png" /> -->
+      <cards-group-cover :name="collection.name" :book-items="books" :width="64" :height="64" type="collection" />
     </div>
     <div class="flex-grow overflow-hidden px-2">
-      <template v-if="isEditing">
+      <!-- <template v-if="isEditing">
         <form @submit.prevent="submitUpdate">
           <div class="flex items-center">
             <div class="flex-grow pr-2">
@@ -19,12 +19,14 @@
             </div>
           </div>
         </form>
-      </template>
-      <p v-else class="pl-2 pr-2 truncate">{{ bookmark.title }}</p>
+      </template> -->
+      <p class="pl-2 pr-2 truncate">{{ collection.name }}</p>
     </div>
     <div v-if="!isEditing" class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
-      <span class="material-icons text-xl mr-2 text-gray-200 hover:text-yellow-400" @click.stop="editClick">edit</span>
-      <span class="material-icons text-xl text-gray-200 hover:text-error cursor-pointer" @click.stop="deleteClick">delete</span>
+      <ui-btn v-if="!isBookIncluded" color="success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-icons pt-px">add</span></ui-btn>
+      <ui-btn v-else color="error" :padding-x="3" class="h-9" small @click.stop="clickRem"><span class="material-icons pt-px">remove</span></ui-btn>
+      <!-- <span class="material-icons text-xl mr-2 text-gray-200 hover:text-yellow-400" @click.stop="editClick">edit</span>
+      <span class="material-icons text-xl text-gray-200 hover:text-error cursor-pointer" @click.stop="deleteClick">delete</span> -->
     </div>
   </div>
 </template>
@@ -32,7 +34,7 @@
 <script>
 export default {
   props: {
-    bookmark: {
+    collection: {
       type: Object,
       default: () => {}
     },
@@ -41,16 +43,21 @@ export default {
   data() {
     return {
       isHovering: false,
-      isEditing: false,
-      newBookmarkTitle: null
+      isEditing: false
     }
   },
   computed: {
+    isBookIncluded() {
+      return !!this.collection.isBookIncluded
+    },
     wrapperClass() {
       var classes = []
       if (this.highlight) classes.push('bg-bg bg-opacity-60')
       if (!this.isEditing) classes.push('cursor-pointer')
       return classes.join(' ')
+    },
+    books() {
+      return this.collection.books || []
     }
   },
   methods: {
@@ -61,32 +68,22 @@ export default {
     mouseleave() {
       this.isHovering = false
     },
-    click(e) {
-      if (this.isEditing) {
-        if (e) e.stopPropagation()
-        return
-      }
-      this.$emit('click', this.bookmark)
+    clickAdd() {
+      this.$emit('add', this.collection)
+    },
+    clickRem() {
+      this.$emit('remove', this.collection)
     },
     deleteClick() {
       if (this.isEditing) return
-      this.$emit('delete', this.bookmark)
+      this.$emit('delete', this.collection)
     },
     editClick() {
-      this.newBookmarkTitle = this.bookmark.title
       this.isEditing = true
       this.isHovering = false
     },
     cancelEditing() {
       this.isEditing = false
-    },
-    submitUpdate() {
-      if (this.newBookmarkTitle === this.bookmark.title) {
-        return this.cancelEditing()
-      }
-      var bookmark = { ...this.bookmark }
-      bookmark.title = this.newBookmarkTitle
-      this.$emit('update', bookmark)
     }
   },
   mounted() {}

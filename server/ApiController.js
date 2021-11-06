@@ -10,6 +10,7 @@ const BookFinder = require('./BookFinder')
 
 const Library = require('./objects/Library')
 const User = require('./objects/User')
+const UserCollection = require('./objects/UserCollection')
 
 class ApiController {
   constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, emitter, clientEmitter) {
@@ -75,14 +76,20 @@ class ApiController {
     this.router.patch('/user/:id', this.updateUser.bind(this))
     this.router.delete('/user/:id', this.deleteUser.bind(this))
 
+    this.router.get('/collections', this.getUserCollections.bind(this))
+    this.router.get('/collection/:id', this.getUserCollection.bind(this))
+    this.router.post('/collection', this.createUserCollection.bind(this))
+    this.router.post('/collection/:id/book', this.addBookToUserCollection.bind(this))
+    this.router.delete('/collection/:id/book/:bookId', this.removeBookFromUserCollection.bind(this))
+    this.router.patch('/collection/:id', this.updateUserCollection.bind(this))
+    this.router.delete('/collection/:id', this.deleteUserCollection.bind(this))
+
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
 
     this.router.delete('/backup/:id', this.deleteBackup.bind(this))
     this.router.post('/backup/upload', this.uploadBackup.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
-
-    this.router.get('/genres', this.getGenres.bind(this))
 
     this.router.post('/feed', this.openRssFeed.bind(this))
 
@@ -366,6 +373,15 @@ class ApiController {
         client.stream = null
         this.db.updateUserStream(client.user.id, null)
       }
+    }
+
+    // remove book from collections
+    var collectionsWithBook = this.db.collections.filter(c => c.books.includes(audiobook.id))
+    for (let i = 0; i < collectionsWithBook.length; i++) {
+      var collection = collectionsWithBook[i]
+      collection.removeBook(audiobook.id)
+      await this.db.updateEntity('collection', collection)
+      this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.audiobooks))
     }
 
     var audiobookJSON = audiobook.toJSONMinified()
@@ -761,6 +777,13 @@ class ApiController {
       })
     }
 
+    // delete user collections
+    var userCollections = this.db.collections.filter(c => c.userId === user.id)
+    var collectionsToRemove = userCollections.map(uc => uc.id)
+    for (let i = 0; i < collectionsToRemove.length; i++) {
+      await this.db.removeEntity('collection', collectionsToRemove[i])
+    }
+
     // Todo: check if user is logged in and cancel streams
 
     var userJson = user.toJSONForBrowser()
@@ -769,6 +792,95 @@ class ApiController {
     res.json({
       success: true
     })
+  }
+
+  async getUserCollections(req, res) {
+    var collections = this.db.collections.filter(c => c.userId === req.user.id)
+    var expandedCollections = collections.map(c => c.toJSONExpanded(this.db.audiobooks))
+    res.json(expandedCollections)
+  }
+
+  async getUserCollection(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    res.json(collection.toJSONExpanded(this.db.audiobooks))
+  }
+
+  async createUserCollection(req, res) {
+    var newCollection = new UserCollection()
+    req.body.userId = req.user.id
+    var success = newCollection.setData(req.body)
+    if (!success) {
+      return res.status(500).send('Invalid collection data')
+    }
+    var jsonExpanded = newCollection.toJSONExpanded(this.db.audiobooks)
+    await this.db.insertEntity('collection', newCollection)
+    this.clientEmitter(req.user.id, 'collection_added', jsonExpanded)
+    res.json(jsonExpanded)
+  }
+
+  async addBookToUserCollection(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    var audiobook = this.db.audiobooks.find(ab => ab.id === req.body.id)
+    if (!audiobook) {
+      return res.status(500).send('Book not found')
+    }
+    if (audiobook.libraryId !== collection.libraryId) {
+      return res.status(500).send('Book in different library')
+    }
+    if (collection.books.includes(req.body.id)) {
+      return res.status(500).send('Book already in collection')
+    }
+    collection.addBook(req.body.id)
+    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    await this.db.updateEntity('collection', collection)
+    this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+    res.json(jsonExpanded)
+  }
+
+  async removeBookFromUserCollection(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+
+    if (collection.books.includes(req.params.bookId)) {
+      collection.removeBook(req.params.bookId)
+      var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+      await this.db.updateEntity('collection', collection)
+      this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+    }
+    res.json(collection.toJSONExpanded(this.db.audiobooks))
+  }
+
+  async updateUserCollection(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    var wasUpdated = collection.update(req.body)
+    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    if (wasUpdated) {
+      await this.db.updateEntity('collection', collection)
+      this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+    }
+    res.json(jsonExpanded)
+  }
+
+  async deleteUserCollection(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    await this.db.removeEntity('collection', collection.id)
+    this.clientEmitter(req.user.id, 'collection_removed', jsonExpanded)
+    res.sendStatus(200)
   }
 
   async updateServerSettings(req, res) {
@@ -843,12 +955,6 @@ class ApiController {
       if (err) {
         Logger.error('Download Error', err)
       }
-    })
-  }
-
-  getGenres(req, res) {
-    res.json({
-      genres: this.db.getGenres()
     })
   }
 

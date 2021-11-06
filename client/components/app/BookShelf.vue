@@ -47,7 +47,7 @@
         </template>
         <div v-show="!shelves.length" class="w-full py-16 text-center text-xl">
           <div v-if="page === 'search'" class="py-4 mb-6"><p class="text-2xl">No Results</p></div>
-          <div v-else class="py-4">No {{ showGroups ? 'Series' : 'Audiobooks' }}</div>
+          <div v-else class="py-4 capitalize">No {{ showGroups ? page : 'Audiobooks' }}</div>
           <ui-btn v-if="!showGroups && (filterBy !== 'all' || keywordFilter)" @click="clearFilter">Clear Filter</ui-btn>
           <ui-btn v-else-if="page === 'search'" to="/library">Back to Library</ui-btn>
         </div>
@@ -197,6 +197,13 @@ export default {
       } else if (this.page === 'search') {
         var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
         return audiobookSearchResults.map((absr) => absr.audiobook)
+      } else if (this.page === 'collections') {
+        return (this.$store.state.user.collections || []).map((c) => {
+          return {
+            type: 'collection',
+            ...c
+          }
+        })
       } else {
         var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {
@@ -214,6 +221,7 @@ export default {
       this.$store.commit('showEditModal', audiobook)
     },
     clickGroup(group) {
+      if (this.page === 'collections') return
       this.$emit('update:selectedSeries', group.name)
     },
     clearFilter() {
@@ -292,7 +300,7 @@ export default {
       this.setBookshelfEntities()
     },
     buildSearchParams() {
-      if (this.page === 'search' || this.page === 'series') {
+      if (this.page === 'search' || this.page === 'series' || this.page === 'collections') {
         return ''
       }
 

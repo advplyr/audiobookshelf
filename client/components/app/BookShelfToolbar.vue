@@ -28,7 +28,7 @@
         </div>
         <div class="flex-grow hidden md:inline-block" />
 
-        <ui-text-input v-show="!selectedSeries" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" />
+        <ui-text-input v-show="showSortFilters" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
         <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
@@ -85,6 +85,8 @@ export default {
       } else if (this.page === 'search') {
         var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
         return audiobookSearchResults.length
+      } else if (this.page === 'collections') {
+        return (this.$store.state.user.collections || []).length
       } else {
         var groups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {

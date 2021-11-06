@@ -16,7 +16,8 @@ export default {
     },
     width: Number,
     height: Number,
-    groupTo: String
+    groupTo: String,
+    type: String
   },
   data() {
     return {
@@ -52,6 +53,7 @@ export default {
       return this.$store.state.showExperimentalFeatures
     },
     showCoverFan() {
+      if (this.type === 'collection') return false
       return this.showExperimentalFeatures && this.windowWidth > 1024
     }
   },
