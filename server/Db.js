@@ -201,11 +201,6 @@ class Db {
       return true
     }).catch((error) => {
       Logger.error(`[DB] Update entity ${entityName} Failed: ${error}`)
-
-      if (error && error.code === 'ENOENT') {
-        this.attemptDataRecovery(entityName)
-      }
-
       return false
     })
   }
@@ -221,71 +216,6 @@ class Db {
     }).catch((error) => {
       Logger.error(`[DB] Remove entity ${entityName} Failed: ${error}`)
     })
-  }
-
-  async attemptDataRecovery(entityName) {
-    var dbDirName = this.getEntityArrayKey(entityName)
-    var dbdir = Path.join(this.ConfigPath, dbDirName)
-    console.log('Attempting data recovery for:', dbdir)
-
-    var exists = await fs.pathExists(dbdir)
-    if (!exists) {
-      console.error('Db dir does not exist', dbdir)
-      return
-    }
-
-    try {
-      var dbdatadir = Path.join(dbdir, 'data')
-      var dbtmpdir = Path.join(dbdir, 'tmp')
-
-      var datafiles = await fs.readdir(dbdatadir)
-      var tempfiles = await fs.readdir(dbtmpdir)
-
-      var orphanOld = datafiles.find(df => df.endsWith('.old'))
-      if (orphanOld) {
-        // Get data file num
-        var dbnum = orphanOld.split('.')[1]
-        console.log('Found orphan json.old', orphanOld, `Num: ${dbnum}`)
-
-        var dbDataFilename = `data.${dbnum}.json`
-
-        // make sure data.#.json does not already exist
-        if (datafiles.includes(dbDataFilename)) {
-          console.warn(`${dbDataFilename} already exists, not recovering`)
-          return
-        }
-
-        // find temp file that was supposed to be renamed
-        var matchingTmp = tempfiles.find(tmp => tmp.startsWith(`data.${dbnum}`))
-        if (matchingTmp) {
-          console.log('found matching tmp file', matchingTmp)
-
-          var tmpfileFullPath = Path.join(dbtmpdir, matchingTmp)
-          var renameToPath = Path.join(dbdatadir, dbDataFilename)
-
-          console.log(`Renamining "${tmpfileFullPath}" => "${renameToPath}"`)
-          await fs.rename(tmpfileFullPath, renameToPath)
-
-          console.log('Data recovery successful -- unlinking old')
-
-          var orphanOldPath = Path.join(dbdatadir, orphanOld)
-          await fs.unlink(orphanOldPath)
-          console.log('Removed .old file')
-
-          // Removing lock dir throws error in proper-lockfile
-          // var lockdirpath = Path.join(dbdatadir, `data.${dbnum}.json.lock`)
-          // var lockdirexists = await fs.pathExists(lockdirpath)
-          // if (lockdirexists) {
-          //   await fs.rmdir(lockdirpath)
-          //   console.log('Removed lock dir')
-          // } else {
-          //   console.log('No lock dir found', lockdirpath)
-          // }
-        }
-      }
-    } catch (error) {
-      console.error('Data recovery failed', error)
-    }
   }
 
   recreateAudiobookDb() {

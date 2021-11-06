@@ -17,7 +17,7 @@ class Scanner {
   constructor(AUDIOBOOK_PATH, METADATA_PATH, db, coverController, emitter) {
     this.AudiobookPath = AUDIOBOOK_PATH
     this.MetadataPath = METADATA_PATH
-    this.BookMetadataPath = Path.join(this.MetadataPath, 'books')
+    this.BookMetadataPath = Path.posix.join(this.MetadataPath.replace(/\\/g, '/'), 'books')
 
     this.db = db
     this.coverController = coverController
@@ -42,8 +42,8 @@ class Scanner {
       }
     } else {
       return {
-        fullPath: Path.join(this.BookMetadataPath, audiobook.id),
-        relPath: Path.join('/metadata', 'books', audiobook.id)
+        fullPath: Path.posix.join(this.BookMetadataPath, audiobook.id),
+        relPath: Path.posix.join('/metadata', 'books', audiobook.id)
       }
     }
   }
@@ -603,7 +603,7 @@ class Scanner {
 
     var bookGroupingResults = {}
     for (const bookDir in fileUpdateBookGroup) {
-      var fullPath = Path.join(folder.fullPath, bookDir)
+      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), bookDir)
 
       // Check if book dir group is already an audiobook or in a subdir of an audiobook
       var existingAudiobook = this.db.audiobooks.find(ab => fullPath.startsWith(ab.fullPath))

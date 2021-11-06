@@ -11,8 +11,8 @@ const { CoverDestination } = require('./utils/constants')
 class CoverController {
   constructor(db, MetadataPath, AudiobookPath) {
     this.db = db
-    this.MetadataPath = MetadataPath
-    this.BookMetadataPath = Path.join(this.MetadataPath, 'books')
+    this.MetadataPath = MetadataPath.replace(/\\/g, '/')
+    this.BookMetadataPath = Path.posix.join(this.MetadataPath, 'books')
     this.AudiobookPath = AudiobookPath
   }
 
@@ -24,8 +24,8 @@ class CoverController {
       }
     } else {
       return {
-        fullPath: Path.join(this.BookMetadataPath, audiobook.id),
-        relPath: Path.join('/metadata', 'books', audiobook.id)
+        fullPath: Path.posix.join(this.BookMetadataPath, audiobook.id),
+        relPath: Path.posix.join('/metadata', 'books', audiobook.id)
       }
     }
   }
@@ -98,8 +98,8 @@ class CoverController {
     await fs.ensureDir(fullPath)
 
     var coverFilename = `cover${extname}`
-    var coverFullPath = Path.join(fullPath, coverFilename)
-    var coverPath = Path.join(relPath, coverFilename)
+    var coverFullPath = Path.posix.join(fullPath, coverFilename)
+    var coverPath = Path.posix.join(relPath, coverFilename)
 
     // Move cover from temp upload dir to destination
     var success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
@@ -143,7 +143,7 @@ class CoverController {
       var { fullPath, relPath } = this.getCoverDirectory(audiobook)
       await fs.ensureDir(fullPath)
 
-      var temppath = Path.join(fullPath, 'cover')
+      var temppath = Path.posix.join(fullPath, 'cover')
       var success = await this.downloadFile(url, temppath).then(() => true).catch((err) => {
         Logger.error(`[CoverController] Download image file failed for "${url}"`, err)
         return false
@@ -161,8 +161,8 @@ class CoverController {
       }
 
       var coverFilename = `cover.${imgtype.ext}`
-      var coverPath = Path.join(relPath, coverFilename)
-      var coverFullPath = Path.join(fullPath, coverFilename)
+      var coverPath = Path.posix.join(relPath, coverFilename)
+      var coverFullPath = Path.posix.join(fullPath, coverFilename)
       await fs.rename(temppath, coverFullPath)
 
       await this.removeOldCovers(fullPath, '.' + imgtype.ext)

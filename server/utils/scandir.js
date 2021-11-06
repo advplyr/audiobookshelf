@@ -1,21 +1,9 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const dir = require('node-dir')
 const Logger = require('../Logger')
 const { getIno } = require('./index')
+const { recurseFiles } = require('./fileUtils')
 const globals = require('./globals')
-
-function getPaths(path) {
-  return new Promise((resolve) => {
-    dir.paths(path, function (err, res) {
-      if (err) {
-        Logger.error(err)
-        resolve(false)
-      }
-      resolve(res)
-    })
-  })
-}
 
 function isBookFile(path) {
   if (!path) return false
@@ -25,43 +13,36 @@ function isBookFile(path) {
   return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
+// TODO: Function needs to be re-done
 // Input: array of relative file paths
 // Output: map of files grouped into potential audiobook dirs
 function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
-  // Step 1: Normalize path, Remove leading "/", Filter out files in root dir
-  var pathsFiltered = paths.map(path => Path.normalize(path.slice(1))).filter(path => Path.parse(path).dir)
+  // Step 1: Clean path, Remove leading "/", Filter out files in root dir
+  var pathsFiltered = paths.map(path => {
+    return path.startsWith('/') ? path.slice(1) : path
+  }).filter(path => Path.parse(path).dir)
 
   // Step 2: Sort by least number of directories
   pathsFiltered.sort((a, b) => {
-    var pathsA = Path.dirname(a).split(Path.sep).length
-    var pathsB = Path.dirname(b).split(Path.sep).length
+    var pathsA = Path.dirname(a).split('/').length
+    var pathsB = Path.dirname(b).split('/').length
     return pathsA - pathsB
   })
 
-  // Step 2.5: Seperate audio/ebook files and other files (optional)
-  //              - Directories without an audio or ebook file will not be included
-  var bookFilePaths = []
-  var otherFilePaths = []
-  pathsFiltered.forEach(path => {
-    if (isBookFile(path) || useAllFileTypes) bookFilePaths.push(path)
-    else otherFilePaths.push(path)
-  })
-
-  // Step 3: Group audio files in audiobooks
+  // Step 3: Group files in dirs
   var audiobookGroup = {}
-  bookFilePaths.forEach((path) => {
-    var dirparts = Path.dirname(path).split(Path.sep)
+  pathsFiltered.forEach((path) => {
+    var dirparts = Path.dirname(path).split('/')
     var numparts = dirparts.length
     var _path = ''
 
     // Iterate over directories in path
     for (let i = 0; i < numparts; i++) {
       var dirpart = dirparts.shift()
-      _path = Path.join(_path, dirpart)
-
+      _path = Path.posix.join(_path, dirpart)
 
       if (audiobookGroup[_path]) { // Directory already has files, add file
-        var relpath = Path.join(dirparts.join(Path.sep), Path.basename(path))
+        var relpath = Path.posix.join(dirparts.join('/'), Path.basename(path))
         audiobookGroup[_path].push(relpath)
         return
       } else if (!dirparts.length) { // This is the last directory, create group
@@ -70,19 +51,60 @@ function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
       }
     }
   })
+  return audiobookGroup
+}
+module.exports.groupFilesIntoAudiobookPaths = groupFilesIntoAudiobookPaths
 
-  // Step 4: Add other files into audiobook groups
-  otherFilePaths.forEach((path) => {
-    var dirparts = Path.dirname(path).split(Path.sep)
+// Input: array of relative file items (see recurseFiles)
+// Output: map of files grouped into potential audiobook dirs
+function groupFileItemsIntoBooks(fileItems) {
+  // Step 1: Filter out files in root dir (with depth of 0)
+  var itemsFiltered = fileItems.filter(i => i.deep > 0)
+
+  // Step 2: Seperate audio/ebook files and other files
+  //     - Directories without an audio or ebook file will not be included
+  var bookFileItems = []
+  var otherFileItems = []
+  itemsFiltered.forEach(item => {
+    if (isBookFile(item.fullpath)) bookFileItems.push(item)
+    else otherFileItems.push(item)
+  })
+
+  // Step 3: Group audio files in audiobooks
+  var audiobookGroup = {}
+  bookFileItems.forEach((item) => {
+    var dirparts = item.reldirpath.split('/')
     var numparts = dirparts.length
     var _path = ''
 
     // Iterate over directories in path
     for (let i = 0; i < numparts; i++) {
       var dirpart = dirparts.shift()
-      _path = Path.join(_path, dirpart)
+      _path = Path.posix.join(_path, dirpart)
+
+      if (audiobookGroup[_path]) { // Directory already has files, add file
+        var relpath = Path.posix.join(dirparts.join('/'), item.name)
+        audiobookGroup[_path].push(relpath)
+        return
+      } else if (!dirparts.length) { // This is the last directory, create group
+        audiobookGroup[_path] = [item.name]
+        return
+      }
+    }
+  })
+
+  // Step 4: Add other files into audiobook groups
+  otherFileItems.forEach((item) => {
+    var dirparts = item.reldirpath.split('/')
+    var numparts = dirparts.length
+    var _path = ''
+
+    // Iterate over directories in path
+    for (let i = 0; i < numparts; i++) {
+      var dirpart = dirparts.shift()
+      _path = Path.posix.join(_path, dirpart)
       if (audiobookGroup[_path]) { // Directory is audiobook group
-        var relpath = Path.join(dirparts.join(Path.sep), Path.basename(path))
+        var relpath = Path.posix.join(dirparts.join('/'), item.name)
         audiobookGroup[_path].push(relpath)
         return
       }
@@ -90,7 +112,6 @@ function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
   })
   return audiobookGroup
 }
-module.exports.groupFilesIntoAudiobookPaths = groupFilesIntoAudiobookPaths
 
 function cleanFileObjects(basepath, abrelpath, files) {
   return files.map((file) => {
@@ -98,8 +119,8 @@ function cleanFileObjects(basepath, abrelpath, files) {
     return {
       filetype: getFileType(ext),
       filename: Path.basename(file),
-      path: Path.join(abrelpath, file), // /AUDIOBOOK/PATH/filename.mp3
-      fullPath: Path.join(basepath, file), // /audiobooks/AUDIOBOOK/PATH/filename.mp3
+      path: Path.posix.join(abrelpath, file), // /AUDIOBOOK/PATH/filename.mp3
+      fullPath: Path.posix.join(basepath, file), // /audiobooks/AUDIOBOOK/PATH/filename.mp3
       ext: ext
     }
   })
@@ -118,7 +139,7 @@ function getFileType(ext) {
 
 // Scan folder
 async function scanRootDir(folder, serverSettings = {}) {
-  var folderPath = folder.fullPath
+  var folderPath = folder.fullPath.replace(/\\/g, '/')
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
   var pathExists = await fs.pathExists(folderPath)
@@ -127,15 +148,12 @@ async function scanRootDir(folder, serverSettings = {}) {
     return []
   }
 
-  var pathdata = await getPaths(folderPath)
-  var filepaths = pathdata.files.map(filepath => {
-    return Path.normalize(filepath).replace(folderPath, '')
-  })
+  var fileItems = await recurseFiles(folderPath)
 
-  var audiobookGrouping = groupFilesIntoAudiobookPaths(filepaths)
+  var audiobookGrouping = groupFileItemsIntoBooks(fileItems)
 
   if (!Object.keys(audiobookGrouping).length) {
-    Logger.error('Root path has no audiobooks', filepaths)
+    Logger.error('Root path has no books', fileItems.length)
     return []
   }
 
@@ -163,7 +181,8 @@ module.exports.scanRootDir = scanRootDir
 
 // Input relative filepath, output all details that can be parsed
 function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
-  var splitDir = dir.split(Path.sep)
+  dir = dir.replace(/\\/g, '/')
+  var splitDir = dir.split('/')
 
   // Audio files will always be in the directory named for the title
   var title = splitDir.pop()
@@ -240,25 +259,20 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
     volumeNumber,
     publishYear,
     path: dir, // relative audiobook path i.e. /Author Name/Book Name/..
-    fullPath: Path.join(folderPath, dir) // i.e. /audiobook/Author Name/Book Name/..
+    fullPath: Path.posix.join(folderPath, dir) // i.e. /audiobook/Author Name/Book Name/..
   }
 }
 
 async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) {
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
-  var paths = await getPaths(audiobookPath)
-  var filepaths = paths.files
+  var fileItems = await recurseFiles(audiobookPath)
 
-  // Sort by least number of directories
-  filepaths.sort((a, b) => {
-    var pathsA = Path.dirname(a).split(Path.sep).length
-    var pathsB = Path.dirname(b).split(Path.sep).length
-    return pathsA - pathsB
-  })
+  audiobookPath = audiobookPath.replace(/\\/g, '/')
+  var folderFullPath = folder.fullPath.replace(/\\/g, '/')
 
-  var audiobookDir = Path.normalize(audiobookPath).replace(folder.fullPath, '').slice(1)
-  var audiobookData = getAudiobookDataFromDir(folder.fullPath, audiobookDir, parseSubtitle)
+  var audiobookDir = audiobookPath.replace(folderFullPath, '').slice(1)
+  var audiobookData = getAudiobookDataFromDir(folderFullPath, audiobookDir, parseSubtitle)
   var audiobook = {
     ino: await getIno(audiobookData.fullPath),
     folderId: folder.id,
@@ -268,20 +282,17 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
     otherFiles: []
   }
 
-  for (let i = 0; i < filepaths.length; i++) {
-    var filepath = filepaths[i]
+  for (let i = 0; i < fileItems.length; i++) {
+    var fileItem = fileItems[i]
 
-    var relpath = Path.normalize(filepath).replace(folder.fullPath, '').slice(1)
-    var extname = Path.extname(filepath)
-    var basename = Path.basename(filepath)
-    var ino = await getIno(filepath)
+    var ino = await getIno(fileItem.fullpath)
     var fileObj = {
       ino,
-      filetype: getFileType(extname),
-      filename: basename,
-      path: relpath,
-      fullPath: filepath,
-      ext: extname
+      filetype: getFileType(fileItem.extension),
+      filename: fileItem.name,
+      path: fileItem.path,
+      fullPath: fileItem.fullpath,
+      ext: fileItem.extension
     }
     if (fileObj.filetype === 'audio') {
       audiobook.audioFiles.push(fileObj)

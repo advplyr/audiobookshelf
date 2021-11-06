@@ -1,4 +1,5 @@
 const fs = require('fs-extra')
+const rra = require('recursive-readdir-async')
 const Logger = require('../Logger')
 
 async function getFileStat(path) {
@@ -86,3 +87,58 @@ function setFileOwner(path, uid, gid) {
   }
 }
 module.exports.setFileOwner = setFileOwner
+
+async function recurseFiles(path) {
+  path = path.replace(/\\/g, '/')
+  if (!path.endsWith('/')) path = path + '/'
+
+  const options = {
+    mode: rra.LIST,
+    recursive: true,
+    stats: false,
+    ignoreFolders: true,
+    extensions: true,
+    deep: true,
+    realPath: true,
+    normalizePath: true
+  }
+  var list = await rra.list(path, options)
+  if (list.error) {
+    Logger.error('[fileUtils] Recurse files error', list.error)
+    return []
+  }
+
+  list = list.filter((item) => {
+    if (item.error) {
+      Logger.error(`[fileUtils] Recurse files file "${item.fullName}" has error`, item.error)
+      return false
+    }
+
+    // Ignore any file if a directory or the filename starts with "."
+    var relpath = item.fullname.replace(path, '')
+    var pathStartsWithPeriod = relpath.split('/').find(p => p.startsWith('.'))
+    if (pathStartsWithPeriod) {
+      Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
+      return false
+    }
+
+    return true
+  }).map((item) => ({
+    name: item.name,
+    path: item.fullname.replace(path, ''),
+    dirpath: item.path,
+    reldirpath: item.path.replace(path, ''),
+    fullpath: item.fullname,
+    extension: item.extension,
+    deep: item.deep
+  }))
+
+  // Sort from least deep to most
+  list.sort((a, b) => a.deep - b.deep)
+
+  // list.forEach((l) => {
+  //   console.log(`${l.deep}: ${l.path}`)
+  // })
+  return list
+}
+module.exports.recurseFiles = recurseFiles

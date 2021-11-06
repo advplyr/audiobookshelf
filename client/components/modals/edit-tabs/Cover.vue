@@ -143,7 +143,7 @@ export default {
         .map((file) => {
           var _file = { ...file }
           var imgRelPath = _file.path.replace(this.audiobookPath, '')
-          _file.localPath = `/s/book/${this.audiobookId}${imgRelPath}`
+          _file.localPath = `/s/book/${this.audiobookId}/${imgRelPath}`
           return _file
         })
     }

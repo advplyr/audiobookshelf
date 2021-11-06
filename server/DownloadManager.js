@@ -240,11 +240,12 @@ class DownloadManager {
     }
 
     if (shouldIncludeCover) {
-      var _cover = audiobook.book.coverFullPath
+      var _cover = audiobook.book.coverFullPath.replace(/\\/g, '/')
 
       // Supporting old local file prefix
-      if (!_cover && audiobook.book.cover && audiobook.book.cover.startsWith(Path.sep + 'local')) {
-        _cover = Path.join(this.AudiobookPath, _cover.replace(Path.sep + 'local', ''))
+      var bookCoverPath = audiobook.book.cover ? audiobook.book.cover.replace(/\\/g, '/') : null
+      if (!_cover && bookCoverPath && bookCoverPath.startsWith('/local')) {
+        _cover = Path.posix.join(this.AudiobookPath.replace(/\\/g, '/'), _cover.replace('/local', ''))
         Logger.debug('Local cover url', _cover)
       }
 

@@ -119,6 +119,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   addFileUpdate(libraryId, path, type) {
+    path = path.replace(/\\/g, '/')
     if (this.pendingFilePaths.includes(path)) return
 
     // Get file library
@@ -129,20 +130,28 @@ class FolderWatcher extends EventEmitter {
     }
 
     // Get file folder
-    var folder = libwatcher.folders.find(fold => path.startsWith(fold.fullPath))
+    var folder = libwatcher.folders.find(fold => path.startsWith(fold.fullPath.replace(/\\/g, '/')))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
     }
+    var folderFullPath = folder.fullPath.replace(/\\/g, '/')
 
     // Check if file was added to root directory
     var dir = Path.dirname(path)
-    if (dir === folder.fullPath) {
+    if (dir === folderFullPath) {
       Logger.warn(`[Watcher] New file "${Path.basename(path)}" added to folder root - ignoring it`)
       return
     }
 
-    var relPath = path.replace(folder.fullPath, '')
+    var relPath = path.replace(folderFullPath, '')
+
+    var hasDotPath = relPath.split('/').find(p => p.startsWith('.'))
+    if (hasDotPath) {
+      Logger.debug(`[Watcher] Ignoring dot path "${relPath}" | Piece "${hasDotPath}"`)
+      return
+    }
+
     Logger.debug(`[Watcher] Modified file in library "${libwatcher.name}" and folder "${folder.id}" with relPath "${relPath}"`)
 
     this.pendingFileUpdates.push({

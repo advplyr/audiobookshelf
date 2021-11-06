@@ -350,9 +350,9 @@ class Audiobook {
     if (this.otherFiles && this.otherFiles.length) {
       var imageFile = this.otherFiles.find(f => f.filetype === 'image')
       if (imageFile) {
-        data.coverFullPath = Path.normalize(imageFile.fullPath)
+        data.coverFullPath = imageFile.fullPath
         var relImagePath = imageFile.path.replace(this.path, '')
-        data.cover = Path.normalize(Path.join(`/s/book/${this.id}`, relImagePath))
+        data.cover = Path.posix.join(`/s/book/${this.id}`, relImagePath)
       }
     }
 
@@ -366,10 +366,10 @@ class Audiobook {
       return false
     }
     var updateBookPayload = {}
-    updateBookPayload.coverFullPath = Path.normalize(file.fullPath)
+    updateBookPayload.coverFullPath = file.fullPath
     // Set ab local static path from file relative path
     var relImagePath = file.path.replace(this.path, '')
-    updateBookPayload.cover = Path.normalize(Path.join(`/s/book/${this.id}`, relImagePath))
+    updateBookPayload.cover = Path.posix.join(`/s/book/${this.id}`, relImagePath)
     return this.book.update(updateBookPayload)
   }
 
@@ -556,23 +556,24 @@ class Audiobook {
         var oldFormat = this.book.cover
 
         // Update book cover path to new format
-        this.book.coverFullPath = Path.normalize(Path.join(this.fullPath, this.book.cover.substr(7)))
-        this.book.cover = Path.normalize(coverStripped.replace(this.path, `/s/book/${this.id}`))
+        this.book.coverFullPath = Path.join(this.fullPath, this.book.cover.substr(7)).replace(/\\/g, '/')
+        this.book.cover = coverStripped.replace(this.path, `/s/book/${this.id}`)
         Logger.debug(`[Audiobook] updated book cover to new format "${oldFormat}" => "${this.book.cover}"`)
       }
       hasUpdates = true
     }
 
     // Check if book was removed from book dir
-    if (this.book.cover && this.book.cover.substr(1).startsWith('s\\book\\')) {
+    var bookCoverPath = this.book.cover ? this.book.cover.replace(/\\/g, '/') : null
+    if (bookCoverPath && bookCoverPath.startsWith('/s/book/')) {
       // Fixing old cover paths
       if (!this.book.coverFullPath) {
-        this.book.coverFullPath = Path.normalize(Path.join(this.fullPath, this.book.cover.substr(`/s/book/${this.id}`.length)))
+        this.book.coverFullPath = Path.join(this.fullPath, this.book.cover.substr(`/s/book/${this.id}`.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
         Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
       }
 
-      var coverStillExists = imageFiles.find(f => f.fullPath === this.book.coverFullPath)
+      var coverStillExists = imageFiles.find(f => comparePaths(f.fullPath, this.book.coverFullPath))
       if (!coverStillExists) {
         Logger.info(`[Audiobook] Local cover "${this.book.cover}" was removed | "${this.title}"`)
         this.book.removeCover()
@@ -580,14 +581,14 @@ class Audiobook {
       }
     }
 
-    if (this.book.cover && this.book.cover.substr(1).startsWith('metadata')) {
+    if (bookCoverPath && bookCoverPath.startsWith('/metadata')) {
       // Fixing old cover paths
       if (!this.book.coverFullPath) {
-        this.book.coverFullPath = Path.normalize(Path.join(metadataPath, this.book.cover.substr('/metadata/'.length)))
+        this.book.coverFullPath = Path.join(metadataPath, this.book.cover.substr('/metadata/'.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
         Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
       }
-      var coverStillExists = imageFiles.find(f => f.fullPath === this.book.coverFullPath)
+      var coverStillExists = imageFiles.find(f => comparePaths(f.fullPath, this.book.coverFullPath))
       if (!coverStillExists) {
         Logger.info(`[Audiobook] Metadata cover "${this.book.cover}" was removed | "${this.title}"`)
         this.book.removeCover()
@@ -608,7 +609,7 @@ class Audiobook {
     // If no cover set and image file exists then use it
     if (!this.book.cover && imageFiles.length) {
       var imagePathRelativeToBook = imageFiles[0].path.replace(this.path, '')
-      this.book.cover = Path.normalize(Path.join(`/s/book/${this.id}`, imagePathRelativeToBook))
+      this.book.cover = Path.posix.join(`/s/book/${this.id}`, imagePathRelativeToBook)
       this.book.coverFullPath = imageFiles[0].fullPath
       Logger.info(`[Audiobook] Local cover was set to "${this.book.cover}" | "${this.title}"`)
       hasUpdates = true
@@ -733,7 +734,7 @@ class Audiobook {
 
     var success = await extractCoverArt(audioFileWithCover.fullPath, coverFilePath)
     if (success) {
-      var coverRelPath = Path.join(coverDirRelPath, coverFilename)
+      var coverRelPath = Path.join(coverDirRelPath, coverFilename).replace(/\\/g, '/').replace(/\/\//g, '/')
       this.update({ book: { cover: coverRelPath } })
       return coverRelPath
     }
