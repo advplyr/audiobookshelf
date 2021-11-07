@@ -11,7 +11,7 @@
     <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `${paddingY}px ${paddingX}px` }" @click.stop>
       <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
         <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }" @click="clickCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
-          <cards-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
+          <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
 
           <!-- Hidden SM and DOWN -->
           <div v-show="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block" :class="overlayWrapperClasslist">

@@ -1,6 +1,6 @@
 <template>
   <div ref="container" @mouseover="mouseover" @mouseleave="mouseleave" class="relative">
-    <cards-book-cover :width="24" :audiobook="audiobook" />
+    <covers-book-cover :width="24" :audiobook="audiobook" />
   </div>
 </template>
 

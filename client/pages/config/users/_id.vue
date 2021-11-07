@@ -26,7 +26,7 @@
           </tr>
           <tr v-for="ab in userAudiobooks" :key="ab.audiobookId" :class="!ab.isRead ? '' : 'isRead'">
             <td>
-              <cards-book-cover :width="50" :audiobook="ab" />
+              <covers-book-cover :width="50" :audiobook="ab" />
             </td>
             <td class="font-book">
               <p>{{ ab.book ? ab.book.title : ab.audiobookTitle || 'Unknown' }}</p>

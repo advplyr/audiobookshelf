@@ -139,17 +139,7 @@ export default {
   /* background: linear-gradient(180deg, rgb(114, 85, 59) 0%, rgb(73, 48, 22) 17%, rgb(71, 43, 15) 88%, rgb(61, 41, 20) 100%); */
   box-shadow: 2px 14px 8px #111111aa;
 }
-.categoryPlacard {
-  background-image: url(https://image.freepik.com/free-photo/brown-wooden-textured-flooring-background_53876-128537.jpg);
-  letter-spacing: 1px;
-}
-.shinyBlack {
-  background-color: #2d3436;
-  background-image: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);
-  border-color: rgba(255, 244, 182, 0.6);
-  border-style: solid;
-  color: #fce3a6;
-}
+
 .book-shelf-arrow-right {
   height: calc(100% - 24px);
   background: rgb(48, 48, 48);

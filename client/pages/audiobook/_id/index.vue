@@ -4,7 +4,7 @@
       <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
-            <cards-book-cover :audiobook="audiobook" :width="bookCoverWidth" />
+            <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" />
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>

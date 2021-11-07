@@ -8,7 +8,7 @@
       </div>
     </td>
     <td class="body-cell min-w-6 max-w-6">
-      <cards-hover-book-cover :audiobook="book" />
+      <covers-hover-book-cover :audiobook="book" />
     </td>
     <td class="body-cell min-w-64 max-w-64 px-2">
       <nuxt-link :to="`/audiobook/${book.id}`" class="hover:underline">

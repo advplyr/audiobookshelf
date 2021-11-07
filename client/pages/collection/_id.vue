@@ -2,23 +2,33 @@
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
       <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
-        <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
+        <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 240px">
           <div class="relative" style="height: fit-content">
-            <cards-group-cover :name="collectionName" type="collection" :book-items="bookItems" :width="176" :height="176" />
+            <covers-collection-cover :book-items="bookItems" :width="240" :height="120 * 1.6" />
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
-          <div class="flex">
-            <div class="mb-4">
-              <div class="flex sm:items-end flex-col sm:flex-row">
-                <h1 class="text-2xl md:text-3xl font-sans">
-                  {{ collectionName }}
-                </h1>
-              </div>
-            </div>
+          <div class="flex sm:items-end flex-col sm:flex-row">
+            <h1 class="text-2xl md:text-3xl font-sans">
+              {{ collectionName }}
+            </h1>
+            <div class="flex-grow" />
+
+            <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
+
+            <ui-icon-btn icon="delete" class="mx-0.5" @click="removeClick" />
           </div>
+
+          <div class="my-8 max-w-2xl">
+            <p class="text-base text-gray-100">{{ description }}</p>
+          </div>
+
+          <tables-collection-books-table :books="bookItems" />
         </div>
       </div>
+    </div>
+    <div v-show="processingRemove" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
+      <ui-loading-indicator />
     </div>
   </div>
 </template>
@@ -42,7 +52,9 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      processingRemove: false
+    }
   },
   computed: {
     streamAudiobook() {
@@ -53,9 +65,33 @@ export default {
     },
     collectionName() {
       return this.collection.name || ''
+    },
+    description() {
+      return this.collection.description || ''
     }
   },
-  methods: {},
+  methods: {
+    editClick() {
+      this.$store.commit('globals/setEditCollection', this.collection)
+    },
+    removeClick() {
+      if (confirm(`Are you sure you want to remove collection "${this.collectionName}"?`)) {
+        this.processingRemove = true
+        var collectionName = this.collectionName
+        this.$axios
+          .$delete(`/api/collection/${this.collection.id}`)
+          .then(() => {
+            this.processingRemove = false
+            this.$toast.success(`Collection "${collectionName}" Removed`)
+          })
+          .catch((error) => {
+            console.error('Failed to remove collection', error)
+            this.processingRemove = false
+            this.$toast.error(`Failed to remove collection`)
+          })
+      }
+    }
+  },
   mounted() {}
 }
 </script>

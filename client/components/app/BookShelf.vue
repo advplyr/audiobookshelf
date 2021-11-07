@@ -32,12 +32,14 @@
               <div :key="index" class="w-full bookshelfRow relative">
                 <div class="flex justify-center items-center">
                   <template v-for="entity in shelf">
-                    <cards-group-card v-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
+                    <cards-collection-card v-if="isCollections" :key="entity.id" :width="bookCoverWidth" :collection="entity" @click="clickGroup" />
+                    <cards-group-card v-else-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
+
                     <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
                     <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
                   </template>
                 </div>
-                <div class="bookshelfDivider h-4 w-full absolute bottom-0 left-0 right-0 z-10" />
+                <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-10" :class="isCollections ? 'h-6' : 'h-4'" />
               </div>
             </template>
           </div>
@@ -131,7 +133,9 @@ export default {
       return 16 * this.sizeMultiplier
     },
     bookWidth() {
-      var _width = this.bookCoverWidth + this.paddingX * 2
+      var coverWidth = this.bookCoverWidth
+      if (this.page === 'collections') coverWidth *= 2
+      var _width = coverWidth + this.paddingX * 2
       return this.showGroups ? _width * 1.6 : _width
     },
     isSelectionMode() {
@@ -148,6 +152,9 @@ export default {
     },
     showGroups() {
       return this.page !== '' && this.page !== 'search' && !this.selectedSeries
+    },
+    isCollections() {
+      return this.page === 'collections'
     },
     categorizedShelves() {
       if (this.page !== 'search') return []
@@ -198,12 +205,7 @@ export default {
         var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
         return audiobookSearchResults.map((absr) => absr.audiobook)
       } else if (this.page === 'collections') {
-        return (this.$store.state.user.collections || []).map((c) => {
-          return {
-            type: 'collection',
-            ...c
-          }
-        })
+        return this.$store.state.user.collections || []
       } else {
         var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
         if (this.selectedSeries) {
@@ -299,6 +301,11 @@ export default {
       console.log('[AudioBookshelf] Audiobooks Updated')
       this.setBookshelfEntities()
     },
+    collectionsUpdated() {
+      if (!this.isCollections) return
+      console.log('[AudioBookshelf] Collections Updated')
+      this.setBookshelfEntities()
+    },
     buildSearchParams() {
       if (this.page === 'search' || this.page === 'series' || this.page === 'collections') {
         return ''
@@ -357,6 +364,7 @@ export default {
     window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'bookshelf', meth: this.audiobooksUpdated })
     this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
+    this.$store.commit('user/addCollectionsListener', { id: 'bookshelf', meth: this.collectionsUpdated })
 
     this.init()
   },
@@ -364,6 +372,7 @@ export default {
     window.removeEventListener('resize', this.resize)
     this.$store.commit('audiobooks/removeListener', 'bookshelf')
     this.$store.commit('user/removeSettingsListener', 'bookshelf')
+    this.$store.commit('user/removeCollectionsListener', 'bookshelf')
   }
 }
 </script>

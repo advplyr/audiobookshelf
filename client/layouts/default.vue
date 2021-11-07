@@ -8,6 +8,7 @@
 
     <modals-edit-modal />
     <modals-user-collections-modal />
+    <modals-edit-collection-modal />
     <readers-reader />
   </div>
 </template>
@@ -189,6 +190,11 @@ export default {
       this.$store.commit('user/addUpdateCollection', collection)
     },
     collectionRemoved(collection) {
+      if (this.$route.name.startsWith('collection')) {
+        if (this.$route.params.id === collection.id) {
+          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/collections`)
+        }
+      }
       this.$store.commit('user/removeCollection', collection)
     },
     downloadToastClick(download) {

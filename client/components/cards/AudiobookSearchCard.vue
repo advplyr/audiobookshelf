@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
-    <cards-book-cover :audiobook="audiobook" :width="50" />
+    <covers-book-cover :audiobook="audiobook" :width="50" />
     <div class="flex-grow px-2 audiobookSearchCardContent">
       <p v-if="matchKey !== 'title'" class="truncate text-sm">{{ title }}</p>
       <p v-else class="truncate text-sm" v-html="matchHtml" />

@@ -2,9 +2,9 @@
   <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" :class="wrapperClass" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="isBookIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
     <!-- <span class="material-icons" :class="highlight ? 'text-success' : 'text-white text-opacity-80'">{{ highlight ? 'bookmark' : 'bookmark_border' }}</span> -->
-    <div class="w-16 max-w-16 text-center">
+    <div class="w-20 max-w-20 text-center">
       <!-- <img src="/Logo.png" /> -->
-      <cards-group-cover :name="collection.name" :book-items="books" :width="64" :height="64" type="collection" />
+      <covers-collection-cover :book-items="books" :width="80" :height="40 * 1.6" />
     </div>
     <div class="flex-grow overflow-hidden px-2">
       <!-- <template v-if="isEditing">
@@ -20,7 +20,7 @@
           </div>
         </form>
       </template> -->
-      <p class="pl-2 pr-2 truncate">{{ collection.name }}</p>
+      <nuxt-link :to="`/collection/${collection.id}`" class="pl-2 pr-2 truncate hover:underline cursor-pointer" @click.native="clickNuxtLink">{{ collection.name }}</nuxt-link>
     </div>
     <div v-if="!isEditing" class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
       <ui-btn v-if="!isBookIncluded" color="success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-icons pt-px">add</span></ui-btn>
@@ -61,6 +61,9 @@ export default {
     }
   },
   methods: {
+    clickNuxtLink() {
+      this.$emit('close')
+    },
     mouseover() {
       if (this.isEditing) return
       this.isHovering = true

@@ -2,10 +2,10 @@
   <div class="relative">
     <div class="rounded-sm h-full relative" :style="{ padding: `16px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
-        <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: height + 'px', width: height + 'px' }">
-          <cards-group-cover ref="groupcover" :name="groupName" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="height" :height="height" />
+        <div class="w-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: coverHeight + 'px', width: coverWidth + 'px' }">
+          <covers-group-cover ref="groupcover" :name="groupName" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="coverWidth" :height="coverHeight" />
 
-          <div v-if="hasValidCovers && !showExperimentalFeatures && groupType !== 'collection'" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+          <div v-if="hasValidCovers && !showExperimentalFeatures" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
             <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
@@ -66,7 +66,10 @@ export default {
         return `/library/${this.currentLibraryId}/bookshelf?filter=tags.${this.groupEncode}`
       }
     },
-    height() {
+    coverWidth() {
+      return this.coverHeight
+    },
+    coverHeight() {
       return this.width * 1.6
     },
     sizeMultiplier() {
@@ -89,9 +92,6 @@ export default {
     },
     groupName() {
       return this._group.name || 'No Name'
-    },
-    groupType() {
-      return this._group.type
     },
     groupEncode() {
       return this.$encode(this.groupName)

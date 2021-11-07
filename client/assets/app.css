@@ -151,3 +151,18 @@ input[type=number] {
 .box-shadow-side {
   box-shadow: 5px 0px 5px #11111166;
 }
+
+/*
+Bookshelf Label
+*/
+.categoryPlacard {
+  background-image: url(https://image.freepik.com/free-photo/brown-wooden-textured-flooring-background_53876-128537.jpg);
+  letter-spacing: 1px;
+}
+.shinyBlack {
+  background-color: #2d3436;
+  background-image: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);
+  border-color: rgba(255, 244, 182, 0.6);
+  border-style: solid;
+  color: #fce3a6;
+}

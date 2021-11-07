@@ -12,7 +12,8 @@ export const state = () => ({
   },
   settingsListeners: [],
   collections: [],
-  collectionsLoaded: false
+  collectionsLoaded: false,
+  collectionsListeners: []
 })
 
 export const getters = {
@@ -140,8 +141,18 @@ export const mutations = {
     } else {
       state.collections.push(collection)
     }
+    state.collectionsListeners.forEach((listener) => listener.meth())
   },
   removeCollection(state, collection) {
     state.collections = state.collections.filter(c => c.id !== collection.id)
-  }
+    state.collectionsListeners.forEach((listener) => listener.meth())
+  },
+  addCollectionsListener(state, listener) {
+    var index = state.collectionsListeners.findIndex(l => l.id === listener.id)
+    if (index >= 0) state.collectionsListeners.splice(index, 1, listener)
+    else state.collectionsListeners.push(listener)
+  },
+  removeCollectionsListener(state, listenerId) {
+    state.collectionsListeners = state.collectionsListeners.filter(l => l.id !== listenerId)
+  },
 }

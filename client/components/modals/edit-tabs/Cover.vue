@@ -2,7 +2,7 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6 relative">
     <div class="flex">
       <div class="relative">
-        <cards-book-cover :audiobook="audiobook" />
+        <covers-book-cover :audiobook="audiobook" />
         <!-- book cover overlay -->
         <div v-if="book.cover" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
@@ -57,7 +57,7 @@
           <p v-if="!coversFound.length">No Covers Found</p>
           <template v-for="cover in coversFound">
             <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
-              <cards-preview-cover :src="cover" :width="80" show-open-new-tab />
+              <covers-preview-cover :src="cover" :width="80" show-open-new-tab />
             </div>
           </template>
         </div>
@@ -68,7 +68,7 @@
       <p class="text-lg">Preview Cover</p>
       <span class="absolute top-4 right-4 material-icons text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
       <div class="flex justify-center py-4">
-        <cards-preview-cover :src="previewUpload" :width="240" />
+        <covers-preview-cover :src="previewUpload" :width="240" />
       </div>
       <div class="absolute bottom-0 right-0 flex py-4 px-5">
         <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">Clear</ui-btn>
