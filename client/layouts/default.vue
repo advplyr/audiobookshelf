@@ -20,7 +20,10 @@ export default {
   middleware: 'authenticated',
   data() {
     return {
-      socket: null
+      socket: null,
+      isSocketConnected: false,
+      isFirstSocketConnection: true,
+      socketConnectionToastId: null
     }
   },
   watch: {
@@ -46,14 +49,46 @@ export default {
       console.log('[SOCKET] Connected')
       var token = this.$store.getters['user/getToken']
       this.socket.emit('auth', token)
+
+      if (this.socketConnectionToastId !== null) {
+        this.$toast.update(this.socketConnectionToastId, { content: 'Socket Connected', options: { timeout: 5000, type: 'success', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
+      } else if (!this.isFirstSocketConnection) {
+        this.$toast.success('Socket Connected', { position: 'bottom-center' })
+      }
+      this.isFirstSocketConnection = false
+      this.isSocketConnected = true
     },
-    connectError() {},
+    connectError() {
+      console.error('[SOCKET] connect error')
+
+      // if (this.socketConnectionToastId) {
+      //    this.$toast.update(this.socketConnectionToastId, { content: 'Socket Connection Error', options: { timeout: 5000, type: 'error', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
+      // } else {
+      //   this.$toast.error('Socket Connection Error', { position: 'bottom-center' })
+      // }
+    },
     disconnect() {
       console.log('[SOCKET] Disconnected')
+      this.isSocketConnected = false
+
+      if (this.socketConnectionToastId !== null) {
+        this.socketConnectionToastId = this.$toast.update(this.socketConnectionToastId, { content: 'Socket Disconnected', options: { timeout: null, type: 'error', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
+      } else {
+        this.socketConnectionToastId = this.$toast.error('Socket Disconnected', { timeout: null, position: 'bottom-center' })
+      }
     },
-    reconnect() {},
-    reconnectError() {},
-    reconnectFailed() {},
+    reconnect() {
+      console.error('[SOCKET] reconnected')
+    },
+    reconnection_attempt(val) {
+      console.log(`[SOCKET] Reconnection attempt ${val}`)
+    },
+    reconnectError() {
+      console.error('[SOCKET] reconnect error')
+    },
+    reconnectFailed() {
+      console.error('[SOCKET] reconnect failed')
+    },
     init(payload) {
       console.log('Init Payload', payload)
       if (payload.stream) {
@@ -269,20 +304,20 @@ export default {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
         persist: 'main',
-        teardown: true,
+        teardown: false,
         transports: ['websocket'],
-        upgrade: false
+        upgrade: false,
+        reconnection: true
       })
-      this.$root.socket = this.socket
+      // this.$root.socket = this.socket
 
-      // Connection Listeners
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)
       this.socket.on('disconnect', this.disconnect)
-      this.socket.on('reconnecting', this.reconnecting)
-      this.socket.on('reconnect', this.reconnect)
-      this.socket.on('reconnect_error', this.reconnectError)
-      this.socket.on('reconnect_failed', this.reconnectFailed)
+      this.socket.io.on('reconnection_attempt', this.reconnection_attempt)
+      this.socket.io.on('reconnect', this.reconnect)
+      this.socket.io.on('reconnect_error', this.reconnectError)
+      this.socket.io.on('reconnect_failed', this.reconnectFailed)
 
       this.socket.on('init', this.init)
 
