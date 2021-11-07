@@ -150,8 +150,6 @@ export default {
 <style>
 .list-complete-item {
   transition: all 0.8s ease;
-  /* display: block;
-  margin-right: 10px; */
 }
 
 .list-complete-enter-from,

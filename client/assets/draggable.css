@@ -14,6 +14,9 @@
 #librariesTable .item {
   cursor: n-resize;
 }
+.drag-handle {
+  cursor: n-resize;
+}
 .list-group-item:not(.exclude) {
   cursor: n-resize;
 }

@@ -309,7 +309,7 @@ export default {
         upgrade: false,
         reconnection: true
       })
-      // this.$root.socket = this.socket
+      this.$root.socket = this.socket
 
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)

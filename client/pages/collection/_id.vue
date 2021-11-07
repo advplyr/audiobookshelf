@@ -23,7 +23,7 @@
             <p class="text-base text-gray-100">{{ description }}</p>
           </div>
 
-          <tables-collection-books-table :books="bookItems" />
+          <tables-collection-books-table :books="bookItems" :collection-id="collection.id" />
         </div>
       </div>
     </div>
@@ -47,13 +47,17 @@ export default {
       return redirect('/')
     }
     store.commit('user/addUpdateCollection', collection)
+    collection.books.forEach((book) => {
+      store.commit('audiobooks/addUpdate', book)
+    })
     return {
-      collection
+      collectionId: collection.id
     }
   },
   data() {
     return {
-      processingRemove: false
+      processingRemove: false,
+      collectionCopy: {}
     }
   },
   computed: {
@@ -68,6 +72,9 @@ export default {
     },
     description() {
       return this.collection.description || ''
+    },
+    collection() {
+      return this.$store.getters['user/getCollection'](this.collectionId)
     }
   },
   methods: {
@@ -90,8 +97,14 @@ export default {
             this.$toast.error(`Failed to remove collection`)
           })
       }
+    },
+    collectionsUpdated() {
+      // this.collectionCopy = { ...this.collection }
     }
   },
-  mounted() {}
+  mounted() {
+    // this.$store.commit('user/addCollectionsListener', { meth: this.collectionsUpdated, key: 'collection-page' })
+  },
+  beforeDestroy() {}
 }
 </script>

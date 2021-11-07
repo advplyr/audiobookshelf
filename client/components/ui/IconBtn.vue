@@ -1,5 +1,5 @@
 <template>
-  <button class="icon-btn rounded-md border border-gray-600 flex items-center justify-center h-9 w-9 relative" :disabled="disabled" :class="className" @click="clickBtn">
+  <button class="icon-btn rounded-md flex items-center justify-center h-9 w-9 relative" @mousedown.prevent :disabled="disabled" :class="className" @click="clickBtn">
     <span :class="outlined ? 'material-icons-outlined' : 'material-icons'" :style="{ fontSize }">{{ icon }}</span>
   </button>
 </template>
@@ -13,7 +13,8 @@ export default {
       type: String,
       default: 'primary'
     },
-    outlined: Boolean
+    outlined: Boolean,
+    borderless: Boolean
   },
   data() {
     return {}
@@ -21,7 +22,9 @@ export default {
   computed: {
     className() {
       var classes = []
-      classes.push(`bg-${this.bgColor}`)
+      if (!this.borderless) {
+        classes.push(`bg-${this.bgColor} border border-gray-600`)
+      }
       return classes.join(' ')
     },
     fontSize() {
@@ -35,6 +38,7 @@ export default {
         e.preventDefault()
         return
       }
+      e.preventDefault()
       this.$emit('click')
       e.stopPropagation()
     }

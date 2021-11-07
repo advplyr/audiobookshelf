@@ -51,6 +51,9 @@ export const getters = {
     if (!state.user) return false
     if (getters.getUserCanAccessAllLibraries) return true
     return getters.getLibrariesAccessible.includes(libraryId)
+  },
+  getCollection: state => id => {
+    return state.collections.find(c => c.id === id)
   }
 }
 

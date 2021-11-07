@@ -175,6 +175,7 @@ export default {
   },
   methods: {
     goPrevBook() {
+      console.log('GO PREV', this.currentBookshelfIndex)
       if (this.currentBookshelfIndex - 1 < 0) return
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
       var prevBook = this.$store.getters['audiobooks/getAudiobook'](prevBookId)
@@ -186,6 +187,7 @@ export default {
       }
     },
     goNextBook() {
+      console.log('GO NEXT', this.currentBookshelfIndex)
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
 
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
@@ -224,6 +226,7 @@ export default {
       }
     },
     hotkey(action) {
+      console.log('HOTKEY', action)
       if (action === this.$hotkeys.Modal.NEXT_PAGE) {
         this.goNextBook()
       } else if (action === this.$hotkeys.Modal.PREV_PAGE) {
