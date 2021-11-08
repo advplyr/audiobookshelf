@@ -9,10 +9,10 @@
             <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
-          <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none z-10">
+          <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none z-40">
             <p class="font-book text-xl">{{ bookItems.length }}</p>
           </div>
-          <div class="absolute bottom-0 left-0 w-full h-1 flex flex-nowrap">
+          <div class="absolute bottom-0 left-0 w-full h-1 flex flex-nowrap z-40">
             <div v-for="userProgress in userProgressItems" :key="userProgress.audiobookId" class="h-full w-full" :class="userProgress.isRead ? 'bg-success' : userProgress.progress > 0 ? 'bg-yellow-400' : ''" />
           </div>
         </div>

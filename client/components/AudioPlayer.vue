@@ -155,13 +155,13 @@ export default {
   methods: {
     audioPlayed() {
       if (!this.$refs.audio) return
-      console.log('Audio Played', this.$refs.audio.paused, this.$refs.audio.currentTime)
+      // console.log('Audio Played', this.$refs.audio.paused, this.$refs.audio.currentTime)
       this.playStartTime = Date.now()
       this.isPaused = this.$refs.audio.paused
     },
     audioPaused() {
       if (!this.$refs.audio) return
-      console.log('Audio Paused', this.$refs.audio.paused, this.$refs.audio.currentTime)
+      // console.log('Audio Paused', this.$refs.audio.paused, this.$refs.audio.currentTime)
       this.isPaused = this.$refs.audio.paused
     },
     audioError(err) {

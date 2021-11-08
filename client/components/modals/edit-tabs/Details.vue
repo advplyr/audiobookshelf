@@ -2,16 +2,6 @@
   <div class="w-full h-full relative">
     <form class="w-full h-full" @submit.prevent="submitForm">
       <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
-        <!-- <div v-if="userProgress" class="bg-success bg-opacity-40 rounded-md w-full px-4 py-1 mb-4 border border-success border-opacity-50">
-        <div class="w-full flex items-center">
-          <p>
-            Your progress: <span class="font-mono text-lg">{{ (userProgress * 100).toFixed(0) }}%</span>
-          </p>
-          <div class="flex-grow" />
-          <ui-btn v-if="!resettingProgress" small :padding-x="2" class="-mr-3" @click="resetProgress">Reset</ui-btn>
-        </div>
-      </div> -->
-
         <ui-text-input-with-label v-model="details.title" label="Title" />
 
         <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
@@ -278,7 +268,6 @@ export default {
     }
   },
   mounted() {
-    // this.init()
     this.setResizeObserver()
   }
 }

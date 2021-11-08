@@ -98,7 +98,6 @@ export default {
       })
       this.searchQuery = query
     }
-  },
-  mounted() {}
+  }
 }
 </script>

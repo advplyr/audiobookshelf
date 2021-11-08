@@ -16,6 +16,7 @@ export const state = () => ({
   processingBatch: false,
   previousPath: '/',
   routeHistory: [],
+  isRoutingBack: false,
   showExperimentalFeatures: false,
   backups: [],
   bookshelfBookIds: [],
@@ -77,6 +78,9 @@ export const mutations = {
   },
   setRouteHistory(state, val) {
     state.routeHistory = val
+  },
+  setIsRoutingBack(state, val) {
+    state.isRoutingBack = val
   },
   setPreviousPath(state, val) {
     state.previousPath = val

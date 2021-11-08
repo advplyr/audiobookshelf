@@ -8,10 +8,10 @@
       <div class="flex-grow" />
       <p v-if="totalDuration">{{ totalDurationPretty }}</p>
     </div>
-    <draggable v-model="books" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
-      <transition-group type="transition" :name="!drag ? 'list-complete' : null">
-        <template v-for="book in books">
-          <tables-collection-book-table-row :key="book.id" :book="book" :collection-id="collectionId" class="item list-complete-item" @edit="editBook" />
+    <draggable v-model="booksCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
+      <transition-group type="transition" :name="!drag ? 'collection-book' : null">
+        <template v-for="book in booksCopy">
+          <tables-collection-book-table-row :key="book.id" :is-dragging="drag" :book="book" :collection-id="collectionId" class="item" :class="drag ? '' : 'collection-book-item'" @edit="editBook" />
         </template>
       </transition-group>
     </draggable>
@@ -39,6 +39,14 @@ export default {
         animation: 200,
         group: 'description',
         ghostClass: 'ghost'
+      },
+      booksCopy: []
+    }
+  },
+  watch: {
+    books: {
+      handler(newVal) {
+        this.init()
       }
     }
   },
@@ -55,29 +63,47 @@ export default {
     }
   },
   methods: {
-    draggableUpdate() {},
+    draggableUpdate() {
+      var collectionUpdate = {
+        books: this.booksCopy.map((b) => b.id)
+      }
+      this.$axios
+        .$patch(`/api/collection/${this.collectionId}`, collectionUpdate)
+        .then((collection) => {
+          console.log('Collection updated', collection)
+        })
+        .catch((error) => {
+          console.error('Failed to update collection', error)
+          this.$toast.error('Failed to save collection books order')
+        })
+    },
     editBook(book) {
       var bookIds = this.books.map((b) => b.id)
       this.$store.commit('setBookshelfBookIds', bookIds)
       this.$store.commit('showEditModal', book)
+    },
+    init() {
+      this.booksCopy = this.books.map((b) => ({ ...b }))
     }
   },
-  mounted() {}
+  mounted() {
+    this.init()
+  }
 }
 </script>
 
 <style>
-.list-complete-item {
-  transition: all 0.8s ease;
+.collection-book-item {
+  transition: all 0.4s ease;
 }
 
-.list-complete-enter-from,
-.list-complete-leave-to {
+.collection-book-enter-from,
+.collection-book-leave-to {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateX(30px);
 }
 
-.list-complete-leave-active {
+.collection-book-leave-active {
   position: absolute;
 }
 </style>

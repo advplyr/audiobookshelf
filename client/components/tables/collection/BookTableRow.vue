@@ -6,11 +6,18 @@
           <span class="material-icons drag-handle text-xl">menu</span>
         </div>
       </div>
-      <covers-book-cover :audiobook="book" :width="50" />
+      <div class="h-full relative" :style="{ width: '50px' }">
+        <covers-book-cover :audiobook="book" :width="50" />
+        <div class="absolute top-0 left-0 bg-black bg-opacity-50 flex items-center justify-center h-full w-full" v-show="isHovering && showPlayBtn">
+          <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
+            <span class="material-icons">play_arrow</span>
+          </div>
+        </div>
+      </div>
       <div class="w-80 h-full px-2 flex items-center">
         <div>
-          <p class="truncate">{{ bookTitle }}</p>
-          <p class="truncate text-gray-400 text-sm">{{ bookAuthor }}</p>
+          <nuxt-link :to="`/audiobook/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
+          <nuxt-link :to="`/library/${book.libraryId}/bookshelf?filter=authors.${$encode(bookAuthor)}`" class="truncate block text-gray-400 text-sm hover:underline">{{ bookAuthor }}</nuxt-link>
         </div>
       </div>
       <div class="flex-grow flex items-center">
@@ -26,12 +33,12 @@
         <span class="material-icons">edit</span>
       </div>
     </div> -->
-    <div class="w-40 absolute top-0 -right-40 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : '-translate-x-40'">
+    <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : '-translate-x-24'">
       <div class="flex h-full items-center">
         <ui-tooltip :text="isRead ? 'Mark as Not Read' : 'Mark as Read'" direction="top">
           <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" borderless class="mx-1 mt-0.5" @click="toggleRead" />
         </ui-tooltip>
-        <div class="mx-1">
+        <div class="mx-1" :class="isHovering ? '' : 'ml-6'">
           <ui-icon-btn icon="edit" borderless @click="clickEdit" />
         </div>
         <div class="mx-1">
@@ -49,7 +56,8 @@ export default {
     book: {
       type: Object,
       default: () => {}
-    }
+    },
+    isDragging: Boolean
   },
   data() {
     return {
@@ -63,6 +71,13 @@ export default {
       immediate: true,
       handler(newVal) {
         this.isRead = newVal
+      }
+    },
+    isDragging: {
+      handler(newVal) {
+        if (newVal) {
+          this.isHovering = false
+        }
       }
     }
   },
@@ -79,6 +94,21 @@ export default {
     bookDuration() {
       return this.$secondsToTimestamp(this.book.duration)
     },
+    isMissing() {
+      return this.book.isMissing
+    },
+    isIncomplete() {
+      return this.book.isIncomplete
+    },
+    numTracks() {
+      return this.book.numTracks
+    },
+    isStreaming() {
+      return this.$store.getters['getAudiobookIdStreaming'] === this.book.id
+    },
+    showPlayBtn() {
+      return !this.isMissing && !this.isIncomplete && !this.isStreaming && this.numTracks
+    },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
@@ -91,12 +121,16 @@ export default {
   },
   methods: {
     mouseover() {
+      if (this.isDragging) return
       this.isHovering = true
     },
     mouseleave() {
       this.isHovering = false
     },
-    clickRemove() {},
+    playClick() {
+      this.$store.commit('setStreamAudiobook', this.book)
+      this.$root.socket.emit('open_stream', this.book.id)
+    },
     clickEdit() {
       this.$emit('edit', this.book)
     },

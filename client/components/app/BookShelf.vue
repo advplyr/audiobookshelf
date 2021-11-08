@@ -298,12 +298,12 @@ export default {
       this.$nextTick(this.setBookshelfEntities)
     },
     audiobooksUpdated() {
-      console.log('[AudioBookshelf] Audiobooks Updated')
+      console.log('[Bookshelf] Audiobooks Updated')
       this.setBookshelfEntities()
     },
     collectionsUpdated() {
       if (!this.isCollections) return
-      console.log('[AudioBookshelf] Collections Updated')
+      console.log('[Bookshelf] Collections Updated')
       this.setBookshelfEntities()
     },
     buildSearchParams() {

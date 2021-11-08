@@ -148,7 +148,6 @@ export default {
     }
   },
   mounted() {
-    console.log('folder chooser mounted')
     this.init()
   }
 }

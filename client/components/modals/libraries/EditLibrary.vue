@@ -60,9 +60,6 @@ export default {
       }
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
-      console.log(newfolderpaths)
-      console.log(origfolderpaths)
-      console.log(newfolderpaths === origfolderpaths)
 
       return newfolderpaths === origfolderpaths && this.name === this.library.name
     }
@@ -158,7 +155,6 @@ export default {
     }
   },
   mounted() {
-    console.log('Mounted edit library')
     this.init()
   }
 }

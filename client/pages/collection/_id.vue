@@ -14,6 +14,11 @@
             </h1>
             <div class="flex-grow" />
 
+            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
+              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
+              {{ streaming ? 'Streaming' : 'Play' }}
+            </ui-btn>
+
             <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
 
             <ui-icon-btn icon="delete" class="mx-0.5" @click="removeClick" />
@@ -75,6 +80,20 @@ export default {
     },
     collection() {
       return this.$store.getters['user/getCollection'](this.collectionId)
+    },
+    playableBooks() {
+      return this.bookItems.filter((book) => {
+        return !book.isMissing && !book.isIncomplete && book.numTracks
+      })
+    },
+    streaming() {
+      return !!this.playableBooks.find((b) => b.id === this.$store.getters['getAudiobookIdStreaming'])
+    },
+    showPlayButton() {
+      return this.playableBooks.length
+    },
+    userAudiobooks() {
+      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     }
   },
   methods: {
@@ -98,13 +117,15 @@ export default {
           })
       }
     },
-    collectionsUpdated() {
-      // this.collectionCopy = { ...this.collection }
+    clickPlay() {
+      var nextBookNotRead = this.playableBooks.find((pb) => !this.userAudiobooks[pb.id] || !this.userAudiobooks[pb.id].isRead)
+      if (nextBookNotRead) {
+        this.$store.commit('setStreamAudiobook', nextBookNotRead)
+        this.$root.socket.emit('open_stream', nextBookNotRead.id)
+      }
     }
   },
-  mounted() {
-    // this.$store.commit('user/addCollectionsListener', { meth: this.collectionsUpdated, key: 'collection-page' })
-  },
+  mounted() {},
   beforeDestroy() {}
 }
 </script>

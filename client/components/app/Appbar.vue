@@ -128,6 +128,7 @@ export default {
   methods: {
     async back() {
       var popped = await this.$store.dispatch('popRoute')
+      if (popped) this.$store.commit('setIsRoutingBack', true)
       var backTo = popped || '/'
       this.$router.push(backTo)
     },

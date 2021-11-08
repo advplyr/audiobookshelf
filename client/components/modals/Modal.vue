@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 flex items-center justify-center z-40 opacity-0">
+  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 items-center justify-center z-40 opacity-0 hidden">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
 
     <div class="absolute top-5 right-5 h-12 w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300" @click="clickClose">
@@ -47,7 +47,7 @@ export default {
   watch: {
     show(newVal) {
       if (newVal) {
-        this.setShow()
+        this.$nextTick(this.setShow)
       } else {
         this.setHide()
       }
@@ -77,9 +77,9 @@ export default {
     clickClose() {
       this.show = false
     },
-    clickBg(vm, ev) {
+    clickBg(ev) {
       if (this.processing && this.persistent) return
-      if (vm.srcElement.classList.contains('modal-bg')) {
+      if (ev.srcElement.classList.contains('modal-bg')) {
         this.show = false
       }
     },
@@ -89,6 +89,13 @@ export default {
       }
     },
     setShow() {
+      if (!this.el || !this.content) {
+        this.init()
+      }
+      if (!this.el || !this.content) {
+        return
+      }
+
       document.body.appendChild(this.el)
       setTimeout(() => {
         this.content.style.transform = 'scale(1)'
@@ -105,15 +112,22 @@ export default {
 
       this.$eventBus.$off('modal-hotkey', this.hotkey)
       this.$store.commit('setOpenModal', null)
+    },
+    init() {
+      this.el = this.$refs.wrapper
+      this.content = this.$refs.content
+      if (this.content && this.el) {
+        this.el.classList.remove('hidden')
+        this.el.classList.add('flex')
+        this.content.style.transform = 'scale(0)'
+        this.content.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+        this.el.style.opacity = 1
+        this.el.remove()
+      } else {
+        console.warn('Invalid modal init', this.name)
+      }
     }
   },
-  mounted() {
-    this.el = this.$refs.wrapper
-    this.content = this.$refs.content
-    this.content.style.transform = 'scale(0)'
-    this.content.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
-    this.el.style.opacity = 1
-    this.el.remove()
-  }
+  mounted() {}
 }
 </script>

@@ -8,7 +8,10 @@
     <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
       <form @submit.prevent="submitForm">
         <div class="flex">
-          <covers-collection-cover :book-items="books" :width="200" :height="100 * 1.6" />
+          <div>
+            <covers-collection-cover :book-items="books" :width="200" :height="100 * 1.6" />
+            <!-- <ui-btn type="button" @click="showUploadImageModal = true">Upload</ui-btn> -->
+          </div>
           <div class="flex-grow px-4">
             <ui-text-input-with-label v-model="newCollectionName" label="Name" class="mb-2" />
 
@@ -21,6 +24,8 @@
           <ui-btn color="success" type="submit">Save</ui-btn>
         </div>
       </form>
+
+      <modals-upload-image-modal v-model="showUploadImageModal" entity="collection" :entity-id="collection.id" />
     </div>
   </modals-modal>
 </template>
@@ -31,7 +36,8 @@ export default {
     return {
       processing: false,
       newCollectionName: null,
-      newCollectionDescription: null
+      newCollectionDescription: null,
+      showUploadImageModal: false
     }
   },
   watch: {

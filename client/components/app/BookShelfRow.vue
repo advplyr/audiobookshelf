@@ -31,10 +31,10 @@
     <div class="bookshelfDividerCategorized h-6 w-full absolute bottom-0 left-0 right-0 z-20"></div>
 
     <div v-show="canScrollLeft && !isScrolling" class="absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollLeft">
-      <span class="material-icons text-8xl text-white">chevron_left</span>
+      <span class="material-icons text-6xl text-white">chevron_left</span>
     </div>
     <div v-show="canScrollRight && !isScrolling" class="absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
-      <span class="material-icons text-8xl text-white">chevron_right</span>
+      <span class="material-icons text-6xl text-white">chevron_right</span>
     </div>
   </div>
 </template>

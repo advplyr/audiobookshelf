@@ -136,6 +136,7 @@ export const mutations = {
   setCollections(state, collections) {
     state.collectionsLoaded = true
     state.collections = collections
+    state.collectionsListeners.forEach((listener) => listener.meth())
   },
   addUpdateCollection(state, collection) {
     var index = state.collections.findIndex(c => c.id === collection.id)
