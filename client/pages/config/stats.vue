@@ -86,7 +86,7 @@ export default {
       return Object.values(this.$store.state.user.user.audiobooks || {})
     },
     userAudiobooksRead() {
-      return this.userAudiobooks.map((ab) => !!ab.isRead)
+      return this.userAudiobooks.filter((ab) => !!ab.isRead)
     },
     genresWithCount() {
       var genresMap = {}

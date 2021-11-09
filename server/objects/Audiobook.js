@@ -2,6 +2,7 @@ const Path = require('path')
 const fs = require('fs-extra')
 const { bytesPretty, elapsedPretty, readTextFile } = require('../utils/fileUtils')
 const { comparePaths, getIno } = require('../utils/index')
+const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
 const Logger = require('../Logger')
@@ -501,6 +502,7 @@ class Audiobook {
 
     var alreadyHasDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
     var alreadyHasReaderTxt = this.otherFiles.find(of => of.filename === 'reader.txt')
+    var alreadyHasMetadataOpf = this.otherFiles.find(of => of.filename === 'metadata.opf')
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
@@ -529,6 +531,27 @@ class Audiobook {
         Logger.debug(`[Audiobook] Sync Other File reader.txt: ${newReader}`)
         this.update({ book: { narrator: newReader } })
         hasUpdates = true
+      }
+    }
+    var metadataOpf = newOtherFiles.find(file => file.filename === 'metadata.opf' || file.filename === 'metadata.xml')
+    if (metadataOpf && (!alreadyHasMetadataOpf || forceRescan)) {
+      var xmlText = await readTextFile(metadataOpf.fullPath)
+      if (xmlText) {
+        var opfMetadata = await parseOpfMetadataXML(xmlText)
+        Logger.debug(`[Audiobook] Sync Other File ${metadataOpf.filename} parsed:`, opfMetadata)
+        if (opfMetadata) {
+          const bookUpdatePayload = {}
+          for (const key in opfMetadata) {
+            if (opfMetadata[key] && !this.book[key]) {
+              bookUpdatePayload[key] = opfMetadata[key]
+            }
+          }
+          if (Object.keys(bookUpdatePayload).length) {
+            Logger.debug(`[Audiobook] Using data found in metadata opf/xml`, bookUpdatePayload)
+            this.update({ book: bookUpdatePayload })
+            hasUpdates = true
+          }
+        }
       }
     }
 
@@ -754,6 +777,23 @@ class Audiobook {
       Logger.debug(`[Audiobook] "${this.title}" found reader.txt updating narrator with "${readerText}"`)
       bookUpdatePayload.narrator = readerText
     }
+
+    var metadataOpf = this.otherFiles.find(file => file.filename === 'metadata.opf' || file.filename === 'metadata.xml')
+    if (metadataOpf) {
+      var xmlText = await readTextFile(metadataOpf.fullPath)
+      if (xmlText) {
+        var opfMetadata = await parseOpfMetadataXML(xmlText)
+        Logger.debug(`[Audiobook] "${this.title}" found ${metadataOpf.filename} parsed:`, opfMetadata)
+        if (opfMetadata) {
+          for (const key in opfMetadata) {
+            if (opfMetadata[key] && !this.book[key] && !bookUpdatePayload[key]) {
+              bookUpdatePayload[key] = opfMetadata[key]
+            }
+          }
+        }
+      }
+    }
+
     if (Object.keys(bookUpdatePayload).length) {
       return this.update({ book: bookUpdatePayload })
     }

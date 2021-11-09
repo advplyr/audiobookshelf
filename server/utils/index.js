@@ -1,6 +1,7 @@
 const Path = require('path')
 const fs = require('fs')
 const Logger = require('../Logger')
+const { parseString } = require("xml2js")
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
   if (!caseSensitive) {
@@ -43,3 +44,17 @@ module.exports.getIno = (path) => {
     return null
   })
 }
+
+const xmlToJSON = (xml) => {
+  return new Promise((resolve, reject) => {
+    parseString(xml, (err, results) => {
+      if (err) {
+        Logger.error(`[xmlToJSON] Error`, err)
+        resolve(null)
+      } else {
+        resolve(results)
+      }
+    })
+  })
+}
+module.exports.xmlToJSON = xmlToJSON

@@ -36,8 +36,14 @@
         </div>
 
         <div class="flex mt-2 -mx-1">
-          <div class="w-1/2 px-1">
+          <div class="w-1/3 px-1">
             <ui-text-input-with-label v-model="details.narrator" label="Narrator" />
+          </div>
+          <div class="w-1/3 px-1">
+            <ui-text-input-with-label v-model="details.publisher" label="Publisher" />
+          </div>
+          <div class="flex-grow px-1">
+            <ui-text-input-with-label v-model="details.isbn" label="ISBN" />
           </div>
         </div>
       </div>
@@ -83,6 +89,8 @@ export default {
         series: null,
         volumeNumber: null,
         publishYear: null,
+        publisher: null,
+        isbn: null,
         genres: []
       },
       newTags: [],
@@ -207,6 +215,8 @@ export default {
       this.details.series = this.book.series
       this.details.volumeNumber = this.book.volumeNumber
       this.details.publishYear = this.book.publishYear
+      this.details.publisher = this.book.publisher || null
+      this.details.isbn = this.book.isbn || null
 
       this.newTags = this.audiobook.tags || []
     },
