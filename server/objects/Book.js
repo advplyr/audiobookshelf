@@ -16,6 +16,7 @@ class Book {
     this.publisher = null
     this.description = null
     this.isbn = null
+    this.langauge = null
     this.cover = null
     this.coverFullPath = null
     this.genres = []
@@ -38,6 +39,7 @@ class Book {
   get _author() { return this.authorFL || '' }
   get _series() { return this.series || '' }
   get _authorsList() { return this._author.split(', ') }
+  get _genres() { return this.genres || [] }
 
   get shouldSearchForCover() {
     if (this.authorFL !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
@@ -58,6 +60,7 @@ class Book {
     this.publisher = book.publisher
     this.description = book.description
     this.isbn = book.isbn || null
+    this.language = book.language || null
     this.cover = book.cover
     this.coverFullPath = book.coverFullPath || null
     this.genres = book.genres
@@ -81,6 +84,7 @@ class Book {
       publisher: this.publisher,
       description: this.description,
       isbn: this.isbn,
+      language: this.language,
       cover: this.cover,
       coverFullPath: this.coverFullPath,
       genres: this.genres,
@@ -120,6 +124,7 @@ class Book {
     this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.isbn = data.isbn || null
+    this.language = data.language || null
     this.cover = data.cover || null
     this.coverFullPath = data.coverFullPath || null
     this.genres = data.genres || []

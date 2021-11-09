@@ -194,6 +194,14 @@ class Scanner {
       }
     })
 
+
+    // Sync other files (all files that are not audio files) - Updates cover path
+    var hasOtherFileUpdates = false
+    var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles, this.MetadataPath, forceAudioFileScan)
+    if (otherFilesUpdated) {
+      hasOtherFileUpdates = true
+    }
+
     // Rescan audio file metadata
     if (forceAudioFileScan) {
       Logger.info(`[Scanner] Rescanning ${existingAudiobook.audioFiles.length} audio files for "${existingAudiobook.title}"`)
@@ -240,17 +248,11 @@ class Scanner {
       return ScanResult.UPDATED
     }
 
-    var hasUpdates = hasUpdatedIno || hasUpdatedLibraryOrFolder || removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
+    var hasUpdates = hasOtherFileUpdates || hasUpdatedIno || hasUpdatedLibraryOrFolder || removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
 
     // Check that audio tracks are in sequential order with no gaps
     if (existingAudiobook.checkUpdateMissingParts()) {
       Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
-      hasUpdates = true
-    }
-
-    // Sync other files (all files that are not audio files) - Updates cover path
-    var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles, this.MetadataPath, forceAudioFileScan)
-    if (otherFilesUpdated) {
       hasUpdates = true
     }
 

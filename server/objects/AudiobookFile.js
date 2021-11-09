@@ -13,6 +13,10 @@ class AudiobookFile {
     }
   }
 
+  get isOPFFile() {
+    return this.ext ? this.ext.toLowerCase() === '.opf' : false
+  }
+
   toJSON() {
     return {
       ino: this.ino || null,

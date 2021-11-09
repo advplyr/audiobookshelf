@@ -130,10 +130,11 @@ function getFileType(ext) {
   var ext_cleaned = ext.toLowerCase()
   if (ext_cleaned.startsWith('.')) ext_cleaned = ext_cleaned.slice(1)
   if (globals.SupportedAudioTypes.includes(ext_cleaned)) return 'audio'
-  if (ext_cleaned === 'nfo') return 'info'
-  if (ext_cleaned === 'txt') return 'text'
   if (globals.SupportedImageTypes.includes(ext_cleaned)) return 'image'
   if (globals.SupportedEbookTypes.includes(ext_cleaned)) return 'ebook'
+  if (ext_cleaned === 'nfo') return 'info'
+  if (ext_cleaned === 'txt') return 'text'
+  if (ext_cleaned === 'opf') return 'opf'
   return 'unknown'
 }
 

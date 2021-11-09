@@ -502,7 +502,6 @@ class Audiobook {
 
     var alreadyHasDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
     var alreadyHasReaderTxt = this.otherFiles.find(of => of.filename === 'reader.txt')
-    var alreadyHasMetadataOpf = this.otherFiles.find(of => of.filename === 'metadata.opf')
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
@@ -533,21 +532,27 @@ class Audiobook {
         hasUpdates = true
       }
     }
-    var metadataOpf = newOtherFiles.find(file => file.filename === 'metadata.opf' || file.filename === 'metadata.xml')
-    if (metadataOpf && (!alreadyHasMetadataOpf || forceRescan)) {
+
+    var metadataOpf = newOtherFiles.find(file => file.ext === '.opf' || file.filename === 'metadata.xml')
+    if (metadataOpf) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
       if (xmlText) {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
-        Logger.debug(`[Audiobook] Sync Other File ${metadataOpf.filename} parsed:`, opfMetadata)
+        Logger.debug(`[Audiobook] Sync Other File "${metadataOpf.filename}" parsed:`, opfMetadata)
         if (opfMetadata) {
           const bookUpdatePayload = {}
           for (const key in opfMetadata) {
-            if (opfMetadata[key] && !this.book[key]) {
+            // Add genres only if genres are empty
+            if (key === 'genres') {
+              if (opfMetadata.genres.length && !this.book._genres.length) {
+                bookUpdatePayload[key] = opfMetadata.genres
+              }
+            } else if (opfMetadata[key] && !this.book[key]) {
               bookUpdatePayload[key] = opfMetadata[key]
             }
           }
           if (Object.keys(bookUpdatePayload).length) {
-            Logger.debug(`[Audiobook] Using data found in metadata opf/xml`, bookUpdatePayload)
+            Logger.debug(`[Audiobook] Using data found in OPF "${metadataOpf.filename}"`, bookUpdatePayload)
             this.update({ book: bookUpdatePayload })
             hasUpdates = true
           }
@@ -778,15 +783,20 @@ class Audiobook {
       bookUpdatePayload.narrator = readerText
     }
 
-    var metadataOpf = this.otherFiles.find(file => file.filename === 'metadata.opf' || file.filename === 'metadata.xml')
+    var metadataOpf = this.otherFiles.find(file => file.isOPFFile || file.filename === 'metadata.xml')
     if (metadataOpf) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
       if (xmlText) {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
-        Logger.debug(`[Audiobook] "${this.title}" found ${metadataOpf.filename} parsed:`, opfMetadata)
+        Logger.debug(`[Audiobook] "${this.title}" found "${metadataOpf.filename}" parsed:`, opfMetadata)
         if (opfMetadata) {
           for (const key in opfMetadata) {
-            if (opfMetadata[key] && !this.book[key] && !bookUpdatePayload[key]) {
+            // Add genres only if genres are empty
+            if (key === 'genres') {
+              if (opfMetadata.genres.length && !this.book._genres.length) {
+                bookUpdatePayload[key] = opfMetadata.genres
+              }
+            } else if (opfMetadata[key] && !this.book[key] && !bookUpdatePayload[key]) {
               bookUpdatePayload[key] = opfMetadata[key]
             }
           }
