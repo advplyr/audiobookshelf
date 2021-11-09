@@ -143,7 +143,7 @@ export default {
         .$patch(`/api/user/audiobook/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          this.$toast.success(`"${this.bookTitle}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
