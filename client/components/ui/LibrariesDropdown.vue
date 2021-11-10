@@ -1,5 +1,5 @@
 <template>
-  <div v-if="currentLibrary" class="relative w-36 h-8" v-click-outside="clickOutside">
+  <div v-if="currentLibrary" class="relative w-36 h-8" v-click-outside="clickOutsideObj">
     <button type="button" :disabled="disabled" class="relative h-full w-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <widgets-library-icon :icon="currentLibraryIcon" class="mr-2" />
@@ -26,6 +26,11 @@
 export default {
   data() {
     return {
+      clickOutsideObj: {
+        handler: this.clickedOutside,
+        events: ['mousedown'],
+        isActive: true
+      },
       showMenu: false,
       disabled: false
     }
@@ -61,7 +66,7 @@ export default {
       if (this.disabled) return
       this.showMenu = !this.showMenu
     },
-    clickOutside() {
+    clickedOutside() {
       this.showMenu = false
     },
     selectLibrary(library) {

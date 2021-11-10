@@ -5,10 +5,12 @@ if (process.env.FFMPEG_PATH) {
 }
 
 const { parentPort, workerData } = require("worker_threads")
-const Logger = require('../Logger')
 
-Logger.info('[DownloadWorker] Starting Worker...')
-
+parentPort.postMessage({
+  type: 'FFMPEG',
+  level: 'debug',
+  log: '[DownloadWorker] Starting Worker...'
+})
 
 const ffmpegCommand = Ffmpeg()
 const startTime = Date.now()
@@ -27,25 +29,45 @@ var isKilled = false
 async function runFfmpeg() {
   var success = await new Promise((resolve) => {
     ffmpegCommand.on('start', (command) => {
-      Logger.info('[DownloadWorker] FFMPEG concat started with command: ' + command)
+      parentPort.postMessage({
+        type: 'FFMPEG',
+        level: 'info',
+        log: '[DownloadWorker] FFMPEG concat started with command: ' + command
+      })
     })
 
     ffmpegCommand.on('stderr', (stdErrline) => {
-      Logger.info(stdErrline)
+      parentPort.postMessage({
+        type: 'FFMPEG',
+        level: 'error',
+        log: '[DownloadWorker] Ffmpeg Stderr: ' + stdErrline
+      })
     })
 
     ffmpegCommand.on('error', (err, stdout, stderr) => {
       if (err.message && err.message.includes('SIGKILL')) {
         // This is an intentional SIGKILL
-        Logger.info('[DownloadWorker] User Killed singleAudio')
+        parentPort.postMessage({
+          type: 'FFMPEG',
+          level: 'info',
+          log: '[DownloadWorker] User Killed worker'
+        })
       } else {
-        Logger.error('[DownloadWorker] Ffmpeg Err', err.message)
+        parentPort.postMessage({
+          type: 'FFMPEG',
+          level: 'error',
+          log: '[DownloadWorker] Ffmpeg Err: ' + err.message
+        })
       }
       resolve(false)
     })
 
     ffmpegCommand.on('end', (stdout, stderr) => {
-      Logger.info('[DownloadWorker] singleAudio ended')
+      parentPort.postMessage({
+        type: 'FFMPEG',
+        level: 'info',
+        log: '[DownloadWorker] worker ended'
+      })
       resolve(true)
     })
     ffmpegCommand.run()
@@ -62,7 +84,6 @@ async function runFfmpeg() {
 
 parentPort.on('message', (message) => {
   if (message === 'STOP') {
-    Logger.info('[DownloadWorker] Requested a hard stop')
     isKilled = true
     ffmpegCommand.kill()
   }

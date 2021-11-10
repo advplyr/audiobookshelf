@@ -1,5 +1,8 @@
 import Vue from 'vue'
+import vClickOutside from 'v-click-outside'
 import { formatDistance, format } from 'date-fns'
+
+Vue.directive('click-outside', vClickOutside.directive)
 
 Vue.prototype.$eventBus = new Vue()
 
@@ -73,42 +76,41 @@ Vue.prototype.$calculateTextSize = (text, styles = {}) => {
   }
 }
 
-function isClickedOutsideEl(clickEvent, elToCheckOutside, ignoreSelectors = [], ignoreElems = []) {
-  const isDOMElement = (element) => {
-    return element instanceof Element || element instanceof HTMLDocument
-  }
+// function isClickedOutsideEl(clickEvent, elToCheckOutside, ignoreSelectors = [], ignoreElems = []) {
+//   const isDOMElement = (element) => {
+//     return element instanceof Element || element instanceof HTMLDocument
+//   }
 
-  const clickedEl = clickEvent.srcElement
-  const didClickOnIgnoredEl = ignoreElems.filter((el) => el).some((element) => element.contains(clickedEl) || element.isEqualNode(clickedEl))
-  const didClickOnIgnoredSelector = ignoreSelectors.length ? ignoreSelectors.map((selector) => clickedEl.closest(selector)).reduce((curr, accumulator) => curr && accumulator, true) : false
+//   const clickedEl = clickEvent.srcElement
+//   const didClickOnIgnoredEl = ignoreElems.filter((el) => el).some((element) => element.contains(clickedEl) || element.isEqualNode(clickedEl))
+//   const didClickOnIgnoredSelector = ignoreSelectors.length ? ignoreSelectors.map((selector) => clickedEl.closest(selector)).reduce((curr, accumulator) => curr && accumulator, true) : false
 
-  if (isDOMElement(elToCheckOutside) && !elToCheckOutside.contains(clickedEl) && !didClickOnIgnoredEl && !didClickOnIgnoredSelector) {
-    return true
-  }
+//   if (isDOMElement(elToCheckOutside) && !elToCheckOutside.contains(clickedEl) && !didClickOnIgnoredEl && !didClickOnIgnoredSelector) {
+//     return true
+//   }
+//   return false
+// }
 
-  return false
-}
-
-Vue.directive('click-outside', {
-  bind: function (el, binding, vnode) {
-    let vm = vnode.context;
-    let callback = binding.value;
-    if (typeof callback !== 'function') {
-      console.error('Invalid callback', binding)
-      return
-    }
-    el['__click_outside__'] = (ev) => {
-      if (isClickedOutsideEl(ev, el)) {
-        callback.call(vm, ev)
-      }
-    }
-    document.addEventListener('click', el['__click_outside__'], false)
-  },
-  unbind: function (el, binding, vnode) {
-    document.removeEventListener('click', el['__click_outside__'], false)
-    delete el['__click_outside__']
-  }
-})
+// Vue.directive('click-outside', {
+//   bind: function (el, binding, vnode) {
+//     let vm = vnode.context;
+//     let callback = binding.value;
+//     if (typeof callback !== 'function') {
+//       console.error('Invalid callback', binding)
+//       return
+//     }
+//     el['__click_outside__'] = (ev) => {
+//       if (isClickedOutsideEl(ev, el)) {
+//         callback.call(vm, ev)
+//       }
+//     }
+//     document.addEventListener('click', el['__click_outside__'], false)
+//   },
+//   unbind: function (el, binding, vnode) {
+//     document.removeEventListener('click', el['__click_outside__'], false)
+//     delete el['__click_outside__']
+//   }
+// })
 
 Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
   if (typeof input !== 'string') {

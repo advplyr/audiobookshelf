@@ -285,6 +285,10 @@ class DownloadManager {
           if (!download.isTimedOut) {
             this.sendResult(download, message)
           }
+        } else if (message.type === 'FFMPEG') {
+          if (Logger[message.level]) {
+            Logger[message.level](message.log)
+          }
         }
       } else {
         Logger.error('Invalid worker message', message)

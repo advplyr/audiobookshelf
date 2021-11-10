@@ -132,7 +132,7 @@ export default {
         if (tab.id === 'download' && this.isMissing) return false
         if ((tab.id === 'download' || tab.id === 'tracks') && this.userCanDownload) return true
         if (tab.id !== 'download' && tab.id !== 'tracks' && this.userCanUpdate) return true
-        if (tab.id === 'match' && this.showExperimentalFeatures) return true
+        if (tab.id === 'match' && this.userCanUpdate && this.showExperimentalFeatures) return true
         return false
       })
     },
