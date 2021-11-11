@@ -57,6 +57,7 @@ class ApiController {
     this.router.post('/audiobook/:id/cover', this.uploadAudiobookCover.bind(this))
     this.router.patch('/audiobook/:id/coverfile', this.updateAudiobookCoverFromFile.bind(this))
     this.router.get('/audiobook/:id/match', this.matchAudiobookBook.bind(this))
+    this.router.get('/audiobook/:id/stream', this.openAudiobookStream.bind(this))
     this.router.patch('/audiobook/:id', this.updateAudiobook.bind(this))
 
     this.router.patch('/match/:id', this.match.bind(this))
@@ -539,6 +540,13 @@ class ApiController {
 
     var results = await this.bookFinder.search(provider, audiobook.title, authorSearch)
     res.json(results)
+  }
+
+  async openAudiobookStream(req, res) {
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook) return res.sendStatus(404)
+
+    this.streamManager.openStreamApiRequest(res, req.user, audiobook)
   }
 
   async updateAudiobook(req, res) {

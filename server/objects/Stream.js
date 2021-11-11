@@ -41,7 +41,7 @@ class Stream extends EventEmitter {
   }
 
   get socket() {
-    return this.client.socket
+    return this.client ? this.client.socket || null : null
   }
 
   get audiobookId() {
@@ -89,15 +89,15 @@ class Stream extends EventEmitter {
   }
 
   get clientUser() {
-    return this.client.user || {}
+    return this.client ? this.client.user || {} : null
   }
 
   get clientUserAudiobooks() {
-    return this.clientUser.audiobooks || {}
+    return this.client ? this.clientUser.audiobooks || {} : null
   }
 
   get clientUserAudiobookData() {
-    return this.clientUserAudiobooks[this.audiobookId]
+    return this.client ? this.clientUserAudiobooks[this.audiobookId] : null
   }
 
   get clientPlaylistUri() {
@@ -189,8 +189,10 @@ class Stream extends EventEmitter {
 
       if (this.segmentsCreated.size > 6 && !this.isClientInitialized) {
         this.isClientInitialized = true
-        Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
-        this.socket.emit('stream_open', this.toJSON())
+        if (this.socket) {
+          Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
+          this.socket.emit('stream_open', this.toJSON())
+        }
       }
 
       var chunks = []
@@ -221,14 +223,16 @@ class Stream extends EventEmitter {
 
       var perc = (this.segmentsCreated.size * 100 / this.numSegments).toFixed(2) + '%'
       Logger.info('[STREAM-CHECK] Check Files', this.segmentsCreated.size, 'of', this.numSegments, perc, `Furthest Segment: ${this.furthestSegmentCreated}`)
-      Logger.debug('[STREAM-CHECK] Chunks', chunks.join(', '))
+      // Logger.debug('[STREAM-CHECK] Chunks', chunks.join(', '))
 
-      this.socket.emit('stream_progress', {
-        stream: this.id,
-        percent: perc,
-        chunks,
-        numSegments: this.numSegments
-      })
+      if (this.socket) {
+        this.socket.emit('stream_progress', {
+          stream: this.id,
+          percent: perc,
+          chunks,
+          numSegments: this.numSegments
+        })
+      }
     } catch (error) {
       Logger.error('Failed checking files', error)
     }
@@ -236,15 +240,19 @@ class Stream extends EventEmitter {
 
   startLoop() {
     // Logger.info(`[Stream] ${this.audiobookTitle} (${this.id}) Start Loop`)
-    this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
+    if (this.socket) {
+      this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
+    }
 
     clearInterval(this.loop)
     var intervalId = setInterval(() => {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
       } else {
-        Logger.info(`[Stream] ${this.audiobookTitle} sending stream_ready`)
-        this.socket.emit('stream_ready')
+        if (this.socket) {
+          Logger.info(`[Stream] ${this.audiobookTitle} sending stream_ready`)
+          this.socket.emit('stream_ready')
+        }
         clearInterval(intervalId)
       }
     }, 2000)
@@ -342,8 +350,10 @@ class Stream extends EventEmitter {
       // For very small fast load
       if (!this.isClientInitialized) {
         this.isClientInitialized = true
-        Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
-        this.socket.emit('stream_open', this.toJSON())
+        if (this.socket) {
+          Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
+          this.socket.emit('stream_open', this.toJSON())
+        }
       }
       this.isTranscodeComplete = true
       this.ffmpeg = null
@@ -367,7 +377,9 @@ class Stream extends EventEmitter {
       Logger.error('Failed to delete session data', err)
     })
 
-    this.client.socket.emit('stream_closed', this.id)
+    if (this.socket) {
+      this.socket.emit('stream_closed', this.id)
+    }
 
     this.emit('closed')
   }
