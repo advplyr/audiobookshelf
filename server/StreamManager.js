@@ -28,8 +28,12 @@ class StreamManager {
     this.streams = this.streams.filter(s => s.id !== stream.id)
   }
 
-  async openStream(client, audiobook) {
-    var stream = new Stream(this.StreamsPath, client, audiobook)
+  async openStream(client, audiobook, transcodeOptions = {}) {
+    if (!client || !client.user) {
+      Logger.error('[StreamManager] Cannot open stream invalid client', client)
+      return
+    }
+    var stream = new Stream(this.StreamsPath, client, audiobook, transcodeOptions)
 
     stream.on('closed', () => {
       this.removeStream(stream)

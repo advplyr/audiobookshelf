@@ -134,6 +134,10 @@ export default {
     streamReset(payload) {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamReset(payload)
     },
+    streamError({ id, errorMessage }) {
+      this.$toast.error(`Stream Failed: ${errorMessage}`)
+      if (this.$refs.streamContainer) this.$refs.streamContainer.streamError(id)
+    },
     audiobookAdded(audiobook) {
       this.$store.commit('audiobooks/addUpdate', audiobook)
     },
@@ -327,6 +331,7 @@ export default {
       this.socket.on('stream_progress', this.streamProgress)
       this.socket.on('stream_ready', this.streamReady)
       this.socket.on('stream_reset', this.streamReset)
+      this.socket.on('stream_error', this.streamError)
 
       // Audiobook Listeners
       this.socket.on('audiobook_updated', this.audiobookUpdated)

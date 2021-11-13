@@ -194,6 +194,13 @@ export default {
         console.error('No Audio Ref')
       }
     },
+    streamError(streamId) {
+      if (this.stream && (this.stream.id === streamId || streamId === 'n/a')) {
+        this.terminateStream()
+        this.$store.commit('clearStreamAudiobook', this.stream.audiobook.id)
+        this.stream = null
+      }
+    },
     sendStreamSync(syncData) {
       var diff = syncData.currentTime - this.lastServerUpdateSentSeconds
       if (Math.abs(diff) < 1 && !syncData.timeListened) {

@@ -10,12 +10,14 @@ const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 const UserListeningSession = require('./UserListeningSession')
 
 class Stream extends EventEmitter {
-  constructor(streamPath, client, audiobook) {
+  constructor(streamPath, client, audiobook, transcodeOptions = {}) {
     super()
 
     this.id = (Date.now() + Math.trunc(Math.random() * 1000)).toString(36)
     this.client = client
     this.audiobook = audiobook
+
+    this.transcodeOptions = transcodeOptions
 
     this.segmentLength = 6
     this.maxSeekBackTime = 30
@@ -108,6 +110,14 @@ class Stream extends EventEmitter {
     if (!this.clientCurrentTime) return 0
     var prog = Math.min(1, this.clientCurrentTime / this.totalDuration)
     return Number(prog.toFixed(3))
+  }
+
+  get isAACEncodable() {
+    return ['mp4', 'm4a', 'm4b'].includes(this.tracksAudioFileType)
+  }
+
+  get transcodeForceAAC() {
+    return !!this.transcodeOptions.forceAAC
   }
 
   toJSON() {
@@ -314,8 +324,8 @@ class Stream extends EventEmitter {
       this.ffmpeg.inputOption('-noaccurate_seek')
     }
 
-    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'error'
-    const audioCodec = (this.hlsSegmentType === 'fmp4' || this.tracksAudioFileType === 'opus') ? 'aac' : 'copy'
+    const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
+    const audioCodec = (this.hlsSegmentType === 'fmp4' || this.tracksAudioFileType === 'opus' || this.transcodeForceAAC) ? 'aac' : 'copy'
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,
       '-map 0:a',
@@ -349,11 +359,13 @@ class Stream extends EventEmitter {
       Logger.info('[INFO] FFMPEG transcoding started with command: ' + command)
       Logger.info('')
       if (this.isResetting) {
+        // AAC encode is much slower
+        const clearIsResettingTime = this.transcodeForceAAC ? 3000 : 500
         setTimeout(() => {
           Logger.info('[STREAM] Clearing isResetting')
           this.isResetting = false
           this.startLoop()
-        }, 500)
+        }, clearIsResettingTime)
       } else {
         this.startLoop()
       }
@@ -368,10 +380,21 @@ class Stream extends EventEmitter {
         // This is an intentional SIGKILL
         Logger.info('[FFMPEG] Transcode Killed')
         this.ffmpeg = null
+        clearInterval(this.loop)
       } else {
-        Logger.error('Ffmpeg Err', err.message)
+        Logger.error('Ffmpeg Err', '"' + err.message + '"')
+
+        // Temporary workaround for https://github.com/advplyr/audiobookshelf/issues/172
+        const aacErrorMsg = 'ffmpeg exited with code 1: Could not write header for output file #0 (incorrect codec parameters ?)'
+        if (audioCodec === 'copy' && this.isAACEncodable && err.message && err.message.startsWith(aacErrorMsg)) {
+          Logger.info(`[Stream] Re-attempting stream with AAC encode`)
+          this.transcodeOptions.forceAAC = true
+          this.reset(this.startTime)
+        } else {
+          // Close stream show error
+          this.close(err.message)
+        }
       }
-      clearInterval(this.loop)
     })
 
     this.ffmpeg.on('end', (stdout, stderr) => {
@@ -392,7 +415,7 @@ class Stream extends EventEmitter {
     this.ffmpeg.run()
   }
 
-  async close() {
+  async close(errorMessage = null) {
     clearInterval(this.loop)
 
     Logger.info('Closing Stream', this.id)
@@ -407,7 +430,8 @@ class Stream extends EventEmitter {
     })
 
     if (this.socket) {
-      this.socket.emit('stream_closed', this.id)
+      if (errorMessage) this.socket.emit('stream_error', { id: this.id, error: (errorMessage || '').trim() })
+      else this.socket.emit('stream_closed', this.id)
     }
 
     this.emit('closed')
