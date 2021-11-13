@@ -226,6 +226,7 @@ export default {
       clearInterval(this.listenTimeInterval)
       var lastTime = this.$refs.audio.currentTime
       var lastTick = Date.now()
+      var noProgressCount = 0
       this.listenTimeInterval = setInterval(() => {
         if (!this.$refs.audio) {
           console.error('Canceling audio played interval no audio player')
@@ -245,13 +246,18 @@ export default {
         var currentTime = this.$refs.audio.currentTime
         var differenceFromExpected = expectedAudioTime - currentTime
         if (currentTime === lastTime) {
-          console.error('Audio current time has not increased - cancel interval and pause player')
-          this.cancelListenTimeInterval()
-          this.pause()
+          noProgressCount++
+          if (noProgressCount > 3) {
+            console.error('Audio current time has not increased - cancel interval and pause player')
+            this.cancelListenTimeInterval()
+            this.pause()
+          }
         } else if (Math.abs(differenceFromExpected) > 0.1) {
+          noProgressCount = 0
           console.warn('Invalid time between interval - resync last', differenceFromExpected)
           lastTime = currentTime
         } else {
+          noProgressCount = 0
           var exactPlayTimeDifference = currentTime - lastTime
           // console.log('Difference from expected', differenceFromExpected, 'Exact play time diff', exactPlayTimeDifference)
           lastTime = currentTime
