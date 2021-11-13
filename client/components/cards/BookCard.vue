@@ -243,6 +243,10 @@ export default {
         {
           func: 'toggleRead',
           text: `Mark as ${this.userIsRead ? 'Not Read' : 'Read'}`
+        },
+        {
+          func: 'openCollections',
+          text: 'Add to Collection'
         }
       ]
       if (this.userCanUpdate) {
@@ -252,7 +256,6 @@ export default {
             text: 'Tracks'
           })
         }
-
         items.push({
           func: 'showEditModalMatch',
           text: 'Match'
@@ -346,6 +349,10 @@ export default {
     showEditModalDownload() {
       // More menu func
       this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+    },
+    openCollections() {
+      this.$store.commit('setSelectedAudiobook', this.audiobook)
+      this.$store.commit('globals/setShowUserCollectionsModal', true)
     },
     createMoreMenu() {
       if (!this.$refs.moreIcon) return

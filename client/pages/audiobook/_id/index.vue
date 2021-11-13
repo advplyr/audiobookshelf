@@ -113,7 +113,7 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" class="mx-0.5" @click="toggleRead" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="showExperimentalFeatures" text="Collections" direction="top">
+            <ui-tooltip text="Collections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
