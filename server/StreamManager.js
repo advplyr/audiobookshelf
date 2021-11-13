@@ -151,6 +151,45 @@ class StreamManager {
     this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
+  streamSync(socket, syncData) {
+    const client = socket.sheepClient
+    if (!client || !client.stream) {
+      Logger.error('[StreamManager] streamSync: No stream for client', (client && client.user) ? client.user.id : 'No Client')
+      return
+    }
+    if (client.stream.id !== syncData.streamId) {
+      Logger.error('[StreamManager] streamSync: Stream id mismatch on stream update', syncData.streamId, client.stream.id)
+      return
+    }
+    if (!client.user) {
+      Logger.error('[StreamManager] streamSync: No User for client', client)
+      return
+    }
+    // const { timeListened, currentTime, streamId } = syncData
+    var listeningSession = client.stream.syncStream(syncData)
+
+    if (listeningSession && listeningSession.timeListening > 0) {
+      // Save listening session
+      var existingListeningSession = this.db.sessions.find(s => s.id === listeningSession.id)
+      if (existingListeningSession) {
+        this.db.updateEntity('session', listeningSession)
+      } else {
+        this.db.sessions.push(listeningSession.toJSON()) // Insert right away to prevent duplicate session
+        this.db.insertEntity('session', listeningSession)
+      }
+    }
+
+    var userAudiobook = client.user.updateAudiobookProgressFromStream(client.stream)
+    this.db.updateEntity('user', client.user)
+
+    if (userAudiobook) {
+      this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
+        id: userAudiobook.audiobookId,
+        data: userAudiobook.toJSON()
+      })
+    }
+  }
+
   streamUpdate(socket, { currentTime, streamId }) {
     var client = socket.sheepClient
     if (!client || !client.stream) {

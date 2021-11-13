@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadeddata="audioLoadedData" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
+    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadedmetadata="audioLoadedMetadata" @loadeddata="audioLoadedData" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
   </div>
@@ -85,6 +85,8 @@ import Hls from 'hls.js'
 
 export default {
   props: {
+    streamId: String,
+    audiobookId: String,
     loading: Boolean,
     chapters: {
       type: Array,
@@ -115,7 +117,9 @@ export default {
       showChaptersModal: false,
       currentTime: 0,
       trackOffsetLeft: 16, // Track is 16px from edge
-      playStartTime: 0
+      listenTimeInterval: null,
+      listeningTimeSinceLastUpdate: 0,
+      totalListeningTimeInSession: 0
     }
   },
   computed: {
@@ -130,6 +134,10 @@ export default {
       return this.totalDuration - this.currentTime
     },
     timeRemainingPretty() {
+      if (this.timeRemaining < 0) {
+        console.warn('Time remaining < 0', this.totalDuration, this.currentTime, this.timeRemaining)
+        return this.$secondsToTimestamp(this.timeRemaining * -1)
+      }
       return '-' + this.$secondsToTimestamp(this.timeRemaining)
     },
     progressPercent() {
@@ -155,14 +163,19 @@ export default {
   methods: {
     audioPlayed() {
       if (!this.$refs.audio) return
-      // console.log('Audio Played', this.$refs.audio.paused, this.$refs.audio.currentTime)
-      this.playStartTime = Date.now()
+      console.log('Audio Played', this.$refs.audio.currentTime, 'Total Duration', this.$refs.audio.duration)
+      // setTimeout(() => {
+      //   console.log('Audio Played FOLLOW UP', this.$refs.audio.currentTime, 'Total Duration', this.$refs.audio.duration)
+      //   this.startListenTimeInterval()
+      // }, 500)
+      this.startListenTimeInterval()
       this.isPaused = this.$refs.audio.paused
     },
     audioPaused() {
       if (!this.$refs.audio) return
       // console.log('Audio Paused', this.$refs.audio.paused, this.$refs.audio.currentTime)
       this.isPaused = this.$refs.audio.paused
+      this.cancelListenTimeInterval()
     },
     audioError(err) {
       if (!this.$refs.audio) return
@@ -179,6 +192,77 @@ export default {
     audioSuspended() {
       if (!this.$refs.audio) return
       console.warn('Audio Suspended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    },
+    sendStreamSync(timeListened = 0) {
+      // If currentTime is null then currentTime wont be updated
+      var currentTime = null
+      if (this.$refs.audio) {
+        currentTime = this.$refs.audio.currentTime
+      } else if (!timeListened) {
+        console.warn('Not sending stream sync, no data to sync')
+        return
+      }
+      var syncData = {
+        timeListened,
+        currentTime,
+        streamId: this.streamId,
+        audiobookId: this.audiobookId
+      }
+      this.$emit('sync', syncData)
+    },
+    sendAddListeningTime() {
+      var listeningTimeToAdd = Math.floor(this.listeningTimeSinceLastUpdate)
+      this.listeningTimeSinceLastUpdate = Math.max(0, this.listeningTimeSinceLastUpdate - listeningTimeToAdd)
+      this.sendStreamSync(listeningTimeToAdd)
+    },
+    cancelListenTimeInterval() {
+      this.sendAddListeningTime()
+      clearInterval(this.listenTimeInterval)
+      this.listenTimeInterval = null
+    },
+    startListenTimeInterval() {
+      if (!this.$refs.audio) return
+
+      clearInterval(this.listenTimeInterval)
+      var lastTime = this.$refs.audio.currentTime
+      var lastTick = Date.now()
+      this.listenTimeInterval = setInterval(() => {
+        if (!this.$refs.audio) {
+          console.error('Canceling audio played interval no audio player')
+          this.cancelListenTimeInterval()
+          return
+        }
+        if (this.$refs.audio.paused) {
+          console.warn('Canceling audio played interval audio player paused')
+          this.cancelListenTimeInterval()
+          return
+        }
+
+        var timeSinceLastTick = Date.now() - lastTick
+        lastTick = Date.now()
+
+        var expectedAudioTime = lastTime + timeSinceLastTick / 1000
+        var currentTime = this.$refs.audio.currentTime
+        var differenceFromExpected = expectedAudioTime - currentTime
+        if (currentTime === lastTime) {
+          console.error('Audio current time has not increased - cancel interval and pause player')
+          this.cancelListenTimeInterval()
+          this.pause()
+        } else if (Math.abs(differenceFromExpected) > 0.1) {
+          console.warn('Invalid time between interval - resync last', differenceFromExpected)
+          lastTime = currentTime
+        } else {
+          var exactPlayTimeDifference = currentTime - lastTime
+          // console.log('Difference from expected', differenceFromExpected, 'Exact play time diff', exactPlayTimeDifference)
+          lastTime = currentTime
+          this.listeningTimeSinceLastUpdate += exactPlayTimeDifference
+          this.totalListeningTimeInSession += exactPlayTimeDifference
+          // console.log('Time since last update:', this.listeningTimeSinceLastUpdate, 'Session listening time:', this.totalListeningTimeInSession)
+          if (this.listeningTimeSinceLastUpdate > 5) {
+            this.sendAddListeningTime()
+          }
+        }
+      }, 1000)
     },
     selectChapter(chapter) {
       this.seek(chapter.start)
@@ -201,10 +285,22 @@ export default {
         console.error('No Audio el for seek', time)
         return
       }
+      if (!this.audioEl.paused) {
+        this.cancelListenTimeInterval()
+      }
+
       this.seekedTime = time
       this.seekLoading = true
 
       this.audioEl.currentTime = time
+
+      this.sendStreamSync()
+
+      this.$nextTick(() => {
+        if (this.audioEl && !this.audioEl.paused) {
+          this.startListenTimeInterval()
+        }
+      })
 
       if (this.$refs.playedTrack) {
         var perc = time / this.audioEl.duration
@@ -287,7 +383,7 @@ export default {
     },
     restart() {
       this.seek(0)
-      this.$nextTick(this.sendStreamUpdate)
+      this.$nextTick(this.sendStreamSync)
     },
     backward10() {
       var newTime = this.audioEl.currentTime - 10
@@ -298,10 +394,6 @@ export default {
       var newTime = this.audioEl.currentTime + 10
       newTime = Math.min(this.audioEl.duration, newTime)
       this.seek(newTime)
-    },
-    sendStreamUpdate() {
-      if (!this.audioEl) return
-      this.$emit('updateTime', this.audioEl.currentTime)
     },
     setStreamReady() {
       this.readyTrackWidth = this.trackWidth
@@ -432,9 +524,9 @@ export default {
       // Send update to server when currentTime > 0
       //   this prevents errors when seeking to position not yet transcoded
       //   seeking to position not yet transcoded will cause audio element to set currentTime to 0
-      if (this.audioEl.currentTime) {
-        this.sendStreamUpdate()
-      }
+      // if (this.audioEl.currentTime) {
+      //   this.sendStreamUpdate()
+      // }
 
       this.currentTime = this.audioEl.currentTime
 
@@ -446,10 +538,12 @@ export default {
       this.$refs.playedTrack.style.width = ptWidth + 'px'
       this.playedTrackWidth = ptWidth
     },
-    audioLoadedData() {
+    audioLoadedMetadata() {
+      console.log('Audio METADATA Loaded, total duration', this.audioEl.duration)
       this.totalDuration = this.audioEl.duration
       this.$emit('loaded', this.totalDuration)
     },
+    audioLoadedData() {},
     set(url, currentTime, playOnLoad = false) {
       if (this.hlsInstance) {
         this.terminateStream()
@@ -458,6 +552,8 @@ export default {
         console.error('No audio widget')
         return
       }
+      this.listeningTimeSinceLastUpdate = 0
+
       this.url = url
       if (process.env.NODE_ENV === 'development') {
         url = `${process.env.serverUrl}${url}`
@@ -471,6 +567,7 @@ export default {
           xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
         }
       }
+      console.log('Starting HLS audio stream at time', currentTime)
       // console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
       this.hlsInstance = new Hls(hlsOptions)
       var audio = this.$refs.audio

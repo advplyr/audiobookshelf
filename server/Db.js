@@ -13,19 +13,23 @@ class Db {
   constructor(ConfigPath, AudiobookPath) {
     this.ConfigPath = ConfigPath
     this.AudiobookPath = AudiobookPath
+
     this.AudiobooksPath = Path.join(ConfigPath, 'audiobooks')
     this.UsersPath = Path.join(ConfigPath, 'users')
+    this.SessionsPath = Path.join(ConfigPath, 'sessions')
     this.LibrariesPath = Path.join(ConfigPath, 'libraries')
     this.SettingsPath = Path.join(ConfigPath, 'settings')
     this.CollectionsPath = Path.join(ConfigPath, 'collections')
 
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
+    this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
 
     this.users = []
+    this.sessions = []
     this.libraries = []
     this.audiobooks = []
     this.settings = []
@@ -36,6 +40,7 @@ class Db {
 
   getEntityDb(entityName) {
     if (entityName === 'user') return this.usersDb
+    else if (entityName === 'session') return this.sessionsDb
     else if (entityName === 'audiobook') return this.audiobooksDb
     else if (entityName === 'library') return this.librariesDb
     else if (entityName === 'settings') return this.settingsDb
@@ -45,6 +50,7 @@ class Db {
 
   getEntityArrayKey(entityName) {
     if (entityName === 'user') return 'users'
+    else if (entityName === 'session') return 'sessions'
     else if (entityName === 'audiobook') return 'audiobooks'
     else if (entityName === 'library') return 'libraries'
     else if (entityName === 'settings') return 'settings'
@@ -82,6 +88,7 @@ class Db {
   reinit() {
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
+    this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
@@ -188,8 +195,6 @@ class Db {
     var jsonEntity = entity
     if (entity && entity.toJSON) {
       jsonEntity = entity.toJSON()
-    } else {
-      console.log('Entity has no json', jsonEntity)
     }
 
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
@@ -227,6 +232,15 @@ class Db {
     }).catch((error) => {
       Logger.error(`[DB] Failed to drop audiobook db`, error)
       return false
+    })
+  }
+
+  selectUserSessions(userId) {
+    return this.sessionsDb.select((session) => session.userId === userId).then((results) => {
+      return results.data || []
+    }).catch((error) => {
+      Logger.error(`[Db] Failed to select user sessions "${userId}"`, error)
+      return []
     })
   }
 }

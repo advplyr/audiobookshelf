@@ -83,6 +83,10 @@ class Auth {
     return jwt.sign(payload, process.env.TOKEN_SECRET);
   }
 
+  authenticateUser(token) {
+    return this.verifyToken(token)
+  }
+
   verifyToken(token) {
     return new Promise((resolve) => {
       jwt.verify(token, process.env.TOKEN_SECRET, (err, payload) => {

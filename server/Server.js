@@ -186,11 +186,13 @@ class Server {
       res.sendFile(fullPath)
     })
 
-    // Client routes
+    // Client dynamic routes
     app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library/bookshelf/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/config/users/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/collection/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 
     app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
     app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
@@ -252,6 +254,7 @@ class Server {
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
+      socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
 
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
 
@@ -569,7 +572,7 @@ class Server {
   }
 
   async authenticateSocket(socket, token) {
-    var user = await this.auth.verifyToken(token)
+    var user = await this.auth.authenticateUser(token)
     if (!user) {
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')

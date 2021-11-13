@@ -54,6 +54,22 @@ Vue.prototype.$secondsToTimestamp = (seconds) => {
   return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
 }
 
+Vue.prototype.$elapsedPrettyExtended = (seconds) => {
+  var minutes = Math.floor(seconds / 60)
+  seconds -= minutes * 60
+  var hours = Math.floor(minutes / 60)
+  minutes -= hours * 60
+  var days = Math.floor(hours / 24)
+  hours -= days * 24
+
+  var strs = []
+  if (days) strs.push(`${days}d`)
+  if (hours) strs.push(`${hours}h`)
+  if (minutes) strs.push(`${minutes}m`)
+  if (seconds) strs.push(`${seconds}s`)
+  return strs.join(' ')
+}
+
 Vue.prototype.$calculateTextSize = (text, styles = {}) => {
   const el = document.createElement('p')
 

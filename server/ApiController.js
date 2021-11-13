@@ -1,6 +1,7 @@
 const express = require('express')
 const Path = require('path')
 const fs = require('fs-extra')
+const date = require('date-and-time')
 
 const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
@@ -74,6 +75,8 @@ class ApiController {
     this.router.get('/users', this.getUsers.bind(this))
     this.router.post('/user', this.createUser.bind(this))
     this.router.get('/user/:id', this.getUser.bind(this))
+    this.router.get('/user/:id/listeningSessions', this.getUserListeningSessions.bind(this))
+    this.router.get('/user/:id/listeningStats', this.getUserListeningStats.bind(this))
     this.router.patch('/user/:id', this.updateUser.bind(this))
     this.router.delete('/user/:id', this.deleteUser.bind(this))
 
@@ -99,6 +102,9 @@ class ApiController {
     this.router.get('/filesystem', this.getFileSystemPaths.bind(this))
 
     this.router.get('/scantracks/:id', this.scanAudioTrackNums.bind(this))
+
+    this.router.get('/listeningSessions', this.getCurrentUserListeningSessions.bind(this))
+    this.router.get('/listeningStats', this.getCurrentUserListeningStats.bind(this))
   }
 
   async find(req, res) {
@@ -1025,6 +1031,76 @@ class ApiController {
 
     var scandata = await audioFileScanner.scanTrackNumbers(audiobook)
     res.json(scandata)
+  }
+
+  async getUserListeningSessionsHelper(userId) {
+    var userSessions = await this.db.selectUserSessions(userId)
+    var listeningSessions = userSessions.filter(us => us.sessionType === 'listeningSession')
+    return listeningSessions.sort((a, b) => b.lastUpdate - a.lastUpdate)
+  }
+
+  async getUserListeningSessions(req, res) {
+    if (!req.user || !req.user.isRoot) {
+      return res.sendStatus(403)
+    }
+    var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
+    res.json(listeningSessions.slice(0, 10))
+  }
+
+  async getCurrentUserListeningSessions(req, res) {
+    if (!req.user) {
+      return res.sendStatus(500)
+    }
+    var listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
+    res.json(listeningSessions.slice(0, 10))
+  }
+
+  async getUserListeningStatsHelpers(userId) {
+    const today = date.format(new Date(), 'YYYY-MM-DD')
+
+    var listeningSessions = await this.getUserListeningSessionsHelper(userId)
+    var listeningStats = {
+      totalTime: 0,
+      books: {},
+      days: {},
+      dayOfWeek: {},
+      today: 0
+    }
+    listeningSessions.forEach((s) => {
+      if (s.dayOfWeek) {
+        if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
+        listeningStats.dayOfWeek[s.dayOfWeek] += s.timeListening
+      }
+      if (s.date) {
+        if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
+        listeningStats.days[s.date] += s.timeListening
+
+        if (s.date === today) {
+          listeningStats.today += s.timeListening
+        }
+      }
+      if (!listeningStats.books[s.audiobookId]) listeningStats.books[s.audiobookId] = 0
+      listeningStats.books[s.audiobookId] += s.timeListening
+
+      listeningStats.totalTime += s.timeListening
+    })
+    return listeningStats
+  }
+
+  async getUserListeningStats(req, res) {
+    if (!req.user || !req.user.isRoot) {
+      return res.sendStatus(403)
+    }
+    var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
+    res.json(listeningStats)
+  }
+
+  async getCurrentUserListeningStats(req, res) {
+    if (!req.user) {
+      return res.sendStatus(500)
+    }
+    var listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
+    res.json(listeningStats)
   }
 }
 module.exports = ApiController

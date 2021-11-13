@@ -206,7 +206,7 @@ class BackupManager {
     }
     newBackup.setData(newBackData)
 
-    var zipResult = await this.zipBackup(this.db.ConfigPath, metadataBooksPath, newBackup).then(() => true).catch((error) => {
+    var zipResult = await this.zipBackup(metadataBooksPath, newBackup).then(() => true).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
       return false
     })
@@ -246,7 +246,7 @@ class BackupManager {
     }
   }
 
-  zipBackup(configPath, metadataBooksPath, backup) {
+  zipBackup(metadataBooksPath, backup) {
     return new Promise((resolve, reject) => {
       // create a file to stream archive data to
       const output = fs.createWriteStream(backup.fullPath)
@@ -307,17 +307,12 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      var audiobooksDbDir = Path.join(configPath, 'audiobooks')
-      var librariesDbDir = Path.join(configPath, 'libraries')
-      var settingsDbDir = Path.join(configPath, 'settings')
-      var usersDbDir = Path.join(configPath, 'users')
-      var collectionsDbDir = Path.join(configPath, 'collections')
-
-      archive.directory(audiobooksDbDir, 'config/audiobooks')
-      archive.directory(librariesDbDir, 'config/libraries')
-      archive.directory(settingsDbDir, 'config/settings')
-      archive.directory(usersDbDir, 'config/users')
-      archive.directory(collectionsDbDir, 'config/collections')
+      archive.directory(this.db.AudiobooksPath, 'config/audiobooks')
+      archive.directory(this.db.LibrariesPath, 'config/libraries')
+      archive.directory(this.db.SettingsPath, 'config/settings')
+      archive.directory(this.db.UsersPath, 'config/users')
+      archive.directory(this.db.SessionsPath, 'config/sessions')
+      archive.directory(this.db.CollectionsPath, 'config/collections')
 
       if (metadataBooksPath) {
         Logger.debug(`[BackupManager] Backing up Metadata Books "${metadataBooksPath}"`)

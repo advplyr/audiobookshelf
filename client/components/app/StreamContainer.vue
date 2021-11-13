@@ -25,7 +25,7 @@
       <span v-if="stream" class="material-icons p-4 cursor-pointer" @click="cancelStream">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @updateTime="updateTime" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :stream-id="streamId" :audiobook-id="audiobookId" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @sync="sendStreamSync" @hook:mounted="audioPlayerMounted" />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" />
   </div>
@@ -109,6 +109,9 @@ export default {
     }
   },
   methods: {
+    addListeningTime(time) {
+      console.log('Send listening time to server', time)
+    },
     showBookmarks(currentTime) {
       this.bookmarkAudiobookId = this.audiobookId
       this.bookmarkCurrentTime = currentTime
@@ -191,17 +194,25 @@ export default {
         console.error('No Audio Ref')
       }
     },
-    updateTime(currentTime) {
-      var diff = currentTime - this.lastServerUpdateSentSeconds
-      if (diff > 4 || diff < 0) {
-        this.lastServerUpdateSentSeconds = currentTime
-        var updatePayload = {
-          currentTime,
-          streamId: this.streamId
-        }
-        this.$root.socket.emit('stream_update', updatePayload)
+    sendStreamSync(syncData) {
+      var diff = syncData.currentTime - this.lastServerUpdateSentSeconds
+      if (Math.abs(diff) < 1 && !syncData.timeListened) {
+        // No need to sync
+        return
       }
+      this.$root.socket.emit('stream_sync', syncData)
     },
+    // updateTime(currentTime) {
+    //   var diff = currentTime - this.lastServerUpdateSentSeconds
+    //   if (diff > 4 || diff < 0) {
+    //     this.lastServerUpdateSentSeconds = currentTime
+    //     var updatePayload = {
+    //       currentTime,
+    //       streamId: this.streamId
+    //     }
+    //     this.$root.socket.emit('stream_update', updatePayload)
+    //   }
+    // },
     streamReset({ startTime, streamId }) {
       if (streamId !== this.streamId) {
         console.error('resetStream StreamId Mismatch', streamId, this.streamId)

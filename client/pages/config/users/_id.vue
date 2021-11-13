@@ -13,6 +13,23 @@
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
+      <div v-if="showExperimentalFeatures" class="w-full h-px bg-white bg-opacity-10 my-2" />
+      <div v-if="showExperimentalFeatures" class="py-2">
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats <span class="pl-2 text-xs text-error">(web app only)</span></h1>
+        <p class="text-sm text-gray-300">
+          Total Time Listened:&nbsp;
+          <span class="font-mono text-base">{{ listeningTimePretty }}</span>
+        </p>
+        <p class="text-sm text-gray-300">
+          Time Listened Today:&nbsp;
+          <span class="font-mono text-base">{{ $elapsedPrettyExtended(timeListenedToday) }}</span>
+        </p>
+
+        <div v-if="latestSession" class="mt-4">
+          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Last Listening Session <span class="pl-2 text-xs text-error">(web app only)</span></h1>
+          <p class="text-sm text-gray-300">{{ latestSession.audiobookTitle }} {{ $dateDistanceFromNow(latestSession.lastUpdate) }} for {{ $elapsedPrettyExtended(this.latestSession.timeListening) }}</p>
+        </div>
+      </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Reading Progress</h1>
@@ -64,9 +81,15 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      listeningSessions: [],
+      listeningStats: {}
+    }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     username() {
       return this.user.username
     },
@@ -75,10 +98,37 @@ export default {
     },
     userAudiobooks() {
       return Object.values(this.user.audiobooks || {}).sort((a, b) => b.lastUpdate - a.lastUpdate)
+    },
+    totalListeningTime() {
+      return this.listeningStats.totalTime || 0
+    },
+    listeningTimePretty() {
+      return this.$elapsedPrettyExtended(this.totalListeningTime)
+    },
+    timeListenedToday() {
+      return this.listeningStats.today || 0
+    },
+    latestSession() {
+      if (!this.listeningSessions.length) return null
+      return this.listeningSessions[0]
     }
   },
-  methods: {},
-  mounted() {}
+  methods: {
+    async init() {
+      this.listeningSessions = await this.$axios.$get(`/api/user/${this.user.id}/listeningSessions`).catch((err) => {
+        console.error('Failed to load listening sesions', err)
+        return []
+      })
+      this.listeningStats = await this.$axios.$get(`/api/user/${this.user.id}/listeningStats`).catch((err) => {
+        console.error('Failed to load listening sesions', err)
+        return []
+      })
+      console.log('Loaded user listening data', this.listeningSessions, this.listeningStats)
+    }
+  },
+  mounted() {
+    this.init()
+  }
 }
 </script>
 

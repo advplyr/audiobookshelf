@@ -7,7 +7,7 @@ const { secondsToTimestamp } = require('../utils/fileUtils')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 
-// const UserListeningSession = require('./UserListeningSession')
+const UserListeningSession = require('./UserListeningSession')
 
 class Stream extends EventEmitter {
   constructor(streamPath, client, audiobook) {
@@ -34,8 +34,8 @@ class Stream extends EventEmitter {
     this.furthestSegmentCreated = 0
     this.clientCurrentTime = 0
 
-    // this.listeningSession = new UserListeningSession()
-    // this.listeningSession.setData(audiobook, client.user)
+    this.listeningSession = new UserListeningSession()
+    this.listeningSession.setData(audiobook, client.user)
 
     this.init()
   }
@@ -161,6 +161,35 @@ class Stream extends EventEmitter {
   updateClientCurrentTime(currentTime) {
     Logger.debug('[Stream] Updated client current time', secondsToTimestamp(currentTime))
     this.clientCurrentTime = currentTime
+  }
+
+  syncStream({ timeListened, currentTime }) {
+    var syncLog = ''
+    if (currentTime !== null && !isNaN(currentTime)) {
+      syncLog = `Update client current time ${secondsToTimestamp(currentTime)}`
+      this.clientCurrentTime = currentTime
+    }
+    var saveListeningSession = false
+    if (timeListened && !isNaN(timeListened)) {
+
+      // Check if listening session should roll to next day
+      if (this.listeningSession.checkDateRollover()) {
+        if (!this.clientUser) {
+          Logger.error(`[Stream] Sync stream invalid client user`)
+          return null
+        }
+        this.listeningSession = new UserListeningSession()
+        this.listeningSession.setData(this.audiobook, this.clientUser)
+        Logger.debug(`[Stream] Listening session rolled to next day`)
+      }
+
+      this.listeningSession.addListeningTime(timeListened)
+      if (syncLog) syncLog += ' | '
+      syncLog += `Add listening time ${timeListened}s, Total time listened ${this.listeningSession.timeListening}s`
+      saveListeningSession = true
+    }
+    Logger.debug('[Stream]', syncLog)
+    return saveListeningSession ? this.listeningSession : null
   }
 
   async generatePlaylist() {
