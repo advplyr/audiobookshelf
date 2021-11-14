@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import vClickOutside from 'v-click-outside'
-import { formatDistance, format } from 'date-fns'
+import { formatDistance, format, addDays, isDate } from 'date-fns'
 
 Vue.directive('click-outside', vClickOutside.directive)
 
@@ -15,6 +15,15 @@ Vue.prototype.$dateDistanceFromNow = (unixms) => {
 Vue.prototype.$formatDate = (unixms, fnsFormat = 'MM/dd/yyyy HH:mm') => {
   if (!unixms) return ''
   return format(unixms, fnsFormat)
+}
+Vue.prototype.$formatJsDate = (jsdate, fnsFormat = 'MM/dd/yyyy HH:mm') => {
+  if (!jsdate || !isDate(jsdate)) return ''
+  return format(jsdate, fnsFormat)
+}
+Vue.prototype.$addDaysToToday = (daysToAdd) => {
+  var date = addDays(new Date(), daysToAdd)
+  if (!date || !isDate(date)) return null
+  return date
 }
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
