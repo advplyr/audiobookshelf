@@ -567,6 +567,17 @@ export default {
       this.src = url
       console.log('[AudioPlayer-Set] Set url', url)
 
+      var audio = this.$refs.audio
+      audio.volume = this.volume
+      audio.defaultPlaybackRate = this.playbackRate
+
+      // iOS does not support Media Elements but allows for HLS in the native audio player
+      if (!Hls.isSupported()) {
+        console.warn('HLS is not supported - fallback to using audio element')
+        audio.src = this.src + '?token=' + this.token
+        return
+      }
+
       var hlsOptions = {
         startPosition: currentTime || -1,
         xhrSetup: (xhr) => {
@@ -576,9 +587,6 @@ export default {
       console.log('Starting HLS audio stream at time', currentTime)
       // console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
       this.hlsInstance = new Hls(hlsOptions)
-      var audio = this.$refs.audio
-      audio.volume = this.volume
-      audio.defaultPlaybackRate = this.playbackRate
 
       this.hlsInstance.attachMedia(audio)
       this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {

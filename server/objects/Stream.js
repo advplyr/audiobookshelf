@@ -95,6 +95,10 @@ class Stream extends EventEmitter {
     return this.client ? this.client.user || {} : null
   }
 
+  get userToken() {
+    return this.clientUser ? this.clientUser.token : null
+  }
+
   get clientUserAudiobooks() {
     return this.client ? this.clientUser.audiobooks || {} : null
   }
@@ -205,7 +209,7 @@ class Stream extends EventEmitter {
 
   async generatePlaylist() {
     fs.ensureDirSync(this.streamPath)
-    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType)
+    await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType, this.userToken)
     return this.clientPlaylistUri
   }
 
