@@ -3,6 +3,7 @@ const EventEmitter = require('events')
 const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('../Logger')
+const { getId } = require('../utils/index')
 const { secondsToTimestamp } = require('../utils/fileUtils')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
@@ -13,7 +14,7 @@ class Stream extends EventEmitter {
   constructor(streamPath, client, audiobook, transcodeOptions = {}) {
     super()
 
-    this.id = (Date.now() + Math.trunc(Math.random() * 1000)).toString(36)
+    this.id = getId('str')
     this.client = client
     this.audiobook = audiobook
 

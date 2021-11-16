@@ -5,6 +5,7 @@ const archiver = require('archiver')
 const workerThreads = require('worker_threads')
 const Logger = require('./Logger')
 const Download = require('./objects/Download')
+const { getId } = require('./utils/index')
 const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
 const TAG = 'DownloadManager'
@@ -61,7 +62,7 @@ class DownloadManager {
   }
 
   async prepareDownload(client, audiobook, options = {}) {
-    var downloadId = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    var downloadId = getId('dl')
     var dlpath = Path.join(this.downloadDirPath, downloadId)
     Logger.info(`Start Download for ${audiobook.id} - DownloadId: ${downloadId} - ${dlpath}`)
 

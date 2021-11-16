@@ -1,70 +1,79 @@
 <template>
-  <div ref="wrapper" class="relative">
-    <!-- New Book Flag -->
-    <div v-show="isNew" class="absolute top-4 left-0 w-4 h-10 pr-2 bg-darkgreen box-shadow-xl z-20">
-      <div class="absolute top-0 left-0 w-full h-full transform -rotate-90 flex items-center justify-center">
-        <p class="text-center text-sm">New</p>
-      </div>
-      <div class="absolute -bottom-4 left-0 triangle-right" />
-    </div>
-
-    <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `${paddingY}px ${paddingX}px` }">
-      <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
-        <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }" @click="clickCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
-          <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
-
-          <!-- Hidden SM and DOWN -->
-          <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
-            <div v-show="showPlayButton" class="h-full flex items-center justify-center">
-              <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
-                <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
-              </div>
-            </div>
-            <div v-show="showReadButton" class="h-full flex items-center justify-center">
-              <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="clickReadEBook">
-                <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
-              </div>
-            </div>
-
-            <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
-              <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
-            </div>
-
-            <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
-              <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
-            </div>
-
-            <!-- More Icon -->
-            <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
-              <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
-            </div>
-          </div>
-
-          <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-            <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
-          </div>
-
-          <!-- EBook Icon -->
-          <div
-            v-if="showSmallEBookIcon"
-            class="absolute rounded-full bg-blue-500 flex items-center justify-center bg-opacity-90 hover:scale-125 transform duration-200"
-            :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem`, width: 1.5 * sizeMultiplier + 'rem', height: 1.5 * sizeMultiplier + 'rem' }"
-            @click.stop.prevent="clickReadEBook"
-          >
-            <!-- <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">EBook</p> -->
-            <span class="material-icons text-white" :style="{ fontSize: sizeMultiplier * 1 + 'rem' }">auto_stories</span>
-          </div>
-
-          <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
-
-          <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
-            <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-              <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
-            </div>
-          </ui-tooltip>
+  <div ref="wrapper" class="relative book-card" :data-bookId="audiobookId" :id="`book-card-${audiobookId}`">
+    <template v-if="!showCard">
+      <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `${paddingY}px ${paddingX}px` }">
+        <div class="bg-bg flex items-center justify-center p-2" :style="{ height: height + 'px', width: width + 'px' }">
+          <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         </div>
-      </nuxt-link>
-    </div>
+      </div>
+    </template>
+    <template v-else>
+      <!-- New Book Flag -->
+      <div v-show="isNew" class="absolute top-4 left-0 w-4 h-10 pr-2 bg-darkgreen box-shadow-xl z-20">
+        <div class="absolute top-0 left-0 w-full h-full transform -rotate-90 flex items-center justify-center">
+          <p class="text-center text-sm">New</p>
+        </div>
+        <div class="absolute -bottom-4 left-0 triangle-right" />
+      </div>
+
+      <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `${paddingY}px ${paddingX}px` }">
+        <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
+          <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }" @click="clickCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
+            <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
+
+            <!-- Hidden SM and DOWN -->
+            <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
+              <div v-show="showPlayButton" class="h-full flex items-center justify-center">
+                <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
+                  <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
+                </div>
+              </div>
+              <div v-show="showReadButton" class="h-full flex items-center justify-center">
+                <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="clickReadEBook">
+                  <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
+                </div>
+              </div>
+
+              <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+                <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
+              </div>
+
+              <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
+                <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+              </div>
+
+              <!-- More Icon -->
+              <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+                <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
+              </div>
+            </div>
+
+            <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+              <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
+            </div>
+
+            <!-- EBook Icon -->
+            <div
+              v-if="showSmallEBookIcon"
+              class="absolute rounded-full bg-blue-500 flex items-center justify-center bg-opacity-90 hover:scale-125 transform duration-200"
+              :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem`, width: 1.5 * sizeMultiplier + 'rem', height: 1.5 * sizeMultiplier + 'rem' }"
+              @click.stop.prevent="clickReadEBook"
+            >
+              <!-- <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">EBook</p> -->
+              <span class="material-icons text-white" :style="{ fontSize: sizeMultiplier * 1 + 'rem' }">auto_stories</span>
+            </div>
+
+            <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+
+            <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
+              <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
+                <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
+              </div>
+            </ui-tooltip>
+          </div>
+        </nuxt-link>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -90,14 +99,17 @@ export default {
       type: Number,
       default: 16
     },
+    isBookshelfBook: Boolean,
     showVolumeNumber: Boolean
   },
   data() {
     return {
+      showCard: false,
       isHovering: false,
       isMoreMenuOpen: false,
       isProcessingReadUpdate: false,
-      rescanning: false
+      rescanning: false,
+      timesVisible: 0
     }
   },
   computed: {
@@ -277,6 +289,10 @@ export default {
     }
   },
   methods: {
+    setShowCard(val) {
+      if (val) this.timesVisible++
+      this.showCard = val
+    },
     selectBtnClick() {
       if (this.processingBatch) return
       this.$store.commit('toggleAudiobookSelected', this.audiobookId)
@@ -404,6 +420,9 @@ export default {
     clickShowMore() {
       this.createMoreMenu()
     }
+  },
+  mounted() {
+    this.showCard = !this.isBookshelfBook
   }
 }
 </script>

@@ -118,6 +118,12 @@ class Server {
     await this.backupManager.init()
     await this.logManager.init()
 
+    // Only fix duplicate ids once on upgrade
+    if (this.db.previousVersion === '1.0.0') {
+      Logger.info(`[Server] Running scan for duplicate book IDs`)
+      await this.scanner.fixDuplicateIds()
+    }
+
     this.watcher.initWatcher(this.libraries)
     this.watcher.on('files', this.filesChanged.bind(this))
   }

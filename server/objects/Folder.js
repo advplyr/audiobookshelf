@@ -1,3 +1,5 @@
+const { getId } = require("../utils")
+
 class Folder {
   constructor(folder = null) {
     this.id = null
@@ -27,7 +29,7 @@ class Folder {
   }
 
   setData(data) {
-    this.id = data.id ? data.id : 'fol' + (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.id = data.id ? data.id : getId('fol')
     this.fullPath = data.fullPath
     this.libraryId = data.libraryId
     this.addedAt = Date.now()

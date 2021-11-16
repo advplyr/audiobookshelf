@@ -32,6 +32,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     this.logLevel = Logger.logLevel
+    this.version = null
 
     if (settings) {
       this.construct(settings)
@@ -56,6 +57,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
     this.logLevel = settings.logLevel || Logger.logLevel
+    this.version = settings.version || null
 
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
@@ -78,7 +80,8 @@ class ServerSettings {
       backupMetadataCovers: this.backupMetadataCovers,
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
-      logLevel: this.logLevel
+      logLevel: this.logLevel,
+      version: this.version
     }
   }
 

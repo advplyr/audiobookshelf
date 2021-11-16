@@ -3,6 +3,7 @@ const njodb = require("njodb")
 const fs = require('fs-extra')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
+const { version } = require('../package.json')
 const Audiobook = require('./objects/Audiobook')
 const User = require('./objects/User')
 const UserCollection = require('./objects/UserCollection')
@@ -36,6 +37,9 @@ class Db {
     this.collections = []
 
     this.serverSettings = null
+
+    // Stores previous version only if upgraded
+    this.previousVersion = null
   }
 
   getEntityDb(entityName) {
@@ -138,6 +142,11 @@ class Db {
         var serverSettings = this.settings.find(s => s.id === 'server-settings')
         if (serverSettings) {
           this.serverSettings = new ServerSettings(serverSettings)
+
+          // Check if server was upgraded
+          if (!this.serverSettings.version || this.serverSettings.version !== version) {
+            this.previousVersion = this.serverSettings.version || '1.0.0'
+          }
         }
       }
     })
@@ -146,6 +155,12 @@ class Db {
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
     await Promise.all([p1, p2, p3, p4, p5])
+
+    // Update server version in server settings
+    if (this.previousVersion) {
+      this.serverSettings.version = version
+      await this.updateEntity('settings', this.serverSettings)
+    }
   }
 
   updateAudiobook(audiobook) {

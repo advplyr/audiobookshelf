@@ -1,4 +1,5 @@
 const Folder = require('./Folder')
+const { getId } = require('../utils/index')
 
 class Library {
   constructor(library = null) {
@@ -46,7 +47,7 @@ class Library {
   }
 
   setData(data) {
-    this.id = data.id ? data.id : 'lib' + (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.id = data.id ? data.id : getId('lib')
     this.name = data.name
     if (data.folder) {
       this.folders = [

@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { getId } = require('../utils/index')
 
 class UserCollection {
   constructor(collection) {
@@ -62,7 +63,7 @@ class UserCollection {
     if (!data.userId || !data.libraryId || !data.name) {
       return false
     }
-    this.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.id = getId('usr')
     this.userId = data.userId
     this.libraryId = data.libraryId
     this.name = data.name

@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const date = require('date-and-time')
+const { getId } = require('../utils/index')
 
 class UserListeningSession {
   constructor(session) {
@@ -58,7 +59,7 @@ class UserListeningSession {
   }
 
   setData(audiobook, user) {
-    this.id = 'ls_' + (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.id = getId('ls')
     this.userId = user.id
     this.audiobookId = audiobook.id
     this.audiobookTitle = audiobook.title || ''

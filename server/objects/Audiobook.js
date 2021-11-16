@@ -1,7 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const { bytesPretty, elapsedPretty, readTextFile } = require('../utils/fileUtils')
-const { comparePaths, getIno } = require('../utils/index')
+const { comparePaths, getIno, getId } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
@@ -317,7 +317,7 @@ class Audiobook {
   }
 
   setData(data) {
-    this.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    this.id = getId('ab')
     this.libraryId = data.libraryId || 'main'
     this.folderId = data.folderId || 'audiobooks'
     this.ino = data.ino || null

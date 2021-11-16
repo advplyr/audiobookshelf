@@ -4,7 +4,7 @@ const fs = require('fs-extra')
 const date = require('date-and-time')
 
 const Logger = require('./Logger')
-const { isObject } = require('./utils/index')
+const { isObject, getId } = require('./utils/index')
 const audioFileScanner = require('./utils/audioFileScanner')
 
 const BookFinder = require('./BookFinder')
@@ -702,7 +702,7 @@ class ApiController {
       return res.status(500).send('Username already taken')
     }
 
-    account.id = (Math.trunc(Math.random() * 1000) + Date.now()).toString(36)
+    account.id = getId('usr')
     account.pash = await this.auth.hashPass(account.password)
     delete account.password
     account.token = await this.auth.generateAccessToken({ userId: account.id })

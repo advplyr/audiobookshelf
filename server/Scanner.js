@@ -6,7 +6,7 @@ const Logger = require('./Logger')
 const { version } = require('../package.json')
 const audioFileScanner = require('./utils/audioFileScanner')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('./utils/scandir')
-const { comparePaths, getIno } = require('./utils/index')
+const { comparePaths, getIno, getId } = require('./utils/index')
 const { secondsToTimestamp } = require('./utils/fileUtils')
 const { ScanResult, CoverDestination } = require('./utils/constants')
 
@@ -751,6 +751,30 @@ class Scanner {
     }
     var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null, options)
     res.json(result)
+  }
+
+  async fixDuplicateIds() {
+    var ids = {}
+    var audiobooksUpdated = 0
+    for (let i = 0; i < this.db.audiobooks.length; i++) {
+      var ab = this.db.audiobooks[i]
+      if (ids[ab.id]) {
+        var abCopy = new Audiobook(ab.toJSON())
+        abCopy.id = getId('ab')
+        if (abCopy.book.cover) {
+          abCopy.book.cover = abCopy.book.cover.replace(ab.id, abCopy.id)
+        }
+        Logger.warn('Found duplicate ID - updating from', ab.id, 'to', abCopy.id)
+        await this.db.removeEntity('audiobook', ab.id)
+        await this.db.insertEntity('audiobook', abCopy)
+        audiobooksUpdated++
+      } else {
+        ids[ab.id] = true
+      }
+    }
+    if (audiobooksUpdated) {
+      Logger.info(`[Scanner] Updated ${audiobooksUpdated} audiobook IDs`)
+    }
   }
 }
 module.exports = Scanner

@@ -36,7 +36,7 @@
                     <cards-group-card v-else-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
 
                     <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-                    <cards-book-card v-else :key="entity.id" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" />
+                    <cards-book-card v-else :ref="`book-card-${entity.id}`" :key="entity.id" is-bookshelf-book :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" @hook:mounted="mountedBookCard(entity)" />
                   </template>
                 </div>
                 <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-10" :class="isCollections ? 'h-6' : 'h-4'" />
@@ -79,7 +79,10 @@ export default {
       rowPaddingX: 40,
       keywordFilterTimeout: null,
       scannerParseSubtitle: false,
-      wrapperClientWidth: 0
+      wrapperClientWidth: 0,
+      observer: null,
+      booksObserved: [],
+      booksVisible: {}
     }
   },
   watch: {
@@ -351,6 +354,61 @@ export default {
     },
     scan() {
       this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
+    },
+    mountedBookCard(entity, shouldUnobserve = false) {
+      if (!this.observer) {
+        console.error('Observer not loaded', entity.id)
+        return
+      }
+      var el = document.getElementById(`book-card-${entity.id}`)
+      if (el) {
+        if (shouldUnobserve) {
+          console.warn('Unobserving el', el)
+          this.observer.unobserve(el)
+        }
+        this.observer.observe(el)
+        this.booksObserved.push(entity.id)
+        // console.log('Book observed', this.booksObserved.length)
+      } else {
+        console.error('Could not get book card', entity.id)
+      }
+    },
+    getBookCard(id) {
+      if (!this.$refs[id] || !this.$refs[id].length) {
+        return null
+      }
+      return this.$refs[id][0]
+    },
+    observerCallback(entries, observer) {
+      entries.forEach((entry) => {
+        var bookId = entry.target.getAttribute('data-bookId')
+        if (!bookId) {
+          console.error('Invalid observe no book id', entry)
+          return
+        }
+        var component = this.getBookCard(entry.target.id)
+        if (component) {
+          if (entry.isIntersecting) {
+            if (!this.booksVisible[bookId]) {
+              this.booksVisible[bookId] = true
+              component.setShowCard(true)
+            }
+          } else if (this.booksVisible[bookId]) {
+            this.booksVisible[bookId] = false
+            component.setShowCard(false)
+          }
+        } else {
+          console.error('Could not get book card for id', entry.target.id)
+        }
+      })
+    },
+    initIO() {
+      let observerOptions = {
+        rootMargin: '0px',
+        threshold: 0.1
+      }
+
+      this.observer = new IntersectionObserver(this.observerCallback, observerOptions)
     }
   },
   updated() {
@@ -367,6 +425,18 @@ export default {
     this.$store.commit('user/addCollectionsListener', { id: 'bookshelf', meth: this.collectionsUpdated })
 
     this.init()
+    this.initIO()
+
+    setTimeout(() => {
+      var ids = {}
+      this.audiobooks.forEach((ab) => {
+        if (ids[ab.id]) {
+          console.error('FOUDN DUPLICATE ID', ids[ab.id], ab)
+        } else {
+          ids[ab.id] = ab
+        }
+      })
+    }, 5000)
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)

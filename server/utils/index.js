@@ -58,3 +58,9 @@ const xmlToJSON = (xml) => {
   })
 }
 module.exports.xmlToJSON = xmlToJSON
+
+module.exports.getId = (prepend = '') => {
+  var _id = Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 8)
+  if (prepend) return prepend + '_' + _id
+  return _id
+}
