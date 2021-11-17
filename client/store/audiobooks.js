@@ -60,7 +60,7 @@ export const getters = {
         else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
       }
       else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL && ab.book.authorFL.split(', ').includes(filter))
-      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narrator === filter)
+      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(ab => {
           var userAudiobook = rootGetters['user/getUserAudiobook'](ab.id)
@@ -141,8 +141,13 @@ export const getters = {
     return [...new Set(abAuthors)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   },
   getUniqueNarrators: (state) => {
-    var _narrators = state.audiobooks.filter(ab => !!(ab.book && ab.book.narrator)).map(ab => ab.book.narrator)
-    return [...new Set(_narrators)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
+    var narrators = []
+    state.audiobooks.forEach((ab) => {
+      if (ab.book && ab.book.narratorFL) {
+        narrators = narrators.concat(ab.book.narratorFL.split(', '))
+      }
+    })
+    return [...new Set(narrators)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   },
   getGenresUsed: (state) => {
     var _genres = []

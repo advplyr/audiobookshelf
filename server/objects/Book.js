@@ -54,6 +54,7 @@ class Book {
     this.authorFL = book.authorFL || null
     this.authorLF = book.authorLF || null
     this.narrator = book.narrator || book.narrarator || null // Mispelled initially... need to catch those
+    this.narratorFL = book.narratorFL || null
     this.series = book.series
     this.volumeNumber = book.volumeNumber || null
     this.publishYear = book.publishYear
@@ -68,6 +69,11 @@ class Book {
     this.lastCoverSearch = book.lastCoverSearch || null
     this.lastCoverSearchTitle = book.lastCoverSearchTitle || null
     this.lastCoverSearchAuthor = book.lastCoverSearchAuthor || null
+
+    // narratorFL added in v1.6.21 to support multi-narrators
+    if (this.narrator && !this.narratorFL) {
+      this.setParseNarrator(this.narrator)
+    }
   }
 
   toJSON() {
@@ -78,6 +84,7 @@ class Book {
       authorFL: this.authorFL,
       authorLF: this.authorLF,
       narrator: this.narrator,
+      narratorFL: this.narratorFL,
       series: this.series,
       volumeNumber: this.volumeNumber,
       publishYear: this.publishYear,
@@ -114,6 +121,23 @@ class Book {
     }
   }
 
+  setParseNarrator(narrator) {
+    if (!narrator) {
+      var hasUpdated = this.narratorFL
+      this.narratorFL = null
+      return hasUpdated
+    }
+    try {
+      var { authorFL } = parseAuthors(narrator)
+      var hasUpdated = authorFL !== this.narratorFL
+      this.narratorFL = authorFL || null
+      return hasUpdated
+    } catch (err) {
+      Logger.error('[Book] Parse narrator failed', err)
+      return false
+    }
+  }
+
   setData(data) {
     this.title = data.title || null
     this.subtitle = data.subtitle || null
@@ -135,6 +159,9 @@ class Book {
 
     if (data.author) {
       this.setParseAuthor(this.author)
+    }
+    if (data.narrator) {
+      this.setParseNarrator(this.narrator)
     }
   }
 
@@ -172,6 +199,14 @@ class Book {
           hasUpdates = true
         }
         if (this.setParseAuthor(this.author)) {
+          hasUpdates = true
+        }
+      } else if (key === 'narrator') {
+        if (this.narrator !== payload.narrator) {
+          this.narrator = payload.narrator || null
+          hasUpdates = true
+        }
+        if (this.setParseNarrator(this.narrator)) {
           hasUpdates = true
         }
       } else if (this[key] !== undefined && payload[key] !== this[key]) {

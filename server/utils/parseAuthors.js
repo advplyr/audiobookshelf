@@ -44,7 +44,7 @@ module.exports = (author) => {
     var isEvenNum = splitAuthors.length % 2 === 0
 
     if (!isEvenNum && firstChunkIsALastName) {
-      // console.error('Multi-author LAST,FIRST entry has a straggler (could be roman numerals or a suffix), ignore it', splitByComma[splitByComma.length - 1])
+      // console.error('Multi-author LAST,FIRST entry has a straggler (could be roman numerals or a suffix), ignore it')
       splitAuthors = splitAuthors.slice(0, splitAuthors.length - 1)
     }
 

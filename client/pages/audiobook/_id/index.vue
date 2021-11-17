@@ -30,7 +30,11 @@
                   <span class="text-white text-opacity-60 uppercase text-sm">Narrated By</span>
                 </div>
                 <div>
-                  <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link>
+                  <template v-for="(narrator, index) in narrators">
+                    <nuxt-link :key="narrator" :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link
+                    ><span :key="index" v-if="index < narrators.length - 1">,&nbsp;</span>
+                  </template>
+                  <!-- <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link> -->
                 </div>
               </div>
               <div v-if="publishYear" class="flex py-0.5">
@@ -277,6 +281,10 @@ export default {
     },
     authorLF() {
       return this.book.authorLF
+    },
+    narrators() {
+      if (!this.book.narratorFL) return []
+      return this.book.narratorFL.split(', ') || []
     },
     authorTooltipText() {
       var txt = ['FL: ' + this.authorFL || 'Not Set', 'LF: ' + this.authorLF || 'Not Set']
