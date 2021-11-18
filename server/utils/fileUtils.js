@@ -142,3 +142,19 @@ async function recurseFiles(path) {
   return list
 }
 module.exports.recurseFiles = recurseFiles
+
+module.exports.downloadFile = async (url, filepath) => {
+  Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+
+  const writer = fs.createWriteStream(filepath)
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream'
+  })
+  response.data.pipe(writer)
+  return new Promise((resolve, reject) => {
+    writer.on('finish', resolve)
+    writer.on('error', reject)
+  })
+}

@@ -44,11 +44,11 @@ export default {
           title: 'Cover',
           component: 'modals-edit-tabs-cover'
         },
-        {
-          id: 'tracks',
-          title: 'Tracks',
-          component: 'modals-edit-tabs-tracks'
-        },
+        // {
+        //   id: 'tracks',
+        //   title: 'Tracks',
+        //   component: 'modals-edit-tabs-tracks'
+        // },
         {
           id: 'chapters',
           title: 'Chapters',
@@ -69,6 +69,11 @@ export default {
           title: 'Match',
           component: 'modals-edit-tabs-match'
         }
+        // {
+        //   id: 'authors',
+        //   title: 'Authors',
+        //   component: 'modals-edit-tabs-authors'
+        // }
       ]
     }
   },
@@ -130,8 +135,8 @@ export default {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.id === 'download' && this.isMissing) return false
-        if ((tab.id === 'download' || tab.id === 'tracks') && this.userCanDownload) return true
-        if (tab.id !== 'download' && tab.id !== 'tracks' && this.userCanUpdate) return true
+        if ((tab.id === 'download' || tab.id === 'files' || tab.id === 'authors') && this.userCanDownload) return true
+        if (tab.id !== 'download' && tab.id !== 'files' && tab.id !== 'authors' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate && this.showExperimentalFeatures) return true
         return false
       })

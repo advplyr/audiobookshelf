@@ -8,6 +8,7 @@ const Audiobook = require('./objects/Audiobook')
 const User = require('./objects/User')
 const UserCollection = require('./objects/UserCollection')
 const Library = require('./objects/Library')
+const Author = require('./objects/Author')
 const ServerSettings = require('./objects/ServerSettings')
 
 class Db {
@@ -21,6 +22,7 @@ class Db {
     this.LibrariesPath = Path.join(ConfigPath, 'libraries')
     this.SettingsPath = Path.join(ConfigPath, 'settings')
     this.CollectionsPath = Path.join(ConfigPath, 'collections')
+    this.AuthorsPath = Path.join(ConfigPath, 'authors')
 
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
@@ -28,6 +30,7 @@ class Db {
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
+    this.authorsDb = new njodb.Database(this.AuthorsPath)
 
     this.users = []
     this.sessions = []
@@ -35,6 +38,7 @@ class Db {
     this.audiobooks = []
     this.settings = []
     this.collections = []
+    this.authors = []
 
     this.serverSettings = null
 
@@ -49,6 +53,7 @@ class Db {
     else if (entityName === 'library') return this.librariesDb
     else if (entityName === 'settings') return this.settingsDb
     else if (entityName === 'collection') return this.collectionsDb
+    else if (entityName === 'author') return this.authorsDb
     return null
   }
 
@@ -59,6 +64,7 @@ class Db {
     else if (entityName === 'library') return 'libraries'
     else if (entityName === 'settings') return 'settings'
     else if (entityName === 'collection') return 'collections'
+    else if (entityName === 'author') return 'authors'
     return null
   }
 
@@ -96,6 +102,7 @@ class Db {
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
+    this.authorsDb = new njodb.Database(this.AuthorsPath)
     return this.init()
   }
 
@@ -154,7 +161,11 @@ class Db {
       this.collections = results.data.map(l => new UserCollection(l))
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
-    await Promise.all([p1, p2, p3, p4, p5])
+    var p6 = this.authorsDb.select(() => true).then((results) => {
+      this.authors = results.data.map(l => new Author(l))
+      Logger.info(`[DB] ${this.authors.length} Authors Loaded`)
+    })
+    await Promise.all([p1, p2, p3, p4, p5, p6])
 
     // Update server version in server settings
     if (this.previousVersion) {

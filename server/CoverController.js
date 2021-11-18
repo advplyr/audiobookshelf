@@ -7,6 +7,7 @@ const imageType = require('image-type')
 
 const globals = require('./utils/globals')
 const { CoverDestination } = require('./utils/constants')
+const { downloadFile } = require('./utils/fileUtils')
 
 class CoverController {
   constructor(db, MetadataPath, AudiobookPath) {
@@ -123,28 +124,13 @@ class CoverController {
     }
   }
 
-  async downloadFile(url, filepath) {
-    Logger.debug(`[CoverController] Starting file download to ${filepath}`)
-    const writer = fs.createWriteStream(filepath)
-    const response = await axios({
-      url,
-      method: 'GET',
-      responseType: 'stream'
-    })
-    response.data.pipe(writer)
-    return new Promise((resolve, reject) => {
-      writer.on('finish', resolve)
-      writer.on('error', reject)
-    })
-  }
-
   async downloadCoverFromUrl(audiobook, url) {
     try {
       var { fullPath, relPath } = this.getCoverDirectory(audiobook)
       await fs.ensureDir(fullPath)
 
       var temppath = Path.posix.join(fullPath, 'cover')
-      var success = await this.downloadFile(url, temppath).then(() => true).catch((err) => {
+      var success = await downloadFile(url, temppath).then(() => true).catch((err) => {
         Logger.error(`[CoverController] Download image file failed for "${url}"`, err)
         return false
       })

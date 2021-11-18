@@ -1,7 +1,7 @@
 <template>
   <div class="w-full my-2">
-    <div class="w-full bg-primary px-6 py-2 flex items-center cursor-pointer">
-      <p class="pr-4">Files</p>
+    <div class="w-full bg-primary px-4 py-2 flex items-center cursor-pointer">
+      <p class="pr-4">All Files</p>
       <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ allFiles.length }}</span>
       <div class="flex-grow" />
 

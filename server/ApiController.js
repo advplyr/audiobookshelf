@@ -8,6 +8,7 @@ const { isObject, getId } = require('./utils/index')
 const audioFileScanner = require('./utils/audioFileScanner')
 
 const BookFinder = require('./BookFinder')
+const AuthorController = require('./AuthorController')
 
 const Library = require('./objects/Library')
 const User = require('./objects/User')
@@ -29,6 +30,7 @@ class ApiController {
     this.MetadataPath = MetadataPath
 
     this.bookFinder = new BookFinder()
+    this.authorController = new AuthorController(this.MetadataPath)
 
     this.router = express()
     this.init()
@@ -87,6 +89,13 @@ class ApiController {
     this.router.delete('/collection/:id/book/:bookId', this.removeBookFromUserCollection.bind(this))
     this.router.patch('/collection/:id', this.updateUserCollection.bind(this))
     this.router.delete('/collection/:id', this.deleteUserCollection.bind(this))
+
+    this.router.get('/authors', this.getAuthors.bind(this))
+    this.router.get('/authors/search', this.searchAuthor.bind(this))
+    this.router.get('/authors/:id', this.getAuthor.bind(this))
+    this.router.post('/authors', this.createAuthor.bind(this))
+    this.router.patch('/authors/:id', this.updateAuthor.bind(this))
+    this.router.delete('/authors/:id', this.deleteAuthor.bind(this))
 
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
 
@@ -894,6 +903,63 @@ class ApiController {
     var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
     await this.db.removeEntity('collection', collection.id)
     this.clientEmitter(req.user.id, 'collection_removed', jsonExpanded)
+    res.sendStatus(200)
+  }
+
+  async getAuthors(req, res) {
+    var authors = this.db.authors.filter(p => p.isAuthor)
+    res.json(authors)
+  }
+
+  async getAuthor(req, res) {
+    var author = this.db.authors.find(p => p.id === req.params.id)
+    if (!author) {
+      return res.status(404).send('Author not found')
+    }
+    res.json(author.toJSON())
+  }
+
+  async searchAuthor(req, res) {
+    var query = req.query.q
+    var author = await this.authorController.findAuthorByName(query)
+    res.json(author)
+  }
+
+  async createAuthor(req, res) {
+    var author = await this.authorController.createAuthor(req.body)
+    if (!author) {
+      return res.status(500).send('Failed to create author')
+    }
+
+    await this.db.insertEntity('author', author)
+    this.emitter('author_added', author.toJSON())
+    res.json(author)
+  }
+
+  async updateAuthor(req, res) {
+    var author = this.db.authors.find(p => p.id === req.params.id)
+    if (!author) {
+      return res.status(404).send('Author not found')
+    }
+
+    var wasUpdated = author.update(req.body)
+    if (wasUpdated) {
+      await this.db.updateEntity('author', author)
+      this.emitter('author_updated', author.toJSON())
+    }
+    res.json(author)
+  }
+
+  async deleteAuthor(req, res) {
+    var author = this.db.authors.find(p => p.id === req.params.id)
+    if (!author) {
+      return res.status(404).send('Author not found')
+    }
+
+    var authorJson = author.toJSON()
+
+    await this.db.removeEntity('author', author.id)
+    this.emitter('author_removed', authorJson)
     res.sendStatus(200)
   }
 

@@ -9,6 +9,7 @@ class Book {
     this.author = null
     this.authorFL = null
     this.authorLF = null
+    this.authors = []
     this.narrator = null
     this.series = null
     this.volumeNumber = null
@@ -51,6 +52,7 @@ class Book {
     this.title = book.title
     this.subtitle = book.subtitle || null
     this.author = book.author
+    this.authors = (book.authors || []).map(a => ({ ...a }))
     this.authorFL = book.authorFL || null
     this.authorLF = book.authorLF || null
     this.narrator = book.narrator || book.narrarator || null // Mispelled initially... need to catch those
@@ -81,6 +83,7 @@ class Book {
       title: this.title,
       subtitle: this.subtitle,
       author: this.author,
+      authors: this.authors,
       authorFL: this.authorFL,
       authorLF: this.authorLF,
       narrator: this.narrator,
@@ -142,6 +145,7 @@ class Book {
     this.title = data.title || null
     this.subtitle = data.subtitle || null
     this.author = data.author || null
+    this.authors = data.authors || []
     this.narrator = data.narrator || data.narrarator || null
     this.series = data.series || null
     this.volumeNumber = data.volumeNumber || null
