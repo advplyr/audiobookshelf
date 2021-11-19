@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const rra = require('recursive-readdir-async')
+const axios = require('axios')
 const Logger = require('../Logger')
 
 async function getFileStat(path) {
