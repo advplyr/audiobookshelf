@@ -328,5 +328,30 @@ class User {
     this.audiobooks[audiobookId].deleteBookmark(time)
     return this.audiobooks[audiobookId]
   }
+
+  syncLocalUserAudiobookData(localUserAudiobookData, audiobook) {
+    if (!localUserAudiobookData || !localUserAudiobookData.audiobookId) {
+      Logger.error(`[User] Invalid local user audiobook data`, localUserAudiobookData)
+      return false
+    }
+
+    if (!this.audiobooks[localUserAudiobookData.audiobookId]) {
+      this.audiobooks[localUserAudiobookData.audiobookId] = new UserAudiobookData(localUserAudiobookData)
+      return true
+    }
+
+    var userAbD = this.audiobooks[localUserAudiobookData.audiobookId]
+    if (userAbD.lastUpdate >= localUserAudiobookData.lastUpdate) {
+      // Server audiobook data is more recent
+      return false
+    }
+
+    // Local Data More recent
+    var wasUpdated = this.audiobooks[localUserAudiobookData.audiobookId].update(localUserAudiobookData)
+    if (wasUpdated) {
+      Logger.debug(`[User] syncLocalUserAudiobookData local data was more recent for "${audiobook.title}"`)
+    }
+    return wasUpdated
+  }
 }
 module.exports = User

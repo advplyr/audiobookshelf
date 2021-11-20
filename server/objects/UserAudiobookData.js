@@ -5,7 +5,6 @@ class UserAudiobookData {
   constructor(progress) {
     this.audiobookId = null
 
-    this.id = null
     this.totalDuration = null // seconds
     this.progress = null // 0 to 1
     this.currentTime = null // seconds

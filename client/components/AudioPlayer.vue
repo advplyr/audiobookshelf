@@ -164,10 +164,6 @@ export default {
     audioPlayed() {
       if (!this.$refs.audio) return
       console.log('Audio Played', this.$refs.audio.currentTime, 'Total Duration', this.$refs.audio.duration)
-      // setTimeout(() => {
-      //   console.log('Audio Played FOLLOW UP', this.$refs.audio.currentTime, 'Total Duration', this.$refs.audio.duration)
-      //   this.startListenTimeInterval()
-      // }, 500)
       this.startListenTimeInterval()
       this.isPaused = this.$refs.audio.paused
     },

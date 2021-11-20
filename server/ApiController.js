@@ -114,6 +114,8 @@ class ApiController {
 
     this.router.get('/listeningSessions', this.getCurrentUserListeningSessions.bind(this))
     this.router.get('/listeningStats', this.getCurrentUserListeningStats.bind(this))
+
+    this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
   }
 
   async find(req, res) {
@@ -606,6 +608,12 @@ class ApiController {
     }
     req.user.resetAudiobookProgress(audiobook)
     await this.db.updateEntity('user', req.user)
+
+    var userAudiobookData = req.user.audiobooks[audiobook.id]
+    if (userAudiobookData) {
+      this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: audiobook.id, data: userAudiobookData })
+    }
+
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }
@@ -1162,11 +1170,40 @@ class ApiController {
   }
 
   async getCurrentUserListeningStats(req, res) {
-    if (!req.user) {
-      return res.sendStatus(500)
-    }
     var listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
     res.json(listeningStats)
+  }
+
+  async syncUserAudiobookData(req, res) {
+    if (!req.body.data) {
+      return res.status(403).send('Invalid local user audiobook data')
+    }
+
+    var hasUpdates = false
+
+    // Local user audiobook data use the latest update
+    req.body.data.forEach((uab) => {
+      if (!uab || !uab.audiobookId) {
+        Logger.error('[ApiController] Invalid user audiobook data', uab)
+        return
+      }
+      var audiobook = this.db.audiobooks.find(ab => ab.id === uab.audiobookId)
+      if (!audiobook) {
+        Logger.info('[ApiController] syncUserAudiobookData local audiobook data audiobook no longer exists', uab.audiobookId)
+        return
+      }
+      if (req.user.syncLocalUserAudiobookData(uab, audiobook)) {
+        this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: uab.audiobookId, data: uab })
+        hasUpdates = true
+      }
+    })
+
+    if (hasUpdates) {
+      await this.db.updateEntity('user', req.user)
+    }
+
+    var allUserAudiobookData = Object.values(req.user.audiobooksToJSON())
+    res.json(allUserAudiobookData)
   }
 }
 module.exports = ApiController
