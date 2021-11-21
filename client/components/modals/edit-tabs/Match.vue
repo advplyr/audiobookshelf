@@ -49,6 +49,10 @@
           <ui-checkbox v-model="selectedMatchUsage.author" />
           <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" label="Author" class="flex-grow ml-4" />
         </div>
+        <div v-if="selectedMatch.narrator" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.narrator" />
+          <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" label="Narrator" class="flex-grow ml-4" />
+        </div>
         <div v-if="selectedMatch.description" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.description" />
           <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" label="Description" class="flex-grow ml-4" />
@@ -65,6 +69,18 @@
           <ui-checkbox v-model="selectedMatchUsage.isbn" />
           <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" class="flex-grow ml-4" />
         </div>
+        <div v-if="selectedMatch.series" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.series" />
+          <ui-text-input-with-label v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" label="Series" class="flex-grow ml-4" />
+        </div>
+        <div v-if="selectedMatch.volumeNumber" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.volumeNumber" />
+          <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
+        </div>
+        <!-- <div v-if="selectedMatch.asin" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.asin" />
+          <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" class="flex-grow ml-4" />
+        </div> -->
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">Update</ui-btn>
         </div>
@@ -96,6 +112,10 @@ export default {
         {
           text: 'Open Library',
           value: 'openlibrary'
+        },
+        {
+          text: 'Audible',
+          value: 'audible'
         }
       ],
       provider: 'google',
@@ -107,10 +127,13 @@ export default {
         subtitle: true,
         cover: true,
         author: true,
+        narrator: true,
         description: true,
         isbn: true,
         publisher: true,
-        publishYear: true
+        publishYear: true,
+        series: true,
+        volumeNumber: true,
       }
     }
   },
@@ -169,10 +192,13 @@ export default {
         subtitle: true,
         cover: true,
         author: true,
+        narrator: true,
         description: true,
         isbn: true,
         publisher: true,
-        publishYear: true
+        publishYear: true,
+        series: true,
+        volumeNumber: true,
       }
 
       if (this.audiobook.id !== this.audiobookId) {

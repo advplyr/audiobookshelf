@@ -1,6 +1,7 @@
 const OpenLibrary = require('./providers/OpenLibrary')
 const LibGen = require('./providers/LibGen')
 const GoogleBooks = require('./providers/GoogleBooks')
+const Audible = require('./providers/Audible')
 const Logger = require('./Logger')
 const { levenshteinDistance } = require('./utils/index')
 
@@ -9,6 +10,7 @@ class BookFinder {
     this.openLibrary = new OpenLibrary()
     this.libGen = new LibGen()
     this.googleBooks = new GoogleBooks()
+    this.audible = new Audible()
 
     this.verbose = false
   }
@@ -156,6 +158,13 @@ class BookFinder {
     return books
   }
 
+  async getAudibleResults(title, author, maxTitleDistance, maxAuthorDistance) {
+    var books = await this.audible.search(title, author);
+    if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
+    if (!books) return []
+    return books
+  }
+
   async search(provider, title, author, options = {}) {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
@@ -164,6 +173,8 @@ class BookFinder {
 
     if (provider === 'google') {
       return this.getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance)
+    } else if (provider === 'audible') {
+      return this.getAudibleResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {
