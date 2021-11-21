@@ -1,5 +1,5 @@
 const axios = require('axios')
-const {stripHtml} = require('string-strip-html')
+const { stripHtml } = require('string-strip-html')
 const Logger = require('../Logger')
 
 class Audible {
@@ -43,7 +43,6 @@ class Audible {
             Logger.error('[Audible] search error', error)
             return []
         })
-        Logger.debug(JSON.stringify(items.map(item => this.cleanResult(item))))
         return items.map(item => this.cleanResult(item))
     }
 }
