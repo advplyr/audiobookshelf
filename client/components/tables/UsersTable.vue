@@ -101,7 +101,7 @@ export default {
       if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
         this.isDeletingUser = true
         this.$axios
-          .$delete(`/api/user/${user.id}`)
+          .$delete(`/api/users/${user.id}`)
           .then((data) => {
             this.isDeletingUser = false
             if (data.error) {

@@ -326,7 +326,7 @@ export default {
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/user/audiobook/${this.audiobookId}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)

@@ -158,7 +158,7 @@ export default {
         }
       })
       this.$axios
-        .patch(`/api/user/audiobooks`, updateProgressPayloads)
+        .patch(`/api/me/audiobook/batch/update`, updateProgressPayloads)
         .then(() => {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)
@@ -177,7 +177,7 @@ export default {
         this.processingBatchDelete = true
         this.$store.commit('setProcessingBatch', true)
         this.$axios
-          .$post(`/api/audiobooks/delete`, {
+          .$post(`/api/books/batch/delete`, {
             audiobookIds: this.selectedAudiobooks
           })
           .then(() => {

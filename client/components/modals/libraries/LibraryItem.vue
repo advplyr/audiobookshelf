@@ -72,7 +72,7 @@ export default {
       if (confirm(`Are you sure you want to permanently delete library "${this.library.name}"?`)) {
         this.isDeleting = true
         this.$axios
-          .$delete(`/api/library/${this.library.id}`)
+          .$delete(`/api/libraries/${this.library.id}`)
           .then((data) => {
             this.isDeleting = false
             if (data.error) {

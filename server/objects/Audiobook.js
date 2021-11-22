@@ -353,6 +353,7 @@ class Audiobook {
       if (imageFile) {
         data.coverFullPath = imageFile.fullPath
         var relImagePath = imageFile.path.replace(this.path, '')
+        console.log('SET BOOK PATH', imageFile.path, 'REPLACE', this.path, 'RESULT', relImagePath)
         data.cover = Path.posix.join(`/s/book/${this.id}`, relImagePath)
       }
     }

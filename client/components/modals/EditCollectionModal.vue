@@ -94,7 +94,7 @@ export default {
         this.processing = true
         var collectionName = this.collectionName
         this.$axios
-          .$delete(`/api/collection/${this.collection.id}`)
+          .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
             this.processing = false
             this.show = false
@@ -122,7 +122,7 @@ export default {
         description: this.newCollectionDescription || null
       }
       this.$axios
-        .$patch(`/api/collection/${this.collection.id}`, collectionUpdate)
+        .$patch(`/api/collections/${this.collection.id}`, collectionUpdate)
         .then((collection) => {
           console.log('Collection Updated', collection)
           this.processing = false

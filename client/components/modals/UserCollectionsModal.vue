@@ -96,7 +96,7 @@ export default {
       this.processing = true
 
       this.$axios
-        .$delete(`/api/collection/${collection.id}/book/${this.selectedAudiobookId}`)
+        .$delete(`/api/collections/${collection.id}/book/${this.selectedAudiobookId}`)
         .then((updatedCollection) => {
           console.log(`Book removed from collection`, updatedCollection)
           this.$toast.success('Book removed from collection')
@@ -114,7 +114,7 @@ export default {
       this.processing = true
 
       this.$axios
-        .$post(`/api/collection/${collection.id}/book`, { id: this.selectedAudiobookId })
+        .$post(`/api/collections/${collection.id}/book`, { id: this.selectedAudiobookId })
         .then((updatedCollection) => {
           console.log(`Book added to collection`, updatedCollection)
           this.$toast.success('Book added to collection')

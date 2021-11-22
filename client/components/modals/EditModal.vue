@@ -220,7 +220,7 @@ export default {
     async fetchFull() {
       try {
         this.processing = true
-        this.audiobook = await this.$axios.$get(`/api/audiobook/${this.selectedAudiobookId}`)
+        this.audiobook = await this.$axios.$get(`/api/books/${this.selectedAudiobookId}`)
         this.processing = false
       } catch (error) {
         console.error('Failed to fetch audiobook', this.selectedAudiobookId, error)

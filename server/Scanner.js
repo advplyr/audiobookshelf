@@ -355,9 +355,6 @@ class Scanner {
       Logger.info(`[Scanner] Updated Audiobook "${existingAudiobook.title}" library and folder to "${libraryId}" "${folderId}"`)
     }
 
-    // var audiobooksInLibrary = this.audiobooks.filter(ab => ab.libraryId === libraryId)
-    // var existingAudiobook = audiobooksInLibrary.find(a => a.ino === audiobookData.ino)
-
     // inode value may change when using shared drives, update inode if matching path is found
     // Note: inode will not change on rename
     var hasUpdatedIno = false

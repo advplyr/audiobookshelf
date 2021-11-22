@@ -267,7 +267,7 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
 async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) {
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
 
-  var fileItems = await recurseFiles(audiobookPath)
+  var fileItems = await recurseFiles(audiobookPath, folder.fullPath)
 
   audiobookPath = audiobookPath.replace(/\\/g, '/')
   var folderFullPath = folder.fullPath.replace(/\\/g, '/')

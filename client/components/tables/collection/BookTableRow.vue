@@ -140,7 +140,7 @@ export default {
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/user/audiobook/${this.book.id}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           this.$toast.success(`"${this.bookTitle}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
@@ -155,7 +155,7 @@ export default {
       this.processingRemove = true
 
       this.$axios
-        .$delete(`/api/collection/${this.collectionId}/book/${this.book.id}`)
+        .$delete(`/api/collections/${this.collectionId}/book/${this.book.id}`)
         .then((updatedCollection) => {
           console.log(`Book removed from collection`, updatedCollection)
           this.$toast.success('Book removed from collection')

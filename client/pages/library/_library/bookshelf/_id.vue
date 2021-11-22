@@ -31,7 +31,7 @@ export default {
     if (params.id === 'search' && query.query) {
       searchQuery = query.query
 
-      searchResults = await app.$axios.$get(`/api/library/${libraryId}/search?q=${searchQuery}`).catch((error) => {
+      searchResults = await app.$axios.$get(`/api/libraries/${libraryId}/search?q=${searchQuery}`).catch((error) => {
         console.error('Search error', error)
         return {}
       })
@@ -92,7 +92,7 @@ export default {
   methods: {
     async newQuery() {
       var query = this.$route.query.query
-      this.searchResults = await this.$axios.$get(`/api/library/${this.libraryId}/search?q=${query}`).catch((error) => {
+      this.searchResults = await this.$axios.$get(`/api/libraries/${this.libraryId}/search?q=${query}`).catch((error) => {
         console.error('Search error', error)
         return {}
       })

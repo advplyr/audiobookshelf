@@ -169,7 +169,7 @@ export default {
       this.isProcessing = true
 
       this.$axios
-        .$post('/api/audiobooks/update', this.audiobookCopies)
+        .$post('/api/books/batch/update', this.audiobookCopies)
         .then((data) => {
           this.isProcessing = false
           if (data.updates) {
