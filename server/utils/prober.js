@@ -1,5 +1,8 @@
 var Ffmpeg = require('fluent-ffmpeg')
 const Path = require('path')
+
+const AudioProbeData = require('../scanner/AudioProbeData')
+
 const Logger = require('../Logger')
 
 function tryGrabBitRate(stream, all_streams, total_bit_rate) {
@@ -241,4 +244,31 @@ function probe(filepath, verbose = false) {
     })
   })
 }
-module.exports = probe
+module.exports.probe = probe
+
+// Updated probe returns AudioProbeData object
+function probe2(filepath, verbose = false) {
+  return new Promise((resolve) => {
+    Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
+      if (err) {
+        console.error(err)
+        var errorMsg = err ? err.message : null
+        resolve({
+          error: errorMsg || 'Probe Error'
+        })
+      } else {
+        var rawProbeData = parseProbeData(raw, verbose)
+        if (!rawProbeData || !rawProbeData.audio_streams.length) {
+          resolve({
+            error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
+          })
+        } else {
+          var probeData = new AudioProbeData()
+          probeData.setData(rawProbeData)
+          resolve(probeData)
+        }
+      }
+    })
+  })
+}
+module.exports.probe2 = probe2
