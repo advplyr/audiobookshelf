@@ -137,7 +137,7 @@ export default {
         name: this.newCollectionName
       }
       this.$axios
-        .$post('/api/collection', newCollection)
+        .$post('/api/collections', newCollection)
         .then((data) => {
           console.log('New Collection Created', data)
           this.$toast.success(`Collection "${data.name}" created`)
