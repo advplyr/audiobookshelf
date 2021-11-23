@@ -60,7 +60,7 @@ export const actions = {
     }
 
     return this.$axios
-      .$get(`/api/library/${libraryId}`)
+      .$get(`/api/libraries/${libraryId}`)
       .then((data) => {
         commit('addUpdate', data)
         commit('setCurrentLibrary', libraryId)

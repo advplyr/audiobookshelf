@@ -153,6 +153,17 @@ class AudioFile {
     this.metadata.setData(data)
   }
 
+  // New scanner creates AudioFile from AudioFileScanner
+  setData2(fileData, probeData) {
+    this.index = fileData.index || null
+    this.ino = fileData.ino || null
+    this.filename = fileData.filename
+    this.ext = fileData.ext
+    this.path = fileData.path
+    this.fullPath = fileData.fullPath
+    this.addedAt = Date.now()
+  }
+
   syncChapters(updatedChapters) {
     if (this.chapters.length !== updatedChapters.length) {
       this.chapters = updatedChapters.map(ch => ({ ...ch }))

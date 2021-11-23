@@ -71,7 +71,7 @@
 <script>
 export default {
   async asyncData({ params, redirect, app }) {
-    var user = await app.$axios.$get(`/api/user/${params.id}`).catch((error) => {
+    var user = await app.$axios.$get(`/api/users/${params.id}`).catch((error) => {
       console.error('Failed to get user', error)
       return null
     })
@@ -115,11 +115,11 @@ export default {
   },
   methods: {
     async init() {
-      this.listeningSessions = await this.$axios.$get(`/api/user/${this.user.id}/listeningSessions`).catch((err) => {
+      this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
       })
-      this.listeningStats = await this.$axios.$get(`/api/user/${this.user.id}/listeningStats`).catch((err) => {
+      this.listeningStats = await this.$axios.$get(`/api/users/${this.user.id}/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
       })

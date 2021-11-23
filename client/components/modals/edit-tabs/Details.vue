@@ -195,7 +195,7 @@ export default {
         tags: this.newTags
       }
 
-      var updatedAudiobook = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
+      var updatedAudiobook = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
       })
@@ -220,27 +220,11 @@ export default {
 
       this.newTags = this.audiobook.tags || []
     },
-    resetProgress() {
-      if (confirm(`Are you sure you want to reset your progress?`)) {
-        this.resettingProgress = true
-        this.$axios
-          .$delete(`/api/user/audiobook/${this.audiobookId}`)
-          .then(() => {
-            console.log('Progress reset complete')
-            this.$toast.success(`Your progress was reset`)
-            this.resettingProgress = false
-          })
-          .catch((error) => {
-            console.error('Progress reset failed', error)
-            this.resettingProgress = false
-          })
-      }
-    },
     deleteAudiobook() {
       if (confirm(`Are you sure you want to remove this audiobook?\n\n*Does not delete your files, only removes the audiobook from AudioBookshelf`)) {
         this.isProcessing = true
         this.$axios
-          .$delete(`/api/audiobook/${this.audiobookId}`)
+          .$delete(`/api/books/${this.audiobookId}`)
           .then(() => {
             console.log('Audiobook removed')
             this.$toast.success('Audiobook Removed')

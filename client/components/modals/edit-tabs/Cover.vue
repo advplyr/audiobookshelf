@@ -155,7 +155,7 @@ export default {
       form.set('cover', this.selectedFile)
 
       this.$axios
-        .$post(`/api/audiobook/${this.audiobook.id}/cover`, form)
+        .$post(`/api/books/${this.audiobook.id}/cover`, form)
         .then((data) => {
           if (data.error) {
             this.$toast.error(data.error)
@@ -217,7 +217,7 @@ export default {
 
       // Download cover from url and use
       if (cover.startsWith('http:') || cover.startsWith('https:')) {
-        success = await this.$axios.$post(`/api/audiobook/${this.audiobook.id}/cover`, { url: cover }).catch((error) => {
+        success = await this.$axios.$post(`/api/books/${this.audiobook.id}/cover`, { url: cover }).catch((error) => {
           console.error('Failed to download cover from url', error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
@@ -231,7 +231,7 @@ export default {
             cover: cover
           }
         }
-        success = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, updatePayload).catch((error) => {
+        success = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, updatePayload).catch((error) => {
           console.error('Failed to update', error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
@@ -266,7 +266,7 @@ export default {
     setCover(coverFile) {
       this.isProcessing = true
       this.$axios
-        .$patch(`/api/audiobook/${this.audiobook.id}/coverfile`, coverFile)
+        .$patch(`/api/books/${this.audiobook.id}/coverfile`, coverFile)
         .then((data) => {
           console.log('response data', data)
           if (data && typeof data === 'string') {

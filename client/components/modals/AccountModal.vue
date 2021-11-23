@@ -171,7 +171,7 @@ export default {
       this.processing = true
       console.log('Calling update', account)
       this.$axios
-        .$patch(`/api/user/${this.account.id}`, account)
+        .$patch(`/api/users/${this.account.id}`, account)
         .then((data) => {
           this.processing = false
           if (data.error) {
@@ -198,7 +198,7 @@ export default {
       var account = { ...this.newUser }
       this.processing = true
       this.$axios
-        .$post('/api/user', account)
+        .$post('/api/users', account)
         .then((data) => {
           this.processing = false
           if (data.error) {

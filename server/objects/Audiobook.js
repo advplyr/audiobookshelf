@@ -353,6 +353,7 @@ class Audiobook {
       if (imageFile) {
         data.coverFullPath = imageFile.fullPath
         var relImagePath = imageFile.path.replace(this.path, '')
+        console.log('SET BOOK PATH', imageFile.path, 'REPLACE', this.path, 'RESULT', relImagePath)
         data.cover = Path.posix.join(`/s/book/${this.id}`, relImagePath)
       }
     }
@@ -821,6 +822,142 @@ class Audiobook {
     if (!this.audioFiles.length) return false
     var audioFile = this.audioFiles[0]
     return this.book.setDetailsFromFileMetadata(audioFile.metadata)
+  }
+
+  // Returns null if file not found, true if file was updated, false if up to date
+  checkFileFound(fileFound, isAudioFile) {
+    var hasUpdated = false
+
+    const arrayToCheck = isAudioFile ? this.audioFiles : this.otherFiles
+
+    var existingFile = arrayToCheck.find(_af => _af.ino === fileFound.ino)
+    if (!existingFile) {
+      existingFile = arrayToCheck.find(_af => _af.path === fileFound.path)
+      if (existingFile) {
+        // file inode was updated
+        existingFile.ino = fileFound.ino
+        hasUpdated = true
+      } else {
+        // file not found
+        return null
+      }
+    }
+
+    if (existingFile.filename !== fileFound.filename) {
+      existingFile.filename = fileFound.filename
+      existingFile.ext = fileFound.ext
+      hasUpdated = true
+    }
+
+    if (existingFile.path !== fileFound.path) {
+      existingFile.path = fileFound.path
+      existingFile.fullPath = fileFound.fullPath
+      hasUpdated = true
+    } else if (existingFile.fullPath !== fileFound.fullPath) {
+      existingFile.fullPath = fileFound.fullPath
+      hasUpdated = true
+    }
+
+    if (!isAudioFile && existingFile.filetype !== fileFound.filetype) {
+      existingFile.filetype = fileFound.filetype
+      hasUpdated = true
+    }
+
+    return hasUpdated
+  }
+
+  checkShouldScan(dataFound) {
+    var hasUpdated = false
+
+    if (dataFound.ino !== this.ino) {
+      this.ino = dataFound.ino
+      hasUpdated = true
+    }
+
+    if (dataFound.folderId !== this.folderId) {
+      Logger.warn(`[Audiobook] Check scan audiobook changed folder ${this.folderId} -> ${dataFound.folderId}`)
+      this.folderId = dataFound.folderId
+      hasUpdated = true
+    }
+
+    if (dataFound.path !== this.path) {
+      Logger.warn(`[Audiobook] Check scan audiobook changed path "${this.path}" -> "${dataFound.path}"`)
+      this.path = dataFound.path
+      this.fullPath = dataFound.fullPath
+      hasUpdated = true
+    } else if (dataFound.fullPath !== this.fullPath) {
+      Logger.warn(`[Audiobook] Check scan audiobook changed fullpath "${this.fullPath}" -> "${dataFound.fullPath}"`)
+      this.fullPath = dataFound.fullPath
+      hasUpdated = true
+    }
+
+    var newAudioFileData = []
+    var newOtherFileData = []
+
+    dataFound.audioFiles.forEach((af) => {
+      var audioFileFoundCheck = this.checkFileFound(af, true)
+      if (audioFileFoundCheck === null) {
+        newAudioFileData.push(af)
+      } else if (audioFileFoundCheck === true) {
+        hasUpdated = true
+      }
+    })
+
+    dataFound.otherFiles.forEach((otherFileData) => {
+      var fileFoundCheck = this.checkFileFound(otherFileData, false)
+      if (fileFoundCheck === null) {
+        newOtherFileData.push(otherFileData)
+      } else if (fileFoundCheck === true) {
+        hasUpdated = true
+      }
+    })
+
+    const audioFilesRemoved = []
+    const otherFilesRemoved = []
+
+    // inodes will all be up to date at this point
+    this.audioFiles = this.audioFiles.filter(af => {
+      if (!dataFound.audioFiles.find(_af => _af.ino === af.ino)) {
+        audioFilesRemoved.push(af.toJSON())
+        return false
+      }
+      return true
+    })
+
+    // Remove all tracks that were associated with removed audio files
+    if (audioFilesRemoved.length) {
+      const audioFilesRemovedInodes = audioFilesRemoved.map(afr => afr.ino)
+      this.tracks = this.tracks.filter(t => !audioFilesRemovedInodes.includes(t.ino))
+      this.checkUpdateMissingParts()
+      hasUpdated = true
+    }
+
+    this.otherFiles = this.otherFiles.filter(otherFile => {
+      if (!dataFound.otherFiles.find(_otherFile => _otherFile.ino === otherFile.ino)) {
+        otherFilesRemoved.push(otherFile.toJSON())
+
+        // Check remove cover
+        if (otherFile.fullPath === this.book.coverFullPath) {
+          Logger.debug(`[Audiobook] "${this.title}" Check scan book cover removed`)
+          this.book.removeCover()
+        }
+
+        return false
+      }
+      return true
+    })
+
+    if (otherFilesRemoved.length) {
+      hasUpdated = true
+    }
+
+    return {
+      updated: hasUpdated,
+      newAudioFileData,
+      newOtherFileData,
+      audioFilesRemoved,
+      otherFilesRemoved
+    }
   }
 }
 module.exports = Audiobook

@@ -211,7 +211,7 @@ export const actions = {
     commit('setLoadedLibrary', currentLibraryId)
 
     this.$axios
-      .$get(`/api/library/${currentLibraryId}/audiobooks`)
+      .$get(`/api/libraries/${currentLibraryId}/books`)
       .then((data) => {
         commit('set', data)
         commit('setLastLoad')

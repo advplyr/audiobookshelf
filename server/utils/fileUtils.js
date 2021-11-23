@@ -89,9 +89,16 @@ function setFileOwner(path, uid, gid) {
 }
 module.exports.setFileOwner = setFileOwner
 
-async function recurseFiles(path) {
+async function recurseFiles(path, relPathToReplace = null) {
   path = path.replace(/\\/g, '/')
   if (!path.endsWith('/')) path = path + '/'
+
+  if (relPathToReplace) {
+    relPathToReplace = relPathToReplace.replace(/\\/g, '/')
+    if (!relPathToReplace.endsWith('/')) relPathToReplace += '/'
+  } else {
+    relPathToReplace = path
+  }
 
   const options = {
     mode: rra.LIST,
@@ -116,7 +123,7 @@ async function recurseFiles(path) {
     }
 
     // Ignore any file if a directory or the filename starts with "."
-    var relpath = item.fullname.replace(path, '')
+    var relpath = item.fullname.replace(relPathToReplace, '')
     var pathStartsWithPeriod = relpath.split('/').find(p => p.startsWith('.'))
     if (pathStartsWithPeriod) {
       Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
@@ -126,9 +133,9 @@ async function recurseFiles(path) {
     return true
   }).map((item) => ({
     name: item.name,
-    path: item.fullname.replace(path, ''),
+    path: item.fullname.replace(relPathToReplace, ''),
     dirpath: item.path,
-    reldirpath: item.path.replace(path, ''),
+    reldirpath: item.path.replace(relPathToReplace, ''),
     fullpath: item.fullname,
     extension: item.extension,
     deep: item.deep

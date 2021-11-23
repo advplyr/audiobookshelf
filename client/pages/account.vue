@@ -90,7 +90,7 @@ export default {
       }
       this.changingPassword = true
       this.$axios
-        .$patch('/api/user/password', {
+        .$patch('/api/me/password', {
           password: this.password,
           newPassword: this.newPassword
         })

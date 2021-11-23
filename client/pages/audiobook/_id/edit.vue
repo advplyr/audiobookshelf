@@ -115,7 +115,7 @@ export default {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
-    var audiobook = await app.$axios.$get(`/api/audiobook/${params.id}`).catch((error) => {
+    var audiobook = await app.$axios.$get(`/api/books/${params.id}`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -291,7 +291,7 @@ export default {
 
       this.saving = true
       this.$axios
-        .$patch(`/api/audiobook/${this.audiobook.id}/tracks`, { orderedFileData })
+        .$patch(`/api/books/${this.audiobook.id}/tracks`, { orderedFileData })
         .then((data) => {
           console.log('Finished patching files', data)
           this.saving = false

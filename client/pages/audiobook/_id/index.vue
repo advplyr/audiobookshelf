@@ -161,7 +161,7 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
-    var audiobook = await app.$axios.$get(`/api/audiobook/${params.id}`).catch((error) => {
+    var audiobook = await app.$axios.$get(`/api/books/${params.id}`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -383,7 +383,7 @@ export default {
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/user/audiobook/${this.audiobookId}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
@@ -417,7 +417,7 @@ export default {
     audiobookUpdated() {
       console.log('Audiobook Updated - Fetch full audiobook')
       this.$axios
-        .$get(`/api/audiobook/${this.audiobookId}`)
+        .$get(`/api/books/${this.audiobookId}`)
         .then((audiobook) => {
           console.log('Updated audiobook', audiobook)
           this.audiobook = audiobook
@@ -430,7 +430,7 @@ export default {
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$patch(`/api/user/audiobook/${this.audiobookId}/reset-progress`)
+          .$patch(`/api/me/audiobook/${this.audiobookId}/reset-progress`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)

@@ -68,7 +68,7 @@ export default {
         books: this.booksCopy.map((b) => b.id)
       }
       this.$axios
-        .$patch(`/api/collection/${this.collectionId}`, collectionUpdate)
+        .$patch(`/api/collections/${this.collectionId}`, collectionUpdate)
         .then((collection) => {
           console.log('Collection updated', collection)
         })

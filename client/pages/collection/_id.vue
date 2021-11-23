@@ -44,7 +44,7 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
-    var collection = await app.$axios.$get(`/api/collection/${params.id}`).catch((error) => {
+    var collection = await app.$axios.$get(`/api/collections/${params.id}`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -105,7 +105,7 @@ export default {
         this.processingRemove = true
         var collectionName = this.collectionName
         this.$axios
-          .$delete(`/api/collection/${this.collection.id}`)
+          .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
             this.processingRemove = false
             this.$toast.success(`Collection "${collectionName}" Removed`)

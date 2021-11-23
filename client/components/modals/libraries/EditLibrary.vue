@@ -105,7 +105,7 @@ export default {
 
       this.$emit('update:processing', true)
       this.$axios
-        .$patch(`/api/library/${this.library.id}`, newLibraryPayload)
+        .$patch(`/api/libraries/${this.library.id}`, newLibraryPayload)
         .then((res) => {
           this.$emit('update:processing', false)
           this.$emit('close')
@@ -137,7 +137,7 @@ export default {
 
       this.$emit('update:processing', true)
       this.$axios
-        .$post('/api/library', newLibraryPayload)
+        .$post('/api/libraries', newLibraryPayload)
         .then((res) => {
           this.$emit('update:processing', false)
           this.$emit('close')

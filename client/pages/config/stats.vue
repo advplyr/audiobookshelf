@@ -97,7 +97,7 @@ export default {
   },
   methods: {
     async init() {
-      this.listeningStats = await this.$axios.$get(`/api/user/${this.user.id}/listeningStats`).catch((err) => {
+      this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
       })

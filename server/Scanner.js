@@ -355,9 +355,6 @@ class Scanner {
       Logger.info(`[Scanner] Updated Audiobook "${existingAudiobook.title}" library and folder to "${libraryId}" "${folderId}"`)
     }
 
-    // var audiobooksInLibrary = this.audiobooks.filter(ab => ab.libraryId === libraryId)
-    // var existingAudiobook = audiobooksInLibrary.find(a => a.ino === audiobookData.ino)
-
     // inode value may change when using shared drives, update inode if matching path is found
     // Note: inode will not change on rename
     var hasUpdatedIno = false
@@ -457,7 +454,6 @@ class Scanner {
     var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
 
     // TODO: This temporary fix from pre-release should be removed soon, "checkUpdateInos"
-    // TEMP - update ino for each audiobook
     if (audiobooksInLibrary.length) {
       for (let i = 0; i < audiobooksInLibrary.length; i++) {
         var ab = audiobooksInLibrary[i]
@@ -466,7 +462,7 @@ class Scanner {
         if (shouldUpdateIno) {
           var filesWithMissingIno = ab.getFilesWithMissingIno()
 
-          Logger.debug(`\n\Updating inos for "${ab.title}"`)
+          Logger.debug(`\nUpdating inos for "${ab.title}"`)
           Logger.debug(`In Scan, Files with missing inode`, filesWithMissingIno)
 
           var hasUpdates = await ab.checkUpdateInos()
@@ -507,7 +503,7 @@ class Scanner {
     // Check for removed audiobooks
     for (let i = 0; i < audiobooksInLibrary.length; i++) {
       var audiobook = audiobooksInLibrary[i]
-      var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino)
+      var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino || comparePaths(abd.path, audiobook.path))
       if (!dataFound) {
         Logger.info(`[Scanner] Audiobook "${audiobook.title}" is missing`)
         audiobook.isMissing = true

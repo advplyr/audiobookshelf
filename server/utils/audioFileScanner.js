@@ -13,7 +13,7 @@ function getDefaultAudioStream(audioStreams) {
 
 async function scan(path, verbose = false) {
   Logger.debug(`Scanning path "${path}"`)
-  var probeData = await prober(path, verbose)
+  var probeData = await prober.probe(path, verbose)
   if (!probeData || !probeData.audio_streams || !probeData.audio_streams.length) {
     return {
       error: 'Invalid audio file'

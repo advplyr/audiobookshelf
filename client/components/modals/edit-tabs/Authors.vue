@@ -154,7 +154,7 @@ export default {
         var coverPayload = {
           url: updatePayload.cover
         }
-        var success = await this.$axios.$post(`/api/audiobook/${this.audiobook.id}/cover`, coverPayload).catch((error) => {
+        var success = await this.$axios.$post(`/api/books/${this.audiobook.id}/cover`, coverPayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
@@ -171,7 +171,7 @@ export default {
         var bookUpdatePayload = {
           book: updatePayload
         }
-        var success = await this.$axios.$patch(`/api/audiobook/${this.audiobook.id}`, bookUpdatePayload).catch((error) => {
+        var success = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, bookUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })

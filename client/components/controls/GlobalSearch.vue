@@ -131,7 +131,7 @@ export default {
       }
       this.isFetching = true
 
-      var searchResults = await this.$axios.$get(`/api/library/${this.currentLibraryId}/search?q=${value}`).catch((error) => {
+      var searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}`).catch((error) => {
         console.error('Search error', error)
         return []
       })

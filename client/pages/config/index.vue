@@ -150,7 +150,7 @@ export default {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
         this.isResettingAudiobooks = true
         this.$axios
-          .$delete('/api/audiobooks')
+          .$delete('/api/books/all')
           .then(() => {
             this.isResettingAudiobooks = false
             this.$toast.success('Successfully reset audiobooks')
