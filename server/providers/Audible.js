@@ -6,9 +6,9 @@ class Audible {
     constructor() { }
 
     cleanResult(item) {
-        var { title, subtitle, asin, authors, narrators, publisher_name, publisher_summary, release_date, series, product_images } = item;
+        var { title, subtitle, asin, authors, narrators, publisher_name, publisher_summary, release_date, series, product_images, publication_name } = item;
 
-        var firstSeries = series && series.length > 0 ? series[0] : null;
+        var primarySeries = this.getPrimarySeries(series, publication_name);
 
         return {
             title,
@@ -20,14 +20,18 @@ class Audible {
             description: stripHtml(publisher_summary).result,
             cover: this.getBestImageLink(product_images),
             asin,
-            series: firstSeries ? firstSeries.title : null,
-            volumeNumber: firstSeries ? firstSeries.sequence : null
+            series: primarySeries ? primarySeries.title : null,
+            volumeNumber: primarySeries ? primarySeries.sequence : null
         }
     }
 
     getBestImageLink(images) {
         var keys = Object.keys(images);
         return images[keys[keys.length - 1]];
+    }
+
+    getPrimarySeries(series, publication_name) {
+        return (series && series.length > 0) ? series.find((s) => s.title == publication_name) || series[0] : null
     }
 
     async search(title, author) {
