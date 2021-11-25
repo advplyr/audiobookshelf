@@ -6,8 +6,7 @@ const Logger = require('./Logger')
 const { version } = require('../package.json')
 const audioFileScanner = require('./utils/audioFileScanner')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('./utils/scandir')
-const { comparePaths, getIno, getId } = require('./utils/index')
-const { secondsToTimestamp } = require('./utils/fileUtils')
+const { comparePaths, getIno, getId, secondsToTimestamp } = require('./utils/index')
 const { ScanResult, CoverDestination } = require('./utils/constants')
 
 const BookFinder = require('./BookFinder')
@@ -440,7 +439,6 @@ class Scanner {
     var scanPayload = {
       id: libraryId,
       name: library.name,
-      scanType: 'library',
       folders: library.folders.length
     }
     this.emitter('scan_start', scanPayload)
@@ -489,7 +487,7 @@ class Scanner {
       Logger.info(`[Scanner] Canceling scan ${libraryId}`)
       delete this.cancelLibraryScan[libraryId]
       this.librariesScanning = this.librariesScanning.filter(l => l.id !== libraryId)
-      this.emitter('scan_complete', { id: libraryId, name: library.name, scanType: 'library', results: null })
+      this.emitter('scan_complete', { id: libraryId, name: library.name, results: null })
       return null
     }
 
@@ -516,7 +514,7 @@ class Scanner {
         Logger.info(`[Scanner] Canceling scan ${libraryId}`)
         delete this.cancelLibraryScan[libraryId]
         this.librariesScanning = this.librariesScanning.filter(l => l.id !== libraryId)
-        this.emitter('scan_complete', { id: libraryId, name: library.name, scanType: 'library', results: scanResults })
+        this.emitter('scan_complete', { id: libraryId, name: library.name, results: scanResults })
         return
       }
     }
@@ -532,7 +530,6 @@ class Scanner {
       this.emitter('scan_progress', {
         id: libraryId,
         name: library.name,
-        scanType: 'library',
         progress: {
           total: audiobookDataFound.length,
           done: i + 1,
@@ -548,7 +545,7 @@ class Scanner {
     const scanElapsed = Math.floor((Date.now() - scanStart) / 1000)
     Logger.info(`[Scanned] Finished | ${scanResults.added} added | ${scanResults.updated} updated | ${scanResults.removed} removed | ${scanResults.missing} missing | elapsed: ${secondsToTimestamp(scanElapsed)}`)
     this.librariesScanning = this.librariesScanning.filter(l => l.id !== libraryId)
-    this.emitter('scan_complete', { id: libraryId, name: library.name, scanType: 'library', results: scanResults })
+    this.emitter('scan_complete', { id: libraryId, name: library.name, results: scanResults })
   }
 
   async scanAudiobookById(audiobookId) {

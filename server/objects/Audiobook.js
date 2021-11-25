@@ -1,7 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const { bytesPretty, elapsedPretty, readTextFile } = require('../utils/fileUtils')
-const { comparePaths, getIno, getId } = require('../utils/index')
+const { bytesPretty, readTextFile } = require('../utils/fileUtils')
+const { comparePaths, getIno, getId, elapsedPretty } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
@@ -127,6 +127,8 @@ class Audiobook {
   get _audioFiles() { return this.audioFiles || [] }
   get _otherFiles() { return this.otherFiles || [] }
   get _tracks() { return this.tracks || [] }
+
+  get audioFilesToInclude() { return this._audioFiles.filter(af => !af.exclude) }
 
   get ebooks() {
     return this.otherFiles.filter(file => file.filetype === 'ebook')
@@ -346,6 +348,11 @@ class Audiobook {
     this.scanVersion = version
   }
 
+  setMissing() {
+    this.isMissing = true
+    this.lastUpdate = Date.now()
+  }
+
   setBook(data) {
     // Use first image file as cover
     if (this.otherFiles && this.otherFiles.length) {
@@ -353,7 +360,6 @@ class Audiobook {
       if (imageFile) {
         data.coverFullPath = imageFile.fullPath
         var relImagePath = imageFile.path.replace(this.path, '')
-        console.log('SET BOOK PATH', imageFile.path, 'REPLACE', this.path, 'RESULT', relImagePath)
         data.cover = Path.posix.join(`/s/book/${this.id}`, relImagePath)
       }
     }
@@ -383,10 +389,15 @@ class Audiobook {
   }
 
   addAudioFile(audioFileData) {
-    var audioFile = new AudioFile()
-    audioFile.setData(audioFileData)
-    this.audioFiles.push(audioFile)
-    return audioFile
+    if (audioFileData instanceof AudioFile) {
+      this.audioFiles.push(audioFileData)
+      return audioFileData
+    } else {
+      var audioFile = new AudioFile()
+      audioFile.setData(audioFileData)
+      this.audioFiles.push(audioFile)
+      return audioFile
+    }
   }
 
   addOtherFile(fileData) {
@@ -426,6 +437,10 @@ class Audiobook {
     return this.book.updateCover(cover, coverFullPath)
   }
 
+  checkHasTrackNum(trackNum) {
+    return this.tracks.find(t => t.index === trackNum)
+  }
+
   updateAudioTracks(orderedFileData) {
     var index = 1
     this.audioFiles = orderedFileData.map((fileData) => {
@@ -444,8 +459,12 @@ class Audiobook {
       return audioFile
     })
 
-    this.audioFiles.sort((a, b) => a.index - b.index)
+    this.rebuildTracks()
+  }
 
+  // After audio files have been added/removed/updated this method sets tracks
+  rebuildTracks() {
+    this.audioFiles.sort((a, b) => a.index - b.index)
     this.tracks = []
     this.missingParts = []
     this.audioFiles.forEach((file) => {
@@ -569,7 +588,6 @@ class Audiobook {
         hasUpdates = true
       }
     })
-
 
     var imageFiles = this.otherFiles.filter(f => f.filetype === 'image')
 
@@ -866,7 +884,7 @@ class Audiobook {
     return hasUpdated
   }
 
-  checkShouldScan(dataFound) {
+  checkScanData(dataFound) {
     var hasUpdated = false
 
     if (dataFound.ino !== this.ino) {

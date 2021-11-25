@@ -6,8 +6,7 @@ const Logger = require('../Logger')
 const { version } = require('../../package.json')
 const audioFileScanner = require('../utils/audioFileScanner')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('../utils/scandir')
-const { comparePaths, getIno, getId } = require('../utils/index')
-const { secondsToTimestamp } = require('../utils/fileUtils')
+const { comparePaths, getIno, getId, msToTimestamp } = require('../utils/index')
 const { ScanResult, CoverDestination } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
@@ -33,6 +32,20 @@ class Scanner {
     this.bookFinder = new BookFinder()
   }
 
+  getCoverDirectory(audiobook) {
+    if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
+      return {
+        fullPath: audiobook.fullPath,
+        relPath: '/s/book/' + audiobook.id
+      }
+    } else {
+      return {
+        fullPath: Path.posix.join(this.BookMetadataPath, audiobook.id),
+        relPath: Path.posix.join('/metadata', 'books', audiobook.id)
+      }
+    }
+  }
+
   async scan(libraryId, options = {}) {
     if (this.librariesScanning.includes(libraryId)) {
       Logger.error(`[Scanner] Already scanning ${libraryId}`)
@@ -53,14 +66,19 @@ class Scanner {
 
     var libraryScan = new LibraryScan()
     libraryScan.setData(library, scanOptions)
+    this.librariesScanning.push(libraryScan)
+
+    this.emitter('scan_start', libraryScan.getScanEmitData)
 
     Logger.info(`[Scanner] Starting library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    var results = await this.scanLibrary(libraryScan)
+    await this.scanLibrary(libraryScan)
 
-    Logger.info(`[Scanner] Library scan ${libraryScan.id} complete`)
+    libraryScan.setComplete()
+    Logger.info(`[Scanner] Library scan ${libraryScan.id} completed in ${libraryScan.elapsedTimestamp}. ${libraryScan.resultStats}`)
 
-    return results
+    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    this.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 
   async scanLibrary(libraryScan) {
@@ -77,9 +95,9 @@ class Scanner {
 
     var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === libraryScan.libraryId)
 
-    const audiobooksToUpdate = []
-    const audiobooksToRescan = []
-    const newAudiobookData = []
+    var audiobooksToUpdate = []
+    var audiobookRescans = []
+    var newAudiobookScans = []
 
     // Check for existing & removed audiobooks
     for (let i = 0; i < audiobooksInLibrary.length; i++) {
@@ -87,21 +105,20 @@ class Scanner {
       var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino || comparePaths(abd.path, audiobook.path))
       if (!dataFound) {
         Logger.info(`[Scanner] Audiobook "${audiobook.title}" is missing`)
-        audiobook.isMissing = true
-        audiobook.lastUpdate = Date.now()
-        scanResults.missing++
+        audiobook.setMissing()
         audiobooksToUpdate.push(audiobook)
       } else {
-        var checkRes = audiobook.checkShouldRescan(dataFound)
+        var checkRes = audiobook.checkScanData(dataFound)
         if (checkRes.newAudioFileData.length || checkRes.newOtherFileData.length) {
           // existing audiobook has new files
           checkRes.audiobook = audiobook
-          audiobooksToRescan.push(checkRes)
+          checkRes.bookScanData = dataFound
+          audiobookRescans.push(this.rescanAudiobook(checkRes, libraryScan))
+          libraryScan.resultsMissing++
         } else if (checkRes.updated) {
           audiobooksToUpdate.push(audiobook)
+          libraryScan.resultsUpdated++
         }
-
-        // Remove this abf
         audiobookDataFound = audiobookDataFound.filter(abf => abf.ino !== dataFound.ino)
       }
     }
@@ -113,60 +130,108 @@ class Scanner {
       if (!hasEbook && !dataFound.audioFiles.length) {
         Logger.info(`[Scanner] Directory found "${audiobookDataFound.path}" has no ebook or audio files`)
       } else {
-        newAudiobookData.push(dataFound)
+        newAudiobookScans.push(this.scanNewAudiobook(dataFound, libraryScan))
       }
     }
 
-    var rescans = []
-    for (let i = 0; i < audiobooksToRescan.length; i++) {
-      var rescan = this.rescanAudiobook(audiobooksToRescan[i])
-      rescans.push(rescan)
+    if (audiobookRescans.length) {
+      var updatedAudiobooks = (await Promise.all(audiobookRescans)).filter(ab => !!ab)
+      if (updatedAudiobooks.length) {
+        audiobooksToUpdate = audiobooksToUpdate.concat(updatedAudiobooks)
+        libraryScan.resultsUpdated += updatedAudiobooks.length
+      }
     }
-    var newscans = []
-    for (let i = 0; i < newAudiobookData.length; i++) {
-      var newscan = this.scanNewAudiobook(newAudiobookData[i])
-      newscans.push(newscan)
+    if (audiobooksToUpdate.length) {
+      Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" updating ${audiobooksToUpdate.length} books`)
+      await this.db.updateEntities('audiobook', audiobooksToUpdate)
     }
 
-    var rescanResults = await Promise.all(rescans)
-
-    var newscanResults = await Promise.all(newscans)
-
-    // TODO: Return report
-    return {
-      updates: 0,
-      additions: 0
+    if (newAudiobookScans.length) {
+      var newAudiobooks = (await Promise.all(newAudiobookScans)).filter(ab => !!ab)
+      if (newAudiobooks.length) {
+        Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" inserting ${newAudiobooks.length} books`)
+        await this.db.insertEntities('audiobook', newAudiobooks)
+        libraryScan.resultsAdded = newAudiobooks.length
+      }
     }
   }
 
-  // Return scan result payload
-  async rescanAudiobook(audiobookCheckData) {
-    const { newAudioFileData, newOtherFileData, audiobook } = audiobookCheckData
+  async rescanAudiobook(audiobookCheckData, libraryScan) {
+    const { newAudioFileData, newOtherFileData, audiobook, bookScanData } = audiobookCheckData
+    Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" Re-scanning "${audiobook.path}"`)
+
     if (newAudioFileData.length) {
-      var newAudioFiles = await this.scanAudioFiles(newAudioFileData)
-      // TODO: Update audiobook tracks
+      var audioScanResult = await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData)
+      Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" Book "${audiobook.path}" Audio file scan took ${msToTimestamp(audioScanResult.elapsed, true)} for ${audioScanResult.audioFiles.length} with average time of ${msToTimestamp(audioScanResult.averageScanDuration, true)}`)
+      if (audioScanResult.audioFiles.length) {
+        var totalAudioFilesToInclude = audiobook.audioFilesToInclude.length + audioScanResult.audioFiles.length
+
+        // validate & add audio files to audiobook
+        for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
+          var newAF = audioScanResult.audioFiles[i]
+          var trackIndex = newAF.validateTrackIndex(totalAudioFilesToInclude === 1)
+          if (trackIndex !== null) {
+            if (audiobook.checkHasTrackNum(trackIndex)) {
+              newAF.setDuplicateTrackNumber(trackIndex)
+            } else {
+              newAF.index = trackIndex
+            }
+          }
+          audiobook.addAudioFile(newAF)
+        }
+
+        audiobook.rebuildTracks()
+      }
     }
     if (newOtherFileData.length) {
-      // TODO: Check other files
+      await audiobook.syncOtherFiles(newOtherFileData, this.MetadataPath)
     }
-
-    return {
-      updated: true
-    }
+    return audiobook
   }
 
-  async scanNewAudiobook(audiobookData) {
-    // TODO: Return new audiobook
-    return null
-  }
+  async scanNewAudiobook(audiobookData, libraryScan) {
+    Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" Scanning new "${audiobookData.path}"`)
+    var audiobook = new Audiobook()
+    audiobook.setData(audiobookData)
 
-  async scanAudioFiles(audioFileData) {
-    var proms = []
-    for (let i = 0; i < audioFileData.length; i++) {
-      var prom = AudioFileScanner.scan(audioFileData[i])
-      proms.push(prom)
+    if (audiobookData.audioFiles.length) {
+      var audioScanResult = await AudioFileScanner.scanAudioFiles(audiobookData.audioFiles, audiobookData)
+      Logger.debug(`[Scanner] Library "${libraryScan.libraryName}" Book "${audiobookData.path}" Audio file scan took ${msToTimestamp(audioScanResult.elapsed, true)} for ${audioScanResult.audioFiles.length} with average time of ${msToTimestamp(audioScanResult.averageScanDuration, true)}`)
+      if (audioScanResult.audioFiles.length) {
+        // validate & add audio files to audiobook
+        for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
+          var newAF = audioScanResult.audioFiles[i]
+          var trackIndex = newAF.validateTrackIndex(audioScanResult.audioFiles.length === 1)
+          if (trackIndex !== null) {
+            if (audiobook.checkHasTrackNum(trackIndex)) {
+              newAF.setDuplicateTrackNumber(trackIndex)
+            } else {
+              newAF.index = trackIndex
+            }
+          }
+          audiobook.addAudioFile(newAF)
+        }
+        audiobook.rebuildTracks()
+      } else if (!audiobook.ebooks.length) {
+        // Audiobook has no ebooks and no valid audio tracks do not continue
+        Logger.warn(`[Scanner] Audiobook has no ebooks and no valid audio tracks "${audiobook.path}"`)
+        return null
+      }
     }
-    return Promise.all(proms)
+
+    // Look for desc.txt and reader.txt and update
+    await audiobook.saveDataFromTextFiles()
+
+    // Extract embedded cover art if cover is not already in directory
+    if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
+      var outputCoverDirs = this.getCoverDirectory(audiobook)
+      var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
+      if (relativeDir) {
+        Logger.debug(`[Scanner] Saved embedded cover art "${relativeDir}"`)
+      }
+    }
+
+    return audiobook
   }
 }
 module.exports = Scanner

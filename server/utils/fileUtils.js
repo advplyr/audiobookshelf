@@ -51,34 +51,6 @@ function bytesPretty(bytes, decimals = 0) {
 }
 module.exports.bytesPretty = bytesPretty
 
-function elapsedPretty(seconds) {
-  var minutes = Math.floor(seconds / 60)
-  if (minutes < 70) {
-    return `${minutes} min`
-  }
-  var hours = Math.floor(minutes / 60)
-  minutes -= hours * 60
-  if (!minutes) {
-    return `${hours} hr`
-  }
-  return `${hours} hr ${minutes} min`
-}
-module.exports.elapsedPretty = elapsedPretty
-
-function secondsToTimestamp(seconds) {
-  var _seconds = seconds
-  var _minutes = Math.floor(seconds / 60)
-  _seconds -= _minutes * 60
-  var _hours = Math.floor(_minutes / 60)
-  _minutes -= _hours * 60
-  _seconds = Math.floor(_seconds)
-  if (!_hours) {
-    return `${_minutes}:${_seconds.toString().padStart(2, '0')}`
-  }
-  return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
-}
-module.exports.secondsToTimestamp = secondsToTimestamp
-
 function setFileOwner(path, uid, gid) {
   try {
     return fs.chown(path, uid, gid).then(() => true)

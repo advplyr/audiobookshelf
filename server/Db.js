@@ -201,6 +201,20 @@ class Db {
     })
   }
 
+  insertEntities(entityName, entities) {
+    var entityDb = this.getEntityDb(entityName)
+    return entityDb.insert(entities).then((results) => {
+      Logger.debug(`[DB] Inserted ${results.inserted} ${entityName}`)
+
+      var arrayKey = this.getEntityArrayKey(entityName)
+      this[arrayKey] = this[arrayKey].concat(entities)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Failed to insert ${entityName}`, error)
+      return false
+    })
+  }
+
   insertEntity(entityName, entity) {
     var entityDb = this.getEntityDb(entityName)
     return entityDb.insert([entity]).then((results) => {
@@ -215,6 +229,26 @@ class Db {
     })
   }
 
+  updateEntities(entityName, entities) {
+    var entityDb = this.getEntityDb(entityName)
+
+    var entityIds = entities.map(ent => ent.id)
+    return entityDb.update((record) => entityIds.includes(record.id), (record) => {
+      return entities.find(ent => ent.id === record.id)
+    }).then((results) => {
+      Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
+      var arrayKey = this.getEntityArrayKey(entityName)
+      this[arrayKey] = this[arrayKey].map(e => {
+        if (entityIds.includes(e.id)) return entities.find(_e => _e.id === e.id)
+        return e
+      })
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Update ${entityName} Failed: ${error}`)
+      return false
+    })
+  }
+
   updateEntity(entityName, entity) {
     var entityDb = this.getEntityDb(entityName)
 
@@ -224,7 +258,7 @@ class Db {
     }
 
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
-      Logger.debug(`[DB] Updated entity ${entityName}: ${results.updated}`)
+      Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
       var arrayKey = this.getEntityArrayKey(entityName)
       this[arrayKey] = this[arrayKey].map(e => {
         return e.id === entity.id ? entity : e

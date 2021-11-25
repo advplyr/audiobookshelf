@@ -11,13 +11,14 @@ const { version } = require('../package.json')
 // Utils
 const { ScanResult } = require('./utils/constants')
 const filePerms = require('./utils/filePerms')
-const { secondsToTimestamp } = require('./utils/fileUtils')
+const { secondsToTimestamp } = require('./utils/index')
 const Logger = require('./Logger')
 
 // Classes
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./Scanner')
+const Scanner2 = require('./scanner/Scanner')
 const Db = require('./Db')
 const BackupManager = require('./BackupManager')
 const LogManager = require('./LogManager')
@@ -49,6 +50,8 @@ class Server {
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
+    this.scanner2 = new Scanner2(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
+
     this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
@@ -314,7 +317,8 @@ class Server {
 
   async scan(libraryId, forceAudioFileScan = false) {
     Logger.info('[Server] Starting Scan')
-    await this.scanner.scan(libraryId, forceAudioFileScan)
+    // await this.scanner2.scan(libraryId)
+    await this.scanner(libraryId, forceAudioFileScan)
     Logger.info('[Server] Scan complete')
   }
 

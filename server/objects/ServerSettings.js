@@ -12,6 +12,8 @@ class ServerSettings {
     // Scanner
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
+    this.scannerPreferAudioMetadata = false
+    this.scannerPreferOpfMetadata = false
 
     // Metadata
     this.coverDestination = CoverDestination.METADATA

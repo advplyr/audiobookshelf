@@ -45,6 +45,10 @@ module.exports.getIno = (path) => {
   })
 }
 
+module.exports.isNullOrNaN = (num) => {
+  return num === null || isNaN(num)
+}
+
 const xmlToJSON = (xml) => {
   return new Promise((resolve, reject) => {
     parseString(xml, (err, results) => {
@@ -64,3 +68,37 @@ module.exports.getId = (prepend = '') => {
   if (prepend) return prepend + '_' + _id
   return _id
 }
+
+function elapsedPretty(seconds) {
+  var minutes = Math.floor(seconds / 60)
+  if (minutes < 70) {
+    return `${minutes} min`
+  }
+  var hours = Math.floor(minutes / 60)
+  minutes -= hours * 60
+  if (!minutes) {
+    return `${hours} hr`
+  }
+  return `${hours} hr ${minutes} min`
+}
+module.exports.elapsedPretty = elapsedPretty
+
+function secondsToTimestamp(seconds, includeMs = false) {
+  var _seconds = seconds
+  var _minutes = Math.floor(seconds / 60)
+  _seconds -= _minutes * 60
+  var _hours = Math.floor(_minutes / 60)
+  _minutes -= _hours * 60
+
+  var ms = _seconds - Math.floor(seconds)
+  _seconds = Math.floor(_seconds)
+
+  var msString = '.' + (includeMs ? ms.toFixed(3) : '0.0').split('.')[1]
+  if (!_hours) {
+    return `${_minutes}:${_seconds.toString().padStart(2, '0')}${msString}`
+  }
+  return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}${msString}`
+}
+module.exports.secondsToTimestamp = secondsToTimestamp
+
+module.exports.msToTimestamp = (ms, includeMs) => secondsToTimestamp(ms / 1000, includeMs)

@@ -4,33 +4,35 @@ class ScanOptions {
   constructor(options) {
     this.forceRescan = false
 
-    this.metadataPrecedence = [
-      {
-        id: 'directory',
-        include: true
-      },
-      {
-        id: 'reader-desc-txt',
-        include: true
-      },
-      {
-        id: 'audio-file-metadata',
-        include: true
-      },
-      {
-        id: 'metadata-opf',
-        include: true
-      },
-      {
-        id: 'external-source',
-        include: false
-      }
-    ]
+    // this.metadataPrecedence = [
+    //   {
+    //     id: 'directory',
+    //     include: true
+    //   },
+    //   {
+    //     id: 'reader-desc-txt',
+    //     include: true
+    //   },
+    //   {
+    //     id: 'audio-file-metadata',
+    //     include: true
+    //   },
+    //   {
+    //     id: 'metadata-opf',
+    //     include: true
+    //   },
+    //   {
+    //     id: 'external-source',
+    //     include: false
+    //   }
+    // ]
 
     // Server settings
     this.parseSubtitles = false
     this.findCovers = false
     this.coverDestination = CoverDestination.METADATA
+    this.preferAudioMetadata = false
+    this.preferOpfMetadata = false
 
     if (options) {
       this.construct(options)
@@ -53,7 +55,9 @@ class ScanOptions {
       metadataPrecedence: this.metadataPrecedence,
       parseSubtitles: this.parseSubtitles,
       findCovers: this.findCovers,
-      coverDestination: this.coverDestination
+      coverDestination: this.coverDestination,
+      preferAudioMetadata: this.preferAudioMetadata,
+      preferOpfMetadata: this.preferOpfMetadata
     }
   }
 
@@ -63,6 +67,8 @@ class ScanOptions {
     this.parseSubtitles = !!serverSettings.scannerParseSubtitle
     this.findCovers = !!serverSettings.scannerFindCovers
     this.coverDestination = serverSettings.coverDestination
+    this.preferAudioMetadata = serverSettings.scannerPreferAudioMetadata
+    this.preferOpfMetadata = serverSettings.scannerPreferOpfMetadata
   }
 }
 module.exports = ScanOptions
