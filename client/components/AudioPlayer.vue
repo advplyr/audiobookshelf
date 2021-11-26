@@ -1,12 +1,12 @@
 <template>
-  <div class="w-full -mt-4">
-    <div class="w-full relative mb-2">
-      <div class="absolute top-0 left-0 w-full h-full bg-red flex items-end pointer-events-none">
+  <div class="w-full -mt-6">
+    <div class="w-full relative mb-1">
+      <!-- <div class="absolute top-0 left-0 w-full h-full bg-red flex items-end pointer-events-none">
         <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
         <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
         <div class="flex-grow" />
         <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
-      </div>
+      </div> -->
 
       <div v-if="chapters.length" class="hidden md:flex absolute right-20 top-0 bottom-0 h-full items-end">
         <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
@@ -59,7 +59,7 @@
       </div>
       <div ref="track" class="w-full h-2 relative overflow-hidden">
         <template v-for="(tick, index) in chapterTicks">
-          <div :key="index" :style="{ left: tick.left + 'px' }" class="absolute top-0 w-px bg-white bg-opacity-50 h-1 pointer-events-none" />
+          <div :key="index" :style="{ left: tick.left + 'px' }" class="absolute top-0 w-px bg-white bg-opacity-30 h-1 pointer-events-none" />
         </template>
       </div>
 
@@ -72,6 +72,14 @@
           <div class="arrow-down" />
         </div>
       </div>
+    </div>
+    <div class="flex">
+      <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
+      <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
+      <div class="flex-grow" />
+      <p class="text-sm text-gray-300 pt-0.5">{{ currentChapterName }}</p>
+      <div class="flex-grow" />
+      <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
     <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadedmetadata="audioLoadedMetadata" @loadeddata="audioLoadedData" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
@@ -131,7 +139,7 @@ export default {
     },
     timeRemaining() {
       if (!this.audioEl) return 0
-      return this.totalDuration - this.currentTime
+      return (this.totalDuration - this.currentTime) / this.playbackRate
     },
     timeRemainingPretty() {
       if (this.timeRemaining < 0) {
@@ -155,6 +163,9 @@ export default {
     },
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
+    },
+    currentChapterName() {
+      return this.currentChapter ? this.currentChapter.title : ''
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures

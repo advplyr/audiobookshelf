@@ -124,6 +124,8 @@ class FolderWatcher extends EventEmitter {
   }
 
   addFileUpdate(libraryId, path, type) {
+    console.log('add file update', libraryId, path, type)
+    return
     path = path.replace(/\\/g, '/')
     if (this.pendingFilePaths.includes(path)) return
 

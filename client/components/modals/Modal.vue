@@ -110,8 +110,8 @@ export default {
       this.$store.commit('setOpenModal', this.name)
     },
     setHide() {
-      this.content.style.transform = 'scale(0)'
-      this.el.remove()
+      if (this.content) this.content.style.transform = 'scale(0)'
+      if (this.el) this.el.remove()
       document.documentElement.classList.remove('modal-open')
 
       this.$eventBus.$off('modal-hotkey', this.hotkey)

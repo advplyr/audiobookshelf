@@ -6,7 +6,7 @@ const Audnexus = require('./providers/Audnexus')
 
 const { downloadFile } = require('./utils/fileUtils')
 
-class AuthorController {
+class AuthorFinder {
   constructor(MetadataPath) {
     this.MetadataPath = MetadataPath
     this.AuthorPath = Path.join(MetadataPath, 'authors')
@@ -16,7 +16,7 @@ class AuthorController {
 
   async downloadImage(url, outputPath) {
     return downloadFile(url, outputPath).then(() => true).catch((error) => {
-      Logger.error('[AuthorController] Failed to download author image', error)
+      Logger.error('[AuthorFinder] Failed to download author image', error)
       return null
     })
   }
@@ -50,7 +50,7 @@ class AuthorController {
       var success = await this.downloadImage(payload.image, outputPath)
       if (!success) {
         await fs.rmdir(authorDir).catch((error) => {
-          Logger.error(`[AuthorController] Failed to remove author dir`, authorDir, error)
+          Logger.error(`[AuthorFinder] Failed to remove author dir`, authorDir, error)
         })
         payload.image = null
         payload.imageFullPath = null
@@ -88,7 +88,7 @@ class AuthorController {
       var success = await this.downloadImage(authorData.image, outputPath)
       if (!success) {
         await fs.rmdir(authorDir).catch((error) => {
-          Logger.error(`[AuthorController] Failed to remove author dir`, authorDir, error)
+          Logger.error(`[AuthorFinder] Failed to remove author dir`, authorDir, error)
         })
         authorData.image = null
         authorData.imageFullPath = null
@@ -107,4 +107,4 @@ class AuthorController {
     return author
   }
 }
-module.exports = AuthorController
+module.exports = AuthorFinder

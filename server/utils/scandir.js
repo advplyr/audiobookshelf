@@ -206,7 +206,8 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
   */
   var volumeNumber = null
   if (series) {
-    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
+    // New volume regex to match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
+    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
     if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
       volumeNumber = volumeMatch[3]
       var replaceChunk = volumeMatch[2]
@@ -226,9 +227,6 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
 
 
   var publishYear = null
-  // OLD regex (not matching parentheses)
-  // var publishYearMatch = title.match(/^([0-9]{4}) - (.+)/)
-
   // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
   var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
   if (publishYearMatch && publishYearMatch.length > 2 && publishYearMatch[1]) {

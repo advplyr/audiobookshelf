@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="chapters" :width="500" :height="'unset'">
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <template v-for="chap in chapters">
-        <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer hover:bg-bg relative" :class="chap.id === currentChapterId ? 'bg-bg bg-opacity-80' : 'bg-opacity-20'" @click="clickChapter(chap)">
+        <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer hover:bg-bg relative" :class="chap.id === currentChapterId ? 'bg-yellow-400 bg-opacity-10' : chap.end <= currentChapterStart ? 'bg-success bg-opacity-5' : 'bg-opacity-20'" @click="clickChapter(chap)">
           {{ chap.title }}
           <span class="flex-grow" />
           <span class="font-mono text-sm text-gray-300">{{ $secondsToTimestamp(chap.start) }}</span>
@@ -46,6 +46,9 @@ export default {
     },
     currentChapterId() {
       return this.currentChapter ? this.currentChapter.id : null
+    },
+    currentChapterStart() {
+      return this.currentChapter ? this.currentChapter.start : 0
     }
   },
   methods: {

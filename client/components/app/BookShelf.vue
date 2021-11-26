@@ -1,5 +1,5 @@
 <template>
-  <div id="bookshelf" class="bookshelf overflow-hidden relative block max-h-full">
+  <div id="bookshelf" class="overflow-hidden relative block max-h-full">
     <div ref="wrapper" class="h-full w-full relative" :class="isGridMode ? 'overflow-y-scroll' : 'overflow-hidden'">
       <!-- Cover size widget -->
       <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
@@ -36,10 +36,10 @@
                     <cards-group-card v-else-if="showGroups" :key="entity.id" :width="bookCoverWidth" :group="entity" @click="clickGroup" />
 
                     <!-- <cards-book-3d :key="entity.id" v-else :width="100" :src="$store.getters['audiobooks/getBookCoverSrc'](entity.book)" /> -->
-                    <cards-book-card v-else :ref="`book-card-${entity.id}`" :key="entity.id" is-bookshelf-book :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" @hook:mounted="mountedBookCard(entity)" />
+                    <cards-book-card v-else :ref="`book-card-${entity.id}`" :key="entity.id" :is-bookshelf-book="!isSeries" :show-volume-number="!!selectedSeries" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @edit="editBook" @hook:mounted="mountedBookCard(entity)" />
                   </template>
                 </div>
-                <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-10" :class="isCollections ? 'h-6' : 'h-4'" />
+                <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-10" :class="isCollections || isSeriesGroups ? 'h-6' : 'h-4'" />
               </div>
             </template>
           </div>
@@ -158,6 +158,12 @@ export default {
     },
     isCollections() {
       return this.page === 'collections'
+    },
+    isSeries() {
+      return this.page === 'series'
+    },
+    isSeriesGroups() {
+      return this.isSeries && !this.selectedSeries
     },
     categorizedShelves() {
       if (this.page !== 'search') return []
@@ -448,17 +454,6 @@ export default {
 </script>
 
 <style>
-.bookshelf {
-  /* height: calc(100% - 40px); */
-  width: calc(100vw - 80px);
-}
-@media (max-width: 768px) {
-  .bookshelf {
-    /* height: calc(100% - 80px); */
-    width: 100vw;
-  }
-}
-
 .bookshelfRow {
   background-image: url(/wood_panels.jpg);
 }

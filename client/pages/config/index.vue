@@ -98,10 +98,10 @@ export default {
   },
   computed: {
     scannerPreferAudioMetaTooltip() {
-      return 'Audio file ID3 meta tags will be used for book details over folder & filenames'
+      return 'Audio file ID3 meta tags will be used for book details over folder names'
     },
     scannerPreferOpfMetaTooltip() {
-      return 'OPF file metadata will be used for book details over folder & filenames'
+      return 'OPF file metadata will be used for book details over folder names'
     },
     saveMetadataTooltip() {
       return 'This will write a "metadata.nfo" file in all of your audiobook directories.'

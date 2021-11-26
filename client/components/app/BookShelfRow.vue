@@ -9,13 +9,13 @@
         </div>
         <div v-else-if="shelf.series" class="flex items-center -mb-2">
           <template v-for="entity in shelf.series">
-            <cards-group-card :key="entity.name" :width="bookCoverWidth" :group="entity" @click="$emit('clickSeries', entity)" />
+            <cards-group-card is-search :key="entity.name" :width="bookCoverWidth" :group="entity" @click="$emit('clickSeries', entity)" />
           </template>
         </div>
         <div v-else-if="shelf.tags" class="flex items-center -mb-2">
           <template v-for="entity in shelf.tags">
             <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
-              <cards-group-card :width="bookCoverWidth" :group="entity" />
+              <cards-group-card is-search :width="bookCoverWidth" :group="entity" />
             </nuxt-link>
           </template>
         </div>
