@@ -26,7 +26,6 @@ class Scanner {
     this.coverController = coverController
     this.emitter = emitter
 
-    this.cancelScan = false
     this.cancelLibraryScan = {}
     this.librariesScanning = []
 
@@ -49,6 +48,12 @@ class Scanner {
 
   isLibraryScanning(libraryId) {
     return this.librariesScanning.find(ls => ls.id === libraryId)
+  }
+
+  setCancelLibraryScan(libraryId) {
+    var libraryScanning = this.librariesScanning.find(ls => ls.id === libraryId)
+    if (!libraryScanning) return
+    this.cancelLibraryScan[libraryId] = true
   }
 
   async scanAudiobookById(audiobookId) {

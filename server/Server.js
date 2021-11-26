@@ -334,7 +334,7 @@ class Server {
 
   cancelScan(id) {
     Logger.debug('[Server] Cancel scan', id)
-    this.scanner2.cancelLibraryScan[id] = true
+    this.scanner2.setCancelLibraryScan(id)
   }
 
   // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
