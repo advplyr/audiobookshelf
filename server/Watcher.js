@@ -24,8 +24,11 @@ class FolderWatcher extends EventEmitter {
       Logger.warn('[Watcher] Already watching library', library.name)
       return
     }
-    Logger.info(`[Watcher] Initializing watcher for "${library.name}"..`)
+    Logger.info(`[Watcher] Initializing watcher for "${library.name}".`)
     var folderPaths = library.folderPaths
+    folderPaths.forEach((fp) => {
+      Logger.debug(`[Watcher] Init watcher for library folder path "${fp}"`)
+    })
     var watcher = new Watcher(folderPaths, {
       ignored: /(^|[\/\\])\../, // ignore dotfiles
       renameDetection: true,
@@ -48,6 +51,8 @@ class FolderWatcher extends EventEmitter {
         Logger.error(`[Watcher] ${error}`)
       }).on('ready', () => {
         Logger.info(`[Watcher] "${library.name}" Ready`)
+      }).on('close', () => {
+        Logger.debug(`[Watcher] "${library.name}" Closed`)
       })
 
     this.libraryWatchers.push({

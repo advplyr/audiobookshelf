@@ -311,19 +311,18 @@ class Server {
 
   async filesChanged(fileUpdates) {
     Logger.info('[Server]', fileUpdates.length, 'Files Changed')
-    await this.scanner.filesChanged(fileUpdates)
-    // Logger.debug('[Server] Files changed result', result)
+    await this.scanner2.scanFilesChanged(fileUpdates)
   }
 
-  async scan(libraryId, forceAudioFileScan = false) {
+  async scan(libraryId) {
     Logger.info('[Server] Starting Scan')
-    // await this.scanner2.scan(libraryId)
-    await this.scanner(libraryId, forceAudioFileScan)
+    await this.scanner2.scan(libraryId)
+    // await this.scanner.scan(libraryId)
     Logger.info('[Server] Scan complete')
   }
 
   async scanAudiobook(socket, audiobookId) {
-    var result = await this.scanner.scanAudiobookById(audiobookId)
+    var result = await this.scanner2.scanAudiobookById(audiobookId)
     var scanResultName = ''
     for (const key in ScanResult) {
       if (ScanResult[key] === result) {
@@ -335,7 +334,7 @@ class Server {
 
   cancelScan(id) {
     Logger.debug('[Server] Cancel scan', id)
-    this.scanner.cancelLibraryScan[id] = true
+    this.scanner2.cancelLibraryScan[id] = true
   }
 
   // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
@@ -624,7 +623,7 @@ class Server {
       configPath: this.ConfigPath,
       user: client.user.toJSONForBrowser(),
       stream: client.stream || null,
-      librariesScanning: this.scanner.librariesScanning,
+      librariesScanning: this.scanner2.librariesScanning,
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }
     if (user.type === 'root') {

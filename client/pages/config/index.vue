@@ -22,6 +22,20 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferAudioMeta" />
+        <ui-tooltip :text="scannerPreferAudioMetaTooltip">
+          <p class="pl-4 text-lg">Scanner prefer audio metadata <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
+        <ui-tooltip :text="scannerPreferOpfMetaTooltip">
+          <p class="pl-4 text-lg">Scanner prefer OPF metadata <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
         <ui-tooltip :text="coverDestinationTooltip">
           <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
@@ -83,6 +97,12 @@ export default {
     }
   },
   computed: {
+    scannerPreferAudioMetaTooltip() {
+      return 'Audio file ID3 meta tags will be used for book details over folder & filenames'
+    },
+    scannerPreferOpfMetaTooltip() {
+      return 'OPF file metadata will be used for book details over folder & filenames'
+    },
     saveMetadataTooltip() {
       return 'This will write a "metadata.nfo" file in all of your audiobook directories.'
     },
@@ -127,6 +147,16 @@ export default {
         scannerParseSubtitle: !!val
       })
     },
+    updateScannerPreferAudioMeta(val) {
+      this.updateServerSettings({
+        scannerPreferAudioMetadata: !!val
+      })
+    },
+    updateScannerPreferOpfMeta(val) {
+      this.updateServerSettings({
+        scannerPreferOpfMetadata: !!val
+      })
+    },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
@@ -143,7 +173,6 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
 
-      this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
     },
     resetAudiobooks() {

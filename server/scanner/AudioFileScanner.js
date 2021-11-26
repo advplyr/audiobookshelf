@@ -4,7 +4,7 @@ const AudioFile = require('../objects/AudioFile')
 
 const prober = require('../utils/prober')
 const Logger = require('../Logger')
-const { msToTimestamp } = require('../utils')
+const { LogLevel } = require('../utils/constants')
 
 class AudioFileScanner {
   constructor() { }
@@ -80,6 +80,9 @@ class AudioFileScanner {
     audioFileData.trackNumFromFilename = this.getTrackNumberFromFilename(bookScanData, audioFileData.filename)
     audioFileData.cdNumFromFilename = this.getCdNumberFromFilename(bookScanData, audioFileData.filename)
     audioFile.setDataFromProbe(audioFileData, probeData)
+    if (audioFile.embeddedCoverArt) {
+
+    }
     return {
       audioFile,
       elapsed: Date.now() - probeStart
@@ -87,12 +90,11 @@ class AudioFileScanner {
   }
 
 
-  // Returns array of { AudioFile, elapsed } from audio file scan objects
-  async scanAudioFiles(audioFileDataArray, bookScanData) {
+  // Returns array of { AudioFile, elapsed, averageScanDuration } from audio file scan objects
+  async executeAudioFileScans(audioFileDataArray, bookScanData) {
     var proms = []
     for (let i = 0; i < audioFileDataArray.length; i++) {
-      var prom = this.scan(audioFileDataArray[i], bookScanData)
-      proms.push(prom)
+      proms.push(this.scan(audioFileDataArray[i], bookScanData))
     }
     var scanStart = Date.now()
     var results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
@@ -101,6 +103,63 @@ class AudioFileScanner {
       elapsed: Date.now() - scanStart,
       averageScanDuration: this.getAverageScanDurationMs(results)
     }
+  }
+
+  async scanAudioFiles(audioFileDataArray, bookScanData, audiobook, preferAudioMetadata, libraryScan = null) {
+    var hasUpdated = false
+
+    var audioScanResult = await this.executeAudioFileScans(audioFileDataArray, bookScanData)
+    if (audioScanResult.audioFiles.length) {
+      if (libraryScan) {
+        libraryScan.addLog(LogLevel.DEBUG, `Book "${bookScanData.path}" Audio file scan took ${audioScanResult.elapsed}ms for ${audioScanResult.audioFiles.length} with average time of ${audioScanResult.averageScanDuration}ms`)
+      }
+
+      var totalAudioFilesToInclude = audiobook.audioFilesToInclude.filter(af => !audioScanResult.audioFiles.find(_af => _af.ino === af.ino)).length + audioScanResult.audioFiles.length
+
+      // validate & add/update audio files to audiobook
+      for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
+        var newAF = audioScanResult.audioFiles[i]
+        var existingAF = audiobook.getAudioFileByIno(newAF.ino)
+
+        var trackIndex = null
+        if (totalAudioFilesToInclude === 1) { // Single track audiobooks
+          trackIndex = 1
+        } else if (existingAF && existingAF.manuallyVerified) { // manually verified audio files use existing index
+          trackIndex = existingAF.index
+        } else {
+          trackIndex = newAF.validateTrackIndex()
+        }
+
+        if (trackIndex !== null) {
+          if (audiobook.checkHasTrackNum(trackIndex, newAF.ino)) {
+            newAF.setDuplicateTrackNumber(trackIndex)
+          } else {
+            newAF.index = trackIndex
+          }
+        }
+        if (existingAF) {
+          if (audiobook.updateAudioFile(newAF)) {
+            // console.log('update dauido file')
+            hasUpdated = true
+          }
+        } else {
+          audiobook.addAudioFile(newAF)
+          // console.log('added auido file')
+          hasUpdated = true
+        }
+      }
+
+      if (hasUpdated) {
+        audiobook.rebuildTracks()
+      }
+
+      // Set book details from audio file ID3 tags, optional prefer
+      if (audiobook.setDetailsFromFileMetadata(preferAudioMetadata)) {
+        hasUpdated = true
+      }
+
+    }
+    return hasUpdated
   }
 }
 module.exports = new AudioFileScanner()

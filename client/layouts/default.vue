@@ -104,11 +104,23 @@ export default {
       if (payload.serverSettings) {
         this.$store.commit('setServerSettings', payload.serverSettings)
       }
+
+      // Start scans currently running
       if (payload.librariesScanning) {
         payload.librariesScanning.forEach((libraryScan) => {
           this.scanStart(libraryScan)
         })
       }
+
+      // Remove any current scans that are no longer running
+      var currentScans = [...this.$store.state.scanners.libraryScans]
+      currentScans.forEach((ls) => {
+        if (!payload.librariesScanning || !payload.librariesScanning.find((_ls) => _ls.id === ls.id)) {
+          this.$toast.dismiss(ls.toastId)
+          this.$store.commit('scanners/remove', ls)
+        }
+      })
+
       if (payload.backups && payload.backups.length) {
         this.$store.commit('setBackups', payload.backups)
       }
@@ -152,6 +164,16 @@ export default {
       }
       this.$store.commit('audiobooks/remove', audiobook)
     },
+    audiobooksAdded(audiobooks) {
+      audiobooks.forEach((ab) => {
+        this.$store.commit('audiobooks/addUpdate', ab)
+      })
+    },
+    audiobooksUpdated(audiobooks) {
+      audiobooks.forEach((ab) => {
+        this.$store.commit('audiobooks/addUpdate', ab)
+      })
+    },
     libraryAdded(library) {
       this.$store.commit('libraries/addUpdate', library)
     },
@@ -162,6 +184,8 @@ export default {
       this.$store.commit('libraries/remove', library)
     },
     scanComplete(data) {
+      console.log('Scan complete received', data)
+
       var message = `Scan "${data.name}" complete!`
       if (data.results) {
         var scanResultMsgs = []
@@ -337,6 +361,8 @@ export default {
       this.socket.on('audiobook_updated', this.audiobookUpdated)
       this.socket.on('audiobook_added', this.audiobookAdded)
       this.socket.on('audiobook_removed', this.audiobookRemoved)
+      this.socket.on('audiobooks_updated', this.audiobooksUpdated)
+      this.socket.on('audiobooks_added', this.audiobooksAdded)
 
       // Library Listeners
       this.socket.on('library_updated', this.libraryUpdated)

@@ -43,6 +43,7 @@ class Book {
   get _genres() { return this.genres || [] }
 
   get shouldSearchForCover() {
+    if (this.cover) return false
     if (this.authorFL !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true
     var timeSinceLastSearch = Date.now() - this.lastCoverSearch
     return timeSinceLastSearch > 1000 * 60 * 60 * 24 * 7 // every 7 days do another lookup
@@ -297,7 +298,7 @@ class Book {
     return [genreTag]
   }
 
-  setDetailsFromFileMetadata(audioFileMetadata) {
+  setDetailsFromFileMetadata(audioFileMetadata, overrideExistingDetails = false) {
     const MetadataMapArray = [
       {
         tag: 'tagComposer',
@@ -318,6 +319,10 @@ class Book {
       {
         tag: 'tagSubtitle',
         key: 'subtitle'
+      },
+      {
+        tag: 'tagAlbum',
+        key: 'title',
       },
       {
         tag: 'tagArtist',
@@ -342,12 +347,12 @@ class Book {
     MetadataMapArray.forEach((mapping) => {
       if (audioFileMetadata[mapping.tag]) {
         // Genres can contain multiple
-        if (mapping.key === 'genres' && (!this[mapping.key].length || !this[mapping.key])) {
+        if (mapping.key === 'genres' && (!this[mapping.key].length || !this[mapping.key] || overrideExistingDetails)) {
           updatePayload[mapping.key] = this.parseGenresTag(audioFileMetadata[mapping.tag])
-          Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
-        } else if (!this[mapping.key]) {
+          // Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
+        } else if (!this[mapping.key] || overrideExistingDetails) {
           updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
-          Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+          // Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
         }
       }
     })

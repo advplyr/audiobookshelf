@@ -35,7 +35,6 @@ class AudioProbeData {
 
   setData(data) {
     var audioStream = this.getDefaultAudioStream(data.audio_streams)
-
     this.embeddedCoverArt = data.video_stream ? this.getEmbeddedCoverArt(data.video_stream) : false
     this.format = data.format
     this.duration = data.duration

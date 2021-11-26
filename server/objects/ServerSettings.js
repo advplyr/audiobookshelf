@@ -46,6 +46,9 @@ class ServerSettings {
     this.newTagExpireDays = settings.newTagExpireDays
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerParseSubtitle = settings.scannerParseSubtitle
+    this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
+    this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
+
     this.coverDestination = settings.coverDestination || CoverDestination.METADATA
     this.saveMetadataFile = !!settings.saveMetadataFile
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
@@ -73,6 +76,8 @@ class ServerSettings {
       newTagExpireDays: this.newTagExpireDays,
       scannerFindCovers: this.scannerFindCovers,
       scannerParseSubtitle: this.scannerParseSubtitle,
+      scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
+      scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
       coverDestination: this.coverDestination,
       saveMetadataFile: !!this.saveMetadataFile,
       rateLimitLoginRequests: this.rateLimitLoginRequests,

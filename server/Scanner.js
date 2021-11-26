@@ -196,7 +196,7 @@ class Scanner {
 
     // Sync other files (all files that are not audio files) - Updates cover path
     var hasOtherFileUpdates = false
-    var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles, this.MetadataPath, forceAudioFileScan)
+    var otherFilesUpdated = await existingAudiobook.syncOtherFiles(audiobookData.otherFiles, this.MetadataPath, false, forceAudioFileScan)
     if (otherFilesUpdated) {
       hasOtherFileUpdates = true
     }
@@ -250,7 +250,7 @@ class Scanner {
     var hasUpdates = hasOtherFileUpdates || hasUpdatedIno || hasUpdatedLibraryOrFolder || removedAudioFiles.length || removedAudioTracks.length || newAudioFiles.length || hasUpdatedAudioFiles
 
     // Check that audio tracks are in sequential order with no gaps
-    if (existingAudiobook.checkUpdateMissingParts()) {
+    if (existingAudiobook.checkUpdateMissingTracks()) {
       Logger.info(`[Scanner] "${existingAudiobook.title}" missing parts updated`)
       hasUpdates = true
     }
@@ -299,7 +299,7 @@ class Scanner {
     }
 
     // Look for desc.txt and reader.txt and update
-    await audiobook.saveDataFromTextFiles()
+    await audiobook.saveDataFromTextFiles(false)
 
     // Extract embedded cover art if cover is not already in directory
     if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
@@ -314,7 +314,7 @@ class Scanner {
     audiobook.setDetailsFromFileMetadata()
 
     // Check for gaps in track numbers
-    audiobook.checkUpdateMissingParts()
+    audiobook.checkUpdateMissingTracks()
 
     // Set chapters from audio files
     audiobook.setChapters()
@@ -671,11 +671,6 @@ class Scanner {
       var folder = library.getFolderById(folderId)
       if (!folder) {
         Logger.error(`[Scanner] Folder is not in library in files changed "${folderId}", Library "${library.name}"`)
-
-        Logger.debug(`Looking at folders in library "${library.name}" for folderid ${folderId}`)
-        library.folders.forEach((fold) => {
-          Logger.debug(`Folder "${fold.id}" "${fold.fullPath}"`)
-        })
         continue;
       }
 

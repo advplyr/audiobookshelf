@@ -353,6 +353,11 @@ class Audiobook {
     this.lastUpdate = Date.now()
   }
 
+  setInvalid() {
+    this.isInvalid = true
+    this.lastUpdate = Date.now()
+  }
+
   setBook(data) {
     // Use first image file as cover
     if (this.otherFiles && this.otherFiles.length) {
@@ -400,6 +405,11 @@ class Audiobook {
     }
   }
 
+  updateAudioFile(updatedAudioFile) {
+    var audioFile = this.audioFiles.find(af => af.ino === updatedAudioFile.ino)
+    return audioFile.updateFromScan(updatedAudioFile)
+  }
+
   addOtherFile(fileData) {
     var file = new AudiobookFile()
     file.setData(fileData)
@@ -437,8 +447,8 @@ class Audiobook {
     return this.book.updateCover(cover, coverFullPath)
   }
 
-  checkHasTrackNum(trackNum) {
-    return this.tracks.find(t => t.index === trackNum)
+  checkHasTrackNum(trackNum, excludeIno) {
+    return this._audioFiles.find(t => t.index === trackNum && t.ino !== excludeIno)
   }
 
   updateAudioTracks(orderedFileData) {
@@ -473,6 +483,7 @@ class Audiobook {
       }
     })
     this.setChapters()
+    this.checkUpdateMissingTracks()
     this.lastUpdate = Date.now()
   }
 
@@ -486,7 +497,7 @@ class Audiobook {
     this.audioFiles = this.audioFiles.filter(f => f.ino !== track.ino)
   }
 
-  checkUpdateMissingParts() {
+  checkUpdateMissingTracks() {
     var currMissingParts = (this.missingParts || []).join(',') || ''
 
     var current_index = 1
@@ -515,13 +526,14 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles, metadataPath, forceRescan = false) {
+  async syncOtherFiles(newOtherFiles, metadataPath, opfMetadataOverrideDetails, forceRescan = false) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
 
-    var alreadyHasDescTxt = this.otherFiles.find(of => of.filename === 'desc.txt')
-    var alreadyHasReaderTxt = this.otherFiles.find(of => of.filename === 'reader.txt')
+    var otherFilenamesAlreadyInBook = this.otherFiles.map(ofile => ofile.filename)
+    var alreadyHasDescTxt = otherFilenamesAlreadyInBook.includes('desc.txt')
+    var alreadyHasReaderTxt = otherFilenamesAlreadyInBook.includes('reader.txt')
 
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
@@ -553,21 +565,22 @@ class Audiobook {
       }
     }
 
+    // If OPF file and was not already there
     var metadataOpf = newOtherFiles.find(file => file.ext === '.opf' || file.filename === 'metadata.xml')
-    if (metadataOpf) {
+    if (metadataOpf && (!otherFilenamesAlreadyInBook.includes(metadataOpf.filename) || opfMetadataOverrideDetails)) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
       if (xmlText) {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
-        Logger.debug(`[Audiobook] Sync Other File "${metadataOpf.filename}" parsed:`, opfMetadata)
+        // Logger.debug(`[Audiobook] Sync Other File "${metadataOpf.filename}" parsed:`, opfMetadata)
         if (opfMetadata) {
           const bookUpdatePayload = {}
           for (const key in opfMetadata) {
             // Add genres only if genres are empty
             if (key === 'genres') {
-              if (opfMetadata.genres.length && !this.book._genres.length) {
+              if (opfMetadata.genres.length && (!this.book._genres.length || opfMetadataOverrideDetails)) {
                 bookUpdatePayload[key] = opfMetadata.genres
               }
-            } else if (opfMetadata[key] && !this.book[key]) {
+            } else if (opfMetadata[key] && (!this.book[key] || opfMetadataOverrideDetails)) {
               bookUpdatePayload[key] = opfMetadata[key]
             }
           }
@@ -789,7 +802,7 @@ class Audiobook {
   }
 
   // Look for desc.txt and reader.txt and update details if found
-  async saveDataFromTextFiles() {
+  async saveDataFromTextFiles(opfMetadataOverrideDetails) {
     var bookUpdatePayload = {}
     var descriptionText = await this.fetchTextFromTextFile('desc.txt')
     if (descriptionText) {
@@ -807,15 +820,15 @@ class Audiobook {
       var xmlText = await readTextFile(metadataOpf.fullPath)
       if (xmlText) {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
-        Logger.debug(`[Audiobook] "${this.title}" found "${metadataOpf.filename}" parsed:`, opfMetadata)
+        // Logger.debug(`[Audiobook] "${this.title}" found "${metadataOpf.filename}" parsed:`, opfMetadata)
         if (opfMetadata) {
           for (const key in opfMetadata) {
             // Add genres only if genres are empty
             if (key === 'genres') {
-              if (opfMetadata.genres.length && !this.book._genres.length) {
+              if (opfMetadata.genres.length && (!this.book._genres.length || opfMetadataOverrideDetails)) {
                 bookUpdatePayload[key] = opfMetadata.genres
               }
-            } else if (opfMetadata[key] && !this.book[key] && !bookUpdatePayload[key]) {
+            } else if (opfMetadata[key] && ((!this.book[key] && !bookUpdatePayload[key]) || opfMetadataOverrideDetails)) {
               bookUpdatePayload[key] = opfMetadata[key]
             }
           }
@@ -836,10 +849,10 @@ class Audiobook {
   }
 
   // Audio file metadata tags map to book details (will not overwrite)
-  setDetailsFromFileMetadata() {
+  setDetailsFromFileMetadata(overrideExistingDetails = false) {
     if (!this.audioFiles.length) return false
     var audioFile = this.audioFiles[0]
-    return this.book.setDetailsFromFileMetadata(audioFile.metadata)
+    return this.book.setDetailsFromFileMetadata(audioFile.metadata, overrideExistingDetails)
   }
 
   // Returns null if file not found, true if file was updated, false if up to date
@@ -884,8 +897,14 @@ class Audiobook {
     return hasUpdated
   }
 
-  checkScanData(dataFound) {
+  checkScanData(dataFound, version) {
     var hasUpdated = false
+
+    if (this.isMissing) {
+      // Audiobook no longer missing
+      this.isMissing = false
+      hasUpdated = true
+    }
 
     if (dataFound.ino !== this.ino) {
       this.ino = dataFound.ino
@@ -916,7 +935,7 @@ class Audiobook {
       var audioFileFoundCheck = this.checkFileFound(af, true)
       if (audioFileFoundCheck === null) {
         newAudioFileData.push(af)
-      } else if (audioFileFoundCheck === true) {
+      } else if (audioFileFoundCheck) {
         hasUpdated = true
       }
     })
@@ -925,7 +944,7 @@ class Audiobook {
       var fileFoundCheck = this.checkFileFound(otherFileData, false)
       if (fileFoundCheck === null) {
         newOtherFileData.push(otherFileData)
-      } else if (fileFoundCheck === true) {
+      } else if (fileFoundCheck) {
         hasUpdated = true
       }
     })
@@ -933,7 +952,7 @@ class Audiobook {
     const audioFilesRemoved = []
     const otherFilesRemoved = []
 
-    // inodes will all be up to date at this point
+    // Remove audio files not found (inodes will all be up to date at this point)
     this.audioFiles = this.audioFiles.filter(af => {
       if (!dataFound.audioFiles.find(_af => _af.ino === af.ino)) {
         audioFilesRemoved.push(af.toJSON())
@@ -946,10 +965,11 @@ class Audiobook {
     if (audioFilesRemoved.length) {
       const audioFilesRemovedInodes = audioFilesRemoved.map(afr => afr.ino)
       this.tracks = this.tracks.filter(t => !audioFilesRemovedInodes.includes(t.ino))
-      this.checkUpdateMissingParts()
+      this.checkUpdateMissingTracks()
       hasUpdated = true
     }
 
+    // Remove other files not found
     this.otherFiles = this.otherFiles.filter(otherFile => {
       if (!dataFound.otherFiles.find(_otherFile => _otherFile.ino === otherFile.ino)) {
         otherFilesRemoved.push(otherFile.toJSON())
@@ -967,6 +987,15 @@ class Audiobook {
 
     if (otherFilesRemoved.length) {
       hasUpdated = true
+    }
+
+    // Check if invalid (has no audio files or ebooks)
+    if (!this.audioFilesToInclude.length && !this.ebooks.length && !newAudioFileData.length && !newOtherFileData.length) {
+      this.isInvalid = true
+    }
+
+    if (hasUpdated) {
+      this.setLastScan(version)
     }
 
     return {

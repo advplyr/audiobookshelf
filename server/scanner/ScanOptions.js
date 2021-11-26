@@ -4,29 +4,6 @@ class ScanOptions {
   constructor(options) {
     this.forceRescan = false
 
-    // this.metadataPrecedence = [
-    //   {
-    //     id: 'directory',
-    //     include: true
-    //   },
-    //   {
-    //     id: 'reader-desc-txt',
-    //     include: true
-    //   },
-    //   {
-    //     id: 'audio-file-metadata',
-    //     include: true
-    //   },
-    //   {
-    //     id: 'metadata-opf',
-    //     include: true
-    //   },
-    //   {
-    //     id: 'external-source',
-    //     include: false
-    //   }
-    // ]
-
     // Server settings
     this.parseSubtitles = false
     this.findCovers = false

@@ -165,9 +165,9 @@ class AudioFile {
     this.fullPath = fileData.fullPath
     this.addedAt = Date.now()
 
-    this.trackNumFromMeta = fileData.trackNumFromMeta || null
-    this.trackNumFromFilename = fileData.trackNumFromFilename || null
-    this.cdNumFromFilename = fileData.cdNumFromFilename || null
+    this.trackNumFromMeta = fileData.trackNumFromMeta
+    this.trackNumFromFilename = fileData.trackNumFromFilename
+    this.cdNumFromFilename = fileData.cdNumFromFilename
 
     this.format = probeData.format
     this.duration = probeData.duration
@@ -180,15 +180,13 @@ class AudioFile {
     this.channelLayout = probeData.channelLayout
     this.chapters = probeData.chapters || []
     this.metadata = probeData.audioFileMetadata
+    this.embeddedCoverArt = probeData.embeddedCoverArt
   }
 
-  validateTrackIndex(isSingleTrack) {
+  validateTrackIndex() {
     var numFromMeta = isNullOrNaN(this.trackNumFromMeta) ? null : Number(this.trackNumFromMeta)
     var numFromFilename = isNullOrNaN(this.trackNumFromFilename) ? null : Number(this.trackNumFromFilename)
 
-    if (isSingleTrack) { // Single audio track audiobook only use metadata tag and default to 1
-      return numFromMeta ? numFromMeta : 1
-    }
     if (numFromMeta !== null) return numFromMeta
     if (numFromFilename !== null) return numFromFilename
 
@@ -283,6 +281,34 @@ class AudioFile {
       }
     })
     return hasUpdates
+  }
+
+  updateFromScan(scannedAudioFile) {
+    var hasUpdated = false
+
+    var newjson = scannedAudioFile.toJSON()
+    if (this.manuallyVerified) newjson.manuallyVerified = true
+    if (this.exclude) newjson.exclude = true
+    newjson.addedAt = this.addedAt
+
+    for (const key in newjson) {
+      if (key === 'metadata') {
+        if (!this.metadata || !this.metadata.isEqual(scannedAudioFile.metadata)) {
+          this.metadata = scannedAudioFile.metadata
+          hasUpdated = true
+          // console.log('metadata updated for audio file')
+        }
+      } else if (key === 'chapters') {
+        if (this.syncChapters(newjson.chapters || [])) {
+          hasUpdated = true
+        }
+      } else if (this[key] !== newjson[key]) {
+        this[key] = newjson[key]
+        hasUpdated = true
+        // console.log('key', key, 'updated', this[key], newjson[key])
+      }
+    }
+    return hasUpdated
   }
 }
 module.exports = AudioFile

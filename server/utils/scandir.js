@@ -16,7 +16,7 @@ function isBookFile(path) {
 // TODO: Function needs to be re-done
 // Input: array of relative file paths
 // Output: map of files grouped into potential audiobook dirs
-function groupFilesIntoAudiobookPaths(paths, useAllFileTypes = false) {
+function groupFilesIntoAudiobookPaths(paths) {
   // Step 1: Clean path, Remove leading "/", Filter out files in root dir
   var pathsFiltered = paths.map(path => {
     return path.startsWith('/') ? path.slice(1) : path

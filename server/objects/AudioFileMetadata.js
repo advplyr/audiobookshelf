@@ -101,5 +101,13 @@ class AudioFileMetadata {
     }
     return hasUpdates
   }
+
+  isEqual(audioFileMetadata) {
+    if (!audioFileMetadata || !audioFileMetadata.toJSON) return false
+    for (const key in audioFileMetadata.toJSON()) {
+      if (audioFileMetadata[key] !== this[key]) return false
+    }
+    return true
+  }
 }
 module.exports = AudioFileMetadata
