@@ -153,7 +153,7 @@ function parseTags(format, verbose) {
     file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
     file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
     file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
-    file_tag_albumartist: tryGrabTags(format, 'albumartist', 'tpe2'),
+    file_tag_albumartist: tryGrabTags(format, 'albumartist', 'album_artist', 'tpe2'),
     file_tag_date: tryGrabTags(format, 'date', 'tyer', 'tye'),
     file_tag_composer: tryGrabTags(format, 'composer', 'tcom', 'tcm'),
     file_tag_publisher: tryGrabTags(format, 'publisher', 'tpub', 'tpb'),

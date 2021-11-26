@@ -296,7 +296,6 @@ class AudioFile {
         if (!this.metadata || !this.metadata.isEqual(scannedAudioFile.metadata)) {
           this.metadata = scannedAudioFile.metadata
           hasUpdated = true
-          // console.log('metadata updated for audio file')
         }
       } else if (key === 'chapters') {
         if (this.syncChapters(newjson.chapters || [])) {

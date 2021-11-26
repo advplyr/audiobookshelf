@@ -322,10 +322,12 @@ class Book {
       },
       {
         tag: 'tagAlbum',
+        altTag: 'tagTitle',
         key: 'title',
       },
       {
         tag: 'tagArtist',
+        altTag: 'tagAlbumArtist',
         key: 'author'
       },
       {
@@ -343,16 +345,23 @@ class Book {
     ]
 
     var updatePayload = {}
+
     // Metadata is only mapped to the book if it is empty
     MetadataMapArray.forEach((mapping) => {
-      if (audioFileMetadata[mapping.tag]) {
+      var value = audioFileMetadata[mapping.tag]
+      var tagToUse = mapping.tag
+      if (!value && mapping.altTag) {
+        value = audioFileMetadata[mapping.altTag]
+        tagToUse = mapping.altTag
+      }
+      if (value) {
         // Genres can contain multiple
         if (mapping.key === 'genres' && (!this[mapping.key].length || !this[mapping.key] || overrideExistingDetails)) {
-          updatePayload[mapping.key] = this.parseGenresTag(audioFileMetadata[mapping.tag])
-          // Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
+          updatePayload[mapping.key] = this.parseGenresTag(audioFileMetadata[tagToUse])
+          // Logger.debug(`[Book] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload[mapping.key].join(',')}`)
         } else if (!this[mapping.key] || overrideExistingDetails) {
-          updatePayload[mapping.key] = audioFileMetadata[mapping.tag]
-          // Logger.debug(`[Book] Mapping metadata to key ${mapping.tag} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+          updatePayload[mapping.key] = audioFileMetadata[tagToUse]
+          // Logger.debug(`[Book] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload[mapping.key]}`)
         }
       }
     })
