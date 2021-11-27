@@ -37,7 +37,7 @@
           <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="forward10">
             <span class="material-icons text-3xl">forward_10</span>
           </div>
-          <controls-playback-speed-control v-model="playbackRate" @change="playbackRateChanged" />
+          <controls-playback-speed-control v-model="playbackRate" @input="playbackRateUpdated" @change="playbackRateChanged" />
         </template>
         <template v-else>
           <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
@@ -341,6 +341,9 @@ export default {
       } else {
         console.error('No Audio El updatePlaybackRate')
       }
+    },
+    playbackRateUpdated(playbackRate) {
+      this.updatePlaybackRate(playbackRate)
     },
     playbackRateChanged(playbackRate) {
       this.updatePlaybackRate(playbackRate)

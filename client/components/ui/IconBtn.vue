@@ -68,4 +68,7 @@ button.icon-btn:hover:not(:disabled)::before {
 button.icon-btn:disabled::before {
   background-color: rgba(0, 0, 0, 0.2);
 }
+button.icon-btn:disabled span {
+  color: #777;
+}
 </style>
