@@ -149,15 +149,14 @@ class AudioFileScanner {
         }
       }
 
-      if (hasUpdated) {
-        audiobook.rebuildTracks()
-      }
-
       // Set book details from audio file ID3 tags, optional prefer
       if (audiobook.setDetailsFromFileMetadata(preferAudioMetadata)) {
         hasUpdated = true
       }
 
+      if (hasUpdated) {
+        audiobook.rebuildTracks()
+      }
     }
     return hasUpdated
   }

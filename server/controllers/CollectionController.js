@@ -13,7 +13,7 @@ class CollectionController {
     }
     var jsonExpanded = newCollection.toJSONExpanded(this.db.audiobooks)
     await this.db.insertEntity('collection', newCollection)
-    this.clientEmitter(req.user.id, 'collection_added', jsonExpanded)
+    this.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -40,7 +40,7 @@ class CollectionController {
     var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
     if (wasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+      this.emitter('collection_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
@@ -52,7 +52,7 @@ class CollectionController {
     }
     var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
     await this.db.removeEntity('collection', collection.id)
-    this.clientEmitter(req.user.id, 'collection_removed', jsonExpanded)
+    this.emitter('collection_removed', jsonExpanded)
     res.sendStatus(200)
   }
 
@@ -74,7 +74,7 @@ class CollectionController {
     collection.addBook(req.body.id)
     var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
     await this.db.updateEntity('collection', collection)
-    this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+    this.emitter('collection_updated', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -89,7 +89,55 @@ class CollectionController {
       collection.removeBook(req.params.bookId)
       var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
       await this.db.updateEntity('collection', collection)
-      this.clientEmitter(req.user.id, 'collection_updated', jsonExpanded)
+      this.emitter('collection_updated', jsonExpanded)
+    }
+    res.json(collection.toJSONExpanded(this.db.audiobooks))
+  }
+
+  // POST: api/collections/:id/batch/add
+  async addBatch(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    if (!req.body.books || !req.body.books.length) {
+      return res.status(500).send('Invalid request body')
+    }
+    var bookIdsToAdd = req.body.books
+    var hasUpdated = false
+    for (let i = 0; i < bookIdsToAdd.length; i++) {
+      if (!collection.books.includes(bookIdsToAdd[i])) {
+        collection.addBook(bookIdsToAdd[i])
+        hasUpdated = true
+      }
+    }
+    if (hasUpdated) {
+      await this.db.updateEntity('collection', collection)
+      this.emitter('collection_updated', collection.toJSONExpanded(this.db.audiobooks))
+    }
+    res.json(collection.toJSONExpanded(this.db.audiobooks))
+  }
+
+  // POST: api/collections/:id/batch/remove
+  async removeBatch(req, res) {
+    var collection = this.db.collections.find(c => c.id === req.params.id)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    if (!req.body.books || !req.body.books.length) {
+      return res.status(500).send('Invalid request body')
+    }
+    var bookIdsToRemove = req.body.books
+    var hasUpdated = false
+    for (let i = 0; i < bookIdsToRemove.length; i++) {
+      if (collection.books.includes(bookIdsToRemove[i])) {
+        collection.removeBook(bookIdsToRemove[i])
+        hasUpdated = true
+      }
+    }
+    if (hasUpdated) {
+      await this.db.updateEntity('collection', collection)
+      this.emitter('collection_updated', collection.toJSONExpanded(this.db.audiobooks))
     }
     res.json(collection.toJSONExpanded(this.db.audiobooks))
   }

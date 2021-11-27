@@ -1,5 +1,6 @@
 
 export const state = () => ({
+  showBatchUserCollectionModal: false,
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
   selectedCollection: null
@@ -15,6 +16,11 @@ export const actions = {
 
 export const mutations = {
   setShowUserCollectionsModal(state, val) {
+    state.showBatchUserCollectionModal = false
+    state.showUserCollectionsModal = val
+  },
+  setShowBatchUserCollectionsModal(state, val) {
+    state.showBatchUserCollectionModal = true
     state.showUserCollectionsModal = val
   },
   setShowEditCollectionModal(state, val) {

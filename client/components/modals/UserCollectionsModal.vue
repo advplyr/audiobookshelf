@@ -9,7 +9,8 @@
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
-          <h1 class="text-2xl">Add to Collection</h1>
+          <h1 v-if="!showBatchUserCollectionModal" class="text-2xl">Add to Collection</h1>
+          <h1 v-else class="text-2xl">Add {{ selectedBooks.length }} Books to Collection</h1>
         </div>
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
@@ -63,6 +64,14 @@ export default {
       }
     },
     title() {
+      if (this.showBatchUserCollectionModal) {
+        var title = this.selectedBooks[0] ? this.selectedBooks[0].book.title || '' : ''
+        if (this.selectedBooks.length > 1 && this.selectedBooks[1]) {
+          title += ', ' + this.selectedBooks[1].book.title || ''
+          if (this.selectedBooks.length > 2) title += `, and ${this.selectedBooks.length - 2} other${this.selectedBooks.length > 3 ? 's' : ''}`
+        }
+        return title
+      }
       return this.selectedAudiobook ? this.selectedAudiobook.book.title : ''
     },
     selectedAudiobook() {
@@ -77,13 +86,32 @@ export default {
     sortedCollections() {
       return this.collections
         .map((c) => {
-          var includesBook = !!c.books.find((b) => b.id === this.selectedAudiobookId)
+          var includesBook = false
+          if (this.showBatchUserCollectionModal) {
+            // Only show collection added if all books are in the collection
+            var collectionBookIds = c.books.map((b) => b.id)
+            includesBook = !this.selectedBookIds.find((id) => !collectionBookIds.includes(id))
+          } else {
+            includesBook = !!c.books.find((b) => b.id === this.selectedAudiobookId)
+          }
+
           return {
             isBookIncluded: includesBook,
             ...c
           }
         })
         .sort((a, b) => (a.isBookIncluded ? -1 : 1))
+    },
+    showBatchUserCollectionModal() {
+      return this.$store.state.globals.showBatchUserCollectionModal
+    },
+    selectedBookIds() {
+      return this.$store.state.selectedAudiobooks || []
+    },
+    selectedBooks() {
+      return this.selectedBookIds.map((id) => {
+        return this.$store.getters['audiobooks/getAudiobook'](id)
+      })
     }
   },
   methods: {
@@ -91,48 +119,83 @@ export default {
       this.$store.dispatch('user/loadUserCollections')
     },
     removeFromCollection(collection) {
-      if (!this.selectedAudiobookId) return
-
+      if (!this.selectedAudiobookId && !this.selectedBookIds.length) return
       this.processing = true
 
-      this.$axios
-        .$delete(`/api/collections/${collection.id}/book/${this.selectedAudiobookId}`)
-        .then((updatedCollection) => {
-          console.log(`Book removed from collection`, updatedCollection)
-          this.$toast.success('Book removed from collection')
-          this.processing = false
-        })
-        .catch((error) => {
-          console.error('Failed to remove book from collection', error)
-          this.$toast.error('Failed to remove book from collection')
-          this.processing = false
-        })
+      if (this.showBatchUserCollectionModal) {
+        // BATCH Remove books
+        this.$axios
+          .$post(`/api/collections/${collection.id}/batch/remove`, { books: this.selectedBookIds })
+          .then((updatedCollection) => {
+            console.log(`Books removed from collection`, updatedCollection)
+            this.$toast.success('Books removed from collection')
+            this.processing = false
+          })
+          .catch((error) => {
+            console.error('Failed to remove books from collection', error)
+            this.$toast.error('Failed to remove books from collection')
+            this.processing = false
+          })
+      } else {
+        // Remove single book
+        this.$axios
+          .$delete(`/api/collections/${collection.id}/book/${this.selectedAudiobookId}`)
+          .then((updatedCollection) => {
+            console.log(`Book removed from collection`, updatedCollection)
+            this.$toast.success('Book removed from collection')
+            this.processing = false
+          })
+          .catch((error) => {
+            console.error('Failed to remove book from collection', error)
+            this.$toast.error('Failed to remove book from collection')
+            this.processing = false
+          })
+      }
     },
     addToCollection(collection) {
-      if (!this.selectedAudiobookId) return
-
+      if (!this.selectedAudiobookId && !this.selectedBookIds.length) return
       this.processing = true
 
-      this.$axios
-        .$post(`/api/collections/${collection.id}/book`, { id: this.selectedAudiobookId })
-        .then((updatedCollection) => {
-          console.log(`Book added to collection`, updatedCollection)
-          this.$toast.success('Book added to collection')
-          this.processing = false
-        })
-        .catch((error) => {
-          console.error('Failed to add book to collection', error)
-          this.$toast.error('Failed to add book to collection')
-          this.processing = false
-        })
+      if (this.showBatchUserCollectionModal) {
+        // BATCH Remove books
+        this.$axios
+          .$post(`/api/collections/${collection.id}/batch/add`, { books: this.selectedBookIds })
+          .then((updatedCollection) => {
+            console.log(`Books added to collection`, updatedCollection)
+            this.$toast.success('Books added to collection')
+            this.processing = false
+          })
+          .catch((error) => {
+            console.error('Failed to add books to collection', error)
+            this.$toast.error('Failed to add books to collection')
+            this.processing = false
+          })
+      } else {
+        if (!this.selectedAudiobookId) return
+
+        this.$axios
+          .$post(`/api/collections/${collection.id}/book`, { id: this.selectedAudiobookId })
+          .then((updatedCollection) => {
+            console.log(`Book added to collection`, updatedCollection)
+            this.$toast.success('Book added to collection')
+            this.processing = false
+          })
+          .catch((error) => {
+            console.error('Failed to add book to collection', error)
+            this.$toast.error('Failed to add book to collection')
+            this.processing = false
+          })
+      }
     },
     submitCreateCollection() {
-      if (!this.newCollectionName || !this.selectedAudiobook) {
+      if (!this.newCollectionName || (!this.selectedAudiobookId && !this.selectedBookIds.length)) {
         return
       }
       this.processing = true
+
+      var books = this.showBatchUserCollectionModal ? this.selectedBookIds : [this.selectedAudiobookId]
       var newCollection = {
-        books: [this.selectedAudiobook.id],
+        books: books,
         libraryId: this.selectedAudiobook.libraryId,
         name: this.newCollectionName
       }

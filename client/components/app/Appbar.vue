@@ -48,6 +48,9 @@
         <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
+        <ui-tooltip text="Add to Collection" direction="bottom">
+          <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
+        </ui-tooltip>
         <template v-if="userCanUpdate">
           <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
         </template>
@@ -196,6 +199,9 @@ export default {
     },
     batchEditClick() {
       this.$router.push('/batch')
+    },
+    batchAddToCollectionClick() {
+      this.$store.commit('globals/setShowBatchUserCollectionsModal', true)
     }
   },
   mounted() {}

@@ -108,6 +108,8 @@ class ApiController {
 
     this.router.post('/collections/:id/book', CollectionController.addBook.bind(this))
     this.router.delete('/collections/:id/book/:bookId', CollectionController.removeBook.bind(this))
+    this.router.post('/collections/:id/batch/add', CollectionController.addBatch.bind(this))
+    this.router.post('/collections/:id/batch/remove', CollectionController.removeBatch.bind(this))
 
     // TEMP: Support old syntax for mobile app
     this.router.get('/collection/:id', CollectionController.findOne.bind(this))
