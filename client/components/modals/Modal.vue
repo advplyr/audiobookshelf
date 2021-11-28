@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 items-center justify-center opacity-0 hidden" :class="`z-${zIndex}`">
+  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary items-center justify-center opacity-0 hidden" :class="`z-${zIndex} bg-opacity-${bgOpacity}`">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
 
     <div class="absolute top-5 right-5 h-12 w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300" @click="clickClose">
@@ -40,6 +40,10 @@ export default {
     zIndex: {
       type: Number,
       default: 40
+    },
+    bgOpacity: {
+      type: Number,
+      default: 75
     }
   },
   data() {

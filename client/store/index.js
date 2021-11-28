@@ -20,7 +20,8 @@ export const state = () => ({
   showExperimentalFeatures: false,
   backups: [],
   bookshelfBookIds: [],
-  openModal: null
+  openModal: null,
+  selectedBookshelfTexture: '/textures/wood_default.jpg'
 })
 
 export const getters = {
@@ -69,6 +70,11 @@ export const actions = {
     var last = _history.pop()
     commit('setRouteHistory', _history)
     return last
+  },
+  setBookshelfTexture({ commit, state }, img) {
+    let root = document.documentElement;
+    commit('setBookshelfTexture', img)
+    root.style.setProperty('--bookshelf-texture-img', `url(${img})`);
   }
 }
 
@@ -178,5 +184,8 @@ export const mutations = {
   },
   setOpenModal(state, val) {
     state.openModal = val
+  },
+  setBookshelfTexture(state, val) {
+    state.selectedBookshelfTexture = val
   }
 }

@@ -58,6 +58,13 @@
       </a>
     </div>
 
+    <div v-if="showExperimentalFeatures" class="h-0.5 bg-primary bg-opacity-30 w-full" />
+
+    <div v-if="showExperimentalFeatures" class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 my-8">
+      <p>Experimental Bookshelf Texture</p>
+      <div class="flex"></div>
+    </div>
+
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
     <div class="py-12 mb-4 opacity-60 hover:opacity-100">

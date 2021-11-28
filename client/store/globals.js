@@ -3,7 +3,8 @@ export const state = () => ({
   showBatchUserCollectionModal: false,
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
-  selectedCollection: null
+  selectedCollection: null,
+  showBookshelfTextureModal: false
 })
 
 export const getters = {
@@ -29,5 +30,9 @@ export const mutations = {
   setEditCollection(state, collection) {
     state.selectedCollection = collection
     state.showEditCollectionModal = true
+  },
+  setShowBookshelfTextureModal(state, val) {
+    state.showBookshelfTextureModal = val
+    console.log('shopw', val)
   }
 }

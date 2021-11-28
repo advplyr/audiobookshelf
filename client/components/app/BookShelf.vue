@@ -2,12 +2,16 @@
   <div id="bookshelf" class="overflow-hidden relative block max-h-full">
     <div ref="wrapper" class="h-full w-full relative" :class="isGridMode ? 'overflow-y-scroll' : 'overflow-hidden'">
       <!-- Cover size widget -->
-      <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-2 right-4 z-30">
+      <div v-show="!isSelectionMode && isGridMode" class="fixed bottom-4 right-4 z-30">
         <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
           <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
           <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
           <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
         </div>
+      </div>
+      <!-- Experimental Bookshelf Texture -->
+      <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
+        <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
       </div>
 
       <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
@@ -110,6 +114,9 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     isGridMode() {
       return this.viewMode === 'grid'
     },
@@ -226,6 +233,9 @@ export default {
     }
   },
   methods: {
+    showBookshelfTextureModal() {
+      this.$store.commit('globals/setShowBookshelfTextureModal', true)
+    },
     editBook(audiobook) {
       var bookIds = this.entities.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', bookIds)
@@ -455,7 +465,7 @@ export default {
 
 <style>
 .bookshelfRow {
-  background-image: url(/wood_panels.jpg);
+  background-image: var(--bookshelf-texture-img);
 }
 .bookshelfDivider {
   background: rgb(149, 119, 90);

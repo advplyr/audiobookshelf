@@ -1,12 +1,16 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
-    <div class="fixed bottom-2 right-4 z-40">
+    <div class="fixed bottom-4 right-4 z-40">
       <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
         <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
         <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
       </div>
+    </div>
+    <!-- Experimental Bookshelf Texture -->
+    <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
+      <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
     </div>
 
     <div v-if="!audiobooks.length" class="w-full flex flex-col items-center justify-center py-12">
@@ -39,6 +43,9 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
@@ -109,6 +116,9 @@ export default {
     }
   },
   methods: {
+    showBookshelfTextureModal() {
+      this.$store.commit('globals/setShowBookshelfTextureModal', true)
+    },
     increaseSize() {
       this.selectedSizeIndex = Math.min(this.availableSizes.length - 1, this.selectedSizeIndex + 1)
       this.resize()

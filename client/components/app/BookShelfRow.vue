@@ -124,7 +124,12 @@ export default {
 .categorizedBookshelfRow {
   scroll-behavior: smooth;
   width: calc(100vw - 80px);
-  background-image: url(/wood_panels.jpg);
+
+  /* background-color: rgb(214, 116, 36); */
+  background-image: var(--bookshelf-texture-img);
+  /* background-position: center; */
+  /* background-size: contain; */
+  background-repeat: repeat-x;
 }
 @media (max-width: 768px) {
   .categorizedBookshelfRow {

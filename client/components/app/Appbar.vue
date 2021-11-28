@@ -133,6 +133,9 @@ export default {
     }
   },
   methods: {
+    toggleBookshelfTexture() {
+      this.$store.dispatch('setBookshelfTexture', 'wood2.png')
+    },
     async back() {
       var popped = await this.$store.dispatch('popRoute')
       if (popped) this.$store.commit('setIsRoutingBack', true)

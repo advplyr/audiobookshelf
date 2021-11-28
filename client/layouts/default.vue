@@ -9,6 +9,7 @@
     <modals-edit-modal />
     <modals-user-collections-modal />
     <modals-edit-collection-modal />
+    <modals-bookshelf-texture-modal />
     <readers-reader />
   </div>
 </template>

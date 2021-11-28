@@ -2,6 +2,10 @@
 @import './transitions.css';
 @import './draggable.css';
 
+:root {
+  --bookshelf-texture-img: url(/textures/wood_default.jpg);
+}
+
 .page {
   width: 100%;
   height: calc(100% - 64px);
