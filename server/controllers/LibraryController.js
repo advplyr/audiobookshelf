@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
+const { sort } = require('fast-sort')
 
 class LibraryController {
   constructor() { }
@@ -91,16 +92,82 @@ class LibraryController {
     if (!library) {
       return res.status(400).send('Library does not exist')
     }
+    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
+    // if (req.query.q) {
+    //   audiobooks = this.db.audiobooks.filter(ab => {
+    //     return ab.libraryId === libraryId && ab.isSearchMatch(req.query.q)
+    //   }).map(ab => ab.toJSONMinified())
+    // } else {
+    //   audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId).map(ab => ab.toJSONMinified())
+    // }
 
-    var audiobooks = []
-    if (req.query.q) {
-      audiobooks = this.db.audiobooks.filter(ab => {
-        return ab.libraryId === libraryId && ab.isSearchMatch(req.query.q)
-      }).map(ab => ab.toJSONMinified())
-    } else {
-      audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId).map(ab => ab.toJSONMinified())
+    if (req.query.filter) {
+      audiobooks = this.getFiltered(this.db.audiobooks, req.query.filter, req.user)
+    }
+
+
+    if (req.query.sort) {
+      var orderByNumber = req.query.sort === 'book.volumeNumber'
+      var direction = req.query.desc === '1' ? 'desc' : 'asc'
+      audiobooks = sort(audiobooks)[direction]((ab) => {
+        // Supports dot notation strings i.e. "book.title"
+        var value = req.query.sort.split('.').reduce((a, b) => a[b], ab)
+        if (orderByNumber && !isNaN(value)) return Number(value)
+        return value
+      })
+    }
+
+    if (req.query.limit && !isNaN(req.query.limit)) {
+      var page = req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+      var limit = Number(req.query.limit)
+      var startIndex = page * limit
+      audiobooks = audiobooks.slice(startIndex, startIndex + limit)
     }
     res.json(audiobooks)
+  }
+
+  // api/libraries/:id/books/fs
+  getBooksForLibrary2(req, res) {
+    var libraryId = req.params.id
+    var library = this.db.libraries.find(lib => lib.id === libraryId)
+    if (!library) {
+      return res.status(400).send('Library does not exist')
+    }
+
+    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
+    var payload = {
+      results: [],
+      total: audiobooks.length,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter
+    }
+
+    if (payload.filterBy) {
+      audiobooks = this.getFiltered(this.db.audiobooks, payload.filterBy, req.user)
+    }
+
+    if (payload.sortBy) {
+      var orderByNumber = payload.sortBy === 'book.volumeNumber'
+      var direction = payload.sortDesc ? 'desc' : 'asc'
+      audiobooks = sort(audiobooks)[direction]((ab) => {
+        // Supports dot notation strings i.e. "book.title"
+        var value = payload.sortBy.split('.').reduce((a, b) => a[b], ab)
+        if (orderByNumber && !isNaN(value)) return Number(value)
+        return value
+      })
+    }
+
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      audiobooks = audiobooks.slice(startIndex, startIndex + payload.limit)
+    }
+    payload.results = audiobooks.map(ab => ab.toJSONExpanded())
+    console.log('returning books', audiobooks.length)
+
+    res.json(payload)
   }
 
   // PATCH: Change the order of libraries

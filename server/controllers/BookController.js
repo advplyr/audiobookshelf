@@ -1,16 +1,11 @@
 const Logger = require('../Logger')
 
 class BookController {
-  constructor(db, emitter, clientEmitter, streamManager, coverController) {
-    this.db = db
-    this.emitter = emitter
-    this.clientEmitter = clientEmitter
-    this.streamManager = streamManager
-    this.coverController = coverController
-  }
+  constructor() { }
 
   findAll(req, res) {
     var audiobooks = []
+
     if (req.query.q) {
       audiobooks = this.db.audiobooks.filter(ab => {
         return ab.isSearchMatch(req.query.q)

@@ -4,8 +4,8 @@
       <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
         <div class="w-full h-full z-0" ref="coverBg" />
       </div>
-      <img ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
-      <div v-show="loading" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
+      <img v-if="audiobook" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
+      <div v-show="loading && audiobook" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
         <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         <div class="absolute top-2 right-2">
           <div class="la-ball-spin-clockwise la-sm">
@@ -67,6 +67,7 @@ export default {
   },
   computed: {
     book() {
+      if (!this.audiobook) return {}
       return this.audiobook.book || {}
     },
     title() {
@@ -92,7 +93,9 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      return this.$store.getters['audiobooks/getBookCoverSrc'](this.audiobook, this.placeholderUrl)
+      if (!this.audiobook) return null
+      var store = this.$store || this.$nuxt.$store
+      return store.getters['audiobooks/getBookCoverSrc'](this.audiobook, this.placeholderUrl)
     },
     cover() {
       return this.book.cover || this.placeholderUrl

@@ -53,6 +53,7 @@ class ApiController {
     this.router.patch('/libraries/:id', LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.delete.bind(this))
 
+    this.router.get('/libraries/:id/books/all', LibraryController.getBooksForLibrary2.bind(this))
     this.router.get('/libraries/:id/books', LibraryController.getBooksForLibrary.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.search.bind(this))
     this.router.patch('/libraries/order', LibraryController.reorder.bind(this))
@@ -487,6 +488,46 @@ class ApiController {
       listeningStats.totalTime += s.timeListening
     })
     return listeningStats
+  }
+
+
+  decode(text) {
+    return Buffer.from(decodeURIComponent(text), 'base64').toString()
+  }
+
+  getFiltered(audiobooks, filterBy, user) {
+    var filtered = audiobooks
+
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators']
+    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    if (group) {
+      var filterVal = filterBy.replace(`${group}.`, '')
+      var filter = this.decode(filterVal)
+      if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
+      else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
+      else if (group === 'series') {
+        if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
+        else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
+      }
+      else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL && ab.book.authorFL.split(', ').includes(filter))
+      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
+      else if (group === 'progress') {
+        filtered = filtered.filter(ab => {
+          var userAudiobook = user.getAudiobookJSON(ab.id)
+          var isRead = userAudiobook && userAudiobook.isRead
+          if (filter === 'Read' && isRead) return true
+          if (filter === 'Unread' && !isRead) return true
+          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
+          return false
+        })
+      }
+    } else if (filterBy === 'issues') {
+      filtered = filtered.filter(ab => {
+        return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
+      })
+    }
+
+    return filtered
   }
 }
 module.exports = ApiController

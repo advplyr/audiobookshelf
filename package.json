@@ -32,6 +32,7 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^5.3.0",
+    "fast-sort": "^3.1.1",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^10.0.0",
     "image-type": "^4.1.0",

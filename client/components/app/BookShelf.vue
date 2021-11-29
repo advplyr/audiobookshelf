@@ -442,17 +442,6 @@ export default {
 
     this.init()
     this.initIO()
-
-    setTimeout(() => {
-      var ids = {}
-      this.audiobooks.forEach((ab) => {
-        if (ids[ab.id]) {
-          console.error('FOUDN DUPLICATE ID', ids[ab.id], ab)
-        } else {
-          ids[ab.id] = ab
-        }
-      })
-    }, 5000)
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
