@@ -22,7 +22,7 @@
             <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
 
             <!-- Hidden SM and DOWN -->
-            <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
+            <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block z-20" :class="overlayWrapperClasslist">
               <div v-show="showPlayButton" class="h-full flex items-center justify-center">
                 <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
                   <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
@@ -63,7 +63,7 @@
               <span class="material-icons text-white" :style="{ fontSize: sizeMultiplier * 1 + 'rem' }">auto_stories</span>
             </div>
 
-            <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+            <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
             <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
               <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">

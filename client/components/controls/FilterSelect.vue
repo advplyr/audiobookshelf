@@ -141,19 +141,24 @@ export default {
       return _sel.text
     },
     genres() {
-      return this.$store.getters['audiobooks/getGenresUsed']
+      // return this.$store.getters['audiobooks/getGenresUsed']
+      return this.filterData.genres || []
     },
     tags() {
-      return this.$store.state.audiobooks.tags
+      // return this.$store.state.audiobooks.tags
+      return this.filterData.tags || []
     },
     series() {
-      return this.$store.state.audiobooks.series
+      // return this.$store.state.audiobooks.series
+      return this.filterData.series || []
     },
     authors() {
-      return this.$store.getters['audiobooks/getUniqueAuthors']
+      // return this.$store.getters['audiobooks/getUniqueAuthors']
+      return this.filterData.authors || []
     },
     narrators() {
-      return this.$store.getters['audiobooks/getUniqueNarrators']
+      // return this.$store.getters['audiobooks/getUniqueNarrators']
+      return this.filterData.narrators || []
     },
     progress() {
       return ['Read', 'Unread', 'In Progress']
@@ -165,6 +170,9 @@ export default {
           value: this.$encode(item)
         }
       })
+    },
+    filterData() {
+      return this.$store.state.libraries.filterData || {}
     }
   },
   methods: {

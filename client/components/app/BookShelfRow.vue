@@ -2,9 +2,21 @@
   <div class="relative">
     <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem' }" @scroll="scrolled">
       <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
-        <div v-if="shelf.books" class="flex items-center -mb-2">
-          <template v-for="entity in shelf.books">
+        <div v-if="shelf.type === 'books'" class="flex items-center -mb-2">
+          <template v-for="entity in shelf.entities">
             <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" :padding-y="24" @edit="editBook" />
+          </template>
+        </div>
+        <div v-if="shelf.type === 'series'" class="flex items-center -mb-2">
+          <template v-for="entity in shelf.entities">
+            <cards-group-card :key="entity.name" :width="bookCoverWidth" :group="entity" @click="$emit('clickSeries', entity)" />
+          </template>
+        </div>
+        <div v-if="shelf.type === 'tags'" class="flex items-center -mb-2">
+          <template v-for="entity in shelf.entities">
+            <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
+              <cards-group-card is-search :width="bookCoverWidth" :group="entity" />
+            </nuxt-link>
           </template>
         </div>
         <div v-else-if="shelf.series" class="flex items-center -mb-2">
@@ -70,7 +82,7 @@ export default {
   },
   methods: {
     editBook(audiobook) {
-      var bookIds = this.shelf.books.map((e) => e.id)
+      var bookIds = this.shelf.entities.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', bookIds)
       this.$store.commit('showEditModal', audiobook)
     },

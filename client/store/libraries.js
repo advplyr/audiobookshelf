@@ -4,7 +4,8 @@ export const state = () => ({
   listeners: [],
   currentLibraryId: 'main',
   folders: [],
-  folderLastUpdate: 0
+  folderLastUpdate: 0,
+  filterData: null
 })
 
 export const getters = {
@@ -53,16 +54,19 @@ export const actions = {
       return false
     }
 
-    var library = state.libraries.find(lib => lib.id === libraryId)
-    if (library) {
-      commit('setCurrentLibrary', libraryId)
-      return library
-    }
+    // var library = state.libraries.find(lib => lib.id === libraryId)
+    // if (library) {
+    //   commit('setCurrentLibrary', libraryId)
+    //   return library
+    // }
 
     return this.$axios
-      .$get(`/api/libraries/${libraryId}`)
+      .$get(`/api/libraries/${libraryId}?include=filterdata`)
       .then((data) => {
-        commit('addUpdate', data)
+        var library = data.library
+        var filterData = data.filterdata
+        commit('addUpdate', library)
+        commit('setLibraryFilterData', filterData)
         commit('setCurrentLibrary', libraryId)
         return data
       })
@@ -97,7 +101,22 @@ export const actions = {
       })
     return true
   },
+  loadLibraryFilterData({ state, commit, rootState }) {
+    if (!rootState.user || !rootState.user.user) {
+      console.error('libraries/loadLibraryFilterData - User not set')
+      return false
+    }
 
+    this.$axios
+      .$get(`/api/libraries/${state.currentLibraryId}/filters`)
+      .then((data) => {
+        commit('setLibraryFilterData', data)
+      })
+      .catch((error) => {
+        console.error('Failed', error)
+        commit('setLibraryFilterData', null)
+      })
+  }
 }
 
 export const mutations = {
@@ -145,5 +164,8 @@ export const mutations = {
   },
   removeListener(state, listenerId) {
     state.listeners = state.listeners.filter(l => l.id !== listenerId)
+  },
+  setLibraryFilterData(state, filterData) {
+    state.filterData = filterData
   }
 }

@@ -11,6 +11,7 @@ class Book {
     this.authorLF = null
     this.authors = []
     this.narrator = null
+    this.narratorFL = null
     this.series = null
     this.volumeNumber = null
     this.publishYear = null
@@ -40,6 +41,7 @@ class Book {
   get _author() { return this.authorFL || '' }
   get _series() { return this.series || '' }
   get _authorsList() { return this._author.split(', ') }
+  get _narratorsList() { return this._narrator.split(', ') }
   get _genres() { return this.genres || [] }
 
   get shouldSearchForCover() {

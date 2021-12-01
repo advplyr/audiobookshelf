@@ -28,7 +28,7 @@
         </div>
         <div class="flex-grow hidden md:inline-block" />
 
-        <ui-text-input v-show="showSortFilters" v-model="_keywordFilter" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" />
+        <!-- <ui-text-input v-show="showSortFilters" v-model="keywordFilter" @input="keywordFilterInput" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" /> -->
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
         <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
@@ -69,7 +69,10 @@ export default {
   data() {
     return {
       settings: {},
-      hasInit: false
+      hasInit: false,
+      totalEntities: 0,
+      keywordFilter: null,
+      keywordTimeout: null
     }
   },
   computed: {
@@ -80,8 +83,11 @@ export default {
       return this.page === ''
     },
     numShowing() {
+      return this.totalEntities
+
       if (this.page === '') {
-        return this.$store.getters['audiobooks/getFiltered']().length
+        // return this.$store.getters['audiobooks/getFiltered']().length
+        return this.totalEntities
       } else if (this.page === 'search') {
         var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
         return audiobookSearchResults.length
@@ -103,14 +109,14 @@ export default {
       if (this.page === 'collections') return 'Collections'
       return ''
     },
-    _keywordFilter: {
-      get() {
-        return this.$store.state.audiobooks.keywordFilter
-      },
-      set(val) {
-        this.$store.commit('audiobooks/setKeywordFilter', val)
-      }
-    },
+    // _keywordFilter: {
+    //   get() {
+    //     return this.$store.state.audiobooks.keywordFilter
+    //   },
+    //   set(val) {
+    //     this.$store.commit('audiobooks/setKeywordFilter', val)
+    //   }
+    // },
     paramId() {
       return this.$route.params ? this.$route.params.id || '' : ''
     },
@@ -151,14 +157,28 @@ export default {
       for (const key in settings) {
         this.settings[key] = settings[key]
       }
+    },
+    setBookshelfTotalEntities(totalEntities) {
+      this.totalEntities = totalEntities
+    },
+    keywordFilterInput() {
+      clearTimeout(this.keywordTimeout)
+      this.keywordTimeout = setTimeout(() => {
+        this.keywordUpdated(this.keywordFilter)
+      }, 1000)
+    },
+    keywordUpdated() {
+      this.$eventBus.$emit('bookshelf-keyword-filter', this.keywordFilter)
     }
   },
   mounted() {
     this.init()
     this.$store.commit('user/addSettingsListener', { id: 'bookshelftoolbar', meth: this.settingsUpdated })
+    this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
   },
   beforeDestroy() {
     this.$store.commit('user/removeSettingsListener', 'bookshelftoolbar')
+    this.$eventBus.$off('bookshelf-total-entities', this.setBookshelfTotalEntities)
   }
 }
 </script>

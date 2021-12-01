@@ -17,7 +17,6 @@ export default {
     width: Number,
     height: Number,
     groupTo: String,
-    type: String,
     isSearch: Boolean
   },
   data() {
@@ -51,10 +50,16 @@ export default {
       return this.width / 192
     },
     showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
+      return this.store.state.showExperimentalFeatures
     },
     showCoverFan() {
       return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isSearch
+    },
+    store() {
+      return this.$store || this.$nuxt.$store
+    },
+    router() {
+      return this.$router || this.$nuxt.$router
     }
   },
   methods: {
@@ -167,14 +172,14 @@ export default {
         if (coverEl.dataset.audiobookId) {
           let audiobookId = coverEl.dataset.audiobookId
           coverOverlay.addEventListener('click', (e) => {
-            this.$router.push(`/audiobook/${audiobookId}`)
+            this.router.push(`/audiobook/${audiobookId}`)
             e.stopPropagation()
             e.preventDefault()
           })
         } else {
           // Is Series
           coverOverlay.addEventListener('click', (e) => {
-            this.$router.push(this.groupTo)
+            this.router.push(this.groupTo)
             e.stopPropagation()
             e.preventDefault()
           })
@@ -193,7 +198,7 @@ export default {
       }
     },
     getCoverUrl(book) {
-      return this.$store.getters['audiobooks/getBookCoverSrc'](book, '')
+      return this.store.getters['audiobooks/getBookCoverSrc'](book, '')
     },
     async buildCoverImg(coverData, bgCoverWidth, offsetLeft, zIndex, forceCoverBg = false) {
       var src = coverData.coverUrl

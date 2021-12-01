@@ -49,13 +49,17 @@ class ApiController {
     //
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
-    this.router.get('/libraries/:id', LibraryController.findOne.bind(this))
-    this.router.patch('/libraries/:id', LibraryController.update.bind(this))
-    this.router.delete('/libraries/:id', LibraryController.delete.bind(this))
+    this.router.get('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.findOne.bind(this))
+    this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
+    this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
-    this.router.get('/libraries/:id/books/all', LibraryController.getBooksForLibrary2.bind(this))
-    this.router.get('/libraries/:id/books', LibraryController.getBooksForLibrary.bind(this))
-    this.router.get('/libraries/:id/search', LibraryController.search.bind(this))
+    this.router.get('/libraries/:id/books/all', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary2.bind(this))
+    this.router.get('/libraries/:id/books', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
+    this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
+    this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
+    this.router.get('/libraries/:id/categories', LibraryController.middleware.bind(this), LibraryController.getLibraryCategories.bind(this))
+    this.router.get('/libraries/:id/filters', LibraryController.middleware.bind(this), LibraryController.getLibraryFilters.bind(this))
+    this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.patch('/libraries/order', LibraryController.reorder.bind(this))
 
     // TEMP: Support old syntax for mobile app
@@ -491,43 +495,103 @@ class ApiController {
   }
 
 
-  decode(text) {
-    return Buffer.from(decodeURIComponent(text), 'base64').toString()
-  }
+  // decode(text) {
+  //   return Buffer.from(decodeURIComponent(text), 'base64').toString()
+  // }
 
-  getFiltered(audiobooks, filterBy, user) {
-    var filtered = audiobooks
+  // getFiltered(audiobooks, filterBy, user) {
+  //   var filtered = audiobooks
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators']
-    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
-    if (group) {
-      var filterVal = filterBy.replace(`${group}.`, '')
-      var filter = this.decode(filterVal)
-      if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
-      else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
-      else if (group === 'series') {
-        if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
-        else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
-      }
-      else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL && ab.book.authorFL.split(', ').includes(filter))
-      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
-      else if (group === 'progress') {
-        filtered = filtered.filter(ab => {
-          var userAudiobook = user.getAudiobookJSON(ab.id)
-          var isRead = userAudiobook && userAudiobook.isRead
-          if (filter === 'Read' && isRead) return true
-          if (filter === 'Unread' && !isRead) return true
-          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
-          return false
-        })
-      }
-    } else if (filterBy === 'issues') {
-      filtered = filtered.filter(ab => {
-        return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
-      })
-    }
+  //   var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators']
+  //   var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+  //   if (group) {
+  //     var filterVal = filterBy.replace(`${group}.`, '')
+  //     var filter = this.decode(filterVal)
+  //     if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
+  //     else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
+  //     else if (group === 'series') {
+  //       if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
+  //       else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
+  //     }
+  //     else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL && ab.book.authorFL.split(', ').includes(filter))
+  //     else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
+  //     else if (group === 'progress') {
+  //       filtered = filtered.filter(ab => {
+  //         var userAudiobook = user.getAudiobookJSON(ab.id)
+  //         var isRead = userAudiobook && userAudiobook.isRead
+  //         if (filter === 'Read' && isRead) return true
+  //         if (filter === 'Unread' && !isRead) return true
+  //         if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
+  //         return false
+  //       })
+  //     }
+  //   } else if (filterBy === 'issues') {
+  //     filtered = filtered.filter(ab => {
+  //       return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
+  //     })
+  //   }
 
-    return filtered
-  }
+  //   return filtered
+  // }
+
+  // getDistinctFilterData(audiobooks) {
+  //   var data = {
+  //     authors: [],
+  //     genres: [],
+  //     tags: [],
+  //     series: [],
+  //     narrators: []
+  //   }
+  //   audiobooks.forEach((ab) => {
+  //     if (ab.book._authorsList.length) {
+  //       ab.book._authorsList.forEach((author) => {
+  //         if (author && !data.authors.includes(author)) data.authors.push(author)
+  //       })
+  //     }
+  //     if (ab.book._genres.length) {
+  //       ab.book._genres.forEach((genre) => {
+  //         if (genre && !data.genres.includes(genre)) data.genres.push(genre)
+  //       })
+  //     }
+  //     if (ab.tags.length) {
+  //       ab.tags.forEach((tag) => {
+  //         if (tag && !data.tags.includes(tag)) data.tags.push(tag)
+  //       })
+  //     }
+  //     if (ab.book._series && !data.series.includes(ab.book._series)) data.series.push(ab.book._series)
+  //     if (ab.book._narratorsList.length) {
+  //       ab.book._narratorsList.forEach((narrator) => {
+  //         if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
+  //       })
+  //     }
+  //   })
+  //   return data
+  // }
+
+  // getBooksMostRecentlyRead(user, books, limit) {
+  //   var booksWithProgress = books.map(book => {
+  //     return {
+  //       userAudiobook: user.getAudiobookJSON(book.id),
+  //       book
+  //     }
+  //   }).filter((data) => data.userAudiobook && !data.userAudiobook.isRead)
+  //   booksWithProgress.sort((a, b) => {
+  //     return b.userAudiobook.lastUpdate - a.userAudiobook.lastUpdate
+  //   })
+  //   return booksWithProgress.map(b => b.book).slice(0, limit)
+  // }
+
+  // getBooksMostRecentlyAdded(user, books, limit) {
+  //   var booksWithProgress = books.map(book => {
+  //     return {
+  //       userAudiobook: user.getAudiobookJSON(book.id),
+  //       book
+  //     }
+  //   }).filter((data) => data.userAudiobook && !data.userAudiobook.isRead)
+  //   booksWithProgress.sort((a, b) => {
+  //     return b.userAudiobook.lastUpdate - a.userAudiobook.lastUpdate
+  //   })
+  //   return booksWithProgress.map(b => b.book).slice(0, limit)
+  // }
 }
 module.exports = ApiController

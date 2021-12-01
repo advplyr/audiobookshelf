@@ -25,7 +25,7 @@ export const getters = {
     return state.user && state.user.audiobooks ? state.user.audiobooks[audiobookId] || null : null
   },
   getUserSetting: (state) => (key) => {
-    return state.settings ? state.settings[key] || null : null
+    return state.settings ? state.settings[key] : null
   },
   getUserCanUpdate: (state) => {
     return state.user && state.user.permissions ? !!state.user.permissions.update : false

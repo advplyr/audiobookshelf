@@ -155,6 +155,7 @@ export const getters = {
     return [...new Set(_genres)].sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
   },
   getBookCoverSrc: (state, getters, rootState, rootGetters) => (bookItem, placeholder = '/book_placeholder.jpg') => {
+    if (!bookItem) return placeholder
     var book = bookItem.book
     if (!book || !book.cover || book.cover === placeholder) return placeholder
     var cover = book.cover

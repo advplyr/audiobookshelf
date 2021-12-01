@@ -74,9 +74,18 @@ export default {
       this.showMenu = false
     },
     async updateLibrary(library) {
+      var currLibraryId = this.currentLibraryId
+
       this.disabled = true
       await this.$store.dispatch('libraries/fetch', library.id)
-      this.$router.push(`/library/${library.id}`)
+
+      if (this.$route.name.startsWith('library')) {
+        var newRoute = this.$route.path.replace(currLibraryId, library.id)
+        this.$router.push(newRoute)
+      } else {
+        this.$router.push(`/library/${library.id}`)
+      }
+
       this.disabled = false
     }
   },

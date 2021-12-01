@@ -4,7 +4,7 @@
       <app-side-rail class="hidden md:block" />
       <div class="flex-grow">
         <app-book-shelf-toolbar :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode.sync="viewMode" />
-        <app-lazy-bookshelf />
+        <app-lazy-bookshelf :page="id || ''" />
         <!-- <app-book-shelf :page="id || ''" :search-results="searchResults" :search-query="searchQuery" :selected-series.sync="selectedSeries" :view-mode="viewMode" /> -->
       </div>
     </div>

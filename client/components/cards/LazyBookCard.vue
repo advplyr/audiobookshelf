@@ -1,15 +1,43 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ width: bookWidth + 'px', height: bookHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-20">
-    <div class="w-full h-full bg-primary relative rounded-sm">
-      <div class="absolute top-0 left-0 w-full flex items-center justify-center">
-        <p>{{ title }}/{{ index }}</p>
+  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: bookHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div class="w-full h-full bg-primary relative rounded overflow-hidden">
+      <div v-show="audiobook && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
+        <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
       </div>
-      <img v-show="audiobook" :src="bookCoverSrc" class="w-full h-full object-contain" />
-      <!-- <covers-book-cover v-show="audiobook" :audiobook="audiobook" :width="bookWidth" /> -->
+      <img v-show="audiobook" :src="bookCoverSrc" class="w-full h-full object-contain transition-opacity duration-300" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+      <!-- <covers-book-cover v-show="audiobook" :audiobook="audiobook" :width="width" /> -->
+    </div>
+
+    <div class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+
+    <div v-show="audiobook && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded" :class="overlayWrapperClasslist">
+      <div v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
+        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
+          <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
+        </div>
+      </div>
+
+      <div v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
+        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
+          <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
+        </div>
+      </div>
+
+      <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+        <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
+      </div>
+
+      <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
+        <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+      </div>
+
+      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+        <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
+      </div>
     </div>
 
     <!-- <div ref="overlay-wrapper" class="w-full h-full relative box-shadow-book cursor-pointer" @click="clickCard" @mouseover="mouseover" @mouseleave="isHovering = false">
-      <covers-book-cover :audiobook="audiobook" :width="bookWidth" />
+      <covers-book-cover :audiobook="audiobook" :width="width" />
       <div v-if="false" ref="overlay">
         <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block z-20" :class="overlayWrapperClasslist">
           <div v-show="showPlayButton" class="h-full flex items-center justify-center">
@@ -47,7 +75,7 @@
           <span class="material-icons text-white" :style="{ fontSize: sizeMultiplier * 1 + 'rem' }">auto_stories</span>
         </div>
 
-        <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: bookWidth * userProgressPercent + 'px' }"></div>
+        <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
         <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
           <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
@@ -60,10 +88,13 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import MoreMenu from '@/components/widgets/MoreMenu'
+
 export default {
   props: {
     index: Number,
-    bookWidth: {
+    width: {
       type: Number,
       default: 120
     }
@@ -75,7 +106,11 @@ export default {
       isMoreMenuOpen: false,
       isProcessingReadUpdate: false,
       overlayEl: null,
-      audiobook: null
+      audiobook: null,
+      imageReady: false,
+      rescanning: false,
+      selected: false,
+      isSelectionMode: false
     }
   },
   computed: {
@@ -94,15 +129,15 @@ export default {
     hasTracks() {
       return this._audiobook.numTracks
     },
-    isSelectionMode() {
-      return !!this.selectedAudiobooks.length
-    },
-    selectedAudiobooks() {
-      return this.store.state.selectedAudiobooks
-    },
-    selected() {
-      return this.store.getters['getIsAudiobookSelected'](this.audiobookId)
-    },
+    // isSelectionMode() {
+    //   return !!this.selectedAudiobooks.length
+    // },
+    // selectedAudiobooks() {
+    //   return this.store.state.selectedAudiobooks
+    // },
+    // selected() {
+    //   return this.store.getters['getIsAudiobookSelected'](this.audiobookId)
+    // },
     processingBatch() {
       return this.store.state.processingBatch
     },
@@ -110,13 +145,13 @@ export default {
       return this._audiobook.book || {}
     },
     bookHeight() {
-      return this.bookWidth * 1.6
+      return this.width * 1.6
     },
     sizeMultiplier() {
-      return this.bookWidth / 120
+      return this.width / 120
     },
     title() {
-      return this.book.title
+      return this.book.title || ''
     },
     playIconFontSize() {
       return Math.max(2, 3 * this.sizeMultiplier)
@@ -160,16 +195,16 @@ export default {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
     },
     isMissing() {
-      return this.audiobook.isMissing
+      return this._audiobook.isMissing
     },
     isIncomplete() {
-      return this.audiobook.isIncomplete
+      return this._audiobook.isIncomplete
     },
     hasMissingParts() {
-      return this.audiobook.hasMissingParts
+      return this._audiobook.hasMissingParts
     },
     hasInvalidParts() {
-      return this.audiobook.hasInvalidParts
+      return this._audiobook.hasInvalidParts
     },
     errorText() {
       if (this.isMissing) return 'Audiobook directory is missing!'
@@ -247,7 +282,11 @@ export default {
     }
   },
   methods: {
-    setBook(audiobook) {
+    setSelectionMode(val) {
+      this.isSelectionMode = val
+      if (!val) this.selected = false
+    },
+    setEntity(audiobook) {
       this.audiobook = audiobook
     },
     clickCard(e) {
@@ -255,14 +294,125 @@ export default {
         e.stopPropagation()
         e.preventDefault()
         this.selectBtnClick()
+      } else {
+        var router = this.$router || this.$nuxt.$router
+        if (router) router.push(`/audiobook/${this.audiobookId}`)
       }
     },
-    clickShowMore() {},
+    editClick() {
+      this.$emit('edit', this.audiobook)
+    },
+    toggleRead() {
+      // More menu func
+      var updatePayload = {
+        isRead: !this.userIsRead
+      }
+      this.isProcessingReadUpdate = true
+      var toast = this.$toast || this.$nuxt.$toast
+      var axios = this.$axios || this.$nuxt.$axios
+      axios
+        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
+        .then(() => {
+          this.isProcessingReadUpdate = false
+          toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.isProcessingReadUpdate = false
+          toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+        })
+    },
+    audiobookScanComplete(result) {
+      this.rescanning = false
+      var toast = this.$toast || this.$nuxt.$toast
+      if (!result) {
+        toast.error(`Re-Scan Failed for "${this.title}"`)
+      } else if (result === 'UPDATED') {
+        toast.success(`Re-Scan complete audiobook was updated`)
+      } else if (result === 'UPTODATE') {
+        toast.success(`Re-Scan complete audiobook was up to date`)
+      } else if (result === 'REMOVED') {
+        toast.error(`Re-Scan complete audiobook was removed`)
+      }
+    },
+    rescan() {
+      var socket = this.$root.socket || this.$nuxt.$root.socket
+      this.rescanning = true
+      socket.once('audiobook_scan_complete', this.audiobookScanComplete)
+      socket.emit('scan_audiobook', this.audiobookId)
+    },
+    showEditModalTracks() {
+      // More menu func
+      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'tracks' })
+    },
+    showEditModalMatch() {
+      // More menu func
+      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'match' })
+    },
+    showEditModalDownload() {
+      // More menu func
+      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+    },
+    openCollections() {
+      this.store.commit('setSelectedAudiobook', this.audiobook)
+      this.store.commit('globals/setShowUserCollectionsModal', true)
+    },
+    createMoreMenu() {
+      if (!this.$refs.moreIcon) return
+
+      var ComponentClass = Vue.extend(MoreMenu)
+
+      var _this = this
+      var instance = new ComponentClass({
+        propsData: {
+          items: this.moreMenuItems
+        },
+        created() {
+          this.$on('action', (func) => {
+            if (_this[func]) _this[func]()
+          })
+          this.$on('close', () => {
+            _this.isMoreMenuOpen = false
+          })
+        }
+      })
+      instance.$mount()
+
+      var wrapperBox = this.$refs.moreIcon.getBoundingClientRect()
+      var el = instance.$el
+
+      var elHeight = this.moreMenuItems.length * 28 + 2
+      var elWidth = 130
+
+      var bottomOfIcon = wrapperBox.top + wrapperBox.height
+      var rightOfIcon = wrapperBox.left + wrapperBox.width
+
+      var elTop = bottomOfIcon
+      var elLeft = rightOfIcon
+      if (bottomOfIcon + elHeight > window.innerHeight - 100) {
+        elTop = wrapperBox.top - elHeight
+        elLeft = wrapperBox.left
+      }
+
+      if (rightOfIcon + elWidth > window.innerWidth - 100) {
+        elLeft = rightOfIcon - elWidth
+      }
+
+      el.style.top = elTop + 'px'
+      el.style.left = elLeft + 'px'
+
+      this.isMoreMenuOpen = true
+      document.body.appendChild(el)
+    },
+    clickShowMore() {
+      this.createMoreMenu()
+    },
     clickReadEBook() {},
     editBtnClick() {},
     selectBtnClick() {
       if (this.processingBatch) return
-      this.store.commit('toggleAudiobookSelected', this.audiobookId)
+      this.selected = !this.selected
+      this.$emit('select', this.audiobook)
     },
     play() {},
     detach() {
@@ -286,15 +436,22 @@ export default {
     mouseover() {
       this.isHovering = true
     },
-    // mouseleave() {
-    //   this.isHovering = false
-    // },
+    mouseleave() {
+      this.isHovering = false
+    },
     destroy() {
       // destroy the vue listeners, etc
       this.$destroy()
 
       // remove the element from the DOM
-      this.$el.parentNode.removeChild(this.$el)
+      if (this.$el && this.$el.parentNode) {
+        this.$el.parentNode.removeChild(this.$el)
+      } else if (this.$el && this.$el.remove) {
+        this.$el.remove()
+      }
+    },
+    imageLoaded() {
+      this.imageReady = true
     }
   },
   mounted() {}

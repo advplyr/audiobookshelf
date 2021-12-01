@@ -1,6 +1,7 @@
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { sort } = require('fast-sort')
+const libraryHelpers = require('../utils/libraryHelpers')
 
 class LibraryController {
   constructor() { }
@@ -29,21 +30,19 @@ class LibraryController {
     res.json(this.db.libraries.map(lib => lib.toJSON()))
   }
 
-  findOne(req, res) {
-    if (!req.params.id) return res.status(500).send('Invalid id parameter')
-
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
-    if (!library) {
-      return res.status(404).send('Library not found')
+  async findOne(req, res) {
+    if (req.query.include && req.query.include === 'filterdata') {
+      var books = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+      return res.json({
+        filterdata: libraryHelpers.getDistinctFilterData(books),
+        library: req.library
+      })
     }
-    return res.json(library.toJSON())
+    return res.json(req.library)
   }
 
   async update(req, res) {
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
-    if (!library) {
-      return res.status(404).send('Library not found')
-    }
+    var library = req.library
     var hasUpdates = library.update(req.body)
     if (hasUpdates) {
       // Update watcher
@@ -64,10 +63,7 @@ class LibraryController {
   }
 
   async delete(req, res) {
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
-    if (!library) {
-      return res.status(404).send('Library not found')
-    }
+    var library = req.library
 
     // Remove library watcher
     this.watcher.removeLibrary(library)
@@ -87,11 +83,7 @@ class LibraryController {
 
   // api/libraries/:id/books
   getBooksForLibrary(req, res) {
-    var libraryId = req.params.id
-    var library = this.db.libraries.find(lib => lib.id === libraryId)
-    if (!library) {
-      return res.status(400).send('Library does not exist')
-    }
+    var libraryId = req.library.id
     var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
     // if (req.query.q) {
     //   audiobooks = this.db.audiobooks.filter(ab => {
@@ -102,7 +94,7 @@ class LibraryController {
     // }
 
     if (req.query.filter) {
-      audiobooks = this.getFiltered(this.db.audiobooks, req.query.filter, req.user)
+      audiobooks = libraryHelpers.getFiltered(audiobooks, req.query.filter, req.user)
     }
 
 
@@ -126,13 +118,9 @@ class LibraryController {
     res.json(audiobooks)
   }
 
-  // api/libraries/:id/books/fs
+  // api/libraries/:id/books/all
   getBooksForLibrary2(req, res) {
-    var libraryId = req.params.id
-    var library = this.db.libraries.find(lib => lib.id === libraryId)
-    if (!library) {
-      return res.status(400).send('Library does not exist')
-    }
+    var libraryId = req.library.id
 
     var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
     var payload = {
@@ -146,7 +134,8 @@ class LibraryController {
     }
 
     if (payload.filterBy) {
-      audiobooks = this.getFiltered(this.db.audiobooks, payload.filterBy, req.user)
+      audiobooks = libraryHelpers.getFiltered(audiobooks, payload.filterBy, req.user)
+      payload.total = audiobooks.length
     }
 
     if (payload.sortBy) {
@@ -168,6 +157,110 @@ class LibraryController {
     console.log('returning books', audiobooks.length)
 
     res.json(payload)
+  }
+
+  // api/libraries/:id/series
+  async getSeriesForLibrary(req, res) {
+    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+
+    var payload = {
+      results: [],
+      total: 0,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter
+    }
+
+    var series = libraryHelpers.getSeriesFromBooks(audiobooks)
+    payload.total = series.length
+
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      series = series.slice(startIndex, startIndex + payload.limit)
+    }
+
+    payload.results = series
+    console.log('returning series', series.length)
+
+    res.json(payload)
+  }
+
+  // api/libraries/:id/series
+  async getCollectionsForLibrary(req, res) {
+    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+
+    var payload = {
+      results: [],
+      total: 0,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter
+    }
+
+    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(audiobooks))
+    payload.total = collections.length
+
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      collections = collections.slice(startIndex, startIndex + payload.limit)
+    }
+
+    payload.results = collections
+    console.log('returning collections', collections.length)
+
+    res.json(payload)
+  }
+
+  // api/libraries/:id/books/filters
+  async getLibraryFilters(req, res) {
+    var library = req.library
+    var books = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    res.json(libraryHelpers.getDistinctFilterData(books))
+  }
+
+  // api/libraries/:id/books/categories
+  async getLibraryCategories(req, res) {
+    var library = req.library
+    var books = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+
+    var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, books)
+    var series = libraryHelpers.getSeriesFromBooks(books)
+
+    var categories = [
+      {
+        id: 'continue-reading',
+        label: 'Continue Reading',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf)
+      },
+      {
+        id: 'recently-added',
+        label: 'Recently Added',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyAdded(books, limitPerShelf)
+      },
+      {
+        id: 'read-again',
+        label: 'Read Again',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf)
+      },
+      {
+        id: 'recent-series',
+        label: 'Recent Series',
+        type: 'series',
+        entities: libraryHelpers.getSeriesMostRecentlyAdded(series, limitPerShelf)
+      }
+    ].filter(cats => { // Remove categories with no items
+      return cats.entities.length
+    })
+
+    res.json(categories)
   }
 
   // PATCH: Change the order of libraries
@@ -203,10 +296,7 @@ class LibraryController {
 
   // GET: Global library search
   search(req, res) {
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
-    if (!library) {
-      return res.status(404).send('Library not found')
-    }
+    var library = req.library
     if (!req.query.q) {
       return res.status(400).send('No query string')
     }
@@ -267,6 +357,15 @@ class LibraryController {
       authors: Object.values(authorMatches).slice(0, maxResults),
       series: Object.values(seriesMatches).slice(0, maxResults)
     })
+  }
+
+  middleware(req, res, next) {
+    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    req.library = library
+    next()
   }
 }
 module.exports = new LibraryController()

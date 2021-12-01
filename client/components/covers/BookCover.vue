@@ -4,7 +4,7 @@
       <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
         <div class="w-full h-full z-0" ref="coverBg" />
       </div>
-      <img v-if="audiobook" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
+      <img v-if="audiobook" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
       <div v-show="loading && audiobook" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
         <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         <div class="absolute top-2 right-2">
@@ -57,7 +57,8 @@ export default {
     return {
       loading: true,
       imageFailed: false,
-      showCoverBg: false
+      showCoverBg: false,
+      imageReady: false
     }
   },
   watch: {
@@ -135,6 +136,9 @@ export default {
     hideCoverBg() {},
     imageLoaded() {
       this.loading = false
+      this.$nextTick(() => {
+        this.imageReady = true
+      })
       if (this.$refs.cover && this.cover !== this.placeholderUrl) {
         var { naturalWidth, naturalHeight } = this.$refs.cover
         var aspectRatio = naturalHeight / naturalWidth

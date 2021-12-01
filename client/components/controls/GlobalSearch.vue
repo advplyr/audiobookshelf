@@ -94,7 +94,7 @@ export default {
       if (!this.search) return
       var search = this.search
       this.clearResults()
-      this.$router.push(`/library/${this.currentLibraryId}/bookshelf/search?query=${search}`)
+      this.$router.push(`/library/${this.currentLibraryId}/search?q=${search}`)
     },
     clearResults() {
       this.search = null

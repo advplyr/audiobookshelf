@@ -33,6 +33,5 @@ export const mutations = {
   },
   setShowBookshelfTextureModal(state, val) {
     state.showBookshelfTextureModal = val
-    console.log('shopw', val)
   }
 }
