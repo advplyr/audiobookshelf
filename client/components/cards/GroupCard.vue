@@ -3,9 +3,9 @@
     <div class="rounded-sm h-full relative" :style="{ padding: `${paddingY}px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
         <div class="w-full h-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: coverHeight + 'px', width: coverWidth + 'px' }">
-          <covers-group-cover ref="groupcover" :name="groupName" :is-categorized="isCategorized" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="coverWidth" :height="coverHeight" />
+          <covers-group-cover ref="groupcover" :id="seriesId" :name="groupName" :is-categorized="isCategorized" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="coverWidth" :height="coverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
-          <div v-if="hasValidCovers && (!showExperimentalFeatures || isCategorized)" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+          <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
             <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
@@ -42,7 +42,8 @@ export default {
       type: Number,
       default: 24
     },
-    isCategorized: Boolean
+    isCategorized: Boolean,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -59,6 +60,9 @@ export default {
     }
   },
   computed: {
+    seriesId() {
+      return this.groupEncode
+    },
     labelFontSize() {
       if (this.coverWidth < 160) return 0.75
       return 0.875
@@ -81,14 +85,18 @@ export default {
         return `/library/${this.currentLibraryId}/bookshelf?filter=tags.${this.groupEncode}`
       }
     },
+    squareAspectRatio() {
+      return this.bookCoverAspectRatio === 1
+    },
     coverWidth() {
-      return this.coverHeight
+      return this.width * 2
     },
     coverHeight() {
-      return this.width * 1.6
+      return this.width * this.bookCoverAspectRatio
     },
     sizeMultiplier() {
-      return this.width / 120
+      var baseSize = this.squareAspectRatio ? 192 : 120
+      return this.width / baseSize
     },
     paddingX() {
       return 16 * this.sizeMultiplier

@@ -104,7 +104,7 @@ export default {
       return this.$route.name === 'library-library'
     },
     isSeriesPage() {
-      return this.$route.name === 'library-library-series-id'
+      return this.$route.name === 'library-library-series-id' || this.paramId === 'series'
     },
     libraryBookshelfPage() {
       return this.$route.name === 'library-library-bookshelf-id'

@@ -99,28 +99,48 @@ export default {
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    isCoverSquareAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+    },
+    bookCoverAspectRatio() {
+      return this.isCoverSquareAspectRatio ? 1 : 1.6
+    },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
+    isEntityBook() {
+      return this.entityName === 'series-books' || this.entityName === 'books'
+    },
     bookWidth() {
-      return this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      if (this.isCoverSquareAspectRatio) return coverSize * 1.6
+      return coverSize
+    },
+    bookHeight() {
+      if (this.isCoverSquareAspectRatio) return this.bookWidth
+      return this.bookWidth * 1.6
     },
     entityWidth() {
-      if (this.entityName === 'series') return this.bookWidth * 1.6
+      if (this.entityName === 'series') return this.bookWidth * 2
       if (this.entityName === 'collections') return this.bookWidth * 2
       return this.bookWidth
     },
-    bookHeight() {
-      return this.bookWidth * 1.6
+    entityHeight() {
+      if (this.entityName === 'series') return this.bookHeight
+      if (this.entityName === 'collections') return this.bookHeight
+      return this.bookHeight
     },
     shelfDividerHeightIndex() {
       return 6
     },
     shelfHeight() {
-      return this.bookHeight + 40
+      return this.entityHeight + 40
     },
     totalEntityCardWidth() {
       // Includes margin

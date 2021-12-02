@@ -41,6 +41,13 @@
           <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
+        <ui-tooltip :text="coverAspectRatioTooltip">
+          <p class="pl-4 text-lg">Use square book covers <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
     </div>
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
@@ -92,6 +99,7 @@ export default {
       isResettingAudiobooks: false,
       storeCoversInAudiobookDir: false,
       updatingServerSettings: false,
+      useSquareBookCovers: false,
       newServerSettings: {}
     }
   },
@@ -127,6 +135,9 @@ export default {
     },
     scannerFindCoversTooltip() {
       return 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time'
+    },
+    coverAspectRatioTooltip() {
+      return 'Prefer to use square covers over standard 1.6:1 book covers'
     },
     showExperimentalFeatures: {
       get() {
@@ -164,6 +175,11 @@ export default {
         scannerPreferOpfMetadata: !!val
       })
     },
+    updateBookCoverAspectRatio(val) {
+      this.updateServerSettings({
+        coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
+      })
+    },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
@@ -181,6 +197,8 @@ export default {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
 
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
+
+      this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
     },
     resetAudiobooks() {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {

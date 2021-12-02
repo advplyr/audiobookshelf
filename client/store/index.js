@@ -28,6 +28,10 @@ export const getters = {
   getIsAudiobookSelected: state => audiobookId => {
     return !!state.selectedAudiobooks.includes(audiobookId)
   },
+  getServerSetting: state => key => {
+    if (!state.serverSettings) return null
+    return state.serverSettings[key]
+  },
   getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
   getAudiobookIdStreaming: state => {
     return state.streamAudiobook ? state.streamAudiobook.id : null

@@ -4,30 +4,30 @@
       <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
         <div v-if="shelf.type === 'books'" class="flex items-center -mb-2">
           <template v-for="entity in shelf.entities">
-            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" :padding-y="24" @edit="editBook" />
+            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" :padding-y="24" :book-cover-aspect-ratio="bookCoverAspectRatio" @edit="editBook" />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center -mb-2">
           <template v-for="entity in shelf.entities">
-            <cards-group-card :key="entity.name" is-categorized :width="bookCoverWidth" :group="entity" @click="$emit('clickSeries', entity)" />
+            <cards-group-card :key="entity.name" is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" @click="$emit('clickSeries', entity)" />
           </template>
         </div>
         <div v-if="shelf.type === 'tags'" class="flex items-center -mb-2">
           <template v-for="entity in shelf.entities">
             <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
-              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" />
+              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" />
             </nuxt-link>
           </template>
         </div>
         <div v-else-if="shelf.series" class="flex items-center -mb-2">
           <template v-for="entity in shelf.series">
-            <cards-group-card is-categorized :key="entity.name" :width="bookCoverWidth" :group="entity" @click="$emit('clickSeries', entity)" />
+            <cards-group-card is-categorized :key="entity.name" :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" @click="$emit('clickSeries', entity)" />
           </template>
         </div>
         <div v-else-if="shelf.tags" class="flex items-center -mb-2">
           <template v-for="entity in shelf.tags">
             <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
-              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" />
+              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" />
             </nuxt-link>
           </template>
         </div>
@@ -60,7 +60,8 @@ export default {
       default: () => {}
     },
     sizeMultiplier: Number,
-    bookCoverWidth: Number
+    bookCoverWidth: Number,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {

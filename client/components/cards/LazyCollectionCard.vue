@@ -1,7 +1,7 @@
 <template>
-  <div ref="card" :id="`collection-card-${index}`" :style="{ width: width + 'px', height: cardHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`collection-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
-      <covers-collection-cover ref="cover" :book-items="books" :width="width" :height="width" />
+      <covers-collection-cover ref="cover" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </div>
     <div v-show="isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
       <!-- <div class="absolute pointer-events-auto" :style="{ top: 0.5 * sizeMultiplier + 'rem', left: 0.5 * sizeMultiplier + 'rem' }" @click.stop.prevent="toggleSelected">
@@ -14,7 +14,7 @@
     <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
     </div> -->
     <div class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${1 * sizeMultiplier}rem` }">
+      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
       </div>
     </div>
@@ -25,7 +25,9 @@
 export default {
   props: {
     index: Number,
-    width: Number
+    width: Number,
+    height: Number,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -40,11 +42,9 @@ export default {
       if (this.width < 160) return 0.75
       return 0.875
     },
-    cardHeight() {
-      return (this.width / 2) * 1.6
-    },
     sizeMultiplier() {
-      return this.width / 120
+      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
+      return this.width / 240
     },
     title() {
       return this.collection ? this.collection.name : ''

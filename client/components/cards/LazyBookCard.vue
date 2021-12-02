@@ -1,6 +1,8 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: bookHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <!-- When cover image does not fill -->
     <div v-show="showCoverBg" class="w-full h-full absolute top-0 left-0 z-0" ref="coverBg" />
+
     <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
       <div v-show="audiobook && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
         <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
@@ -55,50 +57,6 @@
     <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
     </div>
-    <!-- <div ref="overlay-wrapper" class="w-full h-full relative box-shadow-book cursor-pointer" @click="clickCard" @mouseover="mouseover" @mouseleave="isHovering = false">
-      <covers-book-cover :audiobook="audiobook" :width="width" />
-      <div v-if="false" ref="overlay">
-        <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block z-20" :class="overlayWrapperClasslist">
-          <div v-show="showPlayButton" class="h-full flex items-center justify-center">
-            <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="play">
-              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
-            </div>
-          </div>
-          <div v-show="showReadButton" class="h-full flex items-center justify-center">
-            <div class="hover:text-gray-200 hover:scale-110 transform duration-200" @click.stop.prevent="clickReadEBook">
-              <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
-            </div>
-          </div>
-
-          <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
-            <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
-          </div>
-
-          <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
-            <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
-          </div>
-          <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
-            <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
-          </div>
-        </div>
-
-        <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-          <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
-        </div>
-        <div
-          v-if="showSmallEBookIcon"
-          class="absolute rounded-full bg-blue-500 flex items-center justify-center bg-opacity-90 hover:scale-125 transform duration-200"
-          :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem`, width: 1.5 * sizeMultiplier + 'rem', height: 1.5 * sizeMultiplier + 'rem' }"
-          @click.stop.prevent="clickReadEBook"
-        >
-          <span class="material-icons text-white" :style="{ fontSize: sizeMultiplier * 1 + 'rem' }">auto_stories</span>
-        </div>
-
-        <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
-
-
-      </div>
-    </div> -->
   </div>
 </template>
 
@@ -113,6 +71,11 @@ export default {
       type: Number,
       default: 120
     },
+    height: {
+      type: Number,
+      default: 192
+    },
+    bookCoverAspectRatio: Number,
     showVolumeNumber: Boolean
   },
   data() {
@@ -159,11 +122,12 @@ export default {
     hasCover() {
       return !!this.book.cover
     },
-    bookHeight() {
-      return this.width * 1.6
+    squareAspectRatio() {
+      return this.bookCoverAspectRatio === 1
     },
     sizeMultiplier() {
-      return this.width / 120
+      var baseSize = this.squareAspectRatio ? 192 : 120
+      return this.width / baseSize
     },
     title() {
       return this.book.title || ''
@@ -492,7 +456,7 @@ export default {
       if (this.$refs.cover && this.bookCoverSrc !== this.placeholderUrl) {
         var { naturalWidth, naturalHeight } = this.$refs.cover
         var aspectRatio = naturalHeight / naturalWidth
-        var arDiff = Math.abs(aspectRatio - 1.6)
+        var arDiff = Math.abs(aspectRatio - this.bookCoverAspectRatio)
 
         // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
         if (arDiff > 0.15) {

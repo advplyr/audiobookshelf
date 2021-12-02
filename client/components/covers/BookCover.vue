@@ -1,5 +1,5 @@
 <template>
-  <div class="relative rounded-sm overflow-hidden" :style="{ height: width * 1.6 + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
+  <div class="relative rounded-sm overflow-hidden" :style="{ height: height + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
     <div class="w-full h-full relative bg-bg">
       <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
         <div class="w-full h-full z-0" ref="coverBg" />
@@ -51,7 +51,8 @@ export default {
     width: {
       type: Number,
       default: 120
-    }
+    },
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -67,6 +68,12 @@ export default {
     }
   },
   computed: {
+    squareAspectRatio() {
+      return this.bookCoverAspectRatio === 1
+    },
+    height() {
+      return this.width * this.bookCoverAspectRatio
+    },
     book() {
       if (!this.audiobook) return {}
       return this.audiobook.book || {}
@@ -105,7 +112,8 @@ export default {
       return !!this.book.cover
     },
     sizeMultiplier() {
-      return this.width / 120
+      var baseSize = this.squareAspectRatio ? 192 : 120
+      return this.width / baseSize
     },
     titleFontSize() {
       return 0.75 * this.sizeMultiplier
@@ -142,7 +150,7 @@ export default {
       if (this.$refs.cover && this.cover !== this.placeholderUrl) {
         var { naturalWidth, naturalHeight } = this.$refs.cover
         var aspectRatio = naturalHeight / naturalWidth
-        var arDiff = Math.abs(aspectRatio - 1.6)
+        var arDiff = Math.abs(aspectRatio - this.bookCoverAspectRatio)
 
         // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
         if (arDiff > 0.15) {

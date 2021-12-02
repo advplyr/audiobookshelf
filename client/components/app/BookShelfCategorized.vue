@@ -16,7 +16,7 @@
     </div>
     <div v-else class="w-full flex flex-col items-center">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </template>
     </div>
   </div>
@@ -51,7 +51,18 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     bookCoverWidth() {
-      return this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      if (this.isCoverSquareAspectRatio) return coverSize * 1.6
+      return coverSize
+    },
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    isCoverSquareAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+    },
+    bookCoverAspectRatio() {
+      return this.isCoverSquareAspectRatio ? 1 : 1.6
     },
     sizeMultiplier() {
       return this.bookCoverWidth / 120

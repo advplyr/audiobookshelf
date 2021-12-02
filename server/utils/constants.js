@@ -11,6 +11,11 @@ module.exports.CoverDestination = {
   AUDIOBOOK: 1
 }
 
+module.exports.BookCoverAspectRatio = {
+  STANDARD: 0, // 1.6:1
+  SQUARE: 1
+}
+
 module.exports.LogLevel = {
   TRACE: 0,
   DEBUG: 1,

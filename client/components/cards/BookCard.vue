@@ -19,7 +19,7 @@
       <div class="rounded-sm h-full overflow-hidden relative" :style="{ padding: `${paddingY}px ${paddingX}px` }">
         <nuxt-link :to="isSelectionMode ? '' : `/audiobook/${audiobookId}`" class="cursor-pointer">
           <div class="w-full relative box-shadow-book" :style="{ height: height + 'px' }" @click="clickCard" @mouseover="isHovering = true" @mouseleave="isHovering = false">
-            <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" />
+            <covers-book-cover :audiobook="audiobook" :author-override="authorFormat" :width="width" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Hidden SM and DOWN -->
             <div v-show="isHovering || isSelectionMode || isMoreMenuOpen" class="absolute top-0 left-0 w-full h-full bg-black rounded hidden md:block z-20" :class="overlayWrapperClasslist">
@@ -48,14 +48,14 @@
               </div>
             </div>
 
-            <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+            <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
               <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
             </div>
 
             <!-- EBook Icon -->
             <div
               v-if="showSmallEBookIcon"
-              class="absolute rounded-full bg-blue-500 flex items-center justify-center bg-opacity-90 hover:scale-125 transform duration-200"
+              class="absolute rounded-full bg-blue-500 flex items-center justify-center bg-opacity-90 hover:scale-125 transform duration-200 z-10"
               :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem`, width: 1.5 * sizeMultiplier + 'rem', height: 1.5 * sizeMultiplier + 'rem' }"
               @click.stop.prevent="clickReadEBook"
             >
@@ -65,7 +65,7 @@
 
             <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
-            <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
+            <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-20">
               <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
                 <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
               </div>
@@ -100,7 +100,8 @@ export default {
       default: 16
     },
     isBookshelfBook: Boolean,
-    showVolumeNumber: Boolean
+    showVolumeNumber: Boolean,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -146,11 +147,15 @@ export default {
     book() {
       return this.audiobook.book || {}
     },
+    squareAspectRatio() {
+      return this.bookCoverAspectRatio === 1
+    },
     height() {
-      return this.width * 1.6
+      return this.width * this.bookCoverAspectRatio
     },
     sizeMultiplier() {
-      return this.width / 120
+      var baseSize = this.squareAspectRatio ? 192 : 120
+      return this.width / baseSize
     },
     paddingX() {
       return 16 * this.sizeMultiplier

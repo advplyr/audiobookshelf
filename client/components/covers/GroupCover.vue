@@ -9,6 +9,7 @@
 <script>
 export default {
   props: {
+    id: String,
     name: String,
     bookItems: {
       type: Array,
@@ -17,7 +18,8 @@ export default {
     width: Number,
     height: Number,
     groupTo: String,
-    isCategorized: Boolean
+    isCategorized: Boolean,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -31,7 +33,8 @@ export default {
       isFannedOut: false,
       isDetached: false,
       isAttaching: false,
-      windowWidth: 0
+      windowWidth: 0,
+      isInit: false
     }
   },
   watch: {
@@ -47,13 +50,15 @@ export default {
   },
   computed: {
     sizeMultiplier() {
-      return this.width / 192
+      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
+      return this.width / 240
     },
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
     },
     showCoverFan() {
-      return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isCategorized
+      // return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isCategorized
+      return false
     },
     store() {
       return this.$store || this.$nuxt.$store
@@ -112,11 +117,11 @@ export default {
         this.fanOutCovers()
       } else if (!val && this.isHovering) {
         this.isAttaching = true
-        this.reverseFan()
-        setTimeout(() => {
-          this.attachCoverWrapper()
-          this.isAttaching = false
-        }, 100)
+        // this.reverseFan()
+        // setTimeout(() => {
+        //   this.attachCoverWrapper()
+        //   this.isAttaching = false
+        // }, 100)
       }
       this.isHovering = val
     },
@@ -211,7 +216,7 @@ export default {
           image.onload = () => {
             var { naturalWidth, naturalHeight } = image
             var aspectRatio = naturalHeight / naturalWidth
-            var arDiff = Math.abs(aspectRatio - 1.6)
+            var arDiff = Math.abs(aspectRatio - this.bookCoverAspectRatio)
 
             // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
             if (arDiff > 0.15) {
@@ -265,7 +270,7 @@ export default {
     createSeriesNameCover(offsetLeft) {
       var imgdiv = document.createElement('div')
       imgdiv.style.height = this.height + 'px'
-      imgdiv.style.width = this.height / 1.6 + 'px'
+      imgdiv.style.width = this.height / this.bookCoverAspectRatio + 'px'
       imgdiv.style.left = offsetLeft + 'px'
       imgdiv.className = 'absolute top-0 box-shadow-book transition-transform flex items-center justify-center'
       imgdiv.style.boxShadow = '4px 0px 4px #11111166'
@@ -279,6 +284,9 @@ export default {
       return imgdiv
     },
     async init() {
+      if (this.isInit) return
+      this.isInit = true
+
       if (this.coverDiv) {
         this.coverDiv.remove()
         this.coverDiv = null
@@ -301,15 +309,16 @@ export default {
       var coverWidth = this.width
       var widthPer = this.width
       if (validCovers.length > 1) {
-        coverWidth = this.height / 1.6
+        coverWidth = this.height / this.bookCoverAspectRatio
         widthPer = (this.width - coverWidth) / (validCovers.length - 1)
       }
       this.coverWidth = coverWidth
       this.offsetIncrement = widthPer
 
       var outerdiv = document.createElement('div')
+      outerdiv.id = `group-cover-${this.id}`
       this.coverWrapperEl = outerdiv
-      outerdiv.className = 'w-full h-full relative'
+      outerdiv.className = 'w-full h-full relative box-shadow-book'
 
       var coverImageEls = []
       var offsetLeft = 0
@@ -340,6 +349,10 @@ export default {
   },
   beforeDestroy() {
     if (this.coverWrapperEl) this.coverWrapperEl.remove()
+    if (this.coverImageEls && this.coverImageEls.length) {
+      this.coverImageEls.forEach((el) => el.remove())
+    }
+    if (this.coverDiv) this.coverDiv.remove()
   }
 }
 </script>

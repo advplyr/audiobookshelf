@@ -47,13 +47,17 @@ export default {
 
       var ComponentClass = this.getComponentClass()
 
+      var props = {
+        index,
+        width: this.entityWidth,
+        height: this.entityHeight,
+        bookCoverAspectRatio: this.bookCoverAspectRatio
+      }
+      if (this.entityName === 'series-books') props.showVolumeNumber = true
+
       var _this = this
       var instance = new ComponentClass({
-        propsData: {
-          index: index,
-          width: this.entityWidth,
-          showVolumeNumber: this.entityName === 'series-books'
-        },
+        propsData: props,
         created() {
           this.$on('edit', (entity) => {
             if (_this.editEntity) _this.editEntity(entity)

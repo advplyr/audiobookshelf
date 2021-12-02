@@ -10,9 +10,15 @@ const CoverDestination = {
   AUDIOBOOK: 1
 }
 
+const BookCoverAspectRatio = {
+  STANDARD: 0,
+  SQUARE: 1
+}
+
 const Constants = {
   DownloadStatus,
-  CoverDestination
+  CoverDestination,
+  BookCoverAspectRatio
 }
 
 const KeyNames = {
