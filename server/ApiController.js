@@ -65,8 +65,8 @@ class ApiController {
     this.router.patch('/libraries/order', LibraryController.reorder.bind(this))
 
     // TEMP: Support old syntax for mobile app
-    this.router.get('/library/:id/audiobooks', LibraryController.getBooksForLibrary.bind(this))
-    this.router.get('/library/:id/search', LibraryController.search.bind(this))
+    this.router.get('/library/:id/audiobooks', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
+    this.router.get('/library/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
 
 
     //
