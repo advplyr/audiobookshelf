@@ -1,22 +1,16 @@
 <template>
   <div id="bookshelf" ref="wrapper" class="w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
-    <div class="fixed bottom-4 right-4 z-40">
-      <div class="rounded-full py-1 bg-primary px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent>
-        <span class="material-icons" :class="selectedSizeIndex === 0 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="decreaseSize">remove</span>
-        <p class="px-2 font-mono">{{ bookCoverWidth }}</p>
-        <span class="material-icons" :class="selectedSizeIndex === availableSizes.length - 1 ? 'text-gray-400' : 'hover:text-yellow-300 cursor-pointer'" style="font-size: 0.9rem" @mousedown.prevent @click="increaseSize">add</span>
-      </div>
-    </div>
+    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
     <!-- Experimental Bookshelf Texture -->
     <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
       <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
     </div>
 
-    <div v-if="loaded && !shelves.length" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4 py-4">Your Audiobookshelf is empty!</p>
+    <div v-if="loaded && !shelves.length && isRootUser" class="w-full flex flex-col items-center justify-center py-12">
+      <p class="text-center text-2xl font-book mb-4 py-4">Audiobookshelf is empty!</p>
       <div class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2" @click="scan">Configure Scanner</ui-btn>
+        <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
       </div>
     </div>
@@ -40,8 +34,6 @@ export default {
   data() {
     return {
       loaded: false,
-      availableSizes: [60, 80, 100, 120, 140, 160, 180, 200, 220],
-      selectedSizeIndex: 3,
       keywordFilterTimeout: null,
       scannerParseSubtitle: false,
       wrapperClientWidth: 0,
@@ -49,6 +41,9 @@ export default {
     }
   },
   computed: {
+    isRootUser() {
+      return this.$store.getters['user/getIsRoot']
+    },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
@@ -56,7 +51,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     bookCoverWidth() {
-      return this.availableSizes[this.selectedSizeIndex]
+      return this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
     },
     sizeMultiplier() {
       return this.bookCoverWidth / 120
@@ -66,40 +61,27 @@ export default {
     showBookshelfTextureModal() {
       this.$store.commit('globals/setShowBookshelfTextureModal', true)
     },
-    increaseSize() {
-      this.selectedSizeIndex = Math.min(this.availableSizes.length - 1, this.selectedSizeIndex + 1)
-      this.resize()
-      this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
-    },
-    decreaseSize() {
-      this.selectedSizeIndex = Math.max(0, this.selectedSizeIndex - 1)
-      this.resize()
-      this.$store.dispatch('user/updateUserSettings', { bookshelfCoverSize: this.bookCoverWidth })
-    },
     async init() {
       this.wrapperClientWidth = this.$refs.wrapper ? this.$refs.wrapper.clientWidth : 0
 
-      var bookshelfCoverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
-      var sizeIndex = this.availableSizes.findIndex((s) => s === bookshelfCoverSize)
-      if (!isNaN(sizeIndex)) this.selectedSizeIndex = sizeIndex
-
-      // await this.$store.dispatch('audiobooks/load')
       if (this.search) {
         this.setShelvesFromSearch()
       } else {
-        var categories = await this.$axios
-          .$get(`/api/libraries/${this.currentLibraryId}/categories`)
-          .then((data) => {
-            console.log('Category data', data)
-            return data
-          })
-          .catch((error) => {
-            console.error('Failed to fetch cats', error)
-          })
-        this.shelves = categories
+        await this.fetchCategories()
       }
-
       this.loaded = true
+    },
+    async fetchCategories() {
+      var categories = await this.$axios
+        .$get(`/api/libraries/${this.currentLibraryId}/categories`)
+        .then((data) => {
+          return data
+        })
+        .catch((error) => {
+          console.error('Failed to fetch categories', error)
+          return []
+        })
+      this.shelves = categories
     },
     async setShelvesFromSearch() {
       var shelves = []
@@ -111,14 +93,17 @@ export default {
           entities: this.results.audiobooks.map((ab) => ab.audiobook)
         })
       }
-      if (this.results.authors) {
-        shelves.push({
-          id: 'authors',
-          label: 'Authors',
-          type: 'authors',
-          entities: this.results.authors.map((a) => a.author)
-        })
-      }
+
+      // TODO: Author shelves
+      // if (this.results.authors) {
+      //   shelves.push({
+      //     id: 'authors',
+      //     label: 'Authors',
+      //     type: 'authors',
+      //     entities: this.results.authors.map((a) => a.author)
+      //   })
+      // }
+
       if (this.results.series) {
         shelves.push({
           id: 'series',
@@ -149,27 +134,100 @@ export default {
       }
       this.shelves = shelves
     },
-    resize() {},
-    settingsUpdated(settings) {
-      if (settings.bookshelfCoverSize !== this.bookCoverWidth && settings.bookshelfCoverSize !== undefined) {
-        var index = this.availableSizes.indexOf(settings.bookshelfCoverSize)
-        if (index >= 0) {
-          this.selectedSizeIndex = index
-          this.resize()
-        }
-      }
-    },
+    settingsUpdated(settings) {},
     scan() {
       this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
+    },
+    audiobookAdded(audiobook) {
+      console.log('Audiobook added', audiobook)
+      // TODO: Check if audiobook would be on this shelf
+      if (!this.search) {
+        this.fetchCategories()
+      }
+    },
+    audiobookUpdated(audiobook) {
+      console.log('Audiobook updated', audiobook)
+      this.shelves.forEach((shelf) => {
+        if (shelf.type === 'books') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.id === audiobook.id) {
+              return audiobook
+            }
+            return ent
+          })
+        } else if (shelf.type === 'series') {
+          shelf.entities.forEach((ent) => {
+            ent.books = ent.books.map((book) => {
+              if (book.id === audiobook.id) return audiobook
+              return book
+            })
+          })
+        }
+      })
+    },
+    removeBookFromShelf(audiobook) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type === 'books') {
+          shelf.entities = shelf.entities.filter((ent) => {
+            return ent.id !== audiobook.id
+          })
+        } else if (shelf.type === 'series') {
+          shelf.entities.forEach((ent) => {
+            ent.books = ent.books.filter((book) => {
+              return book.id !== audiobook.id
+            })
+          })
+        }
+      })
+    },
+    audiobookRemoved(audiobook) {
+      this.removeBookFromShelf(audiobook)
+    },
+    audiobooksAdded(audiobooks) {
+      console.log('audiobooks added', audiobooks)
+      // TODO: Check if audiobook would be on this shelf
+      if (!this.search) {
+        this.fetchCategories()
+      }
+    },
+    audiobooksUpdated(audiobooks) {
+      audiobooks.forEach((ab) => {
+        this.audiobookUpdated(ab)
+      })
+    },
+    initListeners() {
+      this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
+
+      if (this.$root.socket) {
+        this.$root.socket.on('audiobook_updated', this.audiobookUpdated)
+        this.$root.socket.on('audiobook_added', this.audiobookAdded)
+        this.$root.socket.on('audiobook_removed', this.audiobookRemoved)
+        this.$root.socket.on('audiobooks_updated', this.audiobooksUpdated)
+        this.$root.socket.on('audiobooks_added', this.audiobooksAdded)
+      } else {
+        console.error('Error socket not initialized')
+      }
+    },
+    removeListeners() {
+      this.$store.commit('user/removeSettingsListener', 'bookshelf')
+
+      if (this.$root.socket) {
+        this.$root.socket.off('audiobook_updated', this.audiobookUpdated)
+        this.$root.socket.off('audiobook_added', this.audiobookAdded)
+        this.$root.socket.off('audiobook_removed', this.audiobookRemoved)
+        this.$root.socket.off('audiobooks_updated', this.audiobooksUpdated)
+        this.$root.socket.off('audiobooks_added', this.audiobooksAdded)
+      } else {
+        console.error('Error socket not initialized')
+      }
     }
   },
   mounted() {
-    this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
-
+    this.initListeners()
     this.init()
   },
   beforeDestroy() {
-    this.$store.commit('user/removeSettingsListener', 'bookshelf')
+    this.removeListeners()
   }
 }
 </script>

@@ -125,7 +125,7 @@ export default {
       return this.audioFiles.length + this.otherFiles.length
     },
     showM4bDownload() {
-      return !this._audiobook.isMissing && !this._audiobook.isIncomplete && this._audiobook.tracks.length
+      return !this._audiobook.isMissing && !this._audiobook.isInvalid && this._audiobook.tracks.length
     }
   },
   methods: {

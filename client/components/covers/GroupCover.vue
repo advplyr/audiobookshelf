@@ -17,7 +17,7 @@ export default {
     width: Number,
     height: Number,
     groupTo: String,
-    isSearch: Boolean
+    isCategorized: Boolean
   },
   data() {
     return {
@@ -53,7 +53,7 @@ export default {
       return this.store.state.showExperimentalFeatures
     },
     showCoverFan() {
-      return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isSearch
+      return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isCategorized
     },
     store() {
       return this.$store || this.$nuxt.$store

@@ -79,7 +79,9 @@ export default {
       this.disabled = true
       await this.$store.dispatch('libraries/fetch', library.id)
 
-      if (this.$route.name.startsWith('library')) {
+      if (this.$route.name.startsWith('config')) {
+        // No need to refresh
+      } else if (this.$route.name.startsWith('library')) {
         var newRoute = this.$route.path.replace(currLibraryId, library.id)
         this.$router.push(newRoute)
       } else {

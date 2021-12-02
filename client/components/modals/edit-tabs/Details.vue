@@ -17,7 +17,7 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
-            <ui-input-dropdown v-model="details.series" label="Series" :items="series" />
+            <ui-input-dropdown ref="seriesDropdown" v-model="details.series" label="Series" :items="series" />
           </div>
           <div class="flex-grow px-1">
             <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" />
@@ -28,10 +28,10 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-1/2 px-1">
-            <ui-multi-select v-model="details.genres" label="Genres" :items="genres" />
+            <ui-multi-select ref="genresSelect" v-model="details.genres" label="Genres" :items="genres" />
           </div>
           <div class="flex-grow px-1">
-            <ui-multi-select v-model="newTags" label="Tags" :items="tags" />
+            <ui-multi-select ref="tagsSelect" v-model="newTags" label="Tags" :items="tags" />
           </div>
         </div>
 
@@ -133,13 +133,16 @@ export default {
       return this.$store.getters['user/getUserCanDelete']
     },
     genres() {
-      return this.$store.state.audiobooks.genres
+      return this.filterData.genres || []
     },
     tags() {
-      return this.$store.state.audiobooks.tags
+      return this.filterData.tags || []
     },
     series() {
-      return this.$store.state.audiobooks.series
+      return this.filterData.series || []
+    },
+    filterData() {
+      return this.$store.state.libraries.filterData || {}
     },
     libraryId() {
       return this.audiobook ? this.audiobook.libraryId : null
@@ -185,11 +188,23 @@ export default {
       this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
       this.$root.socket.emit('save_metadata', this.audiobookId)
     },
-    async submitForm() {
+    submitForm() {
       if (this.isProcessing) {
         return
       }
       this.isProcessing = true
+      if (this.$refs.seriesDropdown && this.$refs.seriesDropdown.isFocused) {
+        this.$refs.seriesDropdown.blur()
+      }
+      if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
+        this.$refs.genresSelect.forceBlur()
+      }
+      if (this.$refs.tagsSelect && this.$refs.tagsSelect.isFocused) {
+        this.$refs.tagsSelect.forceBlur()
+      }
+      this.$nextTick(this.handleForm)
+    },
+    async handleForm() {
       const updatePayload = {
         book: this.details,
         tags: this.newTags

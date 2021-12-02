@@ -179,10 +179,16 @@ export default {
     }
   },
   methods: {
-    goPrevBook() {
+    async goPrevBook() {
       if (this.currentBookshelfIndex - 1 < 0) return
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
-      var prevBook = this.$store.getters['audiobooks/getAudiobook'](prevBookId)
+      this.processing = true
+      var prevBook = await this.$axios.$get(`/api/books/${prevBookId}`).catch((error) => {
+        var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
+        this.$toast.error(errorMsg)
+        return null
+      })
+      this.processing = false
       if (prevBook) {
         this.$store.commit('showEditModalOnTab', { audiobook: prevBook, tab: this.selectedTab })
         this.$nextTick(this.init)
@@ -190,11 +196,16 @@ export default {
         console.error('Book not found', prevBookId)
       }
     },
-    goNextBook() {
+    async goNextBook() {
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
-
+      this.processing = true
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
-      var nextBook = this.$store.getters['audiobooks/getAudiobook'](nextBookId)
+      var nextBook = await this.$axios.$get(`/api/books/${nextBookId}`).catch((error) => {
+        var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
+        this.$toast.error(errorMsg)
+        return null
+      })
+      this.processing = false
       if (nextBook) {
         this.$store.commit('showEditModalOnTab', { audiobook: nextBook, tab: this.selectedTab })
         this.$nextTick(this.init)

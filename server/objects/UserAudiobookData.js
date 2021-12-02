@@ -85,7 +85,6 @@ class UserAudiobookData {
 
   update(payload) {
     var hasUpdates = false
-    Logger.debug(`[UserAudiobookData] Update called ${JSON.stringify(payload)}`)
     for (const key in payload) {
       if (payload[key] !== this[key]) {
         if (key === 'isRead') {

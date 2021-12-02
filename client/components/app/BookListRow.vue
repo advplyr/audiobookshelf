@@ -72,12 +72,6 @@ export default {
     audiobookId() {
       return this.book.id
     },
-    isSelectionMode() {
-      return !!this.selectedAudiobooks.length
-    },
-    selectedAudiobooks() {
-      return this.$store.state.selectedAudiobooks
-    },
     selected: {
       get() {
         return this.$store.getters['getIsAudiobookSelected'](this.audiobookId)
@@ -114,8 +108,8 @@ export default {
     isMissing() {
       return this.book.isMissing
     },
-    isIncomplete() {
-      return this.book.isIncomplete
+    isInvalid() {
+      return this.book.isInvalid
     },
     numEbooks() {
       return this.book.numEbooks
@@ -130,7 +124,7 @@ export default {
       return this.showExperimentalFeatures && this.numEbooks
     },
     showPlayButton() {
-      return !this.isMissing && !this.isIncomplete && this.numTracks && !this.isStreaming
+      return !this.isMissing && !this.isInvalid && this.numTracks && !this.isStreaming
     },
     userIsRead() {
       return this.userAudiobook ? !!this.userAudiobook.isRead : false

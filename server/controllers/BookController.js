@@ -42,7 +42,7 @@ class BookController {
     if (hasUpdates) {
       await this.db.updateAudiobook(audiobook)
     }
-    this.emitter('audiobook_updated', audiobook.toJSONMinified())
+    this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     res.json(audiobook.toJSON())
   }
 
@@ -118,7 +118,7 @@ class BookController {
       Logger.info(`[ApiController] ${audiobooksUpdated} Audiobooks have updates`)
       for (let i = 0; i < audiobooks.length; i++) {
         await this.db.updateAudiobook(audiobooks[i])
-        this.emitter('audiobook_updated', audiobooks[i].toJSONMinified())
+        this.emitter('audiobook_updated', audiobooks[i].toJSONExpanded())
       }
     }
 
@@ -126,6 +126,16 @@ class BookController {
       success: true,
       updates: audiobooksUpdated
     })
+  }
+
+  // POST: api/books/batch/get
+  async batchGet(req, res) {
+    var bookIds = req.body.books || []
+    if (!bookIds.length) {
+      return res.status(403).send('Invalid payload')
+    }
+    var audiobooks = this.db.audiobooks.filter(ab => bookIds.includes(ab.id)).map((ab) => ab.toJSONExpanded())
+    res.json(audiobooks)
   }
 
   // PATCH: api/books/:id/tracks
@@ -140,7 +150,7 @@ class BookController {
     Logger.info(`Updating audiobook tracks called ${audiobook.id}`)
     audiobook.updateAudioTracks(orderedFileData)
     await this.db.updateAudiobook(audiobook)
-    this.emitter('audiobook_updated', audiobook.toJSONMinified())
+    this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     res.json(audiobook.toJSON())
   }
 
@@ -184,7 +194,7 @@ class BookController {
     }
 
     await this.db.updateAudiobook(audiobook)
-    this.emitter('audiobook_updated', audiobook.toJSONMinified())
+    this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     res.json({
       success: true,
       cover: result.cover
@@ -205,7 +215,7 @@ class BookController {
 
     if (updated) {
       await this.db.updateAudiobook(audiobook)
-      this.emitter('audiobook_updated', audiobook.toJSONMinified())
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     }
 
     if (updated) res.status(200).send('Cover updated successfully')

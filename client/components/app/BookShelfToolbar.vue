@@ -31,16 +31,16 @@
         <!-- <ui-text-input v-show="showSortFilters" v-model="keywordFilter" @input="keywordFilterInput" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" /> -->
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
-        <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
+        <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
           <div class="h-full px-2 text-white flex items-center rounded-l-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'grid')">
             <span class="material-icons" style="font-size: 1.4rem">view_module</span>
           </div>
           <div class="h-full px-2 text-white flex items-center rounded-r-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="!isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'list')">
             <span class="material-icons" style="font-size: 1.4rem">view_list</span>
           </div>
-        </div>
+        </div> -->
       </template>
-      <template v-else-if="!isHome">
+      <template v-else-if="page === 'search'">
         <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
           <span class="material-icons text-3xl text-white">west</span>
         </div>
@@ -59,10 +59,6 @@ export default {
     page: String,
     isHome: Boolean,
     selectedSeries: String,
-    searchResults: {
-      type: Object,
-      default: () => {}
-    },
     searchQuery: String,
     viewMode: String
   },
@@ -84,27 +80,9 @@ export default {
     },
     numShowing() {
       return this.totalEntities
-
-      if (this.page === '') {
-        // return this.$store.getters['audiobooks/getFiltered']().length
-        return this.totalEntities
-      } else if (this.page === 'search') {
-        var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
-        return audiobookSearchResults.length
-      } else if (this.page === 'collections') {
-        return (this.$store.state.user.collections || []).length
-      } else {
-        var groups = this.$store.getters['audiobooks/getSeriesGroups']()
-        if (this.selectedSeries) {
-          var group = groups.find((g) => g.name === this.selectedSeries)
-          if (group) return group.books.length
-          return 0
-        }
-        return groups.length
-      }
     },
     entityName() {
-      if (!this.page) return 'Audiobooks'
+      if (!this.page) return 'Books'
       if (this.page === 'series') return 'Series'
       if (this.page === 'collections') return 'Collections'
       return ''
@@ -139,7 +117,6 @@ export default {
     },
     seriesBackArrow() {
       this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/series`)
-      this.$emit('update:selectedSeries', null)
     },
     updateOrder() {
       this.saveSettings()

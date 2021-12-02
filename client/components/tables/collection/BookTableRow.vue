@@ -97,8 +97,8 @@ export default {
     isMissing() {
       return this.book.isMissing
     },
-    isIncomplete() {
-      return this.book.isIncomplete
+    isInvalid() {
+      return this.book.isInvalid
     },
     numTracks() {
       return this.book.numTracks
@@ -107,7 +107,7 @@ export default {
       return this.$store.getters['getAudiobookIdStreaming'] === this.book.id
     },
     showPlayBtn() {
-      return !this.isMissing && !this.isIncomplete && !this.isStreaming && this.numTracks
+      return !this.isMissing && !this.isInvalid && !this.isStreaming && this.numTracks
     },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}

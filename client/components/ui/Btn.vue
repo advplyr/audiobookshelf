@@ -8,7 +8,7 @@
       </svg>
     </div>
   </nuxt-link>
-  <button v-else class="btn outline-none rounded-md shadow-md relative border border-gray-600" :disabled="disabled || loading" :type="type" :class="classList" @click="click">
+  <button v-else class="btn outline-none rounded-md shadow-md relative border border-gray-600" :disabled="disabled || loading" :type="type" :class="classList" @mousedown.prevent @click="click">
     <slot />
     <div v-if="loading" class="text-white absolute top-0 left-0 w-full h-full flex items-center justify-center text-opacity-100">
       <!-- <span class="material-icons animate-spin">refresh</span> -->

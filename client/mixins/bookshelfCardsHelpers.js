@@ -51,7 +51,8 @@ export default {
       var instance = new ComponentClass({
         propsData: {
           index: index,
-          width: this.entityWidth
+          width: this.entityWidth,
+          showVolumeNumber: this.entityName === 'series-books'
         },
         created() {
           this.$on('edit', (entity) => {
@@ -73,7 +74,7 @@ export default {
       }
       if (this.isSelectionMode) {
         instance.setSelectionMode(true)
-        if (this.selectedAudiobooks.includes(instance.audiobookId) || this.isSelectAll) {
+        if (instance.audiobookId && this.selectedAudiobooks.includes(instance.audiobookId) || this.isSelectAll) {
           instance.selected = true
         }
       }

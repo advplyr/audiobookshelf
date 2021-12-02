@@ -190,7 +190,7 @@ export default {
       return this.userProgress ? !!this.userProgress.isRead : false
     },
     showError() {
-      return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isIncomplete
+      return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isInvalid
     },
     isStreaming() {
       return this.$store.getters['getAudiobookIdStreaming'] === this.audiobookId
@@ -199,7 +199,7 @@ export default {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isIncomplete && this.hasTracks && !this.isStreaming
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && this.hasTracks && !this.isStreaming
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
@@ -207,8 +207,8 @@ export default {
     isMissing() {
       return this.audiobook.isMissing
     },
-    isIncomplete() {
-      return this.audiobook.isIncomplete
+    isInvalid() {
+      return this.audiobook.isInvalid
     },
     hasMissingParts() {
       return this.audiobook.hasMissingParts
@@ -218,7 +218,7 @@ export default {
     },
     errorText() {
       if (this.isMissing) return 'Audiobook directory is missing!'
-      else if (this.isIncomplete) return 'Audiobook has no audio tracks & ebook'
+      else if (this.isInvalid) return 'Audiobook has no audio tracks & ebook'
       var txt = ''
       if (this.hasMissingParts) {
         txt = `${this.hasMissingParts} missing parts.`

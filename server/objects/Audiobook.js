@@ -124,6 +124,14 @@ class Audiobook {
     return this._audioFiles.filter(af => af.invalid).map(af => ({ filename: af.filename, error: af.error || 'Unknown Error' }))
   }
 
+  get numMissingParts() {
+    return this.missingParts ? this.missingParts.length : 0
+  }
+
+  get numInvalidParts() {
+    return this.invalidParts ? this.invalidParts.length : 0
+  }
+
   get _audioFiles() { return this.audioFiles || [] }
   get _otherFiles() { return this.otherFiles || [] }
   get _tracks() { return this.tracks || [] }
@@ -206,8 +214,8 @@ class Audiobook {
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
       isInvalid: !!this.isInvalid,
-      hasMissingParts: this.missingParts ? this.missingParts.length : 0,
-      hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0
+      hasMissingParts: this.numMissingParts,
+      hasInvalidParts: this.numInvalidParts
     }
   }
 
@@ -238,8 +246,8 @@ class Audiobook {
       chapters: this.chapters || [],
       isMissing: !!this.isMissing,
       isInvalid: !!this.isInvalid,
-      hasMissingParts: this.missingParts ? this.missingParts.length : 0,
-      hasInvalidParts: this.invalidParts ? this.invalidParts.length : 0
+      hasMissingParts: this.numMissingParts,
+      hasInvalidParts: this.numInvalidParts
     }
   }
 
@@ -419,7 +427,6 @@ class Audiobook {
 
   update(payload) {
     var hasUpdates = false
-
     if (payload.tags && payload.tags.join(',') !== this.tags.join(',')) {
       this.tags = payload.tags
       hasUpdates = true

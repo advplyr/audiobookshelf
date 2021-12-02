@@ -33,7 +33,7 @@ module.exports = {
       }
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(ab => {
-        return ab.hasMissingParts || ab.hasInvalidParts || ab.isMissing || ab.isIncomplete
+        return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
       })
     }
 
@@ -82,6 +82,7 @@ module.exports = {
           _series[audiobook.book.series] = {
             id: audiobook.book.series,
             name: audiobook.book.series,
+            type: 'series',
             books: [audiobook.toJSONExpanded()]
           }
         } else {
@@ -102,16 +103,16 @@ module.exports = {
   },
 
   getBooksMostRecentlyRead(booksWithUserAb, limit) {
-    var booksWithProgress = booksWithUserAb.filter((data) => data.userAudiobook && !data.userAudiobook.isRead)
+    var booksWithProgress = booksWithUserAb.filter((data) => data.userAudiobook && data.userAudiobook.progress > 0 && !data.userAudiobook.isRead)
     booksWithProgress.sort((a, b) => {
       return b.userAudiobook.lastUpdate - a.userAudiobook.lastUpdate
     })
-    return booksWithProgress.map(b => b.book).slice(0, limit)
+    return booksWithProgress.map(b => b.book.toJSONExpanded()).slice(0, limit)
   },
 
   getBooksMostRecentlyAdded(books, limit) {
     var booksSortedByAddedAt = sort(books).desc(book => book.addedAt)
-    return booksSortedByAddedAt.slice(0, limit)
+    return booksSortedByAddedAt.map(b => b.toJSONExpanded()).slice(0, limit)
   },
 
   getBooksMostRecentlyFinished(booksWithUserAb, limit) {
@@ -119,7 +120,7 @@ module.exports = {
     booksRead.sort((a, b) => {
       return b.userAudiobook.finishedAt - a.userAudiobook.finishedAt
     })
-    return booksRead.map(b => b.book).slice(0, limit)
+    return booksRead.map(b => b.book.toJSONExpanded()).slice(0, limit)
   },
 
   getSeriesMostRecentlyAdded(series, limit) {
@@ -128,5 +129,59 @@ module.exports = {
       return booksSortedByMostRecent[0].addedAt
     })
     return seriesSortedByAddedAt.slice(0, limit)
+  },
+
+  getGenresWithCount(audiobooks) {
+    var genresMap = {}
+    audiobooks.forEach((ab) => {
+      var genres = ab.book.genres || []
+      genres.forEach((genre) => {
+        if (genresMap[genre]) genresMap[genre].count++
+        else
+          genresMap[genre] = {
+            genre,
+            count: 1
+          }
+      })
+    })
+    return Object.values(genresMap).sort((a, b) => b.count - a.count)
+  },
+
+  getAuthorsWithCount(audiobooks) {
+    var authorsMap = {}
+    audiobooks.forEach((ab) => {
+      var authors = ab.book.authorFL ? ab.book.authorFL.split(', ') : []
+      authors.forEach((author) => {
+        if (authorsMap[author]) authorsMap[author].count++
+        else
+          authorsMap[author] = {
+            author,
+            count: 1
+          }
+      })
+    })
+    return Object.values(authorsMap).sort((a, b) => b.count - a.count)
+  },
+
+  getAudiobooksTotalDuration(audiobooks) {
+    var totalDuration = 0
+    audiobooks.forEach((ab) => {
+      totalDuration += ab.totalDuration
+    })
+    return totalDuration
+  },
+
+  getAudiobooksTotalSize(audiobooks) {
+    var totalSize = 0
+    audiobooks.forEach((ab) => {
+      totalSize += ab.totalSize
+    })
+    return totalSize
+  },
+
+  getNumIssues(books) {
+    return books.filter(ab => {
+      return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
+    }).length
   }
 }

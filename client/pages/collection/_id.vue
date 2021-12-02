@@ -83,7 +83,7 @@ export default {
     },
     playableBooks() {
       return this.bookItems.filter((book) => {
-        return !book.isMissing && !book.isIncomplete && book.numTracks
+        return !book.isMissing && !book.isInvalid && book.numTracks
       })
     },
     streaming() {

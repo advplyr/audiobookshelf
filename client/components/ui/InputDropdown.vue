@@ -89,7 +89,24 @@ export default {
     inputFocus() {
       this.isFocused = true
     },
+    blur() {
+      // Handle blur immediately
+      this.isFocused = false
+      if (this.input !== this.textInput) {
+        var val = this.textInput ? this.textInput.trim() : null
+        this.input = val
+        if (val && !this.items.includes(val)) {
+          this.$emit('newItem', val)
+        }
+      }
+
+      if (this.$refs.input) {
+        this.$refs.input.blur()
+      }
+    },
     inputBlur() {
+      if (!this.isFocused) return
+
       setTimeout(() => {
         if (document.activeElement === this.$refs.input) {
           return

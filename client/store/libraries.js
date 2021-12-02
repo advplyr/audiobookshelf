@@ -4,6 +4,7 @@ export const state = () => ({
   listeners: [],
   currentLibraryId: 'main',
   folders: [],
+  issues: 0,
   folderLastUpdate: 0,
   filterData: null
 })
@@ -53,7 +54,6 @@ export const actions = {
       console.warn('Access not allowed to library')
       return false
     }
-
     // var library = state.libraries.find(lib => lib.id === libraryId)
     // if (library) {
     //   commit('setCurrentLibrary', libraryId)
@@ -65,7 +65,9 @@ export const actions = {
       .then((data) => {
         var library = data.library
         var filterData = data.filterdata
+        var issues = data.issues || 0
         commit('addUpdate', library)
+        commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setCurrentLibrary', libraryId)
         return data
@@ -128,6 +130,9 @@ export const mutations = {
   },
   setLastLoad(state) {
     state.lastLoad = Date.now()
+  },
+  setLibraryIssues(state, val) {
+    state.issues = val
   },
   setCurrentLibrary(state, val) {
     state.currentLibraryId = val

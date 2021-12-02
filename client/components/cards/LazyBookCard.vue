@@ -1,11 +1,22 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: bookHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
-    <div class="w-full h-full bg-primary relative rounded overflow-hidden">
+  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: bookHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+    <div v-show="showCoverBg" class="w-full h-full absolute top-0 left-0 z-0" ref="coverBg" />
+    <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
       <div v-show="audiobook && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
         <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
       </div>
-      <img v-show="audiobook" :src="bookCoverSrc" class="w-full h-full object-contain transition-opacity duration-300" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
-      <!-- <covers-book-cover v-show="audiobook" :audiobook="audiobook" :width="width" /> -->
+
+      <img v-show="audiobook" ref="cover" :src="bookCoverSrc" class="w-full h-full object-contain transition-opacity duration-300" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+
+      <!-- Placeholder Cover Title & Author -->
+      <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
+        <div>
+          <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
+        </div>
+      </div>
+      <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
+        <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
+      </div>
     </div>
 
     <div class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
@@ -35,7 +46,15 @@
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
+    <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
+      <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
+        <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
+      </div>
+    </ui-tooltip>
 
+    <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
+    </div>
     <!-- <div ref="overlay-wrapper" class="w-full h-full relative box-shadow-book cursor-pointer" @click="clickCard" @mouseover="mouseover" @mouseleave="isHovering = false">
       <covers-book-cover :audiobook="audiobook" :width="width" />
       <div v-if="false" ref="overlay">
@@ -77,11 +96,7 @@
 
         <div v-show="!isSelectionMode" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
-        <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0">
-          <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-            <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
-          </div>
-        </ui-tooltip>
+
       </div>
     </div> -->
   </div>
@@ -97,25 +112,31 @@ export default {
     width: {
       type: Number,
       default: 120
-    }
+    },
+    showVolumeNumber: Boolean
   },
   data() {
     return {
-      isAttached: false,
       isHovering: false,
       isMoreMenuOpen: false,
       isProcessingReadUpdate: false,
-      overlayEl: null,
       audiobook: null,
       imageReady: false,
       rescanning: false,
       selected: false,
-      isSelectionMode: false
+      isSelectionMode: false,
+      showCoverBg: false
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.store.state.showExperimentalFeatures
+    },
     _audiobook() {
       return this.audiobook || {}
+    },
+    placeholderUrl() {
+      return '/book_placeholder.jpg'
     },
     bookCoverSrc() {
       return this.store.getters['audiobooks/getBookCoverSrc'](this._audiobook, this.placeholderUrl)
@@ -129,20 +150,14 @@ export default {
     hasTracks() {
       return this._audiobook.numTracks
     },
-    // isSelectionMode() {
-    //   return !!this.selectedAudiobooks.length
-    // },
-    // selectedAudiobooks() {
-    //   return this.store.state.selectedAudiobooks
-    // },
-    // selected() {
-    //   return this.store.getters['getIsAudiobookSelected'](this.audiobookId)
-    // },
     processingBatch() {
       return this.store.state.processingBatch
     },
     book() {
       return this._audiobook.book || {}
+    },
+    hasCover() {
+      return !!this.book.cover
     },
     bookHeight() {
       return this.width * 1.6
@@ -169,8 +184,7 @@ export default {
       return this.book.volumeNumber || null
     },
     userProgress() {
-      var store = this.$store || this.$nuxt.$store
-      return store.getters['user/getUserAudiobook'](this.audiobookId)
+      return this.store.getters['user/getUserAudiobook'](this.audiobookId)
     },
     userProgressPercent() {
       return this.userProgress ? this.userProgress.progress || 0 : 0
@@ -179,17 +193,16 @@ export default {
       return this.userProgress ? !!this.userProgress.isRead : false
     },
     showError() {
-      return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isIncomplete
+      return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isInvalid
     },
     isStreaming() {
-      var store = this.$store || this.$nuxt.$store
-      return store.getters['getAudiobookIdStreaming'] === this.audiobookId
+      return this.store.getters['getAudiobookIdStreaming'] === this.audiobookId
     },
     showReadButton() {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isIncomplete && this.hasTracks && !this.isStreaming
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && this.hasTracks && !this.isStreaming
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
@@ -197,8 +210,8 @@ export default {
     isMissing() {
       return this._audiobook.isMissing
     },
-    isIncomplete() {
-      return this._audiobook.isIncomplete
+    isInvalid() {
+      return this._audiobook.isInvalid
     },
     hasMissingParts() {
       return this._audiobook.hasMissingParts
@@ -208,7 +221,7 @@ export default {
     },
     errorText() {
       if (this.isMissing) return 'Audiobook directory is missing!'
-      else if (this.isIncomplete) return 'Audiobook has no audio tracks & ebook'
+      else if (this.isInvalid) return 'Audiobook has no audio tracks & ebook'
       var txt = ''
       if (this.hasMissingParts) {
         txt = `${this.hasMissingParts} missing parts.`
@@ -279,6 +292,35 @@ export default {
         })
       }
       return items
+    },
+    _socket() {
+      return this.$root.socket || this.$nuxt.$root.socket
+    },
+    titleFontSize() {
+      return 0.75 * this.sizeMultiplier
+    },
+    authorFontSize() {
+      return 0.6 * this.sizeMultiplier
+    },
+    placeholderCoverPadding() {
+      return 0.8 * this.sizeMultiplier
+    },
+    authorBottom() {
+      return 0.75 * this.sizeMultiplier
+    },
+    titleCleaned() {
+      if (!this.title) return ''
+      if (this.title.length > 60) {
+        return this.title.slice(0, 57) + '...'
+      }
+      return this.title
+    },
+    authorCleaned() {
+      if (!this.authorFL) return ''
+      if (this.authorFL.length > 30) {
+        return this.authorFL.slice(0, 27) + '...'
+      }
+      return this.authorFL
     }
   },
   methods: {
@@ -336,10 +378,9 @@ export default {
       }
     },
     rescan() {
-      var socket = this.$root.socket || this.$nuxt.$root.socket
       this.rescanning = true
-      socket.once('audiobook_scan_complete', this.audiobookScanComplete)
-      socket.emit('scan_audiobook', this.audiobookId)
+      this._socket.once('audiobook_scan_complete', this.audiobookScanComplete)
+      this._socket.emit('scan_audiobook', this.audiobookId)
     },
     showEditModalTracks() {
       // More menu func
@@ -407,31 +448,17 @@ export default {
     clickShowMore() {
       this.createMoreMenu()
     },
-    clickReadEBook() {},
-    editBtnClick() {},
+    clickReadEBook() {
+      this.store.commit('showEReader', this.audiobook)
+    },
     selectBtnClick() {
       if (this.processingBatch) return
       this.selected = !this.selected
       this.$emit('select', this.audiobook)
     },
-    play() {},
-    detach() {
-      if (!this.isAttached) return
-      if (this.$refs.overlay) {
-        this.overlayEl = this.$refs.overlay
-        this.overlayEl.remove()
-      } else if (this.overlayEl) {
-        this.overlayEl.remove()
-      }
-      this.isAttached = false
-    },
-    attach() {
-      if (this.isAttached) return
-      this.isAttached = true
-
-      if (this.overlayEl) {
-        this.$refs['overlay-wrapper'].appendChild(this.overlayEl)
-      }
+    play() {
+      this.store.commit('setStreamAudiobook', this.audiobook)
+      this._socket.emit('open_stream', this.audiobookId)
     },
     mouseover() {
       this.isHovering = true
@@ -450,8 +477,31 @@ export default {
         this.$el.remove()
       }
     },
+    setCoverBg() {
+      if (this.$refs.coverBg) {
+        this.$refs.coverBg.style.backgroundImage = `url("${this.bookCoverSrc}")`
+        this.$refs.coverBg.style.backgroundSize = 'cover'
+        this.$refs.coverBg.style.backgroundPosition = 'center'
+        this.$refs.coverBg.style.opacity = 0.25
+        this.$refs.coverBg.style.filter = 'blur(1px)'
+      }
+    },
     imageLoaded() {
       this.imageReady = true
+
+      if (this.$refs.cover && this.bookCoverSrc !== this.placeholderUrl) {
+        var { naturalWidth, naturalHeight } = this.$refs.cover
+        var aspectRatio = naturalHeight / naturalWidth
+        var arDiff = Math.abs(aspectRatio - 1.6)
+
+        // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
+        if (arDiff > 0.15) {
+          this.showCoverBg = true
+          this.$nextTick(this.setCoverBg)
+        } else {
+          this.showCoverBg = false
+        }
+      }
     }
   },
   mounted() {}

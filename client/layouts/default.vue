@@ -152,10 +152,16 @@ export default {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamError(id)
     },
     audiobookAdded(audiobook) {
-      this.$store.commit('audiobooks/addUpdate', audiobook)
+      // this.$store.commit('audiobooks/addUpdate', audiobook)
     },
     audiobookUpdated(audiobook) {
-      this.$store.commit('audiobooks/addUpdate', audiobook)
+      if (this.$store.state.selectedAudiobook && this.$store.state.selectedAudiobook.id === audiobook.id) {
+        console.log('Updating selected audiobook', audiobook)
+        this.$store.commit('setSelectedAudiobook', audiobook)
+      }
+      // Just triggers the listeners
+      this.$store.commit('audiobooks/audiobookUpdated', audiobook)
+      // this.$store.commit('audiobooks/addUpdate', audiobook)
     },
     audiobookRemoved(audiobook) {
       if (this.$route.name.startsWith('audiobook')) {
@@ -163,16 +169,17 @@ export default {
           this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
         }
       }
-      this.$store.commit('audiobooks/remove', audiobook)
+      // this.$store.commit('audiobooks/remove', audiobook)
     },
     audiobooksAdded(audiobooks) {
-      audiobooks.forEach((ab) => {
-        this.$store.commit('audiobooks/addUpdate', ab)
-      })
+      // audiobooks.forEach((ab) => {
+      //   this.$store.commit('audiobooks/addUpdate', ab)
+      // })
     },
     audiobooksUpdated(audiobooks) {
       audiobooks.forEach((ab) => {
-        this.$store.commit('audiobooks/addUpdate', ab)
+        this.audiobookUpdated(ab)
+        // this.$store.commit('audiobooks/addUpdate', ab)
       })
     },
     libraryAdded(library) {
@@ -244,7 +251,6 @@ export default {
       this.$store.commit('users/updateUser', user)
     },
     currentUserAudiobookUpdate(payload) {
-      // console.log('Received user audiobook update', payload)
       this.$store.commit('user/updateUserAudiobook', payload)
     },
     collectionAdded(collection) {
@@ -266,11 +272,11 @@ export default {
         return console.error('Invalid download object', download)
       }
 
-      var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
-      if (!audiobook) {
-        return console.error('Audiobook not found for download', download)
-      }
-      this.$store.commit('showEditModalOnTab', { audiobook, tab: 'download' })
+      // var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
+      // if (!audiobook) {
+      //   return console.error('Audiobook not found for download', download)
+      // }
+      // this.$store.commit('showEditModalOnTab', { audiobook, tab: 'download' })
     },
     downloadStarted(download) {
       download.status = this.$constants.DownloadStatus.PENDING
@@ -339,6 +345,7 @@ export default {
         reconnection: true
       })
       this.$root.socket = this.socket
+      console.log('Socket initialized')
 
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)
@@ -471,6 +478,7 @@ export default {
       if (this.$store.getters['getNumAudiobooksSelected'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
         this.$store.commit('setSelectedAudiobooks', [])
+        this.$eventBus.$emit('bookshelf-clear-selection')
         e.preventDefault()
         return
       }
@@ -482,10 +490,11 @@ export default {
       }
     }
   },
+  beforeMount() {
+    this.initializeSocket()
+  },
   mounted() {
     window.addEventListener('keydown', this.keyDown)
-
-    this.initializeSocket()
     this.$store.dispatch('libraries/load')
 
     // If experimental features set in local storage

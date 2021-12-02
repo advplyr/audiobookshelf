@@ -79,9 +79,6 @@ export default {
     }
   },
   computed: {
-    audiobooks() {
-      return this.$store.state.audiobooks.audiobooks
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -131,7 +128,7 @@ export default {
       }
       this.isFetching = true
 
-      var searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}`).catch((error) => {
+      var searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}&limit=3`).catch((error) => {
         console.error('Search error', error)
         return []
       })

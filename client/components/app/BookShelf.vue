@@ -101,7 +101,6 @@ export default {
     },
     searchResults() {
       this.$nextTick(() => {
-        // this.$store.commit('audiobooks/setSearchResults', this.searchResults)
         this.setBookshelfEntities()
       })
     },
@@ -215,21 +214,7 @@ export default {
       return shelves
     },
     entities() {
-      if (this.page === '') {
-        return this.$store.getters['audiobooks/getFilteredAndSorted']()
-      } else if (this.page === 'search') {
-        var audiobookSearchResults = this.searchResults ? this.searchResults.audiobooks || [] : []
-        return audiobookSearchResults.map((absr) => absr.audiobook)
-      } else if (this.page === 'collections') {
-        return this.$store.state.user.collections || []
-      } else {
-        var seriesGroups = this.$store.getters['audiobooks/getSeriesGroups']()
-        if (this.selectedSeries) {
-          var group = seriesGroups.find((group) => group.name === this.selectedSeries)
-          return group.books
-        }
-        return seriesGroups
-      }
+      return []
     }
   },
   methods: {
@@ -308,10 +293,10 @@ export default {
       var sizeIndex = this.availableSizes.findIndex((s) => s === bookshelfCoverSize)
       if (!isNaN(sizeIndex)) this.selectedSizeIndex = sizeIndex
 
-      var isLoading = await this.$store.dispatch('audiobooks/load')
-      if (!isLoading) {
-        this.setBookshelfEntities()
-      }
+      // var isLoading = await this.$store.dispatch('audiobooks/load')
+      // if (!isLoading) {
+      //   this.setBookshelfEntities()
+      // }
     },
     resize() {
       this.$nextTick(this.setBookshelfEntities)

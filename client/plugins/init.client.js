@@ -180,4 +180,5 @@ export {
 }
 export default ({ app }, inject) => {
   app.$decode = decode
+  app.$encode = encode
 }

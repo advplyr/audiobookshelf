@@ -122,6 +122,8 @@ export default {
       this.recalcMenuPos()
     },
     inputBlur() {
+      if (!this.isFocused) return
+
       setTimeout(() => {
         if (document.activeElement === this.$refs.input) {
           return
@@ -134,6 +136,11 @@ export default {
       if (this.$refs.input) this.$refs.input.focus()
     },
     blur() {
+      if (this.$refs.input) this.$refs.input.blur()
+    },
+    forceBlur() {
+      this.isFocused = false
+      if (this.textInput) this.submitForm()
       if (this.$refs.input) this.$refs.input.blur()
     },
     clickedOption(e, itemValue) {

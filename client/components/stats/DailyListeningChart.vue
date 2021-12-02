@@ -139,7 +139,7 @@ export default {
         return Math.ceil(factor / 5) * 5
       }
 
-      return factor
+      return Math.max(1, factor)
     },
     points() {
       var data = []

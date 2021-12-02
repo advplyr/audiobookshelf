@@ -149,13 +149,13 @@ class Scanner {
     if (!audiobookData.audioFiles.length && !ebookFiles.length) {
       Logger.error(`[Scanner] "${existingAudiobook.title}" no valid book files found - marking as incomplete`)
       existingAudiobook.setLastScan(version)
-      existingAudiobook.isIncomplete = true
+      existingAudiobook.isInvalid = true
       await this.db.updateAudiobook(existingAudiobook)
       this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
       return ScanResult.UPDATED
-    } else if (existingAudiobook.isIncomplete) { // Was incomplete but now is not
+    } else if (existingAudiobook.isInvalid) { // Was incomplete but now is not
       Logger.info(`[Scanner] "${existingAudiobook.title}" was incomplete but now has book files`)
-      existingAudiobook.isIncomplete = false
+      existingAudiobook.isInvalid = false
     }
 
     // Check for audio files that were removed
@@ -241,7 +241,7 @@ class Scanner {
     if (!existingAudiobook.tracks.length && !ebookFiles.length) {
       Logger.error(`[Scanner] "${existingAudiobook.title}" no valid book files found after update - marking as incomplete`)
       existingAudiobook.setLastScan(version)
-      existingAudiobook.isIncomplete = true
+      existingAudiobook.isInvalid = true
       await this.db.updateAudiobook(existingAudiobook)
       this.emitter('audiobook_updated', existingAudiobook.toJSONMinified())
       return ScanResult.UPDATED

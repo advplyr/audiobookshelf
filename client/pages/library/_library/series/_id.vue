@@ -3,8 +3,8 @@
     <div class="flex h-full">
       <app-side-rail class="hidden md:block" />
       <div class="flex-grow">
-        <app-book-shelf-toolbar :page="id || ''" :view-mode.sync="viewMode" />
-        <app-lazy-bookshelf :page="id || ''" :view-mode="viewMode" />
+        <app-book-shelf-toolbar :selected-series="series" />
+        <app-lazy-bookshelf page="series-books" :series-id="seriesId" />
       </div>
     </div>
   </div>
@@ -12,37 +12,27 @@
 
 <script>
 export default {
-  async asyncData({ params, query, store, app, redirect }) {
+  async asyncData({ store, params, redirect, query, app }) {
     var libraryId = params.library
     var library = await store.dispatch('libraries/fetch', libraryId)
     if (!library) {
       return redirect('/oops?message=Library not found')
     }
 
-    // Set filter by
-    if (query.filter) {
-      store.dispatch('user/updateUserSettings', { filterBy: query.filter })
-    }
-
-    // if (libraryPage === 'collections') {
-    //   store.dispatch('user/loadUserCollections')
-    // }
-
     return {
-      id: params.id || '',
-      libraryId
+      series: app.$decode(params.id),
+      seriesId: params.id
     }
   },
   data() {
-    return {
-      viewMode: 'grid'
-    }
+    return {}
   },
   computed: {
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     }
   },
-  methods: {}
+  mounted() {},
+  beforeDestroy() {}
 }
 </script>

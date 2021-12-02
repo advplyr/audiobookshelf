@@ -62,11 +62,15 @@
 
 <script>
 export default {
-  asyncData({ store, redirect }) {
+  async asyncData({ store, redirect, app }) {
     if (!store.state.selectedAudiobooks.length) {
       return redirect('/')
     }
-    var audiobooks = store.state.audiobooks.audiobooks.filter((ab) => store.state.selectedAudiobooks.includes(ab.id))
+    var audiobooks = await app.$axios.$post(`/api/books/batch/get`, { books: store.state.selectedAudiobooks }).catch((error) => {
+      var errorMsg = error.response.data || 'Failed to get audiobooks'
+      console.error(errorMsg, error)
+      return []
+    })
     return {
       audiobooks
     }
@@ -85,23 +89,26 @@ export default {
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },
-    genres() {
-      return this.$store.state.audiobooks.genres
-    },
     genreItems() {
       return this.genres.concat(this.newGenreItems)
-    },
-    tags() {
-      return this.$store.state.audiobooks.tags
     },
     tagItems() {
       return this.tags.concat(this.newTagItems)
     },
-    series() {
-      return this.$store.state.audiobooks.series
-    },
     seriesItems() {
       return [...this.series, ...this.newSeriesItems]
+    },
+    genres() {
+      return this.filterData.genres || []
+    },
+    tags() {
+      return this.filterData.tags || []
+    },
+    series() {
+      return this.filterData.series || []
+    },
+    filterData() {
+      return this.$store.state.libraries.filterData || {}
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
@@ -174,7 +181,7 @@ export default {
           this.isProcessing = false
           if (data.updates) {
             this.$toast.success(`Successfully updated ${data.updates} audiobooks`)
-            this.$router.replace(`/library/${this.currentLibraryId}`)
+            this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
             this.$toast.warning('No updates were necessary')
           }

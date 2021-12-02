@@ -39,19 +39,18 @@
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
-        <ui-btn v-show="!isHome" small class="text-sm mx-2" @click="toggleSelectAll"
-          >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ totalBooks }})</span></ui-btn
-        >
+        <!-- <ui-btn v-show="!isHome" small class="text-sm mx-2" @click="toggleSelectAll"
+          >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ entitiesLoaded }})</span></ui-btn
+        > -->
 
         <div class="flex-grow" />
-
         <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip text="Add to Collection" direction="bottom">
+        <ui-tooltip v-if="userCanUpdate" text="Add to Collection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
-        <template v-if="userCanUpdate">
+        <template v-if="userCanUpdate && numAudiobooksSelected < 50">
           <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
         </template>
         <ui-icon-btn v-show="userCanDelete" :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
@@ -66,7 +65,7 @@ export default {
   data() {
     return {
       processingBatchDelete: false,
-      totalBooks: 0,
+      totalEntities: 0,
       isAllSelected: false
     }
   },
@@ -98,15 +97,8 @@ export default {
     selectedAudiobooks() {
       return this.$store.state.selectedAudiobooks
     },
-    // isAllSelected() {
-    //   return this.audiobooksShowing.length === this.selectedAudiobooks.length
-    // },
     userAudiobooks() {
       return this.$store.state.user.user.audiobooks || {}
-    },
-    audiobooksShowing() {
-      // return this.$store.getters['audiobooks/getFiltered']()
-      return this.$store.getters['audiobooks/getEntitiesShowing']()
     },
     selectedSeries() {
       return this.$store.state.audiobooks.selectedSeries
@@ -150,16 +142,14 @@ export default {
       this.$eventBus.$emit('bookshelf-clear-selection')
       this.isAllSelected = false
     },
-    toggleSelectAll() {
-      if (this.isAllSelected) {
-        this.cancelSelectionMode()
-      } else {
-        this.$eventBus.$emit('bookshelf-select-all')
-        this.isAllSelected = true
-        // var audiobookIds = this.audiobooksShowing.map((a) => a.id)
-        // this.$store.commit('setSelectedAudiobooks', audiobookIds)
-      }
-    },
+    // toggleSelectAll() {
+    //   if (this.isAllSelected) {
+    //     this.cancelSelectionMode()
+    //   } else {
+    //     this.$eventBus.$emit('bookshelf-select-all')
+    //     this.isAllSelected = true
+    //   }
+    // },
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
       var newIsRead = !this.selectedIsRead
@@ -175,6 +165,7 @@ export default {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)
           this.$store.commit('setSelectedAudiobooks', [])
+          this.$eventBus.$emit('bookshelf-clear-selection')
         })
         .catch((error) => {
           this.$toast.error('Batch update failed')
@@ -197,6 +188,7 @@ export default {
             this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
             this.$store.commit('setSelectedAudiobooks', [])
+            this.$eventBus.$emit('bookshelf-clear-selection')
           })
           .catch((error) => {
             this.$toast.error('Batch delete failed')
@@ -212,15 +204,15 @@ export default {
     batchAddToCollectionClick() {
       this.$store.commit('globals/setShowBatchUserCollectionsModal', true)
     },
-    setBookshelfTotalBooks(totalBooks) {
-      this.totalBooks = totalBooks
+    setBookshelfTotalEntities(totalEntities) {
+      this.totalEntities = totalEntities
     }
   },
   mounted() {
-    this.$eventBus.$on('bookshelf-total-books', this.setBookshelfTotalBooks)
+    this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
   },
   beforeDestroy() {
-    this.$eventBus.$off('bookshelf-total-books', this.setBookshelfTotalBooks)
+    this.$eventBus.$off('bookshelf-total-entities', this.setBookshelfTotalEntities)
   }
 }
 </script>

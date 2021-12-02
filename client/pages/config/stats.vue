@@ -1,6 +1,6 @@
 <template>
   <div>
-    <stats-preview-icons :listening-stats="listeningStats" />
+    <stats-preview-icons :listening-stats="listeningStats" :library-stats="libraryStats" />
 
     <div class="flex md:flex-row flex-wrap justify-between flex-col mt-12">
       <div class="w-80 my-6 mx-auto">
@@ -8,12 +8,12 @@
         <template v-for="genre in top5Genres">
           <div :key="genre.genre" class="w-full py-2">
             <div class="flex items-end mb-1">
-              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / audiobooks.length) }}&nbsp;%</p>
+              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalBooks) }}&nbsp;%</p>
               <div class="flex-grow" />
               <p class="text-base font-book text-white text-opacity-70">{{ genre.genre }}</p>
             </div>
             <div class="w-full rounded-full h-3 bg-primary bg-opacity-50 overflow-hidden">
-              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / audiobooks.length) + '%' }" />
+              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalBooks) + '%' }" />
             </div>
           </div>
         </template>
@@ -43,49 +43,32 @@
 export default {
   data() {
     return {
-      listeningStats: null
+      listeningStats: null,
+      libraryStats: null
+    }
+  },
+  watch: {
+    currentLibraryId(newVal, oldVal) {
+      if (newVal) {
+        this.init()
+      }
     }
   },
   computed: {
-    audiobooks() {
-      return this.$store.state.audiobooks.audiobooks
-    },
     user() {
       return this.$store.state.user.user
     },
+    totalBooks() {
+      return this.libraryStats ? this.libraryStats.totalBooks : 0
+    },
     genresWithCount() {
-      var genresMap = {}
-      this.audiobooks.forEach((ab) => {
-        var genres = ab.book.genres || []
-        genres.forEach((genre) => {
-          if (genresMap[genre]) genresMap[genre].count++
-          else
-            genresMap[genre] = {
-              genre,
-              count: 1
-            }
-        })
-      })
-      var genres = Object.values(genresMap).sort((a, b) => b.count - a.count)
-      return genres
+      return this.libraryStats ? this.libraryStats.genresWithCount : []
     },
     top5Genres() {
       return this.genresWithCount.slice(0, 5)
     },
     authorsWithCount() {
-      var authorsMap = {}
-      this.audiobooks.forEach((ab) => {
-        var authors = ab.book.authorFL ? ab.book.authorFL.split(', ') : []
-        authors.forEach((author) => {
-          if (authorsMap[author]) authorsMap[author].count++
-          else
-            authorsMap[author] = {
-              author,
-              count: 1
-            }
-        })
-      })
-      return Object.values(authorsMap).sort((a, b) => b.count - a.count)
+      return this.libraryStats ? this.libraryStats.authorsWithCount : []
     },
     mostUsedAuthorCount() {
       if (!this.authorsWithCount.length) return 0
@@ -93,10 +76,19 @@ export default {
     },
     top10Authors() {
       return this.authorsWithCount.slice(0, 10)
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
     async init() {
+      this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
+        console.error('Failed to get library stats', err)
+        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+      })
+      console.log('lib stats', this.libraryStats)
       this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
@@ -106,7 +98,6 @@ export default {
   },
   mounted() {
     this.init()
-    this.$store.dispatch('audiobooks/load')
   }
 }
 </script>

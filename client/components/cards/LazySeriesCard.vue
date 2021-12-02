@@ -1,11 +1,7 @@
 <template>
   <div ref="card" :id="`series-card-${index}`" :style="{ width: width + 'px', height: cardHeight + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
-      <covers-group-cover ref="cover" :name="title" :book-items="books" :width="width" :height="width" />
-      <!-- <div v-show="series && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
-        <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
-      </div>
-      <img v-show="series" :src="bookCoverSrc" class="w-full h-full object-contain transition-opacity duration-300" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" /> -->
+      <covers-group-cover ref="cover" :name="title" :book-items="books" :width="width" :height="width" :group-to="seriesBooksRoute" />
     </div>
 
     <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
@@ -53,15 +49,11 @@ export default {
     store() {
       return this.$store || this.$nuxt.$store
     },
-    firstBookInSeries() {
-      if (!this.series || !this.series.books.length) return null
-      return this.series.books[0]
-    },
-    bookCoverSrc() {
-      return this.store.getters['audiobooks/getBookCoverSrc'](this.firstBookInSeries)
-    },
     currentLibraryId() {
       return this.store.state.libraries.currentLibraryId
+    },
+    seriesBooksRoute() {
+      return `/library/${this.currentLibraryId}/series/${this.$encode(this.title)}`
     }
   },
   methods: {

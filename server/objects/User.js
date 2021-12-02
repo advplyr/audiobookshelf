@@ -215,7 +215,7 @@ class User {
     }
     var wasUpdated = this.audiobooks[audiobook.id].update(updatePayload)
     if (wasUpdated) {
-      Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
+      // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
       return this.audiobooks[audiobook.id]
     }
     return false
@@ -276,6 +276,7 @@ class User {
   }
 
   getAudiobookJSON(audiobookId) {
+    if (!this.audiobooks) return null
     return this.audiobooks[audiobookId] ? this.audiobooks[audiobookId].toJSON() : null
   }
 

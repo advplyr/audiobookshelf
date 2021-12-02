@@ -3,7 +3,14 @@
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
       <covers-collection-cover ref="cover" :book-items="books" :width="width" :height="width" />
     </div>
-
+    <div v-show="isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
+      <!-- <div class="absolute pointer-events-auto" :style="{ top: 0.5 * sizeMultiplier + 'rem', left: 0.5 * sizeMultiplier + 'rem' }" @click.stop.prevent="toggleSelected">
+              <span class="material-icons text-xl text-white text-opacity-75 hover:text-opacity-100">radio_button_unchecked</span>
+            </div> -->
+      <div class="absolute pointer-events-auto" :style="{ top: 0.5 * sizeMultiplier + 'rem', right: 0.5 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickEdit">
+        <span class="material-icons text-xl text-white text-opacity-75 hover:text-opacity-100">edit</span>
+      </div>
+    </div>
     <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
     </div> -->
     <div class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
@@ -69,6 +76,9 @@ export default {
       if (!this.collection) return
       var router = this.$router || this.$nuxt.$router
       router.push(`/collection/${this.collection.id}`)
+    },
+    clickEdit() {
+      this.$emit('edit', this.collection)
     },
     destroy() {
       // destroy the vue listeners, etc

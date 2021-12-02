@@ -10,7 +10,7 @@
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
           <h1 v-if="!showBatchUserCollectionModal" class="text-2xl">Add to Collection</h1>
-          <h1 v-else class="text-2xl">Add {{ selectedBooks.length }} Books to Collection</h1>
+          <h1 v-else class="text-2xl">Add {{ selectedBookIds.length }} Books to Collection</h1>
         </div>
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
@@ -65,12 +65,7 @@ export default {
     },
     title() {
       if (this.showBatchUserCollectionModal) {
-        var title = this.selectedBooks[0] ? this.selectedBooks[0].book.title || '' : ''
-        if (this.selectedBooks.length > 1 && this.selectedBooks[1]) {
-          title += ', ' + this.selectedBooks[1].book.title || ''
-          if (this.selectedBooks.length > 2) title += `, and ${this.selectedBooks.length - 2} other${this.selectedBooks.length > 3 ? 's' : ''}`
-        }
-        return title
+        return `${this.selectedBookIds.length} Books Selected`
       }
       return this.selectedAudiobook ? this.selectedAudiobook.book.title : ''
     },
@@ -107,11 +102,6 @@ export default {
     },
     selectedBookIds() {
       return this.$store.state.selectedAudiobooks || []
-    },
-    selectedBooks() {
-      return this.selectedBookIds.map((id) => {
-        return this.$store.getters['audiobooks/getAudiobook'](id)
-      })
     }
   },
   methods: {

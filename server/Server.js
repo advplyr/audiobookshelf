@@ -240,7 +240,6 @@ class Server {
         methods: ["GET", "POST"]
       }
     })
-
     this.io.on('connection', (socket) => {
       this.clients[socket.id] = {
         id: socket.id,

@@ -95,7 +95,7 @@
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
-            <ui-btn v-else-if="isMissing || isIncomplete" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
+            <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
@@ -169,7 +169,6 @@ export default {
       console.error('No audiobook...', params.id)
       return redirect('/')
     }
-    store.commit('audiobooks/addUpdate', audiobook)
     return {
       audiobook
     }
@@ -234,11 +233,11 @@ export default {
     isMissing() {
       return this.audiobook.isMissing
     },
-    isIncomplete() {
-      return this.audiobook.isIncomplete
+    isInvalid() {
+      return this.audiobook.isInvalid
     },
     showPlayButton() {
-      return !this.isMissing && !this.isIncomplete && this.tracks.length
+      return !this.isMissing && !this.isInvalid && this.tracks.length
     },
     missingParts() {
       return this.audiobook.missingParts || []
@@ -458,8 +457,8 @@ export default {
     window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
 
-    // If a library has not yet been loaded, use this audiobooks library id as the current
-    if (!this.$store.state.audiobooks.loadedLibraryId && this.libraryId) {
+    // use this audiobooks library id as the current
+    if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
   },
