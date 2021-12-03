@@ -10,7 +10,7 @@
         <form @submit.prevent="submitForm">
           <div class="flex">
             <div>
-              <covers-collection-cover :book-items="books" :width="200" :height="100 * 1.6" />
+              <covers-collection-cover :book-items="books" :width="200" :height="100 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
               <!-- <ui-btn type="button" @click="showImageUploader = true">Upload</ui-btn> -->
             </div>
             <div class="flex-grow px-4">
@@ -73,6 +73,9 @@ export default {
       set(val) {
         this.$store.commit('globals/setShowEditCollectionModal', val)
       }
+    },
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
     },
     collection() {
       return this.$store.state.globals.selectedCollection || {}

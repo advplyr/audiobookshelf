@@ -11,7 +11,7 @@
     <draggable v-model="booksCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'collection-book' : null">
         <template v-for="book in booksCopy">
-          <tables-collection-book-table-row :key="book.id" :is-dragging="drag" :book="book" :collection-id="collectionId" class="item" :class="drag ? '' : 'collection-book-item'" @edit="editBook" />
+          <tables-collection-book-table-row :key="book.id" :is-dragging="drag" :book="book" :collection-id="collectionId" :book-cover-aspect-ratio="bookCoverAspectRatio" class="item" :class="drag ? '' : 'collection-book-item'" @edit="editBook" />
         </template>
       </transition-group>
     </draggable>
@@ -51,6 +51,12 @@ export default {
     }
   },
   computed: {
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    bookCoverAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
     totalDuration() {
       var _total = 0
       this.books.forEach((book) => {

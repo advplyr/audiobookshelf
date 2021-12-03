@@ -226,7 +226,7 @@ export default {
         return
       }
       if (payload) {
-        // console.log('Received payload', payload)
+        console.log('Received payload', payload)
         if (!this.initialized) {
           this.initialized = true
           this.totalEntities = payload.total

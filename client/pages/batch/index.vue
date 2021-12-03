@@ -4,7 +4,7 @@
       <template v-for="audiobook in audiobookCopies">
         <div :key="audiobook.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px flex">
           <div class="w-32">
-            <covers-book-cover :audiobook="audiobook.originalAudiobook" :width="120" />
+            <covers-book-cover :audiobook="audiobook.originalAudiobook" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
           </div>
           <div class="flex-grow pl-4">
             <ui-text-input-with-label v-model="audiobook.book.title" label="Title" />
@@ -86,6 +86,12 @@ export default {
     }
   },
   computed: {
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    bookCoverAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },

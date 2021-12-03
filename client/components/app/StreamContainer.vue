@@ -1,7 +1,7 @@
 <template>
   <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-4 pt-2">
-    <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute -top-16 left-4 cursor-pointer">
-      <covers-book-cover :audiobook="streamAudiobook" :width="bookCoverWidth" />
+    <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
+      <covers-book-cover :audiobook="streamAudiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </nuxt-link>
     <div class="flex items-start pl-24 mb-6 md:mb-0">
       <div>
@@ -45,8 +45,18 @@ export default {
     }
   },
   computed: {
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    bookCoverAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
     bookCoverWidth() {
       return 88
+    },
+    bookCoverPosTop() {
+      if (this.bookCoverAspectRatio === 1) return -10
+      return -64
     },
     cover() {
       if (this.streamAudiobook && this.streamAudiobook.cover) return this.streamAudiobook.cover

@@ -191,7 +191,7 @@ class LibraryController {
       return ab.book.volumeNumber
     })
     res.json({
-      results: audiobooks,
+      results: audiobooks.map(ab => ab.toJSONExpanded()),
       total: audiobooks.length
     })
   }
@@ -319,7 +319,7 @@ class LibraryController {
       var queryResult = ab.searchQuery(req.query.q)
       if (queryResult.book) {
         var bookMatchObj = {
-          audiobook: ab,
+          audiobook: ab.toJSONExpanded(),
           matchKey: queryResult.book,
           matchText: queryResult.bookMatchText
         }
@@ -329,8 +329,11 @@ class LibraryController {
         queryResult.authors.forEach((author) => {
           if (!authorMatches[author]) {
             authorMatches[author] = {
-              author: author
+              author: author,
+              numBooks: 1
             }
+          } else {
+            authorMatches[author].numBooks++
           }
         })
       }
@@ -338,10 +341,10 @@ class LibraryController {
         if (!seriesMatches[queryResult.series]) {
           seriesMatches[queryResult.series] = {
             series: queryResult.series,
-            audiobooks: [ab]
+            audiobooks: [ab.toJSONExpanded()]
           }
         } else {
-          seriesMatches[queryResult.series].audiobooks.push(ab)
+          seriesMatches[queryResult.series].audiobooks.push(ab.toJSONExpanded())
         }
       }
       if (queryResult.tags && queryResult.tags.length) {
@@ -349,10 +352,10 @@ class LibraryController {
           if (!tagMatches[tag]) {
             tagMatches[tag] = {
               tag,
-              audiobooks: [ab]
+              audiobooks: [ab.toJSONExpanded()]
             }
           } else {
-            tagMatches[tag].audiobooks.push(ab)
+            tagMatches[tag].audiobooks.push(ab.toJSONExpanded())
           }
         })
       }
@@ -381,6 +384,27 @@ class LibraryController {
       genresWithCount
     }
     res.json(stats)
+  }
+
+  async getAuthors(req, res) {
+    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+    var authors = {}
+    audiobooksInLibrary.forEach((ab) => {
+      if (ab.book._authorsList.length) {
+        ab.book._authorsList.forEach((author) => {
+          if (!author) return
+          if (!authors[author]) {
+            authors[author] = {
+              name: author,
+              numBooks: 1
+            }
+          } else {
+            authors[author].numBooks++
+          }
+        })
+      }
+    })
+    res.json(Object.values(authors))
   }
 
   middleware(req, res, next) {

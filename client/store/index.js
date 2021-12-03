@@ -32,6 +32,10 @@ export const getters = {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
+  getBookCoverAspectRatio: state => {
+    if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1.6
+    return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
+  },
   getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
   getAudiobookIdStreaming: state => {
     return state.streamAudiobook ? state.streamAudiobook.id : null

@@ -19,6 +19,13 @@
             </nuxt-link>
           </template>
         </div>
+        <div v-if="shelf.type === 'authors'" class="flex items-center -mb-2">
+          <template v-for="entity in shelf.entities">
+            <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.name)}`">
+              <cards-author-card :width="bookCoverWidth" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6" />
+            </nuxt-link>
+          </template>
+        </div>
         <div v-else-if="shelf.series" class="flex items-center -mb-2">
           <template v-for="entity in shelf.series">
             <cards-group-card is-categorized :key="entity.name" :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" @click="$emit('clickSeries', entity)" />
@@ -79,6 +86,9 @@ export default {
     paddingLeft() {
       if (window.innerWidth < 768) return 1
       return 2.5
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {

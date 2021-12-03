@@ -23,11 +23,6 @@ export default {
     if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
-
-    // if (libraryPage === 'collections') {
-    //   store.dispatch('user/loadUserCollections')
-    // }
-
     return {
       id: params.id || '',
       libraryId

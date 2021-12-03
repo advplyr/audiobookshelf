@@ -1,5 +1,5 @@
 <template>
-  <div class="relative rounded-sm overflow-hidden" :style="{ height: width * 1.6 + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }" @mouseover="isHovering = true" @mouseleave="isHovering = false">
+  <div class="relative rounded-sm overflow-hidden" :style="{ height: width * bookCoverAspectRatio + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }" @mouseover="isHovering = true" @mouseleave="isHovering = false">
     <div class="w-full h-full relative">
       <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
         <div class="w-full h-full z-0" ref="coverBg" />
@@ -28,7 +28,8 @@ export default {
       type: Number,
       default: 120
     },
-    showOpenNewTab: Boolean
+    showOpenNewTab: Boolean,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {
@@ -72,7 +73,7 @@ export default {
         this.naturalWidth = naturalWidth
 
         var aspectRatio = naturalHeight / naturalWidth
-        var arDiff = Math.abs(aspectRatio - 1.6)
+        var arDiff = Math.abs(aspectRatio - this.bookCoverAspectRatio)
 
         // If image aspect ratio is <= 1.45 or >= 1.75 then use cover bg, otherwise stretch to fit
         if (arDiff > 0.15) {

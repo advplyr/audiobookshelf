@@ -4,7 +4,7 @@
       <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 240px">
           <div class="relative" style="height: fit-content">
-            <covers-collection-cover :book-items="bookItems" :width="240" :height="120 * 1.6" />
+            <covers-collection-cover :book-items="bookItems" :width="240" :height="120 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
@@ -66,6 +66,9 @@ export default {
     }
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
+    },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },

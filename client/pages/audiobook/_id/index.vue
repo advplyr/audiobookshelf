@@ -4,7 +4,7 @@
       <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
-            <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" />
+            <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>
@@ -190,6 +190,12 @@ export default {
     }
   },
   computed: {
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    bookCoverAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
     bookCoverWidth() {
       return this.windowWidth < 800 ? 176 : 208
     },

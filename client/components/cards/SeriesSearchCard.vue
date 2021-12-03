@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
-    <covers-group-cover :name="series" :book-items="bookItems" :width="60" :height="60" />
+    <covers-group-cover :name="series" :book-items="bookItems" :width="60" :height="60" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     <div class="flex-grow px-2 seriesSearchCardContent h-full">
       <p class="truncate text-sm">{{ series }}</p>
     </div>
@@ -19,7 +19,11 @@ export default {
   data() {
     return {}
   },
-  computed: {},
+  computed: {
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
+    }
+  },
   methods: {},
   mounted() {}
 }

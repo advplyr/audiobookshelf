@@ -1,6 +1,6 @@
 <template>
   <div class="flex h-full px-1 overflow-hidden">
-    <covers-book-cover :audiobook="audiobook" :width="50" />
+    <covers-book-cover :audiobook="audiobook" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     <div class="flex-grow px-2 audiobookSearchCardContent">
       <p v-if="matchKey !== 'title'" class="truncate text-sm">{{ title }}</p>
       <p v-else class="truncate text-sm" v-html="matchHtml" />
@@ -30,6 +30,13 @@ export default {
     return {}
   },
   computed: {
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
+    },
+    coverWidth() {
+      if (this.bookCoverAspectRatio === 1) return 50 * 1.2
+      return 50
+    },
     book() {
       return this.audiobook ? this.audiobook.book || {} : {}
     },

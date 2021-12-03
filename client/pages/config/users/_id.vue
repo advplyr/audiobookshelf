@@ -43,7 +43,7 @@
           </tr>
           <tr v-for="ab in userAudiobooks" :key="ab.audiobookId" :class="!ab.isRead ? '' : 'isRead'">
             <td>
-              <covers-book-cover :width="50" :audiobook="ab" />
+              <covers-book-cover :width="50" :audiobook="ab" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
             <td class="font-book">
               <p>{{ ab.book ? ab.book.title : ab.audiobookTitle || 'Unknown' }}</p>
@@ -87,6 +87,12 @@ export default {
     }
   },
   computed: {
+    coverAspectRatio() {
+      return this.$store.getters['getServerSetting']('coverAspectRatio')
+    },
+    bookCoverAspectRatio() {
+      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },

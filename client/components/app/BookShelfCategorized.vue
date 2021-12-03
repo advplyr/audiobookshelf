@@ -65,7 +65,8 @@ export default {
       return this.isCoverSquareAspectRatio ? 1 : 1.6
     },
     sizeMultiplier() {
-      return this.bookCoverWidth / 120
+      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
+      return this.bookCoverWidth / baseSize
     }
   },
   methods: {
@@ -105,16 +106,6 @@ export default {
         })
       }
 
-      // TODO: Author shelves
-      // if (this.results.authors) {
-      //   shelves.push({
-      //     id: 'authors',
-      //     label: 'Authors',
-      //     type: 'authors',
-      //     entities: this.results.authors.map((a) => a.author)
-      //   })
-      // }
-
       if (this.results.series) {
         shelves.push({
           id: 'series',
@@ -143,6 +134,22 @@ export default {
           })
         })
       }
+      if (this.results.authors) {
+        shelves.push({
+          id: 'authors',
+          label: 'Authors',
+          type: 'authors',
+          entities: this.results.authors.map((a) => {
+            return {
+              id: a.author,
+              name: a.author,
+              numBooks: a.numBooks,
+              type: 'author'
+            }
+          })
+        })
+      }
+
       this.shelves = shelves
     },
     settingsUpdated(settings) {},
