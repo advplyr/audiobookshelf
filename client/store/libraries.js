@@ -172,5 +172,46 @@ export const mutations = {
   },
   setLibraryFilterData(state, filterData) {
     state.filterData = filterData
+  },
+  updateFilterDataWithAudiobook(state, audiobook) {
+    if (!audiobook || !audiobook.book || !state.filterData) return
+    if (state.currentLibraryId !== audiobook.libraryId) return
+    /*
+    var filterdata = {
+      authors: [],
+      genres: [],
+      tags: [],
+      series: [],
+      narrators: []
+    }
+    */
+
+    if (audiobook.book.authorFL) {
+      audiobook.book.authorFL.split(', ').forEach((author) => {
+        if (author && !state.filterData.authors.includes(author)) {
+          state.filterData.authors.push(author)
+        }
+      })
+    }
+    if (audiobook.book.narratorFL) {
+      audiobook.book.narratorFL.split(', ').forEach((narrator) => {
+        if (narrator && !state.filterData.narrators.includes(narrator)) {
+          state.filterData.narrators.push(narrator)
+        }
+      })
+    }
+    if (audiobook.book.series && !state.filterData.series.includes(audiobook.book.series)) {
+      state.filterData.series.push(audiobook.book.series)
+    }
+    if (audiobook.tags && audiobook.tags.length) {
+      audiobook.tags.forEach((tag) => {
+        if (tag && !state.filterData.tags.includes(tag)) state.filterData.tags.push(tag)
+      })
+    }
+    if (audiobook.book.genres && audiobook.book.genres.length) {
+      audiobook.book.genres.forEach((genre) => {
+        if (tag && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
+      })
+    }
   }
 }

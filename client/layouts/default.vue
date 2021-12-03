@@ -153,6 +153,7 @@ export default {
     },
     audiobookAdded(audiobook) {
       // this.$store.commit('audiobooks/addUpdate', audiobook)
+      this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
     },
     audiobookUpdated(audiobook) {
       if (this.$store.state.selectedAudiobook && this.$store.state.selectedAudiobook.id === audiobook.id) {
@@ -161,6 +162,7 @@ export default {
       }
       // Just triggers the listeners
       this.$store.commit('audiobooks/audiobookUpdated', audiobook)
+      this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
       // this.$store.commit('audiobooks/addUpdate', audiobook)
     },
     audiobookRemoved(audiobook) {
@@ -172,9 +174,9 @@ export default {
       // this.$store.commit('audiobooks/remove', audiobook)
     },
     audiobooksAdded(audiobooks) {
-      // audiobooks.forEach((ab) => {
-      //   this.$store.commit('audiobooks/addUpdate', ab)
-      // })
+      audiobooks.forEach((ab) => {
+        this.audiobookAdded(ab)
+      })
     },
     audiobooksUpdated(audiobooks) {
       audiobooks.forEach((ab) => {
