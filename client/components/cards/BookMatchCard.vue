@@ -1,7 +1,7 @@
 <template>
   <div class="w-full border-b border-gray-700 pb-2">
     <div class="flex py-1 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer" @click="selectMatch">
-      <img :src="selectedCover || '/book_placeholder.jpg'" class="h-24 object-cover" style="width: 60px" />
+      <img :src="selectedCover || '/book_placeholder.jpg'" class="h-24 object-cover" :style="{ width: 96 / bookCoverAspectRatio + 'px' }" />
       <div class="px-4 flex-grow">
         <div class="flex items-center">
           <h1>{{ book.title }}</h1>
@@ -30,7 +30,8 @@ export default {
     book: {
       type: Object,
       default: () => {}
-    }
+    },
+    bookCoverAspectRatio: Number
   },
   data() {
     return {

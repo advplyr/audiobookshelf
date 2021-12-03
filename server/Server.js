@@ -199,7 +199,10 @@ class Server {
     app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:library/search', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library/bookshelf/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:library/authors', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/library/:library/series/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/config/users/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/collection/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 

@@ -22,7 +22,7 @@
     </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper">
       <template v-for="(res, index) in searchResults">
-        <cards-book-match-card :key="index" :book="res" @select="selectMatch" />
+        <cards-book-match-card :key="index" :book="res" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
     </div>
     <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full p-8 max-h-full overflow-y-auto overflow-x-hidden">
@@ -153,6 +153,9 @@ export default {
       set(val) {
         this.$emit('update:processing', val)
       }
+    },
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
     }
   },
   methods: {
