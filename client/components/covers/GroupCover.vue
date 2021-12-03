@@ -245,15 +245,11 @@ export default {
 
       if (showCoverBg) {
         var coverbgwrapper = document.createElement('div')
-        coverbgwrapper.className = 'absolute top-0 left-0 w-full h-full bg-primary'
+        coverbgwrapper.className = 'absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary'
 
         var coverbg = document.createElement('div')
-        coverbg.className = 'w-full h-full'
+        coverbg.className = 'absolute cover-bg'
         coverbg.style.backgroundImage = `url("${src}")`
-        coverbg.style.backgroundSize = 'cover'
-        coverbg.style.backgroundPosition = 'center'
-        coverbg.style.opacity = 0.25
-        coverbg.style.filter = 'blur(1px)'
 
         coverbgwrapper.appendChild(coverbg)
         imgdiv.appendChild(coverbgwrapper)

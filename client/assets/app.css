@@ -171,3 +171,15 @@ Bookshelf Label
   border-style: solid;
   color: #fce3a6;
 }
+
+
+.cover-bg {
+  width: calc(100% + 40px);
+  height: calc(100% + 40px);
+  top: -20px;
+  left: -20px;
+  background-size: 100% 100%;
+  background-position: center;
+  opacity: 1;
+  filter: blur(20px);
+}

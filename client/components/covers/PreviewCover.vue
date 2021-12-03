@@ -1,9 +1,12 @@
 <template>
   <div class="relative rounded-sm overflow-hidden" :style="{ height: width * bookCoverAspectRatio + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }" @mouseover="isHovering = true" @mouseleave="isHovering = false">
     <div class="w-full h-full relative">
-      <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
-        <div class="w-full h-full z-0" ref="coverBg" />
+      <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+        <div class="absolute cover-bg" ref="coverBg" />
       </div>
+      <!-- <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
+        <div class="w-full h-full z-0" ref="coverBg" />
+      </div> -->
       <img ref="cover" :src="cover" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
 
       <a v-if="!imageFailed && showOpenNewTab && isHovering" :href="cover" @click.stop target="_blank" class="absolute bg-primary flex items-center justify-center shadow-sm rounded-full hover:scale-110 transform duration-100" :style="{ top: sizeMultiplier * 0.5 + 'rem', right: sizeMultiplier * 0.5 + 'rem', width: 2.5 * sizeMultiplier + 'rem', height: 2.5 * sizeMultiplier + 'rem' }">
@@ -60,10 +63,6 @@ export default {
     setCoverBg() {
       if (this.$refs.coverBg) {
         this.$refs.coverBg.style.backgroundImage = `url("${this.src}")`
-        this.$refs.coverBg.style.backgroundSize = 'cover'
-        this.$refs.coverBg.style.backgroundPosition = 'center'
-        this.$refs.coverBg.style.opacity = 0.25
-        this.$refs.coverBg.style.filter = 'blur(1px)'
       }
     },
     imageLoaded() {

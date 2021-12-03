@@ -1,9 +1,10 @@
 <template>
   <div class="relative rounded-sm overflow-hidden" :style="{ height: height + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }">
     <div class="w-full h-full relative bg-bg">
-      <div v-if="showCoverBg" class="bg-primary absolute top-0 left-0 w-full h-full">
-        <div class="w-full h-full z-0" ref="coverBg" />
+      <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+        <div class="absolute cover-bg" ref="coverBg" />
       </div>
+
       <img v-if="audiobook" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-cover'" />
       <div v-show="loading && audiobook" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
         <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
@@ -135,10 +136,6 @@ export default {
     setCoverBg() {
       if (this.$refs.coverBg) {
         this.$refs.coverBg.style.backgroundImage = `url("${this.fullCoverUrl}")`
-        this.$refs.coverBg.style.backgroundSize = 'cover'
-        this.$refs.coverBg.style.backgroundPosition = 'center'
-        this.$refs.coverBg.style.opacity = 0.25
-        this.$refs.coverBg.style.filter = 'blur(1px)'
       }
     },
     hideCoverBg() {},

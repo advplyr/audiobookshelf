@@ -1,7 +1,9 @@
 <template>
   <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <!-- When cover image does not fill -->
-    <div v-show="showCoverBg" class="w-full h-full absolute top-0 left-0 z-0" ref="coverBg" />
+    <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
+      <div class="absolute cover-bg" ref="coverBg" />
+    </div>
 
     <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
       <div v-show="audiobook && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
@@ -444,10 +446,6 @@ export default {
     setCoverBg() {
       if (this.$refs.coverBg) {
         this.$refs.coverBg.style.backgroundImage = `url("${this.bookCoverSrc}")`
-        this.$refs.coverBg.style.backgroundSize = 'cover'
-        this.$refs.coverBg.style.backgroundPosition = 'center'
-        this.$refs.coverBg.style.opacity = 0.25
-        this.$refs.coverBg.style.filter = 'blur(1px)'
       }
     },
     imageLoaded() {
@@ -467,7 +465,6 @@ export default {
         }
       }
     }
-  },
-  mounted() {}
+  }
 }
 </script>
