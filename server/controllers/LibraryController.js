@@ -173,7 +173,7 @@ class LibraryController {
       series = series.slice(startIndex, startIndex + payload.limit)
     }
 
-    payload.results = series
+    payload.results = sort(series).asc(s => s.name)
     res.json(payload)
   }
 
