@@ -82,7 +82,7 @@ export default {
     clickCard() {
       if (!this.series) return
       var router = this.$router || this.$nuxt.$router
-      router.push(`/library/${this.currentLibraryId}/bookshelf/series?series=${this.seriesId}`)
+      router.push(`/library/${this.currentLibraryId}/series/${this.seriesId}`)
     },
     imageLoaded() {
       this.imageReady = true

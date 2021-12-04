@@ -23,7 +23,7 @@
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              <nuxt-link v-if="series" :to="`/library/${libraryId}/bookshelf/series?series=${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ seriesText }}</nuxt-link>
+              <nuxt-link v-if="series" :to="`/library/${libraryId}/series/${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ seriesText }}</nuxt-link>
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
