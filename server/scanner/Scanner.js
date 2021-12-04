@@ -221,7 +221,7 @@ class Scanner {
         }
       } else {
         var checkRes = audiobook.checkScanData(dataFound, version)
-        if (checkRes.newAudioFileData.length || checkRes.newOtherFileData.length) { // Audiobook has new files
+        if (checkRes.newAudioFileData.length || checkRes.newOtherFileData.length || libraryScan.scanOptions.forceRescan) { // Audiobook has new files
           checkRes.audiobook = audiobook
           checkRes.bookScanData = dataFound
           audiobookDataToRescan.push(checkRes)
@@ -325,13 +325,13 @@ class Scanner {
     libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${audiobook.path}"`)
 
     // Sync other files first to use local images as cover before extracting audio file cover
-    if (newOtherFileData.length) {
+    if (newOtherFileData.length || libraryScan.scanOptions.forceRescan) {
       // TODO: Cleanup other file sync
       var allOtherFiles = newOtherFileData.concat(audiobook._otherFiles)
       await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, libraryScan.preferOpfMetadata)
     }
 
-    if (newAudioFileData.length) {
+    if (newAudioFileData.length || libraryScan.scanOptions.forceRescan) {
       await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)
 
       // Extract embedded cover art if cover is not already in directory
