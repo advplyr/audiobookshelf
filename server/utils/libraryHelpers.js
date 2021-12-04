@@ -166,7 +166,7 @@ module.exports = {
   getAudiobooksTotalDuration(audiobooks) {
     var totalDuration = 0
     audiobooks.forEach((ab) => {
-      totalDuration += ab.totalDuration
+      totalDuration += ab.duration
     })
     return totalDuration
   },
@@ -174,7 +174,7 @@ module.exports = {
   getAudiobooksTotalSize(audiobooks) {
     var totalSize = 0
     audiobooks.forEach((ab) => {
-      totalSize += ab.totalSize
+      totalSize += ab.size
     })
     return totalSize
   },

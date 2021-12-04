@@ -55,7 +55,7 @@ class Stream extends EventEmitter {
   }
 
   get totalDuration() {
-    return this.audiobook.totalDuration
+    return this.audiobook.duration
   }
 
   get tracksAudioFileType() {

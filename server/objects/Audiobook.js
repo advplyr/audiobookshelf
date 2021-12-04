@@ -100,24 +100,24 @@ class Audiobook {
     return this.book ? this.book.genres || [] : []
   }
 
-  get totalDuration() {
+  get duration() {
     var total = 0
     this.tracks.forEach((track) => total += track.duration)
     return total
   }
 
-  get totalSize() {
+  get size() {
     var total = 0
     this.tracks.forEach((track) => total += track.size)
     return total
   }
 
   get sizePretty() {
-    return bytesPretty(this.totalSize)
+    return bytesPretty(this.size)
   }
 
   get durationPretty() {
-    return elapsedPretty(this.totalDuration)
+    return elapsedPretty(this.duration)
   }
 
   get invalidParts() {
@@ -206,8 +206,8 @@ class Audiobook {
       fullPath: this.fullPath,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
-      duration: this.totalDuration,
-      size: this.totalSize,
+      duration: this.duration,
+      size: this.size,
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
       numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
@@ -229,9 +229,9 @@ class Audiobook {
       fullPath: this.fullPath,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
-      duration: this.totalDuration,
+      duration: this.duration,
       durationPretty: this.durationPretty,
-      size: this.totalSize,
+      size: this.size,
       sizePretty: this.sizePretty,
       missingParts: this.missingParts,
       invalidParts: this.invalidParts,
