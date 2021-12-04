@@ -179,7 +179,7 @@ class LibraryController {
       series = series.slice(startIndex, startIndex + payload.limit)
     }
 
-    payload.results = series
+    payload.results = sort(series).asc(s => s.name)
     res.json(payload)
   }
 
@@ -194,7 +194,7 @@ class LibraryController {
       return res.status(404).send('Series not found')
     }
     audiobooks = sort(audiobooks).asc(ab => {
-      return ab.book.volumeNumber
+      return Number(ab.book.volumeNumber)
     })
     res.json({
       results: audiobooks.map(ab => ab.toJSONExpanded()),
