@@ -69,6 +69,16 @@ function fetchLanguage(metadata) {
   return fetchTagString(metadata, 'dc:language')
 }
 
+function fetchSeries(metadata) {
+  if(typeof metadata.meta == "undefined") return null
+  return fetchTagString(metadata.meta, "calibre:series")
+}
+
+function fetchVolumeNumber(metadata) {
+  if(typeof metadata.meta == "undefined") return null
+  return fetchTagString(metadata.meta, "calibre:series_index")
+}
+
 module.exports.parseOpfMetadataXML = async (xml) => {
   var json = await xmlToJSON(xml)
   if (!json || !json.package || !json.package.metadata) return null
@@ -89,7 +99,9 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     isbn: fetchISBN(metadata),
     description: fetchDescription(metadata),
     genres: fetchGenres(metadata),
-    language: fetchLanguage(metadata)
+    language: fetchLanguage(metadata),
+    series: fetchSeries(metadata),
+    volumeNumber: fetchVolumeNumber(metadata)
   }
   return data
 }

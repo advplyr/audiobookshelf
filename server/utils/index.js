@@ -56,6 +56,12 @@ const xmlToJSON = (xml) => {
         Logger.error(`[xmlToJSON] Error`, err)
         resolve(null)
       } else {
+        if (typeof results.package.metadata[0].meta != "undefined") {
+          results.package.metadata[0].meta = {}
+          for(var match of xml.matchAll(/<meta name="(?<name>.+)" content="(?<content>.+)"\/>/g)) {
+            results.package.metadata[0].meta[match.groups['name']] = [match.groups['content']]
+          }
+        }
         resolve(results)
       }
     })
