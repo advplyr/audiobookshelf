@@ -90,6 +90,13 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     metadata = metadata[0]
   }
 
+  if (typeof metadata.meta != "undefined") {
+    metadata.meta = {}
+    for(var match of xml.matchAll(/<meta name="(?<name>.+)" content="(?<content>.+)"\/>/g)) {
+      metadata.meta[match.groups['name']] = [match.groups['content']]
+    }
+  }
+
   var creators = parseCreators(metadata)
   var data = {
     title: fetchTitle(metadata),
