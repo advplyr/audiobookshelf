@@ -5,7 +5,7 @@
         <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
           <p class="text-white text-2xl">{{ shelf }}</p>
         </div> -->
-        <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-10" :class="`h-${shelfDividerHeightIndex}`" />
+        <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
 
@@ -146,9 +146,6 @@ export default {
       // Includes margin
       return this.entityWidth + 24
     },
-    booksPerPage() {
-      return this.shelvesPerPage * this.entitiesPerShelf
-    },
     selectedAudiobooks() {
       return this.$store.state.selectedAudiobooks || []
     }
@@ -226,7 +223,7 @@ export default {
         return
       }
       if (payload) {
-        console.log('Received payload', payload)
+        // console.log('Received payload', payload)
         if (!this.initialized) {
           this.initialized = true
           this.totalEntities = payload.total

@@ -135,18 +135,12 @@ class LibraryController {
     if (payload.sortBy) {
       var orderByNumber = payload.sortBy === 'book.volumeNumber'
       var direction = payload.sortDesc ? 'desc' : 'asc'
-      // if (req.query.sort === 'size') {
-      //   console.warn('1SORTING BY SIZE', audiobooks[0])
-      // }
       audiobooks = sort(audiobooks)[direction]((ab) => {
         // Supports dot notation strings i.e. "book.title"
         var value = payload.sortBy.split('.').reduce((a, b) => a[b], ab)
         if (orderByNumber && !isNaN(value)) return Number(value)
         return value
       })
-      // if (req.query.sort === 'size') {
-      //   console.warn('2SORTING BY SIZE', audiobooks[0])
-      // }
     }
 
     if (payload.limit) {
@@ -194,6 +188,7 @@ class LibraryController {
       return res.status(404).send('Series not found')
     }
     audiobooks = sort(audiobooks).asc(ab => {
+      if (!isNaN(ab.book.volumeNumber) && ab.book.volumeNumber !== null) return Number(ab.book.volumeNumber)
       return ab.book.volumeNumber
     })
     res.json({
