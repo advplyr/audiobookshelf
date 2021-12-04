@@ -46,46 +46,41 @@ export default {
     }
   },
   methods: {
+    updateSocketConnectionToast(content, type, timeout) {
+      if (this.socketConnectionToastId !== null && this.socketConnectionToastId !== undefined) {
+        this.$toast.update(this.socketConnectionToastId, { content: content, options: { timeout: timeout, type: type, closeButton: false, position: 'bottom-center', onClose: () => null, closeOnClick: timeout !== null } }, false)
+      } else {
+        this.socketConnectionToastId = this.$toast[type](content, { position: 'bottom-center', timeout: timeout, closeButton: false, closeOnClick: timeout !== null })
+      }
+    },
     connect() {
       console.log('[SOCKET] Connected')
       var token = this.$store.getters['user/getToken']
       this.socket.emit('auth', token)
 
-      if (this.socketConnectionToastId !== null) {
-        this.$toast.update(this.socketConnectionToastId, { content: 'Socket Connected', options: { timeout: 5000, type: 'success', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
-      } else if (!this.isFirstSocketConnection) {
-        this.$toast.success('Socket Connected', { position: 'bottom-center' })
+      if (!this.isFirstSocketConnection || this.socketConnectionToastId !== null) {
+        this.updateSocketConnectionToast('Socket Connected', 'success', 5000)
       }
       this.isFirstSocketConnection = false
       this.isSocketConnected = true
     },
     connectError() {
       console.error('[SOCKET] connect error')
-
-      // if (this.socketConnectionToastId) {
-      //    this.$toast.update(this.socketConnectionToastId, { content: 'Socket Connection Error', options: { timeout: 5000, type: 'error', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
-      // } else {
-      //   this.$toast.error('Socket Connection Error', { position: 'bottom-center' })
-      // }
+      this.updateSocketConnectionToast('Socket Failed to Connect', 'error', null)
     },
     disconnect() {
       console.log('[SOCKET] Disconnected')
       this.isSocketConnected = false
-
-      if (this.socketConnectionToastId !== null) {
-        this.socketConnectionToastId = this.$toast.update(this.socketConnectionToastId, { content: 'Socket Disconnected', options: { timeout: null, type: 'error', closeButton: false, position: 'bottom-center', onClose: () => null } }, true)
-      } else {
-        this.socketConnectionToastId = this.$toast.error('Socket Disconnected', { timeout: null, position: 'bottom-center' })
-      }
+      this.updateSocketConnectionToast('Socket Disconnected', 'error', null)
     },
     reconnect() {
       console.error('[SOCKET] reconnected')
     },
-    reconnection_attempt(val) {
-      console.log(`[SOCKET] Reconnection attempt ${val}`)
+    reconnectAttempt(val) {
+      console.log(`[SOCKET] reconnect attempt ${val}`)
     },
     reconnectError() {
-      console.error('[SOCKET] reconnect error')
+      // console.error('[SOCKET] reconnect error')
     },
     reconnectFailed() {
       console.error('[SOCKET] reconnect failed')
@@ -352,7 +347,7 @@ export default {
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)
       this.socket.on('disconnect', this.disconnect)
-      this.socket.io.on('reconnection_attempt', this.reconnection_attempt)
+      this.socket.io.on('reconnect_attempt', this.reconnectAttempt)
       this.socket.io.on('reconnect', this.reconnect)
       this.socket.io.on('reconnect_error', this.reconnectError)
       this.socket.io.on('reconnect_failed', this.reconnectFailed)
