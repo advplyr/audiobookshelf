@@ -59,9 +59,6 @@ export default {
     }
   },
   methods: {
-    itemClicked() {
-      // this.$emit('click', this.library)
-    },
     editClick() {
       this.$emit('edit', this.library)
     },
@@ -69,7 +66,7 @@ export default {
       this.$root.socket.emit('scan', this.library.id)
     },
     forceScan() {
-      this.$root.socket.emit('scan', this.library.id, {forceRescan: true})
+      this.$root.socket.emit('scan', this.library.id, { forceRescan: true })
     },
     deleteClick() {
       if (this.isMain) return

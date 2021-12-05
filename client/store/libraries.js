@@ -210,7 +210,7 @@ export const mutations = {
     }
     if (audiobook.book.genres && audiobook.book.genres.length) {
       audiobook.book.genres.forEach((genre) => {
-        if (tag && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
+        if (genre && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
       })
     }
   }
