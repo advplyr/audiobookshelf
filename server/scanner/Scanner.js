@@ -305,9 +305,11 @@ class Scanner {
       return this.rescanAudiobook(abd, libraryScan)
     }))
     audiobooksUpdated = audiobooksUpdated.filter(ab => ab) // Filter out nulls
-    libraryScan.resultsUpdated += audiobooksUpdated.length
-    await this.db.updateEntities('audiobook', audiobooksUpdated)
-    this.emitter('audiobooks_updated', audiobooksUpdated.map(ab => ab.toJSONExpanded()))
+    if (audiobooksUpdated.length) {
+      libraryScan.resultsUpdated += audiobooksUpdated.length
+      await this.db.updateEntities('audiobook', audiobooksUpdated)
+      this.emitter('audiobooks_updated', audiobooksUpdated.map(ab => ab.toJSONExpanded()))
+    }
   }
 
   async scanNewAudiobookDataChunk(newAudiobookDataToScan, libraryScan) {
@@ -321,24 +323,38 @@ class Scanner {
   }
 
   async rescanAudiobook(audiobookCheckData, libraryScan) {
-    const { newAudioFileData, newOtherFileData, audiobook, bookScanData } = audiobookCheckData
+    const { newAudioFileData, newOtherFileData, audiobook, bookScanData, updated, existingAudioFileData, existingOtherFileData } = audiobookCheckData
     libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${audiobook.path}"`)
+    var hasUpdated = updated
 
     // Sync other files first to use local images as cover before extracting audio file cover
     if (newOtherFileData.length || libraryScan.scanOptions.forceRescan) {
       // TODO: Cleanup other file sync
-      var allOtherFiles = newOtherFileData.concat(audiobook._otherFiles)
-      await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, libraryScan.preferOpfMetadata)
+      var allOtherFiles = newOtherFileData.concat(existingOtherFileData)
+      if (await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, libraryScan.preferOpfMetadata)) {
+        hasUpdated = true
+      }
     }
 
+    // forceRescan all existing audio files - will probe and update ID3 tag metadata
+    if (libraryScan.scanOptions.forceRescan && existingAudioFileData.length) {
+      if (await AudioFileScanner.scanAudioFiles(existingAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)) {
+        hasUpdated = true
+      }
+    }
+    // Scan new audio files
+    if (newAudioFileData.length) {
+      if (await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)) {
+        hasUpdated = true
+      }
+    }
+    // If an audio file has embedded cover art and no cover is set yet, extract & use it
     if (newAudioFileData.length || libraryScan.scanOptions.forceRescan) {
-      await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)
-
-      // Extract embedded cover art if cover is not already in directory
       if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
         var outputCoverDirs = this.getCoverDirectory(audiobook)
         var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
         if (relativeDir) {
+          hasUpdated = true
           libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${relativeDir}"`)
         }
       }
@@ -346,17 +362,20 @@ class Scanner {
 
     if (!audiobook.audioFilesToInclude.length && !audiobook.ebooks.length) { // Audiobook is invalid
       audiobook.setInvalid()
+      hasUpdated = true
     } else if (audiobook.isInvalid) {
       audiobook.isInvalid = false
+      hasUpdated = true
     }
 
-    // Scan for cover if enabled and has no cover
+    // Scan for cover if enabled and has no cover (and author or title has changed OR has been 7 days since last lookup)
     if (audiobook && libraryScan.findCovers && !audiobook.cover && audiobook.book.shouldSearchForCover) {
       var updatedCover = await this.searchForCover(audiobook, libraryScan)
       audiobook.book.updateLastCoverSearch(updatedCover)
+      hasUpdated = true
     }
 
-    return audiobook
+    return hasUpdated ? audiobook : null
   }
 
   async scanNewAudiobook(audiobookData, preferAudioMetadata, preferOpfMetadata, findCovers, libraryScan = null) {
