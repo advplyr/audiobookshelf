@@ -6,14 +6,16 @@
         <span class="material-icons" style="font-size: 1.4rem">add</span>
       </div>
     </div>
-    <draggable v-model="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
-      <!-- <transition-group type="transition" :name="!drag ? 'flip-list' : null"> -->
+    <draggable :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
-        <modals-libraries-library-item :key="library.id" :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" class="item" />
+        <div :key="library.id" class="item">
+          <modals-libraries-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @sort="draggableSort" @click="setLibrary" />
+        </div>
       </template>
-      <!-- </transition-group> -->
     </draggable>
     <modals-edit-library-modal v-model="showLibraryModal" :library="selectedLibrary" />
+
+    <p class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
   </div>
 </template>
 
@@ -48,6 +50,9 @@ export default {
     },
     libraries() {
       return this.$store.getters['libraries/getSortedLibraries']()
+    },
+    libraryScans() {
+      return this.$store.state.scanners.libraryScans
     }
   },
   methods: {
@@ -55,10 +60,9 @@ export default {
       this.drag = true
       clearTimeout(this.orderTimeout)
     },
-    endDrag() {
+    endDrag(e) {
       this.drag = false
       this.checkOrder()
-      console.log('DRAG END')
     },
     checkOrder() {
       clearTimeout(this.orderTimeout)
@@ -78,7 +82,7 @@ export default {
       })
       var newOrder = libraryOrderData.map((lib) => lib.id).join(',')
       if (currOrder !== newOrder) {
-        this.$axios.$patch('/api/libraries/order', libraryOrderData).then((libraries) => {
+        this.$axios.$post('/api/libraries/order', libraryOrderData).then((libraries) => {
           if (libraries && libraries.length) {
             this.$toast.success('Library order saved', { timeout: 1500 })
             this.$store.commit('libraries/set', libraries)

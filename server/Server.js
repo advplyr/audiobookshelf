@@ -316,9 +316,9 @@ class Server {
     await this.scanner2.scanFilesChanged(fileUpdates)
   }
 
-  async scan(libraryId) {
+  async scan(libraryId, options = {}) {
     Logger.info('[Server] Starting Scan')
-    await this.scanner2.scan(libraryId)
+    await this.scanner2.scan(libraryId, options)
     // await this.scanner.scan(libraryId)
     Logger.info('[Server] Scan complete')
   }
