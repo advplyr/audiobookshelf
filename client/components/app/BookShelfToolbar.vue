@@ -11,7 +11,7 @@
         <p>Series</p>
       </nuxt-link>
     </div>
-    <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-20 flex items-center px-2 md:px-8">
+    <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-30 flex items-center px-2 md:px-8">
       <template v-if="page !== 'search' && !isHome">
         <p v-if="!selectedSeries" class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
         <div v-else class="items-center hidden md:flex">

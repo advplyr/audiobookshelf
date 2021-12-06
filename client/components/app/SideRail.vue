@@ -1,5 +1,5 @@
 <template>
-  <div class="w-20 bg-bg h-full relative box-shadow-side z-30" style="min-width: 80px">
+  <div class="w-20 bg-bg h-full relative box-shadow-side z-40" style="min-width: 80px">
     <div class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
     <nuxt-link :to="`/library/${currentLibraryId}`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

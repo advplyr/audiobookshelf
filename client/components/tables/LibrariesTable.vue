@@ -14,6 +14,8 @@
       </template>
     </draggable>
     <modals-edit-library-modal v-model="showLibraryModal" :library="selectedLibrary" />
+
+    <p class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
   </div>
 </template>
 
