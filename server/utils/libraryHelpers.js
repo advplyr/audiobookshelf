@@ -90,7 +90,13 @@ module.exports = {
         }
       }
     })
-    return Object.values(_series)
+    return Object.values(_series).map((series) => {
+      series.books = sort(series.books).asc(ab => {
+        if (!isNaN(ab.book.volumeNumber) && ab.book.volumeNumber !== null) return Number(ab.book.volumeNumber)
+        return ab.book.volumeNumber
+      })
+      return series
+    })
   },
 
   getBooksWithUserAudiobook(user, books) {
