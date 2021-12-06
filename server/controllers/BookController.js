@@ -99,19 +99,20 @@ class BookController {
       Logger.warn('User attempted to batch update without permission', req.user)
       return res.sendStatus(403)
     }
-    var audiobooks = req.body
-    if (!audiobooks || !audiobooks.length) {
+    var updatePayloads = req.body
+    if (!updatePayloads || !updatePayloads.length) {
       return res.sendStatus(500)
     }
 
     var audiobooksUpdated = 0
-    audiobooks = audiobooks.map((ab) => {
-      var _ab = this.db.audiobooks.find(__ab => __ab.id === ab.id)
-      if (!_ab) return null
-      var hasUpdated = _ab.update(ab)
+    var audiobooks = updatePayloads.map((up) => {
+      var audiobookUpdates = up.updates
+      var ab = this.db.audiobooks.find(_ab => _ab.id === up.id)
+      if (!ab) return null
+      var hasUpdated = ab.update(audiobookUpdates)
       if (!hasUpdated) return null
       audiobooksUpdated++
-      return _ab
+      return ab
     }).filter(ab => ab)
 
     if (audiobooksUpdated) {

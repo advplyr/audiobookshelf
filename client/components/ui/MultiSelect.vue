@@ -57,6 +57,12 @@ export default {
       menu: null
     }
   },
+  watch: {
+    showMenu(newVal) {
+      if (newVal) this.setListener()
+      else this.removeListener()
+    }
+  },
   computed: {
     selected: {
       get() {
@@ -99,7 +105,18 @@ export default {
     recalcMenuPos() {
       if (!this.menu) return
       var boundingBox = this.$refs.inputWrapper.getBoundingClientRect()
-      this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
+      if (boundingBox.y > window.innerHeight - 8) {
+        // Input is off the page
+        return this.forceBlur()
+      }
+      var menuHeight = this.menu.clientHeight
+      var top = boundingBox.y + boundingBox.height - 4
+      if (top + menuHeight > window.innerHeight - 20) {
+        // Reverse menu to open upwards
+        top = boundingBox.y - menuHeight - 4
+      }
+
+      this.menu.style.top = top + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
     },
@@ -119,7 +136,7 @@ export default {
         this.unmountMountMenu()
       }
       this.isFocused = true
-      this.recalcMenuPos()
+      this.$nextTick(this.recalcMenuPos)
     },
     inputBlur() {
       if (!this.isFocused) return
@@ -200,6 +217,15 @@ export default {
       } else {
         this.insertNewItem(this.textInput)
       }
+    },
+    scroll() {
+      this.recalcMenuPos()
+    },
+    setListener() {
+      document.addEventListener('scroll', this.scroll, true)
+    },
+    removeListener() {
+      document.removeEventListener('scroll', this.scroll, true)
     }
   },
   mounted() {}

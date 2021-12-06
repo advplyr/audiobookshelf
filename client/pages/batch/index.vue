@@ -55,7 +55,7 @@
 
     <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamAudiobook ? '165px' : '0px' }">
       <div class="flex-grow" />
-      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click="saveClick">Save</ui-btn>
+      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">Save</ui-btn>
     </div>
   </div>
 </template>
@@ -178,11 +178,55 @@ export default {
         }
       })
     },
+    compareStringArrays(arr1, arr2) {
+      if (!arr1 || !arr2) return false
+      return arr1.join(',') !== arr2.join(',')
+    },
+    compareAudiobooks(newAb, origAb) {
+      const bookKeysToCheck = ['title', 'subtitle', 'narrator', 'author', 'publishYear', 'series', 'volumeNumber', 'description']
+      var newBook = newAb.book
+      var origBook = origAb.book
+      var diffObj = {}
+      for (const key in newBook) {
+        if (bookKeysToCheck.includes(key)) {
+          if (newBook[key] !== origBook[key]) {
+            if (!diffObj.book) diffObj.book = {}
+            diffObj.book[key] = newBook[key]
+          }
+        }
+        if (key === 'genres') {
+          if (this.compareStringArrays(newBook[key], origBook[key])) {
+            diffObj[key] = newBook[key]
+          }
+        }
+      }
+      if (newAb.tags && origAb.tags && newAb.tags.join(',') !== origAb.tags.join(',')) {
+        diffObj.tags = newAb.tags
+      }
+      return diffObj
+    },
     saveClick() {
-      this.isProcessing = true
+      var updates = []
+      for (let i = 0; i < this.audiobookCopies.length; i++) {
+        var ab = { ...this.audiobookCopies[i] }
+        var origAb = ab.originalAudiobook
+        delete ab.originalAudiobook
 
+        var res = this.compareAudiobooks(ab, origAb)
+        if (res && Object.keys(res).length) {
+          updates.push({
+            id: ab.id,
+            updates: res
+          })
+        }
+      }
+      if (!updates.length) {
+        return this.$toast.warning('No updates were made')
+      }
+      console.log('Pushing updates', updates)
+      this.isProcessing = true
       this.$axios
-        .$post('/api/books/batch/update', this.audiobookCopies)
+        .$post('/api/books/batch/update', updates)
         .then((data) => {
           this.isProcessing = false
           if (data.updates) {

@@ -103,9 +103,12 @@ export default {
     },
     closeMenu() {
       this.showMenu = false
+      this.removeListener()
     },
     clickWrapper() {
       this.showMenu = !this.showMenu
+      if (this.showMenu) this.setListener()
+      else this.removeListener()
     },
     removeItem(itemValue) {
       var remaining = this.selected.filter((i) => i !== itemValue)
@@ -113,6 +116,15 @@ export default {
       this.$nextTick(() => {
         this.recalcMenuPos()
       })
+    },
+    scroll() {
+      this.recalcMenuPos()
+    },
+    setListener() {
+      document.addEventListener('scroll', this.scroll, true)
+    },
+    removeListener() {
+      document.removeEventListener('scroll', this.scroll, true)
     }
   },
   mounted() {}
