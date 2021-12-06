@@ -542,10 +542,9 @@ class Audiobook {
     var alreadyHasDescTxt = otherFilenamesAlreadyInBook.includes('desc.txt')
     var alreadyHasReaderTxt = otherFilenamesAlreadyInBook.includes('reader.txt')
 
+    // Filter out other files no longer in directory
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
     this.otherFiles = this.otherFiles.filter(f => newOtherFilePaths.includes(f.path))
-
-    // Some files are not there anymore and filtered out
     if (currOtherFileNum !== this.otherFiles.length) {
       Logger.debug(`[Audiobook] ${currOtherFileNum - this.otherFiles.length} other files were removed for "${this.title}"`)
       hasUpdates = true
@@ -937,6 +936,8 @@ class Audiobook {
 
     var newAudioFileData = []
     var newOtherFileData = []
+    var existingAudioFileData = []
+    var existingOtherFileData = []
 
     dataFound.audioFiles.forEach((af) => {
       var audioFileFoundCheck = this.checkFileFound(af, true)
@@ -944,6 +945,9 @@ class Audiobook {
         newAudioFileData.push(af)
       } else if (audioFileFoundCheck) {
         hasUpdated = true
+        existingAudioFileData.push(af)
+      } else {
+        existingAudioFileData.push(af)
       }
     })
 
@@ -953,6 +957,9 @@ class Audiobook {
         newOtherFileData.push(otherFileData)
       } else if (fileFoundCheck) {
         hasUpdated = true
+        existingOtherFileData.push(otherFileData)
+      } else {
+        existingOtherFileData.push(otherFileData)
       }
     })
 
@@ -1010,7 +1017,9 @@ class Audiobook {
       newAudioFileData,
       newOtherFileData,
       audioFilesRemoved,
-      otherFilesRemoved
+      otherFilesRemoved,
+      existingAudioFileData, // Existing file data may get re-scanned if forceRescan is set
+      existingOtherFileData
     }
   }
 }

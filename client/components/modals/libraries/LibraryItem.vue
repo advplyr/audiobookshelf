@@ -10,6 +10,7 @@
     <p class="text-xl font-book pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
     <div class="flex-grow" />
     <ui-btn v-show="isHovering && !libraryScan && canScan" small color="bg" @click.stop="scan">Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan && canScan" small color="bg" class="ml-2" @click.stop="forceScan">Force Re-Scan</ui-btn>
     <span v-show="isHovering && !libraryScan && showEdit && canEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
     <span v-show="!libraryScan && isHovering && showEdit && canDelete && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50 cursor-pointer'" @click.stop="deleteClick">delete</span>
     <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin">
@@ -58,14 +59,14 @@ export default {
     }
   },
   methods: {
-    itemClicked() {
-      // this.$emit('click', this.library)
-    },
     editClick() {
       this.$emit('edit', this.library)
     },
     scan() {
       this.$root.socket.emit('scan', this.library.id)
+    },
+    forceScan() {
+      this.$root.socket.emit('scan', this.library.id, { forceRescan: true })
     },
     deleteClick() {
       if (this.isMain) return

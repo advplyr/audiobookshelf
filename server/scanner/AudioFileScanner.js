@@ -139,12 +139,10 @@ class AudioFileScanner {
         }
         if (existingAF) {
           if (audiobook.updateAudioFile(newAF)) {
-            // console.log('update dauido file')
             hasUpdated = true
           }
         } else {
           audiobook.addAudioFile(newAF)
-          // console.log('added auido file')
           hasUpdated = true
         }
       }

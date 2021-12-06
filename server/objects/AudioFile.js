@@ -96,9 +96,9 @@ class AudioFile {
     this.exclude = !!data.exclude
     this.error = data.error || null
 
-    this.trackNumFromMeta = data.trackNumFromMeta || null
-    this.trackNumFromFilename = data.trackNumFromFilename || null
-    this.cdNumFromFilename = data.cdNumFromFilename || null
+    this.trackNumFromMeta = data.trackNumFromMeta
+    this.trackNumFromFilename = data.trackNumFromFilename
+    this.cdNumFromFilename = data.cdNumFromFilename
 
     this.format = data.format
     this.duration = data.duration
@@ -130,9 +130,9 @@ class AudioFile {
     this.fullPath = data.fullPath
     this.addedAt = Date.now()
 
-    this.trackNumFromMeta = data.trackNumFromMeta || null
-    this.trackNumFromFilename = data.trackNumFromFilename || null
-    this.cdNumFromFilename = data.cdNumFromFilename || null
+    this.trackNumFromMeta = data.trackNumFromMeta
+    this.trackNumFromFilename = data.trackNumFromFilename
+    this.cdNumFromFilename = data.cdNumFromFilename
 
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid
@@ -302,9 +302,9 @@ class AudioFile {
           hasUpdated = true
         }
       } else if (this[key] !== newjson[key]) {
+        // console.log(this.filename, 'key', key, 'updated', this[key], newjson[key])
         this[key] = newjson[key]
         hasUpdated = true
-        // console.log('key', key, 'updated', this[key], newjson[key])
       }
     }
     return hasUpdated
