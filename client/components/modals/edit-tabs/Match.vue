@@ -6,7 +6,7 @@
           <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
         </div>
         <div class="w-72 px-1">
-          <ui-text-input-with-label v-model="searchTitle" label="Search Title" placeholder="Search" />
+          <ui-text-input-with-label v-model="searchTitle" :label="provider == 'audible' ? 'Search Title or ASIN' : 'Search Title'" placeholder="Search" />
         </div>
         <div class="w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" label="Author" />
