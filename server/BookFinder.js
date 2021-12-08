@@ -147,7 +147,7 @@ class BookFinder {
     return booksFiltered
   }
 
-  async getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance) {
+  async getGoogleBooksResults(title, author) {
     var books = await this.googleBooks.search(title, author)
     if (this.verbose) Logger.debug(`GoogleBooks Book Search Results: ${books.length || 0}`)
     if (books.errorCode) {
@@ -158,7 +158,7 @@ class BookFinder {
     return books
   }
 
-  async getAudibleResults(title, author, maxTitleDistance, maxAuthorDistance) {
+  async getAudibleResults(title, author) {
     var books = await this.audible.search(title, author);
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
@@ -172,9 +172,9 @@ class BookFinder {
     Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'google') {
-      return this.getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance)
+      return this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
-      return this.getAudibleResults(title, author, maxTitleDistance, maxAuthorDistance)
+      return this.getAudibleResults(title, author)
     } else if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {

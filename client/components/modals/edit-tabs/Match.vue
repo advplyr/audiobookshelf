@@ -159,6 +159,13 @@ export default {
     }
   },
   methods: {
+    persistProvider() {
+      try {
+        localStorage.setItem('book-provider', this.provider)
+      } catch (error) {
+        console.error('PersistProvider', error)
+      }
+    },
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
@@ -169,6 +176,7 @@ export default {
         this.$toast.warning('Search title is required')
         return
       }
+      this.persistProvider()
       this.runSearch()
     },
     async runSearch() {
@@ -177,7 +185,7 @@ export default {
       this.searchResults = []
       this.isProcessing = true
       this.lastSearch = searchQuery
-      var results = await this.$axios.$get(`/api/find/search?${searchQuery}`).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/books?${searchQuery}`).catch((error) => {
         console.error('Failed', error)
         return []
       })
@@ -217,6 +225,7 @@ export default {
       }
       this.searchTitle = this.audiobook.book.title
       this.searchAuthor = this.audiobook.book.authorFL || ''
+      this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
       this.selectedMatch = match

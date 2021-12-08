@@ -40,7 +40,7 @@
           </div>
         </div>
 
-        <form @submit.prevent="submitSearchForm">
+        <!-- <form @submit.prevent="submitSearchForm">
           <div class="flex items-center justify-start -mx-1 py-2 mt-2">
             <div class="flex-grow px-1">
               <ui-text-input-with-label v-model="searchTitle" label="Search Title" placeholder="Search" :disabled="processing" />
@@ -52,16 +52,30 @@
               <ui-btn type="submit" class="mt-5 w-full" :padding-x="0">Search</ui-btn>
             </div>
           </div>
-        </form>
-        <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
-          <p v-if="!coversFound.length">No Covers Found</p>
-          <template v-for="cover in coversFound">
-            <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
-              <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
-            </div>
-          </template>
-        </div>
+        </form> -->
       </div>
+    </div>
+    <form @submit.prevent="submitSearchForm">
+      <div class="flex items-center justify-start -mx-1 h-20">
+        <div class="w-40 px-1">
+          <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
+        </div>
+        <div class="w-72 px-1">
+          <ui-text-input-with-label v-model="searchTitle" :label="provider == 'audible' ? 'Search Title or ASIN' : 'Search Title'" placeholder="Search" />
+        </div>
+        <div class="w-72 px-1">
+          <ui-text-input-with-label v-model="searchAuthor" label="Author" />
+        </div>
+        <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
+      </div>
+    </form>
+    <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
+      <p v-if="!coversFound.length">No Covers Found</p>
+      <template v-for="cover in coversFound">
+        <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
+          <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        </div>
+      </template>
     </div>
 
     <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
@@ -97,7 +111,22 @@ export default {
       hasSearched: false,
       showLocalCovers: false,
       previewUpload: null,
-      selectedFile: null
+      selectedFile: null,
+      providers: [
+        {
+          text: 'Google Books',
+          value: 'google'
+        },
+        {
+          text: 'Open Library',
+          value: 'openlibrary'
+        },
+        {
+          text: 'Audible',
+          value: 'audible'
+        }
+      ],
+      provider: 'google'
     }
   },
   watch: {
@@ -201,6 +230,7 @@ export default {
       this.imageUrl = this.book.cover || ''
       this.searchTitle = this.book.title || ''
       this.searchAuthor = this.book.authorFL || ''
+      this.provider = localStorage.getItem('book-provider') || 'openlibrary'
     },
     removeCover() {
       if (!this.book.cover) {
@@ -254,14 +284,24 @@ export default {
       this.isProcessing = false
     },
     getSearchQuery() {
-      var searchQuery = `provider=openlibrary&title=${this.searchTitle}`
+      var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
       return searchQuery
     },
+    persistProvider() {
+      try {
+        localStorage.setItem('book-provider', this.provider)
+      } catch (error) {
+        console.error('PersistProvider', error)
+      }
+    },
     async submitSearchForm() {
+      // Store provider in local storage
+      this.persistProvider()
+
       this.isProcessing = true
       var searchQuery = this.getSearchQuery()
-      var results = await this.$axios.$get(`/api/find/covers?${searchQuery}`).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/covers?${searchQuery}`).catch((error) => {
         console.error('Failed', error)
         return []
       })

@@ -40,10 +40,6 @@ class ApiController {
   }
 
   init() {
-    this.router.get('/find/covers', this.findCovers.bind(this))
-    this.router.get('/find/:method', this.find.bind(this))
-
-
     //
     // Library Routes
     //
@@ -150,6 +146,12 @@ class ApiController {
     this.router.post('/backup/upload', BackupController.upload.bind(this))
 
     //
+    // Search Routes
+    //
+    this.router.get('/search/covers', this.findCovers.bind(this))
+    this.router.get('/search/books', this.findBooks.bind(this))
+
+    //
     // Others
     //
     this.router.get('/authors', this.getAuthors.bind(this))
@@ -174,16 +176,21 @@ class ApiController {
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
   }
 
-  async find(req, res) {
-    var provider = req.query.provider || 'google'
+  async findBooks(req, res) {
+    if (req.method === 'match') {
+
+    } else if (req.method === 'cover')
+      var provider = req.query.provider || 'google'
     var title = req.query.title || ''
     var author = req.query.author || ''
     var results = await this.bookFinder.search(provider, title, author)
     res.json(results)
   }
 
-  findCovers(req, res) {
-    this.scanner.findCovers(req, res)
+  async findCovers(req, res) {
+    var query = req.query
+    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
+    res.json(result)
   }
 
   authorize(req, res) {
