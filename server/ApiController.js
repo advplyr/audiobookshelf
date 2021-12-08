@@ -177,10 +177,7 @@ class ApiController {
   }
 
   async findBooks(req, res) {
-    if (req.method === 'match') {
-
-    } else if (req.method === 'cover')
-      var provider = req.query.provider || 'google'
+    var provider = req.query.provider || 'google'
     var title = req.query.title || ''
     var author = req.query.author || ''
     var results = await this.bookFinder.search(provider, title, author)
