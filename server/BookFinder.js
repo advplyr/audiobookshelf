@@ -169,7 +169,7 @@ class BookFinder {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
-    Logger.debug(`Cover Search: title: "${title}", author: "${author}", provider: ${provider}`)
+    Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'google') {
       return this.getGoogleBooksResults(title, author, maxTitleDistance, maxAuthorDistance)

@@ -38,12 +38,12 @@ class Audible {
         return /[0-9A-Z]{10}/.test(title)
     }
 
-    async asinSearch(asin) {
+    asinSearch(asin) {
         var queryString = `response_groups=rating,series,contributors,product_desc,media,product_extended_attrs` +
-        `&image_sizes=500,1024,2000`;
+            `&image_sizes=500,1024,2000`;
         var url = `https://api.audible.com/1.0/catalog/products/${asin}?${queryString}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
-        return await axios.get(url).then((res) => {
+        return axios.get(url).then((res) => {
             if (!res || !res.data || !res.data.product) return []
             return [res.data.product]
         }).catch(error => {
@@ -56,7 +56,7 @@ class Audible {
         if (this.isProbablyAsin(title)) {
             var items = await this.asinSearch(title)
             if (items.length > 0) return items.map(item => this.cleanResult(item))
-        } 
+        }
         var queryString = `response_groups=rating,series,contributors,product_desc,media,product_extended_attrs` +
             `&image_sizes=500,1024,2000&num_results=25&products_sort_by=Relevance&title=${title}`;
         if (author) queryString += `&author=${author}`
