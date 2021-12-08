@@ -39,7 +39,7 @@ export default {
     },
     zIndex: {
       type: Number,
-      default: 40
+      default: 50
     },
     bgOpacity: {
       type: Number,
