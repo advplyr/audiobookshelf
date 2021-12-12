@@ -5,6 +5,7 @@ const date = require('date-and-time')
 
 const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
+const resize = require('./utils/resizeImage')
 const audioFileScanner = require('./utils/audioFileScanner')
 
 const BookController = require('./controllers/BookController')
@@ -82,6 +83,7 @@ class ApiController {
     this.router.patch('/books/:id/tracks', BookController.updateTracks.bind(this))
     this.router.get('/books/:id/stream', BookController.openStream.bind(this))
     this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
+    this.router.get('/books/:id/cover', this.resizeCover.bind(this))
     this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
 
     // TEMP: Support old syntax for mobile app
@@ -175,6 +177,29 @@ class ApiController {
 
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
   }
+
+  async resizeCover(req, res) {
+    let { query: { width, height }, params: { id }, user } = req; 
+    if (!user) {
+      return res.sendStatus(403)
+    }
+    var audiobook = this.db.audiobooks.find(a => a.id === id)
+    if (!audiobook) return res.sendStatus(404)
+
+    // Check user can access this audiobooks library
+    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    
+    res.type('image/jpeg');
+
+    if (width) width = parseInt(width)
+    if (height) height = parseInt(height)
+
+    return resize(audiobook.book.coverFullPath, width, height).pipe(res)
+  }
+
 
   async findBooks(req, res) {
     var provider = req.query.provider || 'google'
