@@ -16,36 +16,17 @@ export const getters = {
     if (!bookItem) return placeholder
     var book = bookItem.book
     if (!book || !book.cover || book.cover === placeholder) return placeholder
-    var cover = book.cover
 
     // Absolute URL covers (should no longer be used)
-    if (cover.startsWith('http:') || cover.startsWith('https:')) return cover
+    if (book.cover.startsWith('http:') || book.cover.startsWith('https:')) return book.cover
 
-    // Server hosted covers
-    try {
-      // Ensure cover is refreshed if cached
-      var bookLastUpdate = book.lastUpdate || Date.now()
-      var userToken = rootGetters['user/getToken']
+    var userToken = rootGetters['user/getToken']
+    var bookLastUpdate = book.lastUpdate || Date.now()
 
-      cover = cover.replace(/\\/g, '/')
-
-      // Map old covers to new format /s/book/{bookid}/*
-      if (cover.startsWith('/local')) {
-        cover = cover.replace('local', `s/book/${bookItem.id}`)
-        if (cover.includes(bookItem.path + '/')) { // Remove book path
-          cover = cover.replace(bookItem.path + '/', '')
-        }
-      }
-
-      // Easier to replace these special characters then to encodeUriComponent of the filename
-      var encodedCover = cover.replace(/%/g, '%25').replace(/#/g, '%23')
-
-      var url = new URL(encodedCover, document.baseURI)
-      return url.href + `?token=${userToken}&ts=${bookLastUpdate}`
-    } catch (err) {
-      console.error(err)
-      return placeholder
+    if (process.env.NODE_ENV !== 'production') { // Testing
+      return `http://localhost:3333/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
     }
+    return `/api/books/${bookItem.id}/cover?token=${userToken}`
   }
 }
 

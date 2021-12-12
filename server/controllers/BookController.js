@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { reqSupportsWebp } = require('../utils/index')
 
 class BookController {
   constructor() { }
@@ -38,6 +39,12 @@ class BookController {
     }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
+
+    // Book has cover and update is removing cover then purge cache
+    if (audiobook.cover && req.body.book && (req.body.book.cover === '' || req.body.book.cover === null)) {
+      await this.cacheManager.purgeCoverCache(audiobook.id)
+    }
+
     var hasUpdates = audiobook.update(req.body)
     if (hasUpdates) {
       await this.db.updateAudiobook(audiobook)
@@ -221,6 +228,25 @@ class BookController {
 
     if (updated) res.status(200).send('Cover updated successfully')
     else res.status(200).send('No update was made to cover')
+  }
+
+  // GET api/books/:id/cover
+  async getCover(req, res) {
+    let { query: { width, height, format }, params: { id } } = req
+    var audiobook = this.db.audiobooks.find(a => a.id === id)
+    if (!audiobook || !audiobook.book.coverFullPath) return res.sendStatus(404)
+
+    // Check user can access this audiobooks library
+    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    const options = {
+      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpg'),
+      height: height ? parseInt(height) : null,
+      width: width ? parseInt(width) : null
+    }
+    return this.cacheManager.handleCoverCache(res, audiobook, options)
   }
 }
 module.exports = new BookController()

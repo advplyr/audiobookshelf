@@ -5,7 +5,6 @@ const date = require('date-and-time')
 
 const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
-const resize = require('./utils/resizeImage')
 const audioFileScanner = require('./utils/audioFileScanner')
 
 const BookController = require('./controllers/BookController')
@@ -19,7 +18,7 @@ const BookFinder = require('./BookFinder')
 const AuthorFinder = require('./AuthorFinder')
 
 class ApiController {
-  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, emitter, clientEmitter) {
+  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.scanner = scanner
     this.auth = auth
@@ -29,6 +28,7 @@ class ApiController {
     this.backupManager = backupManager
     this.coverController = coverController
     this.watcher = watcher
+    this.cacheManager = cacheManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
     this.MetadataPath = MetadataPath
@@ -62,11 +62,9 @@ class ApiController {
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
-
     // TEMP: Support old syntax for mobile app
     this.router.get('/library/:id/audiobooks', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
     this.router.get('/library/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
-
 
     //
     // Book Routes
@@ -83,14 +81,13 @@ class ApiController {
     this.router.patch('/books/:id/tracks', BookController.updateTracks.bind(this))
     this.router.get('/books/:id/stream', BookController.openStream.bind(this))
     this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
-    this.router.get('/books/:id/cover', this.resizeCover.bind(this))
+    this.router.get('/books/:id/cover', BookController.getCover.bind(this))
     this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
 
     // TEMP: Support old syntax for mobile app
     this.router.get('/audiobooks', BookController.findAll.bind(this)) // Old route should pass library id
     this.router.get('/audiobook/:id', BookController.findOne.bind(this))
     this.router.get('/audiobook/:id/stream', BookController.openStream.bind(this))
-
 
     //
     // User Routes
@@ -103,7 +100,6 @@ class ApiController {
 
     this.router.get('/users/:id/listening-sessions', UserController.getListeningStats.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
-
 
     //
     // Collection Routes
@@ -123,7 +119,6 @@ class ApiController {
     this.router.get('/collection/:id', CollectionController.findOne.bind(this))
     this.router.delete('/collection/:id/book/:bookId', CollectionController.removeBook.bind(this))
 
-
     //
     // Current User Routes (Me)
     //
@@ -139,7 +134,6 @@ class ApiController {
     this.router.patch('/user/audiobook/:id/reset-progress', MeController.resetAudiobookProgress.bind(this))
     this.router.patch('/user/audiobook/:id', MeController.updateAudiobookData.bind(this))
     this.router.patch('/user/settings', MeController.updateSettings.bind(this))
-
 
     //
     // Backup Routes
@@ -176,30 +170,9 @@ class ApiController {
     this.router.get('/scantracks/:id', this.scanAudioTrackNums.bind(this))
 
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
+
+    this.router.post('/purgecache', this.purgeCache.bind(this))
   }
-
-  async resizeCover(req, res) {
-    let { query: { width, height }, params: { id }, user } = req; 
-    if (!user) {
-      return res.sendStatus(403)
-    }
-    var audiobook = this.db.audiobooks.find(a => a.id === id)
-    if (!audiobook) return res.sendStatus(404)
-
-    // Check user can access this audiobooks library
-    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
-      return res.sendStatus(403)
-    }
-
-    
-    res.type('image/jpeg');
-
-    if (width) width = parseInt(width)
-    if (height) height = parseInt(height)
-
-    return resize(audiobook.book.coverFullPath, width, height).pipe(res)
-  }
-
 
   async findBooks(req, res) {
     var provider = req.query.provider || 'google'
@@ -485,6 +458,11 @@ class ApiController {
       this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.audiobooks))
     }
 
+    // purge cover cache
+    if (audiobook.cover) {
+      await this.cacheManager.purgeCoverCache(audiobook.id)
+    }
+
     var audiobookJSON = audiobook.toJSONMinified()
     await this.db.removeEntity('audiobook', audiobook.id)
     this.emitter('audiobook_removed', audiobookJSON)
@@ -526,6 +504,15 @@ class ApiController {
       listeningStats.totalTime += s.timeListening
     })
     return listeningStats
+  }
+
+  async purgeCache(req, res) {
+    if (!req.user.isRoot) {
+      return res.sendStatus(403)
+    }
+    Logger.info(`[ApiController] Purging all cache`)
+    await this.cacheManager.purgeAll()
+    res.sendStatus(200)
   }
 }
 module.exports = ApiController

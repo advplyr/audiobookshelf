@@ -10,8 +10,10 @@ const { CoverDestination } = require('./utils/constants')
 const { downloadFile } = require('./utils/fileUtils')
 
 class CoverController {
-  constructor(db, MetadataPath, AudiobookPath) {
+  constructor(db, cacheManager, MetadataPath, AudiobookPath) {
     this.db = db
+    this.cacheManager = cacheManager
+
     this.MetadataPath = MetadataPath.replace(/\\/g, '/')
     this.BookMetadataPath = Path.posix.join(this.MetadataPath, 'books')
     this.AudiobookPath = AudiobookPath
@@ -115,6 +117,7 @@ class CoverController {
     }
 
     await this.removeOldCovers(fullPath, extname)
+    await this.cacheManager.purgeCoverCache(audiobook.id)
 
     Logger.info(`[CoverController] Uploaded audiobook cover "${coverPath}" for "${audiobook.title}"`)
 
@@ -152,6 +155,7 @@ class CoverController {
       await fs.rename(temppath, coverFullPath)
 
       await this.removeOldCovers(fullPath, '.' + imgtype.ext)
+      await this.cacheManager.purgeCoverCache(audiobook.id)
 
       Logger.info(`[CoverController] Downloaded audiobook cover "${coverPath}" from url "${url}" for "${audiobook.title}"`)
 

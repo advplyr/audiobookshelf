@@ -53,7 +53,8 @@
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
     <div class="flex items-center py-4">
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingAudiobooks" @click="resetAudiobooks">Reset All Audiobooks</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click="purgeCache">Purge Cache</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingAudiobooks" @click="resetAudiobooks">Remove All Audiobooks</ui-btn>
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">Report bugs, request features, provide feedback, and contribute on <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>.</p>
       <a href="https://github.com/advplyr/audiobookshelf" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
@@ -93,6 +94,7 @@ export default {
       storeCoversInAudiobookDir: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
+      isPurgingCache: false,
       newServerSettings: {}
     }
   },
@@ -209,6 +211,19 @@ export default {
             this.$toast.error('Failed to reset audiobooks - manually remove the /config/audiobooks folder')
           })
       }
+    },
+    async purgeCache() {
+      this.isPurgingCache = true
+      await this.$axios
+        .$post('/api/purgecache')
+        .then(() => {
+          this.$toast.success('Cache Purged!')
+        })
+        .catch((error) => {
+          console.error('Failed to purge cache', error)
+          this.$toast.error('Failed to purge cache')
+        })
+      this.isPurgingCache = false
     }
   },
   mounted() {

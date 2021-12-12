@@ -28,6 +28,7 @@ const StreamManager = require('./StreamManager')
 const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
+const CacheManager = require('./CacheManager')
 
 class Server {
   constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -47,15 +48,16 @@ class Server {
     this.auth = new Auth(this.db)
     this.backupManager = new BackupManager(this.MetadataPath, this.Uid, this.Gid, this.db)
     this.logManager = new LogManager(this.MetadataPath, this.db)
+    this.cacheManager = new CacheManager(this.MetadataPath)
     this.watcher = new Watcher(this.AudiobookPath)
-    this.coverController = new CoverController(this.db, this.MetadataPath, this.AudiobookPath)
+    this.coverController = new CoverController(this.db, this.cacheManager, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
     this.scanner2 = new Scanner2(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
 
     this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager

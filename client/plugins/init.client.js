@@ -6,8 +6,6 @@ Vue.directive('click-outside', vClickOutside.directive)
 
 Vue.prototype.$eventBus = new Vue()
 
-Vue.prototype.$isDev = process.env.NODE_ENV !== 'production'
-
 Vue.prototype.$dateDistanceFromNow = (unixms) => {
   if (!unixms) return ''
   return formatDistance(unixms, Date.now(), { addSuffix: true })
@@ -145,4 +143,5 @@ export {
 export default ({ app }, inject) => {
   app.$decode = decode
   app.$encode = encode
+  app.$isDev = process.env.NODE_ENV !== 'production'
 }
