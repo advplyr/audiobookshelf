@@ -93,3 +93,28 @@ async function extractCoverArt(filepath, outputpath) {
   })
 }
 module.exports.extractCoverArt = extractCoverArt
+
+//This should convert based on the output file extension as well
+async function resizeImage(filePath, outputPath, width, height) {
+  var dirname = Path.dirname(outputPath);
+  await fs.ensureDir(dirname);
+
+  return new Promise((resolve) => {
+    var ffmpeg = Ffmpeg(filePath)
+    ffmpeg.addOption(['-vf', `scale=${width || -1}:${height || -1}`])
+    ffmpeg.addOutput(outputPath)
+    ffmpeg.on('start', (cmd) => {
+      Logger.debug(`[FfmpegHelpers] Resize Image Cmd: ${cmd}`)
+    })
+    ffmpeg.on('error', (err, stdout, stderr) => {
+      Logger.error(`[FfmpegHelpers] Resize Image Error ${err}`)
+      resolve(false)
+    })
+    ffmpeg.on('end', () => {
+      Logger.debug(`[FfmpegHelpers] Image resized Successfully`)
+      resolve(outputPath)
+    })
+    ffmpeg.run()
+  })
+}
+module.exports.resizeImage = resizeImage

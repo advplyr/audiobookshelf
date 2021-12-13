@@ -1,8 +1,8 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const stream = require('stream')
-const resize = require('./utils/resizeImage')
 const Logger = require('./Logger')
+const { resizeImage } = require('./utils/ffmpegHelpers')
 
 class CacheManager {
   constructor(MetadataPath) {
@@ -18,7 +18,7 @@ class CacheManager {
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.CoverCachePath, audiobook.id) + '.' + format
+    var path = Path.join(this.CoverCachePath, `${audiobook.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(path)) {
@@ -35,22 +35,22 @@ class CacheManager {
 
     // Write cache
     await fs.ensureDir(this.CoverCachePath)
-    var readStream = resize(audiobook.book.coverFullPath, width, height, format)
-    var writeStream = fs.createWriteStream(path)
-    writeStream.on('error', (e) => {
-      Logger.error(`[CacheManager] Cache write error ${e.message}`)
-    })
-    readStream.pipe(writeStream)
 
+    let writtenFile = await resizeImage(audiobook.book.coverFullPath, path, width, height)
+    var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)
   }
 
-  purgeCoverCache(audiobookId) {
-    var basepath = Path.join(this.CoverCachePath, audiobookId)
-    // Remove both webp and jpg caches if exist
-    var webpPath = basepath + '.webp'
-    var jpgPath = basepath + '.jpg'
-    return Promise.all([this.removeCache(webpPath), this.removeCache(jpgPath)])
+  async purgeCoverCache(audiobookId) {
+    // If purgeAll has been called... The cover cache directory no longer exists
+    await fs.ensureDir(this.CoverCachePath)
+    return Promise.all((await fs.readdir(this.CoverCachePath)).reduce((promises, file) => {
+      if (file.startsWith(audiobookId)) {
+        Logger.debug(`[CacheManager] Going to purge ${file}`);
+        promises.push(this.removeCache(Path.join(this.CoverCachePath, file)))
+      }
+      return promises
+    }, []))
   }
 
   removeCache(path) {
