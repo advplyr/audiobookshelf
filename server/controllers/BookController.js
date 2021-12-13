@@ -234,7 +234,7 @@ class BookController {
   async getCover(req, res) {
     let { query: { width, height, format }, params: { id } } = req
     var audiobook = this.db.audiobooks.find(a => a.id === id)
-    if (!audiobook || !audiobook.book.coverFullPath) return res.sendStatus(404)
+    if (!audiobook || (!audiobook.book.coverFullPath && !audiobook.book.cover)) return res.sendStatus(404)
 
     // Check user can access this audiobooks library
     if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
@@ -242,7 +242,7 @@ class BookController {
     }
 
     const options = {
-      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpg'),
+      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
       height: height ? parseInt(height) : null,
       width: width ? parseInt(width) : null
     }
