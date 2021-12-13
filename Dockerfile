@@ -11,8 +11,9 @@ RUN apk update && apk add --no-cache --update ffmpeg
 ENV NODE_ENV=production
 COPY --from=build /client/dist /client/dist
 COPY index.js index.js
+COPY package-lock.json package-lock.json
 COPY package.json package.json
 COPY server server
-RUN npm install --production
+RUN npm ci --production
 EXPOSE 80
 CMD ["npm", "start"]

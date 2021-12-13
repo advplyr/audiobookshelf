@@ -26,7 +26,7 @@ export const getters = {
     if (process.env.NODE_ENV !== 'production') { // Testing
       return `http://localhost:3333/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
     }
-    return `/api/books/${bookItem.id}/cover?token=${userToken}`
+    return `/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
   }
 }
 

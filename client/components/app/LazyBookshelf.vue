@@ -62,7 +62,9 @@ export default {
       currentSFQueryString: null,
       pendingReset: false,
       keywordFilter: null,
-      currScrollTop: 0
+      currScrollTop: 0,
+      resizeTimeout: null,
+      mountWindowWidth: 0
     }
   },
   watch: {
@@ -322,6 +324,21 @@ export default {
         this.cardsHelpers.mountEntityCard(i)
       })
     },
+    rebuild() {
+      this.initSizeData()
+
+      var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
+      this.entityIndexesMounted = []
+      for (let i = 0; i < lastBookIndex; i++) {
+        this.entityIndexesMounted.push(i)
+      }
+      var bookshelfEl = document.getElementById('bookshelf')
+      if (bookshelfEl) {
+        bookshelfEl.scrollTop = 0
+      }
+
+      this.$nextTick(this.remountEntities)
+    },
     buildSearchParams() {
       if (this.page === 'search' || this.page === 'series' || this.page === 'collections' || this.page === 'series-books') {
         return ''
@@ -358,19 +375,7 @@ export default {
       if (wasUpdated) {
         this.resetEntities()
       } else if (settings.bookshelfCoverSize !== this.currentBookWidth) {
-        this.initSizeData()
-
-        var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
-        this.entityIndexesMounted = []
-        for (let i = 0; i < lastBookIndex; i++) {
-          this.entityIndexesMounted.push(i)
-        }
-        var bookshelfEl = document.getElementById('bookshelf')
-        if (bookshelfEl) {
-          bookshelfEl.scrollTop = 0
-        }
-
-        this.$nextTick(this.remountEntities)
+        this.rebuild()
       }
     },
     scroll(e) {
@@ -428,6 +433,8 @@ export default {
       var entitiesPerShelfBefore = this.entitiesPerShelf
 
       var { clientHeight, clientWidth } = bookshelf
+      console.log('Init bookshelf width', clientWidth, 'window width', window.innerWidth)
+      this.mountWindowWidth = window.innerWidth
       this.bookshelfHeight = clientHeight
       this.bookshelfWidth = clientWidth
       this.entitiesPerShelf = Math.floor((this.bookshelfWidth - 64) / this.totalEntityCardWidth)
@@ -449,12 +456,23 @@ export default {
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntites(0, lastBookIndex)
     },
+    windowResize() {
+      clearTimeout(this.resizeTimeout)
+      this.resizeTimeout = setTimeout(() => {
+        this.rebuild()
+      }, 200)
+    },
     initListeners() {
-      var bookshelf = document.getElementById('bookshelf')
-      if (bookshelf) {
-        this.init(bookshelf)
-        bookshelf.addEventListener('scroll', this.scroll)
-      }
+      window.addEventListener('resize', this.windowResize)
+
+      this.$nextTick(() => {
+        var bookshelf = document.getElementById('bookshelf')
+        if (bookshelf) {
+          this.init(bookshelf)
+          bookshelf.addEventListener('scroll', this.scroll)
+        }
+      })
+
       this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
       this.$eventBus.$on('bookshelf-select-all', this.selectAllEntities)
       this.$eventBus.$on('bookshelf-keyword-filter', this.updateKeywordFilter)
@@ -472,6 +490,7 @@ export default {
       }
     },
     removeListeners() {
+      window.removeEventListener('resize', this.windowResize)
       var bookshelf = document.getElementById('bookshelf')
       if (bookshelf) {
         bookshelf.removeEventListener('scroll', this.scroll)
@@ -505,6 +524,12 @@ export default {
   },
   mounted() {
     this.initListeners()
+  },
+  updated() {
+    if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
+      console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
+      this.rebuild()
+    }
   },
   beforeDestroy() {
     this.destroyEntityComponents()
