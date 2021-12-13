@@ -801,7 +801,7 @@ class Audiobook {
     var success = await extractCoverArt(audioFileWithCover.fullPath, coverFilePath)
     if (success) {
       var coverRelPath = Path.join(coverDirRelPath, coverFilename).replace(/\\/g, '/').replace(/\/\//g, '/')
-      this.update({ book: { cover: coverRelPath } })
+      this.update({ book: { cover: coverRelPath, coverFullPath: audioFileWithCover.fullPath } })
       return coverRelPath
     }
     return false
@@ -1021,6 +1021,24 @@ class Audiobook {
       existingAudioFileData, // Existing file data may get re-scanned if forceRescan is set
       existingOtherFileData
     }
+  }
+
+  // Temp fix for cover is set but coverFullPath is not set
+  fixFullCoverPath(metadataPath) {
+    if (!this.book.cover) return
+    var bookCoverPath = this.book.cover.replace(/\\/g, '/')
+    var newFullCoverPath = null
+    if (bookCoverPath.startsWith('/s/book/')) {
+      newFullCoverPath = Path.join(this.fullPath, bookCoverPath.substr(`/s/book/${this.id}`.length)).replace(/\/\//g, '/')
+    } else if (bookCoverPath.startsWith('/metadata/')) {
+      newFullCoverPath = Path.join(metadataPath, bookCoverPath.substr('/metadata/'.length)).replace(/\/\//g, '/')
+    }
+    if (newFullCoverPath) {
+      Logger.debug(`[Audiobook] "${this.title}" fixing full cover path "${this.book.cover}" => "${newFullCoverPath}"`)
+      this.update({ book: { fullCoverPath: newFullCoverPath } })
+      return true
+    }
+    return false
   }
 }
 module.exports = Audiobook

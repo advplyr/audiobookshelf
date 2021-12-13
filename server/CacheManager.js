@@ -36,7 +36,7 @@ class CacheManager {
     // Write cache
     await fs.ensureDir(this.CoverCachePath)
 
-    let writtenFile = await resizeImage(audiobook.book.coverFullPath || audiobook.book.cover, path, width, height)
+    let writtenFile = await resizeImage(audiobook.book.coverFullPath, path, width, height)
     var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)
   }

@@ -234,11 +234,21 @@ class BookController {
   async getCover(req, res) {
     let { query: { width, height, format }, params: { id } } = req
     var audiobook = this.db.audiobooks.find(a => a.id === id)
-    if (!audiobook || (!audiobook.book.coverFullPath && !audiobook.book.cover)) return res.sendStatus(404)
+    if (!audiobook || !audiobook.book.cover) return res.sendStatus(404)
 
     // Check user can access this audiobooks library
     if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
       return res.sendStatus(403)
+    }
+
+    // Temp fix for books without a full cover path
+    if (audiobook.book.cover && !audiobook.book.coverFullPath) {
+      var isFixed = audiobook.fixFullCoverPath()
+      if (!isFixed) {
+        Logger.warn(`[BookController] Failed to fix full cover path "${audiobook.book.cover}" for "${audiobook.book.title}"`)
+        return res.sendStatus(404)
+      }
+      await this.db.updateEntity('audiobook', audiobook)
     }
 
     const options = {
