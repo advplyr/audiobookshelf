@@ -107,7 +107,7 @@ async function resizeImage(filePath, outputPath, width, height) {
       Logger.debug(`[FfmpegHelpers] Resize Image Cmd: ${cmd}`)
     })
     ffmpeg.on('error', (err, stdout, stderr) => {
-      Logger.error(`[FfmpegHelpers] Resize Image Error ${err}`)
+      Logger.error(`[FfmpegHelpers] Resize Image Error ${err} ${stdout} ${stderr}`)
       resolve(false)
     })
     ffmpeg.on('end', () => {
