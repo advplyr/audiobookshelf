@@ -51,7 +51,7 @@ should_build_config() {
   fi
 }
 
-setup_config() {
+setup_config_interactive() {
   if should_build_config; then
     echo "Okay, let's setup a new config."
 
@@ -91,6 +91,49 @@ setup_config() {
 
     echo "Config created"
 
+  fi
+}
+
+should_build_config() {
+  if [ -f "$CONFIG_PATH" ]; then
+    echo "You already have a config file. Do you want to use it?"
+
+    options=("Yes" "No")
+    select yn in "${options[@]}"
+    do
+      case $yn in
+          "Yes") 
+            false; return
+            ;;
+          "No")
+            true; return
+            ;;
+      esac
+    done
+  else 
+    echo "No existing config found in $CONFIG_PATH"
+    true; return
+  fi
+}
+
+setup_config() {
+  if [ -f "$CONFIG_PATH" ]; then
+    echo "Existing config found."
+    cat $CONFIG_PATH
+  else
+    echo "Creating default config."
+
+    config_text="AUDIOBOOK_PATH=$DEFAULT_AUDIOBOOK_PATH
+  METADATA_PATH=$DEFAULT_DATA_PATH/metadata
+  CONFIG_PATH=$DEFAULT_DATA_PATH/config
+  FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
+  PORT=$DEFAULT_PORT"
+
+    echo "$config_text"
+
+    echo "$config_text" > /etc/default/audiobookshelf;
+
+    echo "Config created"
   fi
 }
 
