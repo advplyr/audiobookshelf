@@ -94,28 +94,6 @@ setup_config_interactive() {
   fi
 }
 
-should_build_config() {
-  if [ -f "$CONFIG_PATH" ]; then
-    echo "You already have a config file. Do you want to use it?"
-
-    options=("Yes" "No")
-    select yn in "${options[@]}"
-    do
-      case $yn in
-          "Yes") 
-            false; return
-            ;;
-          "No")
-            true; return
-            ;;
-      esac
-    done
-  else 
-    echo "No existing config found in $CONFIG_PATH"
-    true; return
-  fi
-}
-
 setup_config() {
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
