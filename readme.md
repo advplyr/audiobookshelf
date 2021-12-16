@@ -34,7 +34,7 @@ Android app is in beta, try it out on the [Google Play Store](https://play.googl
 
 ## Organizing your audiobooks
 
-#### Directory structure and folder names are critical to AudioBookshelf!
+#### Directory structure and folder names are important to Audiobookshelf!
 
  See [documentation](https://audiobookshelf.org/docs) for supported directory structure, folder naming conventions, and audio file metadata usage.
 
@@ -76,9 +76,7 @@ services:
 
 ### Linux (amd64) Install
 
-A simple installer is added to setup the initial config. If you already have audiobooks, you can enter the path to your audiobooks during the install. The installer will create a user and group named `audiobookshelf`.
-
-
+Debian package will use this config file `/etc/default/audiobookshelf` if exists. The install will create a user and group named `audiobookshelf`.
 
 ### Ubuntu Install via PPA
 
@@ -203,6 +201,6 @@ cd audiobookshelf
 npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
 ```
 
-## Contributing
+## Contributing / How to Support
 
-Feel free to help out
+[See the incomplete "How to Support" page](https://www.audiobookshelf.org/support)
