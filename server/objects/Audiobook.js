@@ -654,9 +654,9 @@ class Audiobook {
         Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
       }
-      var coverStillExists = imageFiles.find(f => comparePaths(f.fullPath, this.book.coverFullPath))
-      if (!coverStillExists) {
-        Logger.info(`[Audiobook] Metadata cover "${this.book.cover}" was removed | "${this.title}"`)
+      // metadata covers are stored in /<MetadataPath>/books/:id/
+      if (!await fs.pathExists(this.book.coverFullPath)) {
+        Logger.info(`[Audiobook] Cover in /metadata for "${this.title}" no longer exists - removing cover paths`)
         this.book.removeCover()
         hasUpdates = true
       }
