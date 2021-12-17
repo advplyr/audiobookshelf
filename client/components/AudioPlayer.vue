@@ -585,6 +585,7 @@ export default {
       if (!Hls.isSupported()) {
         console.warn('HLS is not supported - fallback to using audio element')
         audio.src = this.src + '?token=' + this.token
+        audio.currentTime = currentTime
         return
       }
 
