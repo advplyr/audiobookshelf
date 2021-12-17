@@ -103,7 +103,14 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     userAudiobooks() {
-      return Object.values(this.user.audiobooks || {}).sort((a, b) => b.lastUpdate - a.lastUpdate)
+      return Object.values(this.user.audiobooks || {})
+        .map((uab) => {
+          return {
+            id: uab.audiobookId,
+            ...uab
+          }
+        })
+        .sort((a, b) => b.lastUpdate - a.lastUpdate)
     },
     totalListeningTime() {
       return this.listeningStats.totalTime || 0

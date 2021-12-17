@@ -23,6 +23,10 @@ export const getters = {
     var userToken = rootGetters['user/getToken']
     var bookLastUpdate = book.lastUpdate || Date.now()
 
+    if (!bookItem.id) {
+      console.error('No book item id', bookItem)
+    }
+
     if (process.env.NODE_ENV !== 'production') { // Testing
       return `http://localhost:3333/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
     }
