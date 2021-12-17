@@ -194,7 +194,6 @@ class Scanner {
 
     // Remove audiobooks with no inode
     audiobookDataFound = audiobookDataFound.filter(abd => abd.ino)
-
     var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === libraryScan.libraryId)
 
     const NumScansPerChunk = 25
