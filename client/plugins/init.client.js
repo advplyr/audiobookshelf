@@ -143,5 +143,6 @@ export {
 export default ({ app }, inject) => {
   app.$decode = decode
   app.$encode = encode
-  app.$isDev = process.env.NODE_ENV !== 'production'
+  // app.$isDev = process.env.NODE_ENV !== 'production'
+  inject('isDev', process.env.NODE_ENV !== 'production')
 }

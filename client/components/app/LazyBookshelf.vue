@@ -1,7 +1,7 @@
 <template>
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" class="w-full px-8 bookshelfRow relative" :id="`shelf-${shelf - 1}`" :style="{ height: shelfHeight + 'px' }">
+      <div :key="shelf" class="w-full px-4 sm:px-8 bookshelfRow relative" :id="`shelf-${shelf - 1}`" :style="{ height: shelfHeight + 'px' }">
         <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
           <p class="text-white text-2xl">{{ shelf }}</p>
         </div> -->
@@ -128,14 +128,21 @@ export default {
       if (this.isCoverSquareAspectRatio) return this.bookWidth
       return this.bookWidth * 1.6
     },
+    shelfPadding() {
+      if (this.bookshelfWidth < 640) return 32
+      return 64
+    },
+    totalPadding() {
+      return this.shelfPadding * 2
+    },
     entityWidth() {
-      if (this.entityName === 'series') return this.bookWidth * 2
-      if (this.entityName === 'collections') return this.bookWidth * 2
+      if (this.entityName === 'series' || this.entityName === 'collections') {
+        if (this.bookWidth * 2 > this.bookshelfWidth - this.shelfPadding) return this.bookWidth * 1.6
+        return this.bookWidth * 2
+      }
       return this.bookWidth
     },
     entityHeight() {
-      if (this.entityName === 'series') return this.bookHeight
-      if (this.entityName === 'collections') return this.bookHeight
       return this.bookHeight
     },
     shelfDividerHeightIndex() {
@@ -225,7 +232,6 @@ export default {
         return
       }
       if (payload) {
-        // console.log('Received payload', payload)
         if (!this.initialized) {
           this.initialized = true
           this.totalEntities = payload.total
@@ -237,7 +243,6 @@ export default {
         for (let i = 0; i < payload.results.length; i++) {
           var index = i + startIndex
           this.entities[index] = payload.results[i]
-
           if (this.entityComponentRefs[index]) {
             this.entityComponentRefs[index].setEntity(this.entities[index])
           }
@@ -437,7 +442,7 @@ export default {
       this.mountWindowWidth = window.innerWidth
       this.bookshelfHeight = clientHeight
       this.bookshelfWidth = clientWidth
-      this.entitiesPerShelf = Math.floor((this.bookshelfWidth - 64) / this.totalEntityCardWidth)
+      this.entitiesPerShelf = Math.max(1, Math.floor((this.bookshelfWidth - this.shelfPadding) / this.totalEntityCardWidth))
       this.shelvesPerPage = Math.ceil(this.bookshelfHeight / this.shelfHeight) + 2
       this.bookshelfMarginLeft = (this.bookshelfWidth - this.entitiesPerShelf * this.totalEntityCardWidth) / 2
 
@@ -526,10 +531,12 @@ export default {
     this.initListeners()
   },
   updated() {
-    if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
-      console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
-      this.rebuild()
-    }
+    setTimeout(() => {
+      if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
+        console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
+        this.rebuild()
+      }
+    }, 50)
   },
   beforeDestroy() {
     this.destroyEntityComponents()

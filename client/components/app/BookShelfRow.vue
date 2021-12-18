@@ -1,40 +1,28 @@
 <template>
   <div class="relative">
-    <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem' }" @scroll="scrolled">
-      <div class="w-full h-full" :style="{ marginTop: sizeMultiplier + 'rem' }">
-        <div v-if="shelf.type === 'books'" class="flex items-center -mb-2">
-          <template v-for="entity in shelf.entities">
-            <cards-book-card :key="entity.id" :width="bookCoverWidth" :user-progress="userAudiobooks[entity.id]" :audiobook="entity" @hook:updated="updatedBookCard" :padding-y="24" :book-cover-aspect-ratio="bookCoverAspectRatio" @edit="editBook" />
+    <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem', height: shelfHeight + 'px' }" @scroll="scrolled">
+      <div class="w-full h-full pt-6">
+        <div v-if="shelf.type === 'books'" class="flex items-center">
+          <template v-for="(entity, index) in shelf.entities">
+            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectBook" @edit="editBook" />
           </template>
         </div>
-        <div v-if="shelf.type === 'series'" class="flex items-center -mb-2">
+        <div v-if="shelf.type === 'series'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <cards-group-card :key="entity.name" is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" @click="$emit('clickSeries', entity)" />
+            <cards-lazy-series-card :key="entity.name" :series-mount="entity" :height="bookCoverHeight" :width="bookCoverWidth * 2" :book-cover-aspect-ratio="bookCoverAspectRatio" class="relative mx-2" @hook:updated="updatedBookCard" />
           </template>
         </div>
-        <div v-if="shelf.type === 'tags'" class="flex items-center -mb-2">
+        <div v-if="shelf.type === 'tags'" class="flex items-center">
           <template v-for="entity in shelf.entities">
             <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
               <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" />
             </nuxt-link>
           </template>
         </div>
-        <div v-if="shelf.type === 'authors'" class="flex items-center -mb-2">
+        <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
             <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.name)}`">
-              <cards-author-card :width="bookCoverWidth" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6" />
-            </nuxt-link>
-          </template>
-        </div>
-        <div v-else-if="shelf.series" class="flex items-center -mb-2">
-          <template v-for="entity in shelf.series">
-            <cards-group-card is-categorized :key="entity.name" :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" @click="$emit('clickSeries', entity)" />
-          </template>
-        </div>
-        <div v-else-if="shelf.tags" class="flex items-center -mb-2">
-          <template v-for="entity in shelf.tags">
-            <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
-              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" />
+              <cards-author-card :width="bookCoverWidth" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" />
             </nuxt-link>
           </template>
         </div>
@@ -49,10 +37,10 @@
 
     <div class="bookshelfDividerCategorized h-6 w-full absolute bottom-0 left-0 right-0 z-20"></div>
 
-    <div v-show="canScrollLeft && !isScrolling" class="absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollLeft">
+    <div v-show="canScrollLeft && !isScrolling" class="hidden sm:flex absolute top-0 left-0 w-32 pr-8 bg-black book-shelf-arrow-left items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollLeft">
       <span class="material-icons text-6xl text-white">chevron_left</span>
     </div>
-    <div v-show="canScrollRight && !isScrolling" class="absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
+    <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
       <span class="material-icons text-6xl text-white">chevron_right</span>
     </div>
   </div>
@@ -79,7 +67,18 @@ export default {
       updateTimer: null
     }
   },
+  watch: {
+    isSelectionMode(newVal) {
+      this.updateSelectionMode(newVal)
+    }
+  },
   computed: {
+    bookCoverHeight() {
+      return this.bookCoverWidth * this.bookCoverAspectRatio
+    },
+    shelfHeight() {
+      return this.bookCoverHeight + 48
+    },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
@@ -89,6 +88,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    isSelectionMode() {
+      return this.$store.getters['getNumAudiobooksSelected'] > 0
     }
   },
   methods: {
@@ -96,6 +98,21 @@ export default {
       var bookIds = this.shelf.entities.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', bookIds)
       this.$store.commit('showEditModal', audiobook)
+    },
+    updateSelectionMode(val) {
+      var selectedAudiobooks = this.$store.state.selectedAudiobooks
+      if (this.shelf.type === 'books') {
+        this.shelf.entities.forEach((ent) => {
+          var component = this.$refs[`shelf-book-${ent.id}`]
+          if (!component || !component.length) return
+          component = component[0]
+          component.setSelectionMode(val)
+          component.selected = selectedAudiobooks.includes(ent.id)
+        })
+      }
+    },
+    selectBook(audiobook) {
+      this.$store.commit('toggleAudiobookSelected', audiobook.id)
     },
     scrolled() {
       clearTimeout(this.scrollTimer)

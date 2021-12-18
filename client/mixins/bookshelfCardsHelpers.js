@@ -71,6 +71,7 @@ export default {
 
       instance.$mount()
       instance.$el.style.transform = `translate3d(${shelfOffsetX}px, ${shelfOffsetY}px, 0px)`
+      instance.$el.classList.add('absolute', 'top-0', 'left-0')
       shelfEl.appendChild(instance.$el)
 
       if (this.entities[index]) {

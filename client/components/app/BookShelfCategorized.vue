@@ -149,7 +149,6 @@ export default {
           })
         })
       }
-
       this.shelves = shelves
     },
     settingsUpdated(settings) {},

@@ -1,5 +1,5 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: width + 'px', maxWidth: width + 'px', height: height + 'px' }" class="rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <!-- When cover image does not fill -->
     <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
       <div class="absolute cover-bg" ref="coverBg" />
@@ -78,7 +78,12 @@ export default {
       default: 192
     },
     bookCoverAspectRatio: Number,
-    showVolumeNumber: Boolean
+    showVolumeNumber: Boolean,
+    bookMount: {
+      // Book can be passed as prop or set with setEntity()
+      type: Object,
+      default: () => null
+    }
   },
   data() {
     return {
@@ -464,6 +469,11 @@ export default {
           this.showCoverBg = false
         }
       }
+    }
+  },
+  mounted() {
+    if (this.bookMount) {
+      this.setEntity(this.bookMount)
     }
   }
 }

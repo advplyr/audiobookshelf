@@ -22,7 +22,7 @@
         <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
       </div>
 
-      <div class="flex pb-8 sm:pb-4 md:pb-2">
+      <div class="flex pb-4 md:pb-2">
         <div class="flex-grow" />
         <template v-if="!loading">
           <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">
@@ -82,7 +82,7 @@
       <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
-    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadedmetadata="audioLoadedMetadata" @loadeddata="audioLoadedData" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
+    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadedmetadata="audioLoadedMetadata" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
   </div>
@@ -109,6 +109,9 @@ export default {
     return {
       hlsInstance: null,
       staleHlsInstance: null,
+      usingNativeAudioPlayer: false,
+      playOnLoad: false,
+      startTime: 0,
       volume: 1,
       playbackRate: 1,
       trackWidth: 0,
@@ -194,7 +197,7 @@ export default {
     },
     audioStalled() {
       if (!this.$refs.audio) return
-      console.warn('Audio Ended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+      console.warn('Audio Stalled', this.$refs.audio.paused, this.$refs.audio.currentTime)
     },
     audioSuspended() {
       if (!this.$refs.audio) return
@@ -555,11 +558,13 @@ export default {
       this.playedTrackWidth = ptWidth
     },
     audioLoadedMetadata() {
-      console.log('Audio METADATA Loaded, total duration', this.audioEl.duration)
       this.totalDuration = this.audioEl.duration
       this.$emit('loaded', this.totalDuration)
+      if (this.usingNativeAudioPlayer) {
+        this.audioEl.currentTime = this.startTime
+        this.play()
+      }
     },
-    audioLoadedData() {},
     set(url, currentTime, playOnLoad = false) {
       if (this.hlsInstance) {
         this.terminateStream()
@@ -570,6 +575,8 @@ export default {
       }
       this.listeningTimeSinceLastUpdate = 0
 
+      this.playOnLoad = playOnLoad
+      this.startTime = currentTime
       this.url = url
       if (process.env.NODE_ENV === 'development') {
         url = `${process.env.serverUrl}${url}`
@@ -584,6 +591,7 @@ export default {
       // iOS does not support Media Elements but allows for HLS in the native audio player
       if (!Hls.isSupported()) {
         console.warn('HLS is not supported - fallback to using audio element')
+        this.usingNativeAudioPlayer = true
         audio.src = this.src + '?token=' + this.token
         audio.currentTime = currentTime
         return
@@ -604,10 +612,10 @@ export default {
         // console.log('[HLS] MEDIA ATTACHED')
         this.hlsInstance.loadSource(url)
 
-        this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
+        this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log('[HLS] Manifest Parsed')
           if (playOnLoad) {
-            audio.play()
+            this.play()
           }
         })
 

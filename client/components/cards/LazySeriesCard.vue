@@ -1,5 +1,5 @@
 <template>
-  <div ref="card" :id="`series-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`series-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
       <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="title" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" :group-to="seriesBooksRoute" />
@@ -10,7 +10,7 @@
     </div>
     <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
     </div> -->
-    <div class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
+    <div v-if="!isCategorized" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
       </div>
@@ -24,7 +24,12 @@ export default {
     index: Number,
     width: Number,
     height: Number,
-    bookCoverAspectRatio: Number
+    bookCoverAspectRatio: Number,
+    isCategorized: Boolean,
+    seriesMount: {
+      type: Object,
+      default: () => null
+    }
   },
   data() {
     return {
@@ -60,7 +65,7 @@ export default {
       return `/library/${this.currentLibraryId}/series/${this.$encode(this.title)}`
     },
     seriesId() {
-      return this.series ? this.$encode(this.series.id) : null
+      return this.series ? this.$encode(this.title) : null
     },
     hasValidCovers() {
       var validCovers = this.books.map((bookItem) => bookItem.book.cover)
@@ -69,6 +74,7 @@ export default {
   },
   methods: {
     setEntity(_series) {
+      console.log('setting entity', _series)
       this.series = _series
     },
     setSelectionMode(val) {
@@ -100,7 +106,11 @@ export default {
       }
     }
   },
-  mounted() {},
+  mounted() {
+    if (this.seriesMount) {
+      this.setEntity(this.seriesMount)
+    }
+  },
   beforeDestroy() {}
 }
 </script>

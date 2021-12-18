@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <div class="rounded-sm h-full relative" :style="{ padding: `${paddingY}px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
+    <div class="rounded-sm h-full relative" :style="{ padding: `0px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
         <div class="w-full h-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: coverHeight + 'px', width: coverWidth + 'px' }">
           <covers-group-cover ref="groupcover" :id="seriesId" :name="groupName" :is-categorized="isCategorized" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="coverWidth" :height="coverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -37,10 +37,6 @@ export default {
     width: {
       type: Number,
       default: 120
-    },
-    paddingY: {
-      type: Number,
-      default: 24
     },
     isCategorized: Boolean,
     bookCoverAspectRatio: Number
