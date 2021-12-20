@@ -179,10 +179,13 @@ class Stream extends EventEmitter {
 
   syncStream({ timeListened, currentTime }) {
     var syncLog = ''
+    // Set user current time
     if (currentTime !== null && !isNaN(currentTime)) {
       syncLog = `Update client current time ${secondsToTimestamp(currentTime)}`
       this.clientCurrentTime = currentTime
     }
+
+    // Update user listening session
     var saveListeningSession = false
     if (timeListened && !isNaN(timeListened)) {
 
@@ -202,6 +205,7 @@ class Stream extends EventEmitter {
       syncLog += `Add listening time ${timeListened}s, Total time listened ${this.listeningSession.timeListening}s`
       saveListeningSession = true
     }
+
     Logger.debug('[Stream]', syncLog)
     return saveListeningSession ? this.listeningSession : null
   }

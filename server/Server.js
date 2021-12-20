@@ -229,10 +229,6 @@ class Server {
     // Used in development to set-up streams without authentication
     if (process.env.NODE_ENV !== 'production') {
       app.use('/test-hls', this.hlsController.router)
-      app.get('/catalog.json', (req, res) => {
-        Logger.error('Catalog request made', req.headers)
-        res.json()
-      })
     }
 
     this.server.listen(this.Port, this.Host, () => {

@@ -172,6 +172,8 @@ class ApiController {
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
 
     this.router.post('/purgecache', this.purgeCache.bind(this))
+
+    this.router.post('/syncStream', this.syncStream.bind(this))
   }
 
   async findBooks(req, res) {
@@ -403,6 +405,11 @@ class ApiController {
 
     var allUserAudiobookData = Object.values(req.user.audiobooksToJSON())
     res.json(allUserAudiobookData)
+  }
+
+  async syncStream(req, res) {
+    Logger.debug(`[ApiController] syncStream for ${req.user.username} - ${req.body.streamId}`)
+    this.streamManager.streamSyncFromApi(req, res)
   }
 
   //

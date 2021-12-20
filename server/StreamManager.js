@@ -194,6 +194,46 @@ class StreamManager {
     }
   }
 
+  streamSyncFromApi(req, res) {
+    var user = req.user
+    var syncData = req.body
+
+    var stream = this.streams.find(s => s.id === syncData.streamId)
+    if (!stream) {
+      Logger.error(`[StreamManager] streamSyncFromApi stream not found ${syncData.streamId}`)
+      return res.status(404).send('Stream not found')
+    }
+    if (stream.userToken !== user.token) {
+      Logger.error(`[StreamManager] streamSyncFromApi Invalid stream not owned by user`)
+      return res.status(500).send('Invalid stream auth')
+    }
+
+    var listeningSession = stream.syncStream(syncData)
+
+    if (listeningSession && listeningSession.timeListening > 0) {
+      // Save listening session
+      var existingListeningSession = this.db.sessions.find(s => s.id === listeningSession.id)
+      if (existingListeningSession) {
+        this.db.updateEntity('session', listeningSession)
+      } else {
+        this.db.sessions.push(listeningSession.toJSON()) // Insert right away to prevent duplicate session
+        this.db.insertEntity('session', listeningSession)
+      }
+    }
+
+    var userAudiobook = user.updateAudiobookProgressFromStream(stream)
+    this.db.updateEntity('user', user)
+
+    if (userAudiobook) {
+      this.clientEmitter(user.id, 'current_user_audiobook_update', {
+        id: userAudiobook.audiobookId,
+        data: userAudiobook.toJSON()
+      })
+    }
+
+    res.sendStatus(200)
+  }
+
   streamUpdate(socket, { currentTime, streamId }) {
     var client = socket.sheepClient
     if (!client || !client.stream) {
