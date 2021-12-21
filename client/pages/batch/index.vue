@@ -1,5 +1,32 @@
 <template>
   <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+    <!-- <div class="flex justify-center max-w-3xl mx-auto border border-black-300 p-6 mb-2">
+      <div class="flex-grow">
+        <p class="text-xl mb-4">Batch edit {{ audiobooks.length }} books</p>
+
+        <div class="flex items-center px-1">
+          <ui-checkbox v-model="selectedBatchUsage.author" />
+          <ui-text-input-with-label v-model="batchBook.author" :disabled="!selectedBatchUsage.author" label="Author" class="mb-4 ml-4" />
+        </div>
+        <div class="flex items-center px-1">
+          <ui-checkbox v-model="selectedBatchUsage.series" />
+          <ui-input-dropdown v-model="batchBook.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @input="seriesChanged" @newItem="newSeriesItem" class="mb-4 ml-4" />
+        </div>
+        <div class="flex items-center px-1">
+          <ui-checkbox v-model="selectedBatchUsage.genres" />
+          <ui-multi-select v-model="batchBook.genres" :disabled="!selectedBatchUsage.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
+        </div>
+        <div class="flex items-center px-1">
+          <ui-checkbox v-model="selectedBatchUsage.narrator" />
+          <ui-text-input-with-label v-model="batchBook.narrator" :disabled="!selectedBatchUsage.narrator" label="Narrator" class="mb-4 ml-4" />
+        </div>
+        <div class="flex items-center px-1">
+          <ui-checkbox v-model="selectedBatchUsage.tags" />
+          <ui-multi-select v-model="batchTags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
+        </div>
+      </div>
+    </div> -->
+
     <div class="flex justify-center flex-wrap">
       <template v-for="audiobook in audiobookCopies">
         <div :key="audiobook.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px flex">
@@ -82,7 +109,20 @@ export default {
       isScrollable: false,
       newSeriesItems: [],
       newTagItems: [],
-      newGenreItems: []
+      newGenreItems: [],
+      batchBook: {
+        author: null,
+        genres: [],
+        series: null,
+        narrator: null
+      },
+      selectedBatchUsage: {
+        author: false,
+        genres: false,
+        series: false,
+        narrator: false
+      },
+      batchTags: []
     }
   },
   computed: {
@@ -243,6 +283,11 @@ export default {
           this.$toast.error('Failed to batch update')
           this.isProcessing = false
         })
+    },
+    applyBatchUpdates() {
+      this.audiobookCopies = this.audiobookCopies.map((ab) => {
+        if (this.batchBook.series) ab.book.series = this.batchBook.series
+      })
     }
   },
   mounted() {

@@ -3,14 +3,14 @@
     <p class="px-1 text-sm font-semibold">{{ label }}</p>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
-        <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center bg-primary border border-gray-600 rounded-md px-2 py-1 cursor-text" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
+        <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded-md px-2 py-1 cursor-text" :class="disabled ? 'bg-black-300' : 'bg-primary'" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
           <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 ma-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center relative">
             <div class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
               <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item)">close</span>
             </div>
             {{ item }}
           </div>
-          <input ref="input" v-model="textInput" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
 
@@ -46,7 +46,8 @@ export default {
       type: Array,
       default: () => []
     },
-    label: String
+    label: String,
+    disabled: Boolean
   },
   data() {
     return {
@@ -182,6 +183,7 @@ export default {
       })
     },
     clickWrapper() {
+      if (this.disabled) return
       if (this.showMenu) {
         return this.blur()
       }
@@ -234,3 +236,13 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+input {
+  border-style: inherit !important;
+}
+input:read-only {
+  color: #aaa;
+  background-color: #444;
+}
+</style>
