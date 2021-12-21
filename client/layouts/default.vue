@@ -126,6 +126,8 @@ export default {
           this.$store.commit('users/updateUser', user)
         })
       }
+
+      this.$eventBus.$emit('socket_init')
     },
     streamOpen(stream) {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamOpen(stream)

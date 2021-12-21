@@ -380,7 +380,7 @@ export default {
       if (wasUpdated) {
         this.resetEntities()
       } else if (settings.bookshelfCoverSize !== this.currentBookWidth) {
-        this.rebuild()
+        this.executeRebuild()
       }
     },
     scroll(e) {
@@ -461,11 +461,18 @@ export default {
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntites(0, lastBookIndex)
     },
-    windowResize() {
+    executeRebuild() {
       clearTimeout(this.resizeTimeout)
       this.resizeTimeout = setTimeout(() => {
         this.rebuild()
       }, 200)
+    },
+    windowResize() {
+      this.executeRebuild()
+    },
+    socketInit() {
+      // Server settings are set on socket init
+      this.executeRebuild()
     },
     initListeners() {
       window.addEventListener('resize', this.windowResize)
@@ -480,7 +487,7 @@ export default {
 
       this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
       this.$eventBus.$on('bookshelf-select-all', this.selectAllEntities)
-      this.$eventBus.$on('bookshelf-keyword-filter', this.updateKeywordFilter)
+      this.$eventBus.$on('socket_init', this.socketInit)
 
       this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
 
@@ -502,7 +509,7 @@ export default {
       }
       this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
       this.$eventBus.$off('bookshelf-select-all', this.selectAllEntities)
-      this.$eventBus.$off('bookshelf-keyword-filter', this.updateKeywordFilter)
+      this.$eventBus.$off('socket_init', this.socketInit)
 
       this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')
 
@@ -534,7 +541,7 @@ export default {
     setTimeout(() => {
       if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
         console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
-        this.rebuild()
+        this.executeRebuild()
       }
     }, 50)
   },
