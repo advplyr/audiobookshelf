@@ -57,9 +57,16 @@ class Audible {
             var items = await this.asinSearch(title)
             if (items.length > 0) return items.map(item => this.cleanResult(item))
         }
-        var queryString = `response_groups=rating,series,contributors,product_desc,media,product_extended_attrs` +
-            `&image_sizes=500,1024,2000&num_results=25&products_sort_by=Relevance&title=${title}`;
-        if (author) queryString += `&author=${author}`
+
+        var queryObj = {
+            response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
+            image_sizes: '500,1024,2000',
+            num_results: '25',
+            products_sort_by: 'Relevance',
+            title: title
+        };
+        if (author) queryObj.author = author
+        var queryString = (new URLSearchParams(queryObj)).toString();
         var url = `https://api.audible.com/1.0/catalog/products?${queryString}`
         Logger.debug(`[Audible] Search url: ${url}`)
         var items = await axios.get(url).then((res) => {
