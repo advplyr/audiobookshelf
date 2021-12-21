@@ -19,9 +19,7 @@
     </div>
 
     <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
-      <keep-alive>
-        <component v-if="audiobook" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
-      </keep-alive>
+      <component v-if="audiobook && show" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
 </template>

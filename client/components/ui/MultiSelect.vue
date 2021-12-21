@@ -228,6 +228,9 @@ export default {
       document.removeEventListener('scroll', this.scroll, true)
     }
   },
-  mounted() {}
+  mounted() {},
+  beforeDestroy() {
+    if (this.menu) this.menu.remove()
+  }
 }
 </script>
