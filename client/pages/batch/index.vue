@@ -196,7 +196,8 @@ export default {
         }
         if (key === 'genres') {
           if (this.compareStringArrays(newBook[key], origBook[key])) {
-            diffObj[key] = newBook[key]
+            if (!diffObj.book) diffObj.book = {}
+            diffObj.book[key] = newBook[key]
           }
         }
       }
@@ -223,6 +224,7 @@ export default {
       if (!updates.length) {
         return this.$toast.warning('No updates were made')
       }
+
       console.log('Pushing updates', updates)
       this.isProcessing = true
       this.$axios
