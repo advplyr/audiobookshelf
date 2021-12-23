@@ -8,7 +8,7 @@
     ·
     <a href="https://audiobookshelf.org/install">Install Guides</a>
     ·
-    <a href="https://audiobookshelf.org/showcase">Showcase</a>
+    <a href="https://audiobookshelf.org/support">Support</a>
   </p>
 </div>
 
@@ -50,7 +50,7 @@ Available in Unraid Community Apps
 docker pull advplyr/audiobookshelf
 
 docker run -d \
-  -p 1337:80 \
+  -p 13378:80 \
   -v </path/to/audiobooks>:/audiobooks \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
