@@ -124,7 +124,8 @@ class LibraryController {
       page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1'
     }
 
     if (payload.filterBy) {
@@ -147,7 +148,7 @@ class LibraryController {
       var startIndex = payload.page * payload.limit
       audiobooks = audiobooks.slice(startIndex, startIndex + payload.limit)
     }
-    payload.results = audiobooks.map(ab => ab.toJSONExpanded())
+    payload.results = audiobooks.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded())
     res.json(payload)
   }
 
@@ -162,10 +163,11 @@ class LibraryController {
       page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(audiobooks)
+    var series = libraryHelpers.getSeriesFromBooks(audiobooks, payload.minified)
     payload.total = series.length
 
     if (payload.limit) {
@@ -208,10 +210,11 @@ class LibraryController {
       page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter
+      filterBy: req.query.filter,
+      minified: req.query.minified === '1'
     }
 
-    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(audiobooks))
+    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(audiobooks, payload.minified))
     payload.total = collections.length
 
     if (payload.limit) {
@@ -235,28 +238,29 @@ class LibraryController {
     var library = req.library
     var books = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    var minified = req.query.minified === '1'
 
     var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, books)
-    var series = libraryHelpers.getSeriesFromBooks(books)
+    var series = libraryHelpers.getSeriesFromBooks(books, minified)
 
     var categories = [
       {
         id: 'continue-reading',
         label: 'Continue Reading',
         type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf)
+        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf, minified)
       },
       {
         id: 'recently-added',
         label: 'Recently Added',
         type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyAdded(books, limitPerShelf)
+        entities: libraryHelpers.getBooksMostRecentlyAdded(books, limitPerShelf, minified)
       },
       {
         id: 'read-again',
         label: 'Read Again',
         type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf)
+        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf, minified)
       },
       {
         id: 'recent-series',

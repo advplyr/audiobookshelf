@@ -211,7 +211,7 @@ class Audiobook {
       ebooks: this.ebooks.map(ebook => ebook.toJSON()),
       numEbooks: this.ebooks.length,
       numTracks: this.tracks.length,
-      chapters: this.chapters || [],
+      numChapters: (this.chapters || []).length,
       isMissing: !!this.isMissing,
       isInvalid: !!this.isInvalid,
       hasMissingParts: this.numMissingParts,
