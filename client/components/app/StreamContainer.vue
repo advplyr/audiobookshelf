@@ -182,6 +182,8 @@ export default {
     },
     streamOpen(stream) {
       this.stream = stream
+      this.$store.commit('updateStreamAudiobook', stream.audiobook)
+
       if (this.$refs.audioPlayer) {
         console.log('[StreamContainer] streamOpen', stream)
         this.openStream()
