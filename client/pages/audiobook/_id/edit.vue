@@ -73,30 +73,6 @@
           </li>
         </transition-group>
       </draggable>
-
-      <div v-if="showExperimentalFeatures" class="p-4">
-        <ui-btn :loading="checkingTrackNumbers" small @click="checkTrackNumbers">Check Track Numbers</ui-btn>
-        <div v-if="trackNumData && trackNumData.length" class="w-full max-w-4xl py-2">
-          <table class="tracksTable">
-            <tr>
-              <th class="text-left">Filename</th>
-              <th class="w-32">Index</th>
-              <th class="w-32"># From Metadata</th>
-              <th class="w-32"># From Filename</th>
-              <th class="w-32"># From Probe</th>
-              <th class="w-32">Raw Tags</th>
-            </tr>
-            <tr v-for="trackData in trackNumData" :key="trackData.filename">
-              <td class="text-xs">{{ trackData.filename }}</td>
-              <td class="text-center">{{ trackData.currentTrackNum }}</td>
-              <td class="text-center">{{ trackData.trackNumFromMeta }}</td>
-              <td class="text-center">{{ trackData.trackNumFromFilename }}</td>
-              <td class="text-center">{{ trackData.scanDataTrackNum }}</td>
-              <td class="text-left text-xs">{{ JSON.stringify(trackData.rawTags || '') }}</td>
-            </tr>
-          </table>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -137,8 +113,6 @@ export default {
         ghostClass: 'ghost'
       },
       saving: false,
-      checkingTrackNumbers: false,
-      trackNumData: [],
       currentSort: 'current'
     }
   },
@@ -251,19 +225,6 @@ export default {
         return (a.filename || '').toLowerCase().localeCompare((b.filename || '').toLowerCase())
       })
       this.currentSort = 'filename'
-    },
-    checkTrackNumbers() {
-      this.checkingTrackNumbers = true
-      this.$axios
-        .$get(`/api/scantracks/${this.audiobookId}`)
-        .then((res) => {
-          this.trackNumData = res
-          this.checkingTrackNumbers = false
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.checkingTrackNumbers = false
-        })
     },
     includeToggled(audio) {
       var new_index = 0

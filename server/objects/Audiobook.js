@@ -402,15 +402,8 @@ class Audiobook {
   }
 
   addAudioFile(audioFileData) {
-    if (audioFileData instanceof AudioFile) {
-      this.audioFiles.push(audioFileData)
-      return audioFileData
-    } else {
-      var audioFile = new AudioFile()
-      audioFile.setData(audioFileData)
-      this.audioFiles.push(audioFile)
-      return audioFile
-    }
+    this.audioFiles.push(audioFileData)
+    return audioFileData
   }
 
   updateAudioFile(updatedAudioFile) {

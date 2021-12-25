@@ -17,8 +17,7 @@ const Logger = require('./Logger')
 // Classes
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
-const Scanner = require('./Scanner')
-const Scanner2 = require('./scanner/Scanner')
+const Scanner = require('./scanner/Scanner')
 const Db = require('./Db')
 const BackupManager = require('./BackupManager')
 const LogManager = require('./LogManager')
@@ -52,13 +51,12 @@ class Server {
     this.watcher = new Watcher(this.AudiobookPath)
     this.coverController = new CoverController(this.db, this.cacheManager, this.MetadataPath, this.AudiobookPath)
     this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
-    this.scanner2 = new Scanner2(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
 
     this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.emitter.bind(this))
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.scanner, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.hlsController = new HlsController(this.db, this.scanner, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager
 
@@ -311,18 +309,18 @@ class Server {
 
   async filesChanged(fileUpdates) {
     Logger.info('[Server]', fileUpdates.length, 'Files Changed')
-    await this.scanner2.scanFilesChanged(fileUpdates)
+    await this.scanner.scanFilesChanged(fileUpdates)
   }
 
   async scan(libraryId, options = {}) {
     Logger.info('[Server] Starting Scan')
-    await this.scanner2.scan(libraryId, options)
+    await this.scanner.scan(libraryId, options)
     // await this.scanner.scan(libraryId)
     Logger.info('[Server] Scan complete')
   }
 
   async scanAudiobook(socket, audiobookId) {
-    var result = await this.scanner2.scanAudiobookById(audiobookId)
+    var result = await this.scanner.scanAudiobookById(audiobookId)
     var scanResultName = ''
     for (const key in ScanResult) {
       if (ScanResult[key] === result) {
@@ -334,7 +332,7 @@ class Server {
 
   cancelScan(id) {
     Logger.debug('[Server] Cancel scan', id)
-    this.scanner2.setCancelLibraryScan(id)
+    this.scanner.setCancelLibraryScan(id)
   }
 
   // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
@@ -623,7 +621,7 @@ class Server {
       configPath: this.ConfigPath,
       user: client.user.toJSONForBrowser(),
       stream: client.stream || null,
-      librariesScanning: this.scanner2.librariesScanning,
+      librariesScanning: this.scanner.librariesScanning,
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }
     if (user.type === 'root') {

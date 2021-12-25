@@ -539,5 +539,63 @@ class Scanner {
     }
     return false
   }
+
+  async saveMetadata(audiobookId) {
+    if (audiobookId) {
+      var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
+      if (!audiobook) {
+        return {
+          error: 'Audiobook not found'
+        }
+      }
+      var savedPath = await audiobook.writeNfoFile()
+      return {
+        audiobookId,
+        audiobookTitle: audiobook.title,
+        savedPath
+      }
+    } else {
+      var response = {
+        success: 0,
+        failed: 0
+      }
+      for (let i = 0; i < this.db.audiobooks.length; i++) {
+        var audiobook = this.db.audiobooks[i]
+        var savedPath = await audiobook.writeNfoFile()
+        if (savedPath) {
+          Logger.info(`[Scanner] Saved metadata nfo ${savedPath}`)
+          response.success++
+        } else {
+          response.failed++
+        }
+      }
+      return response
+    }
+  }
+
+  // TEMP: Old version created ids that had a chance of repeating
+  async fixDuplicateIds() {
+    var ids = {}
+    var audiobooksUpdated = 0
+    for (let i = 0; i < this.db.audiobooks.length; i++) {
+      var ab = this.db.audiobooks[i]
+      if (ids[ab.id]) {
+        var abCopy = new Audiobook(ab.toJSON())
+        abCopy.id = getId('ab')
+        if (abCopy.book.cover) {
+          abCopy.book.cover = abCopy.book.cover.replace(ab.id, abCopy.id)
+        }
+        Logger.warn('Found duplicate ID - updating from', ab.id, 'to', abCopy.id)
+        await this.db.removeEntity('audiobook', ab.id)
+        await this.db.insertEntity('audiobook', abCopy)
+        audiobooksUpdated++
+      } else {
+        ids[ab.id] = true
+      }
+    }
+    if (audiobooksUpdated) {
+      Logger.info(`[Scanner] Updated ${audiobooksUpdated} audiobook IDs`)
+    }
+  }
 }
 module.exports = Scanner

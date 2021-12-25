@@ -4,9 +4,8 @@ const fs = require('fs-extra')
 const Logger = require('./Logger')
 
 class HlsController {
-  constructor(db, scanner, auth, streamManager, emitter, StreamsPath) {
+  constructor(db, auth, streamManager, emitter, StreamsPath) {
     this.db = db
-    this.scanner = scanner
     this.auth = auth
     this.streamManager = streamManager
     this.emitter = emitter

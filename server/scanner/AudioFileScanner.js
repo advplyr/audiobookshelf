@@ -68,7 +68,7 @@ class AudioFileScanner {
   async scan(audioFileData, bookScanData, verbose = false) {
     var probeStart = Date.now()
     // Logger.debug(`[AudioFileScanner] Start Probe ${audioFileData.fullPath}`)
-    var probeData = await prober.probe2(audioFileData.fullPath, verbose)
+    var probeData = await prober.probe(audioFileData.fullPath, verbose)
     if (probeData.error) {
       Logger.error(`[AudioFileScanner] ${probeData.error} : "${audioFileData.fullPath}"`)
       return null

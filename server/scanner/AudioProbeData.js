@@ -21,20 +21,13 @@ class AudioProbeData {
     this.trackTotal = null
   }
 
-  getDefaultAudioStream(audioStreams) {
-    if (audioStreams.length === 1) return audioStreams[0]
-    var defaultStream = audioStreams.find(a => a.is_default)
-    if (!defaultStream) return audioStreams[0]
-    return defaultStream
-  }
-
   getEmbeddedCoverArt(videoStream) {
     const ImageCodecs = ['mjpeg', 'jpeg', 'png']
     return ImageCodecs.includes(videoStream.codec) ? videoStream.codec : null
   }
 
   setData(data) {
-    var audioStream = this.getDefaultAudioStream(data.audio_streams)
+    var audioStream = data.audio_stream
     this.embeddedCoverArt = data.video_stream ? this.getEmbeddedCoverArt(data.video_stream) : null
     this.format = data.format
     this.duration = data.duration
