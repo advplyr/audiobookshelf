@@ -54,7 +54,7 @@ export default {
       pageLoadQueue: [],
       isFetchingEntities: false,
       scrollTimeout: null,
-      booksPerFetch: 250,
+      booksPerFetch: 100,
       totalShelves: 0,
       bookshelfMarginLeft: 0,
       isSelectionMode: false,
@@ -220,7 +220,7 @@ export default {
       var entityPath = this.entityName === 'books' ? `books/all` : this.entityName
       if (this.entityName === 'series-books') entityPath = `series/${this.seriesId}`
       var sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      var fullQueryString = this.entityName === 'series-books' ? '' : `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}`
+      var fullQueryString = this.entityName === 'series-books' ? '' : `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
       var payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch books', error)
         return null
@@ -438,7 +438,7 @@ export default {
       var entitiesPerShelfBefore = this.entitiesPerShelf
 
       var { clientHeight, clientWidth } = bookshelf
-      console.log('Init bookshelf width', clientWidth, 'window width', window.innerWidth)
+      // console.log('Init bookshelf width', clientWidth, 'window width', window.innerWidth)
       this.mountWindowWidth = window.innerWidth
       this.bookshelfHeight = clientHeight
       this.bookshelfWidth = clientWidth

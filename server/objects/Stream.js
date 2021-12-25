@@ -129,7 +129,7 @@ class Stream extends EventEmitter {
       id: this.id,
       clientId: this.client.id,
       userId: this.client.user.id,
-      audiobook: this.audiobook.toJSONMinified(),
+      audiobook: this.audiobook.toJSONExpanded(),
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,

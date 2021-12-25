@@ -98,6 +98,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     language: tryGrabTag(stream, 'language'),
     title: tryGrabTag(stream, 'title')
   }
+  if (stream.tags) info.tags = stream.tags
 
   if (info.type === 'audio' || info.type === 'subtitle') {
     var disposition = stream.disposition || {}
@@ -188,6 +189,14 @@ function parseTags(format, verbose) {
   return tags
 }
 
+function getDefaultAudioStream(audioStreams) {
+  if (!audioStreams || !audioStreams.length) return null
+  if (audioStreams.length === 1) return audioStreams[0]
+  var defaultStream = audioStreams.find(a => a.is_default)
+  if (!defaultStream) return audioStreams[0]
+  return defaultStream
+}
+
 function parseProbeData(data, verbose = false) {
   try {
     var { format, streams, chapters } = data
@@ -212,14 +221,23 @@ function parseProbeData(data, verbose = false) {
 
     const cleaned_streams = streams.map(s => parseMediaStreamInfo(s, streams, cleanedData.bit_rate))
     cleanedData.video_stream = cleaned_streams.find(s => s.type === 'video')
-    cleanedData.audio_streams = cleaned_streams.filter(s => s.type === 'audio')
-    cleanedData.subtitle_streams = cleaned_streams.filter(s => s.type === 'subtitle')
+    var audioStreams = cleaned_streams.filter(s => s.type === 'audio')
+    cleanedData.audio_stream = getDefaultAudioStream(audioStreams)
 
-    if (cleanedData.audio_streams.length && cleanedData.video_stream) {
+    if (cleanedData.audio_stream && cleanedData.video_stream) {
       var videoBitrate = cleanedData.video_stream.bit_rate
       // If audio stream bitrate larger then video, most likely incorrect
-      if (cleanedData.audio_streams.find(astream => astream.bit_rate > videoBitrate)) {
+      if (cleanedData.audio_stream.bit_rate > videoBitrate) {
         cleanedData.video_stream.bit_rate = cleanedData.bit_rate
+      }
+    }
+
+    // If format does not have tags, check audio stream (https://github.com/advplyr/audiobookshelf/issues/256)
+    if (!format.tags && cleanedData.audio_stream && cleanedData.audio_stream.tags) {
+      var tags = parseTags(cleanedData.audio_stream)
+      cleanedData = {
+        ...cleanedData,
+        ...tags
       }
     }
 
@@ -232,22 +250,8 @@ function parseProbeData(data, verbose = false) {
   }
 }
 
-function probe(filepath, verbose = false) {
-  return new Promise((resolve) => {
-    Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
-      if (err) {
-        console.error(err)
-        resolve(null)
-      } else {
-        resolve(parseProbeData(raw, verbose))
-      }
-    })
-  })
-}
-module.exports.probe = probe
-
 // Updated probe returns AudioProbeData object
-function probe2(filepath, verbose = false) {
+function probe(filepath, verbose = false) {
   return new Promise((resolve) => {
     Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
       if (err) {
@@ -258,7 +262,7 @@ function probe2(filepath, verbose = false) {
         })
       } else {
         var rawProbeData = parseProbeData(raw, verbose)
-        if (!rawProbeData || !rawProbeData.audio_streams.length) {
+        if (!rawProbeData || !rawProbeData.audio_stream) {
           resolve({
             error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
           })
@@ -271,4 +275,4 @@ function probe2(filepath, verbose = false) {
     })
   })
 }
-module.exports.probe2 = probe2
+module.exports.probe = probe

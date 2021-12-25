@@ -37,11 +37,11 @@ class UserCollection {
     }
   }
 
-  toJSONExpanded(audiobooks) {
+  toJSONExpanded(audiobooks, minifiedBooks = false) {
     var json = this.toJSON()
     json.books = json.books.map(bookId => {
       var _ab = audiobooks.find(ab => ab.id === bookId)
-      return _ab ? _ab.toJSONExpanded() : null
+      return _ab ? minifiedBooks ? _ab.toJSONMinified() : _ab.toJSONExpanded() : null
     }).filter(b => !!b)
     return json
   }

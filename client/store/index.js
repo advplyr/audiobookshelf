@@ -110,6 +110,9 @@ export const mutations = {
     state.playOnLoad = true
     state.streamAudiobook = audiobook
   },
+  updateStreamAudiobook(state, audiobook) { // Initial stream audiobook is minified, on open audiobook is updated to full
+    state.streamAudiobook = audiobook
+  },
   setStream(state, stream) {
     state.playOnLoad = false
     state.streamAudiobook = stream ? stream.audiobook : null

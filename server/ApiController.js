@@ -5,7 +5,6 @@ const date = require('date-and-time')
 
 const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
-const audioFileScanner = require('./utils/audioFileScanner')
 
 const BookController = require('./controllers/BookController')
 const LibraryController = require('./controllers/LibraryController')
@@ -18,9 +17,8 @@ const BookFinder = require('./BookFinder')
 const AuthorFinder = require('./AuthorFinder')
 
 class ApiController {
-  constructor(MetadataPath, db, scanner, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(MetadataPath, db, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
-    this.scanner = scanner
     this.auth = auth
     this.streamManager = streamManager
     this.rssFeeds = rssFeeds
@@ -166,8 +164,6 @@ class ApiController {
     this.router.get('/download/:id', this.download.bind(this))
 
     this.router.get('/filesystem', this.getFileSystemPaths.bind(this))
-
-    this.router.get('/scantracks/:id', this.scanAudioTrackNums.bind(this))
 
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
 
@@ -360,19 +356,6 @@ class ApiController {
     Logger.debug(`[Server] get file system paths, excluded: ${excludedDirs.join(', ')}`)
     var dirs = await this.getDirectories(global.appRoot, '/', excludedDirs)
     res.json(dirs)
-  }
-
-  async scanAudioTrackNums(req, res) {
-    if (!req.user || !req.user.isRoot) {
-      return res.sendStatus(403)
-    }
-    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
-    if (!audiobook) {
-      return res.status(404).send('Audiobook not found')
-    }
-
-    var scandata = await audioFileScanner.scanTrackNumbers(audiobook)
-    res.json(scandata)
   }
 
   async syncUserAudiobookData(req, res) {

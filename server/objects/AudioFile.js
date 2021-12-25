@@ -121,40 +121,6 @@ class AudioFile {
     }
   }
 
-  setData(data) {
-    this.index = data.index || null
-    this.ino = data.ino || null
-    this.filename = data.filename
-    this.ext = data.ext
-    this.path = data.path
-    this.fullPath = data.fullPath
-    this.addedAt = Date.now()
-
-    this.trackNumFromMeta = data.trackNumFromMeta
-    this.trackNumFromFilename = data.trackNumFromFilename
-    this.cdNumFromFilename = data.cdNumFromFilename
-
-    this.manuallyVerified = !!data.manuallyVerified
-    this.invalid = !!data.invalid
-    this.exclude = !!data.exclude
-    this.error = data.error || null
-
-    this.format = data.format
-    this.duration = data.duration
-    this.size = data.size
-    this.bitRate = data.bit_rate || null
-    this.language = data.language
-    this.codec = data.codec || null
-    this.timeBase = data.time_base
-    this.channels = data.channels
-    this.channelLayout = data.channel_layout
-    this.chapters = data.chapters || []
-    this.embeddedCoverArt = data.embedded_cover_art || null
-
-    this.metadata = new AudioFileMetadata()
-    this.metadata.setData(data)
-  }
-
   // New scanner creates AudioFile from AudioFileScanner
   setDataFromProbe(fileData, probeData) {
     this.index = fileData.index || null
@@ -221,48 +187,6 @@ class AudioFile {
     if (hasUpdates) {
       this.chapters = updatedChapters.map(ch => ({ ...ch }))
     }
-    return hasUpdates
-  }
-
-  // Called from audioFileScanner.js with scanData
-  updateMetadata(data) {
-    if (!this.metadata) this.metadata = new AudioFileMetadata()
-
-    var dataMap = {
-      format: data.format,
-      duration: data.duration,
-      size: data.size,
-      bitRate: data.bit_rate || null,
-      language: data.language,
-      codec: data.codec || null,
-      timeBase: data.time_base,
-      channels: data.channels,
-      channelLayout: data.channel_layout,
-      chapters: data.chapters || [],
-      embeddedCoverArt: data.embedded_cover_art || null,
-      trackNumFromMeta: data.trackNumFromMeta,
-      trackNumFromFilename: data.trackNumFromFilename,
-      cdNumFromFilename: data.cdNumFromFilename
-    }
-
-    var hasUpdates = false
-    for (const key in dataMap) {
-      if (key === 'chapters') {
-        var chaptersUpdated = this.syncChapters(dataMap.chapters)
-        if (chaptersUpdated) {
-          hasUpdates = true
-        }
-      } else if (dataMap[key] !== this[key]) {
-        // Logger.debug(`[AudioFile] "${key}" from ${this[key]} => ${dataMap[key]}`)
-        this[key] = dataMap[key]
-        hasUpdates = true
-      }
-    }
-
-    if (this.metadata.updateData(data)) {
-      hasUpdates = true
-    }
-
     return hasUpdates
   }
 
