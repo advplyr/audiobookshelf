@@ -223,6 +223,7 @@ class BookController {
 
     if (updated) {
       await this.db.updateAudiobook(audiobook)
+      await this.cacheManager.purgeCoverCache(audiobook.id)
       this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     }
 
