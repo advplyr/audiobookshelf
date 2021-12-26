@@ -1,8 +1,10 @@
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
-const { sort } = require('fast-sort')
+const { sort, createNewSortInstance } = require('fast-sort')
 const libraryHelpers = require('../utils/libraryHelpers')
-
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 class LibraryController {
   constructor() { }
 
@@ -134,13 +136,10 @@ class LibraryController {
     }
 
     if (payload.sortBy) {
-      var orderByNumber = payload.sortBy === 'book.volumeNumber'
       var direction = payload.sortDesc ? 'desc' : 'asc'
-      audiobooks = sort(audiobooks)[direction]((ab) => {
+      audiobooks = naturalSort(audiobooks)[direction]((ab) => {
         // Supports dot notation strings i.e. "book.title"
-        var value = payload.sortBy.split('.').reduce((a, b) => a[b], ab)
-        if (orderByNumber && !isNaN(value)) return Number(value)
-        return value
+        return payload.sortBy.split('.').reduce((a, b) => a[b], ab)
       })
     }
 
