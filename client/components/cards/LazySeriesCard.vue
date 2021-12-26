@@ -5,7 +5,7 @@
       <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="title" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" :group-to="seriesBooksRoute" />
     </div>
 
-    <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-2" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
+    <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
       <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ title }}</p>
     </div>
     <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
