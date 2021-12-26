@@ -217,10 +217,10 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      var entityPath = this.entityName === 'books' ? `books/all` : this.entityName
-      if (this.entityName === 'series-books') entityPath = `series/${this.seriesId}`
+      var entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? `books/all` : this.entityName
       var sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      var fullQueryString = this.entityName === 'series-books' ? '' : `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
+      var fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
+
       var payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch books', error)
         return null
@@ -345,21 +345,29 @@ export default {
       this.$nextTick(this.remountEntities)
     },
     buildSearchParams() {
-      if (this.page === 'search' || this.page === 'series' || this.page === 'collections' || this.page === 'series-books') {
+      if (this.page === 'search' || this.page === 'series' || this.page === 'collections') {
         return ''
       }
 
       let searchParams = new URLSearchParams()
-      if (this.filterBy && this.filterBy !== 'all') {
-        searchParams.set('filter', this.filterBy)
-      }
-      if (this.orderBy) {
-        searchParams.set('sort', this.orderBy)
-        searchParams.set('desc', this.orderDesc ? 1 : 0)
+      if (this.page === 'series-books') {
+        searchParams.set('filter', `series.${this.seriesId}`)
+        searchParams.set('sort', 'book.volumeNumber')
+        searchParams.set('desc', 0)
+      } else {
+        if (this.filterBy && this.filterBy !== 'all') {
+          searchParams.set('filter', this.filterBy)
+        }
+        if (this.orderBy) {
+          searchParams.set('sort', this.orderBy)
+          searchParams.set('desc', this.orderDesc ? 1 : 0)
+        }
       }
       return searchParams.toString()
     },
     checkUpdateSearchParams() {
+      if (this.page === 'series-books') return false
+
       var newSearchParams = this.buildSearchParams()
       var currentQueryString = window.location.search
       if (currentQueryString && currentQueryString.startsWith('?')) currentQueryString = currentQueryString.slice(1)
