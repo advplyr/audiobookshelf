@@ -1,4 +1,7 @@
-const { sort } = require('fast-sort')
+const { sort, createNewSortInstance } = require('fast-sort')
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 
 module.exports = {
   decode(text) {
@@ -92,11 +95,15 @@ module.exports = {
       }
     })
     return Object.values(_series).map((series) => {
-      series.books = sort(series.books).asc(ab => {
-        if (!isNaN(ab.book.volumeNumber) && ab.book.volumeNumber !== null) return Number(ab.book.volumeNumber)
-        return ab.book.volumeNumber
-      })
+      series.books = naturalSort(series.books).asc(ab => ab.book.volumeNumber)
       return series
+    })
+  },
+
+  sortSeriesBooks(books, minified = false) {
+    return naturalSort(books).asc(ab => ab.book.volumeNumber).map(ab => {
+      if (minified) return ab.toJSONMinified()
+      return ab.toJSONExpanded()
     })
   },
 

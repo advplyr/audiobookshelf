@@ -189,12 +189,9 @@ class LibraryController {
     if (!audiobooks.length) {
       return res.status(404).send('Series not found')
     }
-    audiobooks = sort(audiobooks).asc(ab => {
-      if (!isNaN(ab.book.volumeNumber) && ab.book.volumeNumber !== null) return Number(ab.book.volumeNumber)
-      return ab.book.volumeNumber
-    })
+    var sortedBooks = libraryHelpers.sortSeriesBooks(audiobooks, false)
     res.json({
-      results: audiobooks.map(ab => ab.toJSONExpanded()),
+      results: sortedBooks,
       total: audiobooks.length
     })
   }

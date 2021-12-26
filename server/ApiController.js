@@ -15,6 +15,7 @@ const BackupController = require('./controllers/BackupController')
 
 const BookFinder = require('./BookFinder')
 const AuthorFinder = require('./AuthorFinder')
+const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
   constructor(MetadataPath, db, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
@@ -146,6 +147,11 @@ class ApiController {
     this.router.get('/search/books', this.findBooks.bind(this))
 
     //
+    // File System Routes
+    //
+    this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
+
+    //
     // Others
     //
     this.router.get('/authors', this.getAuthors.bind(this))
@@ -162,8 +168,6 @@ class ApiController {
     this.router.post('/feed', this.openRssFeed.bind(this))
 
     this.router.get('/download/:id', this.download.bind(this))
-
-    this.router.get('/filesystem', this.getFileSystemPaths.bind(this))
 
     this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
 
@@ -337,25 +341,6 @@ class ApiController {
       Logger.error('Failed to readdir', dir, error)
       return []
     }
-  }
-
-  async getFileSystemPaths(req, res) {
-    var excludedDirs = ['node_modules', 'client', 'server', '.git', 'static', 'build', 'dist', 'metadata', 'config', 'sys', 'proc'].map(dirname => {
-      return Path.sep + dirname
-    })
-
-    // Do not include existing mapped library paths in response
-    this.db.libraries.forEach(lib => {
-      lib.folders.forEach((folder) => {
-        var dir = folder.fullPath
-        if (dir.includes(global.appRoot)) dir = dir.replace(global.appRoot, '')
-        excludedDirs.push(dir)
-      })
-    })
-
-    Logger.debug(`[Server] get file system paths, excluded: ${excludedDirs.join(', ')}`)
-    var dirs = await this.getDirectories(global.appRoot, '/', excludedDirs)
-    res.json(dirs)
   }
 
   async syncUserAudiobookData(req, res) {
