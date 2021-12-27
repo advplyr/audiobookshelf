@@ -74,6 +74,11 @@ module.exports = {
         })
       }
     })
+    data.authors = naturalSort(data.authors).asc()
+    data.genres = naturalSort(data.genres).asc()
+    data.tags = naturalSort(data.tags).asc()
+    data.series = naturalSort(data.series).asc()
+    data.narrators = naturalSort(data.narrators).asc()
     return data
   },
 
