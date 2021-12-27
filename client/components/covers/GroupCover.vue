@@ -324,6 +324,10 @@ export default {
         var img = await this.buildCoverImg(validCovers[i], coverWidth, offsetLeft, zIndex, validCovers.length === 1)
         outerdiv.appendChild(img)
         coverImageEls.push(img)
+
+        if(coverImageEls.length >= 30) {
+          break;
+        }
       }
 
       if (this.showCoverFan) {
