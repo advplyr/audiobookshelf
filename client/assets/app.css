@@ -18,11 +18,16 @@
 }
 #bookshelf {
   height: calc(100% - 40px);
+  background-image: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
 }
 @media (max-width: 768px) {
   #bookshelf {
     height: calc(100% - 80px);
   }
+}
+
+#page-wrapper {
+  background-image: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
 }
 
 /* width */
@@ -119,10 +124,6 @@ input[type=number] {
 
 .icon-text {
   font-size: 1.1rem;
-}
-
-#page-wrapper {
-  background-image: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
 }
 
 .box-shadow-md {

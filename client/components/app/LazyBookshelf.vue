@@ -1,11 +1,11 @@
 <template>
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" class="w-full px-4 sm:px-8 bookshelfRow relative" :id="`shelf-${shelf - 1}`" :style="{ height: shelfHeight + 'px' }">
+      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
         <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
           <p class="text-white text-2xl">{{ shelf }}</p>
         </div> -->
-        <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
 
@@ -104,8 +104,15 @@ export default {
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },
+    bookshelfView() {
+      return this.$store.getters['getServerSetting']('bookshelfView')
+    },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+    },
+    isAlternativeBookshelfView() {
+      if (!this.isEntityBook) return false // Only used for bookshelf showing books
+      return this.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     bookCoverAspectRatio() {
       return this.isCoverSquareAspectRatio ? 1 : 1.6
@@ -149,6 +156,7 @@ export default {
       return 6
     },
     shelfHeight() {
+      if (this.isAlternativeBookshelfView) return this.entityHeight + 80 * this.sizeMultiplier
       return this.entityHeight + 40
     },
     totalEntityCardWidth() {
@@ -157,6 +165,10 @@ export default {
     },
     selectedAudiobooks() {
       return this.$store.state.selectedAudiobooks || []
+    },
+    sizeMultiplier() {
+      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
+      return this.entityWidth / baseSize
     }
   },
   methods: {

@@ -51,7 +51,8 @@ export default {
         index,
         width: this.entityWidth,
         height: this.entityHeight,
-        bookCoverAspectRatio: this.bookCoverAspectRatio
+        bookCoverAspectRatio: this.bookCoverAspectRatio,
+        bookshelfView: this.bookshelfView
       }
       if (this.entityName === 'series-books') props.showVolumeNumber = true
 

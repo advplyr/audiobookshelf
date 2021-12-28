@@ -48,6 +48,13 @@
           <p class="pl-4 text-lg">Use square book covers <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
+        <ui-tooltip :text="bookshelfViewTooltip">
+          <p class="pl-4 text-lg">Use alternative library bookshelf view <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
     </div>
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
@@ -94,6 +101,7 @@ export default {
       storeCoversInAudiobookDir: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
+      useAlternativeBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {}
     }
@@ -133,6 +141,9 @@ export default {
     },
     coverAspectRatioTooltip() {
       return 'Prefer to use square covers over standard 1.6:1 book covers'
+    },
+    bookshelfViewTooltip() {
+      return 'Alternative bookshelf view that shows title & author under book covers'
     },
     showExperimentalFeatures: {
       get() {
@@ -175,6 +186,11 @@ export default {
         coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
       })
     },
+    updateAlternativeBookshelfView(val) {
+      this.updateServerSettings({
+        bookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+      })
+    },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
@@ -194,6 +210,8 @@ export default {
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+
+      this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     resetAudiobooks() {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {

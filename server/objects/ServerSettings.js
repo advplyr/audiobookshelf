@@ -1,4 +1,4 @@
-const { CoverDestination, BookCoverAspectRatio } = require('../utils/constants')
+const { CoverDestination, BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
 const Logger = require('../Logger')
 
 class ServerSettings {
@@ -35,6 +35,7 @@ class ServerSettings {
 
     // Cover
     this.coverAspectRatio = BookCoverAspectRatio.STANDARD
+    this.bookshelfView = BookshelfView.STANDARD
 
     this.logLevel = Logger.logLevel
     this.version = null
@@ -65,6 +66,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
     this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.STANDARD
+    this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
@@ -93,6 +95,7 @@ class ServerSettings {
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
+      bookshelfView: this.bookshelfView,
       logLevel: this.logLevel,
       version: this.version
     }

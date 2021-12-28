@@ -15,10 +15,16 @@ const BookCoverAspectRatio = {
   SQUARE: 1
 }
 
+const BookshelfView = {
+  STANDARD: 0,
+  TITLES: 1
+}
+
 const Constants = {
   DownloadStatus,
   CoverDestination,
-  BookCoverAspectRatio
+  BookCoverAspectRatio,
+  BookshelfView
 }
 
 const KeyNames = {
