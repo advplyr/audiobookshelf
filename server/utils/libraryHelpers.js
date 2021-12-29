@@ -182,12 +182,20 @@ module.exports = {
     return Object.values(authorsMap).sort((a, b) => b.count - a.count)
   },
 
-  getAudiobooksTotalDuration(audiobooks) {
+  getAudiobookDurationStats(audiobooks) {
+    var sorted = sort(audiobooks).desc(a => a.duration)
+    var top10 = sorted.slice(0, 10).map(ab => ({ title: ab.book.title, duration: ab.duration })).filter(ab => ab.duration > 0)
     var totalDuration = 0
+    var numAudioTracks = 0
     audiobooks.forEach((ab) => {
       totalDuration += ab.duration
+      numAudioTracks += ab.tracks.length
     })
-    return totalDuration
+    return {
+      totalDuration,
+      numAudioTracks,
+      longstAudiobooks: top10
+    }
   },
 
   getAudiobooksTotalSize(audiobooks) {

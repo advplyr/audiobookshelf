@@ -1,0 +1,127 @@
+<template>
+  <div>
+    <p class="text-xl">Stats for library {{ currentLibraryName }}</p>
+
+    <stats-preview-icons :library-stats="libraryStats" />
+
+    <div class="flex md:flex-row flex-wrap justify-between flex-col mt-12">
+      <div class="w-80 my-6 mx-auto">
+        <h1 class="text-2xl mb-4 font-book">Top 5 Genres</h1>
+        <p v-if="!top5Genres.length">No Genres</p>
+        <template v-for="genre in top5Genres">
+          <div :key="genre.genre" class="w-full py-2">
+            <div class="flex items-end mb-1">
+              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalBooks) }}&nbsp;%</p>
+              <div class="flex-grow" />
+              <p class="text-base font-book text-white text-opacity-70">{{ genre.genre }}</p>
+            </div>
+            <div class="w-full rounded-full h-3 bg-primary bg-opacity-50 overflow-hidden">
+              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalBooks) + '%' }" />
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="w-80 my-6 mx-auto">
+        <h1 class="text-2xl mb-4 font-book">Top 10 Authors</h1>
+        <p v-if="!top10Authors.length">No Authors</p>
+        <template v-for="(author, index) in top10Authors">
+          <div :key="author.author" class="w-full py-2">
+            <div class="flex items-center mb-1">
+              <p class="text-sm font-book text-white text-opacity-70 w-36 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ author.author }}</p>
+              <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
+                <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
+              </div>
+              <div class="w-4 ml-3">
+                <p class="text-sm font-bold">{{ author.count }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="w-80 my-6 mx-auto">
+        <h1 class="text-2xl mb-4 font-book">Longest Audiobooks (hrs)</h1>
+        <p v-if="!top10LongestAudiobooks.length">No Audiobooks</p>
+        <template v-for="(ab, index) in top10LongestAudiobooks">
+          <div :key="index" class="w-full py-2">
+            <div class="flex items-center mb-1">
+              <p class="text-sm font-book text-white text-opacity-70 w-44 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ ab.title }}</p>
+              <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
+                <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestAudiobookDuration) + '%' }" />
+              </div>
+              <div class="w-4 ml-3">
+                <p class="text-sm font-bold">{{ (ab.duration / 3600).toFixed(1) }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      libraryStats: null
+    }
+  },
+  watch: {
+    currentLibraryId(newVal, oldVal) {
+      if (newVal) {
+        this.init()
+      }
+    }
+  },
+  computed: {
+    user() {
+      return this.$store.state.user.user
+    },
+    totalBooks() {
+      return this.libraryStats ? this.libraryStats.totalBooks : 0
+    },
+    genresWithCount() {
+      return this.libraryStats ? this.libraryStats.genresWithCount : []
+    },
+    top5Genres() {
+      return this.genresWithCount.slice(0, 5)
+    },
+    top10LongestAudiobooks() {
+      return this.libraryStats ? this.libraryStats.longestAudiobooks || [] : []
+    },
+    longestAudiobookDuration() {
+      if (!this.top10LongestAudiobooks.length) return 0
+      return this.top10LongestAudiobooks[0].duration
+    },
+    authorsWithCount() {
+      return this.libraryStats ? this.libraryStats.authorsWithCount : []
+    },
+    mostUsedAuthorCount() {
+      if (!this.authorsWithCount.length) return 0
+      return this.authorsWithCount[0].count
+    },
+    top10Authors() {
+      return this.authorsWithCount.slice(0, 10)
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
+    currentLibraryName() {
+      return this.$store.getters['libraries/getCurrentLibraryName']
+    }
+  },
+  methods: {
+    async init() {
+      this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
+        console.error('Failed to get library stats', err)
+        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+      })
+      console.log('lib stats', this.libraryStats)
+    }
+  },
+  mounted() {
+    this.init()
+  }
+}
+</script>

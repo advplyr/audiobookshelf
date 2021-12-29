@@ -21,7 +21,7 @@
           <td>
             <div class="flex items-center">
               <widgets-online-indicator :value="!!usersOnline[user.id]" />
-              <span class="pl-2">{{ user.username }}</span> <span v-show="$isDev" class="text-xs text-gray-400 italic pl-4">({{ user.id }})</span>
+              <p class="pl-2 truncate">{{ user.username }}</p>
             </div>
           </td>
           <td class="text-sm">{{ user.type }}</td>

@@ -1,6 +1,6 @@
 <template>
   <div class="w-96 my-6 mx-auto">
-    <h1 class="text-2xl mb-4 font-book">Minutes Listening</h1>
+    <h1 class="text-2xl mb-4 font-book">Minutes Listening <span class="text-white text-opacity-60 text-lg">(Last 7 days)</span></h1>
     <div class="relative w-96 h-72">
       <div class="absolute top-0 left-0">
         <template v-for="lbl in yAxisLabels">

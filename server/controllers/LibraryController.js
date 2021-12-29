@@ -375,11 +375,14 @@ class LibraryController {
 
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(audiobooksInLibrary)
     var genresWithCount = libraryHelpers.getGenresWithCount(audiobooksInLibrary)
+    var abDurationStats = libraryHelpers.getAudiobookDurationStats(audiobooksInLibrary)
     var stats = {
       totalBooks: audiobooksInLibrary.length,
       totalAuthors: Object.keys(authorsWithCount).length,
       totalGenres: Object.keys(genresWithCount).length,
-      totalDuration: libraryHelpers.getAudiobooksTotalDuration(audiobooksInLibrary),
+      totalDuration: abDurationStats.totalDuration,
+      longestAudiobooks: abDurationStats.longstAudiobooks,
+      numAudioTracks: abDurationStats.numAudioTracks,
       totalSize: libraryHelpers.getAudiobooksTotalSize(audiobooksInLibrary),
       authorsWithCount,
       genresWithCount

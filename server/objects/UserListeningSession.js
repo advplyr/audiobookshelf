@@ -10,6 +10,7 @@ class UserListeningSession {
     this.audiobookId = null
     this.audiobookTitle = null
     this.audiobookAuthor = null
+    this.audiobookDuration = 0
     this.audiobookGenres = []
 
     this.date = null
@@ -32,6 +33,7 @@ class UserListeningSession {
       audiobookId: this.audiobookId,
       audiobookTitle: this.audiobookTitle,
       audiobookAuthor: this.audiobookAuthor,
+      audiobookDuration: this.audiobookDuration,
       audiobookGenres: [...this.audiobookGenres],
       date: this.date,
       dayOfWeek: this.dayOfWeek,
@@ -48,6 +50,7 @@ class UserListeningSession {
     this.audiobookId = session.audiobookId
     this.audiobookTitle = session.audiobookTitle
     this.audiobookAuthor = session.audiobookAuthor
+    this.audiobookDuration = session.audiobookDuration || 0
     this.audiobookGenres = session.audiobookGenres
 
     this.date = session.date
@@ -64,6 +67,7 @@ class UserListeningSession {
     this.audiobookId = audiobook.id
     this.audiobookTitle = audiobook.title || ''
     this.audiobookAuthor = audiobook.authorFL || ''
+    this.audiobookDuration = audiobook.duration || 0
     this.audiobookGenres = [...audiobook.genres]
 
     this.timeListening = 0

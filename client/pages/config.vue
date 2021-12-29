@@ -14,9 +14,12 @@
 
 <script>
 export default {
-  asyncData({ store, redirect }) {
+  asyncData({ store, redirect, route }) {
     if (!store.getters['user/getIsRoot']) {
-      redirect('/?error=unauthorized')
+      // Non-Root user only has access to the listening stats page
+      if (route.name !== 'config-stats') {
+        redirect('/config/stats')
+      }
     }
   },
   data() {
@@ -38,7 +41,7 @@ export default {
     currentPage() {
       if (!this.$route.name) return 'Settings'
       var routeName = this.$route.name.split('-')
-      if (routeName.length > 0) return routeName[1]
+      if (routeName.length > 0) return routeName.slice(1).join('-')
       return 'Settings'
     }
   },
@@ -72,7 +75,7 @@ export default {
   width: 900px;
   max-width: calc(100% - 176px);
 }
-.configContent.page-stats {
+.configContent.page-library-stats {
   width: 1200px;
 }
 @media (max-width: 1024px) {
