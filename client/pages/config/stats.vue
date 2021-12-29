@@ -38,13 +38,13 @@
         <template v-for="(book, index) in mostRecentListeningSessions">
           <div :key="book.id" class="w-full py-0.5">
             <div class="flex items-center mb-1">
-              <p class="text-sm font-book text-white text-opacity-70 w-6 truncate">{{ index + 1 }}.</p>
-              <div>
+              <p class="text-sm font-book text-white text-opacity-70 w-6 truncate">{{ index + 1 }}.&nbsp;</p>
+              <div class="w-56">
                 <p class="text-sm font-book text-white text-opacity-80 truncate">{{ book.audiobookTitle }}</p>
                 <p class="text-xs text-white text-opacity-50">{{ $dateDistanceFromNow(book.lastUpdate) }}</p>
               </div>
               <div class="flex-grow" />
-              <div class="w-18 text-right ml-3">
+              <div class="w-18 text-right">
                 <p class="text-sm font-bold">{{ $elapsedPretty(book.timeListening) }}</p>
               </div>
             </div>
