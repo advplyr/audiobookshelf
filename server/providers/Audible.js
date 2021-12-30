@@ -39,8 +39,12 @@ class Audible {
     }
 
     asinSearch(asin) {
-        var queryString = `response_groups=rating,series,contributors,product_desc,media,product_extended_attrs` +
-            `&image_sizes=500,1024,2000`;
+        var queryObj = {
+            response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
+            image_sizes: '500,1024,2000'
+        };
+        var queryString = (new URLSearchParams(queryObj)).toString();
+        asin = encodeURIComponent(asin);
         var url = `https://api.audible.com/1.0/catalog/products/${asin}?${queryString}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
         return axios.get(url).then((res) => {
