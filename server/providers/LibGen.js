@@ -15,6 +15,7 @@ class LibGen {
       await this.init()
     }
     queryTitle = queryTitle.replace(/'/g, '')
+    queryTitle = encodeURIComponent(queryTitle);
     var options = {
       mirror: this.mirror,
       query: queryTitle,
