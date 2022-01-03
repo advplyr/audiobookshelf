@@ -102,6 +102,9 @@ export default {
     },
     selectedBookIds() {
       return this.$store.state.selectedAudiobooks || []
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
@@ -186,9 +189,10 @@ export default {
       var books = this.showBatchUserCollectionModal ? this.selectedBookIds : [this.selectedAudiobookId]
       var newCollection = {
         books: books,
-        libraryId: this.selectedAudiobook.libraryId,
+        libraryId: this.currentLibraryId,
         name: this.newCollectionName
       }
+
       this.$axios
         .$post('/api/collections', newCollection)
         .then((data) => {
