@@ -278,8 +278,12 @@ class Book {
 
     // var authorMatch = this._author.toLowerCase().includes(search)
     var seriesMatch = this._series.toLowerCase().includes(search)
+    
+    // ISBN match has to be exact to prevent isbn matches to flood results. Remove dashes since isbn might have those
+    var isbnMatch = this.isbn.toLowerCase().replaceAll('-', '') === search.replaceAll('-', '')
 
-    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : false
+    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : isbnMatch ? 'isbn' : false
+
     var bookMatchText = bookMatchKey ? this[bookMatchKey] : ''
     return {
       book: bookMatchKey,
