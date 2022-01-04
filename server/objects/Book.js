@@ -343,6 +343,10 @@ class Book {
       {
         tag: 'tagSeriesPart',
         key: 'volumeNumber'
+      },
+      {
+        tag: 'tagIsbn',
+        key: 'isbn'
       }
     ]
 

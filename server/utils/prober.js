@@ -163,6 +163,7 @@ function parseTags(format, verbose) {
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
     file_tag_series: tryGrabTag(format, 'series'),
     file_tag_seriespart: tryGrabTag(format, 'series-part'),
+    file_tag_isbn: tryGrabTag(format, 'isbn'),
 
     // Not sure if these are actually used yet or not
     file_tag_creation_time: tryGrabTag(format, 'creation_time'),
@@ -180,7 +181,7 @@ function parseTags(format, verbose) {
     }
   }
 
-  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
+  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime', 'file_tag_isbn']
   keysToLookOutFor.forEach((key) => {
     if (tags[key]) {
       Logger.debug(`Notable! ${key} => ${tags[key]}`)
