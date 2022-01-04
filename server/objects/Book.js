@@ -43,6 +43,7 @@ class Book {
   get _authorsList() { return this._author.split(', ') }
   get _narratorsList() { return this._narrator.split(', ') }
   get _genres() { return this.genres || [] }
+  get _isbn() { return this.isbn || '' }
 
   get shouldSearchForCover() {
     if (this.cover) return false
@@ -280,7 +281,7 @@ class Book {
     var seriesMatch = this._series.toLowerCase().includes(search)
 
     // ISBN match has to be exact to prevent isbn matches to flood results. Remove dashes since isbn might have those
-    var isbnMatch = this.isbn.toLowerCase().replace(/-/g, '') === search.replace(/-/g, '')
+    var isbnMatch = this._isbn.toLowerCase().replace(/-/g, '') === search.replace(/-/g, '')
 
     var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : isbnMatch ? 'isbn' : false
 
