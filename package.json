@@ -22,7 +22,7 @@
     ]
   },
   "author": "advplyr",
-  "license": "ISC",
+  "license": "GPL-3.0",
   "dependencies": {
     "archiver": "^5.3.0",
     "axios": "^0.21.1",
