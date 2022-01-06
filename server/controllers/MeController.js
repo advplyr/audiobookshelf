@@ -40,7 +40,7 @@ class MeController {
     if (!audiobook) {
       return res.status(404).send('Audiobook not found')
     }
-    var wasUpdated = req.user.updateAudiobookData(audiobook, req.body)
+    var wasUpdated = req.user.updateAudiobookData(audiobook.id, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -59,7 +59,7 @@ class MeController {
     userAbDataPayloads.forEach((userAbData) => {
       var audiobook = this.db.audiobooks.find(ab => ab.id === userAbData.audiobookId)
       if (audiobook) {
-        var wasUpdated = req.user.updateAudiobookData(audiobook, userAbData)
+        var wasUpdated = req.user.updateAudiobookData(audiobook.id, userAbData)
         if (wasUpdated) shouldUpdate = true
       }
     })

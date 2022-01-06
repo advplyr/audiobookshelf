@@ -140,7 +140,9 @@ class User {
     if (user.audiobooks) {
       this.audiobooks = {}
       for (const key in user.audiobooks) {
-        if (user.audiobooks[key]) {
+        if (key === '[object Object]') { // TEMP: Bug remove bad data
+          Logger.warn('[User] Construct found invalid UAD')
+        } else if (user.audiobooks[key]) {
           this.audiobooks[key] = new UserAudiobookData(user.audiobooks[key])
         }
       }
@@ -207,16 +209,16 @@ class User {
     return this.audiobooks[stream.audiobookId]
   }
 
-  updateAudiobookData(audiobook, updatePayload) {
+  updateAudiobookData(audiobookId, updatePayload) {
     if (!this.audiobooks) this.audiobooks = {}
-    if (!this.audiobooks[audiobook.id]) {
-      this.audiobooks[audiobook.id] = new UserAudiobookData()
-      this.audiobooks[audiobook.id].audiobookId = audiobook.id
+    if (!this.audiobooks[audiobookId]) {
+      this.audiobooks[audiobookId] = new UserAudiobookData()
+      this.audiobooks[audiobookId].audiobookId = audiobookId
     }
-    var wasUpdated = this.audiobooks[audiobook.id].update(updatePayload)
+    var wasUpdated = this.audiobooks[audiobookId].update(updatePayload)
     if (wasUpdated) {
-      // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobook.id])}`)
-      return this.audiobooks[audiobook.id]
+      // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobookId])}`)
+      return this.audiobooks[audiobookId]
     }
     return false
   }
@@ -251,7 +253,7 @@ class User {
     if (!this.audiobooks || !this.audiobooks[audiobook.id]) {
       return false
     }
-    return this.updateAudiobookData(audiobook, {
+    return this.updateAudiobookData(audiobook.id, {
       progress: 0,
       currentTime: 0,
       isRead: false,
