@@ -125,7 +125,7 @@
           </div>
 
           <div class="my-4 max-w-2xl">
-            <p class="text-base text-gray-100">{{ description }}</p>
+            <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
           <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">
