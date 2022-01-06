@@ -145,7 +145,7 @@ export default {
     audioPlayerMounted() {
       this.audioPlayerReady = true
       if (this.stream) {
-        console.log('[STREAM-CONTAINER] audioPlayerMounted w/ Stream', this.stream)
+        console.log('[STREAM-CONTAINER] audioPlayer Mounted w/ Stream', this.stream)
         this.openStream()
       }
     },

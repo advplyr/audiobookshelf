@@ -85,12 +85,24 @@ export default {
     reconnectFailed() {
       console.error('[SOCKET] reconnect failed')
     },
-    init(payload) {
+    init(payload, count = 0) {
+      if (!this.$refs.streamContainer) {
+        if (count > 20) {
+          console.error('Stream container never mounted')
+          return
+        }
+        setTimeout(() => {
+          this.init(payload, ++count)
+        }, 100)
+        return
+      }
       console.log('Init Payload', payload)
       if (payload.stream) {
         if (this.$refs.streamContainer) {
           this.$store.commit('setStream', payload.stream)
           this.$refs.streamContainer.streamOpen(payload.stream)
+        } else {
+          console.warn('Stream Container not mounted')
         }
       }
       if (payload.user) {

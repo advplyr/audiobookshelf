@@ -118,7 +118,7 @@ module.exports = {
         userAudiobook: user.getAudiobookJSON(book.id),
         book
       }
-    })
+    }).filter(b => !!b.userAudiobook)
   },
 
   getBooksMostRecentlyRead(booksWithUserAb, limit, minified = false) {

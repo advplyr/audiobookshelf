@@ -74,7 +74,6 @@ export default {
   },
   methods: {
     setEntity(_series) {
-      console.log('setting entity', _series)
       this.series = _series
     },
     setSelectionMode(val) {
