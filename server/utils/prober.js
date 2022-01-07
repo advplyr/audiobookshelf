@@ -1,4 +1,5 @@
 var Ffmpeg = require('fluent-ffmpeg')
+const ffprobe = require('node-ffprobe')
 const Path = require('path')
 
 const AudioProbeData = require('../scanner/AudioProbeData')
@@ -128,7 +129,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
 function parseChapters(chapters) {
   if (!chapters) return []
   return chapters.map(chap => {
-    var title = chap['TAG:title'] || chap.title || ''
+    var title = chap['TAG:title'] || chap.title || chap.tags.title || ''
     var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
     return {
       id: chap.id,
@@ -253,27 +254,23 @@ function parseProbeData(data, verbose = false) {
 
 // Updated probe returns AudioProbeData object
 function probe(filepath, verbose = false) {
-  return new Promise((resolve) => {
-    Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
-      if (err) {
-        console.error(err)
-        var errorMsg = err ? err.message : null
-        resolve({
-          error: errorMsg || 'Probe Error'
-        })
-      } else {
-        var rawProbeData = parseProbeData(raw, verbose)
-        if (!rawProbeData || !rawProbeData.audio_stream) {
-          resolve({
-            error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
-          })
-        } else {
-          var probeData = new AudioProbeData()
-          probeData.setData(rawProbeData)
-          resolve(probeData)
+  return ffprobe(filepath)
+    .then(raw => {
+      var rawProbeData = parseProbeData(raw, verbose)
+      if (!rawProbeData || !rawProbeData.audio_stream) {
+        return {
+          error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
         }
+      } else {
+        var probeData = new AudioProbeData()
+        probeData.setData(rawProbeData)
+        return probeData
       }
     })
-  })
+    .catch((err) => {
+      return {
+        error: err
+      }
+    })
 }
 module.exports.probe = probe
