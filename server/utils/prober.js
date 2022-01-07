@@ -1,4 +1,3 @@
-var Ffmpeg = require('fluent-ffmpeg')
 const ffprobe = require('node-ffprobe')
 const Path = require('path')
 
