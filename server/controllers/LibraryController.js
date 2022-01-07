@@ -167,6 +167,7 @@ class LibraryController {
     }
 
     var series = libraryHelpers.getSeriesFromBooks(audiobooks, payload.minified)
+    series = sort(series).asc(s => s.name)
     payload.total = series.length
 
     if (payload.limit) {
@@ -174,7 +175,7 @@ class LibraryController {
       series = series.slice(startIndex, startIndex + payload.limit)
     }
 
-    payload.results = sort(series).asc(s => s.name)
+    payload.results = series
     res.json(payload)
   }
 
