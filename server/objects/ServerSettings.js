@@ -34,7 +34,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     // Cover
-    this.coverAspectRatio = BookCoverAspectRatio.STANDARD
+    this.coverAspectRatio = BookCoverAspectRatio.SQUARE
     this.bookshelfView = BookshelfView.STANDARD
 
     this.logLevel = Logger.logLevel
@@ -65,7 +65,7 @@ class ServerSettings {
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
-    this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.STANDARD
+    this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.SQUARE
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.logLevel = settings.logLevel || Logger.logLevel
