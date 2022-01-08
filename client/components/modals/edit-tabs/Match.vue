@@ -104,20 +104,6 @@ export default {
       searchTitle: null,
       searchAuthor: null,
       lastSearch: null,
-      providers: [
-        {
-          text: 'Google Books',
-          value: 'google'
-        },
-        {
-          text: 'Open Library',
-          value: 'openlibrary'
-        },
-        {
-          text: 'Audible',
-          value: 'audible'
-        }
-      ],
       provider: 'google',
       searchResults: [],
       hasSearched: false,
@@ -156,6 +142,9 @@ export default {
     },
     bookCoverAspectRatio() {
       return this.$store.getters['getBookCoverAspectRatio']
+    },
+    providers() {
+      return this.$store.state.scanners.providers
     }
   },
   methods: {

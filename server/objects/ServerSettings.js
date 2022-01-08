@@ -12,6 +12,7 @@ class ServerSettings {
     // Scanner
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
+    this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
 
@@ -49,6 +50,7 @@ class ServerSettings {
     this.autoTagNew = settings.autoTagNew
     this.newTagExpireDays = settings.newTagExpireDays
     this.scannerFindCovers = !!settings.scannerFindCovers
+    this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
@@ -82,6 +84,7 @@ class ServerSettings {
       autoTagNew: this.autoTagNew,
       newTagExpireDays: this.newTagExpireDays,
       scannerFindCovers: this.scannerFindCovers,
+      scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,

@@ -8,34 +8,6 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" small :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
-        <ui-tooltip :text="parseSubtitleTooltip">
-          <p class="pl-4 text-lg">Scanner parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updateScannerFindCovers" />
-        <ui-tooltip :text="scannerFindCoversTooltip">
-          <p class="pl-4 text-lg">Scanner find covers <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferAudioMeta" />
-        <ui-tooltip :text="scannerPreferAudioMetaTooltip">
-          <p class="pl-4 text-lg">Scanner prefer audio metadata <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
-        <ui-tooltip :text="scannerPreferOpfMetaTooltip">
-          <p class="pl-4 text-lg">Scanner prefer OPF metadata <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
         <ui-tooltip :text="coverDestinationTooltip">
           <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
@@ -53,6 +25,42 @@
         <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
         <ui-tooltip :text="bookshelfViewTooltip">
           <p class="pl-4 text-lg">Use alternative library bookshelf view <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center mb-2 mt-8">
+        <h1 class="text-xl">Scanner Settings</h1>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" small :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
+        <ui-tooltip :text="parseSubtitleTooltip">
+          <p class="pl-4 text-lg">Scanner parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updateScannerFindCovers" />
+        <ui-tooltip :text="scannerFindCoversTooltip">
+          <p class="pl-4 text-lg">Scanner find covers <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+        <div class="flex-grow" />
+      </div>
+      <div v-if="newServerSettings.scannerFindCovers" class="w-44 ml-14 mb-2">
+        <ui-dropdown v-model="newServerSettings.scannerCoverProvider" small :items="providers" label="Cover Provider" @input="updateScannerCoverProvider" :disabled="updatingServerSettings" />
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferAudioMeta" />
+        <ui-tooltip :text="scannerPreferAudioMetaTooltip">
+          <p class="pl-4 text-lg">Scanner prefer audio metadata <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
+        <ui-tooltip :text="scannerPreferOpfMetaTooltip">
+          <p class="pl-4 text-lg">Scanner prefer OPF metadata <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
     </div>
@@ -85,9 +93,9 @@
             </ui-tooltip>
           </div>
         </div>
-        <div class="hidden md:block">
+        <!-- <div class="hidden md:block">
           <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -145,6 +153,9 @@ export default {
     bookshelfViewTooltip() {
       return 'Alternative bookshelf view that shows title & author under book covers'
     },
+    providers() {
+      return this.$store.state.scanners.providers
+    },
     showExperimentalFeatures: {
       get() {
         return this.$store.state.showExperimentalFeatures
@@ -158,6 +169,11 @@ export default {
     updateScannerFindCovers(val) {
       this.updateServerSettings({
         scannerFindCovers: !!val
+      })
+    },
+    updateScannerCoverProvider(val) {
+      this.updateServerSettings({
+        scannerCoverProvider: val
       })
     },
     updateCoverStorageDestination(val) {
