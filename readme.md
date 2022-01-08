@@ -30,6 +30,8 @@ Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/
 
 Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
+iOS early beta available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStream.png" />
 
 ## Organizing your audiobooks
