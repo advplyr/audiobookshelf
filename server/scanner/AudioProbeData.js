@@ -19,6 +19,9 @@ class AudioProbeData {
 
     this.trackNumber = null
     this.trackTotal = null
+
+    this.discNumber = null
+    this.discTotal = null
   }
 
   getEmbeddedCoverArt(videoStream) {
@@ -55,10 +58,22 @@ class AudioProbeData {
     if (this.audioFileMetadata.tagTrack) {
       var trackParts = this.audioFileMetadata.tagTrack.split('/').map(part => Number(part))
       if (trackParts.length > 0) {
-        this.trackNumber = trackParts[0]
+        // Fractional track numbers not supported
+        this.trackNumber = !isNaN(trackParts[0]) ? Math.trunc(trackParts[0]) : null
       }
       if (trackParts.length > 1) {
-        this.trackTotal = trackParts[1]
+        this.trackTotal = !isNaN(trackParts[1]) ? trackParts[1] : null
+      }
+    }
+
+    // Parse disc tag
+    if (this.audioFileMetadata.tagDisc) {
+      var discParts = this.audioFileMetadata.tagDisc.split('/').map(p => Number(p))
+      if (discParts.length > 0) {
+        this.discNumber = !isNaN(discParts[0]) ? Math.trunc(discParts[0]) : null
+      }
+      if (discParts.length > 1) {
+        this.discTotal = !isNaN(discParts[1]) ? discParts[1] : null
       }
     }
   }

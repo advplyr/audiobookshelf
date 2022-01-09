@@ -14,8 +14,9 @@ class AudioFile {
     this.addedAt = null
 
     this.trackNumFromMeta = null
+    this.discNumFromMeta = null
     this.trackNumFromFilename = null
-    this.cdNumFromFilename = null
+    this.discNumFromFilename = null
 
     this.format = null
     this.duration = null
@@ -42,16 +43,6 @@ class AudioFile {
     }
   }
 
-  // Sort number takes cd num into account
-  // get sortNumber() {
-  //   if (this.manuallyVerified) return this.index
-  //   var num = this.index
-  //   if (this.cdNumFromFilename && !isNaN(this.cdNumFromFilename)) {
-  //     num += (Number(this.cdNumFromFilename) * 1000)
-  //   }
-  //   return num
-  // }
-
   toJSON() {
     return {
       index: this.index,
@@ -62,8 +53,9 @@ class AudioFile {
       fullPath: this.fullPath,
       addedAt: this.addedAt,
       trackNumFromMeta: this.trackNumFromMeta,
+      discNumFromMeta: this.discNumFromMeta,
       trackNumFromFilename: this.trackNumFromFilename,
-      cdNumFromFilename: this.cdNumFromFilename,
+      discNumFromFilename: this.discNumFromFilename,
       manuallyVerified: !!this.manuallyVerified,
       invalid: !!this.invalid,
       exclude: !!this.exclude,
@@ -97,8 +89,11 @@ class AudioFile {
     this.error = data.error || null
 
     this.trackNumFromMeta = data.trackNumFromMeta
+    this.discNumFromMeta = data.discNumFromMeta
     this.trackNumFromFilename = data.trackNumFromFilename
-    this.cdNumFromFilename = data.cdNumFromFilename
+
+    if (data.cdNumFromFilename !== undefined) this.discNumFromFilename = data.cdNumFromFilename // TEMP:Support old var name
+    else this.discNumFromFilename = data.discNumFromFilename
 
     this.format = data.format
     this.duration = data.duration
@@ -132,8 +127,9 @@ class AudioFile {
     this.addedAt = Date.now()
 
     this.trackNumFromMeta = fileData.trackNumFromMeta
+    this.discNumFromMeta = fileData.discNumFromMeta
     this.trackNumFromFilename = fileData.trackNumFromFilename
-    this.cdNumFromFilename = fileData.cdNumFromFilename
+    this.discNumFromFilename = fileData.discNumFromFilename
 
     this.format = probeData.format
     this.duration = probeData.duration

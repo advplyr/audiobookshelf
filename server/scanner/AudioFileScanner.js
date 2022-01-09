@@ -9,11 +9,7 @@ const { LogLevel } = require('../utils/constants')
 class AudioFileScanner {
   constructor() { }
 
-  getTrackNumberFromMeta(scanData) {
-    return !isNaN(scanData.trackNumber) && scanData.trackNumber !== null ? Math.trunc(Number(scanData.trackNumber)) : null
-  }
-
-  getTrackNumberFromFilename(bookScanData, filename) {
+  getTrackAndDiscNumberFromFilename(bookScanData, filename) {
     const { title, author, series, publishYear } = bookScanData
     var partbasename = Path.basename(filename, Path.extname(filename))
 
@@ -23,39 +19,24 @@ class AudioFileScanner {
     if (series) partbasename = partbasename.replace(series, '')
     if (publishYear) partbasename = partbasename.replace(publishYear)
 
-    // Remove eg. "disc 1" from path
-    partbasename = partbasename.replace(/\bdisc \d\d?\b/i, '')
-
-    // Remove "cd01" or "cd 01" from path
-    partbasename = partbasename.replace(/\bcd ?\d\d?\b/i, '')
-
-    var numbersinpath = partbasename.match(/\d{1,4}/g)
-    if (!numbersinpath) return null
-
-    var number = numbersinpath.length ? parseInt(numbersinpath[0]) : null
-    return number
-  }
-
-  getCdNumberFromFilename(bookScanData, filename) {
-    const { title, author, series, publishYear } = bookScanData
-    var partbasename = Path.basename(filename, Path.extname(filename))
-
-    // Remove title, author, series, and publishYear from filename if there
-    if (title) partbasename = partbasename.replace(title, '')
-    if (author) partbasename = partbasename.replace(author, '')
-    if (series) partbasename = partbasename.replace(series, '')
-    if (publishYear) partbasename = partbasename.replace(publishYear)
-
-    var cdNumber = null
-
-    var cdmatch = partbasename.match(/\b(disc|cd) ?(\d\d?)\b/i)
-    if (cdmatch && cdmatch.length > 2 && cdmatch[2]) {
-      if (!isNaN(cdmatch[2])) {
-        cdNumber = Number(cdmatch[2])
+    // Look for disc number
+    var discNumber = null
+    var discMatch = partbasename.match(/\b(disc|cd) ?(\d\d?)\b/i)
+    if (discMatch && discMatch.length > 2 && discMatch[2]) {
+      if (!isNaN(discMatch[2])) {
+        discNumber = Number(discMatch[2])
       }
+
+      // Remove disc number from filename
+      partbasename = partbasename.replace(/\b(disc|cd) ?(\d\d?)\b/i, '')
     }
 
-    return cdNumber
+    var numbersinpath = partbasename.match(/\d{1,4}/g)
+    var trackNumber = numbersinpath && numbersinpath.length ? parseInt(numbersinpath[0]) : null
+    return {
+      trackNumber,
+      discNumber
+    }
   }
 
   getAverageScanDurationMs(results) {
@@ -76,19 +57,20 @@ class AudioFileScanner {
     // Logger.debug(`[AudioFileScanner] Finished Probe ${audioFileData.fullPath} elapsed ${msToTimestamp(Date.now() - probeStart, true)}`)
 
     var audioFile = new AudioFile()
-    audioFileData.trackNumFromMeta = this.getTrackNumberFromMeta(probeData)
-    audioFileData.trackNumFromFilename = this.getTrackNumberFromFilename(bookScanData, audioFileData.filename)
-    audioFileData.cdNumFromFilename = this.getCdNumberFromFilename(bookScanData, audioFileData.filename)
-    audioFile.setDataFromProbe(audioFileData, probeData)
-    if (audioFile.embeddedCoverArt) {
+    audioFileData.trackNumFromMeta = probeData.trackNumber
+    audioFileData.discNumFromMeta = probeData.discNumber
 
-    }
+    const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(bookScanData, audioFileData.filename)
+    audioFileData.trackNumFromFilename = trackNumber
+    audioFileData.discNumFromFilename = discNumber
+
+    audioFile.setDataFromProbe(audioFileData, probeData)
+
     return {
       audioFile,
       elapsed: Date.now() - probeStart
     }
   }
-
 
   // Returns array of { AudioFile, elapsed, averageScanDuration } from audio file scan objects
   async executeAudioFileScans(audioFileDataArray, bookScanData) {
@@ -105,6 +87,84 @@ class AudioFileScanner {
     }
   }
 
+  isSequential(nums) {
+    if (!nums || !nums.length) return false
+    if (nums.length === 1) return true
+    var prev = nums[0]
+    for (let i = 1; i < nums.length; i++) {
+      if (nums[i] - prev > 1) return false
+      prev = nums[i]
+    }
+    return true
+  }
+
+  removeDupes(nums) {
+    if (!nums || !nums.length) return []
+    if (nums.length === 1) return nums
+
+    var nodupes = [nums[0]]
+    nums.forEach((num) => {
+      if (num > nodupes[nodupes.length - 1]) nodupes.push(num)
+    })
+    return nodupes
+  }
+
+  // Must be all audiofiles in audiobook
+  runSmartTrackOrder(audiobook, audioFiles) {
+    var discsFromFilename = []
+    var tracksFromFilename = []
+    var discsFromMeta = []
+    var tracksFromMeta = []
+
+    audioFiles.forEach((af) => {
+      if (af.discNumFromFilename !== null) discsFromFilename.push(af.discNumFromFilename)
+      if (af.discNumFromMeta !== null) discsFromMeta.push(af.discNumFromMeta)
+      if (af.trackNumFromFilename !== null) tracksFromFilename.push(af.trackNumFromFilename)
+      if (af.trackNumFromMeta !== null) tracksFromMeta.push(af.trackNumFromMeta)
+      af.validateTrackIndex() // Sets error if no valid track number
+    })
+    discsFromFilename.sort((a, b) => a - b)
+    discsFromMeta.sort((a, b) => a - b)
+    tracksFromFilename.sort((a, b) => a - b)
+    tracksFromMeta.sort((a, b) => a - b)
+    console.log('AB DISCS', audiobook.title, discsFromFilename, discsFromMeta)
+    console.log('AB TRACKS', audiobook.title, tracksFromFilename, tracksFromMeta)
+
+    var discKey = null
+    if (discsFromMeta.length === audioFiles.length && this.isSequential(discsFromMeta)) {
+      discKey = 'discNumFromMeta'
+    } else if (discsFromFilename.length === audioFiles.length && this.isSequential(discsFromFilename)) {
+      discKey = 'discNumFromFilename'
+    }
+
+    var trackKey = null
+    tracksFromFilename = this.removeDupes(tracksFromFilename)
+    tracksFromMeta = this.removeDupes(tracksFromMeta)
+    if (tracksFromFilename.length > tracksFromMeta.length) {
+      trackKey = 'trackNumFromFilename'
+    } else {
+      trackKey = 'trackNumFromMeta'
+    }
+
+
+    if (discKey !== null) {
+      Logger.debug(`[AudioFileScanner] Smart track order for "${audiobook.title}" using disc key ${discKey} and track key ${trackKey}`)
+      audioFiles.sort((a, b) => {
+        let Dx = a[discKey] - b[discKey]
+        if (Dx === 0) Dx = a[trackKey] - b[trackKey]
+        return Dx
+      })
+    } else {
+      Logger.debug(`[AudioFileScanner] Smart track order for "${audiobook.title}" using track key ${trackKey}`)
+      audioFiles.sort((a, b) => a[trackKey] - b[trackKey])
+    }
+
+    for (let i = 0; i < audioFiles.length; i++) {
+      audioFiles[i].index = i + 1
+      audiobook.addAudioFile(audioFiles[i])
+    }
+  }
+
   async scanAudioFiles(audioFileDataArray, bookScanData, audiobook, preferAudioMetadata, libraryScan = null) {
     var hasUpdated = false
 
@@ -114,36 +174,42 @@ class AudioFileScanner {
         libraryScan.addLog(LogLevel.DEBUG, `Book "${bookScanData.path}" Audio file scan took ${audioScanResult.elapsed}ms for ${audioScanResult.audioFiles.length} with average time of ${audioScanResult.averageScanDuration}ms`)
       }
 
-      var totalAudioFilesToInclude = audiobook.audioFilesToInclude.filter(af => !audioScanResult.audioFiles.find(_af => _af.ino === af.ino)).length + audioScanResult.audioFiles.length
+      var numExistingAudioFilesToInclude = audiobook.audioFilesToInclude.filter(af => !audioScanResult.audioFiles.find(_af => _af.ino === af.ino)).length
+      var totalAudioFilesToInclude = numExistingAudioFilesToInclude + audioScanResult.audioFiles.length
 
-      // validate & add/update audio files to audiobook
-      for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
-        var newAF = audioScanResult.audioFiles[i]
-        var existingAF = audiobook.getAudioFileByIno(newAF.ino)
+      if (numExistingAudioFilesToInclude <= 0) { // SMART TRACK ORDER for New or empty audiobooks
+        this.runSmartTrackOrder(audiobook, audioScanResult.audioFiles)
+        hasUpdated = true
+      } else {
+        // validate & add/update audio files to existing audiobook
+        for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
+          var newAF = audioScanResult.audioFiles[i]
+          var existingAF = audiobook.getAudioFileByIno(newAF.ino)
 
-        var trackIndex = null
-        if (totalAudioFilesToInclude === 1) { // Single track audiobooks
-          trackIndex = 1
-        } else if (existingAF && existingAF.manuallyVerified) { // manually verified audio files use existing index
-          trackIndex = existingAF.index
-        } else {
-          trackIndex = newAF.validateTrackIndex()
-        }
-
-        if (trackIndex !== null) {
-          if (audiobook.checkHasTrackNum(trackIndex, newAF.ino)) {
-            newAF.setDuplicateTrackNumber(trackIndex)
+          var trackIndex = null
+          if (totalAudioFilesToInclude === 1) { // Single track audiobooks
+            trackIndex = 1
+          } else if (existingAF && existingAF.manuallyVerified) { // manually verified audio files use existing index
+            trackIndex = existingAF.index
           } else {
-            newAF.index = trackIndex
+            trackIndex = newAF.validateTrackIndex()
           }
-        }
-        if (existingAF) {
-          if (audiobook.updateAudioFile(newAF)) {
+
+          if (trackIndex !== null) {
+            if (audiobook.checkHasTrackNum(trackIndex, newAF.ino)) {
+              newAF.setDuplicateTrackNumber(trackIndex)
+            } else {
+              newAF.index = trackIndex
+            }
+          }
+          if (existingAF) {
+            if (audiobook.updateAudioFile(newAF)) {
+              hasUpdated = true
+            }
+          } else {
+            audiobook.addAudioFile(newAF)
             hasUpdated = true
           }
-        } else {
-          audiobook.addAudioFile(newAF)
-          hasUpdated = true
         }
       }
 

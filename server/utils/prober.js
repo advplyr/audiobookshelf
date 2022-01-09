@@ -128,7 +128,7 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
 function parseChapters(chapters) {
   if (!chapters) return []
   return chapters.map(chap => {
-    var title = chap['TAG:title'] || chap.title || chap.tags.title || ''
+    var title = chap['TAG:title'] || chap.title || chap.tags.title || ''
     var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
     return {
       id: chap.id,
@@ -152,6 +152,7 @@ function parseTags(format, verbose) {
     file_tag_title: tryGrabTags(format, 'title', 'tit2', 'tt2'),
     file_tag_subtitle: tryGrabTags(format, 'subtitle', 'tit3', 'tt3'),
     file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
+    file_tag_disc: tryGrabTags(format, 'discnumber', 'disc', 'disk', 'tpos'),
     file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
     file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
     file_tag_albumartist: tryGrabTags(format, 'albumartist', 'album_artist', 'tpe2'),

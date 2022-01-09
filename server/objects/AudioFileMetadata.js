@@ -7,6 +7,7 @@ class AudioFileMetadata {
     this.tagSeries = null
     this.tagSeriesPart = null
     this.tagTrack = null
+    this.tagDisc = null
     this.tagSubtitle = null
     this.tagAlbumArtist = null
     this.tagDate = null
@@ -42,6 +43,7 @@ class AudioFileMetadata {
     this.tagSeries = metadata.tagSeries || null
     this.tagSeriesPart = metadata.tagSeriesPart || null
     this.tagTrack = metadata.tagTrack || null
+    this.tagDisc = metadata.tagDisc || null
     this.tagSubtitle = metadata.tagSubtitle || null
     this.tagAlbumArtist = metadata.tagAlbumArtist || null
     this.tagDate = metadata.tagDate || null
@@ -63,6 +65,7 @@ class AudioFileMetadata {
     this.tagSeries = payload.file_tag_series || null
     this.tagSeriesPart = payload.file_tag_seriespart || null
     this.tagTrack = payload.file_tag_track || null
+    this.tagDisc = payload.file_tag_disc || null
     this.tagSubtitle = payload.file_tag_subtitle || null
     this.tagAlbumArtist = payload.file_tag_albumartist || null
     this.tagDate = payload.file_tag_date || null
@@ -84,6 +87,7 @@ class AudioFileMetadata {
       tagSeries: payload.file_tag_series || null,
       tagSeriesPart: payload.file_tag_seriespart || null,
       tagTrack: payload.file_tag_track || null,
+      tagDisc: payload.file_tag_disc || null,
       tagSubtitle: payload.file_tag_subtitle || null,
       tagAlbumArtist: payload.file_tag_albumartist || null,
       tagDate: payload.file_tag_date || null,
