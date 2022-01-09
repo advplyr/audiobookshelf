@@ -6,7 +6,9 @@
     </div>
 
     <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${sizeMultiplier * 3}rem` }">
-      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">{{ title }}</p>
+      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ title }}
+      </p>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ authorFL }}</p>
     </div>
 
