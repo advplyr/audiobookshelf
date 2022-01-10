@@ -256,7 +256,11 @@ function parseProbeData(data, verbose = false) {
 
 // Updated probe returns AudioProbeData object
 function probe(filepath, verbose = false) {
-  return ffprobe(filepath)
+  var options = {}
+  if (process.env.FFPROBE_PATH) {
+    options.path = process.env.FFPROBE_PATH
+  }
+  return ffprobe(filepath, options)
     .then(raw => {
       var rawProbeData = parseProbeData(raw, verbose)
       if (!rawProbeData || !rawProbeData.audio_stream) {

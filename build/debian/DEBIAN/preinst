@@ -83,6 +83,7 @@ setup_config_interactive() {
   METADATA_PATH=$DATA_PATH/metadata
   CONFIG_PATH=$DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
+  FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
   PORT=$PORT"
 
     echo "$config_text"
@@ -105,6 +106,7 @@ setup_config() {
   METADATA_PATH=$DEFAULT_DATA_PATH/metadata
   CONFIG_PATH=$DEFAULT_DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
+  FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
   PORT=$DEFAULT_PORT"
 
     echo "$config_text"

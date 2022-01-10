@@ -12,6 +12,7 @@ if (isDev) {
   process.env.METADATA_PATH = devEnv.MetadataPath
   process.env.AUDIOBOOK_PATH = devEnv.AudiobookPath
   process.env.FFMPEG_PATH = devEnv.FFmpegPath
+  process.env.FFPROBE_PATH = devEnv.FFProbePath
 }
 
 const PORT = process.env.PORT || 80
