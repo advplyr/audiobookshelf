@@ -10,7 +10,7 @@
       <p v-if="matchKey !== 'authorFL'" class="text-xs text-gray-200 truncate">by {{ authorFL }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
 
-      <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
+      <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn' || matchKey === 'asin'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
     </div>
   </div>
 </template>
@@ -71,6 +71,7 @@ export default {
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
       if (this.matchKey === 'authorFL') return `by ${html}`
       if (this.matchKey === 'isbn') return `<p class="truncate">ISBN: ${html}</p>`
+      if (this.matchKey === 'asin') return `<p class="truncate">ASIN: ${html}</p>`
       if (this.matchKey === 'series') return `<p class="truncate">Series: ${html}</p>`
       return `${html}`
     }

@@ -18,6 +18,8 @@ class AudioFileMetadata {
     this.tagEncoder = null
     this.tagEncodedBy = null
     this.tagIsbn = null
+    this.tagLanguage = null
+    this.tagASIN = null
 
     if (metadata) {
       this.construct(metadata)
@@ -54,6 +56,8 @@ class AudioFileMetadata {
     this.tagEncoder = metadata.tagEncoder || null
     this.tagEncodedBy = metadata.tagEncodedBy || null
     this.tagIsbn = metadata.tagIsbn || null
+    this.tagLanguage = metadata.tagLanguage || null
+    this.tagASIN = metadata.tagASIN || null
   }
 
   // Data parsed in prober.js
@@ -76,6 +80,8 @@ class AudioFileMetadata {
     this.tagEncoder = payload.file_tag_encoder || null
     this.tagEncodedBy = payload.file_tag_encodedby || null
     this.tagIsbn = payload.file_tag_isbn || null
+    this.tagLanguage = payload.file_tag_language || null
+    this.tagASIN = payload.file_tag_asin || null
   }
 
   updateData(payload) {
@@ -97,7 +103,9 @@ class AudioFileMetadata {
       tagDescription: payload.file_tag_description || null,
       tagEncoder: payload.file_tag_encoder || null,
       tagEncodedBy: payload.file_tag_encodedby || null,
-      tagIsbn: payload.file_tag_isbn || nulll
+      tagIsbn: payload.file_tag_isbn || null,
+      tagLanguage: payload.file_tag_language || null,
+      tagASIN: payload.file_tag_asin || null
     }
 
     var hasUpdates = false

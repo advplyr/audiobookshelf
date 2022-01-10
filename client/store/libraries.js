@@ -187,7 +187,8 @@ export const mutations = {
       genres: [],
       tags: [],
       series: [],
-      narrators: []
+      narrators: [],
+      languages: []
     }
     */
 
@@ -217,6 +218,9 @@ export const mutations = {
       audiobook.book.genres.forEach((genre) => {
         if (genre && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
       })
+    }
+    if (audiobook.book.language && !state.filterData.languages.includes(audiobook.book.language)) {
+      state.filterData.languages.push(audiobook.book.language)
     }
   }
 }

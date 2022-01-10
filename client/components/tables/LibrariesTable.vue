@@ -9,7 +9,7 @@
     <draggable :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
-          <modals-libraries-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @sort="draggableSort" @click="setLibrary" />
+          <modals-libraries-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
         </div>
       </template>
     </draggable>

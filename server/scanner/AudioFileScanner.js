@@ -127,8 +127,6 @@ class AudioFileScanner {
     discsFromMeta.sort((a, b) => a - b)
     tracksFromFilename.sort((a, b) => a - b)
     tracksFromMeta.sort((a, b) => a - b)
-    console.log('AB DISCS', audiobook.title, discsFromFilename, discsFromMeta)
-    console.log('AB TRACKS', audiobook.title, tracksFromFilename, tracksFromMeta)
 
     var discKey = null
     if (discsFromMeta.length === audioFiles.length && this.isSequential(discsFromMeta)) {

@@ -18,6 +18,9 @@
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
+      <div class="flex justify-center mt-2">
+        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">Clear Filter</ui-btn>
+      </div>
     </div>
 
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
@@ -86,6 +89,7 @@ export default {
     emptyMessage() {
       if (this.page === 'series') return `You have no series`
       if (this.page === 'collections') return "You haven't made any collections yet"
+      if (this.hasFilter) return `No Results for filter "${this.filterValue}"`
       return 'No results'
     },
     entityName() {
@@ -119,6 +123,17 @@ export default {
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'
+    },
+    filterName() {
+      if (!this.filterBy) return ''
+      var filter = this.filterBy.split('.')[0]
+      filter = filter.substr(0, 1).toUpperCase() + filter.substr(1)
+      return filter
+    },
+    filterValue() {
+      if (!this.filterBy) return ''
+      if (!this.filterBy.includes('.')) return ''
+      return this.$decode(this.filterBy.split('.')[1])
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
@@ -174,6 +189,9 @@ export default {
   methods: {
     showBookshelfTextureModal() {
       this.$store.commit('globals/setShowBookshelfTextureModal', true)
+    },
+    clearFilter() {
+      this.$store.dispatch('user/updateUserSettings', { filterBy: 'all' })
     },
     editEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {

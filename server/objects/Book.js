@@ -18,7 +18,8 @@ class Book {
     this.publisher = null
     this.description = null
     this.isbn = null
-    this.langauge = null
+    this.asin = null
+    this.language = null
     this.cover = null
     this.coverFullPath = null
     this.genres = []
@@ -43,7 +44,9 @@ class Book {
   get _authorsList() { return this._author.split(', ') }
   get _narratorsList() { return this._narrator.split(', ') }
   get _genres() { return this.genres || [] }
-  get _isbn() { return this.isbn || '' }
+  get _language() { return this.language || '' }
+  get _isbn() { return this.isbn || '' }
+  get _asin() { return this.asin || '' }
 
   get shouldSearchForCover() {
     if (this.cover) return false
@@ -67,6 +70,7 @@ class Book {
     this.publisher = book.publisher
     this.description = book.description
     this.isbn = book.isbn || null
+    this.asin = book.asin || null
     this.language = book.language || null
     this.cover = book.cover
     this.coverFullPath = book.coverFullPath || null
@@ -98,6 +102,7 @@ class Book {
       publisher: this.publisher,
       description: this.description,
       isbn: this.isbn,
+      asin: this.asin,
       language: this.language,
       cover: this.cover,
       coverFullPath: this.coverFullPath,
@@ -156,6 +161,7 @@ class Book {
     this.publishYear = data.publishYear || null
     this.description = data.description || null
     this.isbn = data.isbn || null
+    this.asin = data.asin || null
     this.language = data.language || null
     this.cover = data.cover || null
     this.coverFullPath = data.coverFullPath || null
@@ -283,7 +289,9 @@ class Book {
     // ISBN match has to be exact to prevent isbn matches to flood results. Remove dashes since isbn might have those
     var isbnMatch = this._isbn.toLowerCase().replace(/-/g, '') === search.replace(/-/g, '')
 
-    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : isbnMatch ? 'isbn' : false
+    var asinMatch = this._asin.toLowerCase() === search
+
+    var bookMatchKey = titleMatch ? 'title' : subtitleMatch ? 'subtitle' : authorsMatched.length ? 'authorFL' : seriesMatch ? 'series' : isbnMatch ? 'isbn' : asinMatch ? 'asin' : false
 
     var bookMatchText = bookMatchKey ? this[bookMatchKey] : ''
     return {
@@ -352,6 +360,14 @@ class Book {
       {
         tag: 'tagIsbn',
         key: 'isbn'
+      },
+      {
+        tag: 'tagLanguage',
+        key: 'language'
+      },
+      {
+        tag: 'tagASIN',
+        key: 'asin'
       }
     ]
 

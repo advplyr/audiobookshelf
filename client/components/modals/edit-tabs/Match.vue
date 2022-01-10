@@ -65,10 +65,7 @@
           <ui-checkbox v-model="selectedMatchUsage.publishYear" />
           <ui-text-input-with-label v-model="selectedMatch.publishYear" :disabled="!selectedMatchUsage.publishYear" label="Publish Year" class="flex-grow ml-4" />
         </div>
-        <div v-if="selectedMatch.isbn" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.isbn" />
-          <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" class="flex-grow ml-4" />
-        </div>
+
         <div v-if="selectedMatch.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" />
           <ui-text-input-with-label v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" label="Series" class="flex-grow ml-4" />
@@ -77,10 +74,14 @@
           <ui-checkbox v-model="selectedMatchUsage.volumeNumber" />
           <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
         </div>
-        <!-- <div v-if="selectedMatch.asin" class="flex items-center py-2">
+        <div v-if="selectedMatch.isbn" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.isbn" />
+          <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" class="flex-grow ml-4" />
+        </div>
+        <div v-if="selectedMatch.asin" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.asin" />
           <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" class="flex-grow ml-4" />
-        </div> -->
+        </div>
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">Update</ui-btn>
         </div>
@@ -115,11 +116,12 @@ export default {
         author: true,
         narrator: true,
         description: true,
-        isbn: true,
         publisher: true,
         publishYear: true,
         series: true,
-        volumeNumber: true
+        volumeNumber: true,
+        asin: true,
+        isbn: true
       }
     }
   },
@@ -194,11 +196,12 @@ export default {
         author: true,
         narrator: true,
         description: true,
-        isbn: true,
         publisher: true,
         publishYear: true,
         series: true,
-        volumeNumber: true
+        volumeNumber: true,
+        asin: true,
+        isbn: true
       }
 
       if (this.audiobook.id !== this.audiobookId) {

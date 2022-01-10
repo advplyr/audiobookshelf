@@ -11,7 +11,7 @@ module.exports = {
   getFiltered(audiobooks, filterBy, user) {
     var filtered = audiobooks
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators']
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'languages']
     var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
       var filterVal = filterBy.replace(`${group}.`, '')
@@ -33,6 +33,8 @@ module.exports = {
           if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
           return false
         })
+      } else if (group === 'languages') {
+        filtered = filtered.filter(ab => ab.book && ab.book.language === filter)
       }
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(ab => {
@@ -49,7 +51,8 @@ module.exports = {
       genres: [],
       tags: [],
       series: [],
-      narrators: []
+      narrators: [],
+      languages: []
     }
     audiobooks.forEach((ab) => {
       if (ab.book._authorsList.length) {
@@ -73,12 +76,14 @@ module.exports = {
           if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
         })
       }
+      if (ab.book._language && !data.languages.includes(ab.book._language)) data.languages.push(ab.book._language)
     })
     data.authors = naturalSort(data.authors).asc()
     data.genres = naturalSort(data.genres).asc()
     data.tags = naturalSort(data.tags).asc()
     data.series = naturalSort(data.series).asc()
     data.narrators = naturalSort(data.narrators).asc()
+    data.languages = naturalSort(data.languages).asc()
     return data
   },
 
