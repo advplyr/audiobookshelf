@@ -322,7 +322,7 @@ class Scanner {
   }
 
   async rescanAudiobook(audiobookCheckData, libraryScan) {
-    const { newAudioFileData, newOtherFileData, audiobook, bookScanData, updated, existingAudioFileData, existingOtherFileData } = audiobookCheckData
+    const { newAudioFileData, audioFilesRemoved, newOtherFileData, audiobook, bookScanData, updated, existingAudioFileData, existingOtherFileData } = audiobookCheckData
     libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${audiobook.path}"`)
     var hasUpdated = updated
 
@@ -342,7 +342,7 @@ class Scanner {
       }
     }
     // Scan new audio files
-    if (newAudioFileData.length) {
+    if (newAudioFileData.length || audioFilesRemoved.length) {
       if (await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)) {
         hasUpdated = true
       }
@@ -459,11 +459,38 @@ class Scanner {
   async scanFolderUpdates(library, folder, fileUpdateBookGroup) {
     Logger.debug(`[Scanner] Scanning file update groups in folder "${folder.id}" of library "${library.name}"`)
 
+    // First pass - Remove files in parent dirs of audiobooks and remap the fileupdate group
+    //    Test Case: Moving audio files from audiobook folder to author folder should trigger a re-scan of audiobook
+    var updateGroup = { ...fileUpdateBookGroup }
+    for (const bookDir in updateGroup) {
+      var bookDirNestedFiles = fileUpdateBookGroup[bookDir].filter(b => b.includes('/'))
+      if (!bookDirNestedFiles.length) continue;
+
+      var firstNest = bookDirNestedFiles[0].split('/').shift()
+      var altDir = `${bookDir}/${firstNest}`
+
+      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), bookDir)
+      var childAudiobook = this.db.audiobooks.find(ab => ab.fullPath !== fullPath && ab.fullPath.startsWith(fullPath))
+      if (!childAudiobook) {
+        continue;
+      }
+      var altFullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), altDir)
+      var altChildAudiobook = this.db.audiobooks.find(ab => ab.fullPath !== altFullPath && ab.fullPath.startsWith(altFullPath))
+      if (altChildAudiobook) {
+        continue;
+      }
+
+      delete fileUpdateBookGroup[bookDir]
+      fileUpdateBookGroup[altDir] = bookDirNestedFiles.map((f) => f.split('/').slice(1).join('/'))
+      Logger.warn(`[Scanner] Some files were modified in a parent directory of an audiobook "${childAudiobook.title}" - ignoring`)
+    }
+
+    // Second pass: Check for new/updated/removed audiobooks
     var bookGroupingResults = {}
     for (const bookDir in fileUpdateBookGroup) {
       var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), bookDir)
 
-      // Check if book dir group is already an audiobook or in a subdir of an audiobook
+      // Check if book dir group is already an audiobook
       var existingAudiobook = this.db.audiobooks.find(ab => fullPath.startsWith(ab.fullPath))
       if (existingAudiobook) {
 

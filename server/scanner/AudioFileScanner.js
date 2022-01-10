@@ -109,7 +109,6 @@ class AudioFileScanner {
     return nodupes
   }
 
-  // Must be all audiofiles in audiobook
   runSmartTrackOrder(audiobook, audioFiles) {
     var discsFromFilename = []
     var tracksFromFilename = []
@@ -159,7 +158,12 @@ class AudioFileScanner {
 
     for (let i = 0; i < audioFiles.length; i++) {
       audioFiles[i].index = i + 1
-      audiobook.addAudioFile(audioFiles[i])
+      var existingAF = audiobook.getAudioFileByIno(audioFiles[i].ino)
+      if (existingAF) {
+        audiobook.updateAudioFile(audioFiles[i])
+      } else {
+        audiobook.addAudioFile(audioFiles[i])
+      }
     }
   }
 
@@ -172,43 +176,34 @@ class AudioFileScanner {
         libraryScan.addLog(LogLevel.DEBUG, `Book "${bookScanData.path}" Audio file scan took ${audioScanResult.elapsed}ms for ${audioScanResult.audioFiles.length} with average time of ${audioScanResult.averageScanDuration}ms`)
       }
 
-      var numExistingAudioFilesToInclude = audiobook.audioFilesToInclude.filter(af => !audioScanResult.audioFiles.find(_af => _af.ino === af.ino)).length
-      var totalAudioFilesToInclude = numExistingAudioFilesToInclude + audioScanResult.audioFiles.length
+      var totalAudioFilesToInclude = audioScanResult.audioFiles.length
+      var newAudioFiles = audioScanResult.audioFiles.filter(af => {
+        return !audiobook.audioFilesToInclude.find(_af => _af.ino === af.ino)
+      })
 
-      if (numExistingAudioFilesToInclude <= 0) { // SMART TRACK ORDER for New or empty audiobooks
-        this.runSmartTrackOrder(audiobook, audioScanResult.audioFiles)
-        hasUpdated = true
+      if (newAudioFiles.length) {
+        // Single Track Audiobooks
+        if (totalAudioFilesToInclude === 1) {
+          var af = audioScanResult.audioFiles[0]
+          af.index = 1
+          audiobook.addAudioFile(af)
+          hasUpdated = true
+        } else {
+          this.runSmartTrackOrder(audiobook, audioScanResult.audioFiles)
+          hasUpdated = true
+        }
       } else {
-        // validate & add/update audio files to existing audiobook
-        for (let i = 0; i < audioScanResult.audioFiles.length; i++) {
-          var newAF = audioScanResult.audioFiles[i]
-          var existingAF = audiobook.getAudioFileByIno(newAF.ino)
-
-          var trackIndex = null
-          if (totalAudioFilesToInclude === 1) { // Single track audiobooks
-            trackIndex = 1
-          } else if (existingAF && existingAF.manuallyVerified) { // manually verified audio files use existing index
-            trackIndex = existingAF.index
-          } else {
-            trackIndex = newAF.validateTrackIndex()
-          }
-
-          if (trackIndex !== null) {
-            if (audiobook.checkHasTrackNum(trackIndex, newAF.ino)) {
-              newAF.setDuplicateTrackNumber(trackIndex)
-            } else {
-              newAF.index = trackIndex
-            }
-          }
+        Logger.debug(`[AudioFileScanner] No audio track re-order required`)
+        // Only update metadata not index
+        audioScanResult.audioFiles.forEach((af) => {
+          var existingAF = audiobook.getAudioFileByIno(af.ino)
           if (existingAF) {
-            if (audiobook.updateAudioFile(newAF)) {
+            af.index = existingAF.index
+            if (audiobook.updateAudioFile(af)) {
               hasUpdated = true
             }
-          } else {
-            audiobook.addAudioFile(newAF)
-            hasUpdated = true
           }
-        }
+        })
       }
 
       // Set book details from audio file ID3 tags, optional prefer
