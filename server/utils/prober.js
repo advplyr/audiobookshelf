@@ -165,7 +165,7 @@ function parseTags(format, verbose) {
     file_tag_series: tryGrabTag(format, 'series'),
     file_tag_seriespart: tryGrabTag(format, 'series-part'),
     file_tag_isbn: tryGrabTag(format, 'isbn'),
-    file_tag_language: tryGrabTab(format, 'language', 'lang'),
+    file_tag_language: tryGrabTags(format, 'language', 'lang'),
     file_tag_asin: tryGrabTag(format, 'asin'),
 
     // Not sure if these are actually used yet or not
