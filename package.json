@@ -15,7 +15,10 @@
   },
   "bin": "prod.js",
   "pkg": {
-    "assets": "client/dist/**/*",
+    "assets": [
+      "client/dist/**/*",
+      "server/Db.js"
+    ],
     "scripts": [
       "prod.js",
       "server/**/*.js"
