@@ -125,15 +125,37 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   return info
 }
 
+function isNullOrNaN(val) {
+  return val === null || isNaN(val)
+}
+
+
+/* Example chapter object
+ * {
+      "id": 71,
+      "time_base": "1/1000",
+      "start": 80792671,
+      "start_time": "80792.671000",
+      "end": 81084755,
+      "end_time": "81084.755000",
+      "tags": {
+          "title": "072"
+      }
+ * }
+ */
 function parseChapters(chapters) {
   if (!chapters) return []
   return chapters.map(chap => {
-    var title = chap['TAG:title'] || chap.title || chap.tags.title || ''
+    var title = chap['TAG:title'] || chap.title || ''
+    if (!title && chap.tags && chap.tags.title) title = chap.tags.title
+
     var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
+    var start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
+    var end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
     return {
       id: chap.id,
-      start: !isNaN(chap.start_time) ? chap.start_time : (chap.start / timebase),
-      end: chap.end_time || (chap.end / timebase),
+      start,
+      end,
       title
     }
   })
