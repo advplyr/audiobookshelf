@@ -16,5 +16,5 @@ remove_binary() {
 }
 
 echo ">> Cleaning up"
-remove_ffmpeg()
-remove_binary()
+remove_ffmpeg
+remove_binary
