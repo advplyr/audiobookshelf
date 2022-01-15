@@ -18,7 +18,7 @@ Audiobookshelf is a self-hosted audiobook server for managing and playing your a
 
 ### Features
 
-* Fully **open-source**, including the [android app](https://github.com/advplyr/audiobookshelf-app) *(in beta)*
+* Fully **open-source**, including the [android & iOS app](https://github.com/advplyr/audiobookshelf-app) *(in beta)*
 * Stream all audiobook formats on the fly
 * Multi-user support w/ custom permissions
 * Keeps progress per user and syncs across devices
@@ -52,6 +52,8 @@ Available in Unraid Community Apps
 docker pull advplyr/audiobookshelf
 
 docker run -d \
+  -e AUDIOBOOKSHELF_UID=99 \
+  -e AUDIOBOOKSHELF_GID=100 \
   -p 13378:80 \
   -v </path/to/audiobooks>:/audiobooks \
   -v </path/to/config>:/config \
@@ -191,17 +193,7 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 ## Run from source
 
-Note: you will need `npm`, `node12`, and `ffmpeg` to run this project locally
-
-```bash
-git clone https://github.com/advplyr/audiobookshelf.git
-cd audiobookshelf
-
-# All paths default to root directory. Config path is the database.
-# Directories will be created if they don't exist
-# Paths are relative to the root directory, so "../Audiobooks" would be a valid path
-npm run prod -- -p [PORT] --audiobooks [AUDIOBOOKS_PATH] --config [CONFIG_PATH] --metadata [METADATA_PATH]
-```
+[See discussion](https://github.com/advplyr/audiobookshelf/discussions/259#discussioncomment-1869729)
 
 ## Contributing / How to Support
 
