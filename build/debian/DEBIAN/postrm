@@ -6,13 +6,19 @@ FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
 ABS_BINARY_PATH="/usr/share/audiobookshelf/audiobookshelf"
 
 remove_ffmpeg() {
-  echo "Forcefully removing audiobookshelf-ffmpeg: $FFMPEG_INSTALL_DIR"
-  rm -rf "$FFMPEG_INSTALL_DIR"
+  if [[ -d "$FFMPEG_INSTALL_DIR" ]]
+  then
+    echo "Forcefully removing audiobookshelf-ffmpeg: $FFMPEG_INSTALL_DIR"
+    rm -r "$FFMPEG_INSTALL_DIR"
+  fi
 }
 
 remove_binary() {
-  echo "Removing audiobookshelf binary: $ABS_BINARY_PATH"
-  rm "$ABS_BINARY_PATH"
+  if [[ -f "$ABS_BINARY_PATH" ]]
+  then
+      echo "Removing audiobookshelf binary: $ABS_BINARY_PATH"
+      rm "$ABS_BINARY_PATH"
+  fi
 }
 
 echo ">> Cleaning up"
