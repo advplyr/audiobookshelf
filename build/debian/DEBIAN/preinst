@@ -2,6 +2,7 @@
 set -e
 set -o pipefail
 
+FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
 DEFAULT_AUDIOBOOK_PATH="/usr/share/audiobookshelf/audiobooks"
 DEFAULT_DATA_PATH="/usr/share/audiobookshelf"
 DEFAULT_PORT=7331
@@ -12,19 +13,16 @@ install_ffmpeg() {
   echo "Starting FFMPEG Install"
 
   WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
-  TARGET_DIR="/usr/lib/audiobookshelf-ffmpeg/"
 
-  if ! cd "$TARGET_DIR"; then
-    echo "WARNING: can't access working directory ($TARGET_DIR) creating it" >&2
-    mkdir "$TARGET_DIR"
-    cd "$TARGET_DIR"
+  if ! cd "$FFMPEG_INSTALL_DIR"; then
+    echo "WARNING: can't access working directory ($FFMPEG_INSTALL_DIR) creating it" >&2
+    mkdir "$FFMPEG_INSTALL_DIR"
+    cd "$FFMPEG_INSTALL_DIR"
   fi
 
   $WGET
   tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1
   rm ffmpeg-git-amd64-static.tar.xz
-
-  chown -R 'audiobookshelf:audiobookshelf' "$TARGET_DIR"
 
   echo "Good to go on Ffmpeg... hopefully"
 }
