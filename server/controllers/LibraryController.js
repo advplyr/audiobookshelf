@@ -38,12 +38,6 @@ class LibraryController {
   }
 
   async findOne(req, res) {
-    var librariesAccessible = req.user.librariesAccessible || []
-    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.library.id)) {
-      Logger.warn(`[LibraryController] Library ${req.library.id} not accessible to user ${req.user.username}`)
-      return res.sendStatus(404)
-    }
-
     if (req.query.include && req.query.include === 'filterdata') {
       var books = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
       return res.json({
@@ -424,6 +418,12 @@ class LibraryController {
   }
 
   middleware(req, res, next) {
+    var librariesAccessible = req.user.librariesAccessible || []
+    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.params.id)) {
+      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
+      return res.sendStatus(404)
+    }
+
     var library = this.db.libraries.find(lib => lib.id === req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
