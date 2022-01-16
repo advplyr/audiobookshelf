@@ -38,6 +38,12 @@ class LibraryController {
   }
 
   async findOne(req, res) {
+    var librariesAccessible = req.user.librariesAccessible || []
+    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.library.id)) {
+      Logger.warn(`[LibraryController] Library ${req.library.id} not accessible to user ${req.user.username}`)
+      return res.sendStatus(404)
+    }
+
     if (req.query.include && req.query.include === 'filterdata') {
       var books = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
       return res.json({
