@@ -29,6 +29,11 @@ class LibraryController {
   }
 
   findAll(req, res) {
+    var librariesAccessible = req.user.librariesAccessible || []
+    if (librariesAccessible && librariesAccessible.length) {
+      return res.json(this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON()))
+    }
+
     res.json(this.db.libraries.map(lib => lib.toJSON()))
   }
 
