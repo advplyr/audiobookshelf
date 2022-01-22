@@ -40,7 +40,7 @@
           <p v-if="seriesResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Series</p>
           <template v-for="item in seriesResults">
             <li :key="item.series" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series?series=${$encode(item.series)}`">
+              <nuxt-link :to="`/library/${currentLibraryId}/series/${$encode(item.series)}`">
                 <cards-series-search-card :series="item.series" :book-items="item.audiobooks" />
               </nuxt-link>
             </li>
