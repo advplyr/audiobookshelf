@@ -3,29 +3,10 @@
     <div class="md:hidden flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
       <span class="material-icons text-2xl">arrow_back</span>
     </div>
-    <nuxt-link to="/config" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Settings</p>
-      <div v-show="routeName === 'config'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-    <nuxt-link to="/config/libraries" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config-libraries' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Libraries</p>
-      <div v-show="routeName === 'config-libraries'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-    <nuxt-link to="/config/users" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config-users' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Users</p>
-      <div v-show="routeName === 'config-users'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-    <nuxt-link to="/config/backups" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config-backups' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Backups</p>
-      <div v-show="routeName === 'config-backups'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-    <nuxt-link to="/config/log" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config-log' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Log</p>
-      <div v-show="routeName === 'config-log'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-    <nuxt-link to="/config/stats" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === 'config-stats' ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>Stats</p>
-      <div v-show="routeName === 'config-stats'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+
+    <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-4 h-12 border-b border-opacity-0 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
+      <p>{{ route.title }}</p>
+      <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
     <div class="w-full h-10 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamAudiobook && windowHeight > 700 && !isMobile ? '300px' : '65px' }">
@@ -47,6 +28,57 @@ export default {
     }
   },
   computed: {
+    userIsRoot() {
+      return this.$store.getters['user/getIsRoot']
+    },
+    configRoutes() {
+      if (!this.userIsRoot) {
+        return [
+          {
+            id: 'config-stats',
+            title: 'Your Stats',
+            path: '/config/stats'
+          }
+        ]
+      }
+      return [
+        {
+          id: 'config',
+          title: 'Settings',
+          path: '/config'
+        },
+        {
+          id: 'config-libraries',
+          title: 'Libraries',
+          path: '/config/libraries'
+        },
+        {
+          id: 'config-users',
+          title: 'Users',
+          path: '/config/users'
+        },
+        {
+          id: 'config-backups',
+          title: 'Backups',
+          path: '/config/backups'
+        },
+        {
+          id: 'config-log',
+          title: 'Log',
+          path: '/config/log'
+        },
+        {
+          id: 'config-library-stats',
+          title: 'Library Stats',
+          path: '/config/library-stats'
+        },
+        {
+          id: 'config-stats',
+          title: 'Your Stats',
+          path: '/config/stats'
+        }
+      ]
+    },
     wrapperClass() {
       var classes = []
       if (this.drawerOpen) classes.push('translate-x-0')

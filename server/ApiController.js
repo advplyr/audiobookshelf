@@ -458,14 +458,15 @@ class ApiController {
       books: {},
       days: {},
       dayOfWeek: {},
-      today: 0
+      today: 0,
+      recentSessions: listeningSessions.slice(0, 10)
     }
     listeningSessions.forEach((s) => {
       if (s.dayOfWeek) {
         if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
         listeningStats.dayOfWeek[s.dayOfWeek] += s.timeListening
       }
-      if (s.date) {
+      if (s.date && s.timeListening > 0) {
         if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
         listeningStats.days[s.date] += s.timeListening
 
@@ -473,8 +474,17 @@ class ApiController {
           listeningStats.today += s.timeListening
         }
       }
-      if (!listeningStats.books[s.audiobookId]) listeningStats.books[s.audiobookId] = 0
-      listeningStats.books[s.audiobookId] += s.timeListening
+      if (!listeningStats.books[s.audiobookId]) {
+        listeningStats.books[s.audiobookId] = {
+          id: s.audiobookId,
+          timeListening: s.timeListening,
+          title: s.audiobookTitle,
+          author: s.audiobookAuthor,
+          lastUpdate: s.lastUpdate
+        }
+      } else {
+        listeningStats.books[s.audiobookId].timeListening += s.timeListening
+      }
 
       listeningStats.totalTime += s.timeListening
     })

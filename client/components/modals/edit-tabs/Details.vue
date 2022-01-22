@@ -2,9 +2,14 @@
   <div class="w-full h-full relative">
     <form class="w-full h-full" @submit.prevent="submitForm">
       <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
-        <ui-text-input-with-label v-model="details.title" label="Title" />
-
-        <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" class="mt-2" />
+        <div class="flex -mx-1">
+          <div class="w-1/2 px-1">
+            <ui-text-input-with-label v-model="details.title" label="Title" />
+          </div>
+          <div class="flex-grow px-1">
+            <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" />
+          </div>
+        </div>
 
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
@@ -43,7 +48,16 @@
             <ui-text-input-with-label v-model="details.publisher" label="Publisher" />
           </div>
           <div class="flex-grow px-1">
+            <ui-text-input-with-label v-model="details.language" label="Language" />
+          </div>
+        </div>
+
+        <div class="flex mt-2 -mx-1">
+          <div class="w-1/3 px-1">
             <ui-text-input-with-label v-model="details.isbn" label="ISBN" />
+          </div>
+          <div class="w-1/3 px-1">
+            <ui-text-input-with-label v-model="details.asin" label="ASIN" />
           </div>
         </div>
       </div>
@@ -90,7 +104,9 @@ export default {
         volumeNumber: null,
         publishYear: null,
         publisher: null,
+        language: null,
         isbn: null,
+        asin: null,
         genres: []
       },
       newTags: [],
@@ -231,7 +247,9 @@ export default {
       this.details.volumeNumber = this.book.volumeNumber
       this.details.publishYear = this.book.publishYear
       this.details.publisher = this.book.publisher || null
+      this.details.language = this.book.language || null
       this.details.isbn = this.book.isbn || null
+      this.details.asin = this.book.asin || null
 
       this.newTags = this.audiobook.tags || []
     },

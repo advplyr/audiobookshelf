@@ -1,4 +1,4 @@
-var Ffmpeg = require('fluent-ffmpeg')
+const ffprobe = require('node-ffprobe')
 const Path = require('path')
 
 const AudioProbeData = require('../scanner/AudioProbeData')
@@ -125,15 +125,37 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
   return info
 }
 
+function isNullOrNaN(val) {
+  return val === null || isNaN(val)
+}
+
+
+/* Example chapter object
+ * {
+      "id": 71,
+      "time_base": "1/1000",
+      "start": 80792671,
+      "start_time": "80792.671000",
+      "end": 81084755,
+      "end_time": "81084.755000",
+      "tags": {
+          "title": "072"
+      }
+ * }
+ */
 function parseChapters(chapters) {
   if (!chapters) return []
   return chapters.map(chap => {
     var title = chap['TAG:title'] || chap.title || ''
+    if (!title && chap.tags && chap.tags.title) title = chap.tags.title
+
     var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
+    var start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
+    var end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
     return {
       id: chap.id,
-      start: !isNaN(chap.start_time) ? chap.start_time : (chap.start / timebase),
-      end: chap.end_time || (chap.end / timebase),
+      start,
+      end,
       title
     }
   })
@@ -152,6 +174,7 @@ function parseTags(format, verbose) {
     file_tag_title: tryGrabTags(format, 'title', 'tit2', 'tt2'),
     file_tag_subtitle: tryGrabTags(format, 'subtitle', 'tit3', 'tt3'),
     file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
+    file_tag_disc: tryGrabTags(format, 'discnumber', 'disc', 'disk', 'tpos'),
     file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
     file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
     file_tag_albumartist: tryGrabTags(format, 'albumartist', 'album_artist', 'tpe2'),
@@ -163,6 +186,9 @@ function parseTags(format, verbose) {
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
     file_tag_series: tryGrabTag(format, 'series'),
     file_tag_seriespart: tryGrabTag(format, 'series-part'),
+    file_tag_isbn: tryGrabTag(format, 'isbn'),
+    file_tag_language: tryGrabTags(format, 'language', 'lang'),
+    file_tag_asin: tryGrabTag(format, 'asin'),
 
     // Not sure if these are actually used yet or not
     file_tag_creation_time: tryGrabTag(format, 'creation_time'),
@@ -180,7 +206,7 @@ function parseTags(format, verbose) {
     }
   }
 
-  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime']
+  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime', 'file_tag_isbn']
   keysToLookOutFor.forEach((key) => {
     if (tags[key]) {
       Logger.debug(`Notable! ${key} => ${tags[key]}`)
@@ -252,27 +278,27 @@ function parseProbeData(data, verbose = false) {
 
 // Updated probe returns AudioProbeData object
 function probe(filepath, verbose = false) {
-  return new Promise((resolve) => {
-    Ffmpeg.ffprobe(filepath, ['-show_chapters'], (err, raw) => {
-      if (err) {
-        console.error(err)
-        var errorMsg = err ? err.message : null
-        resolve({
-          error: errorMsg || 'Probe Error'
-        })
-      } else {
-        var rawProbeData = parseProbeData(raw, verbose)
-        if (!rawProbeData || !rawProbeData.audio_stream) {
-          resolve({
-            error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
-          })
-        } else {
-          var probeData = new AudioProbeData()
-          probeData.setData(rawProbeData)
-          resolve(probeData)
+  var options = {}
+  if (process.env.FFPROBE_PATH) {
+    options.path = process.env.FFPROBE_PATH
+  }
+  return ffprobe(filepath, options)
+    .then(raw => {
+      var rawProbeData = parseProbeData(raw, verbose)
+      if (!rawProbeData || !rawProbeData.audio_stream) {
+        return {
+          error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
         }
+      } else {
+        var probeData = new AudioProbeData()
+        probeData.setData(rawProbeData)
+        return probeData
       }
     })
-  })
+    .catch((err) => {
+      return {
+        error: err
+      }
+    })
 }
 module.exports.probe = probe

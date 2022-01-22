@@ -1,5 +1,19 @@
 export const state = () => ({
-  libraryScans: []
+  libraryScans: [],
+  providers: [
+    {
+      text: 'Google Books',
+      value: 'google'
+    },
+    {
+      text: 'Open Library',
+      value: 'openlibrary'
+    },
+    {
+      text: 'Audible',
+      value: 'audible'
+    }
+  ]
 })
 
 export const getters = {

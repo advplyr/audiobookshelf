@@ -29,6 +29,11 @@ class LibraryController {
   }
 
   findAll(req, res) {
+    var librariesAccessible = req.user.librariesAccessible || []
+    if (librariesAccessible && librariesAccessible.length) {
+      return res.json(this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON()))
+    }
+
     res.json(this.db.libraries.map(lib => lib.toJSON()))
   }
 
@@ -167,6 +172,7 @@ class LibraryController {
     }
 
     var series = libraryHelpers.getSeriesFromBooks(audiobooks, payload.minified)
+    series = sort(series).asc(s => s.name)
     payload.total = series.length
 
     if (payload.limit) {
@@ -174,7 +180,7 @@ class LibraryController {
       series = series.slice(startIndex, startIndex + payload.limit)
     }
 
-    payload.results = sort(series).asc(s => s.name)
+    payload.results = series
     res.json(payload)
   }
 
@@ -375,11 +381,14 @@ class LibraryController {
 
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(audiobooksInLibrary)
     var genresWithCount = libraryHelpers.getGenresWithCount(audiobooksInLibrary)
+    var abDurationStats = libraryHelpers.getAudiobookDurationStats(audiobooksInLibrary)
     var stats = {
       totalBooks: audiobooksInLibrary.length,
       totalAuthors: Object.keys(authorsWithCount).length,
       totalGenres: Object.keys(genresWithCount).length,
-      totalDuration: libraryHelpers.getAudiobooksTotalDuration(audiobooksInLibrary),
+      totalDuration: abDurationStats.totalDuration,
+      longestAudiobooks: abDurationStats.longstAudiobooks,
+      numAudioTracks: abDurationStats.numAudioTracks,
       totalSize: libraryHelpers.getAudiobooksTotalSize(audiobooksInLibrary),
       authorsWithCount,
       genresWithCount
@@ -409,6 +418,12 @@ class LibraryController {
   }
 
   middleware(req, res, next) {
+    var librariesAccessible = req.user.librariesAccessible || []
+    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.params.id)) {
+      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
+      return res.sendStatus(404)
+    }
+
     var library = this.db.libraries.find(lib => lib.id === req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')

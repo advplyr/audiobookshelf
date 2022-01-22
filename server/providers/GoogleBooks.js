@@ -32,8 +32,12 @@ class GoogleBooks {
   }
 
   async search(title, author) {
+    title = encodeURIComponent(title)
     var queryString = `q=intitle:${title}`
-    if (author) queryString += `+inauthor:${author}`
+    if (author) {
+      author = encodeURIComponent(author)
+      queryString += `+inauthor:${author}`
+    }
     var url = `https://www.googleapis.com/books/v1/volumes?${queryString}`
     Logger.debug(`[GoogleBooks] Search url: ${url}`)
     var items = await axios.get(url).then((res) => {

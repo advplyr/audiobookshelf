@@ -1,11 +1,11 @@
 <template>
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" class="w-full px-4 sm:px-8 bookshelfRow relative" :id="`shelf-${shelf - 1}`" :style="{ height: shelfHeight + 'px' }">
+      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
         <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
           <p class="text-white text-2xl">{{ shelf }}</p>
         </div> -->
-        <div class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
 
@@ -18,6 +18,9 @@
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
+      <div class="flex justify-center mt-2">
+        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">Clear Filter</ui-btn>
+      </div>
     </div>
 
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
@@ -86,6 +89,7 @@ export default {
     emptyMessage() {
       if (this.page === 'series') return `You have no series`
       if (this.page === 'collections') return "You haven't made any collections yet"
+      if (this.hasFilter) return `No Results for filter "${this.filterValue}"`
       return 'No results'
     },
     entityName() {
@@ -104,14 +108,32 @@ export default {
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },
+    bookshelfView() {
+      return this.$store.getters['getServerSetting']('bookshelfView')
+    },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+    },
+    isAlternativeBookshelfView() {
+      if (!this.isEntityBook) return false // Only used for bookshelf showing books
+      return this.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     bookCoverAspectRatio() {
       return this.isCoverSquareAspectRatio ? 1 : 1.6
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'
+    },
+    filterName() {
+      if (!this.filterBy) return ''
+      var filter = this.filterBy.split('.')[0]
+      filter = filter.substr(0, 1).toUpperCase() + filter.substr(1)
+      return filter
+    },
+    filterValue() {
+      if (!this.filterBy) return ''
+      if (!this.filterBy.includes('.')) return ''
+      return this.$decode(this.filterBy.split('.')[1])
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
@@ -149,6 +171,7 @@ export default {
       return 6
     },
     shelfHeight() {
+      if (this.isAlternativeBookshelfView) return this.entityHeight + 80 * this.sizeMultiplier
       return this.entityHeight + 40
     },
     totalEntityCardWidth() {
@@ -157,11 +180,18 @@ export default {
     },
     selectedAudiobooks() {
       return this.$store.state.selectedAudiobooks || []
+    },
+    sizeMultiplier() {
+      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
+      return this.entityWidth / baseSize
     }
   },
   methods: {
     showBookshelfTextureModal() {
       this.$store.commit('globals/setShowBookshelfTextureModal', true)
+    },
+    clearFilter() {
+      this.$store.dispatch('user/updateUserSettings', { filterBy: 'all' })
     },
     editEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {

@@ -32,6 +32,7 @@ echo "--------------------"
 # Create debian control file
 
 mkdir -p dist
+rm -rf dist/debian
 cp -R build/debian dist/debian
 chmod -R 775 dist/debian
 

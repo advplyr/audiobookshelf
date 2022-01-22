@@ -85,7 +85,7 @@ class OpenLibrary {
   }
 
   async searchTitle(title) {
-    title = title.replace(/'/g, '')
+    title = encodeURIComponent(title);
     var lookupData = await this.get(`/search.json?title=${title}`)
     if (!lookupData) {
       return {

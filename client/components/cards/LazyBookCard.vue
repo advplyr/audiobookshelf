@@ -5,6 +5,13 @@
       <div class="absolute cover-bg" ref="coverBg" />
     </div>
 
+    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${sizeMultiplier * 3}rem` }">
+      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ title }}
+      </p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ authorFL }}</p>
+    </div>
+
     <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
       <div v-show="audiobook && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
         <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
@@ -79,6 +86,7 @@ export default {
     },
     bookCoverAspectRatio: Number,
     showVolumeNumber: Boolean,
+    bookshelfView: Number,
     bookMount: {
       // Book can be passed as prop or set with setEntity()
       type: Object,
@@ -292,6 +300,10 @@ export default {
         return this.authorFL.slice(0, 27) + '...'
       }
       return this.authorFL
+    },
+    isAlternativeBookshelfView() {
+      var constants = this.$constants || this.$nuxt.$constants
+      return this.bookshelfView === constants.BookshelfView.TITLES
     }
   },
   methods: {

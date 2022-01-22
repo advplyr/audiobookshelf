@@ -2,6 +2,8 @@
 set -e
 set -o pipefail
 
+FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
+
 declare -r init_type='auto'
 declare -ri no_rebuild='0'
 
@@ -81,5 +83,6 @@ add_user 'audiobookshelf' '' 'audiobookshelf' 'audiobookshelf user-daemon' '/bin
 mkdir -p '/var/log/audiobookshelf'
 chown -R 'audiobookshelf:audiobookshelf' '/var/log/audiobookshelf'
 chown -R 'audiobookshelf:audiobookshelf' '/usr/share/audiobookshelf'
+chown -R 'audiobookshelf:audiobookshelf' "$FFMPEG_INSTALL_DIR"
 
 start_service 'audiobookshelf'

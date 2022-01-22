@@ -13,6 +13,11 @@ export const getters = {
   getCurrentLibrary: state => {
     return state.libraries.find(lib => lib.id === state.currentLibraryId)
   },
+  getCurrentLibraryName: (state, getters) => {
+    var currentLibrary = getters.getCurrentLibrary
+    if (!currentLibrary) return ''
+    return currentLibrary.name
+  },
   getSortedLibraries: state => () => {
     return state.libraries.map(lib => ({ ...lib })).sort((a, b) => a.displayOrder - b.displayOrder)
   }
@@ -182,7 +187,8 @@ export const mutations = {
       genres: [],
       tags: [],
       series: [],
-      narrators: []
+      narrators: [],
+      languages: []
     }
     */
 
@@ -212,6 +218,9 @@ export const mutations = {
       audiobook.book.genres.forEach((genre) => {
         if (genre && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
       })
+    }
+    if (audiobook.book.language && !state.filterData.languages.includes(audiobook.book.language)) {
+      state.filterData.languages.push(audiobook.book.language)
     }
   }
 }

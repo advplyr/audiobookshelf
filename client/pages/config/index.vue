@@ -8,6 +8,31 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
+        <ui-tooltip :text="coverDestinationTooltip">
+          <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
+        <ui-tooltip :text="coverAspectRatioTooltip">
+          <p class="pl-4 text-lg">Use square book covers <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
+        <ui-tooltip :text="bookshelfViewTooltip">
+          <p class="pl-4 text-lg">Use alternative library bookshelf view <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center mb-2 mt-8">
+        <h1 class="text-xl">Scanner Settings</h1>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" small :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
         <ui-tooltip :text="parseSubtitleTooltip">
           <p class="pl-4 text-lg">Scanner parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
@@ -19,6 +44,10 @@
         <ui-tooltip :text="scannerFindCoversTooltip">
           <p class="pl-4 text-lg">Scanner find covers <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
+        <div class="flex-grow" />
+      </div>
+      <div v-if="newServerSettings.scannerFindCovers" class="w-44 ml-14 mb-2">
+        <ui-dropdown v-model="newServerSettings.scannerCoverProvider" small :items="providers" label="Cover Provider" @input="updateScannerCoverProvider" :disabled="updatingServerSettings" />
       </div>
 
       <div class="flex items-center py-2">
@@ -32,20 +61,6 @@
         <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
         <ui-tooltip :text="scannerPreferOpfMetaTooltip">
           <p class="pl-4 text-lg">Scanner prefer OPF metadata <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
-        <ui-tooltip :text="coverDestinationTooltip">
-          <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
-        <ui-tooltip :text="coverAspectRatioTooltip">
-          <p class="pl-4 text-lg">Use square book covers <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
     </div>
@@ -78,9 +93,9 @@
             </ui-tooltip>
           </div>
         </div>
-        <div class="hidden md:block">
+        <!-- <div class="hidden md:block">
           <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -94,6 +109,7 @@ export default {
       storeCoversInAudiobookDir: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
+      useAlternativeBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {}
     }
@@ -134,6 +150,12 @@ export default {
     coverAspectRatioTooltip() {
       return 'Prefer to use square covers over standard 1.6:1 book covers'
     },
+    bookshelfViewTooltip() {
+      return 'Alternative bookshelf view that shows title & author under book covers'
+    },
+    providers() {
+      return this.$store.state.scanners.providers
+    },
     showExperimentalFeatures: {
       get() {
         return this.$store.state.showExperimentalFeatures
@@ -147,6 +169,11 @@ export default {
     updateScannerFindCovers(val) {
       this.updateServerSettings({
         scannerFindCovers: !!val
+      })
+    },
+    updateScannerCoverProvider(val) {
+      this.updateServerSettings({
+        scannerCoverProvider: val
       })
     },
     updateCoverStorageDestination(val) {
@@ -175,6 +202,11 @@ export default {
         coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
       })
     },
+    updateAlternativeBookshelfView(val) {
+      this.updateServerSettings({
+        bookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+      })
+    },
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
@@ -194,6 +226,8 @@ export default {
       this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+
+      this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     resetAudiobooks() {
       if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {

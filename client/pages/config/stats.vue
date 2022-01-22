@@ -1,40 +1,56 @@
 <template>
   <div>
-    <stats-preview-icons :listening-stats="listeningStats" :library-stats="libraryStats" />
+    <div class="flex justify-center">
+      <div class="flex p-2">
+        <svg class="h-14 w-14 md:h-18 md:w-18" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M19 1L14 6V17L19 12.5V1M21 5V18.5C19.9 18.15 18.7 18 17.5 18C15.8 18 13.35 18.65 12 19.5V6C10.55 4.9 8.45 4.5 6.5 4.5C4.55 4.5 2.45 4.9 1 6V20.65C1 20.9 1.25 21.15 1.5 21.15C1.6 21.15 1.65 21.1 1.75 21.1C3.1 20.45 5.05 20 6.5 20C8.45 20 10.55 20.4 12 21.5C13.35 20.65 15.8 20 17.5 20C19.15 20 20.85 20.3 22.25 21.05C22.35 21.1 22.4 21.1 22.5 21.1C22.75 21.1 23 20.85 23 20.6V6C22.4 5.55 21.75 5.25 21 5M10 18.41C8.75 18.09 7.5 18 6.5 18C5.44 18 4.18 18.19 3 18.5V7.13C3.91 6.73 5.14 6.5 6.5 6.5C7.86 6.5 9.09 6.73 10 7.13V18.41Z"
+          />
+        </svg>
+        <div class="px-3">
+          <p class="text-4xl md:text-5xl font-bold">{{ userAudiobooksRead.length }}</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Books Read</p>
+        </div>
+      </div>
 
-    <div class="flex md:flex-row flex-wrap justify-between flex-col mt-12">
-      <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Top 5 Genres</h1>
-        <template v-for="genre in top5Genres">
-          <div :key="genre.genre" class="w-full py-2">
-            <div class="flex items-end mb-1">
-              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalBooks) }}&nbsp;%</p>
-              <div class="flex-grow" />
-              <p class="text-base font-book text-white text-opacity-70">{{ genre.genre }}</p>
-            </div>
-            <div class="w-full rounded-full h-3 bg-primary bg-opacity-50 overflow-hidden">
-              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalBooks) + '%' }" />
-            </div>
-          </div>
-        </template>
+      <div class="flex p-2">
+        <span class="material-icons-outlined" style="font-size: 4.1rem">event</span>
+        <div class="px-1">
+          <p class="text-4xl md:text-5xl font-bold">{{ totalDaysListened }}</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Days Listened</p>
+        </div>
       </div>
-      <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Top 10 Authors</h1>
-        <template v-for="(author, index) in top10Authors">
-          <div :key="author.author" class="w-full py-2">
-            <div class="flex items-center mb-1">
-              <p class="text-sm font-book text-white text-opacity-70 w-36 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ author.author }}</p>
-              <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
-                <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
-              </div>
-              <div class="w-4 ml-3">
-                <p class="text-sm font-bold">{{ author.count }}</p>
-              </div>
-            </div>
-          </div>
-        </template>
+
+      <div class="flex p-2">
+        <span class="material-icons-outlined" style="font-size: 4.1rem">watch_later</span>
+        <div class="px-1">
+          <p class="text-4xl md:text-5xl font-bold">{{ totalMinutesListening }}</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Minutes Listening</p>
+        </div>
       </div>
+    </div>
+    <div class="flex">
       <stats-daily-listening-chart :listening-stats="listeningStats" />
+      <div class="w-80 my-6 mx-auto">
+        <h1 class="text-2xl mb-4 font-book">Recent Listening Sessions</h1>
+        <p v-if="!mostRecentListeningSessions.length">No Listening Sessions</p>
+        <template v-for="(book, index) in mostRecentListeningSessions">
+          <div :key="book.id" class="w-full py-0.5">
+            <div class="flex items-center mb-1">
+              <p class="text-sm font-book text-white text-opacity-70 w-6 truncate">{{ index + 1 }}.&nbsp;</p>
+              <div class="w-56">
+                <p class="text-sm font-book text-white text-opacity-80 truncate">{{ book.audiobookTitle }}</p>
+                <p class="text-xs text-white text-opacity-50">{{ $dateDistanceFromNow(book.lastUpdate) }}</p>
+              </div>
+              <div class="flex-grow" />
+              <div class="w-18 text-right">
+                <p class="text-sm font-bold">{{ $elapsedPretty(book.timeListening) }}</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -58,27 +74,31 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    totalBooks() {
-      return this.libraryStats ? this.libraryStats.totalBooks : 0
-    },
-    genresWithCount() {
-      return this.libraryStats ? this.libraryStats.genresWithCount : []
-    },
-    top5Genres() {
-      return this.genresWithCount.slice(0, 5)
-    },
-    authorsWithCount() {
-      return this.libraryStats ? this.libraryStats.authorsWithCount : []
-    },
-    mostUsedAuthorCount() {
-      if (!this.authorsWithCount.length) return 0
-      return this.authorsWithCount[0].count
-    },
-    top10Authors() {
-      return this.authorsWithCount.slice(0, 10)
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    userAudiobooks() {
+      return Object.values(this.user.audiobooks || {})
+    },
+    userAudiobooksRead() {
+      return this.userAudiobooks.filter((ab) => !!ab.isRead)
+    },
+    mostRecentBooksListened() {
+      if (!this.listeningStats) return []
+      var sorted = Object.values(this.listeningStats.books || {}).sort((a, b) => b.lastUpdate - a.lastUpdate)
+      return sorted.slice(0, 10)
+    },
+    mostRecentListeningSessions() {
+      if (!this.listeningStats) return []
+      return this.listeningStats.recentSessions || []
+    },
+    totalMinutesListening() {
+      if (!this.listeningStats) return 0
+      return Math.round(this.listeningStats.totalTime / 60)
+    },
+    totalDaysListened() {
+      if (!this.listeningStats) return 0
+      return Object.values(this.listeningStats.days).length
     }
   },
   methods: {
@@ -88,7 +108,6 @@ export default {
         var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
         this.$toast.error(`Failed to get library stats: ${errorMsg}`)
       })
-      console.log('lib stats', this.libraryStats)
       this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []

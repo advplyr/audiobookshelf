@@ -1,4 +1,4 @@
-const { CoverDestination, BookCoverAspectRatio } = require('../utils/constants')
+const { CoverDestination, BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
 const Logger = require('../Logger')
 
 class ServerSettings {
@@ -12,6 +12,7 @@ class ServerSettings {
     // Scanner
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
+    this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
 
@@ -34,7 +35,8 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     // Cover
-    this.coverAspectRatio = BookCoverAspectRatio.STANDARD
+    this.coverAspectRatio = BookCoverAspectRatio.SQUARE
+    this.bookshelfView = BookshelfView.STANDARD
 
     this.logLevel = Logger.logLevel
     this.version = null
@@ -48,6 +50,7 @@ class ServerSettings {
     this.autoTagNew = settings.autoTagNew
     this.newTagExpireDays = settings.newTagExpireDays
     this.scannerFindCovers = !!settings.scannerFindCovers
+    this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
@@ -64,7 +67,8 @@ class ServerSettings {
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
-    this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.STANDARD
+    this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.SQUARE
+    this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
@@ -80,6 +84,7 @@ class ServerSettings {
       autoTagNew: this.autoTagNew,
       newTagExpireDays: this.newTagExpireDays,
       scannerFindCovers: this.scannerFindCovers,
+      scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
@@ -93,6 +98,7 @@ class ServerSettings {
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
+      bookshelfView: this.bookshelfView,
       logLevel: this.logLevel,
       version: this.version
     }

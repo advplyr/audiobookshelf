@@ -8,6 +8,7 @@ class Audnexus {
   }
 
   authorASINsRequest(name) {
+    name = encodeURIComponent(name);
     return axios.get(`${this.baseUrl}/authors?name=${name}`).then((res) => {
       return res.data || []
     }).catch((error) => {
@@ -17,6 +18,7 @@ class Audnexus {
   }
 
   authorRequest(asin) {
+    asin = encodeURIComponent(asin);
     return axios.get(`${this.baseUrl}/authors/${asin}`).then((res) => {
       return res.data
     }).catch((error) => {

@@ -67,9 +67,29 @@
               </div>
             </div>
 
-            <div class="flex mt-2 -mx-1">
+            <!-- <div class="flex mt-2 -mx-1">
               <div class="w-1/2 px-1">
                 <ui-text-input-with-label v-model="audiobook.book.narrator" label="Narrator" />
+              </div>
+            </div> -->
+            <div class="flex mt-2 -mx-1">
+              <div class="w-1/3 px-1">
+                <ui-text-input-with-label v-model="audiobook.book.narrator" label="Narrator" />
+              </div>
+              <div class="w-1/3 px-1">
+                <ui-text-input-with-label v-model="audiobook.book.publisher" label="Publisher" />
+              </div>
+              <div class="flex-grow px-1">
+                <ui-text-input-with-label v-model="audiobook.book.language" label="Language" />
+              </div>
+            </div>
+
+            <div class="flex mt-2 -mx-1">
+              <div class="w-1/3 px-1">
+                <ui-text-input-with-label v-model="audiobook.book.isbn" label="ISBN" />
+              </div>
+              <div class="w-1/3 px-1">
+                <ui-text-input-with-label v-model="audiobook.book.asin" label="ASIN" />
               </div>
             </div>
           </div>
@@ -223,7 +243,7 @@ export default {
       return arr1.join(',') !== arr2.join(',')
     },
     compareAudiobooks(newAb, origAb) {
-      const bookKeysToCheck = ['title', 'subtitle', 'narrator', 'author', 'publishYear', 'series', 'volumeNumber', 'description']
+      const bookKeysToCheck = ['title', 'subtitle', 'narrator', 'author', 'publishYear', 'series', 'volumeNumber', 'description', 'language', 'publisher', 'isbn', 'asin']
       var newBook = newAb.book
       var origBook = origAb.book
       var diffObj = {}

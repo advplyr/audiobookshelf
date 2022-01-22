@@ -5,7 +5,7 @@
         <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
@@ -125,7 +125,7 @@
           </div>
 
           <div class="my-4 max-w-2xl">
-            <p class="text-base text-gray-100">{{ description }}</p>
+            <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
           <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">

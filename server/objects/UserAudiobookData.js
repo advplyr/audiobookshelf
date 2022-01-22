@@ -86,7 +86,7 @@ class UserAudiobookData {
   update(payload) {
     var hasUpdates = false
     for (const key in payload) {
-      if (payload[key] !== this[key]) {
+      if (this[key] !== undefined && payload[key] !== this[key]) {
         if (key === 'isRead') {
           if (!payload[key]) { // Updating to Not Read - Reset progress and current time
             this.finishedAt = null
