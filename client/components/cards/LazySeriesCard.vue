@@ -5,6 +5,8 @@
       <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="title" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" :group-to="seriesBooksRoute" />
     </div>
 
+    <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ books.length }}</div>
+
     <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
       <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ title }}</p>
     </div>
