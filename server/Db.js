@@ -258,7 +258,12 @@ class Db {
     }
 
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
-      Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
+      if (process.env.NODE_ENV !== 'production') {
+        Logger.debug(`[DB] Updated ${entityName}: ${results.updated} | Selected: ${results.selected}`)
+      } else {
+        Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
+      }
+
       var arrayKey = this.getEntityArrayKey(entityName)
       this[arrayKey] = this[arrayKey].map(e => {
         return e.id === entity.id ? entity : e
