@@ -272,6 +272,7 @@ class LibraryController {
 
     var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, books)
     var series = libraryHelpers.getSeriesFromBooks(books, minified)
+    var seriesWithUserAb = libraryHelpers.getSeriesWithProgressFromBooks(req.user, books)
 
     var categories = [
       {
@@ -279,6 +280,12 @@ class LibraryController {
         label: 'Continue Reading',
         type: 'books',
         entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf, minified)
+      },
+      {
+        id: 'continue-series',
+        label: 'Continue Series',
+        type: 'books',
+        entities: libraryHelpers.getBooksNextInSeries(seriesWithUserAb, limitPerShelf, minified)
       },
       {
         id: 'recently-added',
