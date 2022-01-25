@@ -302,6 +302,8 @@ export default {
       }
       this.noValidCovers = false
 
+      validCovers = validCovers.slice(0, 30);
+
       var coverWidth = this.width
       var widthPer = this.width
       if (validCovers.length > 1) {
@@ -324,10 +326,6 @@ export default {
         var img = await this.buildCoverImg(validCovers[i], coverWidth, offsetLeft, zIndex, validCovers.length === 1)
         outerdiv.appendChild(img)
         coverImageEls.push(img)
-
-        if(coverImageEls.length >= 30) {
-          break;
-        }
       }
 
       if (this.showCoverFan) {
