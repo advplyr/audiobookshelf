@@ -98,7 +98,6 @@ class LibraryController {
       audiobooks = libraryHelpers.getFiltered(audiobooks, req.query.filter, req.user)
     }
 
-
     if (req.query.sort) {
       var orderByNumber = req.query.sort === 'book.volumeNumber'
       var direction = req.query.desc === '1' ? 'desc' : 'asc'
@@ -120,6 +119,7 @@ class LibraryController {
   }
 
   // api/libraries/:id/books/all
+  // TODO: Optimize this method, audiobooks are iterated through several times but can be combined
   getBooksForLibrary2(req, res) {
     var libraryId = req.library.id
 
@@ -132,7 +132,8 @@ class LibraryController {
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
-      minified: req.query.minified === '1'
+      minified: req.query.minified === '1',
+      collapseseries: req.query.collapseseries === '1'
     }
 
     if (payload.filterBy) {
@@ -148,11 +149,38 @@ class LibraryController {
       })
     }
 
+    if (payload.collapseseries) {
+      var series = {}
+      // Group abs by series
+      for (let i = 0; i < audiobooks.length; i++) {
+        var ab = audiobooks[i]
+        if (ab.book.series) {
+          if (!series[ab.book.series]) series[ab.book.series] = []
+          series[ab.book.series].push(ab)
+        }
+      }
+
+      // Sort series by volume number and filter out all but the first book in series
+      var seriesBooksToKeep = Object.values(series).map((_series) => {
+        var sorted = naturalSort(_series).asc(_ab => _ab.book.volumeNumber)
+        return sorted[0].id
+      })
+      // Add "booksInSeries" field to audiobook payload
+      audiobooks = audiobooks.filter(ab => !ab.book.series || seriesBooksToKeep.includes(ab.id)).map(ab => {
+        var abJson = payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded()
+        if (ab.book.series) abJson.booksInSeries = series[ab.book.series].length
+        return abJson
+      })
+      payload.total = audiobooks.length
+    } else {
+      audiobooks = audiobooks.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded())
+    }
+
     if (payload.limit) {
       var startIndex = payload.page * payload.limit
       audiobooks = audiobooks.slice(startIndex, startIndex + payload.limit)
     }
-    payload.results = audiobooks.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded())
+    payload.results = audiobooks
     res.json(payload)
   }
 

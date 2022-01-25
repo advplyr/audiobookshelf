@@ -142,14 +142,6 @@ export default {
       this.$eventBus.$emit('bookshelf-clear-selection')
       this.isAllSelected = false
     },
-    // toggleSelectAll() {
-    //   if (this.isAllSelected) {
-    //     this.cancelSelectionMode()
-    //   } else {
-    //     this.$eventBus.$emit('bookshelf-select-all')
-    //     this.isAllSelected = true
-    //   }
-    // },
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
       var newIsRead = !this.selectedIsRead

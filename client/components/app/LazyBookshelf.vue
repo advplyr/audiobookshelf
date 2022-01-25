@@ -105,6 +105,9 @@ export default {
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
+    collapseSeries() {
+      return this.$store.getters['user/getUserSetting']('collapseSeries')
+    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },
@@ -207,19 +210,6 @@ export default {
       this.isSelectionMode = false
       this.isSelectAll = false
     },
-    selectAllEntities() {
-      this.isSelectAll = true
-      if (this.entityName === 'books' || this.entityName === 'series-books') {
-        var allAvailableEntityIds = this.entities.map((ent) => ent.id).filter((ent) => !!ent)
-        this.$store.commit('setSelectedAudiobooks', allAvailableEntityIds)
-      }
-
-      for (const key in this.entityComponentRefs) {
-        if (this.entityIndexesMounted.includes(Number(key))) {
-          this.entityComponentRefs[key].selected = true
-        }
-      }
-    },
     selectEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
         this.$store.commit('toggleAudiobookSelected', entity.id)
@@ -255,6 +245,7 @@ export default {
         console.error('failed to fetch books', error)
         return null
       })
+      console.log('payload', payload)
       this.isFetchingEntities = false
       if (this.pendingReset) {
         this.pendingReset = false
@@ -392,6 +383,9 @@ export default {
           searchParams.set('sort', this.orderBy)
           searchParams.set('desc', this.orderDesc ? 1 : 0)
         }
+        if (this.collapseSeries) {
+          searchParams.set('collapseseries', 1)
+        }
       }
       return searchParams.toString()
     },
@@ -524,7 +518,6 @@ export default {
       })
 
       this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
-      this.$eventBus.$on('bookshelf-select-all', this.selectAllEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
 
       this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
@@ -546,7 +539,6 @@ export default {
         bookshelf.removeEventListener('scroll', this.scroll)
       }
       this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
-      this.$eventBus.$off('bookshelf-select-all', this.selectAllEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
 
       this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')

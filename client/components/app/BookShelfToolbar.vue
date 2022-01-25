@@ -29,6 +29,7 @@
         <div class="flex-grow hidden md:inline-block" />
 
         <!-- <ui-text-input v-show="showSortFilters" v-model="keywordFilter" @input="keywordFilterInput" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" /> -->
+        <ui-checkbox v-if="showExperimentalFeatures" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
         <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
@@ -72,6 +73,9 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     isGridMode() {
       return this.viewMode === 'grid'
     },
@@ -87,14 +91,6 @@ export default {
       if (this.page === 'collections') return 'Collections'
       return ''
     },
-    // _keywordFilter: {
-    //   get() {
-    //     return this.$store.state.audiobooks.keywordFilter
-    //   },
-    //   set(val) {
-    //     this.$store.commit('audiobooks/setKeywordFilter', val)
-    //   }
-    // },
     paramId() {
       return this.$route.params ? this.$route.params.id || '' : ''
     },
@@ -122,6 +118,9 @@ export default {
       this.saveSettings()
     },
     updateFilter() {
+      this.saveSettings()
+    },
+    updateCollapseSeries() {
       this.saveSettings()
     },
     saveSettings() {

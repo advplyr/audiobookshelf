@@ -55,7 +55,8 @@ class User {
       orderDesc: false,
       filterBy: 'all',
       playbackRate: 1,
-      bookshelfCoverSize: 120
+      bookshelfCoverSize: 120,
+      collapseSeries: false
     }
   }
 
