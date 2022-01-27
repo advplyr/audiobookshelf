@@ -302,7 +302,7 @@ export default {
       }
       this.noValidCovers = false
 
-      validCovers = validCovers.slice(0, 30);
+      validCovers = validCovers.slice(0, 10);
 
       var coverWidth = this.width
       var widthPer = this.width
