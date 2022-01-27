@@ -110,6 +110,29 @@ module.exports = {
     })
   },
 
+  getSeriesWithProgressFromBooks(user, books) {
+    var _series = {}
+    books.forEach((audiobook) => {
+      if (audiobook.book.series) {
+        var bookWithUserAb = { userAudiobook: user.getAudiobookJSON(audiobook.id), book: audiobook }
+        if (!_series[audiobook.book.series]) {
+          _series[audiobook.book.series] = {
+            id: audiobook.book.series,
+            name: audiobook.book.series,
+            type: 'series',
+            books: [bookWithUserAb]
+          }
+        } else {
+          _series[audiobook.book.series].books.push(bookWithUserAb)
+        }
+      }
+    })
+    return Object.values(_series).map((series) => {
+      series.books = naturalSort(series.books).asc(ab => ab.book.book.volumeNumber)
+      return series
+    }).filter((series) => series.books.some((book) => book.userAudiobook && book.userAudiobook.isRead))
+  },
+
   sortSeriesBooks(books, minified = false) {
     return naturalSort(books).asc(ab => ab.book.volumeNumber).map(ab => {
       if (minified) return ab.toJSONMinified()
@@ -132,6 +155,18 @@ module.exports = {
       return b.userAudiobook.lastUpdate - a.userAudiobook.lastUpdate
     })
     return booksWithProgress.map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
+  },
+
+  getBooksNextInSeries(seriesWithUserAb, limit, minified = false) {
+    var incompleteSeires = seriesWithUserAb.filter((series) => series.books.some((book) => !book.userAudiobook || (!book.userAudiobook.isRead && book.userAudiobook.progress == 0)))
+    var booksNextInSeries = []
+    incompleteSeires.forEach((series) => {
+      var dateLastRead = series.books.filter((data) => data.userAudiobook && data.userAudiobook.isRead).sort((a, b) => { return b.userAudiobook.finishedAt - a.userAudiobook.finishedAt })[0].userAudiobook.finishedAt
+      var nextUnreadBook = series.books.filter((data) => !data.userAudiobook || (!data.userAudiobook.isRead && data.userAudiobook.progress == 0))[0]
+      nextUnreadBook.DateLastReadSeries = dateLastRead
+      booksNextInSeries.push(nextUnreadBook)
+    })
+    return booksNextInSeries.sort((a, b) => { return b.DateLastReadSeries - a.DateLastReadSeries }).map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
   },
 
   getBooksMostRecentlyAdded(books, limit, minified = false) {
