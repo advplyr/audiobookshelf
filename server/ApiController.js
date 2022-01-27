@@ -174,6 +174,7 @@ class ApiController {
     this.router.post('/purgecache', this.purgeCache.bind(this))
 
     this.router.post('/syncStream', this.syncStream.bind(this))
+    this.router.post('/syncLocal', this.syncLocal.bind(this))
   }
 
   async findBooks(req, res) {
@@ -375,9 +376,24 @@ class ApiController {
     res.json(allUserAudiobookData)
   }
 
+  // Sync audiobook stream progress
   async syncStream(req, res) {
     Logger.debug(`[ApiController] syncStream for ${req.user.username} - ${req.body.streamId}`)
     this.streamManager.streamSyncFromApi(req, res)
+  }
+
+  // Sync local downloaded audiobook progress
+  async syncLocal(req, res) {
+    Logger.debug(`[ApiController] syncLocal for ${req.user.username}`)
+    var progressPayload = req.body
+    var audiobookProgress = req.user.updateAudiobookData(progressPayload.audiobookId, progressPayload)
+    if (audiobookProgress) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'current_user_audiobook_update', {
+        id: progressPayload.audiobookId,
+        data: audiobookProgress || null
+      })
+    }
   }
 
   //
