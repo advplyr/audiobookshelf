@@ -1,11 +1,11 @@
-name: Bug
+name: 🐞 Bug Report
 description: File a bug/issue
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
   - type: markdown
     attributes:
-      value: "## Please first search for your issue and check the [docs](https://audiobookshelf.org/docs)."
+      value: "### Please first search for your issue and check the [docs](https://audiobookshelf.org/docs)."
   - type: markdown
     attributes:
       value: "### Mobile app issues report [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
