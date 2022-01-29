@@ -4,11 +4,9 @@ title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
   - type: markdown
-    attributes:
-      value: "### Please first search for your issue and check the [docs](https://audiobookshelf.org/docs)."
+    value: "### Please first search for your issue and check the [docs](https://audiobookshelf.org/docs)."
   - type: markdown
-    attributes:
-      value: "#### Mobile app issues submit [here in the audiobookshelf-app repo](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
+    value: "#### Mobile app issues submit [here in the audiobookshelf-app repo](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
   - type: textarea
     id: what-happened
     attributes:
