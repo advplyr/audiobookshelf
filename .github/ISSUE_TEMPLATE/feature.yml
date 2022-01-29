@@ -1,0 +1,17 @@
+name: Feature Request
+description: Request a feature/enhancement
+title: "[Enhancement]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "## Please search in issues and discussions to see if the feature has already been requested."
+  - type: markdown
+    attributes:
+      value: "### Mobile app features should be requested [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the feature/enhancement
+    validations:
+      required: true
