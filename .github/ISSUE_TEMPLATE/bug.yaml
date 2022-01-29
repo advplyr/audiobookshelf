@@ -2,8 +2,6 @@ name: 🐞 Bug
 description: File a bug/issue
 title: "[Bug]: "
 labels: ["bug", "triage"]
-assignees:
-  - octocat
 body:
   - type: markdown
     attributes:
