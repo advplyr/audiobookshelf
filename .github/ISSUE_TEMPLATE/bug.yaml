@@ -1,0 +1,49 @@
+name: 🐞 Bug
+description: File a bug/issue
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - octocat
+body:
+  - type: markdown
+    attributes:
+      value: "### Please first search for your issue and check the [docs](https://audiobookshelf.org/docs)."
+  - type: markdown
+    attributes:
+      value: "#### Mobile app issues submit [here in the audiobookshelf-app repo](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Describe the issue
+      description: What happened & what did you expect to happen
+      placeholder: ""
+      value: ""
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce the issue
+      description: ""
+      value: "1. "
+    validations:
+      required: true
+- type: input
+    id: version
+    attributes:
+      label: Audiobookshelf version
+      placeholder: "e.g. v1.6.60"
+      value: ""
+    validations:
+      required: true
+- type: dropdown
+  id: install
+  attributes:
+    label: How are you running audiobookshelf?
+    options:
+      - Docker
+      - Debian/PPA
+      - Built from source
+      - Other
+  validations:
+    required: true
