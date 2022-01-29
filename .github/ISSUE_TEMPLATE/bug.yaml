@@ -24,7 +24,7 @@ body:
       value: "1. "
     validations:
       required: true
-- type: input
+  - type: input
     id: version
     attributes:
       label: Audiobookshelf version
@@ -32,14 +32,14 @@ body:
       value: ""
     validations:
       required: true
-- type: dropdown
-  id: install
-  attributes:
-    label: How are you running audiobookshelf?
-    options:
-      - Docker
-      - Debian/PPA
-      - Built from source
-      - Other
-  validations:
-    required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How are you running audiobookshelf?
+      options:
+        - Docker
+        - Debian/PPA
+        - Built from source
+        - Other
+    validations:
+     required: true
