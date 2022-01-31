@@ -18,7 +18,6 @@
           <div @click="seriesBackArrow" class="rounded-full h-9 w-9 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
             <span class="material-icons text-2xl text-white">west</span>
           </div>
-          <!-- <span class="material-icons text-2xl cursor-pointer" @click="seriesBackArrow">west</span> -->
           <p class="pl-4 font-book text-lg">
             {{ selectedSeries }}
           </p>
@@ -28,8 +27,7 @@
         </div>
         <div class="flex-grow hidden md:inline-block" />
 
-        <!-- <ui-text-input v-show="showSortFilters" v-model="keywordFilter" @input="keywordFilterInput" placeholder="Keyword Filter" :padding-y="1.5" clearable class="text-xs w-40 hidden md:block" /> -->
-        <ui-checkbox v-if="showExperimentalFeatures" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <ui-checkbox v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
         <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
@@ -45,7 +43,6 @@
         <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
           <span class="material-icons text-3xl text-white">west</span>
         </div>
-        <!-- <p class="font-book pl-4">{{ numShowing }} showing</p> -->
         <div class="flex-grow" />
         <p>Search results for "{{ searchQuery }}"</p>
         <div class="flex-grow" />
@@ -73,9 +70,6 @@ export default {
     }
   },
   computed: {
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     isGridMode() {
       return this.viewMode === 'grid'
     },
