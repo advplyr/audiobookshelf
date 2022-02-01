@@ -80,6 +80,15 @@ function fetchVolumeNumber(metadata) {
   return fetchTagString(metadata.meta, "calibre:series_index")
 }
 
+function fetchNarrators(creators, metadata) {
+  var roleNrt = fetchCreator(creators, 'nrt')
+  if(typeof metadata.meta == "undefined" || roleNrt != null) return roleNrt
+  var narratorsTag = fetchTagString(metadata.meta, "calibre:user_metadata:#narrators")
+  if(narratorsTag == null) return narratorsTag
+  var narratorsJSON = JSON.parse(narratorsTag.replace(/&quot;/g,'"'))
+  return narratorsJSON["#value#"].join(", ")
+}
+
 module.exports.parseOpfMetadataXML = async (xml) => {
   var json = await xmlToJSON(xml)
   if (!json || !json.package || !json.package.metadata) return null
@@ -101,7 +110,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   var data = {
     title: fetchTitle(metadata),
     author: fetchCreator(creators, 'aut'),
-    narrator: fetchCreator(creators, 'nrt'),
+    narrator: fetchNarrators(creators, metadata),
     publishYear: fetchDate(metadata),
     publisher: fetchPublisher(metadata),
     isbn: fetchISBN(metadata),
