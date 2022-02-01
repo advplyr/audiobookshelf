@@ -67,7 +67,7 @@ class ServerSettings {
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
-    this.coverAspectRatio = settings.coverAspectRatio || BookCoverAspectRatio.SQUARE
+    this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.logLevel = settings.logLevel || Logger.logLevel
