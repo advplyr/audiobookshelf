@@ -83,10 +83,12 @@ function fetchVolumeNumber(metadata) {
 function fetchNarrators(creators, metadata) {
   var roleNrt = fetchCreator(creators, 'nrt')
   if(typeof metadata.meta == "undefined" || roleNrt != null) return roleNrt
-  var narratorsTag = fetchTagString(metadata.meta, "calibre:user_metadata:#narrators")
-  if(narratorsTag == null) return narratorsTag
-  var narratorsJSON = JSON.parse(narratorsTag.replace(/&quot;/g,'"'))
-  return narratorsJSON["#value#"].join(", ")
+  try {
+    var narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g,'"'))
+    return narratorsJSON["#value#"].join(", ")
+  } catch {
+    return null
+  }
 }
 
 module.exports.parseOpfMetadataXML = async (xml) => {
