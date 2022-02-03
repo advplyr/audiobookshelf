@@ -51,13 +51,15 @@ class LibraryController {
 
   async update(req, res) {
     var library = req.library
+
     var hasUpdates = library.update(req.body)
+    // TODO: Should check if this is an update to folder paths or name only
     if (hasUpdates) {
       // Update watcher
       this.watcher.updateLibrary(library)
 
       // Remove audiobooks no longer in library
-      var audiobooksToRemove = this.db.audiobooks.filter(ab => !library.checkFullPathInLibrary(ab.fullPath))
+      var audiobooksToRemove = this.db.audiobooks.filter(ab => ab.libraryId === library.id && !library.checkFullPathInLibrary(ab.fullPath))
       if (audiobooksToRemove.length) {
         Logger.info(`[Scanner] Updating library, removing ${audiobooksToRemove.length} audiobooks`)
         for (let i = 0; i < audiobooksToRemove.length; i++) {

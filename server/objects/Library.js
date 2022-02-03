@@ -97,7 +97,9 @@ class Library {
         })
       }
 
-      hasUpdates = newFolders.length || removedFolders.length
+      if (newFolders.length || removedFolders.length) {
+        hasUpdates = true
+      }
     }
     if (hasUpdates) {
       this.lastUpdate = Date.now()
@@ -106,7 +108,8 @@ class Library {
   }
 
   checkFullPathInLibrary(fullPath) {
-    return this.folders.find(folder => fullPath.startsWith(folder.fullPath))
+    fullPath = fullPath.replace(/\\/g, '/')
+    return this.folders.find(folder => fullPath.startsWith(folder.fullPath.replace(/\\/g, '/')))
   }
 
   getFolderById(id) {
