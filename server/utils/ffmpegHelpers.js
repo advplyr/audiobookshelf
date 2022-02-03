@@ -45,10 +45,12 @@ async function writeMetadataFile(audiobook, outputPath) {
   var inputstrs = [
     ';FFMETADATA1',
     `title=${audiobook.title}`,
-    `artist=${audiobook.author}`,
+    `artist=${audiobook.authorFL}`,
+    `album_artist=${audiobook.authorFL}`,
     `date=${audiobook.book.publishYear || ''}`,
-    `comment=AudioBookshelf v${package.version}`,
-    'genre=Audiobook'
+    `description=${audiobook.book.description}`,
+    `genre=${audiobook.book._genres.join(';')}`,
+    `comment=Audiobookshelf v${package.version}`
   ]
 
   if (audiobook.chapters) {
