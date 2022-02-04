@@ -338,6 +338,7 @@ class User {
       Logger.error(`[User] Invalid local user audiobook data`, localUserAudiobookData)
       return false
     }
+    if (!this.audiobooks) this.audiobooks = {}
 
     if (!this.audiobooks[localUserAudiobookData.audiobookId]) {
       this.audiobooks[localUserAudiobookData.audiobookId] = new UserAudiobookData(localUserAudiobookData)
