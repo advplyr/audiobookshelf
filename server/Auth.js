@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const passport = require('passport')
 const Logger = require('./Logger')
 
 class Auth {
@@ -38,7 +39,19 @@ class Auth {
   }
 
   async authMiddleware(req, res, next) {
-    var token = null
+    let token = null;
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      token = req.cookies["token"]
+      const user = await this.verifyToken(token)
+      if (!user) {
+        Logger.error('Verify Token User Not Found', token)
+        return res.sendStatus(404)
+      }
+
+      req.user = user
+      
+      return next();
+    }
 
     // If using a get request, the token can be passed as a query string
     if (req.method === 'GET' && req.query && req.query.token) {
@@ -53,7 +66,8 @@ class Auth {
       return res.sendStatus(401)
     }
 
-    var user = await this.verifyToken(token)
+
+    const user = await this.verifyToken(token)
     if (!user) {
       Logger.error('Verify Token User Not Found', token)
       return res.sendStatus(404)

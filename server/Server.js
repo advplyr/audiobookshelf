@@ -1,17 +1,21 @@
 const Path = require('path')
 const express = require('express')
+const cookieParser = require("cookie-parser");
+var session = require('express-session')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
+const passport = require('passport');
+const OidcStrategy = require('passport-openidconnect').Strategy;
 
 const { version } = require('../package.json')
 
 // Utils
 const { ScanResult } = require('./utils/constants')
 const filePerms = require('./utils/filePerms')
-const { secondsToTimestamp } = require('./utils/index')
+const { secondsToTimestamp, getId } = require('./utils/index')
 const Logger = require('./Logger')
 
 // Classes
@@ -28,6 +32,7 @@ const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
 const CacheManager = require('./CacheManager')
+const User = require('./objects/User')
 
 class Server {
   constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -38,6 +43,10 @@ class Server {
     this.ConfigPath = Path.normalize(CONFIG_PATH)
     this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     this.MetadataPath = Path.normalize(METADATA_PATH)
+
+    console.info(this.ConfigPath)
+    console.info(this.MetadataPath)
+    console.info(this.AudiobookPath)
 
     fs.ensureDirSync(CONFIG_PATH, 0o774)
     fs.ensureDirSync(METADATA_PATH, 0o774)
@@ -65,6 +74,54 @@ class Server {
     this.io = null
 
     this.clients = {}
+    passport.serializeUser((user, next) => {
+      next(null, user);
+    });
+    
+    passport.deserializeUser((obj, next) => {
+      next(null, obj);
+    });
+    passport.use(new OidcStrategy({
+        issuer: process.env.OIDC_ISSUER,
+        authorizationURL: process.env.OIDC_AUTHORIZATION_URL,
+        tokenURL: process.env.OIDC_TOKEN_URL,
+        userInfoURL: process.env.OIDC_USER_INFO_URL,
+        clientID: process.env.OIDC_CLIENT_ID,
+        clientSecret: process.env.OIDC_CLIENT_SECRET,
+        callbackURL: '/oidc/callback',
+        scope: "openid email profile"
+      }, async (issuer, profile, cb) => {
+        let user = this.db.users.find(u => u.id === profile.id)
+        if (!user) {
+          // create a user
+          let account = {}      
+          account.id = profile.id
+          account.username = profile.username
+          account.type = "guest"
+          account.permissions = {
+            download: false,
+            update: false,
+            delete: false,
+            upload: false,
+            accessAllLibraries: false
+          }
+          account.pash = await this.auth.hashPass(getId(profile.id))
+          account.token = await this.auth.generateAccessToken({ userId: account.id })
+          account.createdAt = Date.now()
+          user = new User(account)
+          const success = await this.db.insertEntity('user', user)
+          if (!success) {
+            cb('Failed to save new user')
+          }
+        }
+        if (!user || !user.isActive) {
+          Logger.debug(`[Auth] Failed login attempt`)
+          cb("Invalid user or password")
+          return
+        }
+        cb(null, user)
+      })
+    )
   }
 
   get audiobooks() {
@@ -144,7 +201,24 @@ class Server {
     app.use(fileUpload())
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
+    app.use(cookieParser());
+    app.use(session({
+      secret: process.env.TOKEN_SECRET,
+      resave: false,
+      saveUninitialized: true
+    }));
+    app.use(passport.initialize());
+    app.use(passport.session());
 
+    /*
+    if (req.method === 'GET' && req.query && req.query.token) {
+      token = req.query.token
+    } else {
+      const authHeader = req.headers['authorization']
+      token = authHeader && authHeader.split(' ')[1]
+    }
+    */
+    
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
@@ -218,6 +292,36 @@ class Server {
     app.post('/login', loginRateLimiter, (req, res) => this.auth.login(req, res))
 
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+
+    app.get("/oidc/login", passport.authenticate('openidconnect'))
+
+    app.get("/oidc/callback", 
+      passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
+      async (req, res) => {
+        const token = this.auth.generateAccessToken({userId: req.user.id})
+        res.cookie('token', token, { httpOnly: true /* TODO: Set secure: true */ });
+        res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
+
+        res.redirect('/');
+      }
+      // (req, res, next) => {
+      // passport.authenticate('openidconnect', async (err, user, info) => {
+      //     
+      //     Logger.debug(JSON.stringify({user, info}))
+      //     
+      //     const token = await this.auth.generateAccessToken({ userId: user.id })
+      //     res.cookie('token', token, { httpOnly: true /* TODO: Set secure: true */ });
+      //     res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
+      //     
+      //     res.redirect('/'); 
+      //   })(req, res, next)
+      // 
+      // }
+    )
+
+    // app.get("/oidc/token", (req, res) => {
+    //   req.cookies.get("token")
+    // })
 
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
@@ -472,6 +576,9 @@ class Server {
     var { socketId } = req.body
     Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
 
+    res.clearCookie('sso');
+    res.clearCookie('token');
+    if (req.logout) req.logout();
     // Strip user and client from client and client socket
     if (socketId && this.clients[socketId]) {
       var client = this.clients[socketId]

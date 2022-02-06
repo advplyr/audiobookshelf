@@ -15,6 +15,9 @@
             <button type="submit" :disabled="processing" class="bg-blue-600 hover:bg-blue-800 px-8 py-1 mt-3 rounded-md text-white text-center transition duration-300 ease-in-out focus:outline-none">{{ processing ? 'Checking...' : 'Submit' }}</button>
           </div>
         </form>
+        <div class="w-full flex justify-end">
+          <a href="/oidc/login"><ui-btn :disabled="processing" class="bg-blue-600 hover:bg-blue-800 px-8 py-1 mt-3 rounded-md text-white text-center transition duration-300 ease-in-out focus:outline-none">SSO</ui-btn></a>
+        </div>
       </div>
     </div>
   </div>
@@ -87,9 +90,40 @@ export default {
       }
       this.processing = false
     },
+    getCookies() {
+      return document.cookie.split(";").map(c => c.split("=")).reduce((acc, val)=> {
+          return {
+              ...acc,
+              [val[0]]: val[1]
+          }
+      }, {})
+    },
+    deleteCookie(name, path="/", domain=document.location.host) {
+      document.cookie = name + "=" +
+        ((path) ? ";path="+path:"")+
+        ((domain)?";domain="+domain:"") +
+        ";expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    },
     checkAuth() {
+      if (this.getCookies()["sso"]) {
+        this.processing = true
+
+        this.$axios
+          .$post('/api/authorize', null, {})
+          .then((res) => {
+            console.log({res})
+            this.setUser(res.user)
+            this.processing = false
+          })
+          .catch((error) => {
+            console.error('Authorize error', error)
+            this.deleteCookie("sso")
+            this.processing = false
+          })
+        return;
+      }
       if (localStorage.getItem('token')) {
-        var token = localStorage.getItem('token')
+        let token = localStorage.getItem('token')
 
         if (token) {
           this.processing = true
