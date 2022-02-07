@@ -31,7 +31,6 @@ class Db {
     this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
-    this.SSODb = new njodb.Database(this.SSODb, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
 
@@ -132,6 +131,11 @@ class Db {
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
     }
+
+    if (!this.SSOSettings) {
+      this.SSOSettings = new SSOSettings()
+      await this.insertEntity('settings', this.SSOSettings)
+    }
   }
 
   async load() {
@@ -150,6 +154,7 @@ class Db {
     let p4 = this.settingsDb.select(() => true).then((results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
+
         let serverSettings = this.settings.find(s => s.id === 'server-settings')
         if (serverSettings) {
           this.serverSettings = new ServerSettings(serverSettings)
@@ -158,6 +163,11 @@ class Db {
           if (!this.serverSettings.version || this.serverSettings.version !== version) {
             this.previousVersion = this.serverSettings.version || '1.0.0'
           }
+        }
+
+        let ssoSettings = this.settings.find(s => s.id === 'sso-settings')
+        if (ssoSettings) {
+          this.SSOSettings = new SSOSettings(ssoSettings)
         }
       }
     })
@@ -169,10 +179,7 @@ class Db {
       this.authors = results.data.map(l => new Author(l))
       Logger.info(`[DB] ${this.authors.length} Authors Loaded`)
     })
-    let p7 = this.SSODb.select(() => true).then((results) => {
-      this.SSOSettings = new SSOSettings(results.data)
-    })
-    await Promise.all([p1, p2, p3, p4, p5, p6, p7])
+    await Promise.all([p1, p2, p3, p4, p5, p6])
 
     // Update server version in server settings
     if (this.previousVersion) {

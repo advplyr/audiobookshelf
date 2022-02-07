@@ -13,12 +13,12 @@ if (isDev) {
   process.env.AUDIOBOOK_PATH = devEnv.AudiobookPath
   process.env.FFMPEG_PATH = devEnv.FFmpegPath
   process.env.FFPROBE_PATH = devEnv.FFProbePath
-  process.env.OIDC_CLIENT_ID = devEnv.OIDC.ClientID
-  process.env.OIDC_CLIENT_SECRET = devEnv.OIDC.ClientSecret
-  process.env.OIDC_ISSUER = devEnv.OIDC.Issuer
-  process.env.OIDC_AUTHORIZATION_URL = devEnv.OIDC.AuthorizationURL
-  process.env.OIDC_TOKEN_URL = devEnv.OIDC.TokenURL
-  process.env.OIDC_USER_INFO_URL = devEnv.OIDC.UserInfoURL
+  process.env.OIDC_CLIENT_ID = devEnv.OIDC ? devEnv.OIDC.ClientID : ''
+  process.env.OIDC_CLIENT_SECRET = devEnv.OIDC ? devEnv.OIDC.ClientSecret : ''
+  process.env.OIDC_ISSUER = devEnv.OIDC ? devEnv.OIDC.Issuer : ''
+  process.env.OIDC_AUTHORIZATION_URL = devEnv.OIDC ? devEnv.OIDC.AuthorizationURL : ''
+  process.env.OIDC_TOKEN_URL = devEnv.OIDC ? devEnv.OIDC.TokenURL : ''
+  process.env.OIDC_USER_INFO_URL = devEnv.OIDC ? devEnv.OIDC.UserInfoURL : ''
 }
 
 const PORT = process.env.PORT || 80

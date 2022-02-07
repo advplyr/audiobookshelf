@@ -4,14 +4,14 @@ const User = require('./User')
 
 const defaultSettings = {
   oidc: {
-    issuer: "",
-    authorizationURL: "",
-    tokenURL: "",
-    userInfoURL: "",
-    clientID: "",
-    clientSecret: "",
+    issuer: process.env.OIDC_ISSUER || '',
+    authorizationURL: process.env.OIDC_AUTHORIZATION_URL || '',
+    tokenURL: process.env.OIDC_TOKEN_URL || '',
+    userInfoURL: process.env.OIDC_USER_INFO_URL || '',
+    clientID: process.env.OIDC_CLIENT_ID || '',
+    clientSecret: process.env.OIDC_CLIENT_SECRET || '',
     callbackURL: "/oidc/callback",
-    scope: "openid email profile"  
+    scope: "openid email profile"
   },
   user: {
     createNewUser: false,
@@ -38,16 +38,17 @@ const defaultSettings = {
 }
 
 class SSOSettings {
-  constructor(settings=defaultSettings) {
+  constructor(settings = defaultSettings) {
     this.id = 'sso-settings'
-    this.oidc = {...settings.oidc}
-    this.user = {...settings.user}
+    this.oidc = { ...settings.oidc }
+    this.user = { ...settings.user }
   }
 
   toJSON() {
     return {
-      oidc: {...this.oidc},
-      user: {...this.user}
+      id: this.id,
+      oidc: { ...this.oidc },
+      user: { ...this.user }
     }
   }
 
