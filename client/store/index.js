@@ -124,7 +124,7 @@ export const mutations = {
   },
   setServerSettings(state, settings) {
     if (!settings) return
-    state.SSOSettings = settings
+    state.serverSettings = settings
   },
   setSSOSettings(state, settings) {
     if (!settings) return
