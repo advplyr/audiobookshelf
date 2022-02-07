@@ -89,6 +89,7 @@ export default {
   },
   methods: {
     updateSSOIssuer(val) {
+      this.oidc.issuer = val
       return
       this.updateSSOSettings({
         issuer: val
@@ -109,7 +110,7 @@ export default {
     saveSSOSettings(payload) {
       this.updatingSSOSettings = true
       this.$store
-        .dispatch('sso/updateSSOSettings', payload)
+        .dispatch('sso/updateSSOSettings', {oidc: this.oidc, permissions: this.permissions})
         .then((success) => {
           console.log('Updated SSO Settings', success)
           this.updatingSSOSettings = false
