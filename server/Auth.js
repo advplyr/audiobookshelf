@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
-const passport = require('passport')
 const Logger = require('./Logger')
+const User = require('./objects/User')
 
 class Auth {
   constructor(db) {
@@ -49,7 +49,7 @@ class Auth {
       }
 
       req.user = user
-      
+
       return next();
     }
 
@@ -209,6 +209,35 @@ class Auth {
         error: 'Unknown error'
       })
     }
+  }
+
+  async handleOIDCVerification(issuer, profile, cb) {
+    Logger.debug(`[Auth] handleOIDCVerification ${issuer}`)
+
+    let user = this.db.users.find(u => u.id === profile.id)
+    if (!user && this.db.SSOSettings.createNewUser) {
+      // create a user
+      let account = {}
+      account.id = profile.id
+      account.username = profile.username
+      account.isActive = true
+      account.type = "guest"
+      account.permissions = this.db.SSOSettings.getNewUserPermissions()
+      account.pash = await this.hashPass(getId(profile.id))
+      account.token = await this.generateAccessToken({ userId: account.id })
+      account.createdAt = Date.now()
+      user = new User(account)
+      const success = await this.db.insertEntity('user', user)
+      if (!success) {
+        cb('Failed to save new user')
+      }
+    }
+    if (!user || !user.isActive) {
+      Logger.debug(`[Auth] Failed login attempt`)
+      cb("Invalid user or password")
+      return
+    }
+    cb(null, user)
   }
 }
 module.exports = Auth

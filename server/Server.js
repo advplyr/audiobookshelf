@@ -7,8 +7,8 @@ const SocketIO = require('socket.io')
 const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
-const passport = require('passport');
-const OidcStrategy = require('passport-openidconnect').Strategy;
+const passport = require('passport')
+const OidcStrategy = require('passport-openidconnect').Strategy
 
 const { version } = require('../package.json')
 
@@ -32,7 +32,6 @@ const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
 const CacheManager = require('./CacheManager')
-const User = require('./objects/User')
 
 class Server {
   constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -43,10 +42,6 @@ class Server {
     this.ConfigPath = Path.normalize(CONFIG_PATH)
     this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     this.MetadataPath = Path.normalize(METADATA_PATH)
-
-    console.info(this.ConfigPath)
-    console.info(this.MetadataPath)
-    console.info(this.AudiobookPath)
 
     fs.ensureDirSync(CONFIG_PATH, 0o774)
     fs.ensureDirSync(METADATA_PATH, 0o774)
@@ -74,54 +69,6 @@ class Server {
     this.io = null
 
     this.clients = {}
-    passport.serializeUser((user, next) => {
-      next(null, user);
-    });
-    
-    passport.deserializeUser((obj, next) => {
-      next(null, obj);
-    });
-    passport.use(new OidcStrategy({
-        issuer: process.env.OIDC_ISSUER,
-        authorizationURL: process.env.OIDC_AUTHORIZATION_URL,
-        tokenURL: process.env.OIDC_TOKEN_URL,
-        userInfoURL: process.env.OIDC_USER_INFO_URL,
-        clientID: process.env.OIDC_CLIENT_ID,
-        clientSecret: process.env.OIDC_CLIENT_SECRET,
-        callbackURL: '/oidc/callback',
-        scope: "openid email profile"
-      }, async (issuer, profile, cb) => {
-        let user = this.db.users.find(u => u.id === profile.id)
-        if (!user) {
-          // create a user
-          let account = {}      
-          account.id = profile.id
-          account.username = profile.username
-          account.type = "guest"
-          account.permissions = {
-            download: false,
-            update: false,
-            delete: false,
-            upload: false,
-            accessAllLibraries: false
-          }
-          account.pash = await this.auth.hashPass(getId(profile.id))
-          account.token = await this.auth.generateAccessToken({ userId: account.id })
-          account.createdAt = Date.now()
-          user = new User(account)
-          const success = await this.db.insertEntity('user', user)
-          if (!success) {
-            cb('Failed to save new user')
-          }
-        }
-        if (!user || !user.isActive) {
-          Logger.debug(`[Auth] Failed login attempt`)
-          cb("Invalid user or password")
-          return
-        }
-        cb(null, user)
-      })
-    )
   }
 
   get audiobooks() {
@@ -186,6 +133,26 @@ class Server {
 
     this.watcher.initWatcher(this.libraries)
     this.watcher.on('files', this.filesChanged.bind(this))
+
+    this.passportInit()
+  }
+
+  passportInit() {
+    if (this.db.SSOSettings.isOIDCConfigured) {
+      Logger.debug(`[Server] passportInit OIDC is configured - init`)
+
+      passport.serializeUser((user, next) => {
+        next(null, user);
+      })
+      passport.deserializeUser((obj, next) => {
+        next(null, obj);
+      })
+
+      // Initialize passport OIDC verification
+      passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification))
+    } else {
+      Logger.debug(`[Server] passportInit OIDC not configured`)
+    }
   }
 
   async start() {
@@ -218,7 +185,7 @@ class Server {
       token = authHeader && authHeader.split(' ')[1]
     }
     */
-    
+
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
@@ -295,10 +262,10 @@ class Server {
 
     app.get("/oidc/login", passport.authenticate('openidconnect'))
 
-    app.get("/oidc/callback", 
+    app.get("/oidc/callback",
       passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
       async (req, res) => {
-        const token = this.auth.generateAccessToken({userId: req.user.id})
+        const token = this.auth.generateAccessToken({ userId: req.user.id })
         res.cookie('token', token, { httpOnly: true /* TODO: Set secure: true */ });
         res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
 
