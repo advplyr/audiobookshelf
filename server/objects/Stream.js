@@ -63,9 +63,12 @@ class Stream extends EventEmitter {
     return this.tracks[0].ext.toLowerCase().slice(1)
   }
 
+  // Fmp4 does not work on iOS devices: https://github.com/advplyr/audiobookshelf-app/issues/85
+  //   Workaround: Force AAC transcode for FLAC
   get hlsSegmentType() {
-    var hasFlac = this.tracks.find(t => t.ext.toLowerCase() === '.flac')
-    return hasFlac ? 'fmp4' : 'mpegts'
+    return 'mpegts'
+    // var hasFlac = this.tracks.find(t => t.ext.toLowerCase() === '.flac')
+    // return hasFlac ? 'fmp4' : 'mpegts'
   }
 
   get segmentBasename() {
@@ -333,7 +336,9 @@ class Stream extends EventEmitter {
     }
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
-    const audioCodec = (this.hlsSegmentType === 'fmp4' || this.tracksAudioFileType === 'opus' || this.transcodeForceAAC) ? 'aac' : 'copy'
+
+    const audioCodec = (this.tracksAudioFileType === 'flac' || this.tracksAudioFileType === 'opus' || this.transcodeForceAAC) ? 'aac' : 'copy'
+
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,
       '-map 0:a',
@@ -354,8 +359,8 @@ class Stream extends EventEmitter {
     ]
     if (this.hlsSegmentType === 'fmp4') {
       hlsOptions.push('-strict -2')
-      // var fmp4InitFilename = Path.join(this.streamPath, 'init.mp4')
-      var fmp4InitFilename = 'init.mp4'
+      var fmp4InitFilename = Path.join(this.streamPath, 'init.mp4')
+      // var fmp4InitFilename = 'init.mp4'
       hlsOptions.push(`-hls_fmp4_init_filename ${fmp4InitFilename}`)
     }
     this.ffmpeg.addOption(hlsOptions)

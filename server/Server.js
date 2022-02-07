@@ -532,7 +532,7 @@ class Server {
     var exists = await fs.pathExists(outputDirectory)
     if (exists) {
       Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.status(500).error(`Directory "${outputDirectory}" already exists`)
+      return res.status(500).send(`Directory "${outputDirectory}" already exists`)
     }
 
     await fs.ensureDir(outputDirectory)
