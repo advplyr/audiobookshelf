@@ -107,10 +107,9 @@ export default {
       })
     },
     saveSSOSettings(payload) {
-      console.log(this)
       this.updatingSSOSettings = true
       this.$store
-        .dispatch('updateSSOSettings', payload)
+        .dispatch('sso/updateSSOSettings', payload)
         .then((success) => {
           console.log('Updated SSO Settings', success)
           this.updatingSSOSettings = false
