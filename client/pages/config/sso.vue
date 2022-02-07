@@ -40,6 +40,12 @@
       <div class="flex items-center mb-2">
         <h1 class="text-xl">User Settings</h1>
       </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.createNewUser" :disabled="updatingSSOSettings" @input="updateCreateNewUser" />
+        <p class="pl-4 text-lg">Create a new user on first login</p>
+      </div>
+
       <div class="flex items-center mb-2">
         <ui-btn @click="saveSSOSettings">Save</ui-btn>
       </div>
@@ -58,6 +64,10 @@ export default {
         userInfoURL: "",
         clientID: "",
         clientSecret: "",
+      },
+
+      permissions: {
+        createNewUser: false,
       },
 
       updatingSSOSettings: false,
@@ -85,6 +95,12 @@ export default {
       })
     },
     updateAuthorizationURL(val) {
+      return
+      this.updateSSOSettings({
+        authorizationURL: val
+      })
+    },
+    updateCreateNewUser(val) {
       return
       this.updateSSOSettings({
         authorizationURL: val
