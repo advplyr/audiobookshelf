@@ -76,6 +76,11 @@ export default {
           id: 'config-stats',
           title: 'Your Stats',
           path: '/config/stats'
+        },
+        {
+          id: 'config-sso',
+          title: 'SSO',
+          path: '/config/sso'
         }
       ]
     },
