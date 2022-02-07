@@ -19,22 +19,22 @@
 
       <div class="flex items-center py-2">
         <p class="pl-4 text-lg">Token URL&nbsp;</p>
-        <ui-text-input v-model="oidc.tokenURL" :disabled="updatingSSOSettings" @input="updateSSOIssuer" />
+        <ui-text-input v-model="oidc.tokenURL" :disabled="updatingSSOSettings" @input="updateTokenURL" />
       </div>
 
       <div class="flex items-center py-2">
         <p class="pl-4 text-lg">User Info URL&nbsp;</p>
-        <ui-text-input v-model="oidc.userInfoURL" :disabled="updatingSSOSettings" @input="updateSSOIssuer" />
+        <ui-text-input v-model="oidc.userInfoURL" :disabled="updatingSSOSettings" @input="updateUserInfoURL" />
       </div>
 
       <div class="flex items-center py-2">
         <p class="pl-4 text-lg">Client ID&nbsp;</p>
-        <ui-text-input v-model="oidc.clientID" :disabled="updatingSSOSettings" @input="updateSSOIssuer" />
+        <ui-text-input v-model="oidc.clientID" :disabled="updatingSSOSettings" @input="updateClientID" />
       </div>
 
       <div class="flex items-center py-2">
         <p class="pl-4 text-lg">Client Secret&nbsp;</p>
-        <ui-text-input type="password" v-model="oidc.clientSecret" :disabled="updatingSSOSettings" @input="updateSSOIssuer" />
+        <ui-text-input type="password" v-model="oidc.clientSecret" :disabled="updatingSSOSettings" @input="updateClientSecret" />
       </div>
 
       <div class="flex items-center mb-2">
@@ -42,8 +42,33 @@
       </div>
 
       <div class="flex items-center mb-2">
-        <ui-toggle-switch v-model="permissions.createNewUser" :disabled="updatingSSOSettings" @input="updateCreateNewUser" />
+        <ui-toggle-switch v-model="permissions.createNewUser" :disabled="updatingSSOSettings" @input="updatePermissionCreateNewUser" />
         <p class="pl-4 text-lg">Create a new user on first login</p>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.download" :disabled="updatingSSOSettings || !permissions.createNewUser" @input="updatePermissionDownload" />
+        <p class="pl-4 text-lg">The new user is allowed to download</p>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.update" :disabled="updatingSSOSettings || !permissions.createNewUser" @input="updatePermissionUpdate" />
+        <p class="pl-4 text-lg">The new user is allowed to update</p>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.delete" :disabled="updatingSSOSettings || !permissions.createNewUser" @input="updatePermissionDelete" />
+        <p class="pl-4 text-lg">The new user is allowed to delete</p>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.upload" :disabled="updatingSSOSettings || !permissions.createNewUser" @input="updatePermissionUpload" />
+        <p class="pl-4 text-lg">The new user is allowed to upload</p>
+      </div>
+
+      <div class="flex items-center mb-2">
+        <ui-toggle-switch v-model="permissions.accessAllLibraries" :disabled="updatingSSOSettings || !permissions.createNewUser" @input="updatePermissionAccessAllLibraries" />
+        <p class="pl-4 text-lg">The new user is allowed to access all libraries</p>
       </div>
 
       <div class="flex items-center mb-2">
@@ -68,6 +93,11 @@ export default {
 
       permissions: {
         createNewUser: false,
+        download: false,
+        update: false,
+        delete: false,
+        upload: false,
+        accessAllLibraries: false
       },
 
       updatingSSOSettings: false,
@@ -90,22 +120,42 @@ export default {
   methods: {
     updateSSOIssuer(val) {
       this.oidc.issuer = val
-      return
-      this.updateSSOSettings({
-        issuer: val
-      })
     },
     updateAuthorizationURL(val) {
-      return
-      this.updateSSOSettings({
-        authorizationURL: val
-      })
+      this.oidc.authorizationURL = val
     },
-    updateCreateNewUser(val) {
-      return
-      this.updateSSOSettings({
-        authorizationURL: val
-      })
+    updateTokenURL(val) {
+      this.oidc.tokenURL = val
+    },
+    updateUserInfoURL(val) {
+      this.oidc.userInfoURL = val
+    },
+    updateClientID(val) {
+      this.oidc.clientID = val
+    },
+    updateClientSecret(val) {
+      this.oidc.clientSecret = val
+    },
+    updatePermissionCreateNewUser(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionDownload(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionUpdate(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionDelete(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionUpload(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionAccessAllLibraries(val) {
+      this.permissions.createNewUser = val
+    },
+    updatePermissionCreateNewUser(val) {
+      this.permissions.createNewUser = val
     },
     saveSSOSettings(payload) {
       this.updatingSSOSettings = true
