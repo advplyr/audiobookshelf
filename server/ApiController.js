@@ -162,6 +162,7 @@ class ApiController {
     this.router.delete('/authors/:id', this.deleteAuthor.bind(this))
 
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
+    this.router.patch('/SSOSettings', this.updateSSOSettings.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
 
@@ -287,6 +288,27 @@ class ApiController {
     return res.json({
       success: true,
       serverSettings: this.db.serverSettings
+    })
+  }
+
+  async updateSSOSettings(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error('User other than root attempting to update sso settings', req.user)
+      return res.sendStatus(403)
+    }
+    let SSOUpdate = req.body
+    if (!SSOUpdate || !isObject(SSOUpdate)) {
+      return res.status(500).send('Invalid settings update object')
+    }
+
+    console.log("SSOUpdate", JSON.stringify(SSOUpdate))
+    var madeUpdates = this.db.SSOSettings.update(SSOUpdate)
+    if (madeUpdates) {
+      await this.db.updateEntity('sso', this.db.SSOUpdate)
+    }
+    return res.json({
+      success: true,
+      SSOUpdate: this.db.SSOUpdate
     })
   }
 
