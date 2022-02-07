@@ -32,10 +32,6 @@ export const getters = {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
-  getSSOSetting: state => key => {
-    if (!state.SSOSettings) return null
-    return state.getSSOSettings[key]
-  },
   getBookCoverAspectRatio: state => {
     if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1.6
     return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
@@ -62,22 +58,6 @@ export const actions = {
       console.error('Failed to update server settings', error)
       return false
     })
-  },
-  updateSSOSettings({ commit }, payload) {
-    var updatePayload = {
-      ...payload
-    }
-    return this.$axios.$patch('/api/SSOSettings', updatePayload).then((result) => {
-      if (result.success) {
-        commit('setSSOSettings', result.SSOSettings)
-        return true
-      } else {
-        return false
-      }
-    }).catch((error) => {
-      console.error('Failed to update server settings', error)
-      return false
-    })    
   },
   checkForUpdate({ commit }) {
     return checkForUpdate()
@@ -125,10 +105,6 @@ export const mutations = {
   setServerSettings(state, settings) {
     if (!settings) return
     state.serverSettings = settings
-  },
-  setSSOSettings(state, settings) {
-    if (!settings) return
-    state.SSOSettings = settings
   },
   setStreamAudiobook(state, audiobook) {
     state.playOnLoad = true

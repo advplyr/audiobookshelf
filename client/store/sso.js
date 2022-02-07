@@ -58,13 +58,13 @@ export const getters = {
 }
 
 export const actions = {
-  updateUserSettings({ commit }, payload) {
+  updateSSOSettings({ commit }, payload) {
     var updatePayload = {
       ...payload
     }
     // Immediately update
     commit('setSSOSettings', updatePayload)
-    return this.$axios.$patch('/api/sso/settings', updatePayload).then((result) => {
+    return this.$axios.$patch('/api/SSOSettings', updatePayload).then((result) => {
       if (result.success) {
         commit('setSSOSettings', result.settings)
         return true
@@ -77,11 +77,6 @@ export const actions = {
     })
   },
   loadSSOSettings({ state, commit }) {
-    return defaultSSOSettings
-    if (state.collectionsLoaded) {
-      console.log('Collections already loaded')
-      return state.collections
-    }
 
     return this.$axios.$get('/api/collections').then((collections) => {
       commit('setCollections', collections)
