@@ -10,6 +10,7 @@ const UserCollection = require('./objects/UserCollection')
 const Library = require('./objects/Library')
 const Author = require('./objects/Author')
 const ServerSettings = require('./objects/ServerSettings')
+const SSOSettings = require('./objects/SSOSettings')
 
 class Db {
   constructor(ConfigPath, AudiobookPath) {
@@ -21,6 +22,7 @@ class Db {
     this.SessionsPath = Path.join(ConfigPath, 'sessions')
     this.LibrariesPath = Path.join(ConfigPath, 'libraries')
     this.SettingsPath = Path.join(ConfigPath, 'settings')
+    this.SSOPath = Path.join(ConfigPath, 'sso')
     this.CollectionsPath = Path.join(ConfigPath, 'collections')
     this.AuthorsPath = Path.join(ConfigPath, 'authors')
 
@@ -29,6 +31,7 @@ class Db {
     this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
+    this.SSODb = new njodb.Database(this.SSODb, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
 
@@ -41,6 +44,7 @@ class Db {
     this.authors = []
 
     this.serverSettings = null
+    this.SSOSettings = null
 
     // Stores previous version only if upgraded
     this.previousVersion = null
@@ -131,22 +135,22 @@ class Db {
   }
 
   async load() {
-    var p1 = this.audiobooksDb.select(() => true).then((results) => {
+    let p1 = this.audiobooksDb.select(() => true).then((results) => {
       this.audiobooks = results.data.map(a => new Audiobook(a))
       Logger.info(`[DB] ${this.audiobooks.length} Audiobooks Loaded`)
     })
-    var p2 = this.usersDb.select(() => true).then((results) => {
+    let p2 = this.usersDb.select(() => true).then((results) => {
       this.users = results.data.map(u => new User(u))
       Logger.info(`[DB] ${this.users.length} Users Loaded`)
     })
-    var p3 = this.librariesDb.select(() => true).then((results) => {
+    let p3 = this.librariesDb.select(() => true).then((results) => {
       this.libraries = results.data.map(l => new Library(l))
       Logger.info(`[DB] ${this.libraries.length} Libraries Loaded`)
     })
-    var p4 = this.settingsDb.select(() => true).then((results) => {
+    let p4 = this.settingsDb.select(() => true).then((results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
-        var serverSettings = this.settings.find(s => s.id === 'server-settings')
+        let serverSettings = this.settings.find(s => s.id === 'server-settings')
         if (serverSettings) {
           this.serverSettings = new ServerSettings(serverSettings)
 
@@ -157,15 +161,18 @@ class Db {
         }
       }
     })
-    var p5 = this.collectionsDb.select(() => true).then((results) => {
+    let p5 = this.collectionsDb.select(() => true).then((results) => {
       this.collections = results.data.map(l => new UserCollection(l))
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
-    var p6 = this.authorsDb.select(() => true).then((results) => {
+    let p6 = this.authorsDb.select(() => true).then((results) => {
       this.authors = results.data.map(l => new Author(l))
       Logger.info(`[DB] ${this.authors.length} Authors Loaded`)
     })
-    await Promise.all([p1, p2, p3, p4, p5, p6])
+    let p7 = this.SSODb.select(() => true).then((results) => {
+      this.SSOSettings = new SSOSettings(results.data)
+    })
+    await Promise.all([p1, p2, p3, p4, p5, p6, p7])
 
     // Update server version in server settings
     if (this.previousVersion) {
