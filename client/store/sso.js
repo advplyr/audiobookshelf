@@ -1,6 +1,3 @@
-
-import Vue from 'vue'
-
 const defaultSSOSettings = {
   oidc: {
     issuer: "",
@@ -10,7 +7,7 @@ const defaultSSOSettings = {
     clientID: "",
     clientSecret: "",
     callbackURL: "/oidc/callback",
-    scope: "openid email profile"  
+    scope: "openid email profile"
   },
   user: {
     createNewUser: false,

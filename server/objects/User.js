@@ -46,7 +46,7 @@ class User {
     return !!this.pash && !!this.pash.length
   }
 
-  getDefaultUserSettings() {
+  static getDefaultUserSettings() {
     return {
       mobileOrderBy: 'recent',
       mobileOrderDesc: true,
@@ -60,12 +60,12 @@ class User {
     }
   }
 
-  getDefaultUserPermissions() {
+  static getDefaultUserPermissions(type) {
     return {
-      download: true,
-      update: true,
-      delete: this.type === 'root',
-      upload: this.type === 'root' || this.type === 'admin',
+      download: type !== 'guest',
+      update: type !== 'guest',
+      delete: type === 'root',
+      upload: type === 'root' || type === 'admin',
       accessAllLibraries: true
     }
   }
@@ -152,8 +152,8 @@ class User {
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
-    this.settings = user.settings || this.getDefaultUserSettings()
-    this.permissions = user.permissions || this.getDefaultUserPermissions()
+    this.settings = user.settings || User.getDefaultUserSettings()
+    this.permissions = user.permissions || User.getDefaultUserPermissions(this.type)
     // Upload permission added v1.1.13, make sure root user has upload permissions
     if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
 
