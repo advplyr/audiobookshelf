@@ -260,16 +260,22 @@ class Server {
 
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
 
-    app.get("/oidc/login", passport.authenticate('openidconnect'))
+    app.get("/oidc/login", (() => {
+      if (!this.db.SSOSettings.isOIDCConfigured) return (req, res) => res.redirect("/");
+      return passport.authenticate('openidconnect')
+    })())
 
     app.get("/oidc/callback",
-      passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
-      async (req, res) => {
-        const token = this.auth.generateAccessToken({ userId: req.user.id })
-        res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
+      (() => {
+        if (!this.db.SSOSettings.isOIDCConfigured) return (req, res) => res.redirect("/");
+        return passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
+          async (req, res) => {
+            const token = this.auth.generateAccessToken({ userId: req.user.id })
+            res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
 
-        res.redirect('/');
-      }
+            res.redirect('/');
+          }
+      })()
     )
 
     app.get('/ping', (req, res) => {
