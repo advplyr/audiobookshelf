@@ -41,10 +41,13 @@ class Auth {
   async authMiddleware(req, res, next) {
     let token = null;
     if (req.isAuthenticated && req.isAuthenticated()) {
-      token = req.cookies["token"]
-      const user = await this.verifyToken(token)
+      if (!req.user) {
+        Logger.error('Failed to find user object on request')
+        return res.sendStatus(403)
+      }
+      const user = this.db.users.find(u => u.id === req.user.userId)
       if (!user) {
-        Logger.error('Verify Token User Not Found', token)
+        Logger.error(`User Not Found, id=${req.user.userId}`)
         return res.sendStatus(404)
       }
 

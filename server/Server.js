@@ -75,10 +75,11 @@ class Server {
 
     this.clients = {}
     passport.serializeUser((user, next) => {
-      next(null, user);
+      next(null, {userId: user.id});
     });
     
     passport.deserializeUser((obj, next) => {
+      const user = this.db.users.find(u => u.id === obj.userId)
       next(null, obj);
     });
     passport.use(new OidcStrategy({
@@ -299,29 +300,11 @@ class Server {
       passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
       async (req, res) => {
         const token = this.auth.generateAccessToken({userId: req.user.id})
-        res.cookie('token', token, { httpOnly: true /* TODO: Set secure: true */ });
         res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
 
         res.redirect('/');
       }
-      // (req, res, next) => {
-      // passport.authenticate('openidconnect', async (err, user, info) => {
-      //     
-      //     Logger.debug(JSON.stringify({user, info}))
-      //     
-      //     const token = await this.auth.generateAccessToken({ userId: user.id })
-      //     res.cookie('token', token, { httpOnly: true /* TODO: Set secure: true */ });
-      //     res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
-      //     
-      //     res.redirect('/'); 
-      //   })(req, res, next)
-      // 
-      // }
     )
-
-    // app.get("/oidc/token", (req, res) => {
-    //   req.cookies.get("token")
-    // })
 
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
@@ -577,7 +560,6 @@ class Server {
     Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
 
     res.clearCookie('sso');
-    res.clearCookie('token');
     if (req.logout) req.logout();
     // Strip user and client from client and client socket
     if (socketId && this.clients[socketId]) {
