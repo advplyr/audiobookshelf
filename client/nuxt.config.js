@@ -79,7 +79,8 @@ module.exports = {
     '/lib/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
     '/ebook/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
     '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/metadata/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
+    '/metadata/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
+    '/oidc/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
   },
 
   io: {
