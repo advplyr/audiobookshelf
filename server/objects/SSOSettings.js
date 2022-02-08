@@ -3,31 +3,34 @@ const User = require('./User')
 const { isObject } = require('../utils')
 
 const defaultSettings = {
-  oidc: {
-    issuer: process.env.OIDC_ISSUER || '',
-    authorizationURL: process.env.OIDC_AUTHORIZATION_URL || '',
-    tokenURL: process.env.OIDC_TOKEN_URL || '',
-    userInfoURL: process.env.OIDC_USER_INFO_URL || '',
-    clientID: process.env.OIDC_CLIENT_ID || '',
-    clientSecret: process.env.OIDC_CLIENT_SECRET || '',
-    callbackURL: "/oidc/callback",
-    scope: "openid email profile"
-  },
-  createNewUser: false,
-  userPermissions: User.getDefaultUserPermissions('guest')
+    createNewUser: false,
+    userPermissions: User.getDefaultUserPermissions('guest')
 }
 
 class SSOSettings {
   constructor(settings = defaultSettings) {
     this.id = 'sso-settings'
-    this.oidc = { ...settings.oidc }
     this.createNewUser = !!settings.createNewUser
     this.userPermissions = { ...settings.userPermissions }
+    this.initOIDCSettings();
   }
 
+  initOIDCSettings() {
+    // can't be part of default settings, because apperently process.env is not set in the beginning
+    this.oidc = {
+      issuer: process.env.OIDC_ISSUER || '',
+      authorizationURL: process.env.OIDC_AUTHORIZATION_URL || '',
+      tokenURL: process.env.OIDC_TOKEN_URL || '',
+      userInfoURL: process.env.OIDC_USER_INFO_URL || '',
+      clientID: process.env.OIDC_CLIENT_ID || '',
+      clientSecret: process.env.OIDC_CLIENT_SECRET || '',
+      callbackURL: "/oidc/callback",
+      scope: "openid email profile"
+    }
+  }
   get isOIDCConfigured() {
     // Check required OIDC settings are set
-    return !['issue', 'authorizationURL', 'tokenURL', 'clientID', 'clientSecret'].some(key => !this.oidc[key])
+    return !['issuer', 'authorizationURL', 'tokenURL', 'clientID', 'clientSecret'].some(key => !this.oidc[key])
   }
 
   toJSON() {
