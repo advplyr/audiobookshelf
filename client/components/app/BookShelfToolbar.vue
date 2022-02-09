@@ -27,7 +27,7 @@
         </div>
         <div class="flex-grow hidden md:inline-block" />
 
-        <ui-checkbox v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <ui-checkbox v-show="showSortFilters" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-48 h-7.5 ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-48 h-7.5 ml-4" @change="updateOrder" />
         <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
