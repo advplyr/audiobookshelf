@@ -1,14 +1,14 @@
 <template>
-  <div id="page-wrapper" class="page p-6 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full max-w-4xl mx-auto">
-      <div class="mb-4 flex items-end">
-        <p class="text-2xl mr-4">Logger</p>
+      <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-end">
+        <p class="text-2xl mr-4 mb-2 sm:mb-0">Logger</p>
 
-        <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-40 h-8 text-sm" />
+        <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm mb-2 sm:mb-0" />
 
         <div class="flex-grow" />
 
-        <div class="w-44">
+        <div class="w-full sm:w-44">
           <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" />
         </div>
       </div>

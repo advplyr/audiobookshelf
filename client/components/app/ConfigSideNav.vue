@@ -9,7 +9,7 @@
       <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
-    <div class="w-full h-10 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamAudiobook && windowHeight > 700 && !isMobile ? '300px' : '65px' }">
+    <div class="w-full h-10 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamAudiobook && isMobileLandscape ? '300px' : '65px' }">
       <p class="font-mono text-sm">v{{ $config.version }}</p>
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-sm">Update available: {{ latestVersion }}</a>
     </div>
@@ -22,10 +22,7 @@ export default {
     isOpen: Boolean
   },
   data() {
-    return {
-      windowWidth: 0,
-      windowHeight: 0
-    }
+    return {}
   },
   computed: {
     userIsRoot() {
@@ -88,7 +85,10 @@ export default {
       return classes.join(' ')
     },
     isMobile() {
-      return this.windowWidth < 758
+      return this.$store.state.globals.isMobile
+    },
+    isMobileLandscape() {
+      return this.$store.state.globals.isMobileLandscape
     },
     drawerOpen() {
       if (this.isMobile) return this.isOpen
@@ -120,19 +120,7 @@ export default {
     },
     closeDrawer() {
       this.$emit('update:isOpen', false)
-    },
-    resize() {
-      this.windowWidth = window.innerWidth
-      this.windowHeight = window.innerHeight
     }
-  },
-  mounted() {
-    window.addEventListener('resize', this.resize)
-    this.windowWidth = window.innerWidth
-    this.windowHeight = window.innerHeight
-  },
-  beforeDestroy() {
-    window.removeEventListener('resize', this.resize)
   }
 }
 </script>

@@ -30,7 +30,7 @@
         </div>
       </div>
     </div>
-    <div class="flex">
+    <div class="flex flex-col md:flex-row">
       <stats-daily-listening-chart :listening-stats="listeningStats" />
       <div class="w-80 my-6 mx-auto">
         <h1 class="text-2xl mb-4 font-book">Recent Listening Sessions</h1>

@@ -19,7 +19,7 @@
         <template v-for="item in items">
           <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item)">
             <div class="flex items-center justify-between">
-              <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
+              <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
               <span class="material-icons">arrow_right</span>
