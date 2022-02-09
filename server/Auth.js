@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
 const User = require('./objects/User')
+const { getId } = require('./utils/index')
 
 class Auth {
   constructor(db) {
@@ -216,7 +217,6 @@ class Auth {
 
   async handleOIDCVerification(issuer, profile, cb) {
     Logger.debug(`[Auth] handleOIDCVerification ${issuer}`)
-
     let user = this.db.users.find(u => u.id === profile.id)
     if (!user && this.db.SSOSettings.createNewUser) {
       // create a user

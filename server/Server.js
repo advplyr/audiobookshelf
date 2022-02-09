@@ -140,16 +140,16 @@ class Server {
   passportInit() {
     if (this.db.SSOSettings.isOIDCConfigured) {
       Logger.debug(`[Server] passportInit OIDC is configured - init`)
-
       passport.serializeUser((user, next) => {
-        next(null, user);
+        next(null, {userId: user.id});
       })
       passport.deserializeUser((obj, next) => {
+        this.db.users.find(u => u.id === obj.userId)
         next(null, obj);
       })
 
       // Initialize passport OIDC verification
-      passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification))
+      passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification.bind(this.auth)))
     } else {
       Logger.debug(`[Server] passportInit OIDC not configured`)
     }
@@ -260,23 +260,15 @@ class Server {
 
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
 
-    app.get("/oidc/login", (() => {
-      if (!this.db.SSOSettings.isOIDCConfigured) return (req, res) => res.redirect("/");
-      return passport.authenticate('openidconnect')
-    })())
-
-    app.get("/oidc/callback",
-      (() => {
-        if (!this.db.SSOSettings.isOIDCConfigured) return (req, res) => res.redirect("/");
-        return passport.authenticate('openidconnect', { failureRedirect: '/oidc/login', failureMessage: true }),
-          async (req, res) => {
-            const token = this.auth.generateAccessToken({ userId: req.user.id })
-            res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
-
-            res.redirect('/');
-          }
-      })()
-    )
+    if (this.db.SSOSettings.isOIDCConfigured) {
+      app.get("/oidc/login", passport.authenticate('openidconnect'))
+      app.get("/oidc/callback", passport.authenticate('openidconnect', { failureRedirect: '/login', failureMessage: true }),
+        async (req, res) => {
+          res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
+          res.redirect('/');
+        }
+      )
+    }
 
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
