@@ -64,6 +64,7 @@ module.exports = {
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
     '@nuxtjs/tailwindcss',
+    '@nuxtjs/pwa'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -95,6 +96,26 @@ module.exports = {
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
     baseURL: process.env.serverUrl || ''
+  },
+
+  // nuxt/pwa https://pwa.nuxtjs.org
+  pwa: {
+    icon: {
+      source: 'Logo.png'
+    },
+    meta: {
+      appleStatusBarStyle: 'black-translucent',
+      name: 'Audiobookshelf',
+      theme_color: '#373838'
+    },
+    manifest: {
+      name: 'Audiobookshelf',
+      short_name: 'Audiobookshelf',
+      background_color: '#373838'
+    },
+    // workbox: {
+    //   enabled: true // TEMP for dev
+    // }
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
