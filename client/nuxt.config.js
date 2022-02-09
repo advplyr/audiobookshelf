@@ -100,22 +100,34 @@ module.exports = {
 
   // nuxt/pwa https://pwa.nuxtjs.org
   pwa: {
-    icon: {
-      source: 'Logo.png'
-    },
+    icon: false,
     meta: {
-      appleStatusBarStyle: 'black-translucent',
+      appleStatusBarStyle: 'black',
       name: 'Audiobookshelf',
-      theme_color: '#373838'
+      theme_color: '#373838',
+      mobileAppIOS: true,
+      nativeUI: true
     },
     manifest: {
       name: 'Audiobookshelf',
       short_name: 'Audiobookshelf',
-      background_color: '#373838'
-    },
-    // workbox: {
-    //   enabled: true // TEMP for dev
-    // }
+      display: 'standalone',
+      background_color: '#373838',
+      icons: [
+        {
+          src: '/icon64.png',
+          sizes: "64x64"
+        },
+        {
+          src: '/icon192.png',
+          sizes: "120x120 144x144 192x192"
+        },
+        {
+          src: '/Logo.png',
+          sizes: "384x384 512x512"
+        }
+      ]
+    }
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
