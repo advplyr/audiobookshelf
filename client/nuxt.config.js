@@ -120,11 +120,11 @@ module.exports = {
         },
         {
           src: '/icon192.png',
-          sizes: "120x120 144x144 192x192"
+          sizes: "192x192"
         },
         {
           src: '/Logo.png',
-          sizes: "384x384 512x512"
+          sizes: "512x512"
         }
       ]
     }
