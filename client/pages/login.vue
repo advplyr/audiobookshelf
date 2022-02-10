@@ -15,7 +15,7 @@
             <button type="submit" :disabled="processing" class="bg-blue-600 hover:bg-blue-800 px-8 py-1 mt-3 rounded-md text-white text-center transition duration-300 ease-in-out focus:outline-none">{{ processing ? 'Checking...' : 'Submit' }}</button>
           </div>
         </form>
-        <div class="w-full flex justify-end">
+        <div v-if="ssoAvailable" class="w-full flex justify-end">
           <a href="/oidc/login"><ui-btn :disabled="processing" class="bg-blue-600 hover:bg-blue-800 px-8 py-1 mt-3 rounded-md text-white text-center transition duration-300 ease-in-out focus:outline-none">SSO</ui-btn></a>
         </div>
       </div>
@@ -31,7 +31,8 @@ export default {
       error: null,
       processing: false,
       username: '',
-      password: null
+      password: null,
+      ssoAvailable: false
     }
   },
   watch: {
@@ -143,10 +144,19 @@ export default {
             })
         }
       }
+    },
+    async checkSSO() {
+      const res = await fetch("/oidc/login", {mode: "no-cors"})
+      if (res.status >= 400 && res.status < 600) {
+        this.ssoAvailable = false
+        return
+      }
+      this.ssoAvailable = true
     }
   },
   mounted() {
     this.checkAuth()
+    this.checkSSO()
   }
 }
 </script>
