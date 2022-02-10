@@ -297,14 +297,12 @@ class ApiController {
       return res.sendStatus(403)
     }
     let SSOUpdate = req.body
-    Logger.debug("SSOUpdate=", SSOUpdate)
     if (!SSOUpdate || !isObject(SSOUpdate)) {
       return res.status(500).send('Invalid settings update object')
     }
 
 
     var madeUpdates = this.db.SSOSettings.update(SSOUpdate)
-    console.log("SSOUpdate", JSON.stringify(this.db.SSOSettings))
     if (madeUpdates) {
       await this.db.updateEntity('settings', this.db.SSOSettings)
     }

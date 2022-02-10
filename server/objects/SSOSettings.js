@@ -28,7 +28,6 @@ class SSOSettings {
     this.id = 'sso-settings'
     this.user = { ...settings.user }
     this.initOIDCSettings(settings);
-    Logger.debug("[SSOSettings.constructor]", this.toJSON)
   }
 
   initOIDCSettings(settings) {
@@ -75,30 +74,11 @@ class SSOSettings {
     const oldTmp = JSON.stringify(this.toJSON())
     const newTmp = JSON.stringify(payload) // deep copy "for free"
     const hasUpdates = difference(oldTmp, newTmp) !== ""; // Not very efficient, but ok for small objects
-    Logger.debug(`SSOSettings hasUpdates=${hasUpdates}`)
     if (!hasUpdates) return hasUpdates
 
     payload = JSON.parse(newTmp)
     this.oidc = payload.oidc
     this.user = payload.user
-    return hasUpdates
-    Logger.debug("SSOSettings.update", payload, this)
-    for (const key in payload) {
-      Logger.debug(`key: ${key}: ${JSON.stringify(payload[key])}`)
-      if (isObject(payload[key])) {
-        for (const setting in payload[key]) {
-          if (!this[key] || this[key][setting] === payload[key][setting]) {
-            continue
-          }
-          this[key][setting] = payload[key][setting]
-          hasUpdates = true
-        }
-      } else if (this[key] !== undefined && this[key] !== payload[key]) {
-        this[key] = payload[key]
-        hasUpdates = true
-      }
-    }
-    Logger.debug("SSOSettings.update", hasUpdates, this)
     return hasUpdates
   }
 
