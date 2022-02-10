@@ -77,9 +77,9 @@ const chmodr = (p, mode, uid, gid, cb) => {
   })
 }
 
-module.exports = (p, mode, uid, gid) => {
+module.exports = (path, mode, uid, gid) => {
   return new Promise((resolve) => {
-    Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${p}"`)
-    chmodr(p, mode, uid, gid, resolve)
+    Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
+    chmodr(path, mode, uid, gid, resolve)
   })
 }

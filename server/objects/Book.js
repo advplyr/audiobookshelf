@@ -47,6 +47,7 @@ class Book {
   get _language() { return this.language || '' }
   get _isbn() { return this.isbn || '' }
   get _asin() { return this.asin || '' }
+  get genresCommaSeparated() { return this._genres.join(', ') }
 
   get shouldSearchForCover() {
     if (this.cover) return false
