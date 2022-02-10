@@ -14,6 +14,7 @@ class User {
     this.lastSeen = null
     this.createdAt = null
     this.audiobooks = null
+    this.ssoId = null
 
     this.settings = {}
     this.permissions = {}
@@ -84,6 +85,7 @@ class User {
   toJSON() {
     return {
       id: this.id,
+      ssoId: this.ssoId,
       username: this.username,
       pash: this.pash,
       type: this.type,
@@ -138,6 +140,7 @@ class User {
     this.type = user.type
     this.stream = user.stream || null
     this.token = user.token
+    this.ssoId = user.ssoId || ""
     if (user.audiobooks) {
       this.audiobooks = {}
       for (const key in user.audiobooks) {

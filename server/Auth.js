@@ -217,11 +217,12 @@ class Auth {
 
   async handleOIDCVerification(issuer, profile, cb) {
     Logger.debug(`[Auth] handleOIDCVerification ${issuer}`)
-    let user = this.db.users.find(u => u.id === profile.id)
-    if (!user && this.db.SSOSettings.createNewUser) {
+    let user = this.db.users.find(u => u.ssoId === profile.id)
+    if (!user && this.db.SSOSettings.user.createNewUser) {
       // create a user
       let account = {}
-      account.id = profile.id
+      account.id = profile.username
+      account.ssoId = profile.id
       account.username = profile.username
       account.isActive = true
       account.type = "guest"

@@ -112,6 +112,9 @@ export default {
       if (payload.serverSettings) {
         this.$store.commit('setServerSettings', payload.serverSettings)
       }
+      if (payload.SSOSettings) {
+        this.$store.commit('sso/setSSOSettings', payload.SSOSettings)
+      }
 
       // Start scans currently running
       if (payload.librariesScanning) {

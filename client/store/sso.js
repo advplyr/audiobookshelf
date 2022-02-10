@@ -87,20 +87,21 @@ export const actions = {
 
 export const mutations = {
   setSSOSettings(state, settings) {
-    if (!settings) return
+    if (!settings || !settings.oidc || !settings.user) return
 
-    for (const key in settings) {
-      if (state.oidc[key] !== settings[key]) {
-        state.oidc[key] = settings[key]
-      }
+    for (const key in settings.oidc) {
+      state.oidc[key] = settings.oidc[key]
     }
-  },
-  setUserPermissions(state, permissions) {
-    if (!permissions) return
 
-    for (const key in permissions) {
-      if (state.user.permissions[key] !== permissions[key]) {
-        state.user.permissions[key] = permissions[key]
+    for (const key in settings.user) {
+      if (typeof settings.user[key] === "object" && typeof state.user[key] === "object") {
+        for (const key2 in settings.user[key]) {
+          state.user[key][key2] = settings.user[key][key2]
+        }
+        continue
+      }
+      if (state.user[key] !== undefined) {
+        state.user[key] = settings.user[key]
       }
     }
   },

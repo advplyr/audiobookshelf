@@ -85,6 +85,9 @@ class Server {
       return client.user.toJSONForPublic(this.streamManager.streams)
     })
   }
+  get SSOSettings() {
+    return this.db.SSOSettings
+  }
 
   getClientsForUser(userId) {
     return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
@@ -679,6 +682,7 @@ class Server {
     }
     if (user.type === 'root') {
       initialPayload.usersOnline = this.usersOnline
+      initialPayload.SSOSettings = this.SSOSettings
     }
     client.socket.emit('init', initialPayload)
 

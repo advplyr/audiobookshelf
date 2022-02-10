@@ -111,7 +111,6 @@ export default {
         this.$axios
           .$post('/api/authorize', null, {})
           .then((res) => {
-            console.log({res})
             this.setUser(res.user)
             this.processing = false
           })

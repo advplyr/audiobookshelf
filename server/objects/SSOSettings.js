@@ -1,22 +1,51 @@
 const Logger = require('../Logger')
 const User = require('./User')
 const { isObject } = require('../utils')
+const { difference } = require('../utils/string')
 
 const defaultSettings = {
     createNewUser: false,
-    userPermissions: User.getDefaultUserPermissions('guest')
+    user: {
+      createNewUser: false,
+      isActive: true,
+      settings: {
+        mobileOrderBy: 'recent',
+        mobileOrderDesc: true,
+        mobileFilterBy: 'all',
+        orderBy: 'book.title',
+        orderDesc: false,
+        filterBy: 'all',
+        playbackRate: 1,
+        bookshelfCoverSize: 120,
+        collapseSeries: false
+      },
+      permissions: User.getDefaultUserPermissions('guest')
+    }
 }
 
 class SSOSettings {
   constructor(settings = defaultSettings) {
     this.id = 'sso-settings'
-    this.createNewUser = !!settings.createNewUser
-    this.userPermissions = { ...settings.userPermissions }
-    this.initOIDCSettings();
+    this.user = { ...settings.user }
+    this.initOIDCSettings(settings);
+    Logger.debug("[SSOSettings.constructor]", this.toJSON)
   }
 
-  initOIDCSettings() {
+  initOIDCSettings(settings) {
     // can't be part of default settings, because apperently process.env is not set in the beginning
+    if (settings && settings.oidc) {
+      this.oidc = {
+        issuer: settings.oidc.issuer,
+        authorizationURL: settings.oidc.authorizationURL,
+        tokenURL: settings.oidc.tokenURL,
+        userInfoURL: settings.oidc.userInfoURL,
+        clientID: settings.oidc.clientID,
+        clientSecret: settings.oidc.clientSecret,
+        callbackURL: "/oidc/callback",
+        scope: "openid email profile"
+      }
+      return
+    }
     this.oidc = {
       issuer: process.env.OIDC_ISSUER || '',
       authorizationURL: process.env.OIDC_AUTHORIZATION_URL || '',
@@ -34,17 +63,28 @@ class SSOSettings {
   }
 
   toJSON() {
-    return {
+    const tmp = {
       id: this.id,
       oidc: { ...this.oidc },
-      createNewUser: this.createNewUser,
-      userPermissions: { ...this.userPermissions }
+      user: { ...this.user }
     }
+    return tmp
   }
 
   update(payload) {
-    let hasUpdates = false
+    const oldTmp = JSON.stringify(this.toJSON())
+    const newTmp = JSON.stringify(payload) // deep copy "for free"
+    const hasUpdates = difference(oldTmp, newTmp) !== ""; // Not very efficient, but ok for small objects
+    Logger.debug(`SSOSettings hasUpdates=${hasUpdates}`)
+    if (!hasUpdates) return hasUpdates
+
+    payload = JSON.parse(newTmp)
+    this.oidc = payload.oidc
+    this.user = payload.user
+    return hasUpdates
+    Logger.debug("SSOSettings.update", payload, this)
     for (const key in payload) {
+      Logger.debug(`key: ${key}: ${JSON.stringify(payload[key])}`)
       if (isObject(payload[key])) {
         for (const setting in payload[key]) {
           if (!this[key] || this[key][setting] === payload[key][setting]) {
@@ -58,12 +98,13 @@ class SSOSettings {
         hasUpdates = true
       }
     }
+    Logger.debug("SSOSettings.update", hasUpdates, this)
     return hasUpdates
   }
 
   getNewUserPermissions() {
     return {
-      ...this.userPermissions
+      ...this.user.permissions
     }
   }
 
