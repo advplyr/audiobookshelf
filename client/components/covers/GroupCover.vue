@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" :style="{ height: height + 'px', width: width + 'px' }" class="relative" @mouseover="mouseoverCover" @mouseleave="mouseleaveCover">
+  <div ref="wrapper" :style="{ height: height + 'px', width: width + 'px' }" class="relative">
     <div v-if="noValidCovers" class="absolute top-0 left-0 w-full h-full flex items-center justify-center box-shadow-book" :style="{ padding: `${sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier + 'rem' }">{{ name }}</p>
     </div>
@@ -18,7 +18,6 @@ export default {
     width: Number,
     height: Number,
     groupTo: String,
-    isCategorized: Boolean,
     bookCoverAspectRatio: Number
   },
   data() {
@@ -33,7 +32,6 @@ export default {
       isFannedOut: false,
       isDetached: false,
       isAttaching: false,
-      windowWidth: 0,
       isInit: false
     }
   },
@@ -56,10 +54,6 @@ export default {
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
     },
-    showCoverFan() {
-      // return this.showExperimentalFeatures && this.windowWidth > 1024 && !this.isCategorized
-      return false
-    },
     store() {
       return this.$store || this.$nuxt.$store
     },
@@ -68,140 +62,6 @@ export default {
     }
   },
   methods: {
-    mouseoverCover() {
-      if (this.showCoverFan) this.setHover(true)
-    },
-    mouseleaveCover() {
-      if (this.showCoverFan) this.setHover(false)
-    },
-    detchCoverWrapper() {
-      if (!this.coverWrapperEl || !this.$refs.wrapper || this.isDetached) return
-
-      this.coverWrapperEl.remove()
-
-      this.isDetached = true
-      document.body.appendChild(this.coverWrapperEl)
-      this.coverWrapperEl.addEventListener('mouseleave', this.mouseleaveCover)
-
-      this.coverWrapperEl.style.position = 'absolute'
-      this.coverWrapperEl.style.zIndex = 40
-
-      this.updatePosition()
-    },
-    attachCoverWrapper() {
-      if (!this.coverWrapperEl || !this.$refs.wrapper || !this.isDetached) return
-
-      this.coverWrapperEl.remove()
-      this.coverWrapperEl.style.position = 'relative'
-      this.coverWrapperEl.style.left = 'unset'
-      this.coverWrapperEl.style.top = 'unset'
-      this.coverWrapperEl.style.width = this.$refs.wrapper.clientWidth + 'px'
-
-      this.$refs.wrapper.appendChild(this.coverWrapperEl)
-
-      this.isDetached = false
-    },
-    updatePosition() {
-      var rect = this.$refs.wrapper.getBoundingClientRect()
-      this.coverWrapperEl.style.top = rect.top + window.scrollY + 'px'
-
-      this.coverWrapperEl.style.left = rect.left + window.scrollX + 4 + 'px'
-
-      this.coverWrapperEl.style.height = rect.height + 'px'
-      this.coverWrapperEl.style.width = rect.width + 'px'
-    },
-    setHover(val) {
-      if (this.isAttaching) return
-      if (val && !this.isHovering) {
-        this.detchCoverWrapper()
-        this.fanOutCovers()
-      } else if (!val && this.isHovering) {
-        this.isAttaching = true
-        // this.reverseFan()
-        // setTimeout(() => {
-        //   this.attachCoverWrapper()
-        //   this.isAttaching = false
-        // }, 100)
-      }
-      this.isHovering = val
-    },
-    fanOutCovers() {
-      if (this.coverImageEls.length < 2 || this.isFannedOut) return
-      this.isFannedOut = true
-      var fanCoverWidth = this.coverWidth * 0.75
-      var maximumWidth = window.innerWidth - 80
-
-      var totalFanWidth = (this.coverImageEls.length + 1) * fanCoverWidth
-
-      // If Fan width is too large, set new fan cover width
-      if (totalFanWidth > maximumWidth) {
-        fanCoverWidth = maximumWidth / (this.coverImageEls.length + 1)
-      }
-
-      var fanWidth = (this.coverImageEls.length - 1) * fanCoverWidth
-      var offsetLeft = (-1 * fanWidth) / 2
-
-      var rect = this.$refs.wrapper.getBoundingClientRect()
-
-      // If fan is going off page left or right, make adjustment
-      var leftEdge = rect.left + offsetLeft
-      var rightEdge = rect.left + rect.width - offsetLeft
-      if (leftEdge < 0) {
-        offsetLeft += leftEdge * -1
-      }
-      if (rightEdge + 80 > window.innerWidth) {
-        var difference = rightEdge + 80 - window.innerWidth
-        offsetLeft -= difference / 2
-      }
-
-      for (let i = 0; i < this.coverImageEls.length; i++) {
-        var coverEl = this.coverImageEls[i]
-
-        // Series name card pop out further
-        if (i === this.coverImageEls.length - 1) {
-          offsetLeft += fanCoverWidth * 0.25
-        }
-
-        coverEl.style.transform = `translateX(${offsetLeft}px)`
-        offsetLeft += fanCoverWidth
-
-        var coverOverlay = document.createElement('div')
-        coverOverlay.className = 'absolute top-0 left-0 w-full h-full hover:bg-black hover:bg-opacity-40 text-white text-opacity-0 hover:text-opacity-100 flex items-center justify-center cursor-pointer'
-
-        if (coverEl.dataset.volumeNumber) {
-          var pEl = document.createElement('p')
-          pEl.className = 'text-2xl'
-          pEl.textContent = `#${coverEl.dataset.volumeNumber}`
-          coverOverlay.appendChild(pEl)
-        }
-        if (coverEl.dataset.audiobookId) {
-          let audiobookId = coverEl.dataset.audiobookId
-          coverOverlay.addEventListener('click', (e) => {
-            this.router.push(`/audiobook/${audiobookId}`)
-            e.stopPropagation()
-            e.preventDefault()
-          })
-        } else {
-          // Is Series
-          coverOverlay.addEventListener('click', (e) => {
-            this.router.push(this.groupTo)
-            e.stopPropagation()
-            e.preventDefault()
-          })
-        }
-
-        coverEl.appendChild(coverOverlay)
-      }
-    },
-    reverseFan() {
-      if (this.coverImageEls.length < 2 || !this.isFannedOut) return
-      this.isFannedOut = false
-      for (let i = 0; i < this.coverImageEls.length; i++) {
-        var coverEl = this.coverImageEls[i]
-        coverEl.style.transform = 'translateX(0px)'
-        if (coverEl.lastChild) coverEl.lastChild.remove() // Remove cover overlay
-      }
-    },
     getCoverUrl(book) {
       return this.store.getters['audiobooks/getBookCoverSrc'](book, '')
     },
@@ -302,7 +162,7 @@ export default {
       }
       this.noValidCovers = false
 
-      validCovers = validCovers.slice(0, 10);
+      validCovers = validCovers.slice(0, 10)
 
       var coverWidth = this.width
       var widthPer = this.width
@@ -328,12 +188,6 @@ export default {
         coverImageEls.push(img)
       }
 
-      if (this.showCoverFan) {
-        var seriesNameCover = this.createSeriesNameCover(offsetLeft)
-        outerdiv.appendChild(seriesNameCover)
-        coverImageEls.push(seriesNameCover)
-      }
-
       this.coverImageEls = coverImageEls
 
       if (this.$refs.wrapper) {
@@ -342,9 +196,7 @@ export default {
       }
     }
   },
-  mounted() {
-    this.windowWidth = window.innerWidth
-  },
+  mounted() {},
   beforeDestroy() {
     if (this.coverWrapperEl) this.coverWrapperEl.remove()
     if (this.coverImageEls && this.coverImageEls.length) {

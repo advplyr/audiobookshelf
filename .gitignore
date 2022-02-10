@@ -10,3 +10,5 @@ test/
 /client/.nuxt/
 /client/dist/
 /dist/
+
+sw.*

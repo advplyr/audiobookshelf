@@ -1,15 +1,15 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
-      <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
-        <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 208px">
+      <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
+        <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
-          <div class="flex">
+          <div class="flex justify-center">
             <div class="mb-4">
               <div class="flex sm:items-end flex-col sm:flex-row">
                 <h1 class="text-2xl md:text-3xl font-sans">
@@ -73,7 +73,7 @@
                 </div>
               </div>
             </div>
-            <div class="flex-grow" />
+            <div class="hidden md:block flex-grow" />
           </div>
 
           <!-- Alerts -->
@@ -82,7 +82,7 @@
             <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
           </div>
 
-          <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max" :class="resettingProgress ? 'opacity-25' : ''">
+          <div v-if="progressPercent > 0 && progressPercent < 1" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-200 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
             <p class="text-gray-400 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
@@ -90,7 +90,7 @@
             </div>
           </div>
 
-          <div class="flex items-center pt-4">
+          <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ streaming ? 'Streaming' : 'Play' }}
@@ -177,8 +177,7 @@ export default {
     return {
       isRead: false,
       resettingProgress: false,
-      isProcessingReadUpdate: false,
-      windowWidth: 0
+      isProcessingReadUpdate: false
     }
   },
   watch: {
@@ -197,7 +196,7 @@ export default {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
     },
     bookCoverWidth() {
-      return this.windowWidth < 800 ? 176 : 208
+      return 208
     },
     isDeveloperMode() {
       return this.$store.state.developerMode
@@ -453,14 +452,9 @@ export default {
     collectionsClick() {
       this.$store.commit('setSelectedAudiobook', this.audiobook)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
-    },
-    resize() {
-      this.windowWidth = window.innerWidth
     }
   },
   mounted() {
-    this.windowWidth = window.innerWidth
-    window.addEventListener('resize', this.resize)
     this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
 
     // use this audiobooks library id as the current
@@ -469,7 +463,6 @@ export default {
     }
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.resize)
     this.$store.commit('audiobooks/removeListener', 'audiobook')
   }
 }

@@ -9,22 +9,21 @@
       <table id="backups">
         <tr>
           <th>File</th>
-          <th class="w-56">Datetime</th>
-          <th class="w-28">Size</th>
+          <th class="hidden sm:block w-32 md:w-56">Datetime</th>
+          <th class="hidden sm:block w-20 md:w-28">Size</th>
           <th class="w-36"></th>
         </tr>
         <tr v-for="backup in backups" :key="backup.id">
           <td>
-            <p class="truncate">/{{ backup.path.replace(/\\/g, '/') }}</p>
+            <p class="truncate text-xs sm:text-sm md:text-base">/{{ backup.path.replace(/\\/g, '/') }}</p>
           </td>
-          <td class="font-sans">{{ backup.datePretty }}</td>
-          <td class="font-mono">{{ $bytesPretty(backup.fileSize) }}</td>
+          <td class="hidden sm:block font-sans text-base">{{ backup.datePretty }}</td>
+          <td class="hidden sm:block font-mono md:text-base text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
-            <div class="w-full flex items-center justify-center">
+            <div class="w-full flex flex-row items-center justify-center">
               <ui-btn small color="primary" @click="applyBackup(backup)">Apply</ui-btn>
 
               <a :href="`/metadata/${backup.path.replace(/%/g, '%25').replace(/#/g, '%23')}?token=${userToken}`" class="mx-1 pt-0.5 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
-              <!-- <span class="material-icons text-xl hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="downloadBackup">download</span> -->
 
               <span class="material-icons text-xl hover:text-error hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="deleteBackupClick(backup)">delete</span>
             </div>

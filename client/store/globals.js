@@ -1,5 +1,7 @@
 
 export const state = () => ({
+  isMobile: false,
+  isMobileLandscape: false,
   showBatchUserCollectionModal: false,
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
@@ -7,15 +9,13 @@ export const state = () => ({
   showBookshelfTextureModal: false
 })
 
-export const getters = {
-
-}
-
-export const actions = {
-
-}
+export const getters = {}
 
 export const mutations = {
+  updateWindowSize(state, { width, height }) {
+    state.isMobile = width < 768 || height < 768
+    state.isMobileLandscape = state.isMobile && height > width
+  },
   setShowUserCollectionsModal(state, val) {
     state.showBatchUserCollectionModal = false
     state.showUserCollectionsModal = val

@@ -43,7 +43,7 @@ export default {
       return classes.join(' ')
     },
     labelClass() {
-      if (this.small) return 'text-sm'
+      if (this.small) return 'text-xs md:text-sm'
       return ''
     },
     svgClass() {

@@ -502,12 +502,17 @@ export default {
         this.$eventBus.$emit('player-hotkey', name)
         e.preventDefault()
       }
+    },
+    resize() {
+      this.$store.commit('globals/updateWindowSize', { width: window.innerWidth, height: window.innerHeight })
     }
   },
   beforeMount() {
     this.initializeSocket()
   },
   mounted() {
+    this.resize()
+    window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
     this.$store.dispatch('libraries/load')
 
@@ -530,6 +535,7 @@ export default {
     }
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.resize)
     window.removeEventListener('keydown', this.keyDown)
   }
 }
