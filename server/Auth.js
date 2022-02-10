@@ -221,7 +221,7 @@ class Auth {
     if (!user && this.db.SSOSettings.user.createNewUser) {
       // create a user
       let account = {}
-      account.id = profile.username
+      account.id = getId('usr')
       account.ssoId = profile.id
       account.username = profile.username
       account.isActive = true
