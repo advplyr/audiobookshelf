@@ -110,10 +110,10 @@ export default {
         this.$store.commit('user/setSettings', payload.user.settings)
       }
       if (payload.serverSettings) {
-        this.$store.commit('setServerSettings', payload.serverSettings)
+        this.$store.commit('settings/setServerSettings', payload.serverSettings)
       }
       if (payload.SSOSettings) {
-        this.$store.commit('sso/setSSOSettings', payload.SSOSettings)
+        this.$store.commit('settings/setSSOSettings', payload.SSOSettings)
       }
 
       // Start scans currently running

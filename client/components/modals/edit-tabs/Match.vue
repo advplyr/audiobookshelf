@@ -143,7 +143,7 @@ export default {
       }
     },
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['settings/getBookCoverAspectRatio']
     },
     providers() {
       return this.$store.state.scanners.providers

@@ -67,7 +67,7 @@ export default {
   },
   computed: {
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['settings/getBookCoverAspectRatio']
     },
     streamAudiobook() {
       return this.$store.state.streamAudiobook

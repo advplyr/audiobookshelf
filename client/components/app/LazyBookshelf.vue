@@ -109,10 +109,10 @@ export default {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
     },
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
+      return this.$store.getters['settings/getServerSetting']('coverAspectRatio')
     },
     bookshelfView() {
-      return this.$store.getters['getServerSetting']('bookshelfView')
+      return this.$store.getters['settings/getServerSetting']('bookshelfView')
     },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE

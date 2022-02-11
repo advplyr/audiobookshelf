@@ -147,7 +147,7 @@ export default {
   },
   computed: {
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
+      return this.$store.getters['settings/getServerSetting']('coverAspectRatio')
     },
     bookCoverAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6

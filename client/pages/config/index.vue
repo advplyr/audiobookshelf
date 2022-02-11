@@ -123,6 +123,9 @@ export default {
     }
   },
   computed: {
+    serverSettings() {
+      return this.$store.state.settings.serverSettings
+    },
     scannerPreferAudioMetaTooltip() {
       return 'Audio file ID3 meta tags will be used for book details over folder names'
     },
@@ -134,9 +137,6 @@ export default {
     },
     experimentalFeaturesTooltip() {
       return 'Features in development that could use your feedback and help testing.'
-    },
-    serverSettings() {
-      return this.$store.state.serverSettings
     },
     parseSubtitleTooltip() {
       return 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"'
@@ -210,7 +210,7 @@ export default {
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
-        .dispatch('updateServerSettings', payload)
+        .dispatch('settings/updateServerSettings', payload)
         .then((success) => {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false
