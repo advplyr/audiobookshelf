@@ -121,6 +121,14 @@ Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
 
 ## Reverse Proxy Set Up
 
+#### Important! Audiobookshelf requires a websocket connection.
+
+### NGINX Proxy Manager
+
+Toggle websockets support.
+
+<img alt="NGINX Web socket" src="https://user-images.githubusercontent.com/67830747/153679106-b2a7f5b9-0702-48c6-9740-b26b401986e9.png" />
+
 ### NGINX Reverse Proxy
 
 Add this to the site config file on your nginx server after you have changed the relevant parts in the <> brackets, and inserted your certificate paths.
