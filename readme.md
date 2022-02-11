@@ -34,13 +34,14 @@ iOS early beta available using Test Flight: https://testflight.apple.com/join/wi
 
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStream.png" />
 
+<br />
+
 # Organizing your audiobooks
 
 #### Directory structure and folder names are important to Audiobookshelf!
 
  See [documentation](https://audiobookshelf.org/docs) for supported directory structure, folder naming conventions, and audio file metadata usage.
 
-<br />
 <br />
 
 # Installation
@@ -122,7 +123,7 @@ System Service: `/lib/systemd/system/audiobookshelf.service`
 Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
 
 <br />
-<br />
+
 # Reverse Proxy Set Up
 
 #### Important! Audiobookshelf requires a websocket connection.
@@ -214,7 +215,7 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 [from @silentArtifact](https://github.com/advplyr/audiobookshelf/issues/241#issuecomment-1036732329)
 
-
+<br />
 
 # Run from source
 
