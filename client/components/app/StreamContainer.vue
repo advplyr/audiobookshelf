@@ -6,7 +6,7 @@
     <div class="flex items-start pl-24 mb-6 md:mb-0">
       <div>
         <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
-          {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
+          {{ title }}
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
