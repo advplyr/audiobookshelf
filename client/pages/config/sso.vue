@@ -1,50 +1,36 @@
 <template>
   <div>
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
+      <div class="flex items-center mb-4">
         <h1 class="text-xl">SSO Provider Settings</h1>
       </div>
 
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">Issuer&nbsp;</p>
-        <ui-text-input v-model="oidc.issuer" :disabled="updatingSSOSettings" />
+      <div class="flex flex-wrap mb-2 -mx-2">
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.issuer" :disabled="updatingSSOSettings" label="Issuer" />
+        </div>
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.authorizationURL" :disabled="updatingSSOSettings" label="Authorization URL" />
+        </div>
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.tokenURL" :disabled="updatingSSOSettings" label="Token URL" />
+        </div>
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.userInfoURL" :disabled="updatingSSOSettings" label="User Info URL" />
+        </div>
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.clientID" :disabled="updatingSSOSettings" label="Client ID" />
+        </div>
+        <div class="w-full md:w-1/2 px-2 mb-2">
+          <ui-text-input-with-label v-model="oidc.clientSecret" type="password" :disabled="updatingSSOSettings" label="Client Secret" />
+        </div>
       </div>
 
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">Authorization URL&nbsp;</p>
-        <ui-text-input v-model="oidc.authorizationURL" :disabled="updatingSSOSettings" />
-      </div>
-
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">Token URL&nbsp;</p>
-        <ui-text-input v-model="oidc.tokenURL" :disabled="updatingSSOSettings" />
-      </div>
-
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">User Info URL&nbsp;</p>
-        <ui-text-input v-model="oidc.userInfoURL" :disabled="updatingSSOSettings" />
-      </div>
-
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">Client ID&nbsp;</p>
-        <ui-text-input v-model="oidc.clientID" :disabled="updatingSSOSettings" />
-      </div>
-
-      <div class="flex items-center py-2">
-        <p class="pl-4 text-lg">Client Secret&nbsp;</p>
-        <ui-text-input type="password" v-model="oidc.clientSecret" :disabled="updatingSSOSettings" />
-      </div>
-
-      <div class="flex items-center mb-2">
+      <!-- <div class="flex items-center mb-2">
         <h1 class="text-xl">User Settings</h1>
-      </div>
+      </div> -->
 
-      <div class="flex items-center mb-2">
-        <ui-toggle-switch v-model="user.createNewUser" :disabled="updatingSSOSettings" />
-        <p class="pl-4 text-lg">Create a new user on first login</p>
-      </div>
-
-      <div class="flex items-center mb-2">
+      <!-- <div class="flex items-center mb-2">
         <ui-toggle-switch v-model="permissionDownload" :disabled="updatingSSOSettings || !user.createNewUser" />
         <p class="pl-4 text-lg">The new user is allowed to download</p>
       </div>
@@ -67,10 +53,15 @@
       <div class="flex items-center mb-2">
         <ui-toggle-switch v-model="permissionAccessAllLibraries" :disabled="updatingSSOSettings || !user.createNewUser" />
         <p class="pl-4 text-lg">The new user is allowed to access all libraries</p>
-      </div>
+      </div> -->
 
-      <div class="flex items-center mb-2">
-        <ui-btn @click="saveSSOSettings">Save</ui-btn>
+      <div class="flex items-center justify-between pt-4">
+        <div class="flex items-center">
+          <ui-toggle-switch v-model="user.createNewUser" :disabled="updatingSSOSettings" />
+          <p class="pl-4 text-lg">Create a new user on first login</p>
+        </div>
+
+        <ui-btn class="w-48" @click="saveSSOSettings">Save</ui-btn>
       </div>
     </div>
   </div>
