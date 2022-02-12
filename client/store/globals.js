@@ -13,7 +13,7 @@ export const getters = {}
 
 export const mutations = {
   updateWindowSize(state, { width, height }) {
-    state.isMobile = width < 768 || height < 768
+    state.isMobile = width < 640 || height < 640
     state.isMobileLandscape = state.isMobile && height > width
   },
   setShowUserCollectionsModal(state, val) {

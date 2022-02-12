@@ -51,16 +51,6 @@ function bytesPretty(bytes, decimals = 0) {
 }
 module.exports.bytesPretty = bytesPretty
 
-function setFileOwner(path, uid, gid) {
-  try {
-    return fs.chown(path, uid, gid).then(() => true)
-  } catch (err) {
-    console.error('Failed set file owner', err)
-    return false
-  }
-}
-module.exports.setFileOwner = setFileOwner
-
 async function recurseFiles(path, relPathToReplace = null) {
   path = path.replace(/\\/g, '/')
   if (!path.endsWith('/')) path = path + '/'

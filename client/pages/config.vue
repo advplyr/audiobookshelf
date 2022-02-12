@@ -2,7 +2,7 @@
   <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamAudiobook ? 'streaming' : ''">
     <app-config-side-nav :is-open.sync="sideDrawerOpen" />
     <div class="configContent" :class="`page-${currentPage}`">
-      <div class="w-full pb-4 px-2 flex md:hidden border-b border-white border-opacity-10 mb-2">
+      <div v-show="isMobile" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2">
         <span class="material-icons cursor-pointer" @click.stop.prevent="showMore">more_vert</span>
         <p class="pl-3 capitalize">{{ currentPage }}</p>
       </div>
@@ -35,6 +35,9 @@ export default {
     }
   },
   computed: {
+    isMobile() {
+      return this.$store.state.globals.isMobile
+    },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
     },
@@ -78,12 +81,12 @@ export default {
 .configContent.page-library-stats {
   width: 1200px;
 }
-@media (max-width: 1024px) {
+@media (max-width: 1240px) {
   .configContent {
     margin-left: 176px;
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .configContent {
     margin-left: 0px;
     width: 100%;

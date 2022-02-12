@@ -12,7 +12,7 @@
   </p>
 </div>
 
-## About
+# About
 
 Audiobookshelf is a self-hosted audiobook server for managing and playing your audiobooks.
 
@@ -34,14 +34,17 @@ iOS early beta available using Test Flight: https://testflight.apple.com/join/wi
 
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStream.png" />
 
-## Organizing your audiobooks
+<br />
+
+# Organizing your audiobooks
 
 #### Directory structure and folder names are important to Audiobookshelf!
 
  See [documentation](https://audiobookshelf.org/docs) for supported directory structure, folder naming conventions, and audio file metadata usage.
 
+<br />
 
-## Installation
+# Installation
 
 ** Default username is "root" with no password
 
@@ -119,7 +122,17 @@ System Service: `/lib/systemd/system/audiobookshelf.service`
 
 Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
 
-## Reverse Proxy Set Up
+<br />
+
+# Reverse Proxy Set Up
+
+#### Important! Audiobookshelf requires a websocket connection.
+
+### NGINX Proxy Manager
+
+Toggle websockets support.
+
+<img alt="NGINX Web socket" src="https://user-images.githubusercontent.com/67830747/153679106-b2a7f5b9-0702-48c6-9740-b26b401986e9.png" />
 
 ### NGINX Reverse Proxy
 
@@ -191,10 +204,23 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 [See this solution](https://forums.unraid.net/topic/112698-support-audiobookshelf/?do=findComment&comment=1049637)
 
-## Run from source
+### Synology Reverse Proxy
+
+1. Open Control Panel > Application Portal
+2. Change to the Reverse Proxy tab
+3. Select the proxy rule for which you want to enable Websockets and click on Edit
+4. Change to the "Custom Header" tab
+5. Click Create > WebSocket
+6. Click Save
+
+[from @silentArtifact](https://github.com/advplyr/audiobookshelf/issues/241#issuecomment-1036732329)
+
+<br />
+
+# Run from source
 
 [See discussion](https://github.com/advplyr/audiobookshelf/discussions/259#discussioncomment-1869729)
 
-## Contributing / How to Support
+# Contributing / How to Support
 
 [See the incomplete "How to Support" page](https://www.audiobookshelf.org/support)
