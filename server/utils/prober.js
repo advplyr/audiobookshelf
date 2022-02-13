@@ -1,9 +1,4 @@
 const ffprobe = require('node-ffprobe')
-
-if (process.env.FFPROBE_PATH) {
-  ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
-}
-
 const AudioProbeData = require('../scanner/AudioProbeData')
 
 const Logger = require('../Logger')
@@ -281,6 +276,10 @@ function parseProbeData(data, verbose = false) {
 
 // Updated probe returns AudioProbeData object
 function probe(filepath, verbose = false) {
+  if (process.env.FFPROBE_PATH) {
+    ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
+  }
+
   return ffprobe(filepath)
     .then(raw => {
       var rawProbeData = parseProbeData(raw, verbose)

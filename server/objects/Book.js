@@ -49,6 +49,20 @@ class Book {
   get _asin() { return this.asin || '' }
   get genresCommaSeparated() { return this._genres.join(', ') }
 
+  get titleIgnorePrefix() {
+    if (this._title.toLowerCase().startsWith('the ')) {
+      return this._title.substr(4) + ', The'
+    }
+    return this._title
+  }
+
+  get seriesIgnorePrefix() {
+    if (this._series.toLowerCase().startsWith('the ')) {
+      return this._series.substr(4) + ', The'
+    }
+    return this._series
+  }
+
   get shouldSearchForCover() {
     if (this.cover) return false
     if (this.authorFL !== this.lastCoverSearchAuthor || this.title !== this.lastCoverSearchTitle || !this.lastCoverSearch) return true

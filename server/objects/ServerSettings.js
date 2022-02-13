@@ -38,6 +38,8 @@ class ServerSettings {
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
     this.bookshelfView = BookshelfView.STANDARD
 
+    this.sortingIgnorePrefix = false
+
     this.logLevel = Logger.logLevel
     this.version = null
 
@@ -70,6 +72,8 @@ class ServerSettings {
     this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
+    this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
+
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -99,6 +103,7 @@ class ServerSettings {
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
       bookshelfView: this.bookshelfView,
+      sortingIgnorePrefix: this.sortingIgnorePrefix,
       logLevel: this.logLevel,
       version: this.version
     }

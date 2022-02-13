@@ -10,22 +10,36 @@
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
         <ui-tooltip :text="coverDestinationTooltip">
-          <p class="pl-4 text-lg">Store covers with audiobook <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Store covers with audiobook
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
         <ui-tooltip :text="coverAspectRatioTooltip">
-          <p class="pl-4 text-lg">Use square book covers <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Use square book covers
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
         <ui-tooltip :text="bookshelfViewTooltip">
-          <p class="pl-4 text-lg">Use alternative library bookshelf view <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Use alternative library bookshelf view
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="updateSortIgnorePrefix" />
+        <p class="pl-4 text-lg">Ignore prefix "The" when sorting title and series</p>
       </div>
 
       <div class="flex items-center mb-2 mt-8">
@@ -35,14 +49,20 @@
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" small :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
         <ui-tooltip :text="parseSubtitleTooltip">
-          <p class="pl-4 text-lg">Scanner parse subtitles <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Scanner parse subtitles
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updateScannerFindCovers" />
         <ui-tooltip :text="scannerFindCoversTooltip">
-          <p class="pl-4 text-lg">Scanner find covers <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Scanner find covers
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
         <div class="flex-grow" />
       </div>
@@ -53,14 +73,20 @@
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferAudioMeta" />
         <ui-tooltip :text="scannerPreferAudioMetaTooltip">
-          <p class="pl-4 text-lg">Scanner prefer audio metadata <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Scanner prefer audio metadata
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
         <ui-tooltip :text="scannerPreferOpfMetaTooltip">
-          <p class="pl-4 text-lg">Scanner prefer OPF metadata <span class="material-icons icon-text">info_outlined</span></p>
+          <p class="pl-4 text-lg">
+            Scanner prefer OPF metadata
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
         </ui-tooltip>
       </div>
     </div>
@@ -71,7 +97,10 @@
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click="purgeCache">Purge Cache</ui-btn>
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingAudiobooks" @click="resetAudiobooks">Remove All Audiobooks</ui-btn>
       <div class="flex-grow" />
-      <p class="pr-2 text-sm font-book text-yellow-400">Report bugs, request features, provide feedback, and contribute on <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>.</p>
+      <p class="pr-2 text-sm font-book text-yellow-400">
+        Report bugs, request features, provide feedback, and contribute on
+        <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>.
+      </p>
       <a href="https://github.com/advplyr/audiobookshelf" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
         <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" width="24" height="24" viewBox="0 0 24 24">
           <path
@@ -89,13 +118,16 @@
           <div class="flex items-center">
             <ui-toggle-switch v-model="showExperimentalFeatures" />
             <ui-tooltip :text="experimentalFeaturesTooltip">
-              <p class="pl-4 text-lg">Experimental Features <span class="material-icons icon-text">info_outlined</span></p>
+              <p class="pl-4 text-lg">
+                Experimental Features
+                <span class="material-icons icon-text">info_outlined</span>
+              </p>
             </ui-tooltip>
           </div>
         </div>
         <!-- <div class="hidden md:block">
           <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
-        </div> -->
+        </div>-->
       </div>
     </div>
   </div>
@@ -166,6 +198,11 @@ export default {
     }
   },
   methods: {
+    updateSortIgnorePrefix(val) {
+      this.updateServerSettings({
+        sortingIgnorePrefix: val
+      })
+    },
     updateScannerFindCovers(val) {
       this.updateServerSettings({
         scannerFindCovers: !!val

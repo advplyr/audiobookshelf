@@ -144,10 +144,19 @@ class LibraryController {
     }
 
     if (payload.sortBy) {
+      var sortKey = payload.sortBy
+
+      // Handle server setting sortingIgnorePrefix
+      if ((sortKey === 'book.series' || sortKey === 'book.title') && this.db.serverSettings.sortingIgnorePrefix) {
+        // Book.js has seriesIgnorePrefix and titleIgnorePrefix getters
+        sortKey += 'IgnorePrefix'
+      }
+
       var direction = payload.sortDesc ? 'desc' : 'asc'
       audiobooks = naturalSort(audiobooks)[direction]((ab) => {
+
         // Supports dot notation strings i.e. "book.title"
-        return payload.sortBy.split('.').reduce((a, b) => a[b], ab)
+        return sortKey.split('.').reduce((a, b) => a[b], ab)
       })
     }
 
@@ -202,7 +211,14 @@ class LibraryController {
     }
 
     var series = libraryHelpers.getSeriesFromBooks(audiobooks, payload.minified)
-    series = sort(series).asc(s => s.name)
+
+    var sortingIgnorePrefix = this.db.serverSettings.sortingIgnorePrefix
+    series = sort(series).asc(s => {
+      if (sortingIgnorePrefix && s.name.toLowerCase().startsWith('the')) {
+        return s.name.substr(4)
+      }
+      return s.name
+    })
     payload.total = series.length
 
     if (payload.limit) {
