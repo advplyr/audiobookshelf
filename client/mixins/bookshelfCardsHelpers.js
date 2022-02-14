@@ -55,6 +55,11 @@ export default {
         bookshelfView: this.bookshelfView
       }
       if (this.entityName === 'series-books') props.showVolumeNumber = true
+      if (this.entityName === 'books') {
+        props.filterBy = this.filterBy
+        props.orderBy = this.orderBy
+        props.sortingIgnorePrefix = !!this.sortingIgnorePrefix
+      }
 
       var _this = this
       var instance = new ComponentClass({

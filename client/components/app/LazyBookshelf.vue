@@ -2,9 +2,6 @@
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
-          <p class="text-white text-2xl">{{ shelf }}</p>
-        </div>-->
         <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
@@ -115,6 +112,9 @@ export default {
     },
     bookshelfView() {
       return this.$store.getters['getServerSetting']('bookshelfView')
+    },
+    sortingIgnorePrefix() {
+      return this.$store.getters['getServerSetting']('sortingIgnorePrefix')
     },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE

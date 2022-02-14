@@ -5,11 +5,12 @@
       <div class="absolute cover-bg" ref="coverBg" />
     </div>
 
-    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${sizeMultiplier * 3}rem` }">
+    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ title }}
+        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ displayTitle }}
       </p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ authorFL }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor }}</p>
+      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
 
     <div v-if="booksInSeries" class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ booksInSeries }}</div>
@@ -99,7 +100,10 @@ export default {
       // Book can be passed as prop or set with setEntity()
       type: Object,
       default: () => null
-    }
+    },
+    orderBy: String,
+    filterBy: String,
+    sortingIgnorePrefix: Boolean
   },
   data() {
     return {
@@ -179,6 +183,24 @@ export default {
     },
     volumeNumber() {
       return this.book.volumeNumber || null
+    },
+    displayTitle() {
+      if (this.orderBy === 'book.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
+        return this.title.substr(4) + ', The'
+      } else {
+        console.log('DOES NOT COMPUTE', this.orderBy, this.sortingIgnorePrefix, this.title.toLowerCase())
+      }
+      return this.title
+    },
+    displayAuthor() {
+      if (this.orderBy === 'book.authorLF') return this.authorLF
+      return this.authorFL
+    },
+    displaySortLine() {
+      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._audiobook.addedAt)
+      if (this.orderBy === 'duration') return 'Duration: ' +  this.$elapsedPrettyExtended(this._audiobook.duration, false)
+      if (this.orderBy === 'size')  return 'Size: ' + this.$bytesPretty(this._audiobook.size)
+      return null
     },
     userProgress() {
       return this.store.getters['user/getUserAudiobook'](this.audiobookId)
@@ -322,6 +344,11 @@ export default {
     isAlternativeBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.TITLES
+    },
+    titleDisplayBottomOffset() {
+      if (!this.isAlternativeBookshelfView) return 0
+      else if (!this.displaySortLine) return 3 * this.sizeMultiplier
+      return 4.25 * this.sizeMultiplier
     }
   },
   methods: {
