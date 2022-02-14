@@ -30,12 +30,13 @@ Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/
 
 Join us on [discord](https://discord.gg/pJsjuNCKRq)
 
-#### Android App (beta)
+### Android App (beta)
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
-#### iOS App (early beta)
+### iOS App (early beta)
 Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
 
+<br />
 
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStreamSquare.png" />
 
