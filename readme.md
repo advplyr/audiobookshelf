@@ -26,11 +26,16 @@ Audiobookshelf is a self-hosted audiobook server for managing and playing your a
 * Upload full audiobooks and covers
 * Backup your metadata + automated daily backups
 
-Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new)
+Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
-Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
+Join us on [discord](https://discord.gg/pJsjuNCKRq)
 
-iOS early beta available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+#### Android App (beta)
+Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
+
+#### iOS App (early beta)
+Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+
 
 <img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStreamSquare.png" />
 
