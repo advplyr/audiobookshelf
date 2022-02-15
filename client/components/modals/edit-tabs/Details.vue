@@ -181,8 +181,8 @@ export default {
       this.quickMatching = true
       var matchOptions = {
         provider: this.libraryProvider,
-        title: details.title,
-        author: details.author !== this.book.author ? details.author : null
+        title: this.details.title,
+        author: this.details.author !== this.book.author ? this.details.author : null
       }
       this.$axios
         .$post(`/api/books/${this.audiobookId}/match`, matchOptions)
