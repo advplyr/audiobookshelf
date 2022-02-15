@@ -118,6 +118,15 @@ export default {
       showCoverBg: false
     }
   },
+  watch: {
+    bookMount: {
+      handler(newVal) {
+        if (newVal) {
+          this.audiobook = newVal
+        }
+      }
+    }
+  },
   computed: {
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
@@ -198,8 +207,8 @@ export default {
     },
     displaySortLine() {
       if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._audiobook.addedAt)
-      if (this.orderBy === 'duration') return 'Duration: ' +  this.$elapsedPrettyExtended(this._audiobook.duration, false)
-      if (this.orderBy === 'size')  return 'Size: ' + this.$bytesPretty(this._audiobook.size)
+      if (this.orderBy === 'duration') return 'Duration: ' + this.$elapsedPrettyExtended(this._audiobook.duration, false)
+      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._audiobook.size)
       return null
     },
     userProgress() {
