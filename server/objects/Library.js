@@ -8,6 +8,7 @@ class Library {
     this.folders = []
     this.displayOrder = 1
     this.icon = 'database'
+    this.provider = 'google'
 
     this.lastScan = 0
 
@@ -29,6 +30,7 @@ class Library {
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
+    this.provider = library.provider || 'google'
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
@@ -41,6 +43,7 @@ class Library {
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
+      provider: this.provider,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }

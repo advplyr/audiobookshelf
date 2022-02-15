@@ -6,7 +6,14 @@
     </div>
 
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
-      <ui-text-input-with-label v-model="name" label="Library Name" />
+      <div class="flex flex-wrap -mx-1">
+        <div class="w-full md:w-2/3 px-1">
+          <ui-text-input-with-label v-model="name" label="Library Name" />
+        </div>
+        <div class="w-full md:w-1/3 px-1">
+          <ui-dropdown v-model="provider" :items="providers" label="Metadata Provider" small />
+        </div>
+      </div>
 
       <div class="w-full py-4">
         <p class="px-1 text-sm font-semibold">Folders</p>
@@ -42,6 +49,7 @@ export default {
   data() {
     return {
       name: '',
+      provider: '',
       folders: [],
       showDirectoryPicker: false
     }
@@ -62,6 +70,9 @@ export default {
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
       return newfolderpaths === origfolderpaths && this.name === this.library.name
+    },
+    providers() {
+      return this.$store.state.scanners.providers
     }
   },
   methods: {
@@ -75,6 +86,7 @@ export default {
     },
     init() {
       this.name = this.library ? this.library.name : ''
+      this.provider = this.library ? this.library.provider : ''
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
       this.showDirectoryPicker = false
     },
@@ -100,6 +112,7 @@ export default {
       }
       var newLibraryPayload = {
         name: this.name,
+        provider: this.provider,
         folders: this.folders
       }
 
@@ -132,6 +145,7 @@ export default {
       }
       var newLibraryPayload = {
         name: this.name,
+        provider: this.provider,
         folders: this.folders
       }
 
