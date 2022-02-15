@@ -82,6 +82,7 @@ class ApiController {
     this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
     this.router.get('/books/:id/cover', BookController.getCover.bind(this))
     this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
+    this.router.post('/books/:id/match', BookController.match.bind(this))
 
     // TEMP: Support old syntax for mobile app
     this.router.get('/audiobooks', BookController.findAll.bind(this)) // Old route should pass library id

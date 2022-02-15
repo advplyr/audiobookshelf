@@ -69,7 +69,7 @@ export default {
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
-      return newfolderpaths === origfolderpaths && this.name === this.library.name
+      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider
     },
     providers() {
       return this.$store.state.scanners.providers

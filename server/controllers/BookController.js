@@ -18,9 +18,6 @@ class BookController {
   }
 
   findOne(req, res) {
-    if (!req.user) {
-      return res.sendStatus(403)
-    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
 
@@ -48,8 +45,8 @@ class BookController {
     var hasUpdates = audiobook.update(req.body)
     if (hasUpdates) {
       await this.db.updateAudiobook(audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     }
-    this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     res.json(audiobook.toJSON())
   }
 
@@ -258,6 +255,72 @@ class BookController {
       width: width ? parseInt(width) : null
     }
     return this.cacheManager.handleCoverCache(res, audiobook, options)
+  }
+
+  // POST api/books/:id/match
+  async match(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to match without permission', req.user)
+      return res.sendStatus(403)
+    }
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook || !audiobook.book.cover) return res.sendStatus(404)
+
+    // Check user can access this audiobooks library
+    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    var options = req.body || {}
+    var provider = options.provider || 'google'
+    var searchTitle = options.title || audiobook.book._title
+    var searchAuthor = options.author || audiobook.book._author
+
+    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
+    if (!results.length) {
+      return res.json({
+        warning: `No ${provider} match found`
+      })
+    }
+    var matchData = results[0]
+
+    // Update cover if not set OR overrideCover flag
+    var hasUpdated = false
+    if (matchData.cover && (!audiobook.book.cover || options.overrideCover)) {
+      Logger.debug(`[BookController] Updating cover "${matchData.cover}"`)
+      var coverResult = await this.coverController.downloadCoverFromUrl(audiobook, matchData.cover)
+      if (!coverResult || coverResult.error || !coverResult.cover) {
+        Logger.warn(`[BookController] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+      } else {
+        hasUpdated = true
+      }
+    }
+
+    // Update book details if not set OR overrideDetails flag
+    const detailKeysToUpdate = ['title', 'subtitle', 'author', 'narrator', 'publisher', 'publishYear', 'series', 'volumeNumber', 'asin', 'isbn']
+    const updatePayload = {}
+    for (const key in matchData) {
+      if (matchData[key] && detailKeysToUpdate.includes(key) && (!audiobook.book[key] || options.overrideDetails)) {
+        updatePayload[key] = matchData[key]
+      }
+    }
+
+    if (Object.keys(updatePayload).length) {
+      Logger.debug('[BookController] Updating details', updatePayload)
+      if (audiobook.update({ book: updatePayload })) {
+        hasUpdated = true
+      }
+    }
+
+    if (hasUpdated) {
+      await this.db.updateEntity('audiobook', audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
+    }
+
+    res.json({
+      updated: hasUpdated,
+      audiobook: audiobook.toJSONExpanded()
+    })
   }
 }
 module.exports = new BookController()

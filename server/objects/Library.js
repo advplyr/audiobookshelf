@@ -78,6 +78,10 @@ class Library {
       this.name = payload.name
       hasUpdates = true
     }
+    if (payload.provider && payload.provider !== this.provider) {
+      this.provider = payload.provider
+      hasUpdates = true
+    }
     if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {
       this.displayOrder = Number(payload.displayOrder)
       hasUpdates = true
