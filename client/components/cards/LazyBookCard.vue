@@ -39,13 +39,13 @@
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && audiobook && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
       <div v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
         </div>
       </div>
 
       <div v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
         </div>
       </div>
