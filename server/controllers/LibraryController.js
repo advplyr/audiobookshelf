@@ -475,28 +475,8 @@ class LibraryController {
       Logger.error(`[LibraryController] Non-root user attempted to match library books`, req.user)
       return res.sendStatus(403)
     }
+    this.scanner.matchLibraryBooks(req.library)
     res.sendStatus(200)
-
-    const provider = req.library.provider || 'google'
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
-    const resultPayload = {
-      library: library.toJSON(),
-      total: audiobooksInLibrary.length,
-      updated: 0
-    }
-
-    for (let i = 0; i < audiobooksInLibrary.length; i++) {
-      var audiobook = audiobooksInLibrary[i]
-      Logger.debug(`[LibraryController] matchBooks quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
-      var result = await this.quickMatchBook(audiobook, { provider })
-      if (result.warning) {
-        Logger.warn(`[LibraryController] matchBooks warning ${result.warning} for audiobook "${audiobook.title}"`)
-      } else if (result.updated) {
-        resultPayload.updated++
-      }
-    }
-
-    this.clientEmitter(req.usr.id, 'library-match-results', resultPayload)
   }
 
   middleware(req, res, next) {

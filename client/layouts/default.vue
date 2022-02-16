@@ -205,7 +205,7 @@ export default {
     scanComplete(data) {
       console.log('Scan complete received', data)
 
-      var message = `Scan "${data.name}" complete!`
+      var message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" complete!`
       if (data.results) {
         var scanResultMsgs = []
         var results = data.results
@@ -216,7 +216,7 @@ export default {
         if (!scanResultMsgs.length) message += '\nEverything was up to date'
         else message += '\n' + scanResultMsgs.join('\n')
       } else {
-        message = `Scan "${data.name}" was canceled`
+        message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" was canceled`
       }
 
       var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
@@ -232,7 +232,7 @@ export default {
       this.$root.socket.emit('cancel_scan', id)
     },
     scanStart(data) {
-      data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
+      data.toastId = this.$toast(`${data.type === 'match' ? 'Matching' : 'Scanning'} "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
       this.$store.commit('scanners/addUpdate', data)
     },
     scanProgress(data) {

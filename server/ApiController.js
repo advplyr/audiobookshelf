@@ -18,9 +18,10 @@ const AuthorFinder = require('./AuthorFinder')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
-  constructor(MetadataPath, db, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(MetadataPath, db, auth, scanner, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
+    this.scanner = scanner
     this.streamManager = streamManager
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
@@ -516,58 +517,6 @@ class ApiController {
     Logger.info(`[ApiController] Purging all cache`)
     await this.cacheManager.purgeAll()
     res.sendStatus(200)
-  }
-
-  async quickMatchBook(audiobook, options = {}) {
-    var provider = options.provider || 'google'
-    var searchTitle = options.title || audiobook.book._title
-    var searchAuthor = options.author || audiobook.book._author
-
-    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
-    if (!results.length) {
-      return {
-        warning: `No ${provider} match found`
-      }
-    }
-    var matchData = results[0]
-
-    // Update cover if not set OR overrideCover flag
-    var hasUpdated = false
-    if (matchData.cover && (!audiobook.book.cover || options.overrideCover)) {
-      Logger.debug(`[BookController] Updating cover "${matchData.cover}"`)
-      var coverResult = await this.coverController.downloadCoverFromUrl(audiobook, matchData.cover)
-      if (!coverResult || coverResult.error || !coverResult.cover) {
-        Logger.warn(`[BookController] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
-      } else {
-        hasUpdated = true
-      }
-    }
-
-    // Update book details if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'author', 'narrator', 'publisher', 'publishYear', 'series', 'volumeNumber', 'asin', 'isbn']
-    const updatePayload = {}
-    for (const key in matchData) {
-      if (matchData[key] && detailKeysToUpdate.includes(key) && (!audiobook.book[key] || options.overrideDetails)) {
-        updatePayload[key] = matchData[key]
-      }
-    }
-
-    if (Object.keys(updatePayload).length) {
-      Logger.debug('[BookController] Updating details', updatePayload)
-      if (audiobook.update({ book: updatePayload })) {
-        hasUpdated = true
-      }
-    }
-
-    if (hasUpdated) {
-      await this.db.updateEntity('audiobook', audiobook)
-      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
-    }
-
-    return {
-      updated: hasUpdated,
-      audiobook: audiobook.toJSONExpanded()
-    }
   }
 }
 module.exports = ApiController

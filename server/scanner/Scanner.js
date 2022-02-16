@@ -625,5 +625,101 @@ class Scanner {
       Logger.info(`[Scanner] Updated ${audiobooksUpdated} audiobook IDs`)
     }
   }
+
+  async quickMatchBook(audiobook, options = {}) {
+    var provider = options.provider || 'google'
+    var searchTitle = options.title || audiobook.book._title
+    var searchAuthor = options.author || audiobook.book._author
+
+    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
+    if (!results.length) {
+      return {
+        warning: `No ${provider} match found`
+      }
+    }
+    var matchData = results[0]
+
+    // Update cover if not set OR overrideCover flag
+    var hasUpdated = false
+    if (matchData.cover && (!audiobook.book.cover || options.overrideCover)) {
+      Logger.debug(`[BookController] Updating cover "${matchData.cover}"`)
+      var coverResult = await this.coverController.downloadCoverFromUrl(audiobook, matchData.cover)
+      if (!coverResult || coverResult.error || !coverResult.cover) {
+        Logger.warn(`[BookController] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+      } else {
+        hasUpdated = true
+      }
+    }
+
+    // Update book details if not set OR overrideDetails flag
+    const detailKeysToUpdate = ['title', 'subtitle', 'author', 'narrator', 'publisher', 'publishYear', 'series', 'volumeNumber', 'asin', 'isbn']
+    const updatePayload = {}
+    for (const key in matchData) {
+      if (matchData[key] && detailKeysToUpdate.includes(key) && (!audiobook.book[key] || options.overrideDetails)) {
+        updatePayload[key] = matchData[key]
+      }
+    }
+
+    if (Object.keys(updatePayload).length) {
+      Logger.debug('[BookController] Updating details', updatePayload)
+      if (audiobook.update({ book: updatePayload })) {
+        hasUpdated = true
+      }
+    }
+
+    if (hasUpdated) {
+      await this.db.updateEntity('audiobook', audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
+    }
+
+    return {
+      updated: hasUpdated,
+      audiobook: audiobook.toJSONExpanded()
+    }
+  }
+
+  async matchLibraryBooks(library) {
+    if (this.isLibraryScanning(library.id)) {
+      Logger.error(`[Scanner] Already scanning ${library.id}`)
+      return
+    }
+
+    const provider = library.provider || 'google'
+    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    if (!audiobooksInLibrary.length) {
+      return
+    }
+
+    var libraryScan = new LibraryScan()
+    libraryScan.setData(library, null, 'match')
+    this.librariesScanning.push(libraryScan.getScanEmitData)
+    this.emitter('scan_start', libraryScan.getScanEmitData)
+
+    Logger.info(`[Scanner] Starting library match books scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+
+    for (let i = 0; i < audiobooksInLibrary.length; i++) {
+      var audiobook = audiobooksInLibrary[i]
+      Logger.debug(`[Scanner] Quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
+      var result = await this.quickMatchBook(audiobook, { provider })
+      if (result.warning) {
+        Logger.warn(`[Scanner] Match warning ${result.warning} for audiobook "${audiobook.title}"`)
+      } else if (result.updated) {
+        libraryScan.resultsUpdated++
+      }
+
+      if (this.cancelLibraryScan[libraryScan.libraryId]) {
+        Logger.info(`[Scanner] Library match scan canceled for "${libraryScan.libraryName}"`)
+        delete this.cancelLibraryScan[libraryScan.libraryId]
+        var scanData = libraryScan.getScanEmitData
+        scanData.results = false
+        this.emitter('scan_complete', scanData)
+        this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+        return
+      }
+    }
+
+    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    this.emitter('scan_complete', libraryScan.getScanEmitData)
+  }
 }
 module.exports = Scanner

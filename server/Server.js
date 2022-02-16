@@ -55,7 +55,7 @@ class Server {
     this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.Uid, this.Gid)
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.MetadataPath, this.db, this.auth, this.scanner, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager

@@ -272,7 +272,7 @@ class BookController {
     }
 
     var options = req.body || {}
-    var matchResult = await this.quickMatchBook(audiobook, options)
+    var matchResult = await this.scanner.quickMatchBook(audiobook, options)
     res.json(matchResult)
   }
 }
