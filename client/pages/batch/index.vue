@@ -1,31 +1,58 @@
 <template>
   <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
-    <!-- <div class="flex justify-center max-w-3xl mx-auto border border-black-300 p-6 mb-2">
-      <div class="flex-grow">
-        <p class="text-xl mb-4">Batch edit {{ audiobooks.length }} books</p>
+    <div class="border border-white border-opacity-10 max-w-7xl mx-auto mb-10 mt-5">
+      <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
+        <span class="material-icons">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
-        <div class="flex items-center px-1">
-          <ui-checkbox v-model="selectedBatchUsage.author" />
-          <ui-text-input-with-label v-model="batchBook.author" :disabled="!selectedBatchUsage.author" label="Author" class="mb-4 ml-4" />
-        </div>
-        <div class="flex items-center px-1">
-          <ui-checkbox v-model="selectedBatchUsage.series" />
-          <ui-input-dropdown v-model="batchBook.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @input="seriesChanged" @newItem="newSeriesItem" class="mb-4 ml-4" />
-        </div>
-        <div class="flex items-center px-1">
-          <ui-checkbox v-model="selectedBatchUsage.genres" />
-          <ui-multi-select v-model="batchBook.genres" :disabled="!selectedBatchUsage.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
-        </div>
-        <div class="flex items-center px-1">
-          <ui-checkbox v-model="selectedBatchUsage.narrator" />
-          <ui-text-input-with-label v-model="batchBook.narrator" :disabled="!selectedBatchUsage.narrator" label="Narrator" class="mb-4 ml-4" />
-        </div>
-        <div class="flex items-center px-1">
-          <ui-checkbox v-model="selectedBatchUsage.tags" />
-          <ui-multi-select v-model="batchTags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
-        </div>
+        <p class="ml-4 text-gray-200 text-lg">Map details</p>
       </div>
-    </div> -->
+      <div class="overflow-hidden">
+        <transition name="slide">
+          <div v-if="openMapOptions" class="flex flex-wrap">
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.subtitle" />
+              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" label="Subtitle" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.author" />
+              <ui-text-input-with-label ref="authorInput" v-model="batchDetails.author" :disabled="!selectedBatchUsage.author" label="Author" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.publishYear" />
+              <ui-text-input-with-label ref="publishYearInput" v-model="batchDetails.publishYear" :disabled="!selectedBatchUsage.publishYear" label="Publish Year" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.series" />
+              <ui-input-dropdown ref="seriesDropdown" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @input="seriesChanged" @newItem="newSeriesItem" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.genres" />
+              <ui-multi-select ref="genresSelect" v-model="batchDetails.genres" :disabled="!selectedBatchUsage.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.tags" />
+              <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.narrator" />
+              <ui-text-input-with-label ref="narratorInput" v-model="batchDetails.narrator" :disabled="!selectedBatchUsage.narrator" label="Narrator" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.publisher" />
+              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" label="Publisher" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.language" />
+              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" label="Language" class="mb-4 ml-4" />
+            </div>
+
+            <div class="w-full flex items-center justify-end p-4">
+              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">Apply</ui-btn>
+            </div>
+          </div>
+        </transition>
+      </div>
+    </div>
 
     <div class="flex justify-center flex-wrap">
       <template v-for="audiobook in audiobookCopies">
@@ -130,19 +157,29 @@ export default {
       newSeriesItems: [],
       newTagItems: [],
       newGenreItems: [],
-      batchBook: {
+      batchDetails: {
+        subtitle: null,
         author: null,
-        genres: [],
+        publishYear: null,
         series: null,
-        narrator: null
+        genres: [],
+        tags: [],
+        narrator: null,
+        publisher: null,
+        language: null
       },
       selectedBatchUsage: {
+        subtitle: false,
         author: false,
-        genres: false,
+        publishYear: false,
         series: false,
-        narrator: false
+        genres: false,
+        tags: false,
+        narrator: false,
+        publisher: false,
+        language: false
       },
-      batchTags: []
+      openMapOptions: false
     }
   },
   computed: {
@@ -178,9 +215,46 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    hasSelectedBatchUsage() {
+      return Object.values(this.selectedBatchUsage).some((b) => !!b)
     }
   },
   methods: {
+    blurBatchForm() {
+      if (this.$refs.seriesDropdown && this.$refs.seriesDropdown.isFocused) {
+        this.$refs.seriesDropdown.blur()
+      }
+      if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
+        this.$refs.genresSelect.forceBlur()
+      }
+      if (this.$refs.tagsSelect && this.$refs.tagsSelect.isFocused) {
+        this.$refs.tagsSelect.forceBlur()
+      }
+
+      for (const key in this.batchDetails) {
+        if (this.$refs[`${key}Input`] && this.$refs[`${key}Input`].blur) {
+          this.$refs[`${key}Input`].blur()
+        }
+      }
+    },
+    mapBatchDetails() {
+      this.blurBatchForm()
+
+      this.audiobookCopies = this.audiobookCopies.map((ab) => {
+        for (const key in this.selectedBatchUsage) {
+          if (this.selectedBatchUsage[key]) {
+            if (key === 'tags') {
+              ab.tags = this.batchDetails.tags
+            } else {
+              ab.book[key] = this.batchDetails[key]
+            }
+          }
+        }
+        return ab
+      })
+      this.$toast.success('Details mapped')
+    },
     newTagItem(item) {
       if (item && !this.newTagItems.includes(item)) {
         this.newTagItems.push(item)
@@ -306,7 +380,7 @@ export default {
     },
     applyBatchUpdates() {
       this.audiobookCopies = this.audiobookCopies.map((ab) => {
-        if (this.batchBook.series) ab.book.series = this.batchBook.series
+        if (this.batchDetails.series) ab.book.series = this.batchDetails.series
       })
     }
   },
@@ -316,3 +390,15 @@ export default {
 }
 </script>
 
+<style>
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.2s ease;
+}
+
+.slide-enter,
+.slide-leave-to {
+  transform: translateY(-100%);
+  transition: all 150ms ease-in 0s;
+}
+</style>

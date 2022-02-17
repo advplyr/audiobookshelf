@@ -1,9 +1,9 @@
 <template>
-  <div class="w-full" :class="disabled ? 'cursor-not-allowed' : ''">
-    <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
+  <div class="w-full">
+    <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</p>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
-        <div ref="inputWrapper" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-2" :class="disabled ? 'bg-bg pointer-events-none text-gray-400' : 'bg-primary'">
+        <div ref="inputWrapper" class="input-wrapper flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-2" :class="disabled ? 'pointer-events-none bg-black-300 text-gray-400' : 'bg-primary'">
           <input ref="input" v-model="textInput" :disabled="disabled" :readonly="!editable" class="h-full w-full bg-transparent focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
