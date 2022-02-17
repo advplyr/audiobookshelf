@@ -39,10 +39,6 @@
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
-        <!-- <ui-btn v-show="!isHome" small class="text-sm mx-2" @click="toggleSelectAll"
-          >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ entitiesLoaded }})</span></ui-btn
-        > -->
-
         <div class="flex-grow" />
         <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />

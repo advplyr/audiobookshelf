@@ -30,13 +30,12 @@ module.exports = {
     ],
     script: [
       {
-        src: '//cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js'
+        src: '/libs/sortable.js'
       }
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Ubuntu+Mono&family=Source+Sans+Pro:wght@300;400;600' },
-      // { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Icons' }
     ]
   },
 
@@ -51,6 +50,7 @@ module.exports = {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    // '@/plugins/chromecast.client.js',
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
     '@/plugins/axios.js',

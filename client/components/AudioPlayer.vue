@@ -1,13 +1,6 @@
 <template>
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
-      <!-- <div class="absolute top-0 left-0 w-full h-full bg-red flex items-end pointer-events-none">
-        <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
-        <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
-        <div class="flex-grow" />
-        <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
-      </div> -->
-
       <div v-if="chapters.length" class="hidden md:flex absolute right-20 top-0 bottom-0 h-full items-end">
         <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
