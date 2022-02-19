@@ -1,0 +1,16 @@
+.background {
+  background: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
+}
+
+.logo {
+  background-image: url(https://github.com/advplyr/audiobookshelf/blob/master/client/static/Logo.png);
+}
+
+.progressBar {
+  background-color: rgb(238, 255, 65);
+}
+
+.watermark {
+  background-image: url(https://github.com/advplyr/audiobookshelf/blob/master/client/static/icon64.png);
+  background-size: 64px 64px;
+}
