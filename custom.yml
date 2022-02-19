@@ -1,0 +1,15 @@
+version: "3.7"
+
+services:
+  audiolibrary:
+    restart: unless-stopped
+    image: oasis256/audiolibrary
+    ports:
+      - 13378:80
+    container_name: bookShelf
+    volumes:
+      - /mnt/f/Fun/Audiobooks:/audiobooks
+      - /mnt/i/Reads/Torrent/BookShelf/Ebooks:/Ebooks
+      - /mnt/i/Reads/Torrent/BookShelf/Private:/Private
+      - /mnt/i/Reads/Torrent/BookShelf/meta:/metadata
+      - /mnt/i/Reads/Torrent/BookShelf/config:/config
