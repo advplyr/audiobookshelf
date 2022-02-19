@@ -1,9 +1,5 @@
-.background {
-  background: linear-gradient(to right bottom, #ff0000, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #ff0000);
-}
-
 .logo {
-  background-image: url(Logo.png);
+  background-image: url(https://raw.githubusercontent.com/advplyr/audiobookshelf/master/client/static/Logo.png);
 }
 
 .progressBar {
@@ -11,6 +7,6 @@
 }
 
 .watermark {
-  background-image: url(icon64.png);
+  background-image: url(https://raw.githubusercontent.com/advplyr/audiobookshelf/master/client/static/icon64.png);
   background-size: 64px 64px;
 }
