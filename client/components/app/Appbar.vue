@@ -15,6 +15,10 @@
 
         <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
 
+        <div v-if="isChromecastInitialized" class="w-6 h-6 mr-2 cursor-pointer">
+          <google-cast-launcher></google-cast-launcher>
+        </div>
+
         <nuxt-link to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <span class="material-icons">equalizer</span>
         </nuxt-link>
@@ -120,6 +124,12 @@ export default {
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
+    },
+    isChromecastEnabled() {
+      return this.$store.getters['getServerSetting']('chromecastEnabled')
+    },
+    isChromecastInitialized() {
+      return this.$store.state.globals.isChromecastInitialized
     }
   },
   methods: {

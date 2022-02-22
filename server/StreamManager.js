@@ -155,6 +155,30 @@ class StreamManager {
     this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
+  async closeStreamApiRequest(userId, streamId) {
+    Logger.info('[StreamManager] Close Stream Api Request', streamId)
+
+    var stream = this.streams.find(s => s.id === streamId)
+    if (!stream) {
+      Logger.warn('[StreamManager] Stream not found', streamId)
+      return
+    }
+
+    if (!stream.client || !stream.client.user || stream.client.user.id !== userId) {
+      Logger.warn(`[StreamManager] Stream close request from invalid user ${userId}`, stream.client)
+      return
+    }
+
+    stream.client.user.stream = null
+    stream.client.stream = null
+    this.db.updateUserStream(stream.client.user.id, null)
+
+    await stream.close()
+
+    this.streams = this.streams.filter(s => s.id !== streamId)
+    Logger.info(`[StreamManager] Stream ${streamId} closed via API request by ${userId}`)
+  }
+
   streamSync(socket, syncData) {
     const client = socket.sheepClient
     if (!client || !client.stream) {
@@ -232,36 +256,6 @@ class StreamManager {
     }
 
     res.sendStatus(200)
-  }
-
-  streamUpdate(socket, { currentTime, streamId }) {
-    var client = socket.sheepClient
-    if (!client || !client.stream) {
-      Logger.error('No stream for client', (client && client.user) ? client.user.id : 'No Client')
-      return
-    }
-    if (client.stream.id !== streamId) {
-      Logger.error('Stream id mismatch on stream update', streamId, client.stream.id)
-      return
-    }
-    client.stream.updateClientCurrentTime(currentTime)
-    if (!client.user) {
-      Logger.error('No User for client', client)
-      return
-    }
-    if (!client.user.updateAudiobookProgressFromStream) {
-      Logger.error('Invalid User for client', client)
-      return
-    }
-    var userAudiobook = client.user.updateAudiobookProgressFromStream(client.stream)
-    this.db.updateEntity('user', client.user)
-
-    if (userAudiobook) {
-      this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
-        id: userAudiobook.audiobookId,
-        data: userAudiobook.toJSON()
-      })
-    }
   }
 }
 module.exports = StreamManager

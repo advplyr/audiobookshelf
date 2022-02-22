@@ -10,7 +10,6 @@ export const state = () => ({
   showEReader: false,
   selectedAudiobook: null,
   selectedAudiobookFile: null,
-  playOnLoad: false,
   developerMode: false,
   selectedAudiobooks: [],
   processingBatch: false,
@@ -107,24 +106,7 @@ export const mutations = {
     state.serverSettings = settings
   },
   setStreamAudiobook(state, audiobook) {
-    state.playOnLoad = true
     state.streamAudiobook = audiobook
-  },
-  updateStreamAudiobook(state, audiobook) { // Initial stream audiobook is minified, on open audiobook is updated to full
-    state.streamAudiobook = audiobook
-  },
-  setStream(state, stream) {
-    state.playOnLoad = false
-    state.streamAudiobook = stream ? stream.audiobook : null
-  },
-  clearStreamAudiobook(state, audiobookId) {
-    if (state.streamAudiobook && state.streamAudiobook.id === audiobookId) {
-      state.playOnLoad = false
-      state.streamAudiobook = null
-    }
-  },
-  setPlayOnLoad(state, val) {
-    state.playOnLoad = val
   },
   showEditModal(state, audiobook) {
     state.editModalTab = 'details'

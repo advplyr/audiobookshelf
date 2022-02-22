@@ -178,6 +178,8 @@ class ApiController {
 
     this.router.post('/syncStream', this.syncStream.bind(this))
     this.router.post('/syncLocal', this.syncLocal.bind(this))
+
+    this.router.post('/streams/:id/close', this.closeStream.bind(this))
   }
 
   async findBooks(req, res) {
@@ -397,6 +399,7 @@ class ApiController {
         data: audiobookProgress || null
       })
     }
+    res.sendStatus(200)
   }
 
   //
@@ -516,6 +519,13 @@ class ApiController {
     }
     Logger.info(`[ApiController] Purging all cache`)
     await this.cacheManager.purgeAll()
+    res.sendStatus(200)
+  }
+
+  async closeStream(req, res) {
+    const streamId = req.params.id
+    const userId = req.user.id
+    this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
   }
 }

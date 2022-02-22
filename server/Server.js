@@ -260,7 +260,6 @@ class Server {
       // Streaming
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
-      socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
       socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
 
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))

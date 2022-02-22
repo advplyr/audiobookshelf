@@ -6,7 +6,9 @@ export const state = () => ({
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
   selectedCollection: null,
-  showBookshelfTextureModal: false
+  showBookshelfTextureModal: false,
+  isCasting: false, // Actively casting
+  isChromecastInitialized: false // Script loaded
 })
 
 export const getters = {}
@@ -33,5 +35,11 @@ export const mutations = {
   },
   setShowBookshelfTextureModal(state, val) {
     state.showBookshelfTextureModal = val
+  },
+  setChromecastInitialized(state, val) {
+    state.isChromecastInitialized = val
+  },
+  setCasting(state, val) {
+    state.isCasting = val
   }
 }

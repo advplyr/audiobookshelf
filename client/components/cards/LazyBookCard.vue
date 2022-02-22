@@ -196,8 +196,6 @@ export default {
     displayTitle() {
       if (this.orderBy === 'book.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
         return this.title.substr(4) + ', The'
-      } else {
-        console.log('DOES NOT COMPUTE', this.orderBy, this.sortingIgnorePrefix, this.title.toLowerCase())
       }
       return this.title
     },
@@ -497,8 +495,8 @@ export default {
       this.$emit('select', this.audiobook)
     },
     play() {
-      this.store.commit('setStreamAudiobook', this.audiobook)
-      this._socket.emit('open_stream', this.audiobookId)
+      var eventBus = this.$eventBus || this.$nuxt.$eventBus
+      eventBus.$emit('play-audiobook', this.audiobookId)
     },
     mouseover() {
       this.isHovering = true

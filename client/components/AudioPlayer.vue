@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="absolute top-0 bottom-0 h-full hidden md:flex items-end" :class="chapters.length ? ' right-44' : 'right-32'">
-        <controls-volume-control ref="volumeControl" v-model="volume" @input="updateVolume" />
+        <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" />
       </div>
 
       <div class="flex pb-4 md:pb-2">
@@ -21,13 +21,13 @@
           <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">
             <span class="material-icons text-3xl">first_page</span>
           </div>
-          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="backward10">
+          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
             <span class="material-icons text-3xl">replay_10</span>
           </div>
-          <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPauseClick">
-            <span class="material-icons">{{ seekLoading ? 'autorenew' : isPaused ? 'play_arrow' : 'pause' }}</span>
+          <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPause">
+            <span class="material-icons">{{ seekLoading ? 'autorenew' : paused ? 'play_arrow' : 'pause' }}</span>
           </div>
-          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="forward10">
+          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpForward">
             <span class="material-icons text-3xl">forward_10</span>
           </div>
           <controls-playback-speed-control v-model="playbackRate" @input="playbackRateUpdated" @change="playbackRateChanged" />
@@ -75,20 +75,15 @@
       <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
-    <audio ref="audio" @progress="progress" @timeupdate="timeupdate" @loadedmetadata="audioLoadedMetadata" @play="audioPlayed" @pause="audioPaused" @error="audioError" @ended="audioEnded" @stalled="audioStalled" @suspend="audioSuspended" />
-
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
   </div>
 </template>
 
 <script>
-import Hls from 'hls.js'
-
 export default {
   props: {
-    streamId: String,
-    audiobookId: String,
     loading: Boolean,
+    paused: Boolean,
     chapters: {
       type: Array,
       default: () => []
@@ -100,57 +95,41 @@ export default {
   },
   data() {
     return {
-      hlsInstance: null,
-      staleHlsInstance: null,
-      usingNativeAudioPlayer: false,
-      playOnLoad: false,
-      startTime: 0,
       volume: 1,
       playbackRate: 1,
       trackWidth: 0,
-      isPaused: true,
-      url: null,
-      src: null,
       playedTrackWidth: 0,
       bufferTrackWidth: 0,
       readyTrackWidth: 0,
       audioEl: null,
-      totalDuration: 0,
-      seekedTime: 0,
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
       trackOffsetLeft: 16, // Track is 16px from edge
-      listenTimeInterval: null,
-      listeningTimeSinceLastUpdate: 0,
-      totalListeningTimeInSession: 0
+      duration: 0
     }
   },
   computed: {
     token() {
       return this.$store.getters['user/getToken']
     },
-    totalDurationPretty() {
-      return this.$secondsToTimestamp(this.totalDuration)
-    },
     timeRemaining() {
-      if (!this.audioEl) return 0
-      return (this.totalDuration - this.currentTime) / this.playbackRate
+      return (this.duration - this.currentTime) / this.playbackRate
     },
     timeRemainingPretty() {
       if (this.timeRemaining < 0) {
-        console.warn('Time remaining < 0', this.totalDuration, this.currentTime, this.timeRemaining)
+        console.warn('Time remaining < 0', this.duration, this.currentTime, this.timeRemaining)
         return this.$secondsToTimestamp(this.timeRemaining * -1)
       }
       return '-' + this.$secondsToTimestamp(this.timeRemaining)
     },
     progressPercent() {
-      if (!this.totalDuration) return 0
-      return Math.round((100 * this.currentTime) / this.totalDuration)
+      if (!this.duration) return 0
+      return Math.round((100 * this.currentTime) / this.duration)
     },
     chapterTicks() {
       return this.chapters.map((chap) => {
-        var perc = chap.start / this.totalDuration
+        var perc = chap.start / this.duration
         return {
           title: chap.title,
           left: perc * this.trackWidth
@@ -168,188 +147,77 @@ export default {
     }
   },
   methods: {
-    audioPlayed() {
-      if (!this.$refs.audio) return
-      console.log('Audio Played', this.$refs.audio.currentTime, 'Total Duration', this.$refs.audio.duration)
-      this.startListenTimeInterval()
-      this.isPaused = this.$refs.audio.paused
+    setDuration(duration) {
+      this.duration = duration
     },
-    audioPaused() {
-      if (!this.$refs.audio) return
-      // console.log('Audio Paused', this.$refs.audio.paused, this.$refs.audio.currentTime)
-      this.isPaused = this.$refs.audio.paused
-      this.cancelListenTimeInterval()
+    setCurrentTime(time) {
+      this.currentTime = time
+      this.updateTimestamp()
+      this.updatePlayedTrack()
     },
-    audioError(err) {
-      if (!this.$refs.audio) return
-      console.error('Audio Error', this.$refs.audio.paused, this.$refs.audio.currentTime, err)
+    playPause() {
+      this.$emit('playPause')
     },
-    audioEnded() {
-      if (!this.$refs.audio) return
-      console.log('Audio Ended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    jumpBackward() {
+      this.$emit('jumpBackward')
     },
-    audioStalled() {
-      if (!this.$refs.audio) return
-      console.warn('Audio Stalled', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    jumpForward() {
+      this.$emit('jumpForward')
     },
-    audioSuspended() {
-      if (!this.$refs.audio) return
-      console.warn('Audio Suspended', this.$refs.audio.paused, this.$refs.audio.currentTime)
+    increaseVolume() {
+      if (this.volume >= 1) return
+      this.volume = Math.min(1, this.volume + 0.1)
+      this.setVolume(this.volume)
     },
-    sendStreamSync(timeListened = 0) {
-      // If currentTime is null then currentTime wont be updated
-      var currentTime = null
-      if (this.$refs.audio) {
-        currentTime = this.$refs.audio.currentTime
-      } else if (!timeListened) {
-        console.warn('Not sending stream sync, no data to sync')
-        return
+    decreaseVolume() {
+      if (this.volume <= 0) return
+      this.volume = Math.max(0, this.volume - 0.1)
+      this.setVolume(this.volume)
+    },
+    setVolume(volume) {
+      this.$emit('setVolume', volume)
+    },
+    toggleMute() {
+      if (this.$refs.volumeControl && this.$refs.volumeControl.toggleMute) {
+        this.$refs.volumeControl.toggleMute()
       }
-      var syncData = {
-        timeListened,
-        currentTime,
-        streamId: this.streamId,
-        audiobookId: this.audiobookId
-      }
-      this.$emit('sync', syncData)
     },
-    sendAddListeningTime() {
-      var listeningTimeToAdd = Math.floor(this.listeningTimeSinceLastUpdate)
-      this.listeningTimeSinceLastUpdate = Math.max(0, this.listeningTimeSinceLastUpdate - listeningTimeToAdd)
-      this.sendStreamSync(listeningTimeToAdd)
+    increasePlaybackRate() {
+      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
+      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
+      if (currentRateIndex >= rates.length - 1) return
+      this.playbackRate = rates[currentRateIndex + 1] || 1
+      this.playbackRateChanged(this.playbackRate)
     },
-    cancelListenTimeInterval() {
-      this.sendAddListeningTime()
-      clearInterval(this.listenTimeInterval)
-      this.listenTimeInterval = null
+    decreasePlaybackRate() {
+      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
+      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
+      if (currentRateIndex <= 0) return
+      this.playbackRate = rates[currentRateIndex - 1] || 1
+      this.playbackRateChanged(this.playbackRate)
     },
-    startListenTimeInterval() {
-      if (!this.$refs.audio) return
-
-      clearInterval(this.listenTimeInterval)
-      var lastTime = this.$refs.audio.currentTime
-      var lastTick = Date.now()
-      var noProgressCount = 0
-      this.listenTimeInterval = setInterval(() => {
-        if (!this.$refs.audio) {
-          console.error('Canceling audio played interval no audio player')
-          this.cancelListenTimeInterval()
-          return
-        }
-        if (this.$refs.audio.paused) {
-          console.warn('Canceling audio played interval audio player paused')
-          this.cancelListenTimeInterval()
-          return
-        }
-
-        var timeSinceLastTick = Date.now() - lastTick
-        lastTick = Date.now()
-
-        var expectedAudioTime = lastTime + timeSinceLastTick / 1000
-        var currentTime = this.$refs.audio.currentTime
-        var differenceFromExpected = expectedAudioTime - currentTime
-        if (currentTime === lastTime) {
-          noProgressCount++
-          if (noProgressCount > 3) {
-            console.error('Audio current time has not increased - cancel interval and pause player')
-            this.cancelListenTimeInterval()
-            this.pause()
-          }
-        } else if (Math.abs(differenceFromExpected) > 0.1) {
-          noProgressCount = 0
-          console.warn('Invalid time between interval - resync last', differenceFromExpected)
-          lastTime = currentTime
-        } else {
-          noProgressCount = 0
-          var exactPlayTimeDifference = currentTime - lastTime
-          // console.log('Difference from expected', differenceFromExpected, 'Exact play time diff', exactPlayTimeDifference)
-          lastTime = currentTime
-          this.listeningTimeSinceLastUpdate += exactPlayTimeDifference
-          this.totalListeningTimeInSession += exactPlayTimeDifference
-          // console.log('Time since last update:', this.listeningTimeSinceLastUpdate, 'Session listening time:', this.totalListeningTimeInSession)
-          if (this.listeningTimeSinceLastUpdate > 5) {
-            this.sendAddListeningTime()
-          }
-        }
-      }, 1000)
+    setPlaybackRate(playbackRate) {
+      this.$emit('setPlaybackRate', playbackRate)
     },
     selectChapter(chapter) {
       this.seek(chapter.start)
       this.showChaptersModal = false
     },
-    selectBookmark(bookmark) {
-      if (bookmark) {
-        this.seek(bookmark.time)
-      }
-    },
     seek(time) {
-      if (this.loading) {
-        return
-      }
-      if (this.seekLoading) {
-        console.error('Already seek loading', this.seekedTime)
-        return
-      }
-      if (!this.audioEl) {
-        console.error('No Audio el for seek', time)
-        return
-      }
-      if (!this.audioEl.paused) {
-        this.cancelListenTimeInterval()
-      }
-
-      this.seekedTime = time
-      this.seekLoading = true
-
-      this.audioEl.currentTime = time
-
-      this.sendStreamSync()
-
-      this.$nextTick(() => {
-        if (this.audioEl && !this.audioEl.paused) {
-          this.startListenTimeInterval()
-        }
-      })
-
-      if (this.$refs.playedTrack) {
-        var perc = time / this.audioEl.duration
-        var ptWidth = Math.round(perc * this.trackWidth)
-        this.$refs.playedTrack.style.width = ptWidth + 'px'
-        this.playedTrackWidth = ptWidth
-
-        this.$refs.playedTrack.classList.remove('bg-gray-200')
-        this.$refs.playedTrack.classList.add('bg-yellow-300')
-      }
-    },
-    updateVolume(volume) {
-      if (this.audioEl) {
-        this.audioEl.volume = volume
-      }
-    },
-    updatePlaybackRate(playbackRate) {
-      if (this.audioEl) {
-        try {
-          this.audioEl.playbackRate = playbackRate
-          this.audioEl.defaultPlaybackRate = playbackRate
-        } catch (error) {
-          console.error('Update playback rate failed', error)
-        }
-      } else {
-        console.error('No Audio El updatePlaybackRate')
-      }
+      this.$emit('seek', time)
     },
     playbackRateUpdated(playbackRate) {
-      this.updatePlaybackRate(playbackRate)
+      this.setPlaybackRate(playbackRate)
     },
     playbackRateChanged(playbackRate) {
-      this.updatePlaybackRate(playbackRate)
+      this.setPlaybackRate(playbackRate)
       this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
         console.error('Failed to update settings', err)
       })
     },
     mousemoveTrack(e) {
       var offsetX = e.offsetX
-      var time = (offsetX / this.trackWidth) * this.totalDuration
+      var time = (offsetX / this.trackWidth) * this.duration
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth
         this.$refs.hoverTimestamp.style.opacity = 1
@@ -395,17 +263,6 @@ export default {
     },
     restart() {
       this.seek(0)
-      this.$nextTick(this.sendStreamSync)
-    },
-    backward10() {
-      var newTime = this.audioEl.currentTime - 10
-      newTime = Math.max(0, newTime)
-      this.seek(newTime)
-    },
-    forward10() {
-      var newTime = this.audioEl.currentTime + 10
-      newTime = Math.min(this.audioEl.duration, newTime)
-      this.seek(newTime)
     },
     setStreamReady() {
       this.readyTrackWidth = this.trackWidth
@@ -435,114 +292,11 @@ export default {
         console.error('No timestamp el')
         return
       }
-      if (!this.audioEl) {
-        console.error('No Audio El')
-        return
-      }
-      var currTimeClean = this.$secondsToTimestamp(this.audioEl.currentTime)
+      var currTimeClean = this.$secondsToTimestamp(this.currentTime)
       ts.innerText = currTimeClean
     },
-    clickTrack(e) {
-      var offsetX = e.offsetX
-      var perc = offsetX / this.trackWidth
-      var time = perc * this.audioEl.duration
-      if (isNaN(time) || time === null) {
-        console.error('Invalid time', perc, time)
-        return
-      }
-      this.seek(time)
-    },
-    playPauseClick() {
-      if (this.isPaused) {
-        this.play()
-      } else {
-        this.pause()
-      }
-    },
-    isValidDuration(duration) {
-      if (duration && !isNaN(duration) && duration !== Number.POSITIVE_INFINITY && duration !== Number.NEGATIVE_INFINITY) {
-        return true
-      }
-      return false
-    },
-    getBufferedRanges() {
-      if (!this.audioEl) return []
-
-      const ranges = []
-      const seekable = this.audioEl.buffered || []
-
-      let offset = 0
-
-      for (let i = 0, length = seekable.length; i < length; i++) {
-        let start = seekable.start(i)
-        let end = seekable.end(i)
-        if (!this.isValidDuration(start)) {
-          start = 0
-        }
-        if (!this.isValidDuration(end)) {
-          end = 0
-          continue
-        }
-
-        ranges.push({
-          start: start + offset,
-          end: end + offset
-        })
-      }
-      return ranges
-    },
-    getLastBufferedTime() {
-      var bufferedRanges = this.getBufferedRanges()
-      if (!bufferedRanges.length) return 0
-
-      var buff = bufferedRanges.find((buff) => buff.start < this.audioEl.currentTime && buff.end > this.audioEl.currentTime)
-      if (buff) return buff.end
-
-      var last = bufferedRanges[bufferedRanges.length - 1]
-      return last.end
-    },
-    progress() {
-      if (!this.audioEl) {
-        return
-      }
-      var lastbuff = this.getLastBufferedTime()
-
-      var bufferlen = (lastbuff / this.audioEl.duration) * this.trackWidth
-      bufferlen = Math.round(bufferlen)
-      if (this.bufferTrackWidth === bufferlen || !this.$refs.bufferTrack) return
-      this.$refs.bufferTrack.style.width = bufferlen + 'px'
-      this.bufferTrackWidth = bufferlen
-    },
-    timeupdate() {
-      if (!this.$refs.playedTrack) {
-        console.error('Invalid no played track ref')
-        return
-      }
-      if (!this.audioEl) {
-        console.error('No Audio El')
-        return
-      }
-
-      if (this.seekLoading) {
-        this.seekLoading = false
-        if (this.$refs.playedTrack) {
-          this.$refs.playedTrack.classList.remove('bg-yellow-300')
-          this.$refs.playedTrack.classList.add('bg-gray-200')
-        }
-      }
-
-      this.updateTimestamp()
-
-      // Send update to server when currentTime > 0
-      //   this prevents errors when seeking to position not yet transcoded
-      //   seeking to position not yet transcoded will cause audio element to set currentTime to 0
-      // if (this.audioEl.currentTime) {
-      //   this.sendStreamUpdate()
-      // }
-
-      this.currentTime = this.audioEl.currentTime
-
-      var perc = this.audioEl.currentTime / this.audioEl.duration
+    updatePlayedTrack() {
+      var perc = this.currentTime / this.duration
       var ptWidth = Math.round(perc * this.trackWidth)
       if (this.playedTrackWidth === ptWidth) {
         return
@@ -550,83 +304,27 @@ export default {
       this.$refs.playedTrack.style.width = ptWidth + 'px'
       this.playedTrackWidth = ptWidth
     },
-    audioLoadedMetadata() {
-      this.totalDuration = this.audioEl.duration
-      this.$emit('loaded', this.totalDuration)
-      if (this.usingNativeAudioPlayer) {
-        this.audioEl.currentTime = this.startTime
-        this.play()
+    clickTrack(e) {
+      if (this.loading) return
+
+      var offsetX = e.offsetX
+      var perc = offsetX / this.trackWidth
+      var time = perc * this.duration
+      if (isNaN(time) || time === null) {
+        console.error('Invalid time', perc, time)
+        return
       }
+      this.seek(time)
     },
-    set(url, currentTime, playOnLoad = false) {
-      if (this.hlsInstance) {
-        this.terminateStream()
-      }
-      if (!this.$refs.audio) {
-        console.error('No audio widget')
+    setBufferTime(bufferTime) {
+      if (!this.audioEl) {
         return
       }
-      this.listeningTimeSinceLastUpdate = 0
-
-      this.playOnLoad = playOnLoad
-      this.startTime = currentTime
-      this.url = url
-      if (process.env.NODE_ENV === 'development') {
-        url = `${process.env.serverUrl}${url}`
-      }
-      this.src = url
-      console.log('[AudioPlayer-Set] Set url', url)
-
-      var audio = this.$refs.audio
-      audio.volume = this.volume
-      audio.defaultPlaybackRate = this.playbackRate
-
-      // iOS does not support Media Elements but allows for HLS in the native audio player
-      if (!Hls.isSupported()) {
-        console.warn('HLS is not supported - fallback to using audio element')
-        this.usingNativeAudioPlayer = true
-        audio.src = this.src + '?token=' + this.token
-        audio.currentTime = currentTime
-        return
-      }
-
-      var hlsOptions = {
-        startPosition: currentTime || -1,
-        xhrSetup: (xhr) => {
-          xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
-        }
-      }
-      console.log('Starting HLS audio stream at time', currentTime)
-      // console.log('[AudioPlayer-Set] HLS Config', hlsOptions)
-      this.hlsInstance = new Hls(hlsOptions)
-
-      this.hlsInstance.attachMedia(audio)
-      this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-        // console.log('[HLS] MEDIA ATTACHED')
-        this.hlsInstance.loadSource(url)
-
-        this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-          console.log('[HLS] Manifest Parsed')
-          if (playOnLoad) {
-            this.play()
-          }
-        })
-
-        this.hlsInstance.on(Hls.Events.ERROR, (e, data) => {
-          console.error('[HLS] Error', data.type, data.details, data)
-
-          if (this.$refs.audio) {
-            console.log('Hls error check audio', this.$refs.audio.paused, this.$refs.audio.currentTime, this.$refs.audio.readyState)
-          }
-
-          if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
-            console.error('[HLS] BUFFER STALLED ERROR')
-          }
-        })
-        this.hlsInstance.on(Hls.Events.DESTROYING, () => {
-          console.log('[HLS] Destroying HLS Instance')
-        })
-      })
+      var bufferlen = (bufferTime / this.duration) * this.trackWidth
+      bufferlen = Math.round(bufferlen)
+      if (this.bufferTrackWidth === bufferlen || !this.$refs.bufferTrack) return
+      this.$refs.bufferTrack.style.width = bufferlen + 'px'
+      this.bufferTrackWidth = bufferlen
     },
     showChapters() {
       if (!this.chapters.length) return
@@ -635,39 +333,9 @@ export default {
     showBookmarks() {
       this.$emit('showBookmarks', this.currentTime)
     },
-    play() {
-      if (!this.$refs.audio) {
-        console.error('No Audio ref')
-        return
-      }
-      this.$refs.audio.play()
-    },
-    pause() {
-      if (!this.$refs.audio) return
-      this.$refs.audio.pause()
-    },
-    terminateStream() {
-      if (this.hlsInstance) {
-        if (!this.hlsInstance.destroy) {
-          console.error('HLS Instance has no destroy property', this.hlsInstance)
-          return
-        }
-        this.staleHlsInstance = this.hlsInstance
-        this.staleHlsInstance.destroy()
-        this.hlsInstance = null
-      }
-    },
-    async resetStream(startTime) {
-      if (this.$refs.audio) this.$refs.audio.pause()
-      this.terminateStream()
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log('Waited 1 second after terminating stream to start again')
-      this.set(this.url, startTime, true)
-    },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
-
-      this.audioEl = this.$refs.audio
+      this.$emit('setPlaybackRate', this.playbackRate)
       this.setTrackWidth()
     },
     setTrackWidth() {
@@ -679,48 +347,19 @@ export default {
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
-        this.updatePlaybackRate(settings.playbackRate)
+        this.setPlaybackRate(settings.playbackRate)
       }
-    },
-    volumeUp() {
-      if (this.volume >= 1) return
-      this.volume = Math.min(1, this.volume + 0.1)
-      this.updateVolume(this.volume)
-    },
-    volumeDown() {
-      if (this.volume <= 0) return
-      this.volume = Math.max(0, this.volume - 0.1)
-      this.updateVolume(this.volume)
-    },
-    toggleMute() {
-      if (this.$refs.volumeControl && this.$refs.volumeControl.toggleMute) {
-        this.$refs.volumeControl.toggleMute()
-      }
-    },
-    increasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex >= rates.length - 1) return
-      this.playbackRate = rates[currentRateIndex + 1] || 1
-      this.playbackRateChanged(this.playbackRate)
-    },
-    decreasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex <= 0) return
-      this.playbackRate = rates[currentRateIndex - 1] || 1
-      this.playbackRateChanged(this.playbackRate)
     },
     closePlayer() {
       if (this.loading) return
       this.$emit('close')
     },
     hotkey(action) {
-      if (action === this.$hotkeys.AudioPlayer.PLAY_PAUSE) this.playPauseClick()
-      else if (action === this.$hotkeys.AudioPlayer.JUMP_FORWARD) this.forward10()
-      else if (action === this.$hotkeys.AudioPlayer.JUMP_BACKWARD) this.backward10()
-      else if (action === this.$hotkeys.AudioPlayer.VOLUME_UP) this.volumeUp()
-      else if (action === this.$hotkeys.AudioPlayer.VOLUME_DOWN) this.volumeDown()
+      if (action === this.$hotkeys.AudioPlayer.PLAY_PAUSE) this.playPause()
+      else if (action === this.$hotkeys.AudioPlayer.JUMP_FORWARD) this.jumpForward()
+      else if (action === this.$hotkeys.AudioPlayer.JUMP_BACKWARD) this.jumpBackward()
+      else if (action === this.$hotkeys.AudioPlayer.VOLUME_UP) this.increaseVolume()
+      else if (action === this.$hotkeys.AudioPlayer.VOLUME_DOWN) this.decreaseVolume()
       else if (action === this.$hotkeys.AudioPlayer.MUTE_UNMUTE) this.toggleMute()
       else if (action === this.$hotkeys.AudioPlayer.SHOW_CHAPTERS) this.showChapters()
       else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE) this.increasePlaybackRate()

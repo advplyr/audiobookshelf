@@ -123,8 +123,7 @@ export default {
     clickPlay() {
       var nextBookNotRead = this.playableBooks.find((pb) => !this.userAudiobooks[pb.id] || !this.userAudiobooks[pb.id].isRead)
       if (nextBookNotRead) {
-        this.$store.commit('setStreamAudiobook', nextBookNotRead)
-        this.$root.socket.emit('open_stream', nextBookNotRead.id)
+        this.$eventBus.$emit('play-audiobook', nextBookNotRead.id)
       }
     }
   },

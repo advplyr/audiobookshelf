@@ -43,6 +43,9 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    isCasting() {
+      return this.$store.state.globals.isCasting
     }
   },
   methods: {
@@ -99,7 +102,6 @@ export default {
       console.log('Init Payload', payload)
       if (payload.stream) {
         if (this.$refs.streamContainer) {
-          this.$store.commit('setStream', payload.stream)
           this.$refs.streamContainer.streamOpen(payload.stream)
         } else {
           console.warn('Stream Container not mounted')
@@ -111,6 +113,11 @@ export default {
       }
       if (payload.serverSettings) {
         this.$store.commit('setServerSettings', payload.serverSettings)
+
+        if (payload.serverSettings.chromecastEnabled) {
+          console.log('Chromecast enabled import script')
+          require('@/plugins/chromecast.js').default(this)
+        }
       }
 
       // Start scans currently running
@@ -511,6 +518,7 @@ export default {
     this.resize()
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
+
     this.$store.dispatch('libraries/load')
 
     // If experimental features set in local storage

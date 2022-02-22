@@ -39,7 +39,7 @@ class ServerSettings {
     this.bookshelfView = BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = false
-
+    this.chromecastEnabled = false
     this.logLevel = Logger.logLevel
     this.version = null
 
@@ -73,7 +73,7 @@ class ServerSettings {
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
-
+    this.chromecastEnabled = !!settings.chromecastEnabled
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -104,6 +104,7 @@ class ServerSettings {
       coverAspectRatio: this.coverAspectRatio,
       bookshelfView: this.bookshelfView,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
+      chromecastEnabled: this.chromecastEnabled,
       logLevel: this.logLevel,
       version: this.version
     }

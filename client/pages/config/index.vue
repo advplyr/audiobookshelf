@@ -38,8 +38,13 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="updateSortIgnorePrefix" />
+        <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
         <p class="pl-4 text-lg">Ignore prefix "The" when sorting title and series</p>
+      </div>
+
+      <div v-if="showExperimentalFeatures" class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
+        <p class="pl-4 text-lg">Enable Chromecast</p>
       </div>
 
       <div class="flex items-center mb-2 mt-8">
@@ -217,10 +222,8 @@ export default {
     }
   },
   methods: {
-    updateSortIgnorePrefix(val) {
-      this.updateServerSettings({
-        sortingIgnorePrefix: val
-      })
+    updateEnableChromecast(val) {
+      this.updateServerSettings({ enableChromecast: val })
     },
     updateScannerFindCovers(val) {
       this.updateServerSettings({
@@ -261,6 +264,11 @@ export default {
     updateAlternativeBookshelfView(val) {
       this.updateServerSettings({
         bookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+      })
+    },
+    updateSettingsKey(key, val) {
+      this.updateServerSettings({
+        [key]: val
       })
     },
     updateServerSettings(payload) {

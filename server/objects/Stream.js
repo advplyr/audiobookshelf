@@ -175,11 +175,6 @@ class Stream extends EventEmitter {
     return false
   }
 
-  updateClientCurrentTime(currentTime) {
-    Logger.debug('[Stream] Updated client current time', secondsToTimestamp(currentTime))
-    this.clientCurrentTime = currentTime
-  }
-
   syncStream({ timeListened, currentTime }) {
     var syncLog = ''
     // Set user current time

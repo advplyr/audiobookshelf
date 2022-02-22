@@ -7,7 +7,7 @@ module.exports = {
   dev: process.env.NODE_ENV !== 'production',
   env: {
     serverUrl: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333',
-    // serverUrl: '',
+    chromecastReceiver: 'FD1F76C5',
     baseUrl: process.env.BASE_URL || 'http://0.0.0.0'
   },
   // rootDir: process.env.NODE_ENV !== 'production' ? 'client/' : '',
@@ -50,7 +50,6 @@ module.exports = {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    // '@/plugins/chromecast.client.js',
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
