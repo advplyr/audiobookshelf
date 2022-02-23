@@ -99,7 +99,7 @@ export default class LocalPlayer extends EventEmitter {
     if (!Hls.isSupported()) {
       console.warn('HLS is not supported - fallback to using audio element')
       this.usingNativeplayer = true
-      this.player.src = this.currentTrack.fullContentUrl
+      this.player.src = this.currentTrack.contentUrl
       this.player.currentTime = this.currentTime
       return
     }
@@ -115,7 +115,7 @@ export default class LocalPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-      this.hlsInstance.loadSource(this.currentTrack.fullContentUrl)
+      this.hlsInstance.loadSource(this.currentTrack.contentUrl)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')

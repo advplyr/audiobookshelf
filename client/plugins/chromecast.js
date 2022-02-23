@@ -5,7 +5,7 @@ export default (ctx) => {
       return data.results.filter((b) => b.book.cover).map((ab) => {
         var coverUrl = ctx.$store.getters['audiobooks/getBookCoverSrc'](ab)
         if (process.env.NODE_ENV === 'development') return coverUrl
-        return `${window.location.origin}/${coverUrl}`
+        return `${window.location.origin}${coverUrl}`
       })
     }).catch((error) => {
       console.error('failed to fetch books', error)

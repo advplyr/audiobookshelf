@@ -14,6 +14,6 @@ export default class AudioTrack {
     if (process.env.NODE_ENV === 'development') {
       return `${process.env.serverUrl}${this.contentUrl}`
     }
-    return `${window.location.origin}/${this.contentUrl}`
+    return `${window.location.origin}${this.contentUrl}`
   }
 }

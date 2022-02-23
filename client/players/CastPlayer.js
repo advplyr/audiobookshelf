@@ -78,7 +78,7 @@ export default class CastPlayer extends EventEmitter {
     if (process.env.NODE_ENV === 'development') {
       this.coverUrl = coverImg
     } else {
-      this.coverUrl = `${window.location.origin}/${coverImg}`
+      this.coverUrl = `${window.location.origin}${coverImg}`
     }
 
     var request = buildCastLoadRequest(this.audiobook, this.coverUrl, this.audioTracks, this.currentTime, playWhenReady, this.defaultPlaybackRate)
