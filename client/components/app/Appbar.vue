@@ -15,6 +15,9 @@
 
         <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
 
+        <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
+          <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>
+        </ui-tooltip>
         <div v-if="isChromecastInitialized" class="w-6 h-6 mr-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
         </div>
@@ -130,6 +133,9 @@ export default {
     },
     isChromecastInitialized() {
       return this.$store.state.globals.isChromecastInitialized
+    },
+    isHttps() {
+      return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
     }
   },
   methods: {
