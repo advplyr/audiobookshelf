@@ -9,7 +9,7 @@
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
-        <ui-tooltip :text="coverDestinationTooltip">
+        <ui-tooltip :text="tooltips.coverDestination">
           <p class="pl-4 text-lg">
             Store covers with audiobook
             <span class="material-icons icon-text">info_outlined</span>
@@ -19,7 +19,7 @@
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
-        <ui-tooltip :text="coverAspectRatioTooltip">
+        <ui-tooltip :text="tooltips.coverAspectRatio">
           <p class="pl-4 text-lg">
             Use square book covers
             <span class="material-icons icon-text">info_outlined</span>
@@ -29,7 +29,7 @@
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
-        <ui-tooltip :text="bookshelfViewTooltip">
+        <ui-tooltip :text="tooltips.bookshelfView">
           <p class="pl-4 text-lg">
             Use alternative library bookshelf view
             <span class="material-icons icon-text">info_outlined</span>
@@ -52,8 +52,8 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" small :disabled="updatingServerSettings" @input="updateScannerParseSubtitle" />
-        <ui-tooltip :text="parseSubtitleTooltip">
+        <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerParseSubtitle', val)" />
+        <ui-tooltip :text="tooltips.scannerParseSubtitle">
           <p class="pl-4 text-lg">
             Scanner parse subtitles
             <span class="material-icons icon-text">info_outlined</span>
@@ -62,8 +62,8 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="updateScannerFindCovers" />
-        <ui-tooltip :text="scannerFindCoversTooltip">
+        <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerFindCovers', val)" />
+        <ui-tooltip :text="tooltips.scannerFindCovers">
           <p class="pl-4 text-lg">
             Scanner find covers
             <span class="material-icons icon-text">info_outlined</span>
@@ -76,8 +76,8 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferAudioMeta" />
-        <ui-tooltip :text="scannerPreferAudioMetaTooltip">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferAudioMetadata">
           <p class="pl-4 text-lg">
             Scanner prefer audio metadata
             <span class="material-icons icon-text">info_outlined</span>
@@ -86,10 +86,20 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="updateScannerPreferOpfMeta" />
-        <ui-tooltip :text="scannerPreferOpfMetaTooltip">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferOpfMetadata">
           <p class="pl-4 text-lg">
             Scanner prefer OPF metadata
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
+        <ui-tooltip :text="tooltips.scannerDisableWatcher">
+          <p class="pl-4 text-lg">
+            Disable Watcher
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -167,7 +177,17 @@ export default {
       useSquareBookCovers: false,
       useAlternativeBookshelfView: false,
       isPurgingCache: false,
-      newServerSettings: {}
+      newServerSettings: {},
+      tooltips: {
+        scannerDisableWatcher: 'Disables the automatic adding/updating of audiobooks when file changes are detected. *Requires server restart',
+        scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
+        scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
+        scannerParseSubtitle: 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
+        scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
+        bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
+        coverDestination: 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.',
+        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
+      }
     }
   },
   watch: {
@@ -179,35 +199,11 @@ export default {
     }
   },
   computed: {
-    scannerPreferAudioMetaTooltip() {
-      return 'Audio file ID3 meta tags will be used for book details over folder names'
-    },
-    scannerPreferOpfMetaTooltip() {
-      return 'OPF file metadata will be used for book details over folder names'
-    },
-    saveMetadataTooltip() {
-      return 'This will write a "metadata.nfo" file in all of your audiobook directories.'
-    },
     experimentalFeaturesTooltip() {
       return 'Features in development that could use your feedback and help testing.'
     },
     serverSettings() {
       return this.$store.state.serverSettings
-    },
-    parseSubtitleTooltip() {
-      return 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"'
-    },
-    coverDestinationTooltip() {
-      return 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.'
-    },
-    scannerFindCoversTooltip() {
-      return 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time'
-    },
-    coverAspectRatioTooltip() {
-      return 'Prefer to use square covers over standard 1.6:1 book covers'
-    },
-    bookshelfViewTooltip() {
-      return 'Alternative bookshelf view that shows title & author under book covers'
     },
     providers() {
       return this.$store.state.scanners.providers
@@ -225,11 +221,6 @@ export default {
     updateEnableChromecast(val) {
       this.updateServerSettings({ enableChromecast: val })
     },
-    updateScannerFindCovers(val) {
-      this.updateServerSettings({
-        scannerFindCovers: !!val
-      })
-    },
     updateScannerCoverProvider(val) {
       this.updateServerSettings({
         scannerCoverProvider: val
@@ -239,21 +230,6 @@ export default {
       this.newServerSettings.coverDestination = val ? this.$constants.CoverDestination.AUDIOBOOK : this.$constants.CoverDestination.METADATA
       this.updateServerSettings({
         coverDestination: this.newServerSettings.coverDestination
-      })
-    },
-    updateScannerParseSubtitle(val) {
-      this.updateServerSettings({
-        scannerParseSubtitle: !!val
-      })
-    },
-    updateScannerPreferAudioMeta(val) {
-      this.updateServerSettings({
-        scannerPreferAudioMetadata: !!val
-      })
-    },
-    updateScannerPreferOpfMeta(val) {
-      this.updateServerSettings({
-        scannerPreferOpfMetadata: !!val
       })
     },
     updateBookCoverAspectRatio(val) {

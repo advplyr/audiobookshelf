@@ -127,8 +127,13 @@ class Server {
       await this.scanner.fixDuplicateIds()
     }
 
-    this.watcher.initWatcher(this.libraries)
-    this.watcher.on('files', this.filesChanged.bind(this))
+    if (this.db.serverSettings.scannerDisableWatcher) {
+      Logger.info(`[Server] Watcher is disabled`)
+      this.watcher.disabled = true
+    } else {
+      this.watcher.initWatcher(this.libraries)
+      this.watcher.on('files', this.filesChanged.bind(this))
+    }
   }
 
   async start() {

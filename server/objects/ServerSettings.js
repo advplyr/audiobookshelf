@@ -15,6 +15,7 @@ class ServerSettings {
     this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
+    this.scannerDisableWatcher = false
 
     // Metadata
     this.coverDestination = CoverDestination.METADATA
@@ -56,6 +57,7 @@ class ServerSettings {
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
+    this.scannerDisableWatcher = !!settings.scannerDisableWatcher
 
     this.coverDestination = settings.coverDestination || CoverDestination.METADATA
     this.saveMetadataFile = !!settings.saveMetadataFile
@@ -92,6 +94,7 @@ class ServerSettings {
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
+      scannerDisableWatcher: this.scannerDisableWatcher,
       coverDestination: this.coverDestination,
       saveMetadataFile: !!this.saveMetadataFile,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
