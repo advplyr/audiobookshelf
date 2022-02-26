@@ -94,7 +94,7 @@ class Server {
   clientEmitter(userId, ev, data) {
     var clients = this.getClientsForUser(userId)
     if (!clients.length) {
-      return Logger.error(`[Server] clientEmitter - no clients found for user ${userId}`)
+      return Logger.debug(`[Server] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
       if (client.socket) {
