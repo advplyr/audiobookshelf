@@ -9,6 +9,7 @@ class Library {
     this.displayOrder = 1
     this.icon = 'database'
     this.provider = 'google'
+    this.disableWatcher = false
 
     this.lastScan = 0
 
@@ -31,6 +32,7 @@ class Library {
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
     this.provider = library.provider || 'google'
+    this.disableWatcher = !!library.disableWatcher
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
@@ -44,6 +46,7 @@ class Library {
       displayOrder: this.displayOrder,
       icon: this.icon,
       provider: this.provider,
+      disableWatcher: this.disableWatcher,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
@@ -68,6 +71,7 @@ class Library {
     }
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
+    this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
   }
@@ -80,6 +84,10 @@ class Library {
     }
     if (payload.provider && payload.provider !== this.provider) {
       this.provider = payload.provider
+      hasUpdates = true
+    }
+    if (payload.disableWatcher !== this.disableWatcher) {
+      this.disableWatcher = !!payload.disableWatcher
       hasUpdates = true
     }
     if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {

@@ -68,17 +68,19 @@ class FolderWatcher extends EventEmitter {
 
   initWatcher(libraries) {
     libraries.forEach((lib) => {
-      this.buildLibraryWatcher(lib)
+      if (!lib.disableWatcher) {
+        this.buildLibraryWatcher(lib)
+      }
     })
   }
 
   addLibrary(library) {
-    if (this.disabled) return
+    if (this.disabled || library.disableWatcher) return
     this.buildLibraryWatcher(library)
   }
 
   updateLibrary(library) {
-    if (this.disabled) return
+    if (this.disabled || library.disableWatcher) return
     var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
     if (libwatcher) {
       libwatcher.name = library.name

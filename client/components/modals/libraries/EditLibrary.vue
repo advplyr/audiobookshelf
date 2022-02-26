@@ -1,7 +1,7 @@
 <template>
-  <div class="w-full h-full px-4 py-2 mb-12">
-    <div class="flex items-center py-1 mb-2">
-      <span v-show="showDirectoryPicker" class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="backArrowPress">arrow_back</span>
+  <div class="w-full h-full px-4 py-2 mb-4">
+    <div v-show="showDirectoryPicker" class="flex items-center py-1 mb-2">
+      <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="backArrowPress">arrow_back</span>
       <p class="px-4 text-xl">{{ title }}</p>
     </div>
 
@@ -33,7 +33,17 @@
         </div>
       </div>
     </div>
+
     <modals-libraries-folder-chooser v-else :paths="folderPaths" @select="selectFolder" />
+
+    <div v-if="!showDirectoryPicker">
+      <div class="flex items-center pt-2">
+        <ui-toggle-switch v-if="!globalWatcherDisabled" v-model="disableWatcher" />
+        <ui-toggle-switch v-else disabled :value="false" />
+        <p class="pl-4 text-lg">Disable folder watcher for library</p>
+      </div>
+      <p v-if="globalWatcherDisabled" class="text-xs text-warning">*Watcher is disabled globally in server settings</p>
+    </div>
   </div>
 </template>
 
@@ -51,7 +61,8 @@ export default {
       name: '',
       provider: '',
       folders: [],
-      showDirectoryPicker: false
+      showDirectoryPicker: false,
+      disableWatcher: false
     }
   },
   computed: {
@@ -69,10 +80,13 @@ export default {
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
-      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider
+      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher
     },
     providers() {
       return this.$store.state.scanners.providers
+    },
+    globalWatcherDisabled() {
+      return this.$store.getters['getServerSetting']('scannerDisableWatcher')
     }
   },
   methods: {
@@ -88,6 +102,7 @@ export default {
       this.name = this.library ? this.library.name : ''
       this.provider = this.library ? this.library.provider : ''
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
+      this.disableWatcher = this.library ? !!this.library.disableWatcher : false
       this.showDirectoryPicker = false
     },
     selectFolder(fullPath) {
@@ -113,7 +128,8 @@ export default {
       var newLibraryPayload = {
         name: this.name,
         provider: this.provider,
-        folders: this.folders
+        folders: this.folders,
+        disableWatcher: this.disableWatcher
       }
 
       this.$emit('update:processing', true)
@@ -146,7 +162,8 @@ export default {
       var newLibraryPayload = {
         name: this.name,
         provider: this.provider,
-        folders: this.folders
+        folders: this.folders,
+        disableWatcher: this.disableWatcher
       }
 
       this.$emit('update:processing', true)
