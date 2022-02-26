@@ -408,25 +408,27 @@ class Server {
 
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
-      return res.status(500).error(`Library not found with id ${libraryId}`)
+      return res.status(500).send(`Library not found with id ${libraryId}`)
     }
     var folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
-      return res.status(500).error(`Folder not found with id ${folderId} in library ${library.name}`)
+      return res.status(500).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
 
-    if (!files.length || !title || !author) {
-      return res.status(500).error(`Invalid post data`)
+    if (!files.length || !title) {
+      return res.status(500).send(`Invalid post data`)
     }
 
     // For setting permissions recursively
     var firstDirPath = Path.join(folder.fullPath, author)
 
     var outputDirectory = ''
-    if (series && series.length && series !== 'null') {
+    if (series && author) {
       outputDirectory = Path.join(folder.fullPath, author, series, title)
-    } else {
+    } else if (author) {
       outputDirectory = Path.join(folder.fullPath, author, title)
+    } else {
+      outputDirectory = Path.join(folder.fullPath, title)
     }
 
     var exists = await fs.pathExists(outputDirectory)
