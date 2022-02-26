@@ -42,7 +42,7 @@
         <p class="pl-4 text-lg">Ignore prefix "The" when sorting title and series</p>
       </div>
 
-      <div v-if="showExperimentalFeatures" class="flex items-center py-2">
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
         <p class="pl-4 text-lg">Enable Chromecast</p>
       </div>
