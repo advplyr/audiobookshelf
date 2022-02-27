@@ -23,8 +23,11 @@ Audiobookshelf is a self-hosted audiobook server for managing and playing your a
 * Multi-user support w/ custom permissions
 * Keeps progress per user and syncs across devices
 * Auto-detects library updates, no need to re-scan
-* Upload full audiobooks and covers
+* Upload audiobooks w/ bulk upload drag and drop folders
 * Backup your metadata + automated daily backups
+* Progressive Web App (PWA)
+* Chromecast support on the web app
+* Fetch metadata and cover art from several sources
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
