@@ -85,8 +85,10 @@ function parseAbMetadataText(text) {
       bookDetails[key] = keyValue[1].trim()
 
       // Genres convert to array of strings
-      if (key === 'genres' && bookDetails[key]) {
-        bookDetails[key] = bookDetails[key].split(',').map(genre => genre.trim())
+      if (key === 'genres') {
+        bookDetails[key] = bookDetails[key] ? bookDetails[key].split(',').map(genre => genre.trim()) : []
+      } else if (!bookDetails[key]) { // Use null for empty details
+        bookDetails[key] = null
       }
     }
   }

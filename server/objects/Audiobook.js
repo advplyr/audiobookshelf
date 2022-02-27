@@ -569,9 +569,8 @@ class Audiobook {
       if (abmetadataText) {
         var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
         if (metadataUpdateObject && metadataUpdateObject.book) {
-          Logger.debug(`[Audiobook] Updating book "${this.title}" details from metadata.abs file`, metadataUpdateObject)
           if (this.update(metadataUpdateObject)) {
-            Logger.debug(`[Audiobook] Some details were updated from metadata.abs for "${this.title}"`)
+            Logger.debug(`[Audiobook] Some details were updated from metadata.abs for "${this.title}"`, metadataUpdateObject)
             hasUpdates = true
           }
         }
@@ -834,7 +833,7 @@ class Audiobook {
     if (abmetadataText) {
       var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
       if (metadataUpdateObject && metadataUpdateObject.book) {
-        Logger.debug(`[Audiobook] "${this.title}" found book details from metadata.abs file`, metadataUpdateObject)
+        Logger.debug(`[Audiobook] "${this.title}" found metadata.abs file`)
         for (const key in metadataUpdateObject.book) {
           var value = metadataUpdateObject.book[key]
           if (key && value !== undefined) {

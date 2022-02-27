@@ -203,7 +203,8 @@ class Db {
     }))
 
     return this.audiobooksDb.insert(audiobooks).then((results) => {
-      Logger.debug(`[DB] Audiobooks inserted ${results.updated}`)
+      Logger.debug(`[DB] Audiobooks inserted ${results.inserted}`)
+      this.audiobooks = this.audiobooks.concat(audiobooks)
       return true
     }).catch((error) => {
       Logger.error(`[DB] Audiobooks insert failed ${error}`)
