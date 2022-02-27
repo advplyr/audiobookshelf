@@ -5,8 +5,8 @@ const Path = require('path')
 const Logger = require('../Logger')
 const { version } = require('../../package.json')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('../utils/scandir')
-const { comparePaths, getIno, getId, msToTimestamp } = require('../utils/index')
-const { ScanResult, CoverDestination, LogLevel } = require('../utils/constants')
+const { comparePaths, getId } = require('../utils/index')
+const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const BookFinder = require('../BookFinder')
@@ -33,7 +33,7 @@ class Scanner {
   }
 
   getCoverDirectory(audiobook) {
-    if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
+    if (this.db.serverSettings.storeCoverWithBook) {
       return {
         fullPath: audiobook.fullPath,
         relPath: '/s/book/' + audiobook.id

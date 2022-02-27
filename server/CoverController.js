@@ -6,7 +6,6 @@ const readChunk = require('read-chunk')
 const imageType = require('image-type')
 
 const globals = require('./utils/globals')
-const { CoverDestination } = require('./utils/constants')
 const { downloadFile } = require('./utils/fileUtils')
 
 class CoverController {
@@ -20,7 +19,7 @@ class CoverController {
   }
 
   getCoverDirectory(audiobook) {
-    if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
+    if (this.db.serverSettings.storeCoverWithBook) {
       return {
         fullPath: audiobook.fullPath,
         relPath: '/s/book/' + audiobook.id

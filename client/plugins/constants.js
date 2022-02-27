@@ -14,11 +14,6 @@ const DownloadStatus = {
   FAILED: 3
 }
 
-const CoverDestination = {
-  METADATA: 0,
-  AUDIOBOOK: 1
-}
-
 const BookCoverAspectRatio = {
   STANDARD: 0,
   SQUARE: 1
@@ -32,7 +27,6 @@ const BookshelfView = {
 const Constants = {
   SupportedFileTypes,
   DownloadStatus,
-  CoverDestination,
   BookCoverAspectRatio,
   BookshelfView
 }

@@ -8,8 +8,8 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="storeCoversInAudiobookDir" :disabled="updatingServerSettings" @input="updateCoverStorageDestination" />
-        <ui-tooltip :text="tooltips.coverDestination">
+        <ui-toggle-switch v-model="newServerSettings.storeCoverWithBook" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithBook', val)" />
+        <ui-tooltip :text="tooltips.storeCoverWithBook">
           <p class="pl-4 text-lg">
             Store covers with audiobook
             <span class="material-icons icon-text">info_outlined</span>
@@ -172,7 +172,6 @@ export default {
   data() {
     return {
       isResettingAudiobooks: false,
-      storeCoversInAudiobookDir: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
       useAlternativeBookshelfView: false,
@@ -185,7 +184,7 @@ export default {
         scannerParseSubtitle: 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
         bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
-        coverDestination: 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.',
+        storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
       }
     }
@@ -226,12 +225,6 @@ export default {
         scannerCoverProvider: val
       })
     },
-    updateCoverStorageDestination(val) {
-      this.newServerSettings.coverDestination = val ? this.$constants.CoverDestination.AUDIOBOOK : this.$constants.CoverDestination.METADATA
-      this.updateServerSettings({
-        coverDestination: this.newServerSettings.coverDestination
-      })
-    },
     updateBookCoverAspectRatio(val) {
       this.updateServerSettings({
         coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
@@ -262,8 +255,6 @@ export default {
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
-
-      this.storeCoversInAudiobookDir = this.newServerSettings.coverDestination === this.$constants.CoverDestination.AUDIOBOOK
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
 

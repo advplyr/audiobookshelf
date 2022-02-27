@@ -6,11 +6,6 @@ module.exports.ScanResult = {
   UPTODATE: 4
 }
 
-module.exports.CoverDestination = {
-  METADATA: 0,
-  AUDIOBOOK: 1
-}
-
 module.exports.BookCoverAspectRatio = {
   STANDARD: 0, // 1.6:1
   SQUARE: 1

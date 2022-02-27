@@ -20,11 +20,22 @@ const bookKeyMap = {
 }
 
 function generate(audiobook, outputPath, uid, gid) {
-  var fileString = `[audiobookshelf v${package.version}]\n`
+  var fileString = ';ABMETADATA1\n'
+  fileString += `#audiobookshelf v${package.version}\n\n`
 
   for (const key in bookKeyMap) {
     const value = audiobook.book[bookKeyMap[key]] || ''
     fileString += `${key}=${value}\n`
+  }
+
+  if (audiobook.chapters.length) {
+    fileString += '\n'
+    audiobook.chapters.forEach((chapter) => {
+      fileString += `[CHAPTER]\n`
+      fileString += `start=${chapter.start}\n`
+      fileString += `end=${chapter.end}\n`
+      fileString += `title=${chapter.title}\n`
+    })
   }
 
   return fs.writeFile(outputPath, fileString).then(() => {

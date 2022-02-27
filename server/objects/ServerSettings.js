@@ -1,4 +1,4 @@
-const { CoverDestination, BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
+const { BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
 const Logger = require('../Logger')
 
 class ServerSettings {
@@ -18,8 +18,8 @@ class ServerSettings {
     this.scannerDisableWatcher = false
 
     // Metadata
-    this.coverDestination = CoverDestination.METADATA
-    this.saveMetadataFile = false
+    this.storeCoverWithBook = false
+    this.storeMetadataWithBook = false
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -59,8 +59,12 @@ class ServerSettings {
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
 
-    this.coverDestination = settings.coverDestination || CoverDestination.METADATA
-    this.saveMetadataFile = !!settings.saveMetadataFile
+    this.storeCoverWithBook = settings.storeCoverWithBook
+    if (this.storeCoverWithBook == undefined) { // storeCoverWithBook added in 1.7.1 to replace coverDestination
+      this.storeCoverWithBook = !!settings.coverDestination
+    }
+    this.storeMetadataWithBook = !!settings.storeCoverWithBook
+
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
 
@@ -95,8 +99,8 @@ class ServerSettings {
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
-      coverDestination: this.coverDestination,
-      saveMetadataFile: !!this.saveMetadataFile,
+      storeCoverWithBook: this.storeCoverWithBook,
+      storeMetadataWithBook: this.storeMetadataWithBook,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,

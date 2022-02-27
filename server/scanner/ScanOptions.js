@@ -1,5 +1,3 @@
-const { CoverDestination } = require('../utils/constants')
-
 class ScanOptions {
   constructor(options) {
     this.forceRescan = false
@@ -7,7 +5,7 @@ class ScanOptions {
     // Server settings
     this.parseSubtitles = false
     this.findCovers = false
-    this.coverDestination = CoverDestination.METADATA
+    this.storeCoverWithBook = false
     this.preferAudioMetadata = false
     this.preferOpfMetadata = false
 
@@ -32,7 +30,7 @@ class ScanOptions {
       metadataPrecedence: this.metadataPrecedence,
       parseSubtitles: this.parseSubtitles,
       findCovers: this.findCovers,
-      coverDestination: this.coverDestination,
+      storeCoverWithBook: this.storeCoverWithBook,
       preferAudioMetadata: this.preferAudioMetadata,
       preferOpfMetadata: this.preferOpfMetadata
     }
@@ -43,7 +41,7 @@ class ScanOptions {
 
     this.parseSubtitles = !!serverSettings.scannerParseSubtitle
     this.findCovers = !!serverSettings.scannerFindCovers
-    this.coverDestination = serverSettings.coverDestination
+    this.storeCoverWithBook = serverSettings.storeCoverWithBook
     this.preferAudioMetadata = serverSettings.scannerPreferAudioMetadata
     this.preferOpfMetadata = serverSettings.scannerPreferOpfMetadata
   }

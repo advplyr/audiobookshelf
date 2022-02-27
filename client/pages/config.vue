@@ -57,16 +57,6 @@ export default {
       this.$store.commit('setDeveloperMode', value)
       this.$toast.info(`Developer Mode ${value ? 'Enabled' : 'Disabled'}`)
     }
-    // saveMetadataComplete(result) {
-    //   this.savingMetadata = false
-    //   if (!result) return
-    //   this.$toast.success(`Metadata saved for ${result.success} audiobooks`)
-    // },
-    // saveMetadataFiles() {
-    //   this.savingMetadata = true
-    //   this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
-    //   this.$root.socket.emit('save_metadata')
-    // }
   },
   mounted() {}
 }
