@@ -124,8 +124,8 @@ class Db {
     if (!this.serverSettings) {
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
-      global.ServerSettings = this.serverSettings.toJSON()
     }
+    global.ServerSettings = this.serverSettings.toJSON()
   }
 
   async load() {
@@ -310,6 +310,13 @@ class Db {
       Logger.error(`[Db] Failed to select user sessions "${userId}"`, error)
       return []
     })
+  }
+
+  // Check if server was updated and previous version was earlier than param
+  checkPreviousVersionIsBefore(version) {
+    if (!this.previousVersion) return false
+    // true if version > previousVersion
+    return version.localeCompare(this.previousVersion) >= 0
   }
 }
 module.exports = Db

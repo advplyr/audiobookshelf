@@ -19,7 +19,7 @@ const bookKeyMap = {
   genres: 'genresCommaSeparated'
 }
 
-function generate(audiobook, outputPath, uid, gid) {
+function generate(audiobook, outputPath) {
   var fileString = ';ABMETADATA1\n'
   fileString += `#audiobookshelf v${package.version}\n\n`
 
@@ -39,7 +39,7 @@ function generate(audiobook, outputPath, uid, gid) {
   }
 
   return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms(outputPath, 0o774, uid, gid).then(() => true)
+    return filePerms(outputPath, 0o774, global.Uid, global.Gid).then(() => true)
   }).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false

@@ -35,6 +35,8 @@ class Server {
     this.Uid = isNaN(UID) ? 0 : Number(UID)
     this.Gid = isNaN(GID) ? 0 : Number(GID)
     this.Host = '0.0.0.0'
+    global.Uid = this.Uid
+    global.Gid = this.Gid
     global.ConfigPath = Path.normalize(CONFIG_PATH)
     global.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
@@ -132,6 +134,10 @@ class Server {
       Logger.info(`[Server] Running scan for duplicate book IDs`)
       await this.scanner.fixDuplicateIds()
     }
+    // If server upgrade and last version was 1.7.0 or earlier - add abmetadata files
+    // if (this.db.checkPreviousVersionIsBefore('1.7.1')) {
+    // TODO: wait until stable
+    // }
 
     if (this.db.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)

@@ -11,7 +11,17 @@
         <ui-toggle-switch v-model="newServerSettings.storeCoverWithBook" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithBook', val)" />
         <ui-tooltip :text="tooltips.storeCoverWithBook">
           <p class="pl-4 text-lg">
-            Store covers with audiobook
+            Store covers with book
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.storeMetadataWithBook" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithBook', val)" />
+        <ui-tooltip :text="tooltips.storeMetadataWithBook">
+          <p class="pl-4 text-lg">
+            Store metadata with book
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -181,10 +191,11 @@ export default {
         scannerDisableWatcher: 'Disables the automatic adding/updating of audiobooks when file changes are detected. *Requires server restart',
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
-        scannerParseSubtitle: 'Extract subtitles from audiobook directory names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
+        scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
         bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
-        storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers inside your audiobooks directory. Only one file named "cover" will be kept.',
+        storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers in the books folder. Only one file named "cover" will be kept',
+        storeMetadataWithBook: 'By default metadata files are stored in /metadata/books, enabling this setting will store metadata files in the books folder. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
       }
     }

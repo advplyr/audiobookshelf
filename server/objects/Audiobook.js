@@ -5,6 +5,7 @@ const { comparePaths, getIno, getId, elapsedPretty } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
+const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const Logger = require('../Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
@@ -44,6 +45,9 @@ class Audiobook {
     if (audiobook) {
       this.construct(audiobook)
     }
+
+    // Temp flags
+    this.isSavingMetadata = false
   }
 
   construct(audiobook) {
@@ -424,6 +428,10 @@ class Audiobook {
 
     if (payload.book && this.book.update(payload.book)) {
       hasUpdates = true
+
+      // TODO: Book may have updates where this save is not necessary
+      //          add check first if metadata update is needed
+      this.saveAbMetadata()
     }
 
     if (hasUpdates) {
@@ -1024,6 +1032,26 @@ class Audiobook {
       return true
     }
     return false
+  }
+
+  async saveAbMetadata() {
+    if (this.isSavingMetadata) return
+    this.isSavingMetadata = true
+
+    var metadataPath = Path.join(global.MetadataPath, 'books', this.id)
+    if (global.ServerSettings.storeMetadataWithBook) {
+      metadataPath = this.fullPath
+    } else {
+      // Make sure metadata book dir exists
+      await fs.ensureDir(metadataPath)
+    }
+    metadataPath = Path.join(metadataPath, 'metadata.abs')
+
+    return abmetadataGenerator.generate(this, metadataPath).then((success) => {
+      if (!success) Logger.error(`[Audiobook] Failed saving abmetadata to "${metadataPath}"`)
+      else Logger.debug(`[Audiobook] Success saving abmetadata to "${metadataPath}"`)
+      return success
+    })
   }
 }
 module.exports = Audiobook
