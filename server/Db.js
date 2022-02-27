@@ -172,12 +172,41 @@ class Db {
     }
   }
 
-  updateAudiobook(audiobook) {
+  async updateAudiobook(audiobook) {
+    if (audiobook && audiobook.saveAbMetadata) {
+      // TODO: Book may have updates where this save is not necessary
+      //          add check first if metadata update is needed
+      await audiobook.saveAbMetadata()
+    } else {
+      Logger.error(`[Db] Invalid audiobook object passed to updateAudiobook`, audiobook)
+    }
+
     return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
       Logger.debug(`[DB] Audiobook updated ${results.updated}`)
       return true
     }).catch((error) => {
       Logger.error(`[DB] Audiobook update failed ${error}`)
+      return false
+    })
+  }
+
+  insertAudiobook(audiobook) {
+    return this.insertAudiobooks([audiobook])
+  }
+
+  async insertAudiobooks(audiobooks) {
+    // TODO: Books may have updates where this save is not necessary
+    //          add check first if metadata update is needed
+    await Promise.all(audiobooks.map(async (ab) => {
+      if (ab && ab.saveAbMetadata) return ab.saveAbMetadata()
+      return null
+    }))
+
+    return this.audiobooksDb.insert(audiobooks).then((results) => {
+      Logger.debug(`[DB] Audiobooks inserted ${results.updated}`)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Audiobooks insert failed ${error}`)
       return false
     })
   }

@@ -117,7 +117,7 @@ class Scanner {
 
     if (hasUpdated) {
       this.emitter('audiobook_updated', audiobook.toJSONExpanded())
-      await this.db.updateEntity('audiobook', audiobook)
+      await this.db.updateAudiobook(audiobook)
       return ScanResult.UPDATED
     }
     return ScanResult.UPTODATE
@@ -314,7 +314,7 @@ class Scanner {
     }))
     newAudiobooks = newAudiobooks.filter(ab => ab) // Filter out nulls
     libraryScan.resultsAdded += newAudiobooks.length
-    await this.db.insertEntities('audiobook', newAudiobooks)
+    await this.db.insertAudiobooks(newAudiobooks)
     this.emitter('audiobooks_added', newAudiobooks.map(ab => ab.toJSONExpanded()))
   }
 
@@ -522,7 +522,7 @@ class Scanner {
       Logger.debug(`[Scanner] Folder update group must be a new book "${bookDir}" in library "${library.name}"`)
       var newAudiobook = await this.scanPotentialNewAudiobook(folder, fullPath)
       if (newAudiobook) {
-        await this.db.insertEntity('audiobook', newAudiobook)
+        await this.db.insertAudiobook(newAudiobook)
         this.emitter('audiobook_added', newAudiobook.toJSONExpanded())
       }
       bookGroupingResults[bookDir] = newAudiobook ? ScanResult.ADDED : ScanResult.NOTHING
@@ -612,7 +612,7 @@ class Scanner {
         }
         Logger.warn('Found duplicate ID - updating from', ab.id, 'to', abCopy.id)
         await this.db.removeEntity('audiobook', ab.id)
-        await this.db.insertEntity('audiobook', abCopy)
+        await this.db.insertAudiobook(abCopy)
         audiobooksUpdated++
       } else {
         ids[ab.id] = true
@@ -665,7 +665,7 @@ class Scanner {
     }
 
     if (hasUpdated) {
-      await this.db.updateEntity('audiobook', audiobook)
+      await this.db.updateAudiobook(audiobook)
       this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     }
 

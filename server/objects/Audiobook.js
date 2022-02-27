@@ -428,10 +428,6 @@ class Audiobook {
 
     if (payload.book && this.book.update(payload.book)) {
       hasUpdates = true
-
-      // TODO: Book may have updates where this save is not necessary
-      //          add check first if metadata update is needed
-      this.saveAbMetadata()
     }
 
     if (hasUpdates) {
@@ -526,12 +522,13 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles, opfMetadataOverrideDetails, forceRescan = false) {
+  async syncOtherFiles(newOtherFiles, opfMetadataOverrideDetails) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
 
     var otherFilenamesAlreadyInBook = this.otherFiles.map(ofile => ofile.filename)
+    var alreadyHasAbsMetadata = otherFilenamesAlreadyInBook.includes('metadata.abs')
     var alreadyHasDescTxt = otherFilenamesAlreadyInBook.includes('desc.txt')
     var alreadyHasReaderTxt = otherFilenamesAlreadyInBook.includes('reader.txt')
 
@@ -543,9 +540,9 @@ class Audiobook {
       hasUpdates = true
     }
 
-    // If desc.txt is new or forcing rescan then read it and update description (will overwrite)
+    // If desc.txt is new then read it and update description (will overwrite)
     var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
-    if (descriptionTxt && (!alreadyHasDescTxt || forceRescan)) {
+    if (descriptionTxt && !alreadyHasDescTxt) {
       var newDescription = await readTextFile(descriptionTxt.fullPath)
       if (newDescription) {
         Logger.debug(`[Audiobook] Sync Other File desc.txt: ${newDescription}`)
@@ -553,9 +550,9 @@ class Audiobook {
         hasUpdates = true
       }
     }
-    // If reader.txt is new or forcing rescan then read it and update narrator (will overwrite)
+    // If reader.txt is new then read it and update narrator (will overwrite)
     var readerTxt = newOtherFiles.find(file => file.filename === 'reader.txt')
-    if (readerTxt && (!alreadyHasReaderTxt || forceRescan)) {
+    if (readerTxt && !alreadyHasReaderTxt) {
       var newReader = await readTextFile(readerTxt.fullPath)
       if (newReader) {
         Logger.debug(`[Audiobook] Sync Other File reader.txt: ${newReader}`)
@@ -564,7 +561,24 @@ class Audiobook {
       }
     }
 
-    // If OPF file and was not already there
+
+    // If metadata.abs is new then read it and set all defined keys (will overwrite)
+    var metadataAbs = newOtherFiles.find(file => file.filename === 'metadata.abs')
+    if (metadataAbs && !alreadyHasAbsMetadata) {
+      var abmetadataText = await readTextFile(metadataAbs.fullPath)
+      if (abmetadataText) {
+        var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
+        if (metadataUpdateObject && metadataUpdateObject.book) {
+          Logger.debug(`[Audiobook] Updating book "${this.title}" details from metadata.abs file`, metadataUpdateObject)
+          if (this.update(metadataUpdateObject)) {
+            Logger.debug(`[Audiobook] Some details were updated from metadata.abs for "${this.title}"`)
+            hasUpdates = true
+          }
+        }
+      }
+    }
+
+    // If OPF file and was not already there OR prefer opf metadata
     var metadataOpf = newOtherFiles.find(file => file.ext === '.opf' || file.filename === 'metadata.xml')
     if (metadataOpf && (!otherFilenamesAlreadyInBook.includes(metadataOpf.filename) || opfMetadataOverrideDetails)) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
@@ -800,9 +814,10 @@ class Audiobook {
     return false
   }
 
-  // Look for desc.txt and reader.txt and update details if found
+  // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async saveDataFromTextFiles(opfMetadataOverrideDetails) {
     var bookUpdatePayload = {}
+
     var descriptionText = await this.fetchTextFromTextFile('desc.txt')
     if (descriptionText) {
       Logger.debug(`[Audiobook] "${this.title}" found desc.txt updating description with "${descriptionText.slice(0, 20)}..."`)
@@ -814,6 +829,22 @@ class Audiobook {
       bookUpdatePayload.narrator = readerText
     }
 
+    // abmetadata will always overwrite
+    var abmetadataText = await this.fetchTextFromTextFile('metadata.abs')
+    if (abmetadataText) {
+      var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
+      if (metadataUpdateObject && metadataUpdateObject.book) {
+        Logger.debug(`[Audiobook] "${this.title}" found book details from metadata.abs file`, metadataUpdateObject)
+        for (const key in metadataUpdateObject.book) {
+          var value = metadataUpdateObject.book[key]
+          if (key && value !== undefined) {
+            bookUpdatePayload[key] = value
+          }
+        }
+      }
+    }
+
+    // Opf only overwrites if detail is empty
     var metadataOpf = this.otherFiles.find(file => file.isOPFFile || file.filename === 'metadata.xml')
     if (metadataOpf) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
@@ -1048,6 +1079,7 @@ class Audiobook {
     metadataPath = Path.join(metadataPath, 'metadata.abs')
 
     return abmetadataGenerator.generate(this, metadataPath).then((success) => {
+      this.isSavingMetadata = false
       if (!success) Logger.error(`[Audiobook] Failed saving abmetadata to "${metadataPath}"`)
       else Logger.debug(`[Audiobook] Success saving abmetadata to "${metadataPath}"`)
       return success
