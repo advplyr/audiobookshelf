@@ -12,17 +12,14 @@ const Author = require('./objects/Author')
 const ServerSettings = require('./objects/ServerSettings')
 
 class Db {
-  constructor(ConfigPath, AudiobookPath) {
-    this.ConfigPath = ConfigPath
-    this.AudiobookPath = AudiobookPath
-
-    this.AudiobooksPath = Path.join(ConfigPath, 'audiobooks')
-    this.UsersPath = Path.join(ConfigPath, 'users')
-    this.SessionsPath = Path.join(ConfigPath, 'sessions')
-    this.LibrariesPath = Path.join(ConfigPath, 'libraries')
-    this.SettingsPath = Path.join(ConfigPath, 'settings')
-    this.CollectionsPath = Path.join(ConfigPath, 'collections')
-    this.AuthorsPath = Path.join(ConfigPath, 'authors')
+  constructor() {
+    this.AudiobooksPath = Path.join(global.ConfigPath, 'audiobooks')
+    this.UsersPath = Path.join(global.ConfigPath, 'users')
+    this.SessionsPath = Path.join(global.ConfigPath, 'sessions')
+    this.LibrariesPath = Path.join(global.ConfigPath, 'libraries')
+    this.SettingsPath = Path.join(global.ConfigPath, 'settings')
+    this.CollectionsPath = Path.join(global.ConfigPath, 'collections')
+    this.AuthorsPath = Path.join(global.ConfigPath, 'authors')
 
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
@@ -88,7 +85,7 @@ class Db {
       name: 'Main',
       folder: { // Generates default folder
         id: 'audiobooks',
-        fullPath: this.AudiobookPath,
+        fullPath: global.AudiobookPath,
         libraryId: 'main'
       }
     })
@@ -127,6 +124,7 @@ class Db {
     if (!this.serverSettings) {
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
+      global.ServerSettings = this.serverSettings.toJSON()
     }
   }
 
@@ -170,7 +168,7 @@ class Db {
     // Update server version in server settings
     if (this.previousVersion) {
       this.serverSettings.version = version
-      await this.updateEntity('settings', this.serverSettings)
+      await this.updateServerSettings()
     }
   }
 
@@ -199,6 +197,11 @@ class Db {
     }).catch((error) => {
       Logger.error(`[DB] Update user Failed ${error}`)
     })
+  }
+
+  updateServerSettings() {
+    global.ServerSettings = this.serverSettings.toJSON()
+    return this.updateEntity('settings', this.serverSettings)
   }
 
   insertEntities(entityName, entities) {

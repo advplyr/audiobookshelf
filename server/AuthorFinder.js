@@ -7,9 +7,8 @@ const Audnexus = require('./providers/Audnexus')
 const { downloadFile } = require('./utils/fileUtils')
 
 class AuthorFinder {
-  constructor(MetadataPath) {
-    this.MetadataPath = MetadataPath
-    this.AuthorPath = Path.join(MetadataPath, 'authors')
+  constructor() {
+    this.AuthorPath = Path.join(global.MetadataPath, 'authors')
 
     this.audnexus = new Audnexus()
   }

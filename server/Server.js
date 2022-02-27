@@ -35,27 +35,33 @@ class Server {
     this.Uid = isNaN(UID) ? 0 : Number(UID)
     this.Gid = isNaN(GID) ? 0 : Number(GID)
     this.Host = '0.0.0.0'
-    this.ConfigPath = Path.normalize(CONFIG_PATH)
-    this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
-    this.MetadataPath = Path.normalize(METADATA_PATH)
+    global.ConfigPath = Path.normalize(CONFIG_PATH)
+    global.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
+    global.MetadataPath = Path.normalize(METADATA_PATH)
+    // Fix backslash if not on Windows
+    if (process.platform !== 'win32') {
+      global.ConfigPath = global.ConfigPath.replace(/\\/g, '/')
+      global.AudiobookPath = global.AudiobookPath.replace(/\\/g, '/')
+      global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
+    }
 
-    fs.ensureDirSync(CONFIG_PATH, 0o774)
-    fs.ensureDirSync(METADATA_PATH, 0o774)
-    fs.ensureDirSync(AUDIOBOOK_PATH, 0o774)
+    fs.ensureDirSync(global.ConfigPath, 0o774)
+    fs.ensureDirSync(global.MetadataPath, 0o774)
+    fs.ensureDirSync(global.AudiobookPath, 0o774)
 
-    this.db = new Db(this.ConfigPath, this.AudiobookPath)
+    this.db = new Db()
     this.auth = new Auth(this.db)
-    this.backupManager = new BackupManager(this.MetadataPath, this.Uid, this.Gid, this.db)
-    this.logManager = new LogManager(this.MetadataPath, this.db)
-    this.cacheManager = new CacheManager(this.MetadataPath)
-    this.watcher = new Watcher(this.AudiobookPath)
-    this.coverController = new CoverController(this.db, this.cacheManager, this.MetadataPath, this.AudiobookPath)
-    this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
+    this.backupManager = new BackupManager(this.Uid, this.Gid, this.db)
+    this.logManager = new LogManager(this.db)
+    this.cacheManager = new CacheManager()
+    this.watcher = new Watcher()
+    this.coverController = new CoverController(this.db, this.cacheManager)
+    this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
 
-    this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
-    this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.Uid, this.Gid)
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.auth, this.scanner, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.downloadManager = new DownloadManager(this.db, this.Uid, this.Gid)
+    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager
@@ -155,10 +161,10 @@ class Server {
     app.use(express.static(distPath))
 
     // Old static path for covers
-    app.use('/local', this.authMiddleware.bind(this), express.static(this.AudiobookPath))
+    app.use('/local', this.authMiddleware.bind(this), express.static(global.AudiobookPath))
 
     // Metadata folder static path
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
+    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
     // Downloads folder static path
     app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
@@ -349,7 +355,7 @@ class Server {
 
   // Remove unused /metadata/books/{id} folders
   async purgeMetadata() {
-    var booksMetadata = Path.join(this.MetadataPath, 'books')
+    var booksMetadata = Path.join(global.MetadataPath, 'books')
     var booksMetadataExists = await fs.pathExists(booksMetadata)
     if (!booksMetadataExists) return
     var foldersInBooksMetadata = await fs.readdir(booksMetadata)
@@ -622,9 +628,9 @@ class Server {
 
     const initialPayload = {
       serverSettings: this.serverSettings.toJSON(),
-      audiobookPath: this.AudiobookPath,
-      metadataPath: this.MetadataPath,
-      configPath: this.ConfigPath,
+      audiobookPath: global.AudiobookPath,
+      metadataPath: global.MetadataPath,
+      configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),
       stream: client.stream || null,
       librariesScanning: this.scanner.librariesScanning,

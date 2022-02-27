@@ -5,9 +5,8 @@ const Logger = require('./Logger')
 const { resizeImage } = require('./utils/ffmpegHelpers')
 
 class CacheManager {
-  constructor(MetadataPath) {
-    this.MetadataPath = MetadataPath
-    this.CachePath = Path.join(this.MetadataPath, 'cache')
+  constructor() {
+    this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
   }
 

@@ -9,13 +9,11 @@ const globals = require('./utils/globals')
 const { downloadFile } = require('./utils/fileUtils')
 
 class CoverController {
-  constructor(db, cacheManager, MetadataPath, AudiobookPath) {
+  constructor(db, cacheManager) {
     this.db = db
     this.cacheManager = cacheManager
 
-    this.MetadataPath = MetadataPath.replace(/\\/g, '/')
-    this.BookMetadataPath = Path.posix.join(this.MetadataPath, 'books')
-    this.AudiobookPath = AudiobookPath
+    this.BookMetadataPath = Path.posix.join(global.MetadataPath, 'books')
   }
 
   getCoverDirectory(audiobook) {

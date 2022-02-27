@@ -13,9 +13,9 @@ const Logger = require('./Logger')
 const Backup = require('./objects/Backup')
 
 class BackupManager {
-  constructor(MetadataPath, Uid, Gid, db) {
-    this.MetadataPath = MetadataPath
-    this.BackupPath = Path.join(this.MetadataPath, 'backups')
+  constructor(Uid, Gid, db) {
+    this.BackupPath = Path.join(global.MetadataPath, 'backups')
+    this.MetadataBooksPath = Path.join(global.MetadataPath, 'books')
 
     this.Uid = Uid
     this.Gid = Gid
@@ -142,10 +142,9 @@ class BackupManager {
       return
     }
     const zip = new StreamZip.async({ file: backup.fullPath })
-    await zip.extract('config/', this.db.ConfigPath)
+    await zip.extract('config/', global.ConfigPath)
     if (backup.backupMetadataCovers) {
-      var metadataBooksPath = Path.join(this.MetadataPath, 'books')
-      await zip.extract('metadata-books/', metadataBooksPath)
+      await zip.extract('metadata-books/', this.MetadataBooksPath)
     }
     await this.db.reinit()
     socket.emit('apply_backup_complete', true)
@@ -157,7 +156,7 @@ class BackupManager {
     var lastBackup = this.backups.shift()
 
     const zip = new StreamZip.async({ file: lastBackup.fullPath })
-    await zip.extract('config/', this.db.ConfigPath)
+    await zip.extract('config/', global.ConfigPath)
     console.log('Set Last Backup')
     await this.db.reinit()
   }
@@ -196,7 +195,7 @@ class BackupManager {
   async runBackup() {
     // Check if Metadata Path is inside Config Path (otherwise there will be an infinite loop as the archiver tries to zip itself)
     Logger.info(`[BackupManager] Running Backup`)
-    var metadataBooksPath = this.serverSettings.backupMetadataCovers ? Path.join(this.MetadataPath, 'books') : null
+    var metadataBooksPath = this.serverSettings.backupMetadataCovers ? this.MetadataBooksPath : null
 
     var newBackup = new Backup()
 

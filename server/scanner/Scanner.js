@@ -15,12 +15,9 @@ const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
 
 class Scanner {
-  constructor(AUDIOBOOK_PATH, METADATA_PATH, db, coverController, emitter) {
-    this.AudiobookPath = AUDIOBOOK_PATH
-    this.MetadataPath = METADATA_PATH
-    this.BookMetadataPath = Path.posix.join(this.MetadataPath.replace(/\\/g, '/'), 'books')
-    var LogDirPath = Path.join(this.MetadataPath, 'logs')
-    this.ScanLogPath = Path.join(LogDirPath, 'scans')
+  constructor(db, coverController, emitter) {
+    this.BookMetadataPath = Path.posix.join(global.MetadataPath, 'books')
+    this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
     this.db = db
     this.coverController = coverController
@@ -89,7 +86,7 @@ class Scanner {
     // Sync other files first so that local images are used as cover art
     // TODO: Cleanup other file sync
     var allOtherFiles = checkRes.newOtherFileData.concat(audiobook._otherFiles)
-    if (await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, this.db.serverSettings.scannerPreferOpfMetadata)) {
+    if (await audiobook.syncOtherFiles(allOtherFiles, this.db.serverSettings.scannerPreferOpfMetadata)) {
       hasUpdated = true
     }
 
@@ -330,7 +327,7 @@ class Scanner {
     if (newOtherFileData.length || libraryScan.scanOptions.forceRescan) {
       // TODO: Cleanup other file sync
       var allOtherFiles = newOtherFileData.concat(existingOtherFileData)
-      if (await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, libraryScan.preferOpfMetadata)) {
+      if (await audiobook.syncOtherFiles(allOtherFiles, libraryScan.preferOpfMetadata)) {
         hasUpdated = true
       }
     }

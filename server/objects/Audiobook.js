@@ -422,13 +422,8 @@ class Audiobook {
       hasUpdates = true
     }
 
-    if (payload.book) {
-      if (!this.book) {
-        this.setBook(payload.book)
-        hasUpdates = true
-      } else if (this.book.update(payload.book)) {
-        hasUpdates = true
-      }
+    if (payload.book && this.book.update(payload.book)) {
+      hasUpdates = true
     }
 
     if (hasUpdates) {
@@ -523,7 +518,7 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles, metadataPath, opfMetadataOverrideDetails, forceRescan = false) {
+  async syncOtherFiles(newOtherFiles, opfMetadataOverrideDetails, forceRescan = false) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
@@ -640,7 +635,7 @@ class Audiobook {
     if (bookCoverPath && bookCoverPath.startsWith('/metadata')) {
       // Fixing old cover paths
       if (!this.book.coverFullPath) {
-        this.book.coverFullPath = Path.join(metadataPath, this.book.cover.substr('/metadata/'.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
+        this.book.coverFullPath = Path.join(global.MetadataPath, this.book.cover.substr('/metadata/'.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
         Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
       }
@@ -1014,14 +1009,14 @@ class Audiobook {
   }
 
   // Temp fix for cover is set but coverFullPath is not set
-  fixFullCoverPath(metadataPath) {
+  fixFullCoverPath() {
     if (!this.book.cover) return
     var bookCoverPath = this.book.cover.replace(/\\/g, '/')
     var newFullCoverPath = null
     if (bookCoverPath.startsWith('/s/book/')) {
       newFullCoverPath = Path.join(this.fullPath, bookCoverPath.substr(`/s/book/${this.id}`.length)).replace(/\/\//g, '/')
     } else if (bookCoverPath.startsWith('/metadata/')) {
-      newFullCoverPath = Path.join(metadataPath, bookCoverPath.substr('/metadata/'.length)).replace(/\/\//g, '/')
+      newFullCoverPath = Path.join(global.MetadataPath, bookCoverPath.substr('/metadata/'.length)).replace(/\/\//g, '/')
     }
     if (newFullCoverPath) {
       Logger.debug(`[Audiobook] "${this.title}" fixing full cover path "${this.book.cover}" => "${newFullCoverPath}"`)

@@ -1,10 +1,9 @@
 const AuthorFinder = require('../AuthorFinder')
 
 class AuthorScanner {
-  constructor(db, MetadataPath) {
+  constructor(db) {
     this.db = db
-    this.MetadataPath = MetadataPath
-    this.authorFinder = new AuthorFinder(MetadataPath)
+    this.authorFinder = new AuthorFinder()
   }
 
   getUniqueAuthors() {

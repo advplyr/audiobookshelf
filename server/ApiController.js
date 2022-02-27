@@ -18,7 +18,7 @@ const AuthorFinder = require('./AuthorFinder')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
-  constructor(MetadataPath, db, auth, scanner, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -31,10 +31,9 @@ class ApiController {
     this.cacheManager = cacheManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
-    this.MetadataPath = MetadataPath
 
     this.bookFinder = new BookFinder()
-    this.authorFinder = new AuthorFinder(this.MetadataPath)
+    this.authorFinder = new AuthorFinder()
 
     this.router = express()
     this.init()
@@ -287,7 +286,7 @@ class ApiController {
         this.backupManager.updateCronSchedule()
       }
 
-      await this.db.updateEntity('settings', this.db.serverSettings)
+      await this.db.updateServerSettings()
     }
     return res.json({
       success: true,

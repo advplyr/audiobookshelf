@@ -8,11 +8,10 @@ const Logger = require('./Logger')
 const TAG = '[LogManager]'
 
 class LogManager {
-  constructor(MetadataPath, db) {
+  constructor(db) {
     this.db = db
-    this.MetadataPath = MetadataPath
 
-    this.logDirPath = Path.join(this.MetadataPath, 'logs')
+    this.logDirPath = Path.join(global.MetadataPath, 'logs')
     this.dailyLogDirPath = Path.join(this.logDirPath, 'daily')
 
     this.currentDailyLog = null

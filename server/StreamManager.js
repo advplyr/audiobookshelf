@@ -5,15 +5,14 @@ const fs = require('fs-extra')
 const Path = require('path')
 
 class StreamManager {
-  constructor(db, MetadataPath, emitter, clientEmitter) {
+  constructor(db, emitter, clientEmitter) {
     this.db = db
 
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
-    this.MetadataPath = MetadataPath
     this.streams = []
-    this.StreamsPath = Path.join(this.MetadataPath, 'streams')
+    this.StreamsPath = Path.join(global.MetadataPath, 'streams')
   }
 
   get audiobooks() {
@@ -68,12 +67,12 @@ class StreamManager {
 
   async tempCheckStrayStreams() {
     try {
-      var dirs = await fs.readdir(this.MetadataPath)
+      var dirs = await fs.readdir(global.MetadataPath)
       if (!dirs || !dirs.length) return true
 
       await Promise.all(dirs.map(async (dirname) => {
         if (dirname !== 'streams' && dirname !== 'books' && dirname !== 'downloads' && dirname !== 'backups' && dirname !== 'logs' && dirname !== 'cache') {
-          var fullPath = Path.join(this.MetadataPath, dirname)
+          var fullPath = Path.join(global.MetadataPath, dirname)
           Logger.warn(`Removing OLD Orphan Stream ${dirname}`)
           return fs.remove(fullPath)
         }
