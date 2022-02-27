@@ -264,7 +264,7 @@ class BookController {
       return res.sendStatus(403)
     }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
-    if (!audiobook || !audiobook.book.cover) return res.sendStatus(404)
+    if (!audiobook) return res.sendStatus(404)
 
     // Check user can access this audiobooks library
     if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
