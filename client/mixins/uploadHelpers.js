@@ -175,7 +175,6 @@ export default {
       }).map(ab => this.cleanBook(ab, index++))
       return {
         books,
-        invalidBooks,
         ignoredFiles
       }
     },
