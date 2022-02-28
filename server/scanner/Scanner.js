@@ -85,7 +85,7 @@ class Scanner {
 
     // Sync other files first so that local images are used as cover art
     // TODO: Cleanup other file sync
-    var allOtherFiles = checkRes.newOtherFileData.concat(audiobook._otherFiles)
+    var allOtherFiles = checkRes.newOtherFileData.concat(checkRes.existingOtherFileData)
     if (await audiobook.syncOtherFiles(allOtherFiles, this.db.serverSettings.scannerPreferOpfMetadata)) {
       hasUpdated = true
     }

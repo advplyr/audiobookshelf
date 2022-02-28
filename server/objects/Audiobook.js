@@ -546,9 +546,10 @@ class Audiobook {
     var currOtherFileNum = this.otherFiles.length
 
     var otherFilenamesAlreadyInBook = this.otherFiles.map(ofile => ofile.filename)
-    var alreadyHasAbsMetadata = otherFilenamesAlreadyInBook.includes('metadata.abs')
     var alreadyHasDescTxt = otherFilenamesAlreadyInBook.includes('desc.txt')
     var alreadyHasReaderTxt = otherFilenamesAlreadyInBook.includes('reader.txt')
+
+    var existingAbMetadata = this.otherFiles.find(file => file.filename === 'metadata.abs')
 
     // Filter out other files no longer in directory
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
@@ -580,9 +581,14 @@ class Audiobook {
     }
 
 
-    // If metadata.abs is new then read it and set all defined keys (will overwrite)
+    // If metadata.abs is new OR modified then read it and set all defined keys (will overwrite)
     var metadataAbs = newOtherFiles.find(file => file.filename === 'metadata.abs')
-    if (metadataAbs && !alreadyHasAbsMetadata) {
+    var shouldUpdateAbs = !!metadataAbs && (metadataAbs.modified || !existingAbMetadata)
+    if (metadataAbs && metadataAbs.modified) {
+      Logger.debug(`[Audiobook] metadata.abs file was modified for "${this.title}"`)
+    }
+
+    if (shouldUpdateAbs) {
       var abmetadataText = await readTextFile(metadataAbs.fullPath)
       if (abmetadataText) {
         var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
@@ -933,6 +939,12 @@ class Audiobook {
     var keysToCheck = ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size']
     keysToCheck.forEach((key) => {
       if (existingFile[key] !== fileFound[key]) {
+
+        // Add modified flag on file data object if exists and was changed
+        if (key === 'mtimeMs' && existingFile[key]) {
+          fileFound.modified = true
+        }
+
         existingFile[key] = fileFound[key]
         hasUpdated = true
       }

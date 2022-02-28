@@ -39,7 +39,7 @@ function generate(audiobook, outputPath) {
   }
 
   return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms(outputPath, 0o774, global.Uid, global.Gid).then(() => true)
+    return filePerms(outputPath, 0o774, global.Uid, global.Gid, true).then((data) => true)
   }).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false
