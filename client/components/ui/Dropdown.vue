@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutsideObj">
     <p class="text-sm font-semibold">{{ label }}</p>
-    <button type="button" :disabled="disabled" class="relative w-full border border-gray-500 rounded shadow-sm pl-3 pr-8 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" :class="small ? 'h-9' : 'h-10'" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="relative w-full border border-gray-600 rounded shadow-sm pl-3 pr-8 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" :class="small ? 'h-9' : 'h-10'" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate" :class="small ? 'text-sm' : ''">{{ selectedText }}</span>
       </span>

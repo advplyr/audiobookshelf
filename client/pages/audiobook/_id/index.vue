@@ -5,7 +5,20 @@
         <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+
+            <!-- Book Progress Bar -->
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+
+            <!-- Book Cover Overlay -->
+            <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
+              <div v-show="showPlayButton && !streaming" class="h-full flex items-center justify-center pointer-events-none">
+                <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="startStream">
+                  <span class="material-icons text-4xl">play_circle_filled</span>
+                </div>
+              </div>
+
+              <span class="absolute bottom-2.5 right-2.5 z-10 material-icons text-lg cursor-pointer text-white text-opacity-75 hover:text-opacity-100 hover:scale-110 transform duration-200" @click="showEditCover">edit</span>
+            </div>
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
@@ -378,6 +391,10 @@ export default {
     }
   },
   methods: {
+    showEditCover() {
+      this.$store.commit('setBookshelfBookIds', [])
+      this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'cover' })
+    },
     openEbook() {
       this.$store.commit('showEReader', this.audiobook)
     },
@@ -411,8 +428,7 @@ export default {
         })
     },
     startStream() {
-      this.$store.commit('setStreamAudiobook', this.audiobook)
-      this.$root.socket.emit('open_stream', this.audiobook.id)
+      this.$eventBus.$emit('play-audiobook', this.audiobook.id)
     },
     editClick() {
       this.$store.commit('setBookshelfBookIds', [])

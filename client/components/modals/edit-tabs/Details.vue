@@ -72,6 +72,10 @@
             <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
           </ui-tooltip>
 
+          <ui-tooltip :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
+            <ui-btn v-if="isRootUser" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
+          </ui-tooltip>
+
           <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
             <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
           </ui-tooltip>
@@ -113,7 +117,8 @@ export default {
       resettingProgress: false,
       isScrollable: false,
       savingMetadata: false,
-      rescanning: false
+      rescanning: false,
+      quickMatching: false
     }
   },
   watch: {
@@ -163,12 +168,41 @@ export default {
     libraryId() {
       return this.audiobook ? this.audiobook.libraryId : null
     },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.libraryId) || 'google'
+    },
     libraryScan() {
       if (!this.libraryId) return null
       return this.$store.getters['scanners/getLibraryScan'](this.libraryId)
     }
   },
   methods: {
+    quickMatch() {
+      this.quickMatching = true
+      var matchOptions = {
+        provider: this.libraryProvider,
+        title: this.details.title,
+        author: this.details.author !== this.book.author ? this.details.author : null
+      }
+      this.$axios
+        .$post(`/api/books/${this.audiobookId}/match`, matchOptions)
+        .then((res) => {
+          this.quickMatching = false
+          if (res.warning) {
+            this.$toast.warning(res.warning)
+          } else if (res.updated) {
+            this.$toast.success('Audiobook details updated')
+          } else {
+            this.$toast.info('No updates were made')
+          }
+        })
+        .catch((error) => {
+          var errMsg = error.response ? error.response.data || '' : ''
+          console.error('Failed to match', error)
+          this.$toast.error(errMsg || 'Failed to match')
+          this.quickMatching = false
+        })
+    },
     audiobookScanComplete(result) {
       this.rescanning = false
       if (!result) {

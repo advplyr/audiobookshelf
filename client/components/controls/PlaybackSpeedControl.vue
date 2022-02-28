@@ -89,6 +89,8 @@ export default {
       this.showMenu = val
     }
   },
-  mounted() {}
+  mounted() {
+    this.currentPlaybackRate = this.playbackRate
+  }
 }
 </script>

@@ -39,20 +39,6 @@
             </template>
           </div>
         </div>
-
-        <!-- <form @submit.prevent="submitSearchForm">
-          <div class="flex items-center justify-start -mx-1 py-2 mt-2">
-            <div class="flex-grow px-1">
-              <ui-text-input-with-label v-model="searchTitle" label="Search Title" placeholder="Search" :disabled="processing" />
-            </div>
-            <div class="flex-grow px-1">
-              <ui-text-input-with-label v-model="searchAuthor" label="Author" :disabled="processing" />
-            </div>
-            <div class="w-24 px-1">
-              <ui-btn type="submit" class="mt-5 w-full" :padding-x="0">Search</ui-btn>
-            </div>
-          </div>
-        </form> -->
       </div>
     </div>
     <form @submit.prevent="submitSearchForm">

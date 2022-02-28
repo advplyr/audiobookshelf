@@ -5,8 +5,8 @@ const Path = require('path')
 const Logger = require('../Logger')
 const { version } = require('../../package.json')
 const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('../utils/scandir')
-const { comparePaths, getIno, getId, msToTimestamp } = require('../utils/index')
-const { ScanResult, CoverDestination, LogLevel } = require('../utils/constants')
+const { comparePaths, getId } = require('../utils/index')
+const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const BookFinder = require('../BookFinder')
@@ -15,12 +15,9 @@ const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
 
 class Scanner {
-  constructor(AUDIOBOOK_PATH, METADATA_PATH, db, coverController, emitter) {
-    this.AudiobookPath = AUDIOBOOK_PATH
-    this.MetadataPath = METADATA_PATH
-    this.BookMetadataPath = Path.posix.join(this.MetadataPath.replace(/\\/g, '/'), 'books')
-    var LogDirPath = Path.join(this.MetadataPath, 'logs')
-    this.ScanLogPath = Path.join(LogDirPath, 'scans')
+  constructor(db, coverController, emitter) {
+    this.BookMetadataPath = Path.posix.join(global.MetadataPath, 'books')
+    this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
     this.db = db
     this.coverController = coverController
@@ -33,7 +30,7 @@ class Scanner {
   }
 
   getCoverDirectory(audiobook) {
-    if (this.db.serverSettings.coverDestination === CoverDestination.AUDIOBOOK) {
+    if (this.db.serverSettings.storeCoverWithBook) {
       return {
         fullPath: audiobook.fullPath,
         relPath: '/s/book/' + audiobook.id
@@ -88,8 +85,8 @@ class Scanner {
 
     // Sync other files first so that local images are used as cover art
     // TODO: Cleanup other file sync
-    var allOtherFiles = checkRes.newOtherFileData.concat(audiobook._otherFiles)
-    if (await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, this.db.serverSettings.scannerPreferOpfMetadata)) {
+    var allOtherFiles = checkRes.newOtherFileData.concat(checkRes.existingOtherFileData)
+    if (await audiobook.syncOtherFiles(allOtherFiles, this.db.serverSettings.scannerPreferOpfMetadata)) {
       hasUpdated = true
     }
 
@@ -120,7 +117,7 @@ class Scanner {
 
     if (hasUpdated) {
       this.emitter('audiobook_updated', audiobook.toJSONExpanded())
-      await this.db.updateEntity('audiobook', audiobook)
+      await this.db.updateAudiobook(audiobook)
       return ScanResult.UPDATED
     }
     return ScanResult.UPTODATE
@@ -208,6 +205,7 @@ class Scanner {
     // Check for existing & removed audiobooks
     for (let i = 0; i < audiobooksInLibrary.length; i++) {
       var audiobook = audiobooksInLibrary[i]
+      // Find audiobook folder with matching inode or matching path
       var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino || comparePaths(abd.path, audiobook.path))
       if (!dataFound) {
         libraryScan.addLog(LogLevel.WARN, `Audiobook "${audiobook.title}" is missing`)
@@ -317,7 +315,7 @@ class Scanner {
     }))
     newAudiobooks = newAudiobooks.filter(ab => ab) // Filter out nulls
     libraryScan.resultsAdded += newAudiobooks.length
-    await this.db.insertEntities('audiobook', newAudiobooks)
+    await this.db.insertAudiobooks(newAudiobooks)
     this.emitter('audiobooks_added', newAudiobooks.map(ab => ab.toJSONExpanded()))
   }
 
@@ -330,7 +328,7 @@ class Scanner {
     if (newOtherFileData.length || libraryScan.scanOptions.forceRescan) {
       // TODO: Cleanup other file sync
       var allOtherFiles = newOtherFileData.concat(existingOtherFileData)
-      if (await audiobook.syncOtherFiles(allOtherFiles, this.MetadataPath, libraryScan.preferOpfMetadata)) {
+      if (await audiobook.syncOtherFiles(allOtherFiles, libraryScan.preferOpfMetadata)) {
         hasUpdated = true
       }
     }
@@ -525,7 +523,7 @@ class Scanner {
       Logger.debug(`[Scanner] Folder update group must be a new book "${bookDir}" in library "${library.name}"`)
       var newAudiobook = await this.scanPotentialNewAudiobook(folder, fullPath)
       if (newAudiobook) {
-        await this.db.insertEntity('audiobook', newAudiobook)
+        await this.db.insertAudiobook(newAudiobook)
         this.emitter('audiobook_added', newAudiobook.toJSONExpanded())
       }
       bookGroupingResults[bookDir] = newAudiobook ? ScanResult.ADDED : ScanResult.NOTHING
@@ -615,7 +613,7 @@ class Scanner {
         }
         Logger.warn('Found duplicate ID - updating from', ab.id, 'to', abCopy.id)
         await this.db.removeEntity('audiobook', ab.id)
-        await this.db.insertEntity('audiobook', abCopy)
+        await this.db.insertAudiobook(abCopy)
         audiobooksUpdated++
       } else {
         ids[ab.id] = true
@@ -624,6 +622,102 @@ class Scanner {
     if (audiobooksUpdated) {
       Logger.info(`[Scanner] Updated ${audiobooksUpdated} audiobook IDs`)
     }
+  }
+
+  async quickMatchBook(audiobook, options = {}) {
+    var provider = options.provider || 'google'
+    var searchTitle = options.title || audiobook.book._title
+    var searchAuthor = options.author || audiobook.book._author
+
+    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
+    if (!results.length) {
+      return {
+        warning: `No ${provider} match found`
+      }
+    }
+    var matchData = results[0]
+
+    // Update cover if not set OR overrideCover flag
+    var hasUpdated = false
+    if (matchData.cover && (!audiobook.book.cover || options.overrideCover)) {
+      Logger.debug(`[BookController] Updating cover "${matchData.cover}"`)
+      var coverResult = await this.coverController.downloadCoverFromUrl(audiobook, matchData.cover)
+      if (!coverResult || coverResult.error || !coverResult.cover) {
+        Logger.warn(`[BookController] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+      } else {
+        hasUpdated = true
+      }
+    }
+
+    // Update book details if not set OR overrideDetails flag
+    const detailKeysToUpdate = ['title', 'subtitle', 'author', 'narrator', 'publisher', 'publishYear', 'series', 'volumeNumber', 'asin', 'isbn']
+    const updatePayload = {}
+    for (const key in matchData) {
+      if (matchData[key] && detailKeysToUpdate.includes(key) && (!audiobook.book[key] || options.overrideDetails)) {
+        updatePayload[key] = matchData[key]
+      }
+    }
+
+    if (Object.keys(updatePayload).length) {
+      Logger.debug('[BookController] Updating details', updatePayload)
+      if (audiobook.update({ book: updatePayload })) {
+        hasUpdated = true
+      }
+    }
+
+    if (hasUpdated) {
+      await this.db.updateAudiobook(audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
+    }
+
+    return {
+      updated: hasUpdated,
+      audiobook: audiobook.toJSONExpanded()
+    }
+  }
+
+  async matchLibraryBooks(library) {
+    if (this.isLibraryScanning(library.id)) {
+      Logger.error(`[Scanner] Already scanning ${library.id}`)
+      return
+    }
+
+    const provider = library.provider || 'google'
+    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    if (!audiobooksInLibrary.length) {
+      return
+    }
+
+    var libraryScan = new LibraryScan()
+    libraryScan.setData(library, null, 'match')
+    this.librariesScanning.push(libraryScan.getScanEmitData)
+    this.emitter('scan_start', libraryScan.getScanEmitData)
+
+    Logger.info(`[Scanner] Starting library match books scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+
+    for (let i = 0; i < audiobooksInLibrary.length; i++) {
+      var audiobook = audiobooksInLibrary[i]
+      Logger.debug(`[Scanner] Quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
+      var result = await this.quickMatchBook(audiobook, { provider })
+      if (result.warning) {
+        Logger.warn(`[Scanner] Match warning ${result.warning} for audiobook "${audiobook.title}"`)
+      } else if (result.updated) {
+        libraryScan.resultsUpdated++
+      }
+
+      if (this.cancelLibraryScan[libraryScan.libraryId]) {
+        Logger.info(`[Scanner] Library match scan canceled for "${libraryScan.libraryName}"`)
+        delete this.cancelLibraryScan[libraryScan.libraryId]
+        var scanData = libraryScan.getScanEmitData
+        scanData.results = false
+        this.emitter('scan_complete', scanData)
+        this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+        return
+      }
+    }
+
+    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    this.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 }
 module.exports = Scanner

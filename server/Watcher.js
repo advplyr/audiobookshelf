@@ -13,6 +13,8 @@ class FolderWatcher extends EventEmitter {
     this.pendingFileUpdates = []
     this.pendingDelay = 4000
     this.pendingTimeout = null
+
+    this.disabled = false
   }
 
   get pendingFilePaths() {
@@ -66,15 +68,19 @@ class FolderWatcher extends EventEmitter {
 
   initWatcher(libraries) {
     libraries.forEach((lib) => {
-      this.buildLibraryWatcher(lib)
+      if (!lib.disableWatcher) {
+        this.buildLibraryWatcher(lib)
+      }
     })
   }
 
   addLibrary(library) {
+    if (this.disabled || library.disableWatcher) return
     this.buildLibraryWatcher(library)
   }
 
   updateLibrary(library) {
+    if (this.disabled || library.disableWatcher) return
     var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
     if (libwatcher) {
       libwatcher.name = library.name
@@ -90,6 +96,7 @@ class FolderWatcher extends EventEmitter {
   }
 
   removeLibrary(library) {
+    if (this.disabled) return
     var libwatcher = this.libraryWatchers.find(lib => lib.id === library.id)
     if (libwatcher) {
       Logger.info(`[Watcher] Removed watcher for "${library.name}"`)

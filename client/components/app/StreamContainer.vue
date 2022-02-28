@@ -6,7 +6,7 @@
     <div class="flex items-start pl-24 mb-6 md:mb-0">
       <div>
         <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
-          {{ title }} <span v-if="stream && $isDev" class="text-xs text-gray-400">({{ stream.id }})</span>
+          {{ title }}
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
@@ -22,26 +22,29 @@
         </div>
       </div>
       <div class="flex-grow" />
-      <span v-if="stream" class="material-icons p-4 cursor-pointer" @click="cancelStream">close</span>
+      <span class="material-icons p-4 cursor-pointer" @click="closePlayer">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :stream-id="streamId" :audiobook-id="audiobookId" :chapters="chapters" :loading="isLoading" :bookmarks="bookmarks" @close="cancelStream" @loaded="(d) => (totalDuration = d)" @showBookmarks="showBookmarks" @sync="sendStreamSync" @hook:mounted="audioPlayerMounted" />
+    <audio-player ref="audioPlayer" :chapters="chapters" :paused="!isPlaying" :loading="playerLoading" :bookmarks="bookmarks" @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" @close="closePlayer" @showBookmarks="showBookmarks" />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" />
   </div>
 </template>
 
 <script>
+import PlayerHandler from '@/players/PlayerHandler'
+
 export default {
   data() {
     return {
-      audioPlayerReady: false,
-      lastServerUpdateSentSeconds: 0,
-      stream: null,
+      playerHandler: new PlayerHandler(this),
       totalDuration: 0,
       showBookmarksModal: false,
       bookmarkCurrentTime: 0,
-      bookmarkAudiobookId: null
+      bookmarkAudiobookId: null,
+      playerLoading: false,
+      isPlaying: false,
+      currentTime: 0
     }
   },
   computed: {
@@ -69,17 +72,12 @@ export default {
       if (!this.audiobookId) return
       return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
     },
+    userAudiobookCurrentTime() {
+      return this.userAudiobook ? this.userAudiobook.currentTime || 0 : 0
+    },
     bookmarks() {
       if (!this.userAudiobook) return []
       return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
-    },
-    isLoading() {
-      if (!this.streamAudiobook) return false
-      if (this.stream) {
-        // IF Stream exists, set loading if stream is diff from next stream
-        return this.stream.audiobook.id !== this.streamAudiobook.id
-      }
-      return true
     },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
@@ -105,12 +103,6 @@ export default {
     authorsList() {
       return this.authorFL ? this.authorFL.split(', ') : []
     },
-    streamId() {
-      return this.stream ? this.stream.id : null
-    },
-    playlistUrl() {
-      return this.stream ? this.stream.clientPlaylistUri : null
-    },
     libraryId() {
       return this.streamAudiobook ? this.streamAudiobook.libraryId : null
     },
@@ -119,8 +111,40 @@ export default {
     }
   },
   methods: {
-    addListeningTime(time) {
-      console.log('Send listening time to server', time)
+    playPause() {
+      this.playerHandler.playPause()
+    },
+    jumpForward() {
+      this.playerHandler.jumpForward()
+    },
+    jumpBackward() {
+      this.playerHandler.jumpBackward()
+    },
+    setVolume(volume) {
+      this.playerHandler.setVolume(volume)
+    },
+    setPlaybackRate(playbackRate) {
+      this.playerHandler.setPlaybackRate(playbackRate)
+    },
+    seek(time) {
+      this.playerHandler.seek(time)
+    },
+    setCurrentTime(time) {
+      this.currentTime = time
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.setCurrentTime(time)
+      }
+    },
+    setDuration(duration) {
+      this.totalDuration = duration
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.setDuration(duration)
+      }
+    },
+    setBufferTime(buffertime) {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.setBufferTime(buffertime)
+      }
     },
     showBookmarks(currentTime) {
       this.bookmarkAudiobookId = this.audiobookId
@@ -128,47 +152,12 @@ export default {
       this.showBookmarksModal = true
     },
     selectBookmark(bookmark) {
-      if (this.$refs.audioPlayer) {
-        this.$refs.audioPlayer.selectBookmark(bookmark)
-      }
+      this.seek(bookmark.time)
       this.showBookmarksModal = false
     },
-    filterByAuthor() {
-      if (this.$route.name !== 'index') {
-        this.$router.push(`/library/${this.libraryId || this.$store.state.libraries.currentLibraryId}/bookshelf`)
-      }
-      var settingsUpdate = {
-        filterBy: `authors.${this.$encode(this.author)}`
-      }
-      this.$store.dispatch('user/updateUserSettings', settingsUpdate)
-    },
-    audioPlayerMounted() {
-      this.audioPlayerReady = true
-      if (this.stream) {
-        console.log('[STREAM-CONTAINER] audioPlayer Mounted w/ Stream', this.stream)
-        this.openStream()
-      }
-    },
-    cancelStream() {
-      this.$root.socket.emit('close_stream')
-    },
-    terminateStream() {
-      if (this.$refs.audioPlayer) {
-        this.$refs.audioPlayer.terminateStream()
-      }
-    },
-    openStream() {
-      var playOnLoad = this.$store.state.playOnLoad
-      console.log(`[StreamContainer] openStream PlayOnLoad`, playOnLoad)
-      if (!this.$refs.audioPlayer) {
-        console.error('NO Audio Player')
-        return
-      }
-      var currentTime = this.stream.clientCurrentTime || 0
-      this.$refs.audioPlayer.set(this.playlistUrl, currentTime, playOnLoad)
-      if (this.stream.isTranscodeComplete) {
-        this.$refs.audioPlayer.setStreamReady()
-      }
+    closePlayer() {
+      this.playerHandler.closePlayer()
+      this.$store.commit('setStreamAudiobook', null)
     },
     streamProgress(data) {
       if (!data.numSegments) return
@@ -181,21 +170,14 @@ export default {
       }
     },
     streamOpen(stream) {
-      this.stream = stream
-      this.$store.commit('updateStreamAudiobook', stream.audiobook)
-
-      if (this.$refs.audioPlayer) {
-        console.log('[StreamContainer] streamOpen', stream)
-        this.openStream()
-      } else if (this.audioPlayerReady) {
-        console.error('No Audio Ref')
-      }
+      this.$store.commit('setStreamAudiobook', stream.audiobook)
+      this.playerHandler.prepareStream(stream)
     },
     streamClosed(streamId) {
-      if (this.stream && (this.stream.id === streamId || streamId === 'n/a')) {
-        this.terminateStream()
-        this.$store.commit('clearStreamAudiobook', this.stream.audiobook.id)
-        this.stream = null
+      // Stream was closed from the server
+      if (this.playerHandler.isPlayingLocalAudiobook && this.playerHandler.currentStreamId === streamId) {
+        console.warn('[StreamContainer] Closing stream due to request from server')
+        this.playerHandler.closePlayer()
       }
     },
     streamReady() {
@@ -207,41 +189,42 @@ export default {
       }
     },
     streamError(streamId) {
-      if (this.stream && (this.stream.id === streamId || streamId === 'n/a')) {
-        this.terminateStream()
-        this.$store.commit('clearStreamAudiobook', this.stream.audiobook.id)
-        this.stream = null
+      // Stream had critical error from the server
+      if (this.playerHandler.isPlayingLocalAudiobook && this.playerHandler.currentStreamId === streamId) {
+        console.warn('[StreamContainer] Closing stream due to stream error from server')
+        this.playerHandler.closePlayer()
       }
     },
-    sendStreamSync(syncData) {
-      var diff = syncData.currentTime - this.lastServerUpdateSentSeconds
-      if (Math.abs(diff) < 1 && !syncData.timeListened) {
-        // No need to sync
-        return
-      }
-      this.$root.socket.emit('stream_sync', syncData)
-    },
-    // updateTime(currentTime) {
-    //   var diff = currentTime - this.lastServerUpdateSentSeconds
-    //   if (diff > 4 || diff < 0) {
-    //     this.lastServerUpdateSentSeconds = currentTime
-    //     var updatePayload = {
-    //       currentTime,
-    //       streamId: this.streamId
-    //     }
-    //     this.$root.socket.emit('stream_update', updatePayload)
-    //   }
-    // },
     streamReset({ startTime, streamId }) {
-      if (streamId !== this.streamId) {
-        console.error('resetStream StreamId Mismatch', streamId, this.streamId)
-        return
+      this.playerHandler.resetStream(startTime, streamId)
+    },
+    castSessionActive(isActive) {
+      if (isActive && this.playerHandler.isPlayingLocalAudiobook) {
+        // Cast session started switch to cast player
+        this.playerHandler.switchPlayer()
+      } else if (!isActive && this.playerHandler.isPlayingCastedAudiobook) {
+        // Cast session ended switch to local player
+        this.playerHandler.switchPlayer()
       }
-      if (this.$refs.audioPlayer) {
-        console.log(`[STREAM-CONTAINER] streamReset Received for time ${startTime}`)
-        this.$refs.audioPlayer.resetStream(startTime)
-      }
+    },
+    async playAudiobook(audiobookId) {
+      var audiobook = await this.$axios.$get(`/api/books/${audiobookId}`).catch((error) => {
+        console.error('Failed to fetch full audiobook', error)
+        return null
+      })
+      if (!audiobook) return
+      this.$store.commit('setStreamAudiobook', audiobook)
+
+      this.playerHandler.load(audiobook, true, this.userAudiobookCurrentTime)
     }
+  },
+  mounted() {
+    this.$eventBus.$on('cast-session-active', this.castSessionActive)
+    this.$eventBus.$on('play-audiobook', this.playAudiobook)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off('cast-session-active', this.castSessionActive)
+    this.$eventBus.$off('play-audiobook', this.playAudiobook)
   }
 }
 </script>

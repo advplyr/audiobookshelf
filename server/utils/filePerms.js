@@ -50,7 +50,7 @@ const chmodr = (p, mode, uid, gid, cb) => {
     // any error other than ENOTDIR means it's not readable, or
     // doesn't exist.  give up.
     if (er && er.code !== 'ENOTDIR') return cb(er)
-    if (er) {
+    if (er) { // Is a file
       return fs.chmod(p, mode).then(() => {
         fs.chown(p, uid, gid, cb)
       })
@@ -77,9 +77,9 @@ const chmodr = (p, mode, uid, gid, cb) => {
   })
 }
 
-module.exports = (path, mode, uid, gid) => {
+module.exports = (path, mode, uid, gid, silent = false) => {
   return new Promise((resolve) => {
-    Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
+    if (!silent) Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
     chmodr(path, mode, uid, gid, resolve)
   })
 }

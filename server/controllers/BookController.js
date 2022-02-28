@@ -18,9 +18,6 @@ class BookController {
   }
 
   findOne(req, res) {
-    if (!req.user) {
-      return res.sendStatus(403)
-    }
     var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
     if (!audiobook) return res.sendStatus(404)
 
@@ -48,8 +45,8 @@ class BookController {
     var hasUpdates = audiobook.update(req.body)
     if (hasUpdates) {
       await this.db.updateAudiobook(audiobook)
+      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     }
-    this.emitter('audiobook_updated', audiobook.toJSONExpanded())
     res.json(audiobook.toJSON())
   }
 
@@ -258,6 +255,25 @@ class BookController {
       width: width ? parseInt(width) : null
     }
     return this.cacheManager.handleCoverCache(res, audiobook, options)
+  }
+
+  // POST api/books/:id/match
+  async match(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.warn('User attempted to match without permission', req.user)
+      return res.sendStatus(403)
+    }
+    var audiobook = this.db.audiobooks.find(a => a.id === req.params.id)
+    if (!audiobook) return res.sendStatus(404)
+
+    // Check user can access this audiobooks library
+    if (!req.user.checkCanAccessLibrary(audiobook.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    var options = req.body || {}
+    var matchResult = await this.scanner.quickMatchBook(audiobook, options)
+    res.json(matchResult)
   }
 }
 module.exports = new BookController()

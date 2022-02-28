@@ -11,6 +11,9 @@ class AudioFile {
     this.ext = null
     this.path = null
     this.fullPath = null
+    this.mtimeMs = null
+    this.ctimeMs = null
+    this.birthtimeMs = null
     this.addedAt = null
 
     this.trackNumFromMeta = null
@@ -51,6 +54,9 @@ class AudioFile {
       ext: this.ext,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       trackNumFromMeta: this.trackNumFromMeta,
       discNumFromMeta: this.discNumFromMeta,
@@ -82,6 +88,9 @@ class AudioFile {
     this.ext = data.ext
     this.path = data.path
     this.fullPath = data.fullPath
+    this.mtimeMs = data.mtimeMs || 0
+    this.ctimeMs = data.ctimeMs || 0
+    this.birthtimeMs = data.birthtimeMs || 0
     this.addedAt = data.addedAt
     this.manuallyVerified = !!data.manuallyVerified
     this.invalid = !!data.invalid
@@ -124,6 +133,9 @@ class AudioFile {
     this.ext = fileData.ext
     this.path = fileData.path
     this.fullPath = fileData.fullPath
+    this.mtimeMs = fileData.mtimeMs || 0
+    this.ctimeMs = fileData.ctimeMs || 0
+    this.birthtimeMs = fileData.birthtimeMs || 0
     this.addedAt = Date.now()
 
     this.trackNumFromMeta = fileData.trackNumFromMeta

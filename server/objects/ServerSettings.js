@@ -1,4 +1,4 @@
-const { CoverDestination, BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
+const { BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
 const Logger = require('../Logger')
 
 class ServerSettings {
@@ -15,10 +15,11 @@ class ServerSettings {
     this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
+    this.scannerDisableWatcher = false
 
     // Metadata
-    this.coverDestination = CoverDestination.METADATA
-    this.saveMetadataFile = false
+    this.storeCoverWithBook = false
+    this.storeMetadataWithBook = false
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -38,6 +39,8 @@ class ServerSettings {
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
     this.bookshelfView = BookshelfView.STANDARD
 
+    this.sortingIgnorePrefix = false
+    this.chromecastEnabled = false
     this.logLevel = Logger.logLevel
     this.version = null
 
@@ -54,9 +57,14 @@ class ServerSettings {
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
+    this.scannerDisableWatcher = !!settings.scannerDisableWatcher
 
-    this.coverDestination = settings.coverDestination || CoverDestination.METADATA
-    this.saveMetadataFile = !!settings.saveMetadataFile
+    this.storeCoverWithBook = settings.storeCoverWithBook
+    if (this.storeCoverWithBook == undefined) { // storeCoverWithBook added in 1.7.1 to replace coverDestination
+      this.storeCoverWithBook = !!settings.coverDestination
+    }
+    this.storeMetadataWithBook = !!settings.storeCoverWithBook
+
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
 
@@ -70,6 +78,8 @@ class ServerSettings {
     this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
+    this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
+    this.chromecastEnabled = !!settings.chromecastEnabled
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -88,8 +98,9 @@ class ServerSettings {
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
-      coverDestination: this.coverDestination,
-      saveMetadataFile: !!this.saveMetadataFile,
+      scannerDisableWatcher: this.scannerDisableWatcher,
+      storeCoverWithBook: this.storeCoverWithBook,
+      storeMetadataWithBook: this.storeMetadataWithBook,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,
@@ -99,6 +110,8 @@ class ServerSettings {
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
       bookshelfView: this.bookshelfView,
+      sortingIgnorePrefix: this.sortingIgnorePrefix,
+      chromecastEnabled: this.chromecastEnabled,
       logLevel: this.logLevel,
       version: this.version
     }

@@ -43,6 +43,9 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    isCasting() {
+      return this.$store.state.globals.isCasting
     }
   },
   methods: {
@@ -99,7 +102,6 @@ export default {
       console.log('Init Payload', payload)
       if (payload.stream) {
         if (this.$refs.streamContainer) {
-          this.$store.commit('setStream', payload.stream)
           this.$refs.streamContainer.streamOpen(payload.stream)
         } else {
           console.warn('Stream Container not mounted')
@@ -110,7 +112,12 @@ export default {
         this.$store.commit('user/setSettings', payload.user.settings)
       }
       if (payload.serverSettings) {
-        this.$store.commit('settings/setServerSettings', payload.serverSettings)
+        this.$store.commit('setServerSettings', payload.serverSettings)
+
+        if (payload.serverSettings.chromecastEnabled) {
+          console.log('Chromecast enabled import script')
+          require('@/plugins/chromecast.js').default(this)
+        }
       }
       if (payload.SSOSettings) {
         this.$store.commit('settings/setSSOSettings', payload.SSOSettings)
@@ -208,7 +215,7 @@ export default {
     scanComplete(data) {
       console.log('Scan complete received', data)
 
-      var message = `Scan "${data.name}" complete!`
+      var message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" complete!`
       if (data.results) {
         var scanResultMsgs = []
         var results = data.results
@@ -219,7 +226,7 @@ export default {
         if (!scanResultMsgs.length) message += '\nEverything was up to date'
         else message += '\n' + scanResultMsgs.join('\n')
       } else {
-        message = `Scan "${data.name}" was canceled`
+        message = `${data.type === 'match' ? 'Match' : 'Scan'} "${data.name}" was canceled`
       }
 
       var existingScan = this.$store.getters['scanners/getLibraryScan'](data.id)
@@ -235,7 +242,7 @@ export default {
       this.$root.socket.emit('cancel_scan', id)
     },
     scanStart(data) {
-      data.toastId = this.$toast(`Scanning "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
+      data.toastId = this.$toast(`${data.type === 'match' ? 'Matching' : 'Scanning'} "${data.name}"...`, { timeout: false, type: 'info', draggable: false, closeOnClick: false, closeButton: CloseButton, closeButtonClassName: 'cancel-scan-btn', showCloseButtonOnHover: false, position: 'bottom-center', onClose: () => this.onScanToastCancel(data.id) })
       this.$store.commit('scanners/addUpdate', data)
     },
     scanProgress(data) {
@@ -514,6 +521,7 @@ export default {
     this.resize()
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
+
     this.$store.dispatch('libraries/load')
 
     // If experimental features set in local storage

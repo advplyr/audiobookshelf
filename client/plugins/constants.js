@@ -1,13 +1,17 @@
+const SupportedFileTypes = {
+  image: ['png', 'jpg', 'jpeg', 'webp'],
+  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'mp4', 'aac'],
+  ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
+  info: ['nfo'],
+  text: ['txt'],
+  opf: ['opf']
+}
+
 const DownloadStatus = {
   PENDING: 0,
   READY: 1,
   EXPIRED: 2,
   FAILED: 3
-}
-
-const CoverDestination = {
-  METADATA: 0,
-  AUDIOBOOK: 1
 }
 
 const BookCoverAspectRatio = {
@@ -21,8 +25,8 @@ const BookshelfView = {
 }
 
 const Constants = {
+  SupportedFileTypes,
   DownloadStatus,
-  CoverDestination,
   BookCoverAspectRatio,
   BookshelfView
 }

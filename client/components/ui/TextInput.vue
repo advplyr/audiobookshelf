@@ -80,7 +80,7 @@ input {
   border-style: inherit !important;
 }
 input:read-only {
-  color: #aaa;
+  color: #bbb;
   background-color: #444;
 }
 </style>

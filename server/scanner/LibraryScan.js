@@ -10,6 +10,7 @@ const { getId, secondsToTimestamp } = require('../utils/index')
 class LibraryScan {
   constructor() {
     this.id = null
+    this.type = null
     this.libraryId = null
     this.libraryName = null
     this.folders = null
@@ -46,6 +47,7 @@ class LibraryScan {
   get getScanEmitData() {
     return {
       id: this.libraryId,
+      type: this.type,
       name: this.libraryName,
       results: {
         added: this.resultsAdded,
@@ -64,10 +66,11 @@ class LibraryScan {
   toJSON() {
     return {
       id: this.id,
+      type: this.type,
       libraryId: this.libraryId,
       libraryName: this.libraryName,
       folders: this.folders.map(f => f.toJSON()),
-      scanOptions: this.scanOptions.toJSON(),
+      scanOptions: this.scanOptions ? this.scanOptions.toJSON() : null,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
       elapsed: this.elapsed,
@@ -77,8 +80,9 @@ class LibraryScan {
     }
   }
 
-  setData(library, scanOptions) {
+  setData(library, scanOptions, type = 'scan') {
     this.id = getId('lscan')
+    this.type = type
     this.libraryId = library.id
     this.libraryName = library.name
     this.folders = library.folders.map(folder => new Folder(folder.toJSON()))

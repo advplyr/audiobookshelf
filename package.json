@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "1.6.66",
+  "version": "1.7.1",
   "description": "Self-hosted audiobook server for managing and playing audiobooks",
   "main": "index.js",
   "scripts": {
@@ -33,7 +33,6 @@
     "command-line-args": "^5.2.0",
     "cookie-parser": "^1.4.6",
     "date-and-time": "^2.0.1",
-    "epub": "^1.2.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^5.3.0",
@@ -58,5 +57,6 @@
     "string-strip-html": "^8.3.0",
     "watcher": "^1.2.0",
     "xml2js": "^0.4.23"
-  }
+  },
+  "devDependencies": {}
 }

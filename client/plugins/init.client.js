@@ -25,7 +25,7 @@ Vue.prototype.$addDaysToToday = (daysToAdd) => {
 }
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
-  if (bytes === 0) {
+  if (isNaN(bytes) || !bytes === 0) {
     return '0 Bytes'
   }
   const k = 1024
@@ -61,13 +61,20 @@ Vue.prototype.$secondsToTimestamp = (seconds) => {
   return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
 }
 
-Vue.prototype.$elapsedPrettyExtended = (seconds) => {
+Vue.prototype.$elapsedPrettyExtended = (seconds, useDays = true) => {
+  if (isNaN(seconds) || seconds === null) return ''
+  seconds = Math.round(seconds)
+
   var minutes = Math.floor(seconds / 60)
   seconds -= minutes * 60
   var hours = Math.floor(minutes / 60)
   minutes -= hours * 60
-  var days = Math.floor(hours / 24)
-  hours -= days * 24
+
+  var days = 0
+  if (useDays || Math.floor(hours / 24) >= 100) {
+    days = Math.floor(hours / 24)
+    hours -= days * 24
+  }
 
   var strs = []
   if (days) strs.push(`${days}d`)

@@ -18,9 +18,10 @@ const AuthorFinder = require('./AuthorFinder')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
-  constructor(MetadataPath, db, auth, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
+    this.scanner = scanner
     this.streamManager = streamManager
     this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
@@ -30,10 +31,9 @@ class ApiController {
     this.cacheManager = cacheManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
-    this.MetadataPath = MetadataPath
 
     this.bookFinder = new BookFinder()
-    this.authorFinder = new AuthorFinder(this.MetadataPath)
+    this.authorFinder = new AuthorFinder()
 
     this.router = express()
     this.init()
@@ -59,6 +59,7 @@ class ApiController {
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
+    this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     // TEMP: Support old syntax for mobile app
@@ -82,6 +83,7 @@ class ApiController {
     this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
     this.router.get('/books/:id/cover', BookController.getCover.bind(this))
     this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
+    this.router.post('/books/:id/match', BookController.match.bind(this))
 
     // TEMP: Support old syntax for mobile app
     this.router.get('/audiobooks', BookController.findAll.bind(this)) // Old route should pass library id
@@ -176,6 +178,8 @@ class ApiController {
 
     this.router.post('/syncStream', this.syncStream.bind(this))
     this.router.post('/syncLocal', this.syncLocal.bind(this))
+
+    this.router.post('/streams/:id/close', this.closeStream.bind(this))
   }
 
   async findBooks(req, res) {
@@ -283,7 +287,7 @@ class ApiController {
         this.backupManager.updateCronSchedule()
       }
 
-      await this.db.updateEntity('settings', this.db.serverSettings)
+      await this.db.updateServerSettings()
     }
     return res.json({
       success: true,
@@ -416,6 +420,7 @@ class ApiController {
         data: audiobookProgress || null
       })
     }
+    res.sendStatus(200)
   }
 
   //
@@ -535,6 +540,13 @@ class ApiController {
     }
     Logger.info(`[ApiController] Purging all cache`)
     await this.cacheManager.purgeAll()
+    res.sendStatus(200)
+  }
+
+  async closeStream(req, res) {
+    const streamId = req.params.id
+    const userId = req.user.id
+    this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
   }
 }

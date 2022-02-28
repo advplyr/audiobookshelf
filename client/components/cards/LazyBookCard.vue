@@ -5,11 +5,13 @@
       <div class="absolute cover-bg" ref="coverBg" />
     </div>
 
-    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${sizeMultiplier * 3}rem` }">
+    <!-- Alternative bookshelf title/author/sort -->
+    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ title }}
+        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ displayTitle }}
       </p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ authorFL }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor }}</p>
+      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
 
     <div v-if="booksInSeries" class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ booksInSeries }}</div>
@@ -38,13 +40,13 @@
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && audiobook && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
       <div v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
         </div>
       </div>
 
       <div v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
         </div>
       </div>
@@ -61,16 +63,20 @@
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
+
+    <!-- Series name overlay -->
     <div v-if="booksInSeries && audiobook && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
       <p class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ series }}</p>
     </div>
 
+    <!-- Error widget -->
     <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
       <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
         <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
       </div>
     </ui-tooltip>
 
+    <!-- Volume number -->
     <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
     </div>
@@ -99,7 +105,10 @@ export default {
       // Book can be passed as prop or set with setEntity()
       type: Object,
       default: () => null
-    }
+    },
+    orderBy: String,
+    filterBy: String,
+    sortingIgnorePrefix: Boolean
   },
   data() {
     return {
@@ -112,6 +121,15 @@ export default {
       selected: false,
       isSelectionMode: false,
       showCoverBg: false
+    }
+  },
+  watch: {
+    bookMount: {
+      handler(newVal) {
+        if (newVal) {
+          this.audiobook = newVal
+        }
+      }
     }
   },
   computed: {
@@ -179,6 +197,24 @@ export default {
     },
     volumeNumber() {
       return this.book.volumeNumber || null
+    },
+    displayTitle() {
+      if (this.orderBy === 'book.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
+        return this.title.substr(4) + ', The'
+      }
+      return this.title
+    },
+    displayAuthor() {
+      if (this.orderBy === 'book.authorLF') return this.authorLF
+      return this.authorFL
+    },
+    displaySortLine() {
+      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._audiobook.mtimeMs)
+      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._audiobook.birthtimeMs)
+      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._audiobook.addedAt)
+      if (this.orderBy === 'duration') return 'Duration: ' + this.$elapsedPrettyExtended(this._audiobook.duration, false)
+      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._audiobook.size)
+      return null
     },
     userProgress() {
       return this.store.getters['user/getUserAudiobook'](this.audiobookId)
@@ -322,6 +358,11 @@ export default {
     isAlternativeBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.TITLES
+    },
+    titleDisplayBottomOffset() {
+      if (!this.isAlternativeBookshelfView) return 0
+      else if (!this.displaySortLine) return 3 * this.sizeMultiplier
+      return 4.25 * this.sizeMultiplier
     }
   },
   methods: {
@@ -461,8 +502,8 @@ export default {
       this.$emit('select', this.audiobook)
     },
     play() {
-      this.store.commit('setStreamAudiobook', this.audiobook)
-      this._socket.emit('open_stream', this.audiobookId)
+      var eventBus = this.$eventBus || this.$nuxt.$eventBus
+      eventBus.$emit('play-audiobook', this.audiobookId)
     },
     mouseover() {
       this.isHovering = true

@@ -7,7 +7,7 @@ module.exports = {
   dev: process.env.NODE_ENV !== 'production',
   env: {
     serverUrl: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333',
-    // serverUrl: '',
+    chromecastReceiver: 'FD1F76C5',
     baseUrl: process.env.BASE_URL || 'http://0.0.0.0'
   },
   // rootDir: process.env.NODE_ENV !== 'production' ? 'client/' : '',
@@ -30,13 +30,12 @@ module.exports = {
     ],
     script: [
       {
-        src: '//cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js'
+        src: '/libs/sortable.js'
       }
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
       { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Ubuntu+Mono&family=Source+Sans+Pro:wght@300;400;600' },
-      // { rel: 'stylesheet', href: 'https://fonts.googleapis.com/icon?family=Material+Icons' }
     ]
   },
 

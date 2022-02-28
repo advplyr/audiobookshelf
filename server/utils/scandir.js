@@ -1,8 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('../Logger')
-const { getIno } = require('./index')
-const { recurseFiles } = require('./fileUtils')
+const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')
 
 function isBookFile(path) {
@@ -114,16 +113,20 @@ function groupFileItemsIntoBooks(fileItems) {
 }
 
 function cleanFileObjects(basepath, abrelpath, files) {
-  return files.map((file) => {
+  return Promise.all(files.map(async (file) => {
+    var fullPath = Path.posix.join(basepath, file)
+    var fileTsData = await getFileTimestampsWithIno(fullPath)
+
     var ext = Path.extname(file)
     return {
       filetype: getFileType(ext),
       filename: Path.basename(file),
       path: Path.posix.join(abrelpath, file), // /AUDIOBOOK/PATH/filename.mp3
-      fullPath: Path.posix.join(basepath, file), // /audiobooks/AUDIOBOOK/PATH/filename.mp3
-      ext: ext
+      fullPath, // /audiobooks/AUDIOBOOK/PATH/filename.mp3
+      ext: ext,
+      ...fileTsData
     }
-  })
+  }))
 }
 
 function getFileType(ext) {
@@ -162,15 +165,15 @@ async function scanRootDir(folder, serverSettings = {}) {
   for (const audiobookPath in audiobookGrouping) {
     var audiobookData = getAudiobookDataFromDir(folderPath, audiobookPath, parseSubtitle)
 
-    var fileObjs = cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
-    for (let i = 0; i < fileObjs.length; i++) {
-      fileObjs[i].ino = await getIno(fileObjs[i].fullPath)
-    }
-    var audiobookIno = await getIno(audiobookData.fullPath)
+    var fileObjs = await cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
+    var audiobookFolderStats = await getFileTimestampsWithIno(audiobookData.fullPath)
     audiobooks.push({
       folderId: folder.id,
       libraryId: folder.libraryId,
-      ino: audiobookIno,
+      ino: audiobookFolderStats.ino,
+      mtimeMs: audiobookFolderStats.mtimeMs || 0,
+      ctimeMs: audiobookFolderStats.ctimeMs || 0,
+      birthtimeMs: audiobookFolderStats.birthtimeMs || 0,
       ...audiobookData,
       audioFiles: fileObjs.filter(f => f.filetype === 'audio'),
       otherFiles: fileObjs.filter(f => f.filetype !== 'audio')
@@ -196,32 +199,42 @@ function getAudiobookDataFromDir(folderPath, dir, parseSubtitle = false) {
 
 
   // If in a series directory check for volume number match
-  /* ACCEPTS:
+  /* ACCEPTS
     Book 2 - Title Here - Subtitle Here
     Title Here - Subtitle Here - Vol 12
     Title Here - volume 9 - Subtitle Here
     Vol. 3 Title Here - Subtitle Here
     1980 - Book 2-Title Here
     Title Here-Volume 999-Subtitle Here
+    2 - Book Title
+    100 - Book Title
+    0.5 - Book Title
   */
   var volumeNumber = null
   if (series) {
-    // New volume regex to match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
-    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
-    if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
-      volumeNumber = volumeMatch[3]
-      var replaceChunk = volumeMatch[2]
+    // Added 1.7.1: If title starts with a # that is 3 digits or less (or w/ 2 decimal), then use as volume number
+    var volumeMatch = title.match(/^(\d{1,3}(?:\.\d{1,2})?) - ./)
+    if (volumeMatch && volumeMatch.length > 1) {
+      volumeNumber = volumeMatch[1]
+      title = title.replace(`${volumeNumber} - `, '')
+    } else {
+      // Match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
+      var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
+      if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
+        volumeNumber = volumeMatch[3]
+        var replaceChunk = volumeMatch[2]
 
-      // "1980 - Book 2-Title Here"
-      // Group 1 would be "- "
-      // Group 3 would be "-"
-      // Only remove the first group
-      if (volumeMatch[1]) {
-        replaceChunk = volumeMatch[1] + replaceChunk
-      } else if (volumeMatch[4]) {
-        replaceChunk += volumeMatch[4]
+        // "1980 - Book 2-Title Here"
+        // Group 1 would be "- "
+        // Group 3 would be "-"
+        // Only remove the first group
+        if (volumeMatch[1]) {
+          replaceChunk = volumeMatch[1] + replaceChunk
+        } else if (volumeMatch[4]) {
+          replaceChunk += volumeMatch[4]
+        }
+        title = title.replace(replaceChunk, '').trim()
       }
-      title = title.replace(replaceChunk, '').trim()
     }
   }
 
@@ -272,8 +285,12 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
 
   var audiobookDir = audiobookPath.replace(folderFullPath, '').slice(1)
   var audiobookData = getAudiobookDataFromDir(folderFullPath, audiobookDir, parseSubtitle)
+  var audiobookFolderStats = await getFileTimestampsWithIno(audiobookData.fullPath)
   var audiobook = {
-    ino: await getIno(audiobookData.fullPath),
+    ino: audiobookFolderStats.ino,
+    mtimeMs: audiobookFolderStats.mtimeMs || 0,
+    ctimeMs: audiobookFolderStats.ctimeMs || 0,
+    birthtimeMs: audiobookFolderStats.birthtimeMs || 0,
     folderId: folder.id,
     libraryId: folder.libraryId,
     ...audiobookData,
@@ -284,14 +301,14 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
   for (let i = 0; i < fileItems.length; i++) {
     var fileItem = fileItems[i]
 
-    var ino = await getIno(fileItem.fullpath)
+    var fileStatData = await getFileTimestampsWithIno(fileItem.fullpath)
     var fileObj = {
-      ino,
       filetype: getFileType(fileItem.extension),
       filename: fileItem.name,
       path: fileItem.path,
       fullPath: fileItem.fullpath,
-      ext: fileItem.extension
+      ext: fileItem.extension,
+      ...fileStatData
     }
     if (fileObj.filetype === 'audio') {
       audiobook.audioFiles.push(fileObj)

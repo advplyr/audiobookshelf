@@ -13,18 +13,15 @@ const ServerSettings = require('./objects/ServerSettings')
 const SSOSettings = require('./objects/SSOSettings')
 
 class Db {
-  constructor(ConfigPath, AudiobookPath) {
-    this.ConfigPath = ConfigPath
-    this.AudiobookPath = AudiobookPath
-
-    this.AudiobooksPath = Path.join(ConfigPath, 'audiobooks')
-    this.UsersPath = Path.join(ConfigPath, 'users')
-    this.SessionsPath = Path.join(ConfigPath, 'sessions')
-    this.LibrariesPath = Path.join(ConfigPath, 'libraries')
-    this.SettingsPath = Path.join(ConfigPath, 'settings')
-    this.SSOPath = Path.join(ConfigPath, 'sso')
-    this.CollectionsPath = Path.join(ConfigPath, 'collections')
-    this.AuthorsPath = Path.join(ConfigPath, 'authors')
+  constructor() {
+    this.AudiobooksPath = Path.join(global.ConfigPath, 'audiobooks')
+    this.UsersPath = Path.join(global.ConfigPath, 'users')
+    this.SessionsPath = Path.join(global.ConfigPath, 'sessions')
+    this.LibrariesPath = Path.join(global.ConfigPath, 'libraries')
+    this.SettingsPath = Path.join(global.ConfigPath, 'settings')
+    this.CollectionsPath = Path.join(global.ConfigPath, 'collections')
+    this.AuthorsPath = Path.join(global.ConfigPath, 'authors')
+    this.SSOPath = Path.join(global.ConfigPath, 'sso')
 
     this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
     this.usersDb = new njodb.Database(this.UsersPath)
@@ -91,7 +88,7 @@ class Db {
       name: 'Main',
       folder: { // Generates default folder
         id: 'audiobooks',
-        fullPath: this.AudiobookPath,
+        fullPath: global.AudiobookPath,
         libraryId: 'main'
       }
     })
@@ -136,6 +133,7 @@ class Db {
       this.SSOSettings = new SSOSettings()
       await this.insertEntity('settings', this.SSOSettings)
     }
+    global.ServerSettings = this.serverSettings.toJSON()
   }
 
   async load() {
@@ -184,16 +182,46 @@ class Db {
     // Update server version in server settings
     if (this.previousVersion) {
       this.serverSettings.version = version
-      await this.updateEntity('settings', this.serverSettings)
+      await this.updateServerSettings()
     }
   }
 
-  updateAudiobook(audiobook) {
+  async updateAudiobook(audiobook) {
+    if (audiobook && audiobook.saveAbMetadata) {
+      // TODO: Book may have updates where this save is not necessary
+      //          add check first if metadata update is needed
+      await audiobook.saveAbMetadata()
+    } else {
+      Logger.error(`[Db] Invalid audiobook object passed to updateAudiobook`, audiobook)
+    }
+
     return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
       Logger.debug(`[DB] Audiobook updated ${results.updated}`)
       return true
     }).catch((error) => {
       Logger.error(`[DB] Audiobook update failed ${error}`)
+      return false
+    })
+  }
+
+  insertAudiobook(audiobook) {
+    return this.insertAudiobooks([audiobook])
+  }
+
+  async insertAudiobooks(audiobooks) {
+    // TODO: Books may have updates where this save is not necessary
+    //          add check first if metadata update is needed
+    await Promise.all(audiobooks.map(async (ab) => {
+      if (ab && ab.saveAbMetadata) return ab.saveAbMetadata()
+      return null
+    }))
+
+    return this.audiobooksDb.insert(audiobooks).then((results) => {
+      Logger.debug(`[DB] Audiobooks inserted ${results.inserted}`)
+      this.audiobooks = this.audiobooks.concat(audiobooks)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Audiobooks insert failed ${error}`)
       return false
     })
   }
@@ -213,6 +241,11 @@ class Db {
     }).catch((error) => {
       Logger.error(`[DB] Update user Failed ${error}`)
     })
+  }
+
+  updateServerSettings() {
+    global.ServerSettings = this.serverSettings.toJSON()
+    return this.updateEntity('settings', this.serverSettings)
   }
 
   insertEntities(entityName, entities) {
@@ -321,6 +354,13 @@ class Db {
       Logger.error(`[Db] Failed to select user sessions "${userId}"`, error)
       return []
     })
+  }
+
+  // Check if server was updated and previous version was earlier than param
+  checkPreviousVersionIsBefore(version) {
+    if (!this.previousVersion) return false
+    // true if version > previousVersion
+    return version.localeCompare(this.previousVersion) >= 0
   }
 }
 module.exports = Db

@@ -1,10 +1,11 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const { bytesPretty, readTextFile } = require('../utils/fileUtils')
-const { comparePaths, getIno, getId, elapsedPretty } = require('../utils/index')
+const { bytesPretty, readTextFile, getIno } = require('../utils/fileUtils')
+const { comparePaths, getId, elapsedPretty } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
+const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const Logger = require('../Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
@@ -21,6 +22,9 @@ class Audiobook {
 
     this.path = null
     this.fullPath = null
+    this.mtimeMs = null
+    this.ctimeMs = null
+    this.birthtimeMs = null
     this.addedAt = null
     this.lastUpdate = null
     this.lastScan = null
@@ -44,6 +48,9 @@ class Audiobook {
     if (audiobook) {
       this.construct(audiobook)
     }
+
+    // Temp flags
+    this.isSavingMetadata = false
   }
 
   construct(audiobook) {
@@ -53,6 +60,9 @@ class Audiobook {
     this.folderId = audiobook.folderId || 'audiobooks'
     this.path = audiobook.path
     this.fullPath = audiobook.fullPath
+    this.mtimeMs = audiobook.mtimeMs || 0
+    this.ctimeMs = audiobook.ctimeMs || 0
+    this.birthtimeMs = audiobook.birthtimeMs || 0
     this.addedAt = audiobook.addedAt
     this.lastUpdate = audiobook.lastUpdate || this.addedAt
     this.lastScan = audiobook.lastScan || null
@@ -173,11 +183,11 @@ class Audiobook {
       ino: this.ino,
       libraryId: this.libraryId,
       folderId: this.folderId,
-      title: this.title,
-      author: this.author,
-      cover: this.cover,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       lastScan: this.lastScan,
@@ -204,6 +214,9 @@ class Audiobook {
       tags: this.tags,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       duration: this.duration,
@@ -227,6 +240,9 @@ class Audiobook {
       folderId: this.folderId,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       duration: this.duration,
@@ -334,6 +350,9 @@ class Audiobook {
 
     this.path = data.path
     this.fullPath = data.fullPath
+    this.mtimeMs = data.mtimeMs || 0
+    this.ctimeMs = data.ctimeMs || 0
+    this.birthtimeMs = data.birthtimeMs || 0
     this.addedAt = Date.now()
     this.lastUpdate = this.addedAt
 
@@ -425,13 +444,8 @@ class Audiobook {
       hasUpdates = true
     }
 
-    if (payload.book) {
-      if (!this.book) {
-        this.setBook(payload.book)
-        hasUpdates = true
-      } else if (this.book.update(payload.book)) {
-        hasUpdates = true
-      }
+    if (payload.book && this.book.update(payload.book)) {
+      hasUpdates = true
     }
 
     if (hasUpdates) {
@@ -526,7 +540,7 @@ class Audiobook {
   }
 
   // On scan check other files found with other files saved
-  async syncOtherFiles(newOtherFiles, metadataPath, opfMetadataOverrideDetails, forceRescan = false) {
+  async syncOtherFiles(newOtherFiles, opfMetadataOverrideDetails) {
     var hasUpdates = false
 
     var currOtherFileNum = this.otherFiles.length
@@ -534,6 +548,8 @@ class Audiobook {
     var otherFilenamesAlreadyInBook = this.otherFiles.map(ofile => ofile.filename)
     var alreadyHasDescTxt = otherFilenamesAlreadyInBook.includes('desc.txt')
     var alreadyHasReaderTxt = otherFilenamesAlreadyInBook.includes('reader.txt')
+
+    var existingAbMetadata = this.otherFiles.find(file => file.filename === 'metadata.abs')
 
     // Filter out other files no longer in directory
     var newOtherFilePaths = newOtherFiles.map(f => f.path)
@@ -543,9 +559,9 @@ class Audiobook {
       hasUpdates = true
     }
 
-    // If desc.txt is new or forcing rescan then read it and update description (will overwrite)
+    // If desc.txt is new then read it and update description (will overwrite)
     var descriptionTxt = newOtherFiles.find(file => file.filename === 'desc.txt')
-    if (descriptionTxt && (!alreadyHasDescTxt || forceRescan)) {
+    if (descriptionTxt && !alreadyHasDescTxt) {
       var newDescription = await readTextFile(descriptionTxt.fullPath)
       if (newDescription) {
         Logger.debug(`[Audiobook] Sync Other File desc.txt: ${newDescription}`)
@@ -553,9 +569,9 @@ class Audiobook {
         hasUpdates = true
       }
     }
-    // If reader.txt is new or forcing rescan then read it and update narrator (will overwrite)
+    // If reader.txt is new then read it and update narrator (will overwrite)
     var readerTxt = newOtherFiles.find(file => file.filename === 'reader.txt')
-    if (readerTxt && (!alreadyHasReaderTxt || forceRescan)) {
+    if (readerTxt && !alreadyHasReaderTxt) {
       var newReader = await readTextFile(readerTxt.fullPath)
       if (newReader) {
         Logger.debug(`[Audiobook] Sync Other File reader.txt: ${newReader}`)
@@ -564,7 +580,28 @@ class Audiobook {
       }
     }
 
-    // If OPF file and was not already there
+
+    // If metadata.abs is new OR modified then read it and set all defined keys (will overwrite)
+    var metadataAbs = newOtherFiles.find(file => file.filename === 'metadata.abs')
+    var shouldUpdateAbs = !!metadataAbs && (metadataAbs.modified || !existingAbMetadata)
+    if (metadataAbs && metadataAbs.modified) {
+      Logger.debug(`[Audiobook] metadata.abs file was modified for "${this.title}"`)
+    }
+
+    if (shouldUpdateAbs) {
+      var abmetadataText = await readTextFile(metadataAbs.fullPath)
+      if (abmetadataText) {
+        var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
+        if (metadataUpdateObject && metadataUpdateObject.book) {
+          if (this.update(metadataUpdateObject)) {
+            Logger.debug(`[Audiobook] Some details were updated from metadata.abs for "${this.title}"`, metadataUpdateObject)
+            hasUpdates = true
+          }
+        }
+      }
+    }
+
+    // If OPF file and was not already there OR prefer opf metadata
     var metadataOpf = newOtherFiles.find(file => file.ext === '.opf' || file.filename === 'metadata.xml')
     if (metadataOpf && (!otherFilenamesAlreadyInBook.includes(metadataOpf.filename) || opfMetadataOverrideDetails)) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
@@ -643,7 +680,7 @@ class Audiobook {
     if (bookCoverPath && bookCoverPath.startsWith('/metadata')) {
       // Fixing old cover paths
       if (!this.book.coverFullPath) {
-        this.book.coverFullPath = Path.join(metadataPath, this.book.cover.substr('/metadata/'.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
+        this.book.coverFullPath = Path.join(global.MetadataPath, this.book.cover.substr('/metadata/'.length)).replace(/\\/g, '/').replace(/\/\//g, '/')
         Logger.debug(`[Audiobook] Metadata cover full path set "${this.book.coverFullPath}" for "${this.title}"`)
         hasUpdates = true
       }
@@ -800,9 +837,10 @@ class Audiobook {
     return false
   }
 
-  // Look for desc.txt and reader.txt and update details if found
+  // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async saveDataFromTextFiles(opfMetadataOverrideDetails) {
     var bookUpdatePayload = {}
+
     var descriptionText = await this.fetchTextFromTextFile('desc.txt')
     if (descriptionText) {
       Logger.debug(`[Audiobook] "${this.title}" found desc.txt updating description with "${descriptionText.slice(0, 20)}..."`)
@@ -814,6 +852,22 @@ class Audiobook {
       bookUpdatePayload.narrator = readerText
     }
 
+    // abmetadata will always overwrite
+    var abmetadataText = await this.fetchTextFromTextFile('metadata.abs')
+    if (abmetadataText) {
+      var metadataUpdateObject = abmetadataGenerator.parse(abmetadataText)
+      if (metadataUpdateObject && metadataUpdateObject.book) {
+        Logger.debug(`[Audiobook] "${this.title}" found metadata.abs file`)
+        for (const key in metadataUpdateObject.book) {
+          var value = metadataUpdateObject.book[key]
+          if (key && value !== undefined) {
+            bookUpdatePayload[key] = value
+          }
+        }
+      }
+    }
+
+    // Opf only overwrites if detail is empty
     var metadataOpf = this.otherFiles.find(file => file.isOPFFile || file.filename === 'metadata.xml')
     if (metadataOpf) {
       var xmlText = await readTextFile(metadataOpf.fullPath)
@@ -873,12 +927,6 @@ class Audiobook {
       }
     }
 
-    if (existingFile.filename !== fileFound.filename) {
-      existingFile.filename = fileFound.filename
-      existingFile.ext = fileFound.ext
-      hasUpdated = true
-    }
-
     if (existingFile.path !== fileFound.path) {
       existingFile.path = fileFound.path
       existingFile.fullPath = fileFound.fullPath
@@ -887,6 +935,20 @@ class Audiobook {
       existingFile.fullPath = fileFound.fullPath
       hasUpdated = true
     }
+
+    var keysToCheck = ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size']
+    keysToCheck.forEach((key) => {
+      if (existingFile[key] !== fileFound[key]) {
+
+        // Add modified flag on file data object if exists and was changed
+        if (key === 'mtimeMs' && existingFile[key]) {
+          fileFound.modified = true
+        }
+
+        existingFile[key] = fileFound[key]
+        hasUpdated = true
+      }
+    })
 
     if (!isAudioFile && existingFile.filetype !== fileFound.filetype) {
       existingFile.filetype = fileFound.filetype
@@ -926,6 +988,14 @@ class Audiobook {
       this.fullPath = dataFound.fullPath
       hasUpdated = true
     }
+
+    var keysToCheck = ['mtimeMs', 'ctimeMs', 'birthtimeMs']
+    keysToCheck.forEach((key) => {
+      if (dataFound[key] != this[key]) {
+        this[key] = dataFound[key] || 0
+        hasUpdated = true
+      }
+    })
 
     var newAudioFileData = []
     var newOtherFileData = []
@@ -1017,14 +1087,14 @@ class Audiobook {
   }
 
   // Temp fix for cover is set but coverFullPath is not set
-  fixFullCoverPath(metadataPath) {
+  fixFullCoverPath() {
     if (!this.book.cover) return
     var bookCoverPath = this.book.cover.replace(/\\/g, '/')
     var newFullCoverPath = null
     if (bookCoverPath.startsWith('/s/book/')) {
       newFullCoverPath = Path.join(this.fullPath, bookCoverPath.substr(`/s/book/${this.id}`.length)).replace(/\/\//g, '/')
     } else if (bookCoverPath.startsWith('/metadata/')) {
-      newFullCoverPath = Path.join(metadataPath, bookCoverPath.substr('/metadata/'.length)).replace(/\/\//g, '/')
+      newFullCoverPath = Path.join(global.MetadataPath, bookCoverPath.substr('/metadata/'.length)).replace(/\/\//g, '/')
     }
     if (newFullCoverPath) {
       Logger.debug(`[Audiobook] "${this.title}" fixing full cover path "${this.book.cover}" => "${newFullCoverPath}"`)
@@ -1032,6 +1102,27 @@ class Audiobook {
       return true
     }
     return false
+  }
+
+  async saveAbMetadata() {
+    if (this.isSavingMetadata) return
+    this.isSavingMetadata = true
+
+    var metadataPath = Path.join(global.MetadataPath, 'books', this.id)
+    if (global.ServerSettings.storeMetadataWithBook) {
+      metadataPath = this.fullPath
+    } else {
+      // Make sure metadata book dir exists
+      await fs.ensureDir(metadataPath)
+    }
+    metadataPath = Path.join(metadataPath, 'metadata.abs')
+
+    return abmetadataGenerator.generate(this, metadataPath).then((success) => {
+      this.isSavingMetadata = false
+      if (!success) Logger.error(`[Audiobook] Failed saving abmetadata to "${metadataPath}"`)
+      else Logger.debug(`[Audiobook] Success saving abmetadata to "${metadataPath}"`)
+      return success
+    })
   }
 }
 module.exports = Audiobook

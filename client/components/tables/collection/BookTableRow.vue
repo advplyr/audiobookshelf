@@ -133,8 +133,7 @@ export default {
       this.isHovering = false
     },
     playClick() {
-      this.$store.commit('setStreamAudiobook', this.book)
-      this.$root.socket.emit('open_stream', this.book.id)
+      this.$eventBus.$emit('play-audiobook', this.book.id)
     },
     clickEdit() {
       this.$emit('edit', this.book)

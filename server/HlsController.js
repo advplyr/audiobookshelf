@@ -4,12 +4,11 @@ const fs = require('fs-extra')
 const Logger = require('./Logger')
 
 class HlsController {
-  constructor(db, auth, streamManager, emitter, StreamsPath) {
+  constructor(db, auth, streamManager, emitter) {
     this.db = db
     this.auth = auth
     this.streamManager = streamManager
     this.emitter = emitter
-    this.StreamsPath = StreamsPath
 
     this.router = express()
     this.init()
@@ -27,7 +26,7 @@ class HlsController {
 
   async streamFileRequest(req, res) {
     var streamId = req.params.stream
-    var fullFilePath = Path.join(this.StreamsPath, streamId, req.params.file)
+    var fullFilePath = Path.join(this.streamManager.StreamsPath, streamId, req.params.file)
 
     // development test stream - ignore
     if (streamId === 'test') {

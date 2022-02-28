@@ -8,6 +8,8 @@ class Library {
     this.folders = []
     this.displayOrder = 1
     this.icon = 'database'
+    this.provider = 'google'
+    this.disableWatcher = false
 
     this.lastScan = 0
 
@@ -29,6 +31,8 @@ class Library {
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
+    this.provider = library.provider || 'google'
+    this.disableWatcher = !!library.disableWatcher
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
@@ -41,6 +45,8 @@ class Library {
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
+      provider: this.provider,
+      disableWatcher: this.disableWatcher,
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
@@ -65,6 +71,7 @@ class Library {
     }
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
+    this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
   }
@@ -73,6 +80,14 @@ class Library {
     var hasUpdates = false
     if (payload.name && payload.name !== this.name) {
       this.name = payload.name
+      hasUpdates = true
+    }
+    if (payload.provider && payload.provider !== this.provider) {
+      this.provider = payload.provider
+      hasUpdates = true
+    }
+    if (payload.disableWatcher !== this.disableWatcher) {
+      this.disableWatcher = !!payload.disableWatcher
       hasUpdates = true
     }
     if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {

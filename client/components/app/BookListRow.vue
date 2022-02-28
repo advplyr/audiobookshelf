@@ -168,8 +168,7 @@ export default {
         })
     },
     startStream() {
-      this.$store.commit('setStreamAudiobook', this.book)
-      this.$root.socket.emit('open_stream', this.book.id)
+      this.$eventBus.$emit('play-audiobook', this.book.id)
     },
     editClick() {
       this.$emit('edit', this.book)

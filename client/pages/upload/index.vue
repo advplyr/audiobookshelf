@@ -1,160 +1,98 @@
 <template>
   <div id="page-wrapper" class="page p-0 sm:p-6 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
-    <main class="md:container mx-auto md:h-full max-w-screen-lg p-0 md:p-6">
-      <article class="max-h-full md:overflow-y-auto relative flex flex-col rounded-md" @drop="drop" @dragover="dragover" @dragleave="dragleave" @dragenter="dragenter">
-        <h1 class="text-xl font-book px-8 pt-4 pb-2">Audiobook Uploader</h1>
+    <div class="w-full max-w-6xl mx-auto">
+      <!-- Library & folder picker -->
+      <div class="flex my-6 -mx-2">
+        <div class="w-1/3 px-2">
+          <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" label="Library" :disabled="processing" @input="libraryChanged" />
+        </div>
+        <div class="w-2/3 px-2">
+          <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId || processing" label="Folder" />
+        </div>
+      </div>
 
-        <div class="flex my-2 px-6">
-          <div class="w-1/3 px-2">
-            <!-- <ui-text-input-with-label v-model="title" label="Title" /> -->
-            <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" label="Library" @input="libraryChanged" />
-          </div>
-          <div class="w-2/3 px-2">
-            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId" label="Folder" />
+      <widgets-alert v-if="error" type="error">
+        <p class="text-lg">{{ error }}</p>
+      </widgets-alert>
+
+      <!-- Picker display -->
+      <div v-if="!books.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
+        <p class="text-2xl text-center">{{ isDragging ? 'Drop files' : "Drag n' drop files or folders" }}</p>
+        <p class="text-center text-sm my-5">or</p>
+        <div class="w-full max-w-xl mx-auto">
+          <div class="flex">
+            <ui-btn class="w-full mx-1" @click="openFilePicker">Choose files</ui-btn>
+            <ui-btn class="w-full mx-1" @click="openFolderPicker">Choose a folder</ui-btn>
           </div>
         </div>
-        <div class="flex my-2 px-6">
-          <div class="w-1/2 px-2">
-            <ui-text-input-with-label v-model="title" label="Title" />
-          </div>
-          <div class="w-1/2 px-2">
-            <ui-text-input-with-label v-model="author" label="Author" />
-          </div>
+        <div class="pt-8 text-center">
+          <p class="text-xs text-white text-opacity-50 font-mono"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
         </div>
-        <div class="flex my-2 px-6">
-          <div class="w-1/2 px-2">
-            <ui-text-input-with-label v-model="series" label="Series" note="(optional)" />
-          </div>
-          <div class="w-1/2 px-2">
-            <div class="w-full">
-              <p class="px-1 text-sm font-semibold">Directory <em class="font-normal text-xs pl-2">(auto)</em></p>
-              <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 42px" />
-            </div>
-          </div>
+      </div>
+      <!-- Book list header -->
+      <div v-else class="w-full flex items-center pb-4 border-b border-white border-opacity-10">
+        <p class="text-lg">{{ books.length }} book{{ books.length === 1 ? '' : 's' }}</p>
+        <p v-if="ignoredFiles.length" class="text-lg">&nbsp;|&nbsp;{{ ignoredFiles.length }} file{{ ignoredFiles.length === 1 ? '' : 's' }} ignored</p>
+        <div class="flex-grow" />
+        <ui-btn :disabled="processing" small @click="reset">Reset</ui-btn>
+      </div>
+
+      <!-- Alerts -->
+      <widgets-alert v-if="!books.length && !uploadReady" type="error" class="my-4">
+        <p class="text-lg">No books found</p>
+      </widgets-alert>
+      <widgets-alert v-if="ignoredFiles.length" type="warning" class="my-4">
+        <div class="w-full pr-12">
+          <p class="text-base mb-1">Unsupported files are ignored. When choosing or dropping a folder, other files that are not in a book folder are ignored.</p>
+          <tables-uploaded-files-table :files="ignoredFiles" title="Ignored Files" class="text-white" />
+          <p class="text-xs text-white text-opacity-50 font-mono pt-1"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
         </div>
+      </widgets-alert>
 
-        <section v-if="showUploader" class="h-full overflow-auto p-8 w-full flex flex-col">
-          <header class="border-dashed border-2 border-gray-400 py-12 flex flex-col justify-center items-center relative h-40" :class="isDragOver ? 'bg-white bg-opacity-10' : ''">
-            <p v-show="isDragOver" class="mb-3 font-semibold text-gray-200 flex flex-wrap justify-center">Drop em'</p>
-            <p v-show="!isDragOver" class="mb-3 font-semibold text-gray-200 flex flex-wrap justify-center">Drop your audio and image files or</p>
+      <!-- Book Upload cards -->
+      <template v-for="(book, index) in books">
+        <cards-book-upload-card :ref="`bookCard-${book.index}`" :key="index" :book="book" :processing="processing" @remove="removeBook(book)" />
+      </template>
 
-            <input ref="fileInput" id="hidden-input" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
-            <ui-btn @click="clickSelectAudioFiles">Select files</ui-btn>
-            <p class="text-xs text-gray-300 absolute bottom-3 right-3">{{ inputAccept }}</p>
-          </header>
-        </section>
-        <section v-else class="h-full overflow-auto px-8 pb-8 w-full flex flex-col">
-          <p v-if="!hasValidAudioFiles" class="text-error text-lg pt-4">* No valid audio tracks</p>
+      <!-- Upload/Reset btns -->
+      <div v-show="books.length" class="flex justify-end pb-8 pt-4">
+        <ui-btn v-if="!uploadFinished" color="success" :loading="processing" @click="submit">Upload</ui-btn>
+        <ui-btn v-else @click="reset">Reset</ui-btn>
+      </div>
+    </div>
 
-          <div v-if="validImageFiles.length">
-            <h1 class="pt-8 pb-3 font-semibold sm:text-lg text-gray-200">Cover Image(s)</h1>
-            <div class="flex">
-              <template v-for="file in validImageFiles">
-                <div :key="file.name" class="h-28 w-20 bg-bg">
-                  <img :src="file.src" class="h-full w-full object-contain" />
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <div v-if="validAudioFiles.length">
-            <h1 class="pt-8 pb-3 font-semibold sm:text-lg text-gray-200">Audio Tracks</h1>
-
-            <table class="text-sm tracksTable">
-              <tr class="font-book">
-                <th class="text-left">Filename</th>
-                <th class="text-left">Type</th>
-                <th class="text-left">Size</th>
-              </tr>
-              <template v-for="file in validAudioFiles">
-                <tr :key="file.name">
-                  <td class="font-book">
-                    <p class="truncate">{{ file.name }}</p>
-                  </td>
-                  <td class="font-sm">
-                    {{ file.type }}
-                  </td>
-                  <td class="font-mono">
-                    {{ $bytesPretty(file.size) }}
-                  </td>
-                </tr>
-              </template>
-            </table>
-          </div>
-
-          <div v-if="invalidFiles.length">
-            <h1 class="pt-8 pb-3 font-semibold sm:text-lg text-gray-200">Invalid Files</h1>
-            <table class="text-sm tracksTable">
-              <tr class="font-book">
-                <th class="text-left">Filename</th>
-                <th class="text-left">Type</th>
-                <th class="text-left">Size</th>
-              </tr>
-              <template v-for="file in invalidFiles">
-                <tr :key="file.name">
-                  <td class="font-book">
-                    <p class="truncate">{{ file.name }}</p>
-                  </td>
-                  <td class="font-sm">
-                    {{ file.type }}
-                  </td>
-                  <td class="font-mono">
-                    {{ $bytesPretty(file.size) }}
-                  </td>
-                </tr>
-              </template>
-            </table>
-          </div>
-        </section>
-        <footer v-show="!showUploader" class="flex justify-end px-8 pb-8 pt-4">
-          <ui-btn :disabled="!hasValidAudioFiles" color="success" @click="submit">Upload Audiobook</ui-btn>
-          <button id="cancel" class="ml-3 rounded-sm px-3 py-1 hover:bg-white hover:bg-opacity-10 focus:shadow-outline focus:outline-none" @click="cancel">Cancel</button>
-        </footer>
-
-        <div v-if="processing" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 flex items-center justify-center z-20">
-          <ui-loading-indicator text="Uploading..." />
-        </div>
-      </article>
-    </main>
+    <input ref="fileInput" id="hidden-input" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
+    <input ref="fileFolderInput" id="hidden-input" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
   </div>
 </template>
 
 <script>
-import Path from 'path'
+import uploadHelpers from '@/mixins/uploadHelpers'
 
 export default {
+  mixins: [uploadHelpers],
   data() {
     return {
-      processing: false,
-      title: null,
-      author: null,
-      series: null,
-      acceptedAudioFormats: ['.mp3', '.m4b', '.m4a', '.flac', '.opus', '.mp4', '.aac'],
-      acceptedImageFormats: ['.png', '.jpg', '.jpeg', '.webp'],
-      inputAccept: '.png, .jpg, .jpeg, .webp, .mp3, .m4b, .m4a, .flac, .opus, .mp4, .aac',
-      isDragOver: false,
-      showUploader: true,
-      validAudioFiles: [],
-      validImageFiles: [],
-      invalidFiles: [],
+      isDragging: false,
+      error: '',
+      books: [],
+      ignoredFiles: [],
       selectedLibraryId: null,
-      selectedFolderId: null
+      selectedFolderId: null,
+      processing: false,
+      uploadFinished: false
     }
   },
   computed: {
+    inputAccept() {
+      var extensions = []
+      Object.values(this.$constants.SupportedFileTypes).forEach((types) => {
+        extensions = extensions.concat(types.map((t) => `.${t}`))
+      })
+      return extensions
+    },
     streamAudiobook() {
       return this.$store.state.streamAudiobook
-    },
-    hasValidAudioFiles() {
-      return this.validAudioFiles.length
-    },
-    directory() {
-      if (!this.author || !this.title) return ''
-      if (this.series) {
-        return Path.join(this.author, this.series, this.title)
-      } else {
-        return Path.join(this.author, this.title)
-      }
     },
     libraries() {
       return this.$store.state.libraries.libraries
@@ -182,6 +120,9 @@ export default {
           text: fold.fullPath
         }
       })
+    },
+    uploadReady() {
+      return !this.books.length && !this.ignoredFiles.length && !this.uploadFinished
     }
   },
   methods: {
@@ -200,114 +141,171 @@ export default {
         this.selectedFolderId = this.selectedLibrary.folders[0].id
       }
     },
-    reset() {
-      this.title = ''
-      this.author = ''
-      this.series = ''
-      this.cancel()
-    },
-    cancel() {
-      this.validAudioFiles = []
-      this.validImageFiles = []
-      this.invalidFiles = []
-      if (this.$refs.fileInput) {
-        this.$refs.fileInput.value = ''
+    removeBook(book) {
+      this.books = this.books.filter((b) => b.index !== book.index)
+      if (!this.books.length) {
+        this.reset()
       }
-      this.showUploader = true
+    },
+    reset() {
+      this.error = ''
+      this.books = []
+      this.ignoredFiles = []
+      this.uploadFinished = false
+      if (this.$refs.fileInput) this.$refs.fileInput.value = ''
+      if (this.$refs.fileFolderInput) this.$refs.fileFolderInput.value = ''
+    },
+    openFilePicker() {
+      if (this.$refs.fileInput) this.$refs.fileInput.click()
+    },
+    openFolderPicker() {
+      if (this.$refs.fileFolderInput) this.$refs.fileFolderInput.click()
+    },
+    isDraggingFile(e) {
+      // Checks dragging file or folder and not an element on the page
+      var dt = e.dataTransfer || {}
+      return dt.types && dt.types.indexOf('Files') >= 0
+    },
+    dragenter(e) {
+      e.preventDefault()
+      if (this.uploadReady && this.isDraggingFile(e) && !this.isDragging) {
+        this.isDragging = true
+      }
+    },
+    dragleave(e) {
+      e.preventDefault()
+      if (!e.fromElement && this.isDragging) {
+        this.isDragging = false
+      }
+    },
+    dragover(e) {
+      // This is required to catch the drop event
+      e.preventDefault()
+    },
+    async drop(e) {
+      e.preventDefault()
+      this.isDragging = false
+      var items = e.dataTransfer.items || []
+      var bookResults = await this.uploadHelpers.getBooksFromDrop(items)
+      this.setResults(bookResults)
     },
     inputChanged(e) {
       if (!e.target || !e.target.files) return
       var _files = Array.from(e.target.files)
       if (_files && _files.length) {
-        this.filesChanged(_files)
+        var bookResults = this.uploadHelpers.getBooksFromPicker(_files)
+        this.setResults(bookResults)
       }
     },
-    drop(evt) {
-      this.isDragOver = false
-      this.preventDefaults(evt)
-      const files = [...evt.dataTransfer.files]
-      this.filesChanged(files)
+    setResults(bookResults) {
+      if (bookResults.error) {
+        this.error = bookResults.error
+        this.books = []
+        this.ignoredFiles = []
+      } else {
+        this.error = ''
+        this.books = bookResults.books
+        this.ignoredFiles = bookResults.ignoredFiles
+      }
+      console.log('Upload results', bookResults)
     },
-    dragover(evt) {
-      this.isDragOver = true
-      this.preventDefaults(evt)
-    },
-    dragleave(evt) {
-      this.isDragOver = false
-      this.preventDefaults(evt)
-    },
-    dragenter(evt) {
-      this.isDragOver = true
-      this.preventDefaults(evt)
-    },
-    preventDefaults(e) {
-      e.preventDefault()
-      e.stopPropagation()
-    },
-    filesChanged(files) {
-      this.showUploader = false
-
-      for (let i = 0; i < files.length; i++) {
-        var file = files[i]
-        var ext = Path.extname(file.name)
-
-        if (this.acceptedAudioFormats.includes(ext)) {
-          this.validAudioFiles.push(file)
-        } else if (file.type.startsWith('image/')) {
-          file.src = URL.createObjectURL(file)
-          this.validImageFiles.push(file)
-        } else {
-          this.invalidFiles.push(file)
-        }
+    updateBookCardStatus(index, status) {
+      var ref = this.$refs[`bookCard-${index}`]
+      if (ref && ref.length) ref = ref[0]
+      if (!ref) {
+        console.error('Book card ref not found', index, this.$refs)
+      } else {
+        ref.setUploadStatus(status)
       }
     },
-    clickSelectAudioFiles() {
-      if (this.$refs.fileInput) {
-        this.$refs.fileInput.click()
-      }
-    },
-    submit() {
-      if (!this.title || !this.author) {
-        this.$toast.error('Must enter a title and author')
-        return
-      }
-      if (!this.selectedLibraryId || !this.selectedFolderId) {
-        this.$toast.error('Must select a library and folder')
-        return
-      }
-      this.processing = true
-
+    uploadBook(book) {
       var form = new FormData()
-      form.set('title', this.title)
-      form.set('author', this.author)
-      form.set('series', this.series)
+      form.set('title', book.title)
+      form.set('author', book.author)
+      form.set('series', book.series)
       form.set('library', this.selectedLibraryId)
       form.set('folder', this.selectedFolderId)
 
       var index = 0
-      var files = this.validAudioFiles.concat(this.validImageFiles)
-      files.forEach((file) => {
+      book.files.forEach((file) => {
         form.set(`${index++}`, file)
       })
 
-      this.$axios
+      return this.$axios
         .$post('/upload', form)
-        .then((data) => {
-          this.$toast.success('Audiobook Uploaded Successfully')
-          this.reset()
-          this.processing = false
-        })
+        .then(() => true)
         .catch((error) => {
           console.error('Failed', error)
           var errorMessage = error.response && error.response.data ? error.response.data : 'Oops, something went wrong...'
           this.$toast.error(errorMessage)
-          this.processing = false
+          return false
         })
+    },
+    validateBooks() {
+      var bookData = []
+      for (var book of this.books) {
+        var bookref = this.$refs[`bookCard-${book.index}`]
+        if (bookref && bookref.length) bookref = bookref[0]
+
+        if (!bookref) {
+          console.error('Invalid book index no ref', book.index, this.$refs.bookCard)
+          return false
+        } else {
+          var data = bookref.getData()
+          if (!data) {
+            return false
+          }
+          bookData.push(data)
+        }
+      }
+      return bookData
+    },
+    async submit() {
+      if (!this.selectedFolderId || !this.selectedLibraryId) {
+        this.$toast.error('Must select library and folder')
+        document.getElementById('page-wrapper').scroll({ top: 0, left: 0, behavior: 'smooth' })
+        return
+      }
+
+      var books = this.validateBooks()
+      if (!books) {
+        this.$toast.error('Some invalid books')
+        return
+      }
+      this.processing = true
+      var booksUploaded = 0
+      var booksFailed = 0
+      for (let i = 0; i < books.length; i++) {
+        var book = books[i]
+        this.updateBookCardStatus(book.index, 'uploading')
+        var result = await this.uploadBook(book)
+        if (result) booksUploaded++
+        else booksFailed++
+        this.updateBookCardStatus(book.index, result ? 'success' : 'failed')
+      }
+      if (booksUploaded) {
+        this.$toast.success(`Successfully uploaded ${booksUploaded} book${booksUploaded > 1 ? 's' : ''}`)
+      }
+      if (booksFailed) {
+        this.$toast.success(`Failed to upload ${booksFailed} book${booksFailed > 1 ? 's' : ''}`)
+      }
+      this.processing = false
+      this.uploadFinished = true
     }
   },
   mounted() {
     this.selectedLibraryId = this.$store.state.libraries.currentLibraryId
     this.setDefaultFolder()
+    window.addEventListener('dragenter', this.dragenter)
+    window.addEventListener('dragleave', this.dragleave)
+    window.addEventListener('dragover', this.dragover)
+    window.addEventListener('drop', this.drop)
+  },
+  beforeDestroy() {
+    window.removeEventListener('dragenter', this.dragenter)
+    window.removeEventListener('dragleave', this.dragleave)
+    window.removeEventListener('dragover', this.dragover)
+    window.removeEventListener('drop', this.drop)
   }
 }
 </script>

@@ -15,6 +15,13 @@
 
         <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
 
+        <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
+          <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>
+        </ui-tooltip>
+        <div v-if="isChromecastInitialized" class="w-6 h-6 mr-2 cursor-pointer">
+          <google-cast-launcher></google-cast-launcher>
+        </div>
+
         <nuxt-link to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <span class="material-icons">equalizer</span>
         </nuxt-link>
@@ -39,10 +46,6 @@
 
       <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
-        <!-- <ui-btn v-show="!isHome" small class="text-sm mx-2" @click="toggleSelectAll"
-          >{{ isAllSelected ? 'Select None' : 'Select All' }}<span class="pl-2">({{ entitiesLoaded }})</span></ui-btn
-        > -->
-
         <div class="flex-grow" />
         <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
@@ -124,6 +127,15 @@ export default {
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
+    },
+    isChromecastEnabled() {
+      return this.$store.getters['getServerSetting']('chromecastEnabled')
+    },
+    isChromecastInitialized() {
+      return this.$store.state.globals.isChromecastInitialized
+    },
+    isHttps() {
+      return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
     }
   },
   methods: {

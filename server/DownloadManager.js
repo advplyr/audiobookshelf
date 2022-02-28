@@ -11,14 +11,12 @@ const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
 const TAG = 'DownloadManager'
 class DownloadManager {
-  constructor(db, MetadataPath, AudiobookPath, Uid, Gid) {
+  constructor(db, Uid, Gid) {
     this.Uid = Uid
     this.Gid = Gid
     this.db = db
-    this.MetadataPath = MetadataPath
-    this.AudiobookPath = AudiobookPath
 
-    this.downloadDirPath = Path.join(this.MetadataPath, 'downloads')
+    this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
 
     this.pendingDownloads = []
     this.downloads = []
@@ -248,7 +246,7 @@ class DownloadManager {
       // Supporting old local file prefix
       var bookCoverPath = audiobook.book.cover ? audiobook.book.cover.replace(/\\/g, '/') : null
       if (!_cover && bookCoverPath && bookCoverPath.startsWith('/local')) {
-        _cover = Path.posix.join(this.AudiobookPath.replace(/\\/g, '/'), _cover.replace('/local', ''))
+        _cover = Path.posix.join(global.AudiobookPath, _cover.replace('/local', ''))
         Logger.debug('Local cover url', _cover)
       }
 

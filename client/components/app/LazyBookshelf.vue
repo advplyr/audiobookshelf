@@ -2,9 +2,6 @@
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
       <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <!-- <div class="absolute top-0 left-0 bottom-0 p-4 z-10">
-          <p class="text-white text-2xl">{{ shelf }}</p>
-        </div> -->
         <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
@@ -26,7 +23,9 @@
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
     <!-- Experimental Bookshelf Texture -->
     <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
-      <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
+      <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal">
+        <p class="text-sm py-0.5">Texture</p>
+      </div>
     </div>
   </div>
 </template>
@@ -113,6 +112,9 @@ export default {
     },
     bookshelfView() {
       return this.$store.getters['settings/getServerSetting']('bookshelfView')
+    },
+    sortingIgnorePrefix() {
+      return this.$store.getters['getServerSetting']('sortingIgnorePrefix')
     },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
@@ -245,7 +247,7 @@ export default {
         console.error('failed to fetch books', error)
         return null
       })
-      console.log('payload', payload)
+
       this.isFetchingEntities = false
       if (this.pendingReset) {
         this.pendingReset = false

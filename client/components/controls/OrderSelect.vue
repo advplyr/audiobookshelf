@@ -59,6 +59,14 @@ export default {
         {
           text: 'Size',
           value: 'size'
+        },
+        {
+          text: 'File Birthtime',
+          value: 'birthtimeMs'
+        },
+        {
+          text: 'File Modified',
+          value: 'mtimeMs'
         }
       ]
     }

@@ -39,27 +39,35 @@ class Server {
     this.Uid = isNaN(UID) ? 0 : Number(UID)
     this.Gid = isNaN(GID) ? 0 : Number(GID)
     this.Host = '0.0.0.0'
-    this.ConfigPath = Path.normalize(CONFIG_PATH)
-    this.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
-    this.MetadataPath = Path.normalize(METADATA_PATH)
+    global.Uid = this.Uid
+    global.Gid = this.Gid
+    global.ConfigPath = Path.normalize(CONFIG_PATH)
+    global.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
+    global.MetadataPath = Path.normalize(METADATA_PATH)
+    // Fix backslash if not on Windows
+    if (process.platform !== 'win32') {
+      global.ConfigPath = global.ConfigPath.replace(/\\/g, '/')
+      global.AudiobookPath = global.AudiobookPath.replace(/\\/g, '/')
+      global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
+    }
 
-    fs.ensureDirSync(CONFIG_PATH, 0o774)
-    fs.ensureDirSync(METADATA_PATH, 0o774)
-    fs.ensureDirSync(AUDIOBOOK_PATH, 0o774)
+    fs.ensureDirSync(global.ConfigPath, 0o774)
+    fs.ensureDirSync(global.MetadataPath, 0o774)
+    fs.ensureDirSync(global.AudiobookPath, 0o774)
 
-    this.db = new Db(this.ConfigPath, this.AudiobookPath)
+    this.db = new Db()
     this.auth = new Auth(this.db)
-    this.backupManager = new BackupManager(this.MetadataPath, this.Uid, this.Gid, this.db)
-    this.logManager = new LogManager(this.MetadataPath, this.db)
-    this.cacheManager = new CacheManager(this.MetadataPath)
-    this.watcher = new Watcher(this.AudiobookPath)
-    this.coverController = new CoverController(this.db, this.cacheManager, this.MetadataPath, this.AudiobookPath)
-    this.scanner = new Scanner(this.AudiobookPath, this.MetadataPath, this.db, this.coverController, this.emitter.bind(this))
+    this.backupManager = new BackupManager(this.Uid, this.Gid, this.db)
+    this.logManager = new LogManager(this.db)
+    this.cacheManager = new CacheManager()
+    this.watcher = new Watcher()
+    this.coverController = new CoverController(this.db, this.cacheManager)
+    this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
 
-    this.streamManager = new StreamManager(this.db, this.MetadataPath, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeeds = new RssFeeds(this.Port, this.db)
-    this.downloadManager = new DownloadManager(this.db, this.MetadataPath, this.AudiobookPath, this.Uid, this.Gid)
-    this.apiController = new ApiController(this.MetadataPath, this.db, this.auth, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.downloadManager = new DownloadManager(this.db, this.Uid, this.Gid)
+    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager
@@ -101,7 +109,7 @@ class Server {
   clientEmitter(userId, ev, data) {
     var clients = this.getClientsForUser(userId)
     if (!clients.length) {
-      return Logger.error(`[Server] clientEmitter - no clients found for user ${userId}`)
+      return Logger.debug(`[Server] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
       if (client.socket) {
@@ -133,10 +141,18 @@ class Server {
       Logger.info(`[Server] Running scan for duplicate book IDs`)
       await this.scanner.fixDuplicateIds()
     }
+    // If server upgrade and last version was 1.7.0 or earlier - add abmetadata files
+    // if (this.db.checkPreviousVersionIsBefore('1.7.1')) {
+    // TODO: wait until stable
+    // }
 
-    this.watcher.initWatcher(this.libraries)
-    this.watcher.on('files', this.filesChanged.bind(this))
-
+    if (this.db.serverSettings.scannerDisableWatcher) {
+      Logger.info(`[Server] Watcher is disabled`)
+      this.watcher.disabled = true
+    } else {
+      this.watcher.initWatcher(this.libraries)
+      this.watcher.on('files', this.filesChanged.bind(this))
+    }
     this.passportInit()
   }
 
@@ -194,10 +210,10 @@ class Server {
     app.use(express.static(distPath))
 
     // Old static path for covers
-    app.use('/local', this.authMiddleware.bind(this), express.static(this.AudiobookPath))
+    app.use('/local', this.authMiddleware.bind(this), express.static(global.AudiobookPath))
 
     // Metadata folder static path
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(this.MetadataPath))
+    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
     // Downloads folder static path
     app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
@@ -314,7 +330,6 @@ class Server {
       // Streaming
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
-      socket.on('stream_update', (payload) => this.streamManager.streamUpdate(socket, payload))
       socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
 
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
@@ -399,7 +414,7 @@ class Server {
 
   // Remove unused /metadata/books/{id} folders
   async purgeMetadata() {
-    var booksMetadata = Path.join(this.MetadataPath, 'books')
+    var booksMetadata = Path.join(global.MetadataPath, 'books')
     var booksMetadataExists = await fs.pathExists(booksMetadata)
     if (!booksMetadataExists) return
     var foldersInBooksMetadata = await fs.readdir(booksMetadata)
@@ -458,25 +473,27 @@ class Server {
 
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
-      return res.status(500).error(`Library not found with id ${libraryId}`)
+      return res.status(500).send(`Library not found with id ${libraryId}`)
     }
     var folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
-      return res.status(500).error(`Folder not found with id ${folderId} in library ${library.name}`)
+      return res.status(500).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
 
-    if (!files.length || !title || !author) {
-      return res.status(500).error(`Invalid post data`)
+    if (!files.length || !title) {
+      return res.status(500).send(`Invalid post data`)
     }
 
     // For setting permissions recursively
     var firstDirPath = Path.join(folder.fullPath, author)
 
     var outputDirectory = ''
-    if (series && series.length && series !== 'null') {
+    if (series && author) {
       outputDirectory = Path.join(folder.fullPath, author, series, title)
-    } else {
+    } else if (author) {
       outputDirectory = Path.join(folder.fullPath, author, title)
+    } else {
+      outputDirectory = Path.join(folder.fullPath, title)
     }
 
     var exists = await fs.pathExists(outputDirectory)
@@ -672,9 +689,9 @@ class Server {
 
     const initialPayload = {
       serverSettings: this.serverSettings.toJSON(),
-      audiobookPath: this.AudiobookPath,
-      metadataPath: this.MetadataPath,
-      configPath: this.ConfigPath,
+      audiobookPath: global.AudiobookPath,
+      metadataPath: global.MetadataPath,
+      configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),
       stream: client.stream || null,
       librariesScanning: this.scanner.librariesScanning,

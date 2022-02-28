@@ -23,16 +23,25 @@ Audiobookshelf is a self-hosted audiobook server for managing and playing your a
 * Multi-user support w/ custom permissions
 * Keeps progress per user and syncs across devices
 * Auto-detects library updates, no need to re-scan
-* Upload full audiobooks and covers
+* Upload audiobooks w/ bulk upload drag and drop folders
 * Backup your metadata + automated daily backups
+* Progressive Web App (PWA)
+* Chromecast support on the web app
+* Fetch metadata and cover art from several sources
 
-Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new)
+Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
-Android app is in beta, try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
+Join us on [discord](https://discord.gg/pJsjuNCKRq)
 
-iOS early beta available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+### Android App (beta)
+Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
-<img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStream.png" />
+### iOS App (early beta)
+Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+
+<br />
+
+<img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStreamSquare.png" />
 
 <br />
 

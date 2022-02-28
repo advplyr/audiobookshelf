@@ -26,8 +26,10 @@ class Audible {
     }
 
     getBestImageLink(images) {
-        var keys = Object.keys(images);
-        return images[keys[keys.length - 1]];
+        if (!images) return null
+        var keys = Object.keys(images)
+        if (!keys.length) return null
+        return images[keys[keys.length - 1]]
     }
 
     getPrimarySeries(series, publication_name) {

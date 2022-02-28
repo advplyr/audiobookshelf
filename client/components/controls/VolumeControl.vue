@@ -51,11 +51,25 @@ export default {
     }
   },
   methods: {
+    scroll(e) {
+      if (!e || !e.wheelDeltaY) return
+      if (e.wheelDeltaY > 0) {
+        this.volume = Math.min(1, this.volume + 0.1)
+      } else {
+        this.volume = Math.max(0, this.volume - 0.1)
+      }
+    },
     mouseover() {
+      if (!this.isHovering) {
+        window.addEventListener('mousewheel', this.scroll)
+      }
       this.isHovering = true
       this.setOpen()
     },
     mouseleave() {
+      if (this.isHovering) {
+        window.removeEventListener('mousewheel', this.scroll)
+      }
       this.isHovering = false
     },
     setOpen() {
@@ -127,6 +141,11 @@ export default {
     if (this.value === 0) {
       this.isMute = true
     }
+  },
+  beforeDestroy() {
+    window.removeEventListener('mousewheel', this.scroll)
+    document.body.removeEventListener('mousemove', this.mousemove)
+    document.body.removeEventListener('mouseup', this.mouseup)
   }
 }
 </script>
