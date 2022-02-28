@@ -5,6 +5,7 @@
       <div class="absolute cover-bg" ref="coverBg" />
     </div>
 
+    <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ displayTitle }}
@@ -62,16 +63,20 @@
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
+
+    <!-- Series name overlay -->
     <div v-if="booksInSeries && audiobook && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
       <p class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ series }}</p>
     </div>
 
+    <!-- Error widget -->
     <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
       <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
         <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
       </div>
     </ui-tooltip>
 
+    <!-- Volume number -->
     <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
     </div>
@@ -204,6 +209,8 @@ export default {
       return this.authorFL
     },
     displaySortLine() {
+      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._audiobook.mtimeMs)
+      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._audiobook.birthtimeMs)
       if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._audiobook.addedAt)
       if (this.orderBy === 'duration') return 'Duration: ' + this.$elapsedPrettyExtended(this._audiobook.duration, false)
       if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._audiobook.size)
