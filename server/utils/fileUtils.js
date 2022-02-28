@@ -20,12 +20,38 @@ async function getFileStat(path) {
 }
 module.exports.getFileStat = getFileStat
 
+async function getFileTimestampsWithIno(path) {
+  try {
+    var stat = await fs.stat(path, { bigint: true })
+    return {
+      size: Number(stat.size),
+      mtimeMs: Number(stat.mtimeMs),
+      ctimeMs: Number(stat.ctimeMs),
+      birthtimeMs: Number(stat.birthtimeMs),
+      ino: String(stat.ino)
+    }
+  } catch (err) {
+    console.error('Failed to getFileTimestampsWithIno', err)
+    return false
+  }
+}
+module.exports.getFileTimestampsWithIno = getFileTimestampsWithIno
+
 async function getFileSize(path) {
   var stat = await getFileStat(path)
   if (!stat) return 0
   return stat.size || 0
 }
 module.exports.getFileSize = getFileSize
+
+
+function getIno(path) {
+  return fs.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
+    Logger.error('[Utils] Failed to get ino for path', path, err)
+    return null
+  })
+}
+module.exports.getIno = getIno
 
 async function readTextFile(path) {
   try {

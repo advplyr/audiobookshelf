@@ -1,7 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const { bytesPretty, readTextFile } = require('../utils/fileUtils')
-const { comparePaths, getIno, getId, elapsedPretty } = require('../utils/index')
+const { bytesPretty, readTextFile, getIno } = require('../utils/fileUtils')
+const { comparePaths, getId, elapsedPretty } = require('../utils/index')
 const { parseOpfMetadataXML } = require('../utils/parseOpfMetadata')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 const nfoGenerator = require('../utils/nfoGenerator')
@@ -22,6 +22,9 @@ class Audiobook {
 
     this.path = null
     this.fullPath = null
+    this.mtimeMs = null
+    this.ctimeMs = null
+    this.birthtimeMs = null
     this.addedAt = null
     this.lastUpdate = null
     this.lastScan = null
@@ -57,6 +60,9 @@ class Audiobook {
     this.folderId = audiobook.folderId || 'audiobooks'
     this.path = audiobook.path
     this.fullPath = audiobook.fullPath
+    this.mtimeMs = audiobook.mtimeMs || 0
+    this.ctimeMs = audiobook.ctimeMs || 0
+    this.birthtimeMs = audiobook.birthtimeMs || 0
     this.addedAt = audiobook.addedAt
     this.lastUpdate = audiobook.lastUpdate || this.addedAt
     this.lastScan = audiobook.lastScan || null
@@ -179,6 +185,9 @@ class Audiobook {
       folderId: this.folderId,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       lastScan: this.lastScan,
@@ -205,6 +214,9 @@ class Audiobook {
       tags: this.tags,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       duration: this.duration,
@@ -228,6 +240,9 @@ class Audiobook {
       folderId: this.folderId,
       path: this.path,
       fullPath: this.fullPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
       lastUpdate: this.lastUpdate,
       duration: this.duration,
@@ -335,6 +350,9 @@ class Audiobook {
 
     this.path = data.path
     this.fullPath = data.fullPath
+    this.mtimeMs = data.mtimeMs || 0
+    this.ctimeMs = data.ctimeMs || 0
+    this.birthtimeMs = data.birthtimeMs || 0
     this.addedAt = Date.now()
     this.lastUpdate = this.addedAt
 
@@ -903,12 +921,6 @@ class Audiobook {
       }
     }
 
-    if (existingFile.filename !== fileFound.filename) {
-      existingFile.filename = fileFound.filename
-      existingFile.ext = fileFound.ext
-      hasUpdated = true
-    }
-
     if (existingFile.path !== fileFound.path) {
       existingFile.path = fileFound.path
       existingFile.fullPath = fileFound.fullPath
@@ -917,6 +929,14 @@ class Audiobook {
       existingFile.fullPath = fileFound.fullPath
       hasUpdated = true
     }
+
+    var keysToCheck = ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size']
+    keysToCheck.forEach((key) => {
+      if (existingFile[key] !== fileFound[key]) {
+        existingFile[key] = fileFound[key]
+        hasUpdated = true
+      }
+    })
 
     if (!isAudioFile && existingFile.filetype !== fileFound.filetype) {
       existingFile.filetype = fileFound.filetype
@@ -956,6 +976,14 @@ class Audiobook {
       this.fullPath = dataFound.fullPath
       hasUpdated = true
     }
+
+    var keysToCheck = ['mtimeMs', 'ctimeMs', 'birthtimeMs']
+    keysToCheck.forEach((key) => {
+      if (dataFound[key] != this[key]) {
+        this[key] = dataFound[key] || 0
+        hasUpdated = true
+      }
+    })
 
     var newAudioFileData = []
     var newOtherFileData = []

@@ -205,6 +205,7 @@ class Scanner {
     // Check for existing & removed audiobooks
     for (let i = 0; i < audiobooksInLibrary.length; i++) {
       var audiobook = audiobooksInLibrary[i]
+      // Find audiobook folder with matching inode or matching path
       var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino || comparePaths(abd.path, audiobook.path))
       if (!dataFound) {
         libraryScan.addLog(LogLevel.WARN, `Audiobook "${audiobook.title}" is missing`)

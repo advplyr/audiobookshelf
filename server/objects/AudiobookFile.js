@@ -6,6 +6,11 @@ class AudiobookFile {
     this.ext = null
     this.path = null
     this.fullPath = null
+    this.size = null
+    this.mtimeMs = null
+    this.ctimeMs = null
+    this.birthtimeMs = null
+
     this.addedAt = null
 
     if (data) {
@@ -25,6 +30,10 @@ class AudiobookFile {
       ext: this.ext,
       path: this.path,
       fullPath: this.fullPath,
+      size: this.size,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt
     }
   }
@@ -36,6 +45,10 @@ class AudiobookFile {
     this.ext = data.ext
     this.path = data.path
     this.fullPath = data.fullPath
+    this.size = data.size || 0
+    this.mtimeMs = data.mtimeMs || 0
+    this.ctimeMs = data.ctimeMs || 0
+    this.birthtimeMs = data.birthtimeMs || 0
     this.addedAt = data.addedAt
   }
 
@@ -46,6 +59,10 @@ class AudiobookFile {
     this.ext = data.ext
     this.path = data.path
     this.fullPath = data.fullPath
+    this.size = data.size || 0
+    this.mtimeMs = data.mtimeMs || 0
+    this.ctimeMs = data.ctimeMs || 0
+    this.birthtimeMs = data.birthtimeMs || 0
     this.addedAt = Date.now()
   }
 }

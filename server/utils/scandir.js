@@ -1,8 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('../Logger')
-const { getIno } = require('./index')
-const { recurseFiles } = require('./fileUtils')
+const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')
 
 function isBookFile(path) {
@@ -114,16 +113,20 @@ function groupFileItemsIntoBooks(fileItems) {
 }
 
 function cleanFileObjects(basepath, abrelpath, files) {
-  return files.map((file) => {
+  return Promise.all(files.map(async (file) => {
+    var fullPath = Path.posix.join(basepath, file)
+    var fileTsData = await getFileTimestampsWithIno(fullPath)
+
     var ext = Path.extname(file)
     return {
       filetype: getFileType(ext),
       filename: Path.basename(file),
       path: Path.posix.join(abrelpath, file), // /AUDIOBOOK/PATH/filename.mp3
-      fullPath: Path.posix.join(basepath, file), // /audiobooks/AUDIOBOOK/PATH/filename.mp3
-      ext: ext
+      fullPath, // /audiobooks/AUDIOBOOK/PATH/filename.mp3
+      ext: ext,
+      ...fileTsData
     }
-  })
+  }))
 }
 
 function getFileType(ext) {
@@ -162,15 +165,15 @@ async function scanRootDir(folder, serverSettings = {}) {
   for (const audiobookPath in audiobookGrouping) {
     var audiobookData = getAudiobookDataFromDir(folderPath, audiobookPath, parseSubtitle)
 
-    var fileObjs = cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
-    for (let i = 0; i < fileObjs.length; i++) {
-      fileObjs[i].ino = await getIno(fileObjs[i].fullPath)
-    }
-    var audiobookIno = await getIno(audiobookData.fullPath)
+    var fileObjs = await cleanFileObjects(audiobookData.fullPath, audiobookPath, audiobookGrouping[audiobookPath])
+    var audiobookFolderStats = await getFileTimestampsWithIno(audiobookData.fullPath)
     audiobooks.push({
       folderId: folder.id,
       libraryId: folder.libraryId,
-      ino: audiobookIno,
+      ino: audiobookFolderStats.ino,
+      mtimeMs: audiobookFolderStats.mtimeMs || 0,
+      ctimeMs: audiobookFolderStats.ctimeMs || 0,
+      birthtimeMs: audiobookFolderStats.birthtimeMs || 0,
       ...audiobookData,
       audioFiles: fileObjs.filter(f => f.filetype === 'audio'),
       otherFiles: fileObjs.filter(f => f.filetype !== 'audio')
@@ -282,8 +285,12 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
 
   var audiobookDir = audiobookPath.replace(folderFullPath, '').slice(1)
   var audiobookData = getAudiobookDataFromDir(folderFullPath, audiobookDir, parseSubtitle)
+  var audiobookFolderStats = await getFileTimestampsWithIno(audiobookData.fullPath)
   var audiobook = {
-    ino: await getIno(audiobookData.fullPath),
+    ino: audiobookFolderStats.ino,
+    mtimeMs: audiobookFolderStats.mtimeMs || 0,
+    ctimeMs: audiobookFolderStats.ctimeMs || 0,
+    birthtimeMs: audiobookFolderStats.birthtimeMs || 0,
     folderId: folder.id,
     libraryId: folder.libraryId,
     ...audiobookData,
@@ -294,14 +301,14 @@ async function getAudiobookFileData(folder, audiobookPath, serverSettings = {}) 
   for (let i = 0; i < fileItems.length; i++) {
     var fileItem = fileItems[i]
 
-    var ino = await getIno(fileItem.fullpath)
+    var fileStatData = await getFileTimestampsWithIno(fileItem.fullpath)
     var fileObj = {
-      ino,
       filetype: getFileType(fileItem.extension),
       filename: fileItem.name,
       path: fileItem.path,
       fullPath: fileItem.fullpath,
-      ext: fileItem.extension
+      ext: fileItem.extension,
+      ...fileStatData
     }
     if (fileObj.filetype === 'audio') {
       audiobook.audioFiles.push(fileObj)

@@ -38,13 +38,6 @@ module.exports.comparePaths = (path1, path2) => {
   return path1 === path2 || Path.normalize(path1) === Path.normalize(path2)
 }
 
-module.exports.getIno = (path) => {
-  return fs.promises.stat(path, { bigint: true }).then((data => String(data.ino))).catch((err) => {
-    Logger.error('[Utils] Failed to get ino for path', path, err)
-    return null
-  })
-}
-
 module.exports.isNullOrNaN = (num) => {
   return num === null || isNaN(num)
 }
