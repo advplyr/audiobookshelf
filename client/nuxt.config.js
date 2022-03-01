@@ -7,8 +7,7 @@ module.exports = {
   dev: process.env.NODE_ENV !== 'production',
   env: {
     serverUrl: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333',
-    chromecastReceiver: 'FD1F76C5',
-    baseUrl: process.env.BASE_URL || 'http://0.0.0.0'
+    chromecastReceiver: 'FD1F76C5'
   },
   // rootDir: process.env.NODE_ENV !== 'production' ? 'client/' : '',
   telemetry: false,
