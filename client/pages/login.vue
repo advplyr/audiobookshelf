@@ -92,21 +92,23 @@ export default {
       this.processing = false
     },
     getCookies() {
-      return document.cookie.split(";").map(c => c.split("=")).reduce((acc, val)=> {
+      return document.cookie
+        .split(';')
+        .map((c) => c.split('='))
+        .reduce((acc, val) => {
           return {
-              ...acc,
-              [val[0]]: val[1]
+            ...acc,
+            [val[0]]: val[1]
           }
-      }, {})
+        }, {})
     },
-    deleteCookie(name, path="/", domain=document.location.host) {
-      document.cookie = name + "=" +
-        ((path) ? ";path="+path:"")+
-        ((domain)?";domain="+domain:"") +
-        ";expires=Thu, 01 Jan 1970 00:00:01 GMT";
+    deleteCookie(name, path = '/', domain = document.location.host) {
+      document.cookie = name + '=' + (path ? ';path=' + path : '') + (domain ? ';domain=' + domain : '') + ';expires=Thu, 01 Jan 1970 00:00:01 GMT'
     },
     checkAuth() {
-      if (this.getCookies()["sso"]) {
+      console.log('Raw cookie', document.cookie)
+
+      if (this.getCookies()['sso']) {
         this.processing = true
 
         this.$axios
@@ -117,10 +119,10 @@ export default {
           })
           .catch((error) => {
             console.error('Authorize error', error)
-            this.deleteCookie("sso")
+            this.deleteCookie('sso')
             this.processing = false
           })
-        return;
+        return
       }
       if (localStorage.getItem('token')) {
         let token = localStorage.getItem('token')
@@ -146,7 +148,8 @@ export default {
       }
     },
     async checkSSO() {
-      const res = await fetch("/oidc/login", {mode: "no-cors"})
+      const res = await fetch('/oidc/login', { mode: 'no-cors' })
+      console.log('res', res)
       if (res.status >= 400 && res.status < 600) {
         this.ssoAvailable = false
         return

@@ -82,17 +82,17 @@ export default {
       user: {
         createNewUser: false,
         isActive: true,
-        settings: {
-          mobileOrderBy: 'recent',
-          mobileOrderDesc: true,
-          mobileFilterBy: 'all',
-          orderBy: 'book.title',
-          orderDesc: false,
-          filterBy: 'all',
-          playbackRate: 1,
-          bookshelfCoverSize: 120,
-          collapseSeries: false
-        },
+        // settings: {
+        //   mobileOrderBy: 'recent',
+        //   mobileOrderDesc: true,
+        //   mobileFilterBy: 'all',
+        //   orderBy: 'book.title',
+        //   orderDesc: false,
+        //   filterBy: 'all',
+        //   playbackRate: 1,
+        //   bookshelfCoverSize: 120,
+        //   collapseSeries: false
+        // },
         permissions: {
           download: false,
           update: false,
@@ -106,7 +106,6 @@ export default {
   },
   watch: {
     SSOSettings(newVal, oldVal) {
-      console.log('SSO Settings set', newVal, oldVal)
       if (newVal && !oldVal) {
         this.initSSOSettings()
       }
@@ -160,8 +159,14 @@ export default {
   methods: {
     saveSSOSettings() {
       this.updatingSSOSettings = true
+
+      var user = JSON.parse(JSON.stringify(this.user))
+      var updatePayload = {
+        oidc: { ...this.oidc },
+        user
+      }
       this.$store
-        .dispatch('settings/updateSSOSettings', { oidc: this.oidc, user: this.user })
+        .dispatch('settings/updateSSOSettings', updatePayload)
         .then((payload) => {
           console.log('Update SSO settings success', payload)
           this.updatingSSOSettings = false

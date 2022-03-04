@@ -153,25 +153,22 @@ class Server {
       this.watcher.initWatcher(this.libraries)
       this.watcher.on('files', this.filesChanged.bind(this))
     }
-    this.passportInit()
   }
 
   passportInit() {
-    if (this.db.SSOSettings.isOIDCConfigured) {
-      Logger.debug(`[Server] passportInit OIDC is configured - init`)
-      passport.serializeUser((user, next) => {
-        next(null, {userId: user.id});
-      })
-      passport.deserializeUser((obj, next) => {
-        this.db.users.find(u => u.id === obj.userId)
-        next(null, obj);
-      })
+    Logger.debug(`[Server] passportInit OIDC is configured - init`)
+    passport.serializeUser((user, next) => {
+      console.log('Testing serialize user', user)
+      next(null, { userId: user.id })
+    })
+    passport.deserializeUser((obj, next) => {
+      console.log('Testing deserialize user', obj)
+      var user = this.db.users.find(u => u.id === obj.userId)
+      next(null, user)
+    })
 
-      // Initialize passport OIDC verification
-      passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification.bind(this.auth)))
-    } else {
-      Logger.debug(`[Server] passportInit OIDC not configured`)
-    }
+    // Initialize passport OIDC verification
+    passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification.bind(this.auth)))
   }
 
   async start() {
@@ -183,19 +180,33 @@ class Server {
 
     this.server = http.createServer(app)
 
+    // TEMP testing OIDC
+    app.use((req, res, next) => {
+      if (req.url.startsWith('/oidc/callback')) {
+        console.log('OIDC CALLBACK', req.headers)
+      }
+      next()
+    })
+
     app.use(this.auth.cors)
     app.use(fileUpload())
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
-    app.use(cookieParser());
+    app.use(cookieParser())
     app.use(session({
       secret: process.env.TOKEN_SECRET,
       resave: false,
       saveUninitialized: true
     }));
-    app.use(passport.initialize());
-    app.use(passport.session());
 
+
+    if (this.db.SSOSettings.isOIDCConfigured) {
+      this.passportInit()
+      app.use(passport.initialize())
+      app.use(passport.session())
+    } else {
+      Logger.debug(`[Server] passportInit OIDC not configured`)
+    }
     /*
     if (req.method === 'GET' && req.query && req.query.token) {
       token = req.query.token
@@ -283,6 +294,8 @@ class Server {
       app.get("/oidc/login", passport.authenticate('openidconnect'))
       app.get("/oidc/callback", passport.authenticate('openidconnect', { failureRedirect: '/login', failureMessage: true }),
         async (req, res) => {
+          // Never reached
+          console.log('OIDC CALLBACK RECEIVED', req)
           res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
           res.redirect('/');
         }

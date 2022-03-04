@@ -4,23 +4,23 @@ const { isObject } = require('../utils')
 const { difference } = require('../utils/string')
 
 const defaultSettings = {
+  createNewUser: false,
+  user: {
     createNewUser: false,
-    user: {
-      createNewUser: false,
-      isActive: true,
-      settings: {
-        mobileOrderBy: 'recent',
-        mobileOrderDesc: true,
-        mobileFilterBy: 'all',
-        orderBy: 'book.title',
-        orderDesc: false,
-        filterBy: 'all',
-        playbackRate: 1,
-        bookshelfCoverSize: 120,
-        collapseSeries: false
-      },
-      permissions: User.getDefaultUserPermissions('guest')
-    }
+    isActive: true,
+    settings: {
+      mobileOrderBy: 'recent',
+      mobileOrderDesc: true,
+      mobileFilterBy: 'all',
+      orderBy: 'book.title',
+      orderDesc: false,
+      filterBy: 'all',
+      playbackRate: 1,
+      bookshelfCoverSize: 120,
+      collapseSeries: false
+    },
+    permissions: User.getDefaultUserPermissions('guest')
+  }
 }
 
 class SSOSettings {
