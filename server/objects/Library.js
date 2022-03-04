@@ -8,6 +8,7 @@ class Library {
     this.folders = []
     this.displayOrder = 1
     this.icon = 'database'
+    this.mediaType = 'default'
     this.provider = 'google'
     this.disableWatcher = false
 
@@ -31,6 +32,7 @@ class Library {
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
+    this.mediaType = library.mediaType || 'default'
     this.provider = library.provider || 'google'
     this.disableWatcher = !!library.disableWatcher
 
@@ -45,6 +47,7 @@ class Library {
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
+      mediaType: this.mediaType,
       provider: this.provider,
       disableWatcher: this.disableWatcher,
       createdAt: this.createdAt,
@@ -71,6 +74,7 @@ class Library {
     }
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
+    this.mediaType = data.mediaType || 'default'
     this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
@@ -86,6 +90,15 @@ class Library {
       this.provider = payload.provider
       hasUpdates = true
     }
+    if (payload.mediaType && payload.mediaType !== this.mediaType) {
+      this.mediaType = payload.mediaType
+      hasUpdates = true
+    }
+    if (payload.icon && payload.icon !== this.icon) {
+      this.icon = payload.icon
+      hasUpdates = true
+    }
+
     if (payload.disableWatcher !== this.disableWatcher) {
       this.disableWatcher = !!payload.disableWatcher
       hasUpdates = true

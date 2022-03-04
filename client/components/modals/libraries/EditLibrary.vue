@@ -6,11 +6,14 @@
     </div>
 
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
-      <div class="flex flex-wrap -mx-1">
-        <div class="w-full md:w-2/3 px-1">
+      <div class="flex flex-wrap md:flex-nowrap -mx-1">
+        <div class="w-full md:flex-grow px-1 py-1 md:py-0">
           <ui-text-input-with-label v-model="name" label="Library Name" />
         </div>
-        <div class="w-full md:w-1/3 px-1">
+        <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
+          <ui-media-type-picker v-model="mediaType" />
+        </div>
+        <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
           <ui-dropdown v-model="provider" :items="providers" label="Metadata Provider" small />
         </div>
       </div>
@@ -18,7 +21,6 @@
       <div class="w-full py-4">
         <p class="px-1 text-sm font-semibold">Folders</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
-          <!-- <ui-text-input :value="folder.fullPath" type="text" class="w-full" /> -->
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text v-model="folder.fullPath" type="text" class="w-full" />
           <span v-show="folders.length > 1" class="material-icons ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
@@ -60,6 +62,7 @@ export default {
     return {
       name: '',
       provider: '',
+      mediaType: '',
       folders: [],
       showDirectoryPicker: false,
       disableWatcher: false
@@ -80,7 +83,7 @@ export default {
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
-      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher
+      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher && this.mediaType === this.library.mediaType
     },
     providers() {
       return this.$store.state.scanners.providers
@@ -103,6 +106,7 @@ export default {
       this.provider = this.library ? this.library.provider : ''
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
       this.disableWatcher = this.library ? !!this.library.disableWatcher : false
+      this.mediaType = this.library ? this.library.mediaType : 'default'
       this.showDirectoryPicker = false
     },
     selectFolder(fullPath) {
@@ -129,6 +133,8 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
+        mediaType: this.mediaType,
+        icon: this.mediaType,
         disableWatcher: this.disableWatcher
       }
 
@@ -163,6 +169,8 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
+        mediaType: this.mediaType,
+        icon: this.mediaType,
         disableWatcher: this.disableWatcher
       }
 

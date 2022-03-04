@@ -12,7 +12,7 @@
         <template v-for="library in librariesFiltered">
           <li :key="library.id" class="text-gray-100 select-none relative py-2 cursor-pointer hover:bg-black-400" id="listbox-option-0" role="option" @click="selectLibrary(library)">
             <div class="flex items-center px-3">
-              <widgets-library-icon :icon="currentLibraryIcon" class="mr-2" />
+              <widgets-library-icon :icon="library.icon" class="mr-2" />
               <span class="font-normal block truncate font-sans text-sm">{{ library.name }}</span>
             </div>
           </li>
