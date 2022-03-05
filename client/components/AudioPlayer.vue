@@ -1,21 +1,27 @@
 <template>
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
-      <div v-if="chapters.length" class="hidden md:flex absolute right-20 top-0 bottom-0 h-full items-end">
-        <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+      <div class="absolute -top-10 md:top-0 right-0 md:right-2 flex items-center h-full">
+        <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
+
+        <div class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
+          <span v-if="!sleepTimerSet" class="material-icons" style="font-size: 1.7rem">snooze</span>
+          <div v-else class="flex items-center">
+            <span class="material-icons text-lg text-warning">snooze</span>
+            <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
+          </div>
+        </div>
+
+        <div class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+          <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+        </div>
+
+        <div v-if="chapters.length" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
       </div>
-      <div class="absolute top-0 bottom-0 h-full hidden md:flex items-end" :class="chapters.length ? ' right-32' : 'right-20'">
-        <div class="cursor-pointer text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="showBookmarks">
-          <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
-        </div>
-      </div>
-      <div class="absolute top-0 bottom-0 h-full hidden md:flex items-end" :class="chapters.length ? ' right-44' : 'right-32'">
-        <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" />
-      </div>
 
-      <div class="flex pb-4 md:pb-2">
+      <div class="flex pt-4 pb-2 md:pt-0 md:pb-2">
         <div class="flex-grow" />
         <template v-if="!loading">
           <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">
@@ -91,7 +97,9 @@ export default {
     bookmarks: {
       type: Array,
       default: () => []
-    }
+    },
+    sleepTimerSet: Boolean,
+    sleepTimerRemaining: Number
   },
   data() {
     return {
@@ -110,6 +118,18 @@ export default {
     }
   },
   computed: {
+    sleepTimerRemainingString() {
+      var rounded = Math.round(this.sleepTimerRemaining)
+      if (rounded < 90) {
+        return `${rounded}s`
+      }
+      var minutesRounded = Math.round(rounded / 60)
+      if (minutesRounded < 90) {
+        return `${minutesRounded}m`
+      }
+      var hoursRounded = Math.round(minutesRounded / 60)
+      return `${hoursRounded}h`
+    },
     token() {
       return this.$store.getters['user/getToken']
     },
@@ -329,9 +349,6 @@ export default {
     showChapters() {
       if (!this.chapters.length) return
       this.showChaptersModal = !this.showChaptersModal
-    },
-    showBookmarks() {
-      this.$emit('showBookmarks', this.currentTime)
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1

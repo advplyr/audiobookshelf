@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-4 pt-2">
+  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
     <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
       <covers-book-cover :audiobook="streamAudiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </nuxt-link>
@@ -22,12 +22,31 @@
         </div>
       </div>
       <div class="flex-grow" />
-      <span class="material-icons p-4 cursor-pointer" @click="closePlayer">close</span>
+      <span class="material-icons px-2 py-1 md:p-4 cursor-pointer" @click="closePlayer">close</span>
     </div>
 
-    <audio-player ref="audioPlayer" :chapters="chapters" :paused="!isPlaying" :loading="playerLoading" :bookmarks="bookmarks" @playPause="playPause" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setVolume="setVolume" @setPlaybackRate="setPlaybackRate" @seek="seek" @close="closePlayer" @showBookmarks="showBookmarks" />
+    <audio-player
+      ref="audioPlayer"
+      :chapters="chapters"
+      :paused="!isPlaying"
+      :loading="playerLoading"
+      :bookmarks="bookmarks"
+      :sleep-timer-set="sleepTimerSet"
+      :sleep-timer-remaining="sleepTimerRemaining"
+      @playPause="playPause"
+      @jumpForward="jumpForward"
+      @jumpBackward="jumpBackward"
+      @setVolume="setVolume"
+      @setPlaybackRate="setPlaybackRate"
+      @seek="seek"
+      @close="closePlayer"
+      @showBookmarks="showBookmarks"
+      @showSleepTimer="showSleepTimerModal = true"
+    />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" />
+
+    <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-time="sleepTimerTime" :remaining="sleepTimerRemaining" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
   </div>
 </template>
 
@@ -44,7 +63,12 @@ export default {
       bookmarkAudiobookId: null,
       playerLoading: false,
       isPlaying: false,
-      currentTime: 0
+      currentTime: 0,
+      showSleepTimerModal: false,
+      sleepTimerSet: false,
+      sleepTimerTime: 0,
+      sleepTimerRemaining: 0,
+      sleepTimer: null
     }
   },
   computed: {
@@ -111,6 +135,49 @@ export default {
     }
   },
   methods: {
+    setSleepTimer(seconds) {
+      this.sleepTimerSet = true
+      this.sleepTimerTime = seconds
+      this.sleepTimerRemaining = seconds
+      this.runSleepTimer()
+      this.showSleepTimerModal = false
+    },
+    runSleepTimer() {
+      var lastTick = Date.now()
+      clearInterval(this.sleepTimer)
+      this.sleepTimer = setInterval(() => {
+        var elapsed = Date.now() - lastTick
+        lastTick = Date.now()
+        this.sleepTimerRemaining -= elapsed / 1000
+
+        if (this.sleepTimerRemaining <= 0) {
+          this.clearSleepTimer()
+          this.playerHandler.pause()
+          this.$toast.info('Sleep Timer Done.. zZzzZz')
+        }
+      }, 1000)
+    },
+    cancelSleepTimer() {
+      this.showSleepTimerModal = false
+      this.clearSleepTimer()
+    },
+    clearSleepTimer() {
+      clearInterval(this.sleepTimer)
+      this.sleepTimerRemaining = 0
+      this.sleepTimer = null
+      this.sleepTimerSet = false
+    },
+    incrementSleepTimer(amount) {
+      if (!this.sleepTimerSet) return
+      this.sleepTimerRemaining += amount
+    },
+    decrementSleepTimer(amount) {
+      if (this.sleepTimerRemaining < amount) {
+        this.sleepTimerRemaining = 3
+        return
+      }
+      this.sleepTimerRemaining = Math.max(0, this.sleepTimerRemaining - amount)
+    },
     playPause() {
       this.playerHandler.playPause()
     },
@@ -146,9 +213,9 @@ export default {
         this.$refs.audioPlayer.setBufferTime(buffertime)
       }
     },
-    showBookmarks(currentTime) {
+    showBookmarks() {
       this.bookmarkAudiobookId = this.audiobookId
-      this.bookmarkCurrentTime = currentTime
+      this.bookmarkCurrentTime = this.currentTime
       this.showBookmarksModal = true
     },
     selectBookmark(bookmark) {

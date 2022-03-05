@@ -255,8 +255,7 @@ export default class PlayerHandler {
   }
 
   play() {
-    if (!this.player) return
-    this.player.play()
+    if (this.player) this.player.play()
   }
 
   pause() {
