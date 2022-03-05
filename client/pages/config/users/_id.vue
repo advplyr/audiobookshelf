@@ -15,18 +15,18 @@
       </div>
       <div v-if="showExperimentalFeatures" class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div v-if="showExperimentalFeatures" class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats <span class="pl-2 text-xs text-error">(web app only)</span></h1>
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats <span class="pl-2 text-xs text-error">(experimental)</span></h1>
         <p class="text-sm text-gray-300">
           Total Time Listened:&nbsp;
           <span class="font-mono text-base">{{ listeningTimePretty }}</span>
         </p>
-        <p class="text-sm text-gray-300">
+        <p v-if="timeListenedToday" class="text-sm text-gray-300">
           Time Listened Today:&nbsp;
           <span class="font-mono text-base">{{ $elapsedPrettyExtended(timeListenedToday) }}</span>
         </p>
 
         <div v-if="latestSession" class="mt-4">
-          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Last Listening Session <span class="pl-2 text-xs text-error">(web app only)</span></h1>
+          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Last Listening Session</h1>
           <p class="text-sm text-gray-300">{{ latestSession.audiobookTitle }} {{ $dateDistanceFromNow(latestSession.lastUpdate) }} for {{ $elapsedPrettyExtended(this.latestSession.timeListening) }}</p>
         </div>
       </div>

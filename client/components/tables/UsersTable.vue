@@ -87,9 +87,11 @@ export default {
   },
   methods: {
     getLastRead(audiobooks) {
-      var abs = Object.values(audiobooks)
+      var abs = Object.values(audiobooks).filter((ab) => {
+        return ab.progress > 0
+      })
       if (abs.length) {
-        abs = abs.sort((a, b) => a.lastUpdate - b.lastUpdate)
+        abs = abs.sort((a, b) => b.lastUpdate - a.lastUpdate)
         // Book object is attached on request
         if (abs[0].book) return abs[0].book.title
         return abs[0].audiobookTitle ? abs[0].audiobookTitle : null
