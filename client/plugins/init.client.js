@@ -138,6 +138,10 @@ function xmlToJson(xml) {
 }
 Vue.prototype.$xmlToJson = xmlToJson
 
+Vue.prototype.$encodeUriPath = (path) => {
+  return path.replace(/\\/g, '/').replace(/%/g, '%25').replace(/#/g, '%23')
+}
+
 const encode = (text) => encodeURIComponent(Buffer.from(text).toString('base64'))
 Vue.prototype.$encode = encode
 const decode = (text) => Buffer.from(decodeURIComponent(text), 'base64').toString()

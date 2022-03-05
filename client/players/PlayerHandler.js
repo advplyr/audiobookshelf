@@ -132,7 +132,7 @@ export default class PlayerHandler {
     var audioTracks = (this.audiobook.tracks || []).map((track) => {
       var audioTrack = new AudioTrack(track)
       audioTrack.startOffset = runningTotal
-      audioTrack.contentUrl = `/lib/${this.audiobook.libraryId}/${this.audiobook.folderId}/${track.path}?token=${this.userToken}`
+      audioTrack.contentUrl = `/lib/${this.audiobook.libraryId}/${this.audiobook.folderId}/${this.ctx.$encodeUriPath(track.path)}?token=${this.userToken}`
       audioTrack.mimeType = this.getMimeTypeForTrack(track)
       audioTrack.canDirectPlay = !!this.player.playableMimetypes[audioTrack.mimeType]
 

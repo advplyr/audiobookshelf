@@ -96,12 +96,8 @@ export default {
   },
   methods: {
     getRelativePath(path) {
-      var filePath = path.replace(/\\/g, '/')
-      var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
-      return filePath
-        .replace(audiobookPath + '/', '')
-        .replace(/%/g, '%25')
-        .replace(/#/g, '%23')
+      var relativePath = path.replace(/\\/g, '/').replace(this.audiobookPath.replace(/\\/g, '/') + '/', '')
+      return this.$encodeUriPath(relativePath)
     }
   },
   mounted() {}

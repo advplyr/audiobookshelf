@@ -71,15 +71,9 @@ export default {
     },
     otherFilesCleaned() {
       return this.files.map((file) => {
-        var filePath = file.path.replace(/\\/g, '/')
-        var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
-
         return {
           ...file,
-          relativePath: filePath
-            .replace(audiobookPath + '/', '')
-            .replace(/%/g, '%25')
-            .replace(/#/g, '%23')
+          relativePath: this.getRelativePath(file.path)
         }
       })
     },
@@ -99,6 +93,10 @@ export default {
     },
     clickBar() {
       this.showFiles = !this.showFiles
+    },
+    getRelativePath(path) {
+      var relativePath = path.replace(/\\/g, '/').replace(this.audiobookPath.replace(/\\/g, '/') + '/', '')
+      return this.$encodeUriPath(relativePath)
     }
   },
   mounted() {}

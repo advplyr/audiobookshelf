@@ -75,15 +75,9 @@ export default {
     },
     tracksCleaned() {
       return this.tracks.map((track) => {
-        var trackPath = track.path.replace(/\\/g, '/')
-        var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
-
         return {
           ...track,
-          relativePath: trackPath
-            .replace(audiobookPath + '/', '')
-            .replace(/%/g, '%25')
-            .replace(/#/g, '%23')
+          relativePath: this.getRelativePath(track.path)
         }
       })
     },
@@ -100,6 +94,10 @@ export default {
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks
+    },
+    getRelativePath(path) {
+      var relativePath = path.replace(/\\/g, '/').replace(this.audiobookPath.replace(/\\/g, '/') + '/', '')
+      return this.$encodeUriPath(relativePath)
     }
   },
   mounted() {}
