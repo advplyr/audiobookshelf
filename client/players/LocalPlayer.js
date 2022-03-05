@@ -14,9 +14,12 @@ export default class LocalPlayer extends EventEmitter {
     this.hlsStreamId = null
     this.hlsInstance = null
     this.usingNativeplayer = false
-    this.currentTime = 0
+    this.startTime = 0
+    this.trackStartTime = 0
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
+
+    this.playableMimetypes = {}
 
     this.initialize()
   }
@@ -38,9 +41,16 @@ export default class LocalPlayer extends EventEmitter {
     this.player.addEventListener('play', this.evtPlay.bind(this))
     this.player.addEventListener('pause', this.evtPause.bind(this))
     this.player.addEventListener('progress', this.evtProgress.bind(this))
+    this.player.addEventListener('ended', this.evtEnded.bind(this))
     this.player.addEventListener('error', this.evtError.bind(this))
     this.player.addEventListener('loadedmetadata', this.evtLoadedMetadata.bind(this))
     this.player.addEventListener('timeupdate', this.evtTimeupdate.bind(this))
+
+    var mimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac']
+    mimeTypes.forEach((mt) => {
+      this.playableMimetypes[mt] = this.player.canPlayType(mt)
+    })
+    console.log(`[LocalPlayer] Supported mime types`, this.playableMimetypes)
   }
 
   evtPlay() {
@@ -53,11 +63,27 @@ export default class LocalPlayer extends EventEmitter {
     var lastBufferTime = this.getLastBufferedTime()
     this.emit('buffertimeUpdate', lastBufferTime)
   }
+  evtEnded() {
+    if (this.currentTrackIndex < this.audioTracks.length - 1) {
+      console.log(`[LocalPlayer] Track ended - loading next track ${this.currentTrackIndex + 1}`)
+      // Has next track
+      this.currentTrackIndex++
+      this.playWhenReady = true
+      this.startTime = this.currentTrack.startOffset
+      this.loadCurrentTrack()
+    } else {
+      console.log(`[LocalPlayer] Ended`)
+    }
+  }
   evtError(error) {
     console.error('Player error', error)
+    this.emit('error', error)
   }
   evtLoadedMetadata(data) {
-    console.log('Audio Loaded Metadata', data)
+    if (!this.hlsStreamId) {
+      this.player.currentTime = this.trackStartTime
+    }
+
     this.emit('stateChange', 'LOADED')
     if (this.playWhenReady) {
       this.playWhenReady = false
@@ -89,23 +115,33 @@ export default class LocalPlayer extends EventEmitter {
     this.audioTracks = tracks
     this.hlsStreamId = hlsStreamId
     this.playWhenReady = playWhenReady
+    this.startTime = startTime
+
     if (this.hlsInstance) {
       this.destroyHlsInstance()
     }
 
-    this.currentTime = startTime
+    if (this.hlsStreamId) {
+      this.setHlsStream()
+    } else {
+      this.setDirectPlay()
+    }
+  }
+
+  setHlsStream() {
+    this.trackStartTime = 0
 
     // iOS does not support Media Elements but allows for HLS in the native audio player
     if (!Hls.isSupported()) {
       console.warn('HLS is not supported - fallback to using audio element')
       this.usingNativeplayer = true
       this.player.src = this.currentTrack.relativeContentUrl
-      this.player.currentTime = this.currentTime
+      this.player.currentTime = this.startTime
       return
     }
 
     var hlsOptions = {
-      startPosition: this.currentTime || -1
+      startPosition: this.startTime || -1
       // No longer needed because token is put in a query string
       // xhrSetup: (xhr) => {
       //   xhr.setRequestHeader('Authorization', `Bearer ${this.token}`)
@@ -131,6 +167,23 @@ export default class LocalPlayer extends EventEmitter {
         console.log('[HLS] Destroying HLS Instance')
       })
     })
+  }
+
+  setDirectPlay() {
+    // Set initial track and track time offset
+    var trackIndex = this.audioTracks.findIndex(t => this.startTime >= t.startOffset && this.startTime < (t.startOffset + t.duration))
+    this.currentTrackIndex = trackIndex >= 0 ? trackIndex : 0
+
+    this.loadCurrentTrack()
+  }
+
+  loadCurrentTrack() {
+    if (!this.currentTrack) return
+    // When direct play track is loaded current time needs to be set
+    this.trackStartTime = Math.max(0, this.startTime - (this.currentTrack.startOffset || 0))
+    this.player.src = this.currentTrack.relativeContentUrl
+    console.log(`[LocalPlayer] Loading track src ${this.currentTrack.relativeContentUrl}`)
+    this.player.load()
   }
 
   destroyHlsInstance() {
@@ -181,8 +234,31 @@ export default class LocalPlayer extends EventEmitter {
 
   seek(time) {
     if (!this.player) return
-    var offsetTime = time - (this.currentTrack.startOffset || 0)
-    this.player.currentTime = Math.max(0, offsetTime)
+    if (this.hlsStreamId) {
+      // Seeking HLS stream
+      var offsetTime = time - (this.currentTrack.startOffset || 0)
+      this.player.currentTime = Math.max(0, offsetTime)
+    } else {
+      // Seeking Direct play
+      if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
+        // Change Track
+        var trackIndex = this.audioTracks.findIndex(t => time >= t.startOffset && time < (t.startOffset + t.duration))
+        if (trackIndex >= 0) {
+          this.startTime = time
+          this.currentTrackIndex = trackIndex
+
+          if (!this.player.paused) {
+            // audio player playing so play when track loads
+            this.playWhenReady = true
+          }
+          this.loadCurrentTrack()
+        }
+      } else {
+        var offsetTime = time - (this.currentTrack.startOffset || 0)
+        this.player.currentTime = Math.max(0, offsetTime)
+      }
+    }
+
   }
 
   setVolume(volume) {

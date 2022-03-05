@@ -17,6 +17,8 @@ export default class CastPlayer extends EventEmitter {
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
 
+    this.playableMimetypes = {}
+
     this.coverUrl = ''
     this.castPlayerState = 'IDLE'
 

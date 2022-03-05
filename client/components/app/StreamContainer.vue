@@ -72,6 +72,9 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },

@@ -38,7 +38,6 @@ export default class PlayerHandler {
   load(audiobook, playWhenReady, startTime = 0) {
     if (!this.player) this.switchPlayer()
 
-    console.log('Load audiobook', audiobook)
     this.audiobook = audiobook
     this.startTime = startTime
     this.playWhenReady = playWhenReady
@@ -88,6 +87,15 @@ export default class PlayerHandler {
     this.player.on('stateChange', this.playerStateChange.bind(this))
     this.player.on('timeupdate', this.playerTimeupdate.bind(this))
     this.player.on('buffertimeUpdate', this.playerBufferTimeUpdate.bind(this))
+    this.player.on('error', this.playerError.bind(this))
+  }
+
+  playerError() {
+    // Switch to HLS stream on error
+    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalPlayer)) {
+      console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
+      this.prepare(true)
+    }
   }
 
   playerStateChange(state) {
@@ -117,8 +125,36 @@ export default class PlayerHandler {
     this.ctx.setBufferTime(buffertime)
   }
 
-  async prepare() {
-    var useHls = !this.isCasting
+  async prepare(forceHls = false) {
+    var useHls = false
+
+    var runningTotal = 0
+    var audioTracks = (this.audiobook.tracks || []).map((track) => {
+      var audioTrack = new AudioTrack(track)
+      audioTrack.startOffset = runningTotal
+      audioTrack.contentUrl = `/lib/${this.audiobook.libraryId}/${this.audiobook.folderId}/${track.path}?token=${this.userToken}`
+      audioTrack.mimeType = this.getMimeTypeForTrack(track)
+      audioTrack.canDirectPlay = !!this.player.playableMimetypes[audioTrack.mimeType]
+
+      runningTotal += audioTrack.duration
+      return audioTrack
+    })
+
+    // All html5 audio player plays use HLS unless experimental features is on
+    if (!this.isCasting) {
+      if (forceHls || !this.ctx.showExperimentalFeatures) {
+        useHls = true
+      } else {
+        // Use HLS if any audio track cannot be direct played
+        useHls = !!audioTracks.find(at => !at.canDirectPlay)
+
+        if (useHls) {
+          console.warn(`[PlayerHandler] An audio track cannot be direct played`, audioTracks.find(at => !at.canDirectPlay))
+        }
+      }
+    }
+
+
     if (useHls) {
       var stream = await this.ctx.$axios.$get(`/api/books/${this.audiobook.id}/stream`).catch((error) => {
         console.error('Failed to start stream', error)
@@ -126,21 +162,28 @@ export default class PlayerHandler {
       if (stream) {
         console.log(`[PlayerHandler] prepare hls stream`, stream)
         this.setHlsStream(stream)
+      } else {
+        console.error(`[PlayerHandler] Failed to start HLS stream`)
       }
     } else {
-      // Setup tracks
-      var runningTotal = 0
-      var audioTracks = (this.audiobook.tracks || []).map((track) => {
-        var audioTrack = new AudioTrack(track)
-        audioTrack.startOffset = runningTotal
-        audioTrack.contentUrl = `/lib/${this.audiobook.libraryId}/${this.audiobook.folderId}/${track.path}?token=${this.userToken}`
-        audioTrack.mimeType = (track.codec === 'm4b' || track.codec === 'm4a') ? 'audio/mp4' : `audio/${track.codec}`
-
-        runningTotal += audioTrack.duration
-        return audioTrack
-      })
       this.setDirectPlay(audioTracks)
     }
+  }
+
+  getMimeTypeForTrack(track) {
+    var ext = track.ext
+    if (ext === '.mp3' || ext === '.m4b' || ext === '.m4a') {
+      return 'audio/mpeg'
+    } else if (ext === '.mp4') {
+      return 'audio/mp4'
+    } else if (ext === '.ogg') {
+      return 'audio/ogg'
+    } else if (ext === '.aac' || ext === '.m4p') {
+      return 'audio/aac'
+    } else if (ext === '.flac') {
+      return 'audio/flac'
+    }
+    return 'audio/mpeg'
   }
 
   closePlayer() {

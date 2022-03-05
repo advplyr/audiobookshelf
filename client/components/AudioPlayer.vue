@@ -114,7 +114,8 @@ export default {
       showChaptersModal: false,
       currentTime: 0,
       trackOffsetLeft: 16, // Track is 16px from edge
-      duration: 0
+      duration: 0,
+      chapterTicks: []
     }
   },
   computed: {
@@ -138,7 +139,6 @@ export default {
     },
     timeRemainingPretty() {
       if (this.timeRemaining < 0) {
-        console.warn('Time remaining < 0', this.duration, this.currentTime, this.timeRemaining)
         return this.$secondsToTimestamp(this.timeRemaining * -1)
       }
       return '-' + this.$secondsToTimestamp(this.timeRemaining)
@@ -146,15 +146,6 @@ export default {
     progressPercent() {
       if (!this.duration) return 0
       return Math.round((100 * this.currentTime) / this.duration)
-    },
-    chapterTicks() {
-      return this.chapters.map((chap) => {
-        var perc = chap.start / this.duration
-        return {
-          title: chap.title,
-          left: perc * this.trackWidth
-        }
-      })
     },
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
@@ -169,6 +160,14 @@ export default {
   methods: {
     setDuration(duration) {
       this.duration = duration
+
+      this.chapterTicks = this.chapters.map((chap) => {
+        var perc = chap.start / this.duration
+        return {
+          title: chap.title,
+          left: perc * this.trackWidth
+        }
+      })
     },
     setCurrentTime(time) {
       this.currentTime = time
