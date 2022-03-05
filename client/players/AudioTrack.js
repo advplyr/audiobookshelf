@@ -16,4 +16,14 @@ export default class AudioTrack {
     }
     return `${window.location.origin}${this.contentUrl}`
   }
+
+  get relativeContentUrl() {
+    if (!this.contentUrl || this.contentUrl.startsWith('http')) return this.contentUrl
+
+    if (process.env.NODE_ENV === 'development') {
+      return `${process.env.serverUrl}${this.contentUrl}`
+    }
+
+    return this.contentUrl
+  }
 }
