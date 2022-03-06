@@ -9,7 +9,7 @@ const { comparePaths, getId } = require('../utils/index')
 const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
-const BookFinder = require('../BookFinder')
+const BookFinder = require('../finders/BookFinder')
 const Audiobook = require('../objects/Audiobook')
 const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')

@@ -15,8 +15,9 @@ const CollectionController = require('./controllers/CollectionController')
 const MeController = require('./controllers/MeController')
 const BackupController = require('./controllers/BackupController')
 
-const BookFinder = require('./BookFinder')
-const AuthorFinder = require('./AuthorFinder')
+const BookFinder = require('./finders/BookFinder')
+const AuthorFinder = require('./finders/AuthorFinder')
+const PodcastFinder = require('./finders/PodcastFinder')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
@@ -36,6 +37,7 @@ class ApiController {
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
+    this.podcastFinder = new PodcastFinder()
 
     this.router = express()
     this.init()
@@ -131,6 +133,7 @@ class ApiController {
     //
     this.router.get('/search/covers', this.findCovers.bind(this))
     this.router.get('/search/books', this.findBooks.bind(this))
+    this.router.get('/search/podcast', this.findPodcasts.bind(this))
 
     //
     // File System Routes
@@ -179,6 +182,12 @@ class ApiController {
     var query = req.query
     var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
     res.json(result)
+  }
+
+  async findPodcasts(req, res) {
+    var term = req.query.term
+    var results = await this.podcastFinder.search(term)
+    res.json(results)
   }
 
   authorize(req, res) {

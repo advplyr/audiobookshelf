@@ -1,9 +1,9 @@
-const OpenLibrary = require('./providers/OpenLibrary')
-const LibGen = require('./providers/LibGen')
-const GoogleBooks = require('./providers/GoogleBooks')
-const Audible = require('./providers/Audible')
-const Logger = require('./Logger')
-const { levenshteinDistance } = require('./utils/index')
+const OpenLibrary = require('../providers/OpenLibrary')
+const LibGen = require('../providers/LibGen')
+const GoogleBooks = require('../providers/GoogleBooks')
+const Audible = require('../providers/Audible')
+const Logger = require('../Logger')
+const { levenshteinDistance } = require('../utils/index')
 
 class BookFinder {
   constructor() {

@@ -1,10 +1,10 @@
 const fs = require('fs-extra')
-const Logger = require('./Logger')
+const Logger = require('../Logger')
 const Path = require('path')
-const Author = require('./objects/Author')
-const Audnexus = require('./providers/Audnexus')
+const Author = require('../objects/Author')
+const Audnexus = require('../providers/Audnexus')
 
-const { downloadFile } = require('./utils/fileUtils')
+const { downloadFile } = require('../utils/fileUtils')
 
 class AuthorFinder {
   constructor() {

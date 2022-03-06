@@ -1,4 +1,4 @@
-const AuthorFinder = require('../AuthorFinder')
+const AuthorFinder = require('../finders/AuthorFinder')
 
 class AuthorScanner {
   constructor(db) {
