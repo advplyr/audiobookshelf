@@ -64,10 +64,6 @@ class ApiController {
     this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
-    // TEMP: Support old syntax for mobile app
-    this.router.get('/library/:id/audiobooks', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
-    this.router.get('/library/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
-
     //
     // Book Routes
     //
@@ -86,11 +82,6 @@ class ApiController {
     this.router.get('/books/:id/cover', BookController.getCover.bind(this))
     this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
     this.router.post('/books/:id/match', BookController.match.bind(this))
-
-    // TEMP: Support old syntax for mobile app
-    this.router.get('/audiobooks', BookController.findAll.bind(this)) // Old route should pass library id
-    this.router.get('/audiobook/:id', BookController.findOne.bind(this))
-    this.router.get('/audiobook/:id/stream', BookController.openStream.bind(this))
 
     //
     // User Routes
@@ -118,10 +109,6 @@ class ApiController {
     this.router.post('/collections/:id/batch/add', CollectionController.addBatch.bind(this))
     this.router.post('/collections/:id/batch/remove', CollectionController.removeBatch.bind(this))
 
-    // TEMP: Support old syntax for mobile app
-    this.router.get('/collection/:id', CollectionController.findOne.bind(this))
-    this.router.delete('/collection/:id/book/:bookId', CollectionController.removeBook.bind(this))
-
     //
     // Current User Routes (Me)
     //
@@ -132,11 +119,6 @@ class ApiController {
     this.router.patch('/me/audiobook/batch/update', MeController.batchUpdateAudiobookData.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
-
-    // TEMP: Support old syntax for mobile app
-    this.router.patch('/user/audiobook/:id/reset-progress', MeController.resetAudiobookProgress.bind(this))
-    this.router.patch('/user/audiobook/:id', MeController.updateAudiobookData.bind(this))
-    this.router.patch('/user/settings', MeController.updateSettings.bind(this))
 
     //
     // Backup Routes
