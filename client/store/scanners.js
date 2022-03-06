@@ -12,6 +12,10 @@ export const state = () => ({
     {
       text: 'Audible',
       value: 'audible'
+    },
+    {
+      text: 'iTunes',
+      value: 'itunes'
     }
   ]
 })

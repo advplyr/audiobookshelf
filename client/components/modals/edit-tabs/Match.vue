@@ -6,9 +6,9 @@
           <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
         </div>
         <div class="w-72 px-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="provider == 'audible' ? 'Search Title or ASIN' : 'Search Title'" placeholder="Search" />
+          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" placeholder="Search" />
         </div>
-        <div class="w-72 px-1">
+        <div v-show="provider != 'itunes'" class="w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" label="Author" />
         </div>
         <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
@@ -147,6 +147,11 @@ export default {
     },
     providers() {
       return this.$store.state.scanners.providers
+    },
+    searchTitleLabel() {
+      if (this.provider == 'audible') return 'Search Title or ASIN'
+      else if (this.provider == 'itunes') return 'Search Term'
+      return 'Search Title'
     }
   },
   methods: {
