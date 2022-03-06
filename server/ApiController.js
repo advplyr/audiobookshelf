@@ -2,9 +2,11 @@ const express = require('express')
 const Path = require('path')
 const fs = require('fs-extra')
 const date = require('date-and-time')
+const axios = require('axios')
 
 const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
+const { parsePodcastRssFeedXml } = require('./utils/podcastUtils')
 
 const BookController = require('./controllers/BookController')
 const LibraryController = require('./controllers/LibraryController')
@@ -179,6 +181,8 @@ class ApiController {
     this.router.post('/syncLocal', this.syncLocal.bind(this))
 
     this.router.post('/streams/:id/close', this.closeStream.bind(this))
+
+    this.router.post('/getPodcastFeed', this.getPodcastFeed.bind(this))
   }
 
   async findBooks(req, res) {
@@ -526,6 +530,28 @@ class ApiController {
     const userId = req.user.id
     this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
+  }
+
+  getPodcastFeed(req, res) {
+    var url = req.body.rssFeed
+    if (!url) {
+      return res.status(400).send('Bad request')
+    }
+
+    axios.get(url).then(async (data) => {
+      if (!data || !data.data) {
+        Logger.error('Invalid podcast feed request response')
+        return res.status(500).send('Bad response from feed request')
+      }
+      var podcast = await parsePodcastRssFeedXml(data.data)
+      if (!podcast) {
+        return res.status(500).send('Invalid podcast RSS feed')
+      }
+      res.json(podcast)
+    }).catch((error) => {
+      console.error('Failed', error)
+      res.status(500).send(error)
+    })
   }
 }
 module.exports = ApiController
