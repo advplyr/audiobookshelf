@@ -9,8 +9,9 @@ const { LogLevel } = require('../utils/constants')
 class AudioFileScanner {
   constructor() { }
 
-  getTrackAndDiscNumberFromFilename(bookScanData, filename) {
+  getTrackAndDiscNumberFromFilename(bookScanData, audioFileData) {
     const { title, author, series, publishYear } = bookScanData
+    const { filename, path } = audioFileData
     var partbasename = Path.basename(filename, Path.extname(filename))
 
     // Remove title, author, series, and publishYear from filename if there
@@ -29,6 +30,13 @@ class AudioFileScanner {
 
       // Remove disc number from filename
       partbasename = partbasename.replace(/\b(disc|cd) ?(\d\d?)\b/i, '')
+    }
+
+    // Look for disc number in folder path e.g. /Book Title/CD01/audiofile.mp3
+    var pathdir = Path.dirname(path).split('/').pop()
+    if (pathdir && /^cd\d{1,3}$/i.test(pathdir)) {
+      var discFromFolder = Number(pathdir.replace(/cd/i, ''))
+      if (!isNaN(discFromFolder) && discFromFolder !== null) discNumber = discFromFolder
     }
 
     var numbersinpath = partbasename.match(/\d{1,4}/g)
@@ -60,7 +68,7 @@ class AudioFileScanner {
     audioFileData.trackNumFromMeta = probeData.trackNumber
     audioFileData.discNumFromMeta = probeData.discNumber
 
-    const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(bookScanData, audioFileData.filename)
+    const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(bookScanData, audioFileData)
     audioFileData.trackNumFromFilename = trackNumber
     audioFileData.discNumFromFilename = discNumber
 

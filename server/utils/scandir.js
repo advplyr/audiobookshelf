@@ -47,6 +47,9 @@ function groupFilesIntoAudiobookPaths(paths) {
       } else if (!dirparts.length) { // This is the last directory, create group
         audiobookGroup[_path] = [Path.basename(path)]
         return
+      } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) { // Next directory is the last and is a CD dir, create group
+        audiobookGroup[_path] = [Path.posix.join(dirparts[0], Path.basename(path))]
+        return
       }
     }
   })
@@ -87,6 +90,9 @@ function groupFileItemsIntoBooks(fileItems) {
         return
       } else if (!dirparts.length) { // This is the last directory, create group
         audiobookGroup[_path] = [item.name]
+        return
+      } else if (dirparts.length === 1 && /^cd\d{1,3}$/i.test(dirparts[0])) { // Next directory is the last and is a CD dir, create group
+        audiobookGroup[_path] = [Path.posix.join(dirparts[0], item.name)]
         return
       }
     }
