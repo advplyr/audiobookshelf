@@ -18,6 +18,10 @@ export const getters = {
     if (!currentLibrary) return ''
     return currentLibrary.name
   },
+  getCurrentLibraryMediaType: (state, getters) => {
+    if (!getters.getCurrentLibrary) return null
+    return getters.getCurrentLibrary.mediaType
+  },
   getSortedLibraries: state => () => {
     return state.libraries.map(lib => ({ ...lib })).sort((a, b) => a.displayOrder - b.displayOrder)
   },
