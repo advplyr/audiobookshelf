@@ -14,6 +14,7 @@ class User {
     this.lastSeen = null
     this.createdAt = null
     this.audiobooks = null
+    this.ssoId = null
 
     this.settings = {}
     this.permissions = {}
@@ -46,7 +47,7 @@ class User {
     return !!this.pash && !!this.pash.length
   }
 
-  getDefaultUserSettings() {
+  static getDefaultUserSettings() {
     return {
       mobileOrderBy: 'recent',
       mobileOrderDesc: true,
@@ -60,12 +61,12 @@ class User {
     }
   }
 
-  getDefaultUserPermissions() {
+  static getDefaultUserPermissions(type) {
     return {
-      download: true,
-      update: true,
-      delete: this.type === 'root',
-      upload: this.type === 'root' || this.type === 'admin',
+      download: type !== 'guest',
+      update: type !== 'guest',
+      delete: type === 'root',
+      upload: type === 'root' || type === 'admin',
       accessAllLibraries: true
     }
   }
@@ -84,6 +85,7 @@ class User {
   toJSON() {
     return {
       id: this.id,
+      ssoId: this.ssoId,
       username: this.username,
       pash: this.pash,
       type: this.type,
@@ -138,6 +140,7 @@ class User {
     this.type = user.type
     this.stream = user.stream || null
     this.token = user.token
+    this.ssoId = user.ssoId || ""
     if (user.audiobooks) {
       this.audiobooks = {}
       for (const key in user.audiobooks) {
@@ -152,8 +155,8 @@ class User {
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
-    this.settings = user.settings || this.getDefaultUserSettings()
-    this.permissions = user.permissions || this.getDefaultUserPermissions()
+    this.settings = user.settings || User.getDefaultUserSettings()
+    this.permissions = user.permissions || User.getDefaultUserPermissions(this.type)
     // Upload permission added v1.1.13, make sure root user has upload permissions
     if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
 

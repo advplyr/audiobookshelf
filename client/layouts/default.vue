@@ -119,6 +119,9 @@ export default {
           require('@/plugins/chromecast.js').default(this)
         }
       }
+      if (payload.SSOSettings) {
+        this.$store.commit('settings/setSSOSettings', payload.SSOSettings)
+      }
 
       // Start scans currently running
       if (payload.librariesScanning) {

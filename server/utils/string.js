@@ -1,0 +1,1 @@
+module.exports.difference = (a, b) => a.split(b).join("");

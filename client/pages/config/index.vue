@@ -254,7 +254,7 @@ export default {
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
-        .dispatch('updateServerSettings', payload)
+        .dispatch('settings/updateServerSettings', payload)
         .then((success) => {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false

@@ -1,17 +1,21 @@
 const Path = require('path')
 const express = require('express')
+const cookieParser = require("cookie-parser");
+var session = require('express-session')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('fs-extra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
+const passport = require('passport')
+const OidcStrategy = require('passport-openidconnect').Strategy
 
 const { version } = require('../package.json')
 
 // Utils
 const { ScanResult } = require('./utils/constants')
 const filePerms = require('./utils/filePerms')
-const { secondsToTimestamp } = require('./utils/index')
+const { secondsToTimestamp, getId } = require('./utils/index')
 const Logger = require('./Logger')
 
 // Classes
@@ -89,6 +93,9 @@ class Server {
       return client.user.toJSONForPublic(this.streamManager.streams)
     })
   }
+  get SSOSettings() {
+    return this.db.SSOSettings
+  }
 
   getClientsForUser(userId) {
     return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
@@ -148,6 +155,22 @@ class Server {
     }
   }
 
+  passportInit() {
+    Logger.debug(`[Server] passportInit OIDC is configured - init`)
+    passport.serializeUser((user, next) => {
+      console.log('Testing serialize user', user)
+      next(null, { userId: user.id })
+    })
+    passport.deserializeUser((obj, next) => {
+      console.log('Testing deserialize user', obj)
+      var user = this.db.users.find(u => u.id === obj.userId)
+      next(null, user)
+    })
+
+    // Initialize passport OIDC verification
+    passport.use(new OidcStrategy(this.db.SSOSettings.getOIDCSettings(), this.auth.handleOIDCVerification.bind(this.auth)))
+  }
+
   async start() {
     Logger.info('=== Starting Server ===')
     await this.init()
@@ -157,10 +180,41 @@ class Server {
 
     this.server = http.createServer(app)
 
+    // TEMP testing OIDC
+    app.use((req, res, next) => {
+      if (req.url.startsWith('/oidc/callback')) {
+        console.log('OIDC CALLBACK', req.headers)
+      }
+      next()
+    })
+
     app.use(this.auth.cors)
     app.use(fileUpload())
     app.use(express.urlencoded({ extended: true }));
     app.use(express.json())
+    app.use(cookieParser())
+    app.use(session({
+      secret: process.env.TOKEN_SECRET,
+      resave: false,
+      saveUninitialized: true
+    }));
+
+
+    if (this.db.SSOSettings.isOIDCConfigured) {
+      this.passportInit()
+      app.use(passport.initialize())
+      app.use(passport.session())
+    } else {
+      Logger.debug(`[Server] passportInit OIDC not configured`)
+    }
+    /*
+    if (req.method === 'GET' && req.query && req.query.token) {
+      token = req.query.token
+    } else {
+      const authHeader = req.headers['authorization']
+      token = authHeader && authHeader.split(' ')[1]
+    }
+    */
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
@@ -235,6 +289,18 @@ class Server {
     app.post('/login', loginRateLimiter, (req, res) => this.auth.login(req, res))
 
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+
+    if (this.db.SSOSettings.isOIDCConfigured) {
+      app.get("/oidc/login", passport.authenticate('openidconnect'))
+      app.get("/oidc/callback", passport.authenticate('openidconnect', { failureRedirect: '/login', failureMessage: true }),
+        async (req, res) => {
+          // Never reached
+          console.log('OIDC CALLBACK RECEIVED', req)
+          res.cookie('sso', true, { httpOnly: false /* TODO: Set secure: true */ });
+          res.redirect('/');
+        }
+      )
+    }
 
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
@@ -490,6 +556,8 @@ class Server {
     var { socketId } = req.body
     Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
 
+    res.clearCookie('sso');
+    if (req.logout) req.logout();
     // Strip user and client from client and client socket
     if (socketId && this.clients[socketId]) {
       var client = this.clients[socketId]
@@ -644,6 +712,7 @@ class Server {
     }
     if (user.type === 'root') {
       initialPayload.usersOnline = this.usersOnline
+      initialPayload.SSOSettings = this.SSOSettings
     }
     client.socket.emit('init', initialPayload)
 

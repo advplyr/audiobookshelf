@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
+const User = require('./objects/User')
+const { getId } = require('./utils/index')
 
 class Auth {
   constructor(db) {
@@ -38,7 +40,22 @@ class Auth {
   }
 
   async authMiddleware(req, res, next) {
-    var token = null
+    let token = null;
+    if (req.isAuthenticated && req.isAuthenticated()) {
+      if (!req.user) {
+        Logger.error('Failed to find user object on request')
+        return res.sendStatus(403)
+      }
+      const user = this.db.users.find(u => u.id === req.user.userId)
+      if (!user) {
+        Logger.error(`User Not Found, id=${req.user.userId}`)
+        return res.sendStatus(404)
+      }
+
+      req.user = user
+
+      return next();
+    }
 
     // If using a get request, the token can be passed as a query string
     if (req.method === 'GET' && req.query && req.query.token) {
@@ -53,7 +70,8 @@ class Auth {
       return res.sendStatus(401)
     }
 
-    var user = await this.verifyToken(token)
+
+    const user = await this.verifyToken(token)
     if (!user) {
       Logger.error('Verify Token User Not Found', token)
       return res.sendStatus(404)
@@ -195,6 +213,35 @@ class Auth {
         error: 'Unknown error'
       })
     }
+  }
+
+  async handleOIDCVerification(issuer, profile, cb) {
+    Logger.debug(`[Auth] handleOIDCVerification ${issuer}`)
+    let user = this.db.users.find(u => u.ssoId === profile.id)
+    if (!user && this.db.SSOSettings.user.createNewUser) {
+      // create a user
+      let account = {}
+      account.id = getId('usr')
+      account.ssoId = profile.id
+      account.username = profile.username
+      account.isActive = true
+      account.type = "guest"
+      account.permissions = this.db.SSOSettings.getNewUserPermissions()
+      account.pash = await this.hashPass(getId(profile.id))
+      account.token = await this.generateAccessToken({ userId: account.id })
+      account.createdAt = Date.now()
+      user = new User(account)
+      const success = await this.db.insertEntity('user', user)
+      if (!success) {
+        cb('Failed to save new user')
+      }
+    }
+    if (!user || !user.isActive) {
+      Logger.debug(`[Auth] Failed login attempt`)
+      cb("Invalid user or password")
+      return
+    }
+    cb(null, user)
   }
 }
 module.exports = Auth

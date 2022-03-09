@@ -48,7 +48,7 @@ export default {
       return 'Runs at 1am every day (your server time). Saved in /metadata/backups.'
     },
     serverSettings() {
-      return this.$store.state.serverSettings
+      return this.$store.state.settings.serverSettings
     }
   },
   methods: {
@@ -66,7 +66,7 @@ export default {
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
-        .dispatch('updateServerSettings', payload)
+        .dispatch('settings/updateServerSettings', payload)
         .then((success) => {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false

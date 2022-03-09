@@ -3,7 +3,6 @@ import Vue from 'vue'
 
 export const state = () => ({
   versionData: null,
-  serverSettings: null,
   streamAudiobook: null,
   editModalTab: 'details',
   showEditModal: false,
@@ -27,14 +26,6 @@ export const getters = {
   getIsAudiobookSelected: state => audiobookId => {
     return !!state.selectedAudiobooks.includes(audiobookId)
   },
-  getServerSetting: state => key => {
-    if (!state.serverSettings) return null
-    return state.serverSettings[key]
-  },
-  getBookCoverAspectRatio: state => {
-    if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1.6
-    return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
-  },
   getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
   getAudiobookIdStreaming: state => {
     return state.streamAudiobook ? state.streamAudiobook.id : null
@@ -42,22 +33,6 @@ export const getters = {
 }
 
 export const actions = {
-  updateServerSettings({ commit }, payload) {
-    var updatePayload = {
-      ...payload
-    }
-    return this.$axios.$patch('/api/serverSettings', updatePayload).then((result) => {
-      if (result.success) {
-        commit('setServerSettings', result.serverSettings)
-        return true
-      } else {
-        return false
-      }
-    }).catch((error) => {
-      console.error('Failed to update server settings', error)
-      return false
-    })
-  },
   checkForUpdate({ commit }) {
     return checkForUpdate()
       .then((res) => {
@@ -100,10 +75,6 @@ export const mutations = {
   },
   setVersionData(state, versionData) {
     state.versionData = versionData
-  },
-  setServerSettings(state, settings) {
-    if (!settings) return
-    state.serverSettings = settings
   },
   setStreamAudiobook(state, audiobook) {
     state.streamAudiobook = audiobook
