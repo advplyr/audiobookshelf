@@ -1,7 +1,7 @@
-const { isNullOrNaN } = require('../utils/index')
+const { isNullOrNaN } = require('../../utils/index')
 
-const Logger = require('../Logger')
-const AudioFileMetadata = require('./AudioFileMetadata')
+const Logger = require('../../Logger')
+const AudioFileMetadata = require('../metadata/AudioFileMetadata')
 
 class AudioFile {
   constructor(data) {

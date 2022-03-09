@@ -1,6 +1,6 @@
 const Path = require('path')
 
-const AudioFile = require('../objects/AudioFile')
+const AudioFile = require('../objects/files/AudioFile')
 
 const prober = require('../utils/prober')
 const Logger = require('../Logger')

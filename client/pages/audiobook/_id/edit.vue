@@ -275,7 +275,6 @@ export default {
         return 'check_circle'
       }
     }
-  },
-  mounted() {}
+  }
 }
 </script>
