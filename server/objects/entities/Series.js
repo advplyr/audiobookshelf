@@ -1,8 +1,9 @@
+const { getId } = require('../../utils/index')
+
 class Series {
   constructor(series) {
     this.id = null
     this.name = null
-    this.sequence = null
     this.addedAt = null
     this.updatedAt = null
 
@@ -14,7 +15,6 @@ class Series {
   construct(series) {
     this.id = series.id
     this.name = series.name
-    this.sequence = series.sequence
     this.addedAt = series.addedAt
     this.updatedAt = series.updatedAt
   }
@@ -23,18 +23,24 @@ class Series {
     return {
       id: this.id,
       name: this.name,
-      sequence: this.sequence,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
   }
 
-  toJSONMinimal() {
+  toJSONMinimal(sequence) {
     return {
       id: this.id,
       name: this.name,
-      sequence: this.sequence
+      sequence
     }
+  }
+
+  setData(data) {
+    this.id = getId('ser')
+    this.name = data.name
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
   }
 }
 module.exports = Series

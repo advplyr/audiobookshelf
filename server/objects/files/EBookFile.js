@@ -6,7 +6,7 @@ class EBookFile {
     this.metadata = null
     this.ebookFormat = null
     this.addedAt = null
-    this.lastUpdate = null
+    this.updatedAt = null
 
     if (file) {
       this.construct(file)
@@ -18,7 +18,7 @@ class EBookFile {
     this.metadata = new FileMetadata(file)
     this.ebookFormat = file.ebookFormat
     this.addedAt = file.addedAt
-    this.lastUpdate = file.lastUpdate
+    this.updatedAt = file.updatedAt
   }
 
   toJSON() {
@@ -27,7 +27,7 @@ class EBookFile {
       metadata: this.metadata.toJSON(),
       ebookFormat: this.ebookFormat,
       addedAt: this.addedAt,
-      lastUpdate: this.lastUpdate
+      updatedAt: this.updatedAt
     }
   }
 }

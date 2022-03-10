@@ -22,12 +22,12 @@ class BookMetadata {
   construct(metadata) {
     this.title = metadata.title
     this.subtitle = metadata.subtitle
-    this.authors = metadata.authors.map(a => ({ ...a }))
-    this.narrators = [...metadata.narrators]
-    this.series = metadata.series.map(s => ({ ...s }))
-    this.genres = [...metadata.genres]
-    this.publishedYear = metadata.publishedYear
-    this.publishedDate = metadata.publishedDate
+    this.authors = (metadata.authors && metadata.authors.map) ? metadata.authors.map(a => ({ ...a })) : []
+    this.narrators = metadata.narrators ? [...metadata.narrators] : []
+    this.series = (metadata.series && metadata.series.map) ? metadata.series.map(s => ({ ...s })) : []
+    this.genres = metadata.genres ? [...metadata.genres] : []
+    this.publishedYear = metadata.publishedYear || null
+    this.publishedDate = metadata.publishedDate || null
     this.publisher = metadata.publisher
     this.description = metadata.description
     this.isbn = metadata.isbn

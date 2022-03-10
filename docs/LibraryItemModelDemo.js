@@ -68,6 +68,7 @@ new LibraryItem({
         discNumFromFilename: 1,
         manuallyVerified: false,
         exclude: false,
+        invalid: false,
         format: "MP2/3 (MPEG audio layer 2/3)",
         duration: 2342342,
         bitRate: 324234,
@@ -78,7 +79,7 @@ new LibraryItem({
         channelLayout: "mono",
         chapters: [],
         embeddedCoverArt: 'jpeg', // Video stream codec ['mjpeg', 'jpeg', 'png'] or null
-        metatags: { // AudioMetatags.js : (Metatags/ID3 tags - only stores values that are found)
+        metaTags: { // AudioMetaTags.js
           tagAlbum: '',
           tagArtist: '',
           tagGenre: '',
@@ -101,7 +102,7 @@ new LibraryItem({
           tagASIN: ''
         },
         addedAt: 1646784672127,
-        lastUpdate: 1646784672127
+        updatedAt: 1646784672127
       }
     ],
     ebookFiles: [
@@ -119,7 +120,7 @@ new LibraryItem({
         },
         ebookFormat: 'mobi',
         addedAt: 1646784672127,
-        lastUpdate: 1646784672127
+        updatedAt: 1646784672127
       }
     ],
     chapters: [
@@ -145,7 +146,7 @@ new LibraryItem({
         size: 1197449516
       },
       addedAt: 1646784672127,
-      lastUpdate: 1646784672127
+      updatedAt: 1646784672127
     },
     { // LibraryFile.js
       ino: "55450570412017066",
@@ -160,7 +161,7 @@ new LibraryItem({
         size: 1197449516
       },
       addedAt: 1646784672127,
-      lastUpdate: 1646784672127
+      updatedAt: 1646784672127
     }
   ]
 })

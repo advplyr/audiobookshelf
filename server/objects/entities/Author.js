@@ -1,10 +1,12 @@
+const { getId } = require('../../utils/index')
+
 class Author {
   constructor(author) {
     this.id = null
     this.asin = null
     this.name = null
     this.imagePath = null
-    this.imageFullPath = null
+    this.relImagePath = null
     this.addedAt = null
     this.updatedAt = null
 
@@ -18,7 +20,7 @@ class Author {
     this.asin = author.asin
     this.name = author.name
     this.imagePath = author.imagePath
-    this.imageFullPath = author.imageFullPath
+    this.relImagePath = author.relImagePath
     this.addedAt = author.addedAt
     this.updatedAt = author.updatedAt
   }
@@ -29,9 +31,9 @@ class Author {
       asin: this.asin,
       name: this.name,
       imagePath: this.imagePath,
-      imageFullPath: this.imageFullPath,
+      relImagePath: this.relImagePath,
       addedAt: this.addedAt,
-      updatedAt: this.updatedAt
+      lastUpdate: this.updatedAt
     }
   }
 
@@ -40,6 +42,16 @@ class Author {
       id: this.id,
       name: this.name
     }
+  }
+
+  setData(data) {
+    this.id = getId('aut')
+    this.name = data.name
+    this.asin = data.asin || null
+    this.imagePath = data.imagePath || null
+    this.relImagePath = data.relImagePath || null
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
   }
 }
 module.exports = Author

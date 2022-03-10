@@ -12,6 +12,7 @@ const { version } = require('../package.json')
 const { ScanResult } = require('./utils/constants')
 const filePerms = require('./utils/filePerms')
 const { secondsToTimestamp } = require('./utils/index')
+const dbMigration = require('./utils/dbMigration')
 const Logger = require('./Logger')
 
 // Classes
@@ -75,15 +76,6 @@ class Server {
     this.clients = {}
   }
 
-  get audiobooks() {
-    return this.db.audiobooks
-  }
-  get libraries() {
-    return this.db.libraries
-  }
-  get serverSettings() {
-    return this.db.serverSettings
-  }
   get usersOnline() {
     return Object.values(this.clients).filter(c => c.user).map(client => {
       return client.user.toJSONForPublic(this.streamManager.streams)
@@ -121,11 +113,20 @@ class Server {
     await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 
+
     await this.db.init()
+
+    if (version.localeCompare('1.7.3') < 0) {
+      await dbMigration(this.db)
+      // TODO: Eventually remove audiobooks db when stable
+    }
+
     this.auth.init()
 
-    await this.checkUserAudiobookData()
-    await this.purgeMetadata()
+    // TODO: Implement method to remove old user auidobook data and book metadata folders
+    // await this.checkUserAudiobookData()
+    // await this.purgeMetadata()
+
     await this.backupManager.init()
     await this.logManager.init()
 
@@ -143,7 +144,7 @@ class Server {
       Logger.info(`[Server] Watcher is disabled`)
       this.watcher.disabled = true
     } else {
-      this.watcher.initWatcher(this.libraries)
+      this.watcher.initWatcher(this.db.libraries)
       this.watcher.on('files', this.filesChanged.bind(this))
     }
   }
@@ -180,7 +181,7 @@ class Server {
 
     // Static file routes
     app.get('/lib/:library/:folder/*', this.authMiddleware.bind(this), (req, res) => {
-      var library = this.libraries.find(lib => lib.id === req.params.library)
+      var library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
       var folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
@@ -192,7 +193,7 @@ class Server {
 
     // Book static file routes
     app.get('/s/book/:id/*', this.authMiddleware.bind(this), (req, res) => {
-      var audiobook = this.audiobooks.find(ab => ab.id === req.params.id)
+      var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
       if (!audiobook) return res.status(404).send('Book not found with id ' + req.params.id)
 
       var remainingPath = req.params['0']
@@ -202,7 +203,7 @@ class Server {
 
     // EBook static file routes
     app.get('/ebook/:library/:folder/*', (req, res) => {
-      var library = this.libraries.find(lib => lib.id === req.params.library)
+      var library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
       var folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
@@ -368,7 +369,7 @@ class Server {
 
     var purged = 0
     await Promise.all(foldersInBooksMetadata.map(async foldername => {
-      var hasMatchingAudiobook = this.audiobooks.find(ab => ab.id === foldername)
+      var hasMatchingAudiobook = this.db.audiobooks.find(ab => ab.id === foldername)
       if (!hasMatchingAudiobook) {
         var folderPath = Path.join(booksMetadata, foldername)
         Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
@@ -633,7 +634,7 @@ class Server {
     await this.db.updateEntity('user', user)
 
     const initialPayload = {
-      serverSettings: this.serverSettings.toJSON(),
+      serverSettings: this.db.serverSettings.toJSON(),
       audiobookPath: global.AudiobookPath,
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,

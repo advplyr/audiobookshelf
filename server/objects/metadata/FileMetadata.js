@@ -37,5 +37,9 @@ class FileMetadata {
       birthtimeMs: this.birthtimeMs
     }
   }
+
+  clone() {
+    return new FileMetadata(this.toJSON())
+  }
 }
 module.exports = FileMetadata

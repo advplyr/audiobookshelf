@@ -1,4 +1,4 @@
-const AudioFileMetadata = require('../objects/metadata/AudioFileMetadata')
+const AudioFileMetadata = require('../objects/AudioFileMetadata')
 
 class AudioProbeData {
   constructor() {

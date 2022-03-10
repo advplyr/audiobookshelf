@@ -4,38 +4,43 @@ const fs = require('fs-extra')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
 const { version } = require('../package.json')
-const Audiobook = require('./objects/Audiobook')
+// const Audiobook = require('./objects/Audiobook')
+const LibraryItem = require('./objects/LibraryItem')
 const User = require('./objects/User')
 const UserCollection = require('./objects/UserCollection')
 const Library = require('./objects/Library')
-const Author = require('./objects/Author')
+const Author = require('./objects/entities/Author')
+const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/ServerSettings')
 
 class Db {
   constructor() {
-    this.AudiobooksPath = Path.join(global.ConfigPath, 'audiobooks')
+    this.LibraryItemsPath = Path.join(global.ConfigPath, 'libraryItems')
     this.UsersPath = Path.join(global.ConfigPath, 'users')
     this.SessionsPath = Path.join(global.ConfigPath, 'sessions')
     this.LibrariesPath = Path.join(global.ConfigPath, 'libraries')
     this.SettingsPath = Path.join(global.ConfigPath, 'settings')
     this.CollectionsPath = Path.join(global.ConfigPath, 'collections')
     this.AuthorsPath = Path.join(global.ConfigPath, 'authors')
+    this.SeriesPath = Path.join(global.ConfigPath, 'series')
 
-    this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
+    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
     this.usersDb = new njodb.Database(this.UsersPath)
     this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
+    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
 
+    this.libraryItems = []
     this.users = []
     this.sessions = []
     this.libraries = []
-    this.audiobooks = []
     this.settings = []
     this.collections = []
     this.authors = []
+    this.series = []
 
     this.serverSettings = null
 
@@ -46,22 +51,24 @@ class Db {
   getEntityDb(entityName) {
     if (entityName === 'user') return this.usersDb
     else if (entityName === 'session') return this.sessionsDb
-    else if (entityName === 'audiobook') return this.audiobooksDb
+    else if (entityName === 'libraryItem') return this.libraryItemsDb
     else if (entityName === 'library') return this.librariesDb
     else if (entityName === 'settings') return this.settingsDb
     else if (entityName === 'collection') return this.collectionsDb
     else if (entityName === 'author') return this.authorsDb
+    else if (entityName === 'series') return this.seriesDb
     return null
   }
 
   getEntityArrayKey(entityName) {
     if (entityName === 'user') return 'users'
     else if (entityName === 'session') return 'sessions'
-    else if (entityName === 'audiobook') return 'audiobooks'
+    else if (entityName === 'libraryItem') return 'libraryItems'
     else if (entityName === 'library') return 'libraries'
     else if (entityName === 'settings') return 'settings'
     else if (entityName === 'collection') return 'collections'
     else if (entityName === 'author') return 'authors'
+    else if (entityName === 'series') return 'series'
     return null
   }
 
@@ -93,13 +100,14 @@ class Db {
   }
 
   reinit() {
-    this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
+    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
     this.usersDb = new njodb.Database(this.UsersPath)
     this.sessionsDb = new njodb.Database(this.SessionsPath)
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
+    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
     return this.init()
   }
 
@@ -129,9 +137,9 @@ class Db {
   }
 
   async load() {
-    var p1 = this.audiobooksDb.select(() => true).then((results) => {
-      this.audiobooks = results.data.map(a => new Audiobook(a))
-      Logger.info(`[DB] ${this.audiobooks.length} Audiobooks Loaded`)
+    var p1 = this.libraryItemsDb.select(() => true).then((results) => {
+      this.libraryItems = results.data.map(a => new LibraryItem(a))
+      Logger.info(`[DB] ${this.libraryItems.length} Library Items Loaded`)
     })
     var p2 = this.usersDb.select(() => true).then((results) => {
       this.users = results.data.map(u => new User(u))
@@ -163,7 +171,11 @@ class Db {
       this.authors = results.data.map(l => new Author(l))
       Logger.info(`[DB] ${this.authors.length} Authors Loaded`)
     })
-    await Promise.all([p1, p2, p3, p4, p5, p6])
+    var p7 = this.seriesDb.select(() => true).then((results) => {
+      this.series = results.data.map(l => new Series(l))
+      Logger.info(`[DB] ${this.series.length} Series Loaded`)
+    })
+    await Promise.all([p1, p2, p3, p4, p5, p6, p7])
 
     // Update server version in server settings
     if (this.previousVersion) {
@@ -181,7 +193,7 @@ class Db {
       Logger.error(`[Db] Invalid audiobook object passed to updateAudiobook`, audiobook)
     }
 
-    return this.audiobooksDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
+    return this.libraryItemsDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
       Logger.debug(`[DB] Audiobook updated ${results.updated}`)
       return true
     }).catch((error) => {
@@ -202,7 +214,7 @@ class Db {
       return null
     }))
 
-    return this.audiobooksDb.insert(audiobooks).then((results) => {
+    return this.libraryItemsDb.insert(audiobooks).then((results) => {
       Logger.debug(`[DB] Audiobooks inserted ${results.inserted}`)
       this.audiobooks = this.audiobooks.concat(audiobooks)
       return true
@@ -321,14 +333,14 @@ class Db {
     })
   }
 
-  recreateAudiobookDb() {
-    return this.audiobooksDb.drop().then((results) => {
-      Logger.info(`[DB] Dropped audiobook db`, results)
-      this.audiobooksDb = new njodb.Database(this.AudiobooksPath)
-      this.audiobooks = []
+  recreateLibraryItemsDb() {
+    return this.libraryItemsDb.drop().then((results) => {
+      Logger.info(`[DB] Dropped library items db`, results)
+      this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
+      this.libraryItems = []
       return true
     }).catch((error) => {
-      Logger.error(`[DB] Failed to drop audiobook db`, error)
+      Logger.error(`[DB] Failed to drop library items db`, error)
       return false
     })
   }

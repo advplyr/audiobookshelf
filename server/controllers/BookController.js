@@ -65,11 +65,11 @@ class BookController {
   // DELETE: api/books/all
   async deleteAll(req, res) {
     if (!req.user.isRoot) {
-      Logger.warn('User other than root attempted to delete all audiobooks', req.user)
+      Logger.warn('User other than root attempted to delete all library items', req.user)
       return res.sendStatus(403)
     }
-    Logger.info('Removing all Audiobooks')
-    var success = await this.db.recreateAudiobookDb()
+    Logger.info('Removing all Library Items')
+    var success = await this.db.recreateLibraryItemsDb()
     if (success) res.sendStatus(200)
     else res.sendStatus(500)
   }

@@ -9,7 +9,7 @@ const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const Logger = require('../Logger')
 const Book = require('./Book')
 const AudioTrack = require('./AudioTrack')
-const AudioFile = require('./files/AudioFile')
+const AudioFile = require('./AudioFile')
 const AudiobookFile = require('./AudiobookFile')
 
 class Audiobook {
