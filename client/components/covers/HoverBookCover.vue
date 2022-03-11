@@ -22,7 +22,7 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      return this.$store.getters['audiobooks/getBookCoverSrc'](this.audiobook, this.placeholderUrl)
+      return this.$store.getters['audiobooks/getLibraryItemCoverSrc'](this.audiobook, this.placeholderUrl)
     },
     hasCover() {
       return !!this.audiobook.book.cover

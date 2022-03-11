@@ -10,7 +10,7 @@ const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const BookFinder = require('../finders/BookFinder')
-const Audiobook = require('../objects/Audiobook')
+const Audiobook = require('../objects/legacy/Audiobook')
 const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
 

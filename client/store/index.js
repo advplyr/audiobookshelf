@@ -9,6 +9,7 @@ export const state = () => ({
   showEditModal: false,
   showEReader: false,
   selectedAudiobook: null,
+  selectedLibraryItem: null,
   selectedAudiobookFile: null,
   developerMode: false,
   selectedAudiobooks: [],
@@ -108,14 +109,14 @@ export const mutations = {
   setStreamAudiobook(state, audiobook) {
     state.streamAudiobook = audiobook
   },
-  showEditModal(state, audiobook) {
+  showEditModal(state, libraryItem) {
     state.editModalTab = 'details'
-    state.selectedAudiobook = audiobook
+    state.selectedLibraryItem = libraryItem
     state.showEditModal = true
   },
-  showEditModalOnTab(state, { audiobook, tab }) {
+  showEditModalOnTab(state, { libraryItem, tab }) {
     state.editModalTab = tab
-    state.selectedAudiobook = audiobook
+    state.selectedLibraryItem = libraryItem
     state.showEditModal = true
   },
   setEditModalTab(state, tab) {
@@ -124,15 +125,15 @@ export const mutations = {
   setShowEditModal(state, val) {
     state.showEditModal = val
   },
-  showEReader(state, audiobook) {
+  showEReader(state, libraryItem) {
     state.selectedAudiobookFile = null
-    state.selectedAudiobook = audiobook
+    state.selectedLibraryItem = libraryItem
 
     state.showEReader = true
   },
-  showEReaderForFile(state, { audiobook, file }) {
+  showEReaderForFile(state, { libraryItem, file }) {
     state.selectedAudiobookFile = file
-    state.selectedAudiobook = audiobook
+    state.selectedLibraryItem = libraryItem
 
     state.showEReader = true
   },
@@ -142,8 +143,8 @@ export const mutations = {
   setDeveloperMode(state, val) {
     state.developerMode = val
   },
-  setSelectedAudiobook(state, val) {
-    Vue.set(state, 'selectedAudiobook', val)
+  setSelectedLibraryItem(state, val) {
+    Vue.set(state, 'selectedLibraryItem', val)
   },
   setSelectedAudiobooks(state, audiobooks) {
     Vue.set(state, 'selectedAudiobooks', audiobooks)

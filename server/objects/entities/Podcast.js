@@ -6,8 +6,8 @@ class Podcast {
     this.id = null
 
     this.metadata = null
-    this.cover = null
-    this.coverFullPath = null
+    this.coverPath = null
+    this.tags = []
     this.episodes = []
 
     this.createdAt = null
@@ -21,8 +21,8 @@ class Podcast {
   construct(podcast) {
     this.id = podcast.id
     this.metadata = new PodcastMetadata(podcast.metadata)
-    this.cover = podcast.cover
-    this.coverFullPath = podcast.coverFullPath
+    this.coverPath = podcast.coverPath
+    this.tags = [...podcast.tags]
     this.episodes = podcast.episodes.map((e) => new PodcastEpisode(e))
     this.createdAt = podcast.createdAt
     this.lastUpdate = podcast.lastUpdate
@@ -32,8 +32,32 @@ class Podcast {
     return {
       id: this.id,
       metadata: this.metadata.toJSON(),
-      cover: this.cover,
-      coverFullPath: this.coverFullPath,
+      coverPath: this.coverPath,
+      tags: [...this.tags],
+      episodes: this.episodes.map(e => e.toJSON()),
+      createdAt: this.createdAt,
+      lastUpdate: this.lastUpdate
+    }
+  }
+
+  toJSONMinified() {
+    return {
+      id: this.id,
+      metadata: this.metadata.toJSON(),
+      coverPath: this.coverPath,
+      tags: [...this.tags],
+      episodes: this.episodes.map(e => e.toJSON()),
+      createdAt: this.createdAt,
+      lastUpdate: this.lastUpdate
+    }
+  }
+
+  toJSONExpanded() {
+    return {
+      id: this.id,
+      metadata: this.metadata.toJSONExpanded(),
+      coverPath: this.coverPath,
+      tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate

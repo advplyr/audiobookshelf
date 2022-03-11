@@ -8,7 +8,7 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        <span v-if="volumeNumber">#{{ volumeNumber }}&nbsp;</span>{{ displayTitle }}
+        {{ displayTitle }}
       </p>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
@@ -21,7 +21,7 @@
         <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
       </div>
 
-      <img v-show="audiobook" ref="cover" :src="bookCoverSrc" class="w-full h-full object-contain transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+      <img v-show="audiobook" ref="cover" :src="bookCoverSrc" class="w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
 
       <!-- Placeholder Cover Title & Author -->
       <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
@@ -136,42 +136,45 @@ export default {
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
     },
-    _audiobook() {
+    _libraryItem() {
       return this.audiobook || {}
     },
-    book() {
-      return this._audiobook.book || {}
+    media() {
+      return this._libraryItem.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     placeholderUrl() {
       return '/book_placeholder.jpg'
     },
     bookCoverSrc() {
-      return this.store.getters['audiobooks/getBookCoverSrc'](this._audiobook, this.placeholderUrl)
+      return this.store.getters['audiobooks/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
     },
-    audiobookId() {
-      return this._audiobook.id
+    libraryItemId() {
+      return this._libraryItem.id
     },
     series() {
-      return this.book.series
+      return this.mediaMetadata.series
     },
     libraryId() {
-      return this._audiobook.libraryId
+      return this._libraryItem.libraryId
     },
     hasEbook() {
-      return this._audiobook.numEbooks
+      return this.media.numEbooks
     },
     hasTracks() {
-      return this._audiobook.numTracks
+      return this.media.numTracks
     },
     processingBatch() {
       return this.store.state.processingBatch
     },
     booksInSeries() {
       // Only added to audiobook object when collapseSeries is enabled
-      return this._audiobook.booksInSeries
+      return this._libraryItem.booksInSeries
     },
     hasCover() {
-      return !!this.book.cover
+      return !!this.media.coverPath
     },
     squareAspectRatio() {
       return this.bookCoverAspectRatio === 1
@@ -181,43 +184,49 @@ export default {
       return this.width / baseSize
     },
     title() {
-      return this.book.title || ''
+      return this.mediaMetadata.title || ''
     },
     playIconFontSize() {
       return Math.max(2, 3 * this.sizeMultiplier)
     },
-    author() {
-      return this.book.author
+    authors() {
+      return this.mediaMetadata.authors || []
     },
-    authorFL() {
-      return this.book.authorFL || this.author
+    author() {
+      return this.authors.map((au) => au.name).join(', ')
     },
     authorLF() {
-      return this.book.authorLF || this.author
+      return this.authors
+        .map((au) => {
+          var parts = au.name.split(' ')
+          if (parts.length === 1) return parts[0]
+          return `${parts[1]}, ${parts[0]}`
+        })
+        .join(', ')
     },
     volumeNumber() {
-      return this.book.volumeNumber || null
+      return this.mediaMetadata.volumeNumber || null
     },
     displayTitle() {
-      if (this.orderBy === 'book.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
+      if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
         return this.title.substr(4) + ', The'
       }
       return this.title
     },
     displayAuthor() {
-      if (this.orderBy === 'book.authorLF') return this.authorLF
-      return this.authorFL
+      if (this.orderBy === 'media.metadata.authorLF') return this.authorLF
+      return this.author
     },
     displaySortLine() {
-      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._audiobook.mtimeMs)
-      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._audiobook.birthtimeMs)
-      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._audiobook.addedAt)
-      if (this.orderBy === 'duration') return 'Duration: ' + this.$elapsedPrettyExtended(this._audiobook.duration, false)
-      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._audiobook.size)
+      if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs)
+      if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs)
+      if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt)
+      if (this.orderBy === 'duration') return 'Duration: ' + this.$elapsedPrettyExtended(this.media.duration, false)
+      if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
       return null
     },
     userProgress() {
-      return this.store.getters['user/getUserAudiobook'](this.audiobookId)
+      return this.store.getters['user/getUserAudiobook'](this.libraryItemId)
     },
     userProgressPercent() {
       return this.userProgress ? this.userProgress.progress || 0 : 0
@@ -229,7 +238,7 @@ export default {
       return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isInvalid
     },
     isStreaming() {
-      return this.store.getters['getAudiobookIdStreaming'] === this.audiobookId
+      return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
     },
     showReadButton() {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
@@ -241,16 +250,16 @@ export default {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
     },
     isMissing() {
-      return this._audiobook.isMissing
+      return this._libraryItem.isMissing
     },
     isInvalid() {
-      return this._audiobook.isInvalid
+      return this._libraryItem.isInvalid
     },
     hasMissingParts() {
-      return this._audiobook.hasMissingParts
+      return this._libraryItem.hasMissingParts
     },
     hasInvalidParts() {
-      return this._audiobook.hasInvalidParts
+      return this._libraryItem.hasInvalidParts
     },
     errorText() {
       if (this.isMissing) return 'Audiobook directory is missing!'
@@ -349,11 +358,11 @@ export default {
       return this.title
     },
     authorCleaned() {
-      if (!this.authorFL) return ''
-      if (this.authorFL.length > 30) {
-        return this.authorFL.slice(0, 27) + '...'
+      if (!this.author) return ''
+      if (this.author.length > 30) {
+        return this.author.slice(0, 27) + '...'
       }
-      return this.authorFL
+      return this.author
     },
     isAlternativeBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
@@ -382,7 +391,7 @@ export default {
         var router = this.$router || this.$nuxt.$router
         if (router) {
           if (this.booksInSeries) router.push(`/library/${this.libraryId}/series/${this.$encode(this.series)}`)
-          else router.push(`/audiobook/${this.audiobookId}`)
+          else router.push(`/item/${this.libraryItemId}`)
         }
       }
     },
@@ -398,7 +407,7 @@ export default {
       var toast = this.$toast || this.$nuxt.$toast
       var axios = this.$axios || this.$nuxt.$axios
       axios
-        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
@@ -425,7 +434,7 @@ export default {
     rescan() {
       this.rescanning = true
       this._socket.once('audiobook_scan_complete', this.audiobookScanComplete)
-      this._socket.emit('scan_audiobook', this.audiobookId)
+      this._socket.emit('scan_libraryItem', this.libraryItemId)
     },
     showEditModalTracks() {
       // More menu func
@@ -503,7 +512,7 @@ export default {
     },
     play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
-      eventBus.$emit('play-audiobook', this.audiobookId)
+      eventBus.$emit('play-audiobook', this.libraryItemId)
     },
     mouseover() {
       this.isHovering = true

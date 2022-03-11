@@ -2,9 +2,9 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6 relative">
     <div class="flex">
       <div class="relative">
-        <covers-book-cover :audiobook="audiobook" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-book-cover :library-item="libraryItem" :book-cover-aspect-ratio="bookCoverAspectRatio" />
         <!-- book cover overlay -->
-        <div v-if="book.cover" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
+        <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
           <div class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
             <span class="material-icons">delete</span>
@@ -82,7 +82,7 @@
 export default {
   props: {
     processing: Boolean,
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
@@ -102,7 +102,7 @@ export default {
     }
   },
   watch: {
-    audiobook: {
+    libraryItem: {
       immediate: true,
       handler(newVal) {
         if (newVal) {
@@ -134,17 +134,17 @@ export default {
     bookCoverAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
     },
-    audiobookId() {
-      return this.audiobook ? this.audiobook.id : null
+    libraryItemId() {
+      return this.libraryItem ? this.libraryItem.id : null
     },
-    book() {
-      return this.audiobook ? this.audiobook.book || {} : {}
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
     },
-    audiobookPath() {
-      return this.audiobook ? this.audiobook.path : null
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
-    otherFiles() {
-      return this.audiobook ? this.audiobook.otherFiles || [] : []
+    libraryFiles() {
+      return this.libraryItem ? this.libraryItem.libraryFiles || [] : []
     },
     userCanUpload() {
       return this.$store.getters['user/getUserCanUpload']
@@ -153,12 +153,11 @@ export default {
       return this.$store.getters['user/getToken']
     },
     localCovers() {
-      return this.otherFiles
-        .filter((f) => f.filetype === 'image')
+      return this.libraryFiles
+        .filter((f) => f.fileType === 'image')
         .map((file) => {
           var _file = { ...file }
-          var imgRelPath = _file.path.replace(this.audiobookPath, '')
-          _file.localPath = `/s/book/${this.audiobookId}/${imgRelPath}`
+          _file.localPath = `/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath)}`
           return _file
         })
     }
@@ -170,7 +169,7 @@ export default {
       form.set('cover', this.selectedFile)
 
       this.$axios
-        .$post(`/api/books/${this.audiobook.id}/cover`, form)
+        .$post(`/api/books/${this.libraryItemId}/cover`, form)
         .then((data) => {
           if (data.error) {
             this.$toast.error(data.error)
@@ -203,17 +202,17 @@ export default {
     },
     init() {
       this.showLocalCovers = false
-      if (this.coversFound.length && (this.searchTitle !== this.book.title || this.searchAuthor !== this.book.authorFL)) {
+      if (this.coversFound.length && (this.searchTitle !== this.mediaMetadata.title || this.searchAuthor !== this.mediaMetadata.authorName)) {
         this.coversFound = []
         this.hasSearched = false
       }
-      this.imageUrl = this.book.cover || ''
-      this.searchTitle = this.book.title || ''
-      this.searchAuthor = this.book.authorFL || ''
+      this.imageUrl = this.media.coverPath || ''
+      this.searchTitle = this.mediaMetadata.title || ''
+      this.searchAuthor = this.mediaMetadata.authorName || ''
       this.provider = localStorage.getItem('book-provider') || 'openlibrary'
     },
     removeCover() {
-      if (!this.book.cover) {
+      if (!this.media.coverPath) {
         this.imageUrl = ''
         return
       }
@@ -223,7 +222,7 @@ export default {
       this.updateCover(this.imageUrl)
     },
     async updateCover(cover) {
-      if (cover === this.book.cover) {
+      if (cover === this.media.coverPath) {
         console.warn('Cover has not changed..', cover)
         return
       }
@@ -233,7 +232,7 @@ export default {
 
       // Download cover from url and use
       if (cover.startsWith('http:') || cover.startsWith('https:')) {
-        success = await this.$axios.$post(`/api/books/${this.audiobook.id}/cover`, { url: cover }).catch((error) => {
+        success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, { url: cover }).catch((error) => {
           console.error('Failed to download cover from url', error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
@@ -247,7 +246,7 @@ export default {
             cover: cover
           }
         }
-        success = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, updatePayload).catch((error) => {
+        success = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, updatePayload).catch((error) => {
           console.error('Failed to update', error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
@@ -259,7 +258,7 @@ export default {
         this.$toast.success('Update Successful')
         this.$emit('close')
       } else {
-        this.imageUrl = this.book.cover || ''
+        this.imageUrl = this.media.coverPath || ''
       }
       this.isProcessing = false
     },
@@ -292,7 +291,7 @@ export default {
     setCover(coverFile) {
       this.isProcessing = true
       this.$axios
-        .$patch(`/api/books/${this.audiobook.id}/coverfile`, coverFile)
+        .$patch(`/api/books/${this.libraryItemId}/coverfile`, coverFile)
         .then((data) => {
           console.log('response data', data)
           if (data && typeof data === 'string') {

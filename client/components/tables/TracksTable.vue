@@ -8,7 +8,7 @@
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
       <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
-      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobookId}/edit`" class="mr-2 md:mr-4">
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4">
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
@@ -25,20 +25,20 @@
             <th class="text-left w-20">Duration</th>
             <th v-if="userCanDownload" class="text-center w-20">Download</th>
           </tr>
-          <template v-for="track in tracksCleaned">
+          <template v-for="track in tracks">
             <tr :key="track.index">
               <td class="text-center">
                 <p>{{ track.index }}</p>
               </td>
-              <td class="font-sans">{{ showFullPath ? track.fullPath : track.filename }}</td>
+              <td class="font-sans">{{ showFullPath ? track.metadata.path : track.metadata.filename }}</td>
               <td class="font-mono">
-                {{ $bytesPretty(track.size) }}
+                {{ $bytesPretty(track.metadata.size) }}
               </td>
               <td class="font-mono">
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/s/book/${audiobook.id}/${track.relativePath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/item/${libraryItemId}${$encodeUriPath(track.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -55,10 +55,7 @@ export default {
       type: Array,
       default: () => []
     },
-    audiobook: {
-      type: Object,
-      default: () => null
-    }
+    libraryItemId: String
   },
   data() {
     return {
@@ -67,20 +64,6 @@ export default {
     }
   },
   computed: {
-    audiobookId() {
-      return this.audiobook.id
-    },
-    audiobookPath() {
-      return this.audiobook.path
-    },
-    tracksCleaned() {
-      return this.tracks.map((track) => {
-        return {
-          ...track,
-          relativePath: this.getRelativePath(track.path)
-        }
-      })
-    },
     userToken() {
       return this.$store.getters['user/getToken']
     },
@@ -94,10 +77,6 @@ export default {
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks
-    },
-    getRelativePath(path) {
-      var relativePath = path.replace(/\\/g, '/').replace(this.audiobookPath.replace(/\\/g, '/') + '/', '')
-      return this.$encodeUriPath(relativePath)
     }
   },
   mounted() {}

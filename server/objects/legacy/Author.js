@@ -1,5 +1,5 @@
-const { getId } = require('../utils/index')
-const Logger = require('../Logger')
+const { getId } = require('../../utils/index')
+const Logger = require('../../Logger')
 
 class Author {
   constructor(author = null) {

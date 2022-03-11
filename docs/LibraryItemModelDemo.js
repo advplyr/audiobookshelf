@@ -19,8 +19,9 @@ new LibraryItem({
   lastScan: 1646784672127,
   scanVersion: 1.72,
   isMissing: false,
-  entityType: 'book',
-  entity: { // Book.js
+  mediaType: 'book',
+  media: { // Book.js
+    coverPath: '/metadata/books/li_abai123wir/cover.webp',
     metadata: { // BookMetadata.js
       title: 'Wizards First Rule',
       subtitle: null,

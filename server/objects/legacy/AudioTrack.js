@@ -1,4 +1,4 @@
-var { bytesPretty } = require('../utils/fileUtils')
+var { bytesPretty } = require('../../utils/fileUtils')
 
 class AudioTrack {
   constructor(audioTrack = null) {

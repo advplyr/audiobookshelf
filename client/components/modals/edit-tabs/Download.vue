@@ -65,7 +65,7 @@
 export default {
   props: {
     processing: Boolean,
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
@@ -86,14 +86,14 @@ export default {
     }
   },
   computed: {
-    audiobookId() {
-      return this.audiobook ? this.audiobook.id : null
+    libraryItemId() {
+      return this.libraryItem ? this.libraryItem.id : null
     },
-    _audiobook() {
-      return this.audiobook || {}
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
     },
     downloads() {
-      return this.$store.getters['downloads/getDownloads'](this.audiobookId)
+      return this.$store.getters['downloads/getDownloads'](this.libraryItemId)
     },
     singleAudioDownload() {
       return this.downloads.find((d) => d.type === 'singleAudio')
@@ -108,24 +108,21 @@ export default {
       return this.zipDownload ? this.zipDownload.status : false
     },
     isSingleTrack() {
-      if (!this.audiobook.tracks) return false
-      return this.audiobook.tracks.length === 1
+      if (!this.libraryItem.tracks) return false
+      return this.libraryItem.tracks.length === 1
     },
     singleTrackPath() {
       if (!this.isSingleTrack) return null
       return this.audiobook.tracks[0].path
     },
-    audioFiles() {
-      return this.audiobook ? this.audiobook.audioFiles || [] : []
-    },
-    otherFiles() {
-      return this.audiobook ? this.audiobook.otherFiles || [] : []
+    libraryFiles() {
+      return this.libraryItem.libraryFiles
     },
     totalFiles() {
-      return this.audioFiles.length + this.otherFiles.length
+      return this.libraryFiles.length
     },
     showM4bDownload() {
-      return !this._audiobook.isMissing && !this._audiobook.isInvalid && this._audiobook.tracks.length
+      return !this.libraryItem.isMissing && this.media.tracks.length
     }
   },
   methods: {

@@ -1,3 +1,4 @@
+const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
 class LibraryFile {
@@ -24,8 +25,18 @@ class LibraryFile {
       ino: this.ino,
       metadata: this.metadata.toJSON(),
       addedAt: this.addedAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      fileType: this.fileType
     }
+  }
+
+  get fileType() {
+    if (globals.SupportedImageTypes.includes(this.metadata.format)) return 'image'
+    if (globals.SupportedAudioTypes.includes(this.metadata.format)) return 'audio'
+    if (globals.SupportedEbookTypes.includes(this.metadata.format)) return 'ebook'
+    if (globals.TextFileTypes.includes(this.metadata.format)) return 'text'
+    if (globals.MetadataFileTypes.includes(this.metadata.format)) return 'metadata'
+    return 'unknown'
   }
 }
 module.exports = LibraryFile

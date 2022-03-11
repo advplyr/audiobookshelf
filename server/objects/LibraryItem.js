@@ -17,15 +17,15 @@ class LibraryItem {
     this.ctimeMs = null
     this.birthtimeMs = null
     this.addedAt = null
-    this.lastUpdate = null
+    this.updatedAt = null
     this.lastScan = null
     this.scanVersion = null
 
     // Entity was scanned and not found
     this.isMissing = false
 
-    this.entityType = null
-    this.entity = null
+    this.mediaType = null
+    this.media = null
 
     this.libraryFiles = []
 
@@ -45,17 +45,17 @@ class LibraryItem {
     this.ctimeMs = libraryItem.ctimeMs || 0
     this.birthtimeMs = libraryItem.birthtimeMs || 0
     this.addedAt = libraryItem.addedAt
-    this.lastUpdate = libraryItem.lastUpdate || this.addedAt
+    this.updatedAt = libraryItem.updatedAt || this.addedAt
     this.lastScan = libraryItem.lastScan || null
     this.scanVersion = libraryItem.scanVersion || null
 
     this.isMissing = !!libraryItem.isMissing
 
-    this.entityType = libraryItem.entityType
-    if (this.entityType === 'book') {
-      this.entity = new Book(libraryItem.entity)
-    } else if (this.entityType === 'podcast') {
-      this.entity = new Podcast(libraryItem.entity)
+    this.mediaType = libraryItem.mediaType
+    if (this.mediaType === 'book') {
+      this.media = new Book(libraryItem.media)
+    } else if (this.mediaType === 'podcast') {
+      this.media = new Podcast(libraryItem.media)
     }
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
@@ -73,14 +73,64 @@ class LibraryItem {
       ctimeMs: this.ctimeMs,
       birthtimeMs: this.birthtimeMs,
       addedAt: this.addedAt,
-      lastUpdate: this.lastUpdate,
+      updatedAt: this.updatedAt,
       lastScan: this.lastScan,
       scanVersion: this.scanVersion,
       isMissing: !!this.isMissing,
-      entityType: this.entityType,
-      entity: this.entity.toJSON(),
+      mediaType: this.mediaType,
+      media: this.media.toJSON(),
       libraryFiles: this.libraryFiles.map(f => f.toJSON())
     }
+  }
+
+  toJSONMinified() {
+    return {
+      id: this.id,
+      ino: this.ino,
+      libraryId: this.libraryId,
+      folderId: this.folderId,
+      path: this.path,
+      relPath: this.relPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
+      addedAt: this.addedAt,
+      updatedAt: this.updatedAt,
+      isMissing: !!this.isMissing,
+      mediaType: this.mediaType,
+      media: this.media.toJSONMinified(),
+      numFiles: this.libraryFiles.length
+    }
+  }
+
+  // Adds additional helpful fields like media duration, tracks, etc.
+  toJSONExpanded() {
+    return {
+      id: this.id,
+      ino: this.ino,
+      libraryId: this.libraryId,
+      folderId: this.folderId,
+      path: this.path,
+      relPath: this.relPath,
+      mtimeMs: this.mtimeMs,
+      ctimeMs: this.ctimeMs,
+      birthtimeMs: this.birthtimeMs,
+      addedAt: this.addedAt,
+      updatedAt: this.updatedAt,
+      lastScan: this.lastScan,
+      scanVersion: this.scanVersion,
+      isMissing: !!this.isMissing,
+      mediaType: this.mediaType,
+      media: this.media.toJSONExpanded(),
+      libraryFiles: this.libraryFiles.map(f => f.toJSON()),
+      size: this.size
+    }
+  }
+
+  get size() {
+    var total = 0
+    this.libraryFiles.forEach((lf) => total += lf.metadata.size)
+    return total
   }
 }
 module.exports = LibraryItem

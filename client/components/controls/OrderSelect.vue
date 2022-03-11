@@ -34,27 +34,23 @@ export default {
       items: [
         {
           text: 'Title',
-          value: 'book.title'
+          value: 'media.metadata.title'
         },
         {
           text: 'Author (First Last)',
-          value: 'book.authorFL'
+          value: 'media.metadata.author'
         },
         {
           text: 'Author (Last, First)',
-          value: 'book.authorLF'
+          value: 'media.metadata.authorLF'
         },
         {
           text: 'Added At',
           value: 'addedAt'
         },
         {
-          text: 'Volume #',
-          value: 'book.volumeNumber'
-        },
-        {
           text: 'Duration',
-          value: 'duration'
+          value: 'media.duration'
         },
         {
           text: 'Size',
@@ -89,7 +85,8 @@ export default {
       }
     },
     selectedText() {
-      var _selected = this.selected === 'book.author' ? 'book.authorFL' : this.selected
+      var _selected = this.selected
+      if (this.selected.startsWith('book.')) _selected = _selected.replace('book.', 'media.metadata.')
       var _sel = this.items.find((i) => i.value === _selected)
       if (!_sel) return ''
       return _sel.text

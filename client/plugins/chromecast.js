@@ -3,7 +3,7 @@ export default (ctx) => {
     // Fetch background covers for chromecast (temp)
     var covers = await ctx.$axios.$get(`/api/libraries/${ctx.$store.state.libraries.currentLibraryId}/books/all?limit=40&minified=1`).then((data) => {
       return data.results.filter((b) => b.book.cover).map((ab) => {
-        var coverUrl = ctx.$store.getters['audiobooks/getBookCoverSrc'](ab)
+        var coverUrl = ctx.$store.getters['audiobooks/getLibraryItemCoverSrc'](ab)
         if (process.env.NODE_ENV === 'development') return coverUrl
         return `${window.location.origin}${coverUrl}`
       })

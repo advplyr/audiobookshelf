@@ -76,7 +76,7 @@ export default class CastPlayer extends EventEmitter {
 
     this.currentTime = startTime
 
-    var coverImg = this.ctx.$store.getters['audiobooks/getBookCoverSrc'](audiobook)
+    var coverImg = this.ctx.$store.getters['audiobooks/getLibraryItemCoverSrc'](audiobook)
     if (process.env.NODE_ENV === 'development') {
       this.coverUrl = coverImg
     } else {

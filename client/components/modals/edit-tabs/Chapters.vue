@@ -31,7 +31,7 @@
 <script>
 export default {
   props: {
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
@@ -42,7 +42,7 @@ export default {
     }
   },
   watch: {
-    audiobook: {
+    libraryItem: {
       immediate: true,
       handler(newVal) {
         if (newVal) this.init()
@@ -52,7 +52,7 @@ export default {
   computed: {},
   methods: {
     init() {
-      this.chapters = this.audiobook.chapters || []
+      this.chapters = this.libraryItem.chapters || []
     }
   }
 }

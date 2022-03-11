@@ -10,14 +10,14 @@ class CacheManager {
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
   }
 
-  async handleCoverCache(res, audiobook, options = {}) {
+  async handleCoverCache(res, libraryItem, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
     const height = options.height || null
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.CoverCachePath, `${audiobook.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    var path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(path)) {
@@ -35,7 +35,7 @@ class CacheManager {
     // Write cache
     await fs.ensureDir(this.CoverCachePath)
 
-    let writtenFile = await resizeImage(audiobook.book.coverFullPath, path, width, height)
+    let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(400)
 
     var readStream = fs.createReadStream(writtenFile)

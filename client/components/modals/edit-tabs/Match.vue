@@ -94,14 +94,14 @@
 export default {
   props: {
     processing: Boolean,
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
   },
   data() {
     return {
-      audiobookId: null,
+      libraryItemId: null,
       searchTitle: null,
       searchAuthor: null,
       lastSearch: null,
@@ -126,7 +126,7 @@ export default {
     }
   },
   watch: {
-    audiobook: {
+    libraryItem: {
       immediate: true,
       handler(newVal) {
         if (newVal) this.init()
@@ -209,19 +209,19 @@ export default {
         isbn: true
       }
 
-      if (this.audiobook.id !== this.audiobookId) {
+      if (this.libraryItem.id !== this.libraryItemId) {
         this.searchResults = []
         this.hasSearched = false
-        this.audiobookId = this.audiobook.id
+        this.libraryItemId = this.libraryItem.id
       }
 
-      if (!this.audiobook.book || !this.audiobook.book.title) {
+      if (!this.libraryItem.media || !this.libraryItem.media.metadata.title) {
         this.searchTitle = null
         this.searchAuthor = null
         return
       }
-      this.searchTitle = this.audiobook.book.title
-      this.searchAuthor = this.audiobook.book.authorFL || ''
+      this.searchTitle = this.libraryItem.media.metadata.title
+      this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
       this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
@@ -247,7 +247,7 @@ export default {
         var coverPayload = {
           url: updatePayload.cover
         }
-        var success = await this.$axios.$post(`/api/books/${this.audiobook.id}/cover`, coverPayload).catch((error) => {
+        var success = await this.$axios.$post(`/api/books/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
@@ -264,7 +264,7 @@ export default {
         var bookUpdatePayload = {
           book: updatePayload
         }
-        var success = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, bookUpdatePayload).catch((error) => {
+        var success = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, bookUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })

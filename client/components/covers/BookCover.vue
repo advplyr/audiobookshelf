@@ -5,8 +5,8 @@
         <div class="absolute cover-bg" ref="coverBg" />
       </div>
 
-      <img v-if="audiobook" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-fill'" />
-      <div v-show="loading && audiobook" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
+      <img v-if="libraryItem" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-fill'" />
+      <div v-show="loading && libraryItem" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
         <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         <div class="absolute top-2 right-2">
           <div class="la-ball-spin-clockwise la-sm">
@@ -44,11 +44,10 @@
 <script>
 export default {
   props: {
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     },
-    authorOverride: String,
     width: {
       type: Number,
       default: 120
@@ -75,12 +74,15 @@ export default {
     height() {
       return this.width * this.bookCoverAspectRatio
     },
-    book() {
-      if (!this.audiobook) return {}
-      return this.audiobook.book || {}
+    media() {
+      if (!this.libraryItem) return {}
+      return this.libraryItem.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     title() {
-      return this.book.title || 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
     titleCleaned() {
       if (this.title.length > 60) {
@@ -88,9 +90,11 @@ export default {
       }
       return this.title
     },
+    authors() {
+      return this.mediaMetadata.authors || []
+    },
     author() {
-      if (this.authorOverride) return this.authorOverride
-      return this.book.author || 'Unknown'
+      return this.authors.map((au) => au.name).join(', ')
     },
     authorCleaned() {
       if (this.author.length > 30) {
@@ -102,15 +106,15 @@ export default {
       return '/book_placeholder.jpg'
     },
     fullCoverUrl() {
-      if (!this.audiobook) return null
+      if (!this.libraryItem) return null
       var store = this.$store || this.$nuxt.$store
-      return store.getters['audiobooks/getBookCoverSrc'](this.audiobook, this.placeholderUrl)
+      return store.getters['audiobooks/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
     },
     cover() {
-      return this.book.cover || this.placeholderUrl
+      return this.media.coverPath || this.placeholderUrl
     },
     hasCover() {
-      return !!this.book.cover
+      return !!this.media.coverPath
     },
     sizeMultiplier() {
       var baseSize = this.squareAspectRatio ? 192 : 120
@@ -138,7 +142,6 @@ export default {
         this.$refs.coverBg.style.backgroundImage = `url("${this.fullCoverUrl}")`
       }
     },
-    hideCoverBg() {},
     imageLoaded() {
       this.loading = false
       this.$nextTick(() => {

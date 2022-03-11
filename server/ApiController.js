@@ -14,6 +14,7 @@ const UserController = require('./controllers/UserController')
 const CollectionController = require('./controllers/CollectionController')
 const MeController = require('./controllers/MeController')
 const BackupController = require('./controllers/BackupController')
+const LibraryItemController = require('./controllers/LibraryItemController')
 
 const BookFinder = require('./finders/BookFinder')
 const AuthorFinder = require('./finders/AuthorFinder')
@@ -53,18 +54,28 @@ class ApiController {
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
-    this.router.get('/libraries/:id/books/all', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary2.bind(this))
-    this.router.get('/libraries/:id/books', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
+    this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/series/:series', LibraryController.middleware.bind(this), LibraryController.getSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
-    this.router.get('/libraries/:id/categories', LibraryController.middleware.bind(this), LibraryController.getLibraryCategories.bind(this))
-    this.router.get('/libraries/:id/filters', LibraryController.middleware.bind(this), LibraryController.getLibraryFilters.bind(this))
+    this.router.get('/libraries/:id/personalized', LibraryController.middleware.bind(this), LibraryController.getLibraryUserPersonalized.bind(this))
+    this.router.get('/libraries/:id/filterdata', LibraryController.middleware.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
+
+    // Legacy
+    this.router.get('/libraries/:id/books/all', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
+    this.router.get('/libraries/:id/categories', LibraryController.middleware.bind(this), LibraryController.getLibraryCategories.bind(this))
+    this.router.get('/libraries/:id/filters', LibraryController.middleware.bind(this), LibraryController.getLibraryFilters.bind(this))
+
+    //
+    // Item Routes
+    //
+    this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
+    this.router.get('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.getCover.bind(this))
 
     //
     // Book Routes

@@ -12,25 +12,21 @@ export const state = () => ({
 })
 
 export const getters = {
-  getBookCoverSrc: (state, getters, rootState, rootGetters) => (bookItem, placeholder = '/book_placeholder.jpg') => {
-    if (!bookItem) return placeholder
-    var book = bookItem.book
-    if (!book || !book.cover || book.cover === placeholder) return placeholder
+  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = '/book_placeholder.jpg') => {
+    if (!libraryItem) return placeholder
+    var media = libraryItem.media
+    if (!media || !media.coverPath || media.coverPath === placeholder) return placeholder
 
     // Absolute URL covers (should no longer be used)
-    if (book.cover.startsWith('http:') || book.cover.startsWith('https:')) return book.cover
+    if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
 
     var userToken = rootGetters['user/getToken']
-    var bookLastUpdate = book.lastUpdate || Date.now()
-
-    if (!bookItem.id) {
-      console.error('No book item id', bookItem)
-    }
+    var lastUpdate = libraryItem.updatedAt || Date.now()
 
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
+      return `http://localhost:3333/api/items/${libraryItem.id}/cover?token=${userToken}&ts=${lastUpdate}`
     }
-    return `/api/books/${bookItem.id}/cover?token=${userToken}&ts=${bookLastUpdate}`
+    return `/api/items/${libraryItem.id}/cover?token=${userToken}&ts=${lastUpdate}`
   }
 }
 

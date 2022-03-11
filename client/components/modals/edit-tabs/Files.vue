@@ -9,7 +9,7 @@
           </div>
           <div class="flex-grow" />
           <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
-          <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobook.id}/edit`">
+          <nuxt-link v-if="userCanUpdate" :to="`/item/${libraryItem.id}/edit`">
             <ui-btn small color="primary">Manage Tracks</ui-btn>
           </nuxt-link>
         </div>
@@ -21,20 +21,20 @@
             <th class="text-left">Duration</th>
             <th v-if="showDownload" class="text-center">Download</th>
           </tr>
-          <template v-for="track in tracksCleaned">
+          <template v-for="track in tracks">
             <tr :key="track.index">
               <td class="text-center">
                 <p>{{ track.index }}</p>
               </td>
-              <td class="font-sans">{{ showFullPath ? track.fullPath : track.filename }}</td>
+              <td class="font-sans">{{ showFullPath ? track.path : track.filename }}</td>
               <td class="font-mono">
-                {{ $bytesPretty(track.size) }}
+                {{ $bytesPretty(track.metadata.size) }}
               </td>
               <td class="font-mono">
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="showDownload" class="font-mono text-center">
-                <a :href="`/s/book/${audiobook.id}/${track.relativePath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/item/${libraryItem.id}/${track.metadata.relPath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -43,26 +43,26 @@
       <div v-else class="flex my-4 text-center justify-center text-xl">No Audio Tracks</div>
     </div>
 
-    <tables-all-files-table :audiobook="audiobook" />
+    <tables-library-files-table :files="libraryFiles" :library-item-id="libraryItem.id" :is-missing="isMissing" />
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
   },
   data() {
     return {
-      tracks: null,
+      tracks: [],
       showFullPath: false
     }
   },
   watch: {
-    audiobook: {
+    libraryItem: {
       immediate: true,
       handler(newVal) {
         if (newVal) this.init()
@@ -70,22 +70,11 @@ export default {
     }
   },
   computed: {
-    audiobookPath() {
-      return this.audiobook.path
+    media() {
+      return this.libraryItem.media || {}
     },
-    tracksCleaned() {
-      return this.tracks.map((track) => {
-        var trackPath = track.path.replace(/\\/g, '/')
-        var audiobookPath = this.audiobookPath.replace(/\\/g, '/')
-
-        return {
-          ...track,
-          relativePath: trackPath
-            .replace(audiobookPath + '/', '')
-            .replace(/%/g, '%25')
-            .replace(/#/g, '%23')
-        }
-      })
+    libraryFiles() {
+      return this.libraryItem.libraryFiles || []
     },
     userToken() {
       return this.$store.getters['user/getToken']
@@ -97,18 +86,18 @@ export default {
       return this.$store.getters['user/getUserCanDownload']
     },
     isMissing() {
-      return this.audiobook.isMissing
+      return this.libraryItem.isMissing
     },
     showDownload() {
       return this.userCanDownload && !this.isMissing
     },
     hasTracks() {
-      return this.audiobook.tracks.length
+      return this.tracks.length
     }
   },
   methods: {
     init() {
-      this.tracks = this.audiobook.tracks
+      this.tracks = this.media.tracks || []
     }
   }
 }

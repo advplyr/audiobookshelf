@@ -3,7 +3,7 @@ const fs = require('fs-extra')
 const njodb = require("njodb")
 
 const { SupportedEbookTypes } = require('./globals')
-const Audiobook = require('../objects/Audiobook')
+const Audiobook = require('../objects/legacy/Audiobook')
 const LibraryItem = require('../objects/LibraryItem')
 
 const Logger = require('../Logger')
@@ -142,7 +142,7 @@ function makeLibraryItemFromOldAb(audiobook) {
   libraryItem.lastScan = audiobook.lastScan
   libraryItem.scanVersion = audiobook.scanVersion
   libraryItem.isMissing = audiobook.isMissing
-  libraryItem.entityType = 'book'
+  libraryItem.mediaType = 'book'
 
   var bookEntity = new Book()
   var bookMetadata = new BookMetadata(audiobook.book)
@@ -159,8 +159,6 @@ function makeLibraryItemFromOldAb(audiobook) {
 
   bookEntity.metadata = bookMetadata
   bookEntity.coverPath = audiobook.book.coverFullPath
-  // Path relative to library item
-  bookEntity.relCoverPath = getRelativePath(audiobook.book.coverFullPath, audiobook.fullPath)
   bookEntity.tags = [...audiobook.tags]
 
   var payload = makeFilesFromOldAb(audiobook)
@@ -171,7 +169,7 @@ function makeLibraryItemFromOldAb(audiobook) {
     bookEntity.chapters = audiobook.chapters.map(c => ({ ...c }))
   }
 
-  libraryItem.entity = bookEntity
+  libraryItem.media = bookEntity
   libraryItem.libraryFiles = payload.libraryFiles
   return libraryItem
 }

@@ -39,10 +39,9 @@ class LibraryController {
 
   async findOne(req, res) {
     if (req.query.include && req.query.include === 'filterdata') {
-      var books = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
       return res.json({
-        filterdata: libraryHelpers.getDistinctFilterData(books),
-        issues: libraryHelpers.getNumIssues(books),
+        filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
+        issues: libraryHelpers.getNumIssues(req.libraryItems),
         library: req.library
       })
     }
@@ -91,38 +90,70 @@ class LibraryController {
     return res.json(libraryJson)
   }
 
-  // api/libraries/:id/books
-  getBooksForLibrary(req, res) {
+  // api/libraries/:id/items
+  // TODO: Optimize this method, audiobooks are iterated through several times but can be combined
+  getLibraryItems(req, res) {
     var libraryId = req.library.id
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
-
-    if (req.query.filter) {
-      audiobooks = libraryHelpers.getFiltered(audiobooks, req.query.filter, req.user)
+    var media = req.query.media || 'all'
+    var libraryItems = this.db.libraryItems.filter(li => {
+      if (li.libraryId !== libraryId) return false
+      if (media != 'all') return li.mediaType == media
+      return true
+    })
+    var payload = {
+      results: [],
+      total: libraryItems.length,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      media,
+      minified: req.query.minified === '1',
+      collapseseries: req.query.collapseseries === '1'
     }
 
-    if (req.query.sort) {
-      var orderByNumber = req.query.sort === 'book.volumeNumber'
-      var direction = req.query.desc === '1' ? 'desc' : 'asc'
-      audiobooks = sort(audiobooks)[direction]((ab) => {
-        // Supports dot notation strings i.e. "book.title"
-        var value = req.query.sort.split('.').reduce((a, b) => a[b], ab)
-        if (orderByNumber && !isNaN(value)) return Number(value)
-        return value
+    if (payload.filterBy) {
+      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user)
+      payload.total = libraryItems.length
+    }
+
+    if (payload.sortBy) {
+      var sortKey = payload.sortBy
+
+      // old sort key
+      if (sortKey.startsWith('book.')) {
+        sortKey = sortKey.replace('book.', 'media.metadata.')
+      }
+
+      // Handle server setting sortingIgnorePrefix
+      if (sortKey === 'media.metadata.title' && this.db.serverSettings.sortingIgnorePrefix) {
+        // BookMetadata.js has titleIgnorePrefix getter
+        sortKey += 'IgnorePrefix'
+      }
+
+      var direction = payload.sortDesc ? 'desc' : 'asc'
+      libraryItems = naturalSort(libraryItems)[direction]((li) => {
+
+        // Supports dot notation strings i.e. "media.metadata.title"
+        return sortKey.split('.').reduce((a, b) => a[b], li)
       })
     }
 
-    if (req.query.limit && !isNaN(req.query.limit)) {
-      var page = req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
-      var limit = Number(req.query.limit)
-      var startIndex = page * limit
-      audiobooks = audiobooks.slice(startIndex, startIndex + limit)
+    // TODO: Potentially implement collapse series again
+    libraryItems = libraryItems.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSON())
+
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
     }
-    res.json(audiobooks)
+    payload.results = libraryItems
+    res.json(payload)
   }
 
   // api/libraries/:id/books/all
   // TODO: Optimize this method, audiobooks are iterated through several times but can be combined
-  getBooksForLibrary2(req, res) {
+  getBooksForLibrary(req, res) {
     var libraryId = req.library.id
 
     var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
@@ -274,6 +305,7 @@ class LibraryController {
     res.json(payload)
   }
 
+  // LEGACY
   // api/libraries/:id/books/filters
   async getLibraryFilters(req, res) {
     var library = req.library
@@ -281,6 +313,45 @@ class LibraryController {
     res.json(libraryHelpers.getDistinctFilterData(books))
   }
 
+  async getLibraryFilterData(req, res) {
+    res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
+  }
+
+  // api/libraries/:id/books/personalized
+  async getLibraryUserPersonalized(req, res) {
+    var libraryItems = req.libraryItems
+    var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    var minified = req.query.minified === '1'
+
+    var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, libraryItems)
+
+    var categories = [
+      {
+        id: 'continue-reading',
+        label: 'Continue Reading',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf, minified)
+      },
+      {
+        id: 'recently-added',
+        label: 'Recently Added',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyAdded(libraryItems, limitPerShelf, minified)
+      },
+      {
+        id: 'read-again',
+        label: 'Read Again',
+        type: 'books',
+        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf, minified)
+      }
+    ].filter(cats => { // Remove categories with no items
+      return cats.entities.length
+    })
+
+    res.json(categories)
+  }
+
+  // LEGACY
   // api/libraries/:id/books/categories
   async getLibraryCategories(req, res) {
     var library = req.library
@@ -491,6 +562,7 @@ class LibraryController {
       return res.status(404).send('Library not found')
     }
     req.library = library
+    req.libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
     next()
   }
 }

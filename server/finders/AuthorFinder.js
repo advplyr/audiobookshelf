@@ -1,7 +1,7 @@
 const fs = require('fs-extra')
 const Logger = require('../Logger')
 const Path = require('path')
-const Author = require('../objects/Author')
+const Author = require('../objects/legacy/Author')
 const Audnexus = require('../providers/Audnexus')
 
 const { downloadFile } = require('../utils/fileUtils')

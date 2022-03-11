@@ -13,7 +13,8 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
-            <ui-text-input-with-label v-model="details.author" label="Author" />
+            <!-- <ui-text-input-with-label v-model="details.authors" label="Author" /> -->
+            <p>Authors placeholder</p>
           </div>
           <div class="flex-grow px-1">
             <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
@@ -22,10 +23,11 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
-            <ui-input-dropdown ref="seriesDropdown" v-model="details.series" label="Series" :items="series" />
+            <p>Series placeholder</p>
+            <!-- <ui-input-dropdown ref="seriesDropdown" v-model="details.series" label="Series" :items="series" /> -->
           </div>
           <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" />
+            <!-- <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" /> -->
           </div>
         </div>
 
@@ -64,7 +66,7 @@
 
       <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
         <div class="flex items-center px-4">
-          <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="deleteAudiobook">Remove</ui-btn>
+          <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
 
           <div class="flex-grow" />
 
@@ -91,7 +93,7 @@
 export default {
   props: {
     processing: Boolean,
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     }
@@ -105,7 +107,6 @@ export default {
         author: null,
         narrator: null,
         series: null,
-        volumeNumber: null,
         publishYear: null,
         publisher: null,
         language: null,
@@ -122,7 +123,7 @@ export default {
     }
   },
   watch: {
-    audiobook: {
+    libraryItem: {
       immediate: true,
       handler(newVal) {
         if (newVal) this.init()
@@ -142,13 +143,16 @@ export default {
       return this.$store.getters['user/getIsRoot']
     },
     isMissing() {
-      return !!this.audiobook && !!this.audiobook.isMissing
+      return !!this.libraryItem && !!this.libraryItem.isMissing
     },
-    audiobookId() {
-      return this.audiobook ? this.audiobook.id : null
+    libraryItemId() {
+      return this.libraryItem ? this.libraryItem.id : null
     },
-    book() {
-      return this.audiobook ? this.audiobook.book || {} : {}
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
@@ -166,7 +170,7 @@ export default {
       return this.$store.state.libraries.filterData || {}
     },
     libraryId() {
-      return this.audiobook ? this.audiobook.libraryId : null
+      return this.libraryItem ? this.libraryItem.libraryId : null
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.libraryId) || 'google'
@@ -185,13 +189,13 @@ export default {
         author: this.details.author !== this.book.author ? this.details.author : null
       }
       this.$axios
-        .$post(`/api/books/${this.audiobookId}/match`, matchOptions)
+        .$post(`/api/books/${this.libraryItemId}/match`, matchOptions)
         .then((res) => {
           this.quickMatching = false
           if (res.warning) {
             this.$toast.warning(res.warning)
           } else if (res.updated) {
-            this.$toast.success('Audiobook details updated')
+            this.$toast.success('Item details updated')
           } else {
             this.$toast.info('No updates were made')
           }
@@ -236,7 +240,7 @@ export default {
     saveMetadata() {
       this.savingMetadata = true
       this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
-      this.$root.socket.emit('save_metadata', this.audiobookId)
+      this.$root.socket.emit('save_metadata', this.libraryItemId)
     },
     submitForm() {
       if (this.isProcessing) {
@@ -260,7 +264,7 @@ export default {
         tags: this.newTags
       }
 
-      var updatedAudiobook = await this.$axios.$patch(`/api/books/${this.audiobook.id}`, updatePayload).catch((error) => {
+      var updatedAudiobook = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
       })
@@ -271,35 +275,34 @@ export default {
       }
     },
     init() {
-      this.details.title = this.book.title
-      this.details.subtitle = this.book.subtitle
-      this.details.description = this.book.description
-      this.details.author = this.book.author
-      this.details.narrator = this.book.narrator
-      this.details.genres = this.book.genres || []
-      this.details.series = this.book.series
-      this.details.volumeNumber = this.book.volumeNumber
-      this.details.publishYear = this.book.publishYear
-      this.details.publisher = this.book.publisher || null
-      this.details.language = this.book.language || null
-      this.details.isbn = this.book.isbn || null
-      this.details.asin = this.book.asin || null
+      this.details.title = this.mediaMetadata.title
+      this.details.subtitle = this.mediaMetadata.subtitle
+      this.details.description = this.mediaMetadata.description
+      this.details.authors = this.mediaMetadata.authors
+      this.details.narrator = this.mediaMetadata.narrator
+      this.details.genres = this.mediaMetadata.genres || []
+      this.details.series = this.mediaMetadata.series
+      this.details.publishYear = this.mediaMetadata.publishYear
+      this.details.publisher = this.mediaMetadata.publisher || null
+      this.details.language = this.mediaMetadata.language || null
+      this.details.isbn = this.mediaMetadata.isbn || null
+      this.details.asin = this.mediaMetadata.asin || null
 
-      this.newTags = this.audiobook.tags || []
+      this.newTags = this.media.tags || []
     },
-    deleteAudiobook() {
-      if (confirm(`Are you sure you want to remove this audiobook?\n\n*Does not delete your files, only removes the audiobook from AudioBookshelf`)) {
+    removeItem() {
+      if (confirm(`Are you sure you want to remove this item?\n\n*Does not delete your files, only removes the item from audiobookshelf`)) {
         this.isProcessing = true
         this.$axios
-          .$delete(`/api/books/${this.audiobookId}`)
+          .$delete(`/api/books/${this.libraryItemId}`)
           .then(() => {
-            console.log('Audiobook removed')
-            this.$toast.success('Audiobook Removed')
+            console.log('Item removed')
+            this.$toast.success('Item Removed')
             this.$emit('close')
             this.isProcessing = false
           })
           .catch((error) => {
-            console.error('Remove Audiobook failed', error)
+            console.error('Remove item failed', error)
             this.isProcessing = false
           })
       }

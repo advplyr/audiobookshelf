@@ -239,7 +239,7 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      var entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? `books/all` : this.entityName
+      var entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? `items` : this.entityName
       var sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
       var fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
 

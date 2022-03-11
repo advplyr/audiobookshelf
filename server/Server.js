@@ -69,7 +69,6 @@ class Server {
 
     Logger.logManager = this.logManager
 
-    this.expressApp = null
     this.server = null
     this.io = null
 
@@ -154,8 +153,6 @@ class Server {
     await this.init()
 
     const app = express()
-    this.expressApp = app
-
     this.server = http.createServer(app)
 
     app.use(this.auth.cors)
@@ -167,9 +164,6 @@ class Server {
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
 
-    // Old static path for covers
-    app.use('/local', this.authMiddleware.bind(this), express.static(global.AudiobookPath))
-
     // Metadata folder static path
     app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
@@ -178,6 +172,9 @@ class Server {
 
     // Static folder
     app.use(express.static(Path.join(global.appRoot, 'static')))
+
+    app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
+    app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
 
     // Static file routes
     app.get('/lib/:library/:folder/*', this.authMiddleware.bind(this), (req, res) => {
@@ -192,12 +189,23 @@ class Server {
     })
 
     // Book static file routes
+    // LEGACY
     app.get('/s/book/:id/*', this.authMiddleware.bind(this), (req, res) => {
       var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
       if (!audiobook) return res.status(404).send('Book not found with id ' + req.params.id)
 
       var remainingPath = req.params['0']
       var fullPath = Path.join(audiobook.fullPath, remainingPath)
+      res.sendFile(fullPath)
+    })
+
+    // Library Item static file routes
+    app.get('/s/item/:id/*', this.authMiddleware.bind(this), (req, res) => {
+      var item = this.db.libraryItems.find(ab => ab.id === req.params.id)
+      if (!item) return res.status(404).send('Item not found with id ' + req.params.id)
+
+      var remainingPath = req.params['0']
+      var fullPath = Path.join(item.path, remainingPath)
       res.sendFile(fullPath)
     })
 
@@ -214,8 +222,10 @@ class Server {
     })
 
     // Client dynamic routes
-    app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html'))) // LEGACY
+    app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html'))) // LEGACY
+    app.get('/item/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    app.get('/item/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library/search', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library/bookshelf/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
@@ -224,31 +234,16 @@ class Server {
     app.get('/config/users/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/collection/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 
-    app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
-    app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
-
-    // Incomplete work in progress
-    // app.use('/feeds', this.rssFeeds.router)
-
+    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
     app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))
-
-    var loginRateLimiter = this.getLoginRateLimiter()
-    app.post('/login', loginRateLimiter, (req, res) => this.auth.login(req, res))
-
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
-
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
       res.json({ success: true })
     })
 
-    // Used in development to set-up streams without authentication
-    if (process.env.NODE_ENV !== 'production') {
-      app.use('/test-hls', this.hlsController.router)
-    }
-
     this.server.listen(this.Port, this.Host, () => {
-      Logger.info(`Running on http://${this.Host}:${this.Port}`)
+      Logger.info(`Listening on http://${this.Host}:${this.Port}`)
     })
 
     this.io = new SocketIO.Server(this.server, {
@@ -265,9 +260,12 @@ class Server {
       }
       socket.sheepClient = this.clients[socket.id]
 
-      Logger.info('[SOCKET] Socket Connected', socket.id)
+      Logger.info('[Server] Socket Connected', socket.id)
 
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
+
+      // TODO: Most of these web socket listeners will be moved to API routes instead
+      //         with the goal of the web socket connection being a nice-to-have not need-to-have
 
       // Scanning
       socket.on('scan', this.scan.bind(this))
@@ -275,11 +273,12 @@ class Server {
       socket.on('scan_audiobook', (audiobookId) => this.scanAudiobook(socket, audiobookId))
       socket.on('save_metadata', (audiobookId) => this.saveMetadata(socket, audiobookId))
 
-      // Streaming
+      // Streaming (only still used in the mobile app)
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
       socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
       socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
 
+      // Used to sync when playing local book on mobile, will be moved to API route
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
 
       // Downloading
@@ -298,10 +297,6 @@ class Server {
       socket.on('create_bookmark', (payload) => this.createBookmark(socket, payload))
       socket.on('update_bookmark', (payload) => this.updateBookmark(socket, payload))
       socket.on('delete_bookmark', (payload) => this.deleteBookmark(socket, payload))
-
-      socket.on('test', () => {
-        socket.emit('test_received', socket.id)
-      })
 
       socket.on('disconnect', () => {
         Logger.removeSocketListener(socket.id)

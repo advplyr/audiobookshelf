@@ -9,6 +9,7 @@ class PodcastMetadata {
     this.itunesPageUrl = null
     this.itunesId = null
     this.itunesArtistId = null
+    this.explicit = false
 
     if (metadata) {
       this.construct(metadata)
@@ -25,6 +26,7 @@ class PodcastMetadata {
     this.itunesPageUrl = metadata.itunesPageUrl
     this.itunesId = metadata.itunesId
     this.itunesArtistId = metadata.itunesArtistId
+    this.explicit = metadata.explicit
   }
 
   toJSON() {
@@ -38,7 +40,12 @@ class PodcastMetadata {
       itunesPageUrl: this.itunesPageUrl,
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
+      explicit: this.explicit
     }
+  }
+
+  toJSONExpanded() {
+    return this.toJSON()
   }
 }
 module.exports = PodcastMetadata

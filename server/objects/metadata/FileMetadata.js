@@ -41,5 +41,10 @@ class FileMetadata {
   clone() {
     return new FileMetadata(this.toJSON())
   }
+
+  get format() {
+    if (!this.ext) return ''
+    return this.ext.slice(1)
+  }
 }
 module.exports = FileMetadata

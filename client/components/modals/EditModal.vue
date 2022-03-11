@@ -19,7 +19,7 @@
     </div>
 
     <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
-      <component v-if="audiobook && show" :is="tabName" :audiobook="audiobook" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
+      <component v-if="libraryItem && show" :is="tabName" :library-item="libraryItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
 </template>
@@ -29,7 +29,7 @@ export default {
   data() {
     return {
       processing: false,
-      audiobook: null,
+      libraryItem: null,
       fetchOnShow: false,
       tabs: [
         {
@@ -42,11 +42,6 @@ export default {
           title: 'Cover',
           component: 'modals-edit-tabs-cover'
         },
-        // {
-        //   id: 'tracks',
-        //   title: 'Tracks',
-        //   component: 'modals-edit-tabs-tracks'
-        // },
         {
           id: 'chapters',
           title: 'Chapters',
@@ -89,12 +84,12 @@ export default {
             this.selectedTab = availableTabIds[0]
           }
 
-          if (this.audiobook && this.audiobook.id === this.selectedAudiobookId) {
+          if (this.libraryItem && this.libraryItem.id === this.selectedLibraryItemId) {
             if (this.fetchOnShow) this.fetchFull()
             return
           }
           this.fetchOnShow = false
-          this.audiobook = null
+          this.libraryItem = null
           this.init()
           this.registerListeners()
         } else {
@@ -148,26 +143,29 @@ export default {
       return _tab ? _tab.component : ''
     },
     isMissing() {
-      return this.selectedAudiobook.isMissing
+      return this.selectedLibraryItem.isMissing
     },
-    selectedAudiobook() {
-      return this.$store.state.selectedAudiobook || {}
+    selectedLibraryItem() {
+      return this.$store.state.selectedLibraryItem || {}
     },
-    selectedAudiobookId() {
-      return this.selectedAudiobook.id
+    selectedLibraryItemId() {
+      return this.selectedLibraryItem.id
     },
-    book() {
-      return this.audiobook ? this.audiobook.book || {} : {}
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     title() {
-      return this.book.title || 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
     bookshelfBookIds() {
       return this.$store.state.bookshelfBookIds || []
     },
     currentBookshelfIndex() {
       if (!this.bookshelfBookIds.length) return 0
-      return this.bookshelfBookIds.findIndex((bid) => bid === this.selectedAudiobookId)
+      return this.bookshelfBookIds.findIndex((bid) => bid === this.selectedLibraryItemId)
     },
     canGoPrev() {
       return this.bookshelfBookIds.length && this.currentBookshelfIndex > 0
@@ -188,7 +186,7 @@ export default {
       })
       this.processing = false
       if (prevBook) {
-        this.$store.commit('showEditModalOnTab', { audiobook: prevBook, tab: this.selectedTab })
+        this.$store.commit('showEditModalOnTab', { libraryItem: prevBook, tab: this.selectedTab })
         this.$nextTick(this.init)
       } else {
         console.error('Book not found', prevBookId)
@@ -205,7 +203,7 @@ export default {
       })
       this.processing = false
       if (nextBook) {
-        this.$store.commit('showEditModalOnTab', { audiobook: nextBook, tab: this.selectedTab })
+        this.$store.commit('showEditModalOnTab', { libraryItem: nextBook, tab: this.selectedTab })
         this.$nextTick(this.init)
       } else {
         console.error('Book not found', nextBookId)
@@ -223,16 +221,16 @@ export default {
       }
     },
     init() {
-      this.$store.commit('audiobooks/addListener', { meth: this.audiobookUpdated, id: 'edit-modal', audiobookId: this.selectedAudiobookId })
+      this.$store.commit('audiobooks/addListener', { meth: this.audiobookUpdated, id: 'edit-modal', audiobookId: this.selectedLibraryItemId })
       this.fetchFull()
     },
     async fetchFull() {
       try {
         this.processing = true
-        this.audiobook = await this.$axios.$get(`/api/books/${this.selectedAudiobookId}`)
+        this.libraryItem = await this.$axios.$get(`/api/items/${this.selectedLibraryItemId}?expanded=1`)
         this.processing = false
       } catch (error) {
-        console.error('Failed to fetch audiobook', this.selectedAudiobookId, error)
+        console.error('Failed to fetch audiobook', this.selectedLibraryItemId, error)
         this.processing = false
         this.show = false
       }

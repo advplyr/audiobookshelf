@@ -4,7 +4,7 @@
       <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
-            <covers-book-cover :audiobook="audiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+            <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Book Progress Bar -->
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
@@ -32,11 +32,12 @@
               </div>
               <!-- <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl block sm:hidden">{{ subtitle }}</p> -->
 
-              <p v-if="authorFL" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
+              <p v-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
-              <nuxt-link v-if="series" :to="`/library/${libraryId}/series/${$encode(series)}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ seriesText }}</nuxt-link>
+
+              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
@@ -136,8 +137,6 @@
             <ui-tooltip text="Collections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
-
-            <ui-btn v-if="isDeveloperMode" class="mx-2" @click="openRssFeed">Open RSS Feed</ui-btn>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -160,11 +159,11 @@
             </div>
           </div>
 
-          <tables-tracks-table v-if="tracks.length" :tracks="tracks" :audiobook="audiobook" class="mt-6" />
+          <tables-tracks-table v-if="tracks.length" :tracks="tracks" :library-item-id="libraryItemId" class="mt-6" />
 
-          <tables-audio-files-table v-if="otherAudioFiles.length" :audiobook-id="audiobook.id" :files="otherAudioFiles" class="mt-6" />
+          <!-- <tables-audio-files-table v-if="otherAudioFiles.length" :library-item-id="libraryItemId" :files="otherAudioFiles" class="mt-6" /> -->
 
-          <tables-library-files-table v-if="otherFiles.length" :audiobook="audiobook" :files="otherFiles" class="mt-6" />
+          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
         </div>
       </div>
     </div>
@@ -177,16 +176,16 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
-    var audiobook = await app.$axios.$get(`/api/books/${params.id}`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
-    if (!audiobook) {
-      console.error('No audiobook...', params.id)
+    if (!item) {
+      console.error('No item...', params.id)
       return redirect('/')
     }
     return {
-      audiobook
+      libraryItem: item
     }
   },
   data() {
@@ -252,89 +251,83 @@ export default {
       return chunks
     },
     isMissing() {
-      return this.audiobook.isMissing
+      return this.libraryItem.isMissing
     },
     isInvalid() {
-      return this.audiobook.isInvalid
+      return this.libraryItem.isInvalid
     },
     showPlayButton() {
       return !this.isMissing && !this.isInvalid && this.tracks.length
     },
     missingParts() {
-      return this.audiobook.missingParts || []
+      return this.libraryItem.missingParts || []
     },
     invalidParts() {
-      return this.audiobook.invalidParts || []
+      return this.libraryItem.invalidParts || []
     },
     libraryId() {
-      return this.audiobook.libraryId
+      return this.libraryItem.libraryId
     },
     folderId() {
-      return this.audiobook.folderId
+      return this.libraryItem.folderId
     },
-    audiobookId() {
-      return this.audiobook.id
+    libraryItemId() {
+      return this.libraryItem.id
+    },
+    media() {
+      return this.libraryItem.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     title() {
-      return this.book.title || 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
     publishYear() {
-      return this.book.publishYear
+      return this.mediaMetadata.publishYear
     },
     narrator() {
-      return this.book.narrator
+      return this.mediaMetadata.narratorName
     },
     subtitle() {
-      return this.book.subtitle
+      return this.mediaMetadata.subtitle
     },
     genres() {
-      return this.book.genres || []
+      return this.mediaMetadata.genres || []
     },
-    author() {
-      return this.book.author || 'Unknown'
-    },
-    authorFL() {
-      return this.book.authorFL
+    authors() {
+      return this.mediaMetadata.authors || []
     },
     authorsList() {
-      return this.authorFL ? this.authorFL.split(', ') : []
-    },
-    authorLF() {
-      return this.book.authorLF
+      return this.authors.map((au) => au.name)
     },
     narrators() {
-      if (!this.book.narratorFL) return []
-      return this.book.narratorFL.split(', ') || []
-    },
-    authorTooltipText() {
-      var txt = ['FL: ' + this.authorFL || 'Not Set', 'LF: ' + this.authorLF || 'Not Set']
-      return txt.join('<br>')
+      return this.mediaMetadata.narrators || []
     },
     series() {
-      return this.book.series || null
+      return this.media.series || []
     },
-    volumeNumber() {
-      return this.book.volumeNumber || null
-    },
-    seriesText() {
-      if (!this.series) return ''
-      if (!this.volumeNumber) return this.series
-      return `${this.series} #${this.volumeNumber}`
+    seriesList() {
+      return this.series.map((se) => {
+        var text = se.name
+        if (se.sequence) text += ` #${se.sequence}`
+        return {
+          ...se,
+          text
+        }
+      })
     },
     durationPretty() {
-      return this.audiobook.durationPretty
+      return this.$elapsedPretty(this.media.duration)
     },
     duration() {
-      return this.audiobook.duration
+      return this.media.duration
     },
     sizePretty() {
-      return this.audiobook.sizePretty
+      return this.$bytesPretty(this.media.size)
     },
-    book() {
-      return this.audiobook.book || {}
-    },
-    otherFiles() {
-      return this.audiobook.otherFiles || []
+    libraryFiles() {
+      return this.libraryItem.libraryFiles || []
     },
     otherAudioFiles() {
       return this.audioFiles.filter((af) => {
@@ -342,28 +335,28 @@ export default {
       })
     },
     tracks() {
-      return this.audiobook.tracks || []
+      return this.media.tracks || []
     },
     audioFiles() {
-      return this.audiobook.audioFiles || []
+      return this.media.audioFiles || []
     },
     ebooks() {
-      return this.audiobook.ebooks
+      return this.media.ebookFiles
     },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
     numEbooks() {
-      return this.audiobook.numEbooks
+      return this.media.numEbooks
     },
     description() {
-      return this.book.description || ''
+      return this.mediaMetadata.description || ''
     },
     userAudiobooks() {
       return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     },
     userAudiobook() {
-      return this.userAudiobooks[this.audiobookId] || null
+      return this.userAudiobooks[this.libraryItemId] || null
     },
     userCurrentTime() {
       return this.userAudiobook ? this.userAudiobook.currentTime : 0
@@ -387,7 +380,7 @@ export default {
       return this.$store.state.streamAudiobook
     },
     streaming() {
-      return this.streamAudiobook && this.streamAudiobook.id === this.audiobookId
+      return this.streamAudiobook && this.streamAudiobook.id === this.libraryItemId
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
@@ -402,10 +395,10 @@ export default {
   methods: {
     showEditCover() {
       this.$store.commit('setBookshelfBookIds', [])
-      this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'cover' })
+      this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'cover' })
     },
     openEbook() {
-      this.$store.commit('showEReader', this.audiobook)
+      this.$store.commit('showEReader', this.libraryItem)
     },
     toggleRead() {
       var updatePayload = {
@@ -413,7 +406,7 @@ export default {
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
@@ -424,32 +417,20 @@ export default {
           this.$toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
         })
     },
-    openRssFeed() {
-      this.$axios
-        .$post('/api/feed', { audiobookId: this.audiobook.id })
-        .then((res) => {
-          console.log('Feed open', res)
-          this.$toast.success('RSS Feed Open')
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.$toast.error('Failed to open feed')
-        })
-    },
     startStream() {
-      this.$eventBus.$emit('play-audiobook', this.audiobook.id)
+      this.$eventBus.$emit('play-audiobook', this.libraryItem.id)
     },
     editClick() {
       this.$store.commit('setBookshelfBookIds', [])
-      this.$store.commit('showEditModal', this.audiobook)
+      this.$store.commit('showEditModal', this.libraryItem)
     },
     audiobookUpdated() {
       console.log('Audiobook Updated - Fetch full audiobook')
       this.$axios
-        .$get(`/api/books/${this.audiobookId}`)
+        .$get(`/api/books/${this.libraryItemId}`)
         .then((audiobook) => {
           console.log('Updated audiobook', audiobook)
-          this.audiobook = audiobook
+          this.libraryItem = audiobook
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -459,7 +440,7 @@ export default {
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$patch(`/api/me/audiobook/${this.audiobookId}/reset-progress`)
+          .$patch(`/api/me/audiobook/${this.libraryItemId}/reset-progress`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)
@@ -472,15 +453,15 @@ export default {
       }
     },
     downloadClick() {
-      this.$store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+      this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'download' })
     },
     collectionsClick() {
-      this.$store.commit('setSelectedAudiobook', this.audiobook)
+      this.$store.commit('setSelectedAudiobook', this.libraryItem)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
     }
   },
   mounted() {
-    this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.audiobookId, meth: this.audiobookUpdated })
+    this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.libraryItemId, meth: this.libraryItemUpdated })
 
     // use this audiobooks library id as the current
     if (this.libraryId) {

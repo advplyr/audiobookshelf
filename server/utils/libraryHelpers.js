@@ -8,6 +8,45 @@ module.exports = {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
   },
 
+  getFilteredLibraryItems(libraryItems, filterBy, user) {
+    var filtered = libraryItems
+
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'languages']
+    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    if (group) {
+      var filterVal = filterBy.replace(`${group}.`, '')
+      var filter = this.decode(filterVal)
+      if (group === 'genres') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.genres.includes(filter))
+      else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
+      else if (group === 'series') {
+        if (filter === 'No Series') filtered = filtered.filter(li => li.media.metadata && !li.media.metadata.series.length)
+        else filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasSeries(filter))
+      }
+      else if (group === 'authors') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasAuthor(filter))
+      else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
+      else if (group === 'progress') {
+        filtered = filtered.filter(li => {
+          var userAudiobook = user.getAudiobookJSON(li.id)
+          var isRead = userAudiobook && userAudiobook.isRead
+          if (filter === 'Read' && isRead) return true
+          if (filter === 'Unread' && !isRead) return true
+          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
+          return false
+        })
+      } else if (group === 'languages') {
+        filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
+      }
+    } else if (filterBy === 'issues') {
+      filtered = filtered.filter(ab => {
+        // TODO: Update filter for issues
+        return ab.isMissing
+        // return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
+      })
+    }
+
+    return filtered
+  },
+
   getFiltered(audiobooks, filterBy, user) {
     var filtered = audiobooks
 
@@ -45,6 +84,55 @@ module.exports = {
     return filtered
   },
 
+  getDistinctFilterDataNew(libraryItems) {
+    var data = {
+      authors: [],
+      genres: [],
+      tags: [],
+      series: [],
+      narrators: [],
+      languages: []
+    }
+    libraryItems.forEach((li) => {
+      var mediaMetadata = li.media.metadata
+      if (mediaMetadata.authors.length) {
+        mediaMetadata.authors.forEach((author) => {
+          if (author && !data.authors.includes(author.name)) data.authors.push(author.name)
+        })
+      }
+      if (mediaMetadata.series.length) {
+        mediaMetadata.series.forEach((series) => {
+          if (series && !data.series.includes(series.name)) data.series.push(series.name)
+        })
+      }
+      if (mediaMetadata.genres.length) {
+        mediaMetadata.genres.forEach((genre) => {
+          if (genre && !data.genres.includes(genre)) data.genres.push(genre)
+        })
+      }
+      if (li.media.tags.length) {
+        li.media.tags.forEach((tag) => {
+          if (tag && !data.tags.includes(tag)) data.tags.push(tag)
+        })
+      }
+      if (mediaMetadata.narrators.length) {
+        mediaMetadata.narrators.forEach((narrator) => {
+          if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
+        })
+      }
+      if (mediaMetadata.language && !data.languages.includes(mediaMetadata.language)) data.languages.push(mediaMetadata.language)
+    })
+    data.authors = naturalSort(data.authors).asc()
+    data.genres = naturalSort(data.genres).asc()
+    data.tags = naturalSort(data.tags).asc()
+    data.series = naturalSort(data.series).asc()
+    data.narrators = naturalSort(data.narrators).asc()
+    data.languages = naturalSort(data.languages).asc()
+    return data
+  },
+
+
+  // TODO: Remove legacy
   getDistinctFilterData(audiobooks) {
     var data = {
       authors: [],
@@ -246,9 +334,11 @@ module.exports = {
     return totalSize
   },
 
-  getNumIssues(books) {
-    return books.filter(ab => {
-      return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
-    }).length
+  getNumIssues(libraryItems) {
+    // TODO: Implement issues
+    return libraryItems.filter(li => li.isMissing).length
+    // return books.filter(ab => {
+    //   return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
+    // }).length
   }
 }

@@ -124,7 +124,7 @@ export const actions = {
     }
 
     this.$axios
-      .$get(`/api/libraries/${state.currentLibraryId}/filters`)
+      .$get(`/api/libraries/${state.currentLibraryId}/filterdata`)
       .then((data) => {
         commit('setLibraryFilterData', data)
       })
