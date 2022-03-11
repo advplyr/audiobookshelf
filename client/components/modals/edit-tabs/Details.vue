@@ -14,7 +14,8 @@
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
             <!-- <ui-text-input-with-label v-model="details.authors" label="Author" /> -->
-            <p>Authors placeholder</p>
+            <!-- <p>Authors placeholder</p> -->
+            <ui-multi-select-query-input ref="authorsSelect" v-model="authorNames" label="Authors" endpoint="authors/search" />
           </div>
           <div class="flex-grow px-1">
             <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
@@ -115,6 +116,7 @@ export default {
         genres: []
       },
       newTags: [],
+      authorNames: [],
       resettingProgress: false,
       isScrollable: false,
       savingMetadata: false,
@@ -278,7 +280,7 @@ export default {
       this.details.title = this.mediaMetadata.title
       this.details.subtitle = this.mediaMetadata.subtitle
       this.details.description = this.mediaMetadata.description
-      this.details.authors = this.mediaMetadata.authors
+      this.details.authors = this.mediaMetadata.authors || []
       this.details.narrator = this.mediaMetadata.narrator
       this.details.genres = this.mediaMetadata.genres || []
       this.details.series = this.mediaMetadata.series
@@ -289,6 +291,7 @@ export default {
       this.details.asin = this.mediaMetadata.asin || null
 
       this.newTags = this.media.tags || []
+      this.authorNames = this.details.authors.map((au) => au.name)
     },
     removeItem() {
       if (confirm(`Are you sure you want to remove this item?\n\n*Does not delete your files, only removes the item from audiobookshelf`)) {

@@ -22,12 +22,11 @@ const PodcastFinder = require('./finders/PodcastFinder')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
-  constructor(db, auth, scanner, streamManager, rssFeeds, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, streamManager, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
     this.streamManager = streamManager
-    this.rssFeeds = rssFeeds
     this.downloadManager = downloadManager
     this.backupManager = backupManager
     this.coverController = coverController
@@ -145,6 +144,7 @@ class ApiController {
     this.router.get('/search/covers', this.findCovers.bind(this))
     this.router.get('/search/books', this.findBooks.bind(this))
     this.router.get('/search/podcast', this.findPodcasts.bind(this))
+    this.router.get('/search/authors', this.findAuthor.bind(this))
 
     //
     // File System Routes
@@ -155,7 +155,7 @@ class ApiController {
     // Others
     //
     this.router.get('/authors', this.getAuthors.bind(this))
-    this.router.get('/authors/search', this.searchAuthor.bind(this))
+    this.router.get('/authors/search', this.searchAuthors.bind(this))
     this.router.get('/authors/:id', this.getAuthor.bind(this))
     this.router.post('/authors', this.createAuthor.bind(this))
     this.router.patch('/authors/:id', this.updateAuthor.bind(this))
@@ -164,8 +164,6 @@ class ApiController {
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))
-
-    this.router.post('/feed', this.openRssFeed.bind(this))
 
     this.router.get('/download/:id', this.download.bind(this))
 
@@ -201,6 +199,12 @@ class ApiController {
     res.json(results)
   }
 
+  async findAuthor(req, res) {
+    var query = req.query.q
+    var author = await this.authorFinder.findAuthorByName(query)
+    res.json(author)
+  }
+
   authorize(req, res) {
     if (!req.user) {
       Logger.error('Invalid user in authorize')
@@ -209,17 +213,16 @@ class ApiController {
     res.json({ user: req.user })
   }
 
-  async openRssFeed(req, res) {
-    var audiobookId = req.body.audiobookId
-    var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
-    if (!audiobook) return res.sendStatus(404)
-    var feed = await this.rssFeeds.openFeed(audiobook)
-    console.log('Feed open', feed)
-    res.json(feed)
-  }
-
   async getAuthors(req, res) {
     var authors = this.db.authors.filter(p => p.isAuthor)
+    res.json(authors)
+  }
+
+  searchAuthors(req, res) {
+    var query = req.query.q || ''
+    var limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 100
+    var authors = this.db.authors.filter(au => au.name.toLowerCase().includes(query.toLowerCase()))
+    authors = authors.slice(0, limit)
     res.json(authors)
   }
 
@@ -229,12 +232,6 @@ class ApiController {
       return res.status(404).send('Author not found')
     }
     res.json(author.toJSON())
-  }
-
-  async searchAuthor(req, res) {
-    var query = req.query.q
-    var author = await this.authorFinder.findAuthorByName(query)
-    res.json(author)
   }
 
   async createAuthor(req, res) {

@@ -25,7 +25,6 @@ const LogManager = require('./LogManager')
 const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
 const StreamManager = require('./StreamManager')
-const RssFeeds = require('./RssFeeds')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
 const CacheManager = require('./CacheManager')
@@ -62,9 +61,8 @@ class Server {
     this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
 
     this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.rssFeeds = new RssFeeds(this.Port, this.db)
     this.downloadManager = new DownloadManager(this.db, this.Uid, this.Gid)
-    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.rssFeeds, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
     Logger.logManager = this.logManager
