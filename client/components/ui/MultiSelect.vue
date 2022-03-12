@@ -3,14 +3,15 @@
     <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</p>
     <div ref="wrapper" class="relative">
       <form @submit.prevent="submitForm">
-        <div ref="inputWrapper" style="min-height: 40px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded-md px-2 py-1 cursor-text" :class="disabled ? 'bg-black-300' : 'bg-primary'" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
-          <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 ma-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center relative">
+        <div ref="inputWrapper" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-1" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
+          <div v-for="item in selected" :key="item" class="rounded-full px-2 py-1 mx-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center relative">
             <div class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
+              <span v-if="showEdit" class="material-icons text-white hover:text-warning" style="font-size: 1.1rem" @click.stop="editItem(item)">edit</span>
               <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item)">close</span>
             </div>
             {{ item }}
           </div>
-          <input ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
+          <input v-show="!readonly" ref="input" v-model="textInput" :disabled="disabled" style="min-width: 40px; width: 40px" class="h-full bg-primary focus:outline-none px-1" @keydown="keydownInput" @focus="inputFocus" @blur="inputBlur" />
         </div>
       </form>
 
@@ -47,7 +48,9 @@ export default {
       default: () => []
     },
     label: String,
-    disabled: Boolean
+    disabled: Boolean,
+    readonly: Boolean,
+    showEdit: Boolean
   },
   data() {
     return {
@@ -76,6 +79,13 @@ export default {
     showMenu() {
       return this.isFocused
     },
+    wrapperClass() {
+      var classes = []
+      if (this.disabled) classes.push('bg-black-300')
+      else classes.push('bg-primary')
+      if (!this.readonly) classes.push('cursor-text')
+      return classes.join(' ')
+    },
     itemsToShow() {
       if (!this.currentSearch || !this.textInput) {
         return this.items
@@ -88,6 +98,9 @@ export default {
     }
   },
   methods: {
+    editItem(item) {
+      this.$emit('edit', item)
+    },
     keydownInput() {
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {

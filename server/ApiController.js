@@ -15,6 +15,7 @@ const CollectionController = require('./controllers/CollectionController')
 const MeController = require('./controllers/MeController')
 const BackupController = require('./controllers/BackupController')
 const LibraryItemController = require('./controllers/LibraryItemController')
+const SeriesController = require('./controllers/SeriesController')
 
 const BookFinder = require('./finders/BookFinder')
 const AuthorFinder = require('./finders/AuthorFinder')
@@ -74,6 +75,8 @@ class ApiController {
     // Item Routes
     //
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
+    this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
+    this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
     this.router.get('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.getCover.bind(this))
 
     //
@@ -152,7 +155,7 @@ class ApiController {
     this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
 
     //
-    // Others
+    // Author Routes
     //
     this.router.get('/authors', this.getAuthors.bind(this))
     this.router.get('/authors/search', this.searchAuthors.bind(this))
@@ -161,6 +164,15 @@ class ApiController {
     this.router.patch('/authors/:id', this.updateAuthor.bind(this))
     this.router.delete('/authors/:id', this.deleteAuthor.bind(this))
 
+    //
+    // Series Routes
+    //
+    this.router.get('/series/search', SeriesController.search.bind(this))
+
+
+    //
+    // Misc Routes
+    //
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
 
     this.router.post('/authorize', this.authorize.bind(this))

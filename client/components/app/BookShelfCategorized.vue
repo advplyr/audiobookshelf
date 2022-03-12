@@ -87,7 +87,6 @@ export default {
       var categories = await this.$axios
         .$get(`/api/libraries/${this.currentLibraryId}/personalized?minified=1`)
         .then((data) => {
-          console.log('Personalized data', data)
           return data
         })
         .catch((error) => {

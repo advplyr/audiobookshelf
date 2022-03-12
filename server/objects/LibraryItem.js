@@ -2,6 +2,7 @@ const Logger = require('../Logger')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./entities/Book')
 const Podcast = require('./entities/Podcast')
+const { areEquivalent, copyValue } = require('../utils/index')
 
 class LibraryItem {
   constructor(libraryItem = null) {
@@ -131,6 +132,24 @@ class LibraryItem {
     var total = 0
     this.libraryFiles.forEach((lf) => total += lf.metadata.size)
     return total
+  }
+
+  update(payload) {
+    var json = this.toJSON()
+    var hasUpdates = false
+    for (const key in json) {
+      if (payload[key] !== undefined) {
+        if (key === 'media') {
+          if (this.media.update(payload[key])) {
+            hasUpdates = true
+          }
+        } else if (!areEquivalent(payload[key], json[key])) {
+          this[key] = copyValue(payload[key])
+          hasUpdates = true
+        }
+      }
+    }
+    return hasUpdates
   }
 }
 module.exports = LibraryItem

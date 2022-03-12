@@ -86,6 +86,7 @@ export default {
     },
     selectedText() {
       var _selected = this.selected
+      if (!_selected) return ''
       if (this.selected.startsWith('book.')) _selected = _selected.replace('book.', 'media.metadata.')
       var _sel = this.items.find((i) => i.value === _selected)
       if (!_sel) return ''

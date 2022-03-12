@@ -18,7 +18,7 @@
       <div class="material-icons text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" @click.stop.prevent="goNextBook" @mousedown.prevent>arrow_forward_ios</div>
     </div>
 
-    <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300">
+    <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative">
       <component v-if="libraryItem && show" :is="tabName" :library-item="libraryItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
@@ -30,7 +30,7 @@ export default {
     return {
       processing: false,
       libraryItem: null,
-      fetchOnShow: false,
+
       tabs: [
         {
           id: 'details',
@@ -62,11 +62,6 @@ export default {
           title: 'Match',
           component: 'modals-edit-tabs-match'
         }
-        // {
-        //   id: 'authors',
-        //   title: 'Authors',
-        //   component: 'modals-edit-tabs-authors'
-        // }
       ]
     }
   },
@@ -84,11 +79,6 @@ export default {
             this.selectedTab = availableTabIds[0]
           }
 
-          if (this.libraryItem && this.libraryItem.id === this.selectedLibraryItemId) {
-            if (this.fetchOnShow) this.fetchFull()
-            return
-          }
-          this.fetchOnShow = false
           this.libraryItem = null
           this.init()
           this.registerListeners()
@@ -214,14 +204,10 @@ export default {
         this.selectedTab = tab
       }
     },
-    audiobookUpdated() {
-      if (!this.show) this.fetchOnShow = true
-      else {
-        this.fetchFull()
-      }
+    libraryItemUpdated(expandedLibraryItem) {
+      this.libraryItem = expandedLibraryItem
     },
     init() {
-      this.$store.commit('audiobooks/addListener', { meth: this.audiobookUpdated, id: 'edit-modal', audiobookId: this.selectedLibraryItemId })
       this.fetchFull()
     },
     async fetchFull() {
@@ -244,9 +230,11 @@ export default {
     },
     registerListeners() {
       this.$eventBus.$on('modal-hotkey', this.hotkey)
+      this.$eventBus.$on(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
     },
     unregisterListeners() {
       this.$eventBus.$off('modal-hotkey', this.hotkey)
+      this.$eventBus.$off(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
     }
   },
   mounted() {},

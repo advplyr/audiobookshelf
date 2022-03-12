@@ -184,6 +184,20 @@ class Db {
     }
   }
 
+  async updateLibraryItem(libraryItem) {
+    if (libraryItem && libraryItem.saveMetadata) {
+      await libraryItem.saveMetadata()
+    }
+
+    return this.libraryItemsDb.update((record) => record.id === libraryItem.id, () => libraryItem).then((results) => {
+      Logger.debug(`[DB] Library Item updated ${results.updated}`)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Library Item update failed ${error}`)
+      return false
+    })
+  }
+
   async updateAudiobook(audiobook) {
     if (audiobook && audiobook.saveAbMetadata) {
       // TODO: Book may have updates where this save is not necessary

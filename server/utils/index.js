@@ -2,6 +2,7 @@ const Path = require('path')
 const fs = require('fs')
 const Logger = require('../Logger')
 const { parseString } = require("xml2js")
+const areEquivalent = require('./areEquivalent')
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
   if (!caseSensitive) {
@@ -99,4 +100,21 @@ module.exports.msToTimestamp = (ms, includeMs) => secondsToTimestamp(ms / 1000, 
 module.exports.reqSupportsWebp = (req) => {
   if (!req || !req.headers || !req.headers.accept) return false
   return req.headers.accept.includes('image/webp') || req.headers.accept === '*/*'
+}
+
+module.exports.areEquivalent = areEquivalent
+
+module.exports.copyValue = (val) => {
+  if (!val) return null
+  if (!this.isObject(val)) return val
+
+  if (Array.isArray(val)) {
+    return val.map(this.copyValue)
+  } else {
+    var final = {}
+    for (const key in val) {
+      final[key] = this.copyValue(val[key])
+    }
+    return final
+  }
 }

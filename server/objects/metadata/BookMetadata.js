@@ -1,3 +1,6 @@
+const Logger = require('../../Logger')
+const { areEquivalent, copyValue } = require('../../utils/index')
+
 class BookMetadata {
   constructor(metadata) {
     this.title = null
@@ -99,6 +102,21 @@ class BookMetadata {
   }
   hasNarrator(narratorName) {
     return this.narrators.includes(narratorName)
+  }
+
+  update(payload) {
+    var json = this.toJSON()
+    var hasUpdates = false
+    for (const key in json) {
+      if (payload[key] !== undefined) {
+        if (!areEquivalent(payload[key], json[key])) {
+          this[key] = copyValue(payload[key])
+          Logger.debug('[BookMetadata] Key updated', key, this[key])
+          hasUpdates = true
+        }
+      }
+    }
+    return hasUpdates
   }
 }
 module.exports = BookMetadata

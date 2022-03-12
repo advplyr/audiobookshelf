@@ -13,9 +13,7 @@
 
         <div class="flex mt-2 -mx-1">
           <div class="w-3/4 px-1">
-            <!-- <ui-text-input-with-label v-model="details.authors" label="Author" /> -->
-            <!-- <p>Authors placeholder</p> -->
-            <ui-multi-select-query-input ref="authorsSelect" v-model="authorNames" label="Authors" endpoint="authors/search" />
+            <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
           </div>
           <div class="flex-grow px-1">
             <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
@@ -23,12 +21,8 @@
         </div>
 
         <div class="flex mt-2 -mx-1">
-          <div class="w-3/4 px-1">
-            <p>Series placeholder</p>
-            <!-- <ui-input-dropdown ref="seriesDropdown" v-model="details.series" label="Series" :items="series" /> -->
-          </div>
           <div class="flex-grow px-1">
-            <!-- <ui-text-input-with-label v-model="details.volumeNumber" label="Volume #" /> -->
+            <ui-multi-select-query-input ref="seriesSelect" v-model="seriesItems" text-key="displayName" label="Series" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
           </div>
         </div>
 
@@ -87,6 +81,27 @@
         </div>
       </div>
     </form>
+
+    <div v-if="showSeriesForm" class="absolute top-0 left-0 z-20 w-full h-full bg-black bg-opacity-50 rounded-lg flex items-center justify-center" @click="cancelSeriesForm">
+      <div class="absolute top-0 right-0 p-4">
+        <span class="material-icons text-gray-200 hover:text-white text-4xl cursor-pointer">close</span>
+      </div>
+      <form @submit.prevent="submitSeriesForm">
+        <div class="bg-bg rounded-lg p-8" @click.stop>
+          <div class="flex">
+            <div class="flex-grow p-1 min-w-80">
+              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!selectedSeries.id.startsWith('new')" label="Series Name" />
+            </div>
+            <div class="w-40 p-1">
+              <ui-text-input-with-label v-model="selectedSeries.sequence" label="Sequence" />
+            </div>
+          </div>
+          <div class="flex justify-end mt-2 p-1">
+            <ui-btn type="submit">Save</ui-btn>
+          </div>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -101,6 +116,8 @@ export default {
   },
   data() {
     return {
+      selectedSeries: {},
+      showSeriesForm: false,
       details: {
         title: null,
         subtitle: null,
@@ -116,7 +133,6 @@ export default {
         genres: []
       },
       newTags: [],
-      authorNames: [],
       resettingProgress: false,
       isScrollable: false,
       savingMetadata: false,
@@ -180,9 +196,71 @@ export default {
     libraryScan() {
       if (!this.libraryId) return null
       return this.$store.getters['scanners/getLibraryScan'](this.libraryId)
+    },
+    existingSeriesNames() {
+      // Only show series names not already selected
+      var alreadySelectedSeriesIds = this.details.series.map((se) => se.id)
+      return this.series.filter((se) => !alreadySelectedSeriesIds.includes(se.id)).map((se) => se.name)
+    },
+    seriesItems: {
+      get() {
+        return this.details.series.map((se) => {
+          return {
+            displayName: se.sequence ? `${se.name} #${se.sequence}` : se.name,
+            ...se
+          }
+        })
+      },
+      set(val) {
+        this.details.series = val
+      }
     }
   },
   methods: {
+    cancelSeriesForm() {
+      this.showSeriesForm = false
+    },
+    editSeriesItem(series) {
+      var _series = this.details.series.find((se) => se.id === series.id)
+      if (!_series) return
+      this.selectedSeries = {
+        ..._series
+      }
+      this.showSeriesForm = true
+    },
+    submitSeriesForm() {
+      if (!this.selectedSeries.name) {
+        this.$toast.error('Must enter a series')
+        return
+      }
+      if (this.$refs.newSeriesSelect) {
+        this.$refs.newSeriesSelect.blur()
+      }
+      var existingSeriesIndex = this.details.series.findIndex((se) => se.id === this.selectedSeries.id)
+
+      var seriesSameName = this.series.find((se) => se.name.toLowerCase() === this.selectedSeries.name.toLowerCase())
+      if (existingSeriesIndex < 0 && seriesSameName) {
+        this.selectedSeries.id = seriesSameName.id
+      }
+
+      if (existingSeriesIndex >= 0) {
+        this.details.series.splice(existingSeriesIndex, 1, { ...this.selectedSeries })
+      } else {
+        this.details.series.push({
+          ...this.selectedSeries
+        })
+      }
+
+      this.showSeriesForm = false
+    },
+    addNewSeries() {
+      this.selectedSeries = {
+        id: `new-${Date.now()}`,
+        name: '',
+        sequence: ''
+      }
+      this.showSeriesForm = true
+    },
     quickMatch() {
       this.quickMatching = true
       var matchOptions = {
@@ -249,8 +327,8 @@ export default {
         return
       }
       this.isProcessing = true
-      if (this.$refs.seriesDropdown && this.$refs.seriesDropdown.isFocused) {
-        this.$refs.seriesDropdown.blur()
+      if (this.$refs.authorsSelect && this.$refs.authorsSelect.isFocused) {
+        this.$refs.authorsSelect.forceBlur()
       }
       if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
         this.$refs.genresSelect.forceBlur()
@@ -262,11 +340,11 @@ export default {
     },
     async handleForm() {
       const updatePayload = {
-        book: this.details,
+        metadata: this.details,
         tags: this.newTags
       }
-
-      var updatedAudiobook = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, updatePayload).catch((error) => {
+      console.log('Sending update', updatePayload)
+      var updatedAudiobook = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
       })
@@ -280,18 +358,24 @@ export default {
       this.details.title = this.mediaMetadata.title
       this.details.subtitle = this.mediaMetadata.subtitle
       this.details.description = this.mediaMetadata.description
-      this.details.authors = this.mediaMetadata.authors || []
+      this.$set(
+        this.details,
+        'authors',
+        (this.mediaMetadata.authors || []).map((se) => ({ ...se }))
+      )
       this.details.narrator = this.mediaMetadata.narrator
-      this.details.genres = this.mediaMetadata.genres || []
-      this.details.series = this.mediaMetadata.series
+      this.details.genres = [...(this.mediaMetadata.genres || [])]
+      this.$set(
+        this.details,
+        'series',
+        (this.mediaMetadata.series || []).map((se) => ({ ...se }))
+      )
       this.details.publishYear = this.mediaMetadata.publishYear
       this.details.publisher = this.mediaMetadata.publisher || null
       this.details.language = this.mediaMetadata.language || null
       this.details.isbn = this.mediaMetadata.isbn || null
       this.details.asin = this.mediaMetadata.asin || null
-
-      this.newTags = this.media.tags || []
-      this.authorNames = this.details.authors.map((au) => au.name)
+      this.newTags = [...(this.media.tags || [])]
     },
     removeItem() {
       if (confirm(`Are you sure you want to remove this item?\n\n*Does not delete your files, only removes the item from audiobookshelf`)) {

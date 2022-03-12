@@ -168,9 +168,16 @@ export default {
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {
-        return {
-          text: item,
-          value: this.$encode(item)
+        if (typeof item === 'string') {
+          return {
+            text: item,
+            value: this.$encode(item)
+          }
+        } else {
+          return {
+            text: item.name,
+            value: item.id
+          }
         }
       })
     },

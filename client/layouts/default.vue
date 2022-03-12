@@ -209,6 +209,12 @@ export default {
     libraryRemoved(library) {
       this.$store.commit('libraries/remove', library)
     },
+    libraryItemUpdated(libraryItem) {
+      if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
+        this.$store.commit('setSelectedLibraryItem', libraryItem)
+      }
+      this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
+    },
     scanComplete(data) {
       console.log('Scan complete received', data)
 
@@ -394,6 +400,9 @@ export default {
       this.socket.on('library_updated', this.libraryUpdated)
       this.socket.on('library_added', this.libraryAdded)
       this.socket.on('library_removed', this.libraryRemoved)
+
+      // Library Item Listeners
+      this.socket.on('item_updated', this.libraryItemUpdated)
 
       // User Listeners
       this.socket.on('user_updated', this.userUpdated)

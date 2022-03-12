@@ -97,12 +97,12 @@ module.exports = {
       var mediaMetadata = li.media.metadata
       if (mediaMetadata.authors.length) {
         mediaMetadata.authors.forEach((author) => {
-          if (author && !data.authors.includes(author.name)) data.authors.push(author.name)
+          if (author && !data.authors.find(au => au.id === author.id)) data.authors.push({ id: author.id, name: author.name })
         })
       }
       if (mediaMetadata.series.length) {
         mediaMetadata.series.forEach((series) => {
-          if (series && !data.series.includes(series.name)) data.series.push(series.name)
+          if (series && !data.series.find(se => se.id === series.id)) data.series.push({ id: series.id, name: series.name })
         })
       }
       if (mediaMetadata.genres.length) {
