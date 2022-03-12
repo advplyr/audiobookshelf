@@ -32,11 +32,9 @@ const CacheManager = require('./CacheManager')
 class Server {
   constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
     this.Port = PORT
-    this.Uid = isNaN(UID) ? 0 : Number(UID)
-    this.Gid = isNaN(GID) ? 0 : Number(GID)
     this.Host = '0.0.0.0'
-    global.Uid = this.Uid
-    global.Gid = this.Gid
+    global.Uid = isNaN(UID) ? 0 : Number(UID)
+    global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
     global.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
@@ -53,7 +51,7 @@ class Server {
 
     this.db = new Db()
     this.auth = new Auth(this.db)
-    this.backupManager = new BackupManager(this.Uid, this.Gid, this.db)
+    this.backupManager = new BackupManager(this.db)
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
     this.watcher = new Watcher()
@@ -61,7 +59,7 @@ class Server {
     this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
 
     this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.downloadManager = new DownloadManager(this.db, this.Uid, this.Gid)
+    this.downloadManager = new DownloadManager(this.db)
     this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
 
@@ -268,8 +266,8 @@ class Server {
       // Scanning
       socket.on('scan', this.scan.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
-      socket.on('scan_audiobook', (audiobookId) => this.scanAudiobook(socket, audiobookId))
-      socket.on('save_metadata', (audiobookId) => this.saveMetadata(socket, audiobookId))
+      socket.on('scan_item', (libraryItemId) => this.scanLibraryItem(socket, libraryItemId))
+      socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
 
       // Streaming (only still used in the mobile app)
       socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
@@ -329,15 +327,15 @@ class Server {
     Logger.info('[Server] Scan complete')
   }
 
-  async scanAudiobook(socket, audiobookId) {
-    var result = await this.scanner.scanAudiobookById(audiobookId)
+  async scanLibraryItem(socket, libraryItemId) {
+    var result = await this.scanner.scanLibraryItemById(libraryItemId)
     var scanResultName = ''
     for (const key in ScanResult) {
       if (ScanResult[key] === result) {
         scanResultName = key
       }
     }
-    socket.emit('audiobook_scan_complete', scanResultName)
+    socket.emit('item_scan_complete', scanResultName)
   }
 
   cancelScan(id) {
@@ -459,8 +457,7 @@ class Server {
       })
     }
 
-    Logger.info(`[Server] Setting owner/perms for first dir "${firstDirPath}"`)
-    await filePerms(firstDirPath, 0o774, this.Uid, this.Gid)
+    await filePerms.setDefault(firstDirPath)
 
     res.sendStatus(200)
   }

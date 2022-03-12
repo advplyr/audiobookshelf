@@ -71,20 +71,20 @@ function fetchLanguage(metadata) {
 }
 
 function fetchSeries(metadata) {
-  if(typeof metadata.meta == "undefined") return null
+  if (typeof metadata.meta == "undefined") return null
   return fetchTagString(metadata.meta, "calibre:series")
 }
 
 function fetchVolumeNumber(metadata) {
-  if(typeof metadata.meta == "undefined") return null
+  if (typeof metadata.meta == "undefined") return null
   return fetchTagString(metadata.meta, "calibre:series_index")
 }
 
 function fetchNarrators(creators, metadata) {
   var roleNrt = fetchCreator(creators, 'nrt')
-  if(typeof metadata.meta == "undefined" || roleNrt != null) return roleNrt
+  if (typeof metadata.meta == "undefined" || roleNrt != null) return roleNrt
   try {
-    var narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g,'"'))
+    var narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
     return narratorsJSON["#value#"].join(", ")
   } catch {
     return null
@@ -103,7 +103,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
 
   if (typeof metadata.meta != "undefined") {
     metadata.meta = {}
-    for(var match of xml.matchAll(/<meta name="(?<name>.+)" content="(?<content>.+)"\/>/g)) {
+    for (var match of xml.matchAll(/<meta name="(?<name>.+)" content="(?<content>.+)"\/>/g)) {
       metadata.meta[match.groups['name']] = [match.groups['content']]
     }
   }
@@ -120,7 +120,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     genres: fetchGenres(metadata),
     language: fetchLanguage(metadata),
     series: fetchSeries(metadata),
-    volumeNumber: fetchVolumeNumber(metadata)
+    sequence: fetchVolumeNumber(metadata)
   }
   return data
 }

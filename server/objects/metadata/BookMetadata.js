@@ -1,6 +1,6 @@
 const Logger = require('../../Logger')
 const { areEquivalent, copyValue } = require('../../utils/index')
-
+const parseNameString = require('../../utils/parseNameString')
 class BookMetadata {
   constructor(metadata) {
     this.title = null
@@ -88,10 +88,15 @@ class BookMetadata {
     return this.title
   }
   get authorName() {
+    if (!this.authors.length) return ''
     return this.authors.map(au => au.name).join(', ')
   }
   get narratorName() {
     return this.narrators.join(', ')
+  }
+  get coverSearchQuery() {
+    if (!this.authorName) return this.title
+    return this.title + '&' + this.authorName
   }
 
   hasAuthor(authorName) {
@@ -117,6 +122,151 @@ class BookMetadata {
       }
     }
     return hasUpdates
+  }
+
+  setData(scanMediaData = {}) {
+    this.title = scanMediaData.title || null
+    this.subtitle = scanMediaData.subtitle || null
+    this.narrators = []
+    this.publishYear = scanMediaData.publishYear || null
+    this.description = scanMediaData.description || null
+    this.isbn = scanMediaData.isbn || null
+    this.asin = scanMediaData.asin || null
+    this.language = scanMediaData.language || null
+    this.genres = []
+
+    if (scanMediaData.author) {
+      this.authors = this.parseAuthorsTag(scanMediaData.author)
+    }
+    if (scanMediaData.series) {
+      this.series = this.parseSeriesTag(scanMediaData.series, scanMediaData.sequence)
+    }
+  }
+
+  setDataFromAudioMetaTags(audioFileMetaTags, overrideExistingDetails = false) {
+    const MetadataMapArray = [
+      {
+        tag: 'tagComposer',
+        key: 'narrators'
+      },
+      {
+        tag: 'tagDescription',
+        key: 'description'
+      },
+      {
+        tag: 'tagPublisher',
+        key: 'publisher'
+      },
+      {
+        tag: 'tagDate',
+        key: 'publishYear'
+      },
+      {
+        tag: 'tagSubtitle',
+        key: 'subtitle'
+      },
+      {
+        tag: 'tagAlbum',
+        altTag: 'tagTitle',
+        key: 'title',
+      },
+      {
+        tag: 'tagArtist',
+        altTag: 'tagAlbumArtist',
+        key: 'authors'
+      },
+      {
+        tag: 'tagGenre',
+        key: 'genres'
+      },
+      {
+        tag: 'tagSeries',
+        key: 'series'
+      },
+      {
+        tag: 'tagIsbn',
+        key: 'isbn'
+      },
+      {
+        tag: 'tagLanguage',
+        key: 'language'
+      },
+      {
+        tag: 'tagASIN',
+        key: 'asin'
+      }
+    ]
+
+    var updatePayload = {}
+
+    // Metadata is only mapped to the book if it is empty
+    MetadataMapArray.forEach((mapping) => {
+      var value = audioFileMetaTags[mapping.tag]
+      var tagToUse = mapping.tag
+      if (!value && mapping.altTag) {
+        value = audioFileMetaTags[mapping.altTag]
+        tagToUse = mapping.altTag
+      }
+      if (value) {
+        if (mapping.key === 'narrators' && (!this.narrators.length || overrideExistingDetails)) {
+          updatePayload.narrators = this.parseNarratorsTag(value)
+        } else if (mapping.key === 'authors' && (!this.authors.length || overrideExistingDetails)) {
+          updatePayload.authors = this.parseAuthorsTag(value)
+        } else if (mapping.key === 'genres' && (!this.genres.length || overrideExistingDetails)) {
+          updatePayload.genres = this.parseGenresTag(value)
+        } else if (mapping.key === 'series' && (!this.series.length || overrideExistingDetails)) {
+          var sequenceTag = audioFileMetaTags.tagSeriesPart || null
+          updatePayload.series = this.parseSeriesTag(value, sequenceTag)
+        } else if (!this[mapping.key] || overrideExistingDetails) {
+          updatePayload[mapping.key] = value
+          // Logger.debug(`[Book] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+        }
+      }
+    })
+
+    if (Object.keys(updatePayload).length) {
+      return this.update(updatePayload)
+    }
+    return false
+  }
+
+  // Returns array of names in First Last format
+  parseNarratorsTag(narratorsTag) {
+    var parsed = parseNameString(narratorsTag)
+    return parsed ? parsed.names : []
+  }
+
+  // Return array of authors minified with placeholder id
+  parseAuthorsTag(authorsTag) {
+    var parsed = parseNameString(authorsTag)
+    if (!parsed) return []
+    return parsed.map((au) => {
+      return {
+        id: `new-${Math.floor(Math.random() * 1000000)}`,
+        name: au
+      }
+    })
+  }
+
+  parseGenresTag(genreTag) {
+    if (!genreTag || !genreTag.length) return []
+    var separators = ['/', '//', ';']
+    for (let i = 0; i < separators.length; i++) {
+      if (genreTag.includes(separators[i])) {
+        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
+      }
+    }
+    return [genreTag]
+  }
+
+  // Return array with series with placeholder id
+  parseSeriesTag(seriesTag, sequenceTag) {
+    if (!seriesTag) return []
+    return [{
+      id: `new-${Math.floor(Math.random() * 1000000)}`,
+      name: seriesTag,
+      sequence: sequenceTag || ''
+    }]
   }
 }
 module.exports = BookMetadata

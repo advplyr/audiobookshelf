@@ -12,6 +12,9 @@ class FileMetadata {
     if (metadata) {
       this.construct(metadata)
     }
+
+    // Temp flag used in scans
+    this.wasModified = false
   }
 
   construct(metadata) {
@@ -45,6 +48,25 @@ class FileMetadata {
   get format() {
     if (!this.ext) return ''
     return this.ext.slice(1)
+  }
+
+  update(payload) {
+    var hasUpdates = false
+    for (const key in payload) {
+      if (this[key] !== undefined && this[key] !== payload[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    }
+    return hasUpdates
+  }
+
+  setData(payload) {
+    for (const key in payload) {
+      if (this[key] !== undefined) {
+        this[key] = payload[key]
+      }
+    }
   }
 }
 module.exports = FileMetadata

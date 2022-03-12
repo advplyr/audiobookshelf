@@ -77,7 +77,19 @@ const chmodr = (p, mode, uid, gid, cb) => {
   })
 }
 
-module.exports = (path, mode, uid, gid, silent = false) => {
+// Set custom permissions
+module.exports.set = (path, mode, uid, gid, silent = false) => {
+  return new Promise((resolve) => {
+    if (!silent) Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
+    chmodr(path, mode, uid, gid, resolve)
+  })
+}
+
+// Default permissions 0o744 and global Uid/Gid
+module.exports.setDefault = (path, silent = false) => {
+  const mode = 0o744
+  const uid = global.Uid
+  const gid = global.Gid
   return new Promise((resolve) => {
     if (!silent) Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
     chmodr(path, mode, uid, gid, resolve)

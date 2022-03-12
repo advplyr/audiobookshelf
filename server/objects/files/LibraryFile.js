@@ -1,3 +1,5 @@
+const Path = require('path')
+const { getFileTimestampsWithIno } = require('../../utils/fileUtils')
 const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
@@ -30,6 +32,10 @@ class LibraryFile {
     }
   }
 
+  clone() {
+    return new LibraryFile(this.toJSON())
+  }
+
   get fileType() {
     if (globals.SupportedImageTypes.includes(this.metadata.format)) return 'image'
     if (globals.SupportedAudioTypes.includes(this.metadata.format)) return 'audio'
@@ -37,6 +43,28 @@ class LibraryFile {
     if (globals.TextFileTypes.includes(this.metadata.format)) return 'text'
     if (globals.MetadataFileTypes.includes(this.metadata.format)) return 'metadata'
     return 'unknown'
+  }
+
+  get isMediaFile() {
+    return this.fileType === 'audio' || this.fileType === 'ebook'
+  }
+
+  get isOPFFile() {
+    return this.metadata.ext === '.opf'
+  }
+
+  async setDataFromPath(path, relPath) {
+    var fileTsData = await getFileTimestampsWithIno(path)
+    var fileMetadata = new FileMetadata()
+    fileMetadata.setData(fileTsData)
+    fileMetadata.filename = Path.basename(relPath)
+    fileMetadata.path = path
+    fileMetadata.relPath = relPath
+    fileMetadata.ext = Path.extname(relPath)
+    this.ino = fileTsData.ino
+    this.metadata = fileMetadata
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
   }
 }
 module.exports = LibraryFile

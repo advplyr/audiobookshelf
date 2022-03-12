@@ -42,11 +42,11 @@ class CacheManager {
     readStream.pipe(res)
   }
 
-  async purgeCoverCache(audiobookId) {
+  async purgeCoverCache(libraryItemId) {
     // If purgeAll has been called... The cover cache directory no longer exists
     await fs.ensureDir(this.CoverCachePath)
     return Promise.all((await fs.readdir(this.CoverCachePath)).reduce((promises, file) => {
-      if (file.startsWith(audiobookId)) {
+      if (file.startsWith(libraryItemId)) {
         Logger.debug(`[CacheManager] Going to purge ${file}`);
         promises.push(this.removeCache(Path.join(this.CoverCachePath, file)))
       }

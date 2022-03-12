@@ -171,24 +171,6 @@ export default {
       // this.$store.commit('audiobooks/addUpdate', audiobook)
       this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
     },
-    audiobookUpdated(audiobook) {
-      if (this.$store.state.selectedAudiobook && this.$store.state.selectedAudiobook.id === audiobook.id) {
-        console.log('Updating selected audiobook', audiobook)
-        this.$store.commit('setSelectedAudiobook', audiobook)
-      }
-      // Just triggers the listeners
-      this.$store.commit('audiobooks/audiobookUpdated', audiobook)
-      this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
-      // this.$store.commit('audiobooks/addUpdate', audiobook)
-    },
-    audiobookRemoved(audiobook) {
-      if (this.$route.name.startsWith('audiobook')) {
-        if (this.$route.params.id === audiobook.id) {
-          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
-        }
-      }
-      // this.$store.commit('audiobooks/remove', audiobook)
-    },
     audiobooksAdded(audiobooks) {
       audiobooks.forEach((ab) => {
         this.audiobookAdded(ab)
@@ -214,6 +196,13 @@ export default {
         this.$store.commit('setSelectedLibraryItem', libraryItem)
       }
       this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
+    },
+    libraryItemRemoved(item) {
+      if (this.$route.name.startsWith('item')) {
+        if (this.$route.params.id === item.id) {
+          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
+        }
+      }
     },
     scanComplete(data) {
       console.log('Scan complete received', data)
@@ -403,6 +392,7 @@ export default {
 
       // Library Item Listeners
       this.socket.on('item_updated', this.libraryItemUpdated)
+      this.socket.on('item_removed', this.libraryItemRemoved)
 
       // User Listeners
       this.socket.on('user_updated', this.userUpdated)

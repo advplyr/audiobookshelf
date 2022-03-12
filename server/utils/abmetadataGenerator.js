@@ -8,8 +8,6 @@ const bookKeyMap = {
   subtitle: 'subtitle',
   author: 'authorFL',
   narrator: 'narratorFL',
-  series: 'series',
-  volumeNumber: 'volumeNumber',
   publishYear: 'publishYear',
   publisher: 'publisher',
   description: 'description',
@@ -39,7 +37,7 @@ function generate(audiobook, outputPath) {
   }
 
   return fs.writeFile(outputPath, fileString).then(() => {
-    return filePerms(outputPath, 0o774, global.Uid, global.Gid, true).then((data) => true)
+    return filePerms.setDefault(outputPath, true).then(() => true)
   }).catch((error) => {
     Logger.error(`[absMetaFileGenerator] Failed to save abs file`, error)
     return false

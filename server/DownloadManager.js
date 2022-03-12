@@ -11,9 +11,7 @@ const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
 const { getFileSize } = require('./utils/fileUtils')
 const TAG = 'DownloadManager'
 class DownloadManager {
-  constructor(db, Uid, Gid) {
-    this.Uid = Uid
-    this.Gid = Gid
+  constructor(db) {
     this.db = db
 
     this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
@@ -344,7 +342,7 @@ class DownloadManager {
     }
 
     // Set file permissions and ownership
-    await filePerms(download.fullPath, 0o774, this.Uid, this.Gid)
+    await filePerms.setDefault(download.fullPath)
 
     var filesize = await getFileSize(download.fullPath)
     download.setComplete(filesize)

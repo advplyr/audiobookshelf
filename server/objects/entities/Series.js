@@ -42,5 +42,10 @@ class Series {
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
   }
+
+  checkNameEquals(name) {
+    if (!name) return false
+    return this.name.toLowerCase() == name.toLowerCase().trim()
+  }
 }
 module.exports = Series

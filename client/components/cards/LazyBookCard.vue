@@ -379,8 +379,8 @@ export default {
       this.isSelectionMode = val
       if (!val) this.selected = false
     },
-    setEntity(audiobook) {
-      this.audiobook = audiobook
+    setEntity(libraryItem) {
+      this.audiobook = libraryItem
     },
     clickCard(e) {
       if (this.isSelectionMode) {

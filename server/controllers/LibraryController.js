@@ -57,12 +57,12 @@ class LibraryController {
       // Update watcher
       this.watcher.updateLibrary(library)
 
-      // Remove audiobooks no longer in library
-      var audiobooksToRemove = this.db.audiobooks.filter(ab => ab.libraryId === library.id && !library.checkFullPathInLibrary(ab.fullPath))
-      if (audiobooksToRemove.length) {
-        Logger.info(`[Scanner] Updating library, removing ${audiobooksToRemove.length} audiobooks`)
-        for (let i = 0; i < audiobooksToRemove.length; i++) {
-          await this.handleDeleteAudiobook(audiobooksToRemove[i])
+      // Remove libraryItems no longer in library
+      var itemsToRemove = this.db.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
+      if (itemsToRemove.length) {
+        Logger.info(`[Scanner] Updating library, removing ${itemsToRemove.length} items`)
+        for (let i = 0; i < itemsToRemove.length; i++) {
+          await this.handleDeleteLibraryItem(itemsToRemove[i])
         }
       }
       await this.db.updateEntity('library', library)
@@ -77,11 +77,11 @@ class LibraryController {
     // Remove library watcher
     this.watcher.removeLibrary(library)
 
-    // Remove audiobooks in this library
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    Logger.info(`[Server] deleting library "${library.name}" with ${audiobooks.length} audiobooks"`)
-    for (let i = 0; i < audiobooks.length; i++) {
-      await this.handleDeleteAudiobook(audiobooks[i])
+    // Remove items in this library
+    var libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
+    Logger.info(`[Server] deleting library "${library.name}" with ${libraryItems.length} items"`)
+    for (let i = 0; i < libraryItems.length; i++) {
+      await this.handleDeleteLibraryItem(libraryItems[i])
     }
 
     var libraryJson = library.toJSON()
@@ -91,7 +91,7 @@ class LibraryController {
   }
 
   // api/libraries/:id/items
-  // TODO: Optimize this method, audiobooks are iterated through several times but can be combined
+  // TODO: Optimize this method, items are iterated through several times but can be combined
   getLibraryItems(req, res) {
     var libraryId = req.library.id
     var media = req.query.media || 'all'

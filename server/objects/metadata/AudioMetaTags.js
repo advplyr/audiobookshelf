@@ -118,6 +118,10 @@ class AudioMetaTags {
     return hasUpdates
   }
 
+  clone() {
+    return new AudioMetaTags(this.toJSON())
+  }
+
   isEqual(audioFileMetadata) {
     if (!audioFileMetadata || !audioFileMetadata.toJSON) return false
     for (const key in audioFileMetadata.toJSON()) {

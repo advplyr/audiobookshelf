@@ -13,12 +13,10 @@ const Logger = require('./Logger')
 const Backup = require('./objects/Backup')
 
 class BackupManager {
-  constructor(Uid, Gid, db) {
+  constructor(db) {
     this.BackupPath = Path.join(global.MetadataPath, 'backups')
     this.MetadataBooksPath = Path.join(global.MetadataPath, 'books')
 
-    this.Uid = Uid
-    this.Gid = Gid
     this.db = db
 
     this.scheduleTask = null
@@ -37,7 +35,7 @@ class BackupManager {
     var backupsDirExists = await fs.pathExists(this.BackupPath)
     if (!backupsDirExists) {
       await fs.ensureDir(this.BackupPath)
-      await filePerms(this.BackupPath, 0o774, this.Uid, this.Gid)
+      await filePerms.setDefault(this.BackupPath)
     }
 
     await this.loadBackups()
@@ -211,7 +209,7 @@ class BackupManager {
     })
     if (zipResult) {
       Logger.info(`[BackupManager] Backup successful ${newBackup.id}`)
-      await filePerms(newBackup.fullPath, 0o774, this.Uid, this.Gid)
+      await filePerms.setDefault(newBackup.fullPath)
       newBackup.fileSize = await getFileSize(newBackup.fullPath)
       var existingIndex = this.backups.findIndex(b => b.id === newBackup.id)
       if (existingIndex >= 0) {

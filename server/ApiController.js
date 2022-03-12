@@ -76,8 +76,12 @@ class ApiController {
     //
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
     this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
+    this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
     this.router.get('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.getCover.bind(this))
+    this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))
+    this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
+    this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
 
     //
     // Book Routes
@@ -437,18 +441,18 @@ class ApiController {
     return json
   }
 
-  async handleDeleteAudiobook(audiobook) {
-    // Remove audiobook from users
+  async handleDeleteLibraryItem(libraryItem) {
+    // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.deleteAudiobookData(audiobook.id)
+      var madeUpdates = user.deleteAudiobookData(libraryItem.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }
     }
 
     // remove any streams open for this audiobook
-    var streams = this.streamManager.streams.filter(stream => stream.audiobookId === audiobook.id)
+    var streams = this.streamManager.streams.filter(stream => stream.audiobookId === libraryItem.id)
     for (let i = 0; i < streams.length; i++) {
       var stream = streams[i]
       var client = stream.client
@@ -461,22 +465,22 @@ class ApiController {
     }
 
     // remove book from collections
-    var collectionsWithBook = this.db.collections.filter(c => c.books.includes(audiobook.id))
+    var collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
     for (let i = 0; i < collectionsWithBook.length; i++) {
       var collection = collectionsWithBook[i]
-      collection.removeBook(audiobook.id)
+      collection.removeBook(libraryItem.id)
       await this.db.updateEntity('collection', collection)
-      this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.audiobooks))
+      this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
 
     // purge cover cache
-    if (audiobook.cover) {
-      await this.cacheManager.purgeCoverCache(audiobook.id)
+    if (libraryItem.media.coverPath) {
+      await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
-    var audiobookJSON = audiobook.toJSONMinified()
-    await this.db.removeEntity('audiobook', audiobook.id)
-    this.emitter('audiobook_removed', audiobookJSON)
+    var json = libraryItem.toJSONExpanded()
+    await this.db.removeLibraryItem(libraryItem.id)
+    this.emitter('item_removed', json)
   }
 
   async getUserListeningSessionsHelper(userId) {

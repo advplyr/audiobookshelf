@@ -287,22 +287,22 @@ export default {
           this.quickMatching = false
         })
     },
-    audiobookScanComplete(result) {
+    libraryScanComplete(result) {
       this.rescanning = false
       if (!result) {
         this.$toast.error(`Re-Scan Failed for "${this.title}"`)
       } else if (result === 'UPDATED') {
-        this.$toast.success(`Re-Scan complete audiobook was updated`)
+        this.$toast.success(`Re-Scan complete item was updated`)
       } else if (result === 'UPTODATE') {
-        this.$toast.success(`Re-Scan complete audiobook was up to date`)
+        this.$toast.success(`Re-Scan complete item was up to date`)
       } else if (result === 'REMOVED') {
-        this.$toast.error(`Re-Scan complete audiobook was removed`)
+        this.$toast.error(`Re-Scan complete item was removed`)
       }
     },
     rescan() {
       this.rescanning = true
-      this.$root.socket.once('audiobook_scan_complete', this.audiobookScanComplete)
-      this.$root.socket.emit('scan_audiobook', this.audiobookId)
+      this.$root.socket.once('item_scan_complete', this.libraryScanComplete)
+      this.$root.socket.emit('scan_item', this.libraryItemId)
     },
     saveMetadataComplete(result) {
       this.savingMetadata = false
@@ -381,7 +381,7 @@ export default {
       if (confirm(`Are you sure you want to remove this item?\n\n*Does not delete your files, only removes the item from audiobookshelf`)) {
         this.isProcessing = true
         this.$axios
-          .$delete(`/api/books/${this.libraryItemId}`)
+          .$delete(`/api/items/${this.libraryItemId}`)
           .then(() => {
             console.log('Item removed')
             this.$toast.success('Item Removed')

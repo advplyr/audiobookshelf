@@ -4,15 +4,19 @@ const Path = require('path')
 // Utils
 const Logger = require('../Logger')
 const { version } = require('../../package.json')
-const { groupFilesIntoAudiobookPaths, getAudiobookFileData, scanRootDir } = require('../utils/scandir')
+const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
 const { comparePaths, getId } = require('../utils/index')
 const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const BookFinder = require('../finders/BookFinder')
 const Audiobook = require('../objects/legacy/Audiobook')
+const LibraryItem = require('../objects/LibraryItem')
 const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
+
+const Author = require('../objects/entities/Author')
+const Series = require('../objects/entities/Series')
 
 class Scanner {
   constructor(db, coverController, emitter) {
@@ -53,71 +57,69 @@ class Scanner {
     this.cancelLibraryScan[libraryId] = true
   }
 
-  async scanAudiobookById(audiobookId) {
-    var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
-    if (!audiobook) {
-      Logger.error(`[Scanner] Scan audiobook by id not found ${audiobookId}`)
+  async scanLibraryItemById(libraryItemId) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[Scanner] Scan libraryItem by id not found ${libraryItemId}`)
       return ScanResult.NOTHING
     }
-    const library = this.db.libraries.find(lib => lib.id === audiobook.libraryId)
+    const library = this.db.libraries.find(lib => lib.id === libraryItem.libraryId)
     if (!library) {
-      Logger.error(`[Scanner] Scan audiobook by id library not found "${audiobook.libraryId}"`)
+      Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
       return ScanResult.NOTHING
     }
-    const folder = library.folders.find(f => f.id === audiobook.folderId)
+    const folder = library.folders.find(f => f.id === libraryItem.folderId)
     if (!folder) {
-      Logger.error(`[Scanner] Scan audiobook by id folder not found "${audiobook.folderId}" in library "${library.name}"`)
+      Logger.error(`[Scanner] Scan libraryItem by id folder not found "${libraryItem.folderId}" in library "${library.name}"`)
       return ScanResult.NOTHING
     }
-    Logger.info(`[Scanner] Scanning Audiobook "${audiobook.title}"`)
-    return this.scanAudiobook(folder, audiobook)
+    Logger.info(`[Scanner] Scanning Library Item "${libraryItem.media.metadata.title}"`)
+    return this.scanLibraryItem(library.mediaType, folder, libraryItem)
   }
 
-  async scanAudiobook(folder, audiobook) {
-    var audiobookData = await getAudiobookFileData(folder, audiobook.fullPath, this.db.serverSettings)
-    if (!audiobookData) {
+  async scanLibraryItem(libraryMediaType, folder, libraryItem) {
+    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, this.db.serverSettings)
+    if (!libraryItemData) {
       return ScanResult.NOTHING
     }
     var hasUpdated = false
 
-    var checkRes = audiobook.checkScanData(audiobookData, version)
+    var checkRes = libraryItem.checkScanData(libraryItemData)
     if (checkRes.updated) hasUpdated = true
 
     // Sync other files first so that local images are used as cover art
-    // TODO: Cleanup other file sync
-    var allOtherFiles = checkRes.newOtherFileData.concat(checkRes.existingOtherFileData)
-    if (await audiobook.syncOtherFiles(allOtherFiles, this.db.serverSettings.scannerPreferOpfMetadata)) {
+    if (await libraryItem.syncFiles(this.db.serverSettings.scannerPreferOpfMetadata)) {
       hasUpdated = true
     }
 
     // Scan all audio files
-    if (audiobookData.audioFiles.length) {
-      if (await AudioFileScanner.scanAudioFiles(audiobookData.audioFiles, audiobookData, audiobook, this.db.serverSettings.scannerPreferAudioMetadata)) {
+    if (libraryItem.hasAudioFiles) {
+      var libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
+      if (await AudioFileScanner.scanAudioFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata)) {
         hasUpdated = true
       }
 
       // Extract embedded cover art if cover is not already in directory
-      if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
-        var outputCoverDirs = this.getCoverDirectory(audiobook)
-        var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
-        if (relativeDir) {
-          Logger.debug(`[Scanner] Saved embedded cover art "${relativeDir}"`)
+      if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
+        var coverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+        if (coverPath) {
+          Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
           hasUpdated = true
         }
       }
     }
-
-    if (!audiobook.audioFilesToInclude.length && !audiobook.ebooks.length) { // Audiobook is invalid
-      audiobook.setInvalid()
+    console.log('Finished library item scan', libraryItem.hasMediaFiles, hasUpdated)
+    if (!libraryItem.hasMediaFiles) { // Library Item is invalid
+      libraryItem.setInvalid()
       hasUpdated = true
-    } else if (audiobook.isInvalid) {
-      audiobook.isInvalid = false
+    } else if (libraryItem.isInvalid) {
+      libraryItem.isInvalid = false
       hasUpdated = true
     }
 
     if (hasUpdated) {
-      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
-      await this.db.updateAudiobook(audiobook)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      await this.db.updateLibraryItem(libraryItem)
       return ScanResult.UPDATED
     }
     return ScanResult.UPTODATE
@@ -177,241 +179,277 @@ class Scanner {
   }
 
   async scanLibrary(libraryScan) {
-    var audiobookDataFound = []
+    var libraryItemDataFound = []
 
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
       var folder = libraryScan.folders[i]
-      var abDataFoundInFolder = await scanRootDir(folder, this.db.serverSettings)
-      libraryScan.addLog(LogLevel.INFO, `${abDataFoundInFolder.length} ab data found in folder "${folder.fullPath}"`)
-      audiobookDataFound = audiobookDataFound.concat(abDataFoundInFolder)
+      var itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder, this.db.serverSettings)
+      libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
+      libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
 
     if (this.cancelLibraryScan[libraryScan.libraryId]) return true
 
     // Remove audiobooks with no inode
-    audiobookDataFound = audiobookDataFound.filter(abd => abd.ino)
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === libraryScan.libraryId)
+    libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino)
+    var libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
 
     const NumScansPerChunk = 25
-    const audiobooksToUpdateChunks = []
-    const audiobookDataToRescanChunks = []
-    const newAudiobookDataToScanChunks = []
-    var audiobooksToUpdate = []
-    var audiobookDataToRescan = []
-    var newAudiobookDataToScan = []
-    var audiobooksToFindCovers = []
+    const itemsToUpdateChunks = []
+    const itemDataToRescanChunks = []
+    const newItemDataToScanChunks = []
+    var itemsToUpdate = []
+    var itemDataToRescan = []
+    var newItemDataToScan = []
+    var itemsToFindCovers = []
 
-    // Check for existing & removed audiobooks
-    for (let i = 0; i < audiobooksInLibrary.length; i++) {
-      var audiobook = audiobooksInLibrary[i]
-      // Find audiobook folder with matching inode or matching path
-      var dataFound = audiobookDataFound.find(abd => abd.ino === audiobook.ino || comparePaths(abd.path, audiobook.path))
+    // Check for existing & removed library items
+    for (let i = 0; i < libraryItemsInLibrary.length; i++) {
+      var libraryItem = libraryItemsInLibrary[i]
+      // Find library item folder with matching inode or matching path
+      var dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
       if (!dataFound) {
-        libraryScan.addLog(LogLevel.WARN, `Audiobook "${audiobook.title}" is missing`)
+        libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
         libraryScan.resultsMissing++
-        audiobook.setMissing()
-        audiobooksToUpdate.push(audiobook)
-        if (audiobooksToUpdate.length === NumScansPerChunk) {
-          audiobooksToUpdateChunks.push(audiobooksToUpdate)
-          audiobooksToUpdate = []
+        libraryItem.setMissing()
+        itemsToUpdate.push(libraryItem)
+        if (itemsToUpdate.length === NumScansPerChunk) {
+          itemsToUpdateChunks.push(itemsToUpdate)
+          itemsToUpdate = []
         }
       } else {
-        var checkRes = audiobook.checkScanData(dataFound, version)
-        if (checkRes.newAudioFileData.length || checkRes.newOtherFileData.length || libraryScan.scanOptions.forceRescan) { // Audiobook has new files
-          checkRes.audiobook = audiobook
-          checkRes.bookScanData = dataFound
-          audiobookDataToRescan.push(checkRes)
-          if (audiobookDataToRescan.length === NumScansPerChunk) {
-            audiobookDataToRescanChunks.push(audiobookDataToRescan)
-            audiobookDataToRescan = []
+        var checkRes = libraryItem.checkScanData(dataFound)
+        if (checkRes.newLibraryFiles.length || libraryScan.scanOptions.forceRescan) { // Item has new files
+          checkRes.libraryItem = libraryItem
+          checkRes.scanData = dataFound
+          itemDataToRescan.push(checkRes)
+          if (itemDataToRescan.length === NumScansPerChunk) {
+            itemDataToRescanChunks.push(itemDataToRescan)
+            itemDataToRescan = []
           }
-        } else if (libraryScan.findCovers && audiobook.book.shouldSearchForCover) {
+        } else if (libraryScan.findCovers && libraryItem.media.shouldSearchForCover) {
           libraryScan.resultsUpdated++
-          audiobooksToFindCovers.push(audiobook)
-          audiobooksToUpdate.push(audiobook)
-          if (audiobooksToUpdate.length === NumScansPerChunk) {
-            audiobooksToUpdateChunks.push(audiobooksToUpdate)
-            audiobooksToUpdate = []
+          itemsToFindCovers.push(libraryItem)
+          itemsToUpdate.push(libraryItem)
+          if (itemsToUpdate.length === NumScansPerChunk) {
+            itemsToUpdateChunks.push(itemsToUpdate)
+            itemsToUpdate = []
           }
         } else if (checkRes.updated) { // Updated but no scan required
           libraryScan.resultsUpdated++
-          audiobooksToUpdate.push(audiobook)
-          if (audiobooksToUpdate.length === NumScansPerChunk) {
-            audiobooksToUpdateChunks.push(audiobooksToUpdate)
-            audiobooksToUpdate = []
+          itemsToUpdate.push(libraryItem)
+          if (itemsToUpdate.length === NumScansPerChunk) {
+            itemsToUpdateChunks.push(itemsToUpdate)
+            itemsToUpdate = []
           }
         }
-        audiobookDataFound = audiobookDataFound.filter(abf => abf.ino !== dataFound.ino)
+        libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino !== dataFound.ino)
       }
     }
-    if (audiobooksToUpdate.length) audiobooksToUpdateChunks.push(audiobooksToUpdate)
-    if (audiobookDataToRescan.length) audiobookDataToRescanChunks.push(audiobookDataToRescan)
+    if (itemsToUpdate.length) itemsToUpdateChunks.push(itemsToUpdate)
+    if (itemDataToRescan.length) itemDataToRescanChunks.push(itemDataToRescan)
 
-    // Potential NEW Audiobooks
-    for (let i = 0; i < audiobookDataFound.length; i++) {
-      var dataFound = audiobookDataFound[i]
-      var hasEbook = dataFound.otherFiles.find(otherFile => otherFile.filetype === 'ebook')
-      if (!hasEbook && !dataFound.audioFiles.length) {
-        libraryScan.addLog(LogLevel.WARN, `Directory found "${audiobookDataFound.path}" has no ebook or audio files`)
+    // Potential NEW Library Items
+    for (let i = 0; i < libraryItemDataFound.length; i++) {
+      var dataFound = libraryItemDataFound[i]
+
+      var hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
+      if (!hasMediaFile) {
+        libraryScan.addLog(LogLevel.WARN, `Directory found "${libraryItemDataFound.path}" has no media files`)
       } else {
-        newAudiobookDataToScan.push(dataFound)
-        if (newAudiobookDataToScan.length === NumScansPerChunk) {
-          newAudiobookDataToScanChunks.push(newAudiobookDataToScan)
-          newAudiobookDataToScan = []
+        newItemDataToScan.push(dataFound)
+        if (newItemDataToScan.length === NumScansPerChunk) {
+          newItemDataToScanChunks.push(newItemDataToScan)
+          newItemDataToScan = []
         }
       }
     }
-    if (newAudiobookDataToScan.length) newAudiobookDataToScanChunks.push(newAudiobookDataToScan)
+    if (newItemDataToScan.length) newItemDataToScanChunks.push(newItemDataToScan)
 
-    // console.log('Num chunks to update', audiobooksToUpdateChunks.length)
-    // console.log('Num chunks to rescan', audiobookDataToRescanChunks.length)
-    // console.log('Num chunks to new scan', newAudiobookDataToScanChunks.length)
-
-    // Audiobooks not requiring a scan but require a search for cover
-    for (let i = 0; i < audiobooksToFindCovers.length; i++) {
-      var audiobook = audiobooksToFindCovers[i]
-      var updatedCover = await this.searchForCover(audiobook, libraryScan)
-      audiobook.book.updateLastCoverSearch(updatedCover)
+    // Library Items not requiring a scan but require a search for cover
+    for (let i = 0; i < itemsToFindCovers.length; i++) {
+      var libraryItem = itemsToFindCovers[i]
+      var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+      libraryItem.media.updateLastCoverSearch(updatedCover)
     }
 
-    for (let i = 0; i < audiobooksToUpdateChunks.length; i++) {
-      await this.updateAudiobooksChunk(audiobooksToUpdateChunks[i])
+    for (let i = 0; i < itemsToUpdateChunks.length; i++) {
+      await this.updateLibraryItemChunk(itemsToUpdateChunks[i])
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
-      // console.log('Update chunk done', i, 'of', audiobooksToUpdateChunks.length)
+      // console.log('Update chunk done', i, 'of', itemsToUpdateChunks.length)
     }
-    for (let i = 0; i < audiobookDataToRescanChunks.length; i++) {
-      await this.rescanAudiobookDataChunk(audiobookDataToRescanChunks[i], libraryScan)
+    for (let i = 0; i < itemDataToRescanChunks.length; i++) {
+      await this.rescanLibraryItemDataChunk(itemDataToRescanChunks[i], libraryScan)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
-      // console.log('Rescan chunk done', i, 'of', audiobookDataToRescanChunks.length)
+      // console.log('Rescan chunk done', i, 'of', itemDataToRescanChunks.length)
     }
-    for (let i = 0; i < newAudiobookDataToScanChunks.length; i++) {
-      await this.scanNewAudiobookDataChunk(newAudiobookDataToScanChunks[i], libraryScan)
-      // console.log('New scan chunk done', i, 'of', newAudiobookDataToScanChunks.length)
+    for (let i = 0; i < newItemDataToScanChunks.length; i++) {
+      await this.scanNewLibraryItemDataChunk(newItemDataToScanChunks[i], libraryScan)
+      // console.log('New scan chunk done', i, 'of', newItemDataToScanChunks.length)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
     }
   }
 
-  async updateAudiobooksChunk(audiobooksToUpdate) {
-    await this.db.updateEntities('audiobook', audiobooksToUpdate)
-    this.emitter('audiobooks_updated', audiobooksToUpdate.map(ab => ab.toJSONExpanded()))
+  async updateLibraryItemChunk(itemsToUpdate) {
+    await this.db.updateLibraryItems(itemsToUpdate)
+    this.emitter('items_updated', itemsToUpdate.map(li => li.toJSONExpanded()))
   }
 
-  async rescanAudiobookDataChunk(audiobookDataToRescan, libraryScan) {
-    var audiobooksUpdated = await Promise.all(audiobookDataToRescan.map((abd) => {
-      return this.rescanAudiobook(abd, libraryScan)
+  async rescanLibraryItemDataChunk(itemDataToRescan, libraryScan) {
+    var itemsUpdated = await Promise.all(itemDataToRescan.map((lid) => {
+      return this.rescanLibraryItem(lid, libraryScan)
     }))
-    audiobooksUpdated = audiobooksUpdated.filter(ab => ab) // Filter out nulls
-    if (audiobooksUpdated.length) {
-      libraryScan.resultsUpdated += audiobooksUpdated.length
-      await this.db.updateEntities('audiobook', audiobooksUpdated)
-      this.emitter('audiobooks_updated', audiobooksUpdated.map(ab => ab.toJSONExpanded()))
+    itemsUpdated = itemsUpdated.filter(li => li) // Filter out nulls
+    if (itemsUpdated.length) {
+      libraryScan.resultsUpdated += itemsUpdated.length
+      await this.db.updateLibraryItems(itemsUpdated)
+      this.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
   }
 
-  async scanNewAudiobookDataChunk(newAudiobookDataToScan, libraryScan) {
-    var newAudiobooks = await Promise.all(newAudiobookDataToScan.map((abd) => {
-      return this.scanNewAudiobook(abd, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan)
+  async scanNewLibraryItemDataChunk(newLibraryItemsData, libraryScan) {
+    var newLibraryItems = await Promise.all(newLibraryItemsData.map((lid) => {
+      return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan)
     }))
-    newAudiobooks = newAudiobooks.filter(ab => ab) // Filter out nulls
-    libraryScan.resultsAdded += newAudiobooks.length
-    await this.db.insertAudiobooks(newAudiobooks)
-    this.emitter('audiobooks_added', newAudiobooks.map(ab => ab.toJSONExpanded()))
+    newLibraryItems = newLibraryItems.filter(li => li) // Filter out nulls
+    libraryScan.resultsAdded += newLibraryItems.length
+    await this.db.insertLibraryItems(newLibraryItems)
+    this.emitter('items_added', newLibraryItems.map(li => li.toJSONExpanded()))
   }
 
-  async rescanAudiobook(audiobookCheckData, libraryScan) {
-    const { newAudioFileData, audioFilesRemoved, newOtherFileData, audiobook, bookScanData, updated, existingAudioFileData, existingOtherFileData } = audiobookCheckData
-    libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${audiobook.path}"`)
+  async rescanLibraryItem(libraryItemCheckData, libraryScan) {
+    const { newLibraryFiles, filesRemoved, existingLibraryFiles, libraryItem, scanData, updated } = libraryItemCheckData
+    libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${libraryItem.path}"`)
     var hasUpdated = updated
 
     // Sync other files first to use local images as cover before extracting audio file cover
-    if (newOtherFileData.length || libraryScan.scanOptions.forceRescan) {
-      // TODO: Cleanup other file sync
-      var allOtherFiles = newOtherFileData.concat(existingOtherFileData)
-      if (await audiobook.syncOtherFiles(allOtherFiles, libraryScan.preferOpfMetadata)) {
-        hasUpdated = true
-      }
+    if (await libraryItem.syncFiles(libraryScan.preferOpfMetadata)) {
+      hasUpdated = true
     }
 
     // forceRescan all existing audio files - will probe and update ID3 tag metadata
-    if (libraryScan.scanOptions.forceRescan && existingAudioFileData.length) {
-      if (await AudioFileScanner.scanAudioFiles(existingAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)) {
+    var existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
+    if (libraryScan.scanOptions.forceRescan && existingAudioFiles.length) {
+      if (await AudioFileScanner.scanAudioFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
         hasUpdated = true
       }
     }
     // Scan new audio files
-    if (newAudioFileData.length || audioFilesRemoved.length) {
-      if (await AudioFileScanner.scanAudioFiles(newAudioFileData, bookScanData, audiobook, libraryScan.preferAudioMetadata, libraryScan)) {
+    var newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
+    var removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
+    if (newAudioFiles.length || removedAudioFiles.length) {
+      if (await AudioFileScanner.scanAudioFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
         hasUpdated = true
       }
     }
     // If an audio file has embedded cover art and no cover is set yet, extract & use it
-    if (newAudioFileData.length || libraryScan.scanOptions.forceRescan) {
-      if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
-        var outputCoverDirs = this.getCoverDirectory(audiobook)
-        var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
-        if (relativeDir) {
+    if (newAudioFiles.length || libraryScan.scanOptions.forceRescan) {
+      if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
+        var savedCoverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+        if (savedCoverPath) {
           hasUpdated = true
-          libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${relativeDir}"`)
+          libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${savedCoverPath}"`)
         }
       }
     }
 
-    if (!audiobook.audioFilesToInclude.length && !audiobook.ebooks.length) { // Audiobook is invalid
-      audiobook.setInvalid()
+    if (!libraryItem.media.hasMediaFiles) { // Library item is invalid
+      libraryItem.setInvalid()
       hasUpdated = true
-    } else if (audiobook.isInvalid) {
-      audiobook.isInvalid = false
+    } else if (libraryItem.isInvalid) {
+      libraryItem.isInvalid = false
       hasUpdated = true
     }
 
     // Scan for cover if enabled and has no cover (and author or title has changed OR has been 7 days since last lookup)
-    if (audiobook && libraryScan.findCovers && !audiobook.cover && audiobook.book.shouldSearchForCover) {
-      var updatedCover = await this.searchForCover(audiobook, libraryScan)
-      audiobook.book.updateLastCoverSearch(updatedCover)
+    if (libraryScan.findCovers && !libraryItem.media.coverPath && libraryItem.media.shouldSearchForCover) {
+      var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+      libraryItem.media.updateLastCoverSearch(updatedCover)
       hasUpdated = true
     }
 
-    return hasUpdated ? audiobook : null
+    return hasUpdated ? libraryItem : null
   }
 
-  async scanNewAudiobook(audiobookData, preferAudioMetadata, preferOpfMetadata, findCovers, libraryScan = null) {
-    if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Scanning new book "${audiobookData.path}"`)
-    else Logger.debug(`[Scanner] Scanning new book "${audiobookData.path}"`)
+  async scanNewLibraryItem(libraryItemData, libraryMediaType, preferAudioMetadata, preferOpfMetadata, findCovers, libraryScan = null) {
+    if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Scanning new library item "${libraryItemData.path}"`)
+    else Logger.debug(`[Scanner] Scanning new item "${libraryItemData.path}"`)
 
-    var audiobook = new Audiobook()
-    audiobook.setData(audiobookData)
+    var libraryItem = new LibraryItem()
+    libraryItem.setData(libraryMediaType, libraryItemData)
 
-    if (audiobookData.audioFiles.length) {
-      await AudioFileScanner.scanAudioFiles(audiobookData.audioFiles, audiobookData, audiobook, preferAudioMetadata, libraryScan)
+    var audioFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio')
+    if (audioFiles.length) {
+      await AudioFileScanner.scanAudioFiles(audioFiles, libraryItemData, libraryItem, preferAudioMetadata, libraryScan)
     }
 
-    if (!audiobook.audioFilesToInclude.length && !audiobook.ebooks.length) {
-      // Audiobook has no ebooks and no valid audio tracks do not continue
-      Logger.warn(`[Scanner] Audiobook has no ebooks and no valid audio tracks "${audiobook.path}"`)
+    if (!libraryItem.media.hasMediaFiles) {
+      Logger.warn(`[Scanner] Library item has no media files "${libraryItemData.path}"`)
       return null
     }
 
-    // Look for desc.txt and reader.txt and update
-    await audiobook.saveDataFromTextFiles(preferOpfMetadata)
+    await libraryItem.syncFiles(preferOpfMetadata)
 
     // Extract embedded cover art if cover is not already in directory
-    if (audiobook.hasEmbeddedCoverArt && !audiobook.cover) {
-      var outputCoverDirs = this.getCoverDirectory(audiobook)
-      var relativeDir = await audiobook.saveEmbeddedCoverArt(outputCoverDirs.fullPath, outputCoverDirs.relPath)
-      if (relativeDir) {
-        if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${relativeDir}"`)
-        else Logger.debug(`[Scanner] Saved embedded cover art "${relativeDir}"`)
+    if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
+      var coverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+      if (coverPath) {
+        if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${coverPath}"`)
+        else Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
       }
     }
 
     // Scan for cover if enabled and has no cover
-    if (audiobook && findCovers && !audiobook.cover && audiobook.book.shouldSearchForCover) {
-      var updatedCover = await this.searchForCover(audiobook, libraryScan)
-      audiobook.book.updateLastCoverSearch(updatedCover)
+    if (libraryMediaType !== 'podcast') {
+      if (libraryItem && findCovers && !libraryItem.media.coverPath && libraryItem.media.shouldSearchForCover) {
+        var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+        libraryItem.media.updateLastCoverSearch(updatedCover)
+      }
+
+      // Create or match all new authors and series
+      if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
+        var newAuthors = []
+        libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
+          var _author = this.db.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
+          if (!_author) {
+            _author = new Author()
+            _author.setData(tempMinAuthor)
+            newAuthors.push(_author)
+          }
+          return {
+            id: _author.id,
+            name: _author.name
+          }
+        })
+        if (newAuthors.length) {
+          await this.db.insertEntities('author', newAuthors)
+          this.emitter('authors_added', newAuthors.map(au => au.toJSON()))
+        }
+      }
+      if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
+        var newSeries = []
+        libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
+          var _series = this.db.series.find(se => se.checkNameEquals(tempMinSeries.name))
+          if (!_series) {
+            _series = new Series()
+            _series.setData(tempMinSeries)
+            newSeries.push(_series)
+          }
+          return {
+            id: _series.id,
+            name: _series.name,
+            sequence: tempMinSeries.sequence
+          }
+        })
+        if (newSeries.length) {
+          await this.db.insertEntities('series', newSeries)
+          this.emitter('series_added', newSeries.map(se => se.toJSON()))
+        }
+      }
     }
 
-    return audiobook
+    return libraryItem
   }
 
   getFileUpdatesGrouped(fileUpdates) {
@@ -448,113 +486,113 @@ class Scanner {
         continue;
       }
       var relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
-      var fileUpdateBookGroup = groupFilesIntoAudiobookPaths(relFilePaths, true)
-      var folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateBookGroup)
+      var fileUpdateGroup = groupFilesIntoLibraryItemPaths(relFilePaths, true)
+      var folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[Scanner] Folder scan results`, folderScanResults)
     }
   }
 
-  async scanFolderUpdates(library, folder, fileUpdateBookGroup) {
+  async scanFolderUpdates(library, folder, fileUpdateGroup) {
     Logger.debug(`[Scanner] Scanning file update groups in folder "${folder.id}" of library "${library.name}"`)
 
-    // First pass - Remove files in parent dirs of audiobooks and remap the fileupdate group
-    //    Test Case: Moving audio files from audiobook folder to author folder should trigger a re-scan of audiobook
-    var updateGroup = { ...fileUpdateBookGroup }
-    for (const bookDir in updateGroup) {
-      var bookDirNestedFiles = fileUpdateBookGroup[bookDir].filter(b => b.includes('/'))
-      if (!bookDirNestedFiles.length) continue;
+    // First pass - Remove files in parent dirs of items and remap the fileupdate group
+    //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
+    var updateGroup = { ...fileUpdateGroup }
+    for (const itemDir in updateGroup) {
+      var itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
+      if (!itemDirNestedFiles.length) continue;
 
-      var firstNest = bookDirNestedFiles[0].split('/').shift()
-      var altDir = `${bookDir}/${firstNest}`
+      var firstNest = itemDirNestedFiles[0].split('/').shift()
+      var altDir = `${itemDir}/${firstNest}`
 
-      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), bookDir)
-      var childAudiobook = this.db.audiobooks.find(ab => ab.fullPath !== fullPath && ab.fullPath.startsWith(fullPath))
-      if (!childAudiobook) {
+      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
+      var childLibraryItem = this.db.libraryItems.find(li => li.path !== fullPath && li.fullPath.startsWith(fullPath))
+      if (!childLibraryItem) {
         continue;
       }
       var altFullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), altDir)
-      var altChildAudiobook = this.db.audiobooks.find(ab => ab.fullPath !== altFullPath && ab.fullPath.startsWith(altFullPath))
-      if (altChildAudiobook) {
+      var altChildLibraryItem = this.db.libraryItems.find(li => li.path !== altFullPath && li.path.startsWith(altFullPath))
+      if (altChildLibraryItem) {
         continue;
       }
 
-      delete fileUpdateBookGroup[bookDir]
-      fileUpdateBookGroup[altDir] = bookDirNestedFiles.map((f) => f.split('/').slice(1).join('/'))
-      Logger.warn(`[Scanner] Some files were modified in a parent directory of an audiobook "${childAudiobook.title}" - ignoring`)
+      delete fileUpdateGroup[itemDir]
+      fileUpdateGroup[altDir] = itemDirNestedFiles.map((f) => f.split('/').slice(1).join('/'))
+      Logger.warn(`[Scanner] Some files were modified in a parent directory of a library item "${childLibraryItem.title}" - ignoring`)
     }
 
-    // Second pass: Check for new/updated/removed audiobooks
-    var bookGroupingResults = {}
-    for (const bookDir in fileUpdateBookGroup) {
-      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), bookDir)
+    // Second pass: Check for new/updated/removed items
+    var itemGroupingResults = {}
+    for (const itemDir in fileUpdateGroup) {
+      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
 
-      // Check if book dir group is already an audiobook
-      var existingAudiobook = this.db.audiobooks.find(ab => fullPath.startsWith(ab.fullPath))
-      if (existingAudiobook) {
+      // Check if book dir group is already an item
+      var existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
+      if (existingLibraryItem) {
 
-        // Is the audiobook exactly - check if was deleted
-        if (existingAudiobook.fullPath === fullPath) {
+        // Is the item exactly - check if was deleted
+        if (existingLibraryItem.path === fullPath) {
           var exists = await fs.pathExists(fullPath)
           if (!exists) {
-            Logger.info(`[Scanner] Scanning file update group and audiobook was deleted "${existingAudiobook.title}" - marking as missing`)
-            existingAudiobook.setMissing()
-            await this.db.updateAudiobook(existingAudiobook)
-            this.emitter('audiobook_updated', existingAudiobook.toJSONExpanded())
+            Logger.info(`[Scanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
+            existingLibraryItem.setMissing()
+            await this.db.updateLibraryItem(existingLibraryItem)
+            this.emitter('item_updated', existingLibraryItem.toJSONExpanded())
 
-            bookGroupingResults[bookDir] = ScanResult.REMOVED
+            itemGroupingResults[itemDir] = ScanResult.REMOVED
             continue;
           }
         }
 
-        // Scan audiobook for updates
-        Logger.debug(`[Scanner] Folder update for relative path "${bookDir}" is in audiobook "${existingAudiobook.title}" - scan for updates`)
-        bookGroupingResults[bookDir] = await this.scanAudiobook(folder, existingAudiobook)
+        // Scan library item for updates
+        Logger.debug(`[Scanner] Folder update for relative path "${itemDir}" is in library item "${existingLibraryItem.media.metadata.title}" - scan for updates`)
+        itemGroupingResults[itemDir] = await this.scanLibraryItem(library.mediaType, folder, existingLibraryItem)
         continue;
       }
 
-      // Check if an audiobook is a subdirectory of this dir
-      var childAudiobook = this.db.audiobooks.find(ab => ab.fullPath.startsWith(fullPath))
-      if (childAudiobook) {
-        Logger.warn(`[Scanner] Files were modified in a parent directory of an audiobook "${childAudiobook.title}" - ignoring`)
-        bookGroupingResults[bookDir] = ScanResult.NOTHING
+      // Check if a library item is a subdirectory of this dir
+      var childItem = this.db.libraryItems.find(li => li.path.startsWith(fullPath))
+      if (childItem) {
+        Logger.warn(`[Scanner] Files were modified in a parent directory of a library item "${childItem.media.metadata.title}" - ignoring`)
+        itemGroupingResults[itemDir] = ScanResult.NOTHING
         continue;
       }
 
-      Logger.debug(`[Scanner] Folder update group must be a new book "${bookDir}" in library "${library.name}"`)
-      var newAudiobook = await this.scanPotentialNewAudiobook(folder, fullPath)
-      if (newAudiobook) {
-        await this.db.insertAudiobook(newAudiobook)
-        this.emitter('audiobook_added', newAudiobook.toJSONExpanded())
+      Logger.debug(`[Scanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
+      var newLibraryItem = await this.scanPotentialNewLibraryItem(library.mediaType, folder, fullPath)
+      if (newLibraryItem) {
+        await this.db.insertLibraryItem(newLibraryItem)
+        this.emitter('item_added', newLibraryItem.toJSONExpanded())
       }
-      bookGroupingResults[bookDir] = newAudiobook ? ScanResult.ADDED : ScanResult.NOTHING
+      itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
 
-    return bookGroupingResults
+    return itemGroupingResults
   }
 
-  async scanPotentialNewAudiobook(folder, fullPath) {
-    var audiobookData = await getAudiobookFileData(folder, fullPath, this.db.serverSettings)
-    if (!audiobookData) return null
+  async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath) {
+    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, this.db.serverSettings)
+    if (!libraryItemData) return null
     var serverSettings = this.db.serverSettings
-    return this.scanNewAudiobook(audiobookData, serverSettings.scannerPreferAudioMetadata, serverSettings.scannerPreferOpfMetadata, serverSettings.scannerFindCovers)
+    return this.scanNewLibraryItem(libraryItemData, libraryMediaType, serverSettings.scannerPreferAudioMetadata, serverSettings.scannerPreferOpfMetadata, serverSettings.scannerFindCovers)
   }
 
-  async searchForCover(audiobook, libraryScan = null) {
+  async searchForCover(libraryItem, libraryScan = null) {
     var options = {
       titleDistance: 2,
       authorDistance: 2
     }
     var scannerCoverProvider = this.db.serverSettings.scannerCoverProvider
-    var results = await this.bookFinder.findCovers(scannerCoverProvider, audiobook.title, audiobook.authorFL, options)
+    var results = await this.bookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
     if (results.length) {
-      if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${audiobook.title}"`)
-      else Logger.debug(`[Scanner] Found best cover for "${audiobook.title}"`)
+      if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
+      else Logger.debug(`[Scanner] Found best cover for "${libraryItem.media.metadata.title}"`)
 
       // If the first cover result fails, attempt to download the second
       for (let i = 0; i < results.length && i < 2; i++) {
 
         // Downloads and updates the book cover
-        var result = await this.coverController.downloadCoverFromUrl(audiobook, results[i])
+        var result = await this.coverController.downloadCoverFromUrl(libraryItem, results[i])
 
         if (result.error) {
           Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)

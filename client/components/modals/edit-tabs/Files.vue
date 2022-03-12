@@ -13,20 +13,20 @@
             <ui-btn small color="primary">Manage Tracks</ui-btn>
           </nuxt-link>
         </div>
-        <table class="text-sm tracksTable">
+        <table class="text-sm tracksTable break-all">
           <tr class="font-book">
-            <th>#</th>
+            <th class="w-16">#</th>
             <th class="text-left">Filename</th>
-            <th class="text-left">Size</th>
-            <th class="text-left">Duration</th>
-            <th v-if="showDownload" class="text-center">Download</th>
+            <th class="text-left w-24 min-w-24">Size</th>
+            <th class="text-left w-24 min-w-24">Duration</th>
+            <th v-if="showDownload" class="text-center w-24 min-w-24">Download</th>
           </tr>
           <template v-for="track in tracks">
             <tr :key="track.index">
               <td class="text-center">
                 <p>{{ track.index }}</p>
               </td>
-              <td class="font-sans">{{ showFullPath ? track.path : track.filename }}</td>
+              <td class="font-sans">{{ showFullPath ? track.metadata.path : track.metadata.filename }}</td>
               <td class="font-mono">
                 {{ $bytesPretty(track.metadata.size) }}
               </td>

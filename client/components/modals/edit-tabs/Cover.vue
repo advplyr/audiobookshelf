@@ -157,7 +157,7 @@ export default {
         .filter((f) => f.fileType === 'image')
         .map((file) => {
           var _file = { ...file }
-          _file.localPath = `/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath)}`
+          _file.localPath = `/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}`
           return _file
         })
     }
@@ -169,7 +169,7 @@ export default {
       form.set('cover', this.selectedFile)
 
       this.$axios
-        .$post(`/api/books/${this.libraryItemId}/cover`, form)
+        .$post(`/api/items/${this.libraryItemId}/cover`, form)
         .then((data) => {
           if (data.error) {
             this.$toast.error(data.error)
@@ -230,8 +230,20 @@ export default {
       this.isProcessing = true
       var success = false
 
-      // Download cover from url and use
-      if (cover.startsWith('http:') || cover.startsWith('https:')) {
+      if (!cover) {
+        // Remove cover
+        success = await this.$axios
+          .$delete(`/api/items/${this.libraryItemId}/cover`)
+          .then(() => true)
+          .catch((error) => {
+            console.error('Failed to remove cover', error)
+            if (error.response && error.response.data) {
+              this.$toast.error(error.response.data)
+            }
+            return false
+          })
+      } else if (cover.startsWith('http:') || cover.startsWith('https:')) {
+        // Download cover from url and use
         success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, { url: cover }).catch((error) => {
           console.error('Failed to download cover from url', error)
           if (error.response && error.response.data) {
@@ -242,11 +254,9 @@ export default {
       } else {
         // Update local cover url
         const updatePayload = {
-          book: {
-            cover: cover
-          }
+          cover
         }
-        success = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, updatePayload).catch((error) => {
+        success = await this.$axios.$patch(`/api/items/${this.libraryItemId}/cover`, updatePayload).catch((error) => {
           console.error('Failed to update', error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
@@ -256,7 +266,7 @@ export default {
       }
       if (success) {
         this.$toast.success('Update Successful')
-        this.$emit('close')
+        // this.$emit('close')
       } else {
         this.imageUrl = this.media.coverPath || ''
       }

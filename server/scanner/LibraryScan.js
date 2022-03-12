@@ -13,6 +13,7 @@ class LibraryScan {
     this.type = null
     this.libraryId = null
     this.libraryName = null
+    this.libraryMediaType = null
     this.folders = null
     this.verbose = false
 
@@ -69,6 +70,7 @@ class LibraryScan {
       type: this.type,
       libraryId: this.libraryId,
       libraryName: this.libraryName,
+      libraryMediaType: this.libraryMediaType,
       folders: this.folders.map(f => f.toJSON()),
       scanOptions: this.scanOptions ? this.scanOptions.toJSON() : null,
       startedAt: this.startedAt,
@@ -85,6 +87,7 @@ class LibraryScan {
     this.type = type
     this.libraryId = library.id
     this.libraryName = library.name
+    this.libraryMediaType = library.mediaType
     this.folders = library.folders.map(folder => new Folder(folder.toJSON()))
 
     this.scanOptions = scanOptions

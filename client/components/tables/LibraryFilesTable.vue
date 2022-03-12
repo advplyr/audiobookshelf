@@ -16,18 +16,22 @@
         <table class="text-sm tracksTable">
           <tr class="font-book">
             <th class="text-left px-4">Path</th>
+            <th class="text-left w-24 min-w-24">Size</th>
             <th class="text-left px-4 w-24">Filetype</th>
             <th v-if="userCanDownload && !isMissing" class="text-center w-20">Download</th>
           </tr>
           <template v-for="file in files">
             <tr :key="file.path">
-              <td class="font-book pl-2">
+              <td class="font-book px-4">
                 {{ showFullPath ? file.metadata.path : file.metadata.relPath }}
+              </td>
+              <td class="font-mono">
+                {{ $bytesPretty(file.metadata.size) }}
               </td>
               <td class="text-xs">
                 <div class="flex items-center">
                   <span v-if="file.filetype === 'ebook'" class="material-icons text-base mr-1 cursor-pointer text-white text-opacity-60 hover:text-opacity-100" @click="readEbookClick(file)">auto_stories </span>
-                  <p>{{ file.metadata.ext }}</p>
+                  <p>{{ file.fileType }}</p>
                 </div>
               </td>
               <td v-if="userCanDownload && !isMissing" class="text-center">

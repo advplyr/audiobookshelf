@@ -12,10 +12,6 @@ class LibraryItemController {
   }
 
   async update(req, res) {
-    if (!req.user.canUpdate) {
-      Logger.warn('User attempted to update without permission', req.user)
-      return res.sendStatus(403)
-    }
     var libraryItem = req.libraryItem
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && req.body.media && (req.body.media.coverPath === '' || req.body.media.coverPath === null)) {
@@ -31,15 +27,15 @@ class LibraryItemController {
     res.json(libraryItem.toJSON())
   }
 
+  async delete(req, res) {
+    await this.handleDeleteLibraryItem(req.libraryItem)
+    res.sendStatus(200)
+  }
+
   //
   // PATCH: will create new authors & series if in payload
   //
   async updateMedia(req, res) {
-    if (!req.user.canUpdate) {
-      Logger.warn('User attempted to update without permission', req.user)
-      return res.sendStatus(403)
-    }
-
     var libraryItem = req.libraryItem
     var mediaPayload = req.body
     // Item has cover and update is removing cover so purge it from cache
@@ -100,6 +96,75 @@ class LibraryItemController {
     res.json(libraryItem)
   }
 
+  // POST: api/items/:id/cover
+  async uploadCover(req, res) {
+    if (!req.user.canUpload || !req.user.canUpdate) {
+      Logger.warn('User attempted to upload a cover without permission', req.user)
+      return res.sendStatus(403)
+    }
+
+    var libraryItem = req.libraryItem
+
+    var result = null
+    if (req.body && req.body.url) {
+      Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
+      result = await this.coverController.downloadCoverFromUrl(libraryItem, req.body.url)
+    } else if (req.files && req.files.cover) {
+      Logger.debug(`[LibraryItemController] Handling uploaded cover`)
+      result = await this.coverController.uploadCover(libraryItem, req.files.cover)
+    } else {
+      return res.status(400).send('Invalid request no file or url')
+    }
+
+    if (result && result.error) {
+      return res.status(400).send(result.error)
+    } else if (!result || !result.cover) {
+      return res.status(500).send('Unknown error occurred')
+    }
+
+    await this.db.updateLibraryItem(libraryItem)
+    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    res.json({
+      success: true,
+      cover: result.cover
+    })
+  }
+
+  // PATCH: api/items/:id/cover
+  async updateCover(req, res) {
+    var libraryItem = req.libraryItem
+    if (!req.body.cover) {
+      return res.status(400).error('Invalid request no cover path')
+    }
+
+    var validationResult = await this.coverController.validateCoverPath(req.body.cover, libraryItem)
+    if (validationResult.error) {
+      return res.status(500).send(validationResult.error)
+    }
+    if (validationResult.updated) {
+      await this.db.updateLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
+    }
+    res.json({
+      success: true,
+      cover: validationResult.cover
+    })
+  }
+
+  // DELETE: api/items/:id/cover
+  async removeCover(req, res) {
+    var libraryItem = req.libraryItem
+
+    if (libraryItem.media.coverPath) {
+      libraryItem.updateMediaCover('')
+      await this.cacheManager.purgeCoverCache(libraryItem.id)
+      await this.db.updateLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
+    }
+
+    res.sendStatus(200)
+  }
+
   // GET api/items/:id/cover
   async getCover(req, res) {
     let { query: { width, height, format }, libraryItem } = req
@@ -114,10 +179,18 @@ class LibraryItemController {
 
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
-    if (!item || !item.media || !item.media.coverPath) return res.sendStatus(404)
+    if (!item || !item.media) return res.sendStatus(404)
 
     // Check user can access this audiobooks library
     if (!req.user.checkCanAccessLibrary(item.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
+      return res.sendStatus(403)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn('[LibraryItemController] User attempted to update without permission', req.user)
       return res.sendStatus(403)
     }
 

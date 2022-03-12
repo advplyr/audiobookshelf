@@ -72,6 +72,9 @@ class AudioFile {
     this.index = data.index
     this.ino = data.ino
     this.metadata = new FileMetadata(data.metadata || {})
+    if (!this.metadata.toJSON) {
+      console.error('No metadata tojosnm\n\n\n\n\n\n', this)
+    }
     this.addedAt = data.addedAt
     this.updatedAt = data.updatedAt
     this.manuallyVerified = !!data.manuallyVerified
@@ -101,18 +104,12 @@ class AudioFile {
   }
 
   // New scanner creates AudioFile from AudioFileScanner
-  setDataFromProbe(fileData, probeData) {
-    this.index = fileData.index || null
-    this.ino = fileData.ino || null
+  setDataFromProbe(libraryFile, probeData) {
+    this.ino = libraryFile.ino || null
 
-    // TODO: Update file metadata for set data from probe
+    this.metadata = libraryFile.metadata.clone()
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
-
-    this.trackNumFromMeta = fileData.trackNumFromMeta
-    this.discNumFromMeta = fileData.discNumFromMeta
-    this.trackNumFromFilename = fileData.trackNumFromFilename
-    this.discNumFromFilename = fileData.discNumFromFilename
 
     this.format = probeData.format
     this.duration = probeData.duration
@@ -196,9 +193,13 @@ class AudioFile {
     newjson.addedAt = this.addedAt
 
     for (const key in newjson) {
-      if (key === 'metaTags') {
-        if (!this.metaTags || !this.metaTags.isEqual(scannedAudioFile.metadata)) {
-          this.metaTags = scannedAudioFile.metadata
+      if (key === 'metadata') {
+        if (this.metadata.update(newjson[key])) {
+          hasUpdated = true
+        }
+      } else if (key === 'metaTags') {
+        if (!this.metaTags || !this.metaTags.isEqual(scannedAudioFile.metaTags)) {
+          this.metaTags = scannedAudioFile.metaTags.clone()
           hasUpdated = true
         }
       } else if (key === 'chapters') {
@@ -206,7 +207,6 @@ class AudioFile {
           hasUpdated = true
         }
       } else if (this[key] !== newjson[key]) {
-        // console.log(this.filename, 'key', key, 'updated', this[key], newjson[key])
         this[key] = newjson[key]
         hasUpdated = true
       }

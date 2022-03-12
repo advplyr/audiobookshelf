@@ -185,16 +185,53 @@ class Db {
   }
 
   async updateLibraryItem(libraryItem) {
-    if (libraryItem && libraryItem.saveMetadata) {
-      await libraryItem.saveMetadata()
-    }
+    return this.updateLibraryItems([libraryItem])
+  }
 
-    return this.libraryItemsDb.update((record) => record.id === libraryItem.id, () => libraryItem).then((results) => {
-      Logger.debug(`[DB] Library Item updated ${results.updated}`)
+  async updateLibraryItems(libraryItems) {
+    await Promise.all(libraryItems.map(async (li) => {
+      if (li && li.saveMetadata) return li.saveMetadata()
+      return null
+    }))
+
+    var libraryItemIds = libraryItems.map(li => li.id)
+    return this.libraryItemsDb.update((record) => libraryItemIds.includes(record.id), (record) => {
+      return libraryItems.find(li => li.id === record.id)
+    }).then((results) => {
+      Logger.debug(`[DB] Library Items updated ${results.updated}`)
       return true
     }).catch((error) => {
-      Logger.error(`[DB] Library Item update failed ${error}`)
+      Logger.error(`[DB] Library Items update failed ${error}`)
       return false
+    })
+  }
+
+  async insertLibraryItem(libraryItem) {
+    return this.insertLibraryItems([libraryItem])
+  }
+
+  async insertLibraryItems(libraryItems) {
+    await Promise.all(libraryItems.map(async (li) => {
+      if (li && li.saveMetadata) return li.saveMetadata()
+      return null
+    }))
+
+    return this.libraryItemsDb.insert(libraryItems).then((results) => {
+      Logger.debug(`[DB] Library Items inserted ${results.inserted}`)
+      this.libraryItems = this.libraryItems.concat(libraryItems)
+      return true
+    }).catch((error) => {
+      Logger.error(`[DB] Library Items insert failed ${error}`)
+      return false
+    })
+  }
+
+  removeLibraryItem(id) {
+    return this.libraryItemsDb.delete((record) => record.id === id).then((results) => {
+      Logger.debug(`[DB] Deleted Library Items: ${results.deleted}`)
+      this.libraryItems = this.libraryItems.filter(li => li.id !== id)
+    }).catch((error) => {
+      Logger.error(`[DB] Remove Library Items Failed: ${error}`)
     })
   }
 

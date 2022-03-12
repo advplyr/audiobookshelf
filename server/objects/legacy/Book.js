@@ -1,6 +1,6 @@
 const Path = require('path')
 const Logger = require('../../Logger')
-const parseAuthors = require('../../utils/parseAuthors')
+const parseAuthors = require('../../utils/parseNameString')
 
 class Book {
   constructor(book = null) {
