@@ -151,7 +151,6 @@ export default {
         .map((bookItem) => {
           return {
             id: bookItem.id,
-            volumeNumber: bookItem.book ? bookItem.book.volumeNumber : null,
             coverUrl: this.getCoverUrl(bookItem)
           }
         })

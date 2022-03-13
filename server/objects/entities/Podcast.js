@@ -124,5 +124,10 @@ class Podcast {
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
     return false
   }
+
+  searchQuery(query) {
+    var payload = this.metadata.searchQuery(query)
+    return payload || {}
+  }
 }
 module.exports = Podcast

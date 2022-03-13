@@ -401,5 +401,10 @@ class LibraryItem {
     }
     return hasUpdated
   }
+
+  searchQuery(query) {
+    query = query.toLowerCase()
+    return this.media.searchQuery(query)
+  }
 }
 module.exports = LibraryItem

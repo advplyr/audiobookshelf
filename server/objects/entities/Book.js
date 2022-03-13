@@ -313,5 +313,33 @@ class Book {
     }
     return false
   }
+
+  searchQuery(query) {
+    var payload = {
+      tags: this.tags.filter(t => t.toLowerCase().includes(query)),
+      series: this.metadata.searchSeries(query),
+      authors: this.metadata.searchAuthors(query),
+      matchKey: null,
+      matchText: null
+    }
+    var metadataMatch = this.metadata.searchQuery(query)
+    if (metadataMatch) {
+      payload.matchKey = metadataMatch.matchKey
+      payload.matchText = metadataMatch.matchText
+    } else {
+      if (payload.authors.length) {
+        payload.matchKey = 'authors'
+        payload.matchText = this.metadata.authorName
+      } else if (payload.series.length) {
+        payload.matchKey = 'series'
+        payload.matchText = this.metadata.seriesName
+      }
+      else if (payload.tags.length) {
+        payload.matchKey = 'tags'
+        payload.matchText = this.tags.join(', ')
+      }
+    }
+    return payload
+  }
 }
 module.exports = Book

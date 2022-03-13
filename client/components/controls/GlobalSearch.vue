@@ -20,37 +20,37 @@
         </li>
         <template v-else>
           <p class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
-          <template v-for="item in audiobookResults">
-            <li :key="item.audiobook.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/audiobook/${item.audiobook.id}`">
-                <cards-audiobook-search-card :audiobook="item.audiobook" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
+          <template v-for="item in bookResults">
+            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/item/${item.id}`">
+                <cards-audiobook-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
             </li>
           </template>
 
           <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Authors</p>
           <template v-for="item in authorResults">
-            <li :key="item.author" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.author)}`">
-                <cards-author-search-card :author="item.author" />
+            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${item.id}`">
+                <cards-author-search-card :author="item" />
               </nuxt-link>
             </li>
           </template>
 
           <p v-if="seriesResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Series</p>
           <template v-for="item in seriesResults">
-            <li :key="item.series" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/library/${currentLibraryId}/series/${$encode(item.series)}`">
-                <cards-series-search-card :series="item.series" :book-items="item.audiobooks" />
+            <li :key="item.series.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/library/${currentLibraryId}/series/${item.series.id}`">
+                <cards-series-search-card :series="item.series" :book-items="item.books" />
               </nuxt-link>
             </li>
           </template>
 
           <p v-if="tagResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Tags</p>
           <template v-for="item in tagResults">
-            <li :key="item.tag" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.tag)}`">
-                <cards-tag-search-card :tag="item.tag" />
+            <li :key="item.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.name)}`">
+                <cards-tag-search-card :tag="item.name" />
               </nuxt-link>
             </li>
           </template>
@@ -70,7 +70,7 @@ export default {
       isTyping: false,
       isFetching: false,
       search: null,
-      audiobookResults: [],
+      bookResults: [],
       authorResults: [],
       seriesResults: [],
       tagResults: [],
@@ -83,7 +83,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.audiobookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length
     }
   },
   methods: {
@@ -96,7 +96,7 @@ export default {
     clearResults() {
       this.search = null
       this.lastSearch = null
-      this.audiobookResults = []
+      this.bookResults = []
       this.authorResults = []
       this.seriesResults = []
       this.tagResults = []
@@ -136,7 +136,7 @@ export default {
       // Search was canceled
       if (!this.isFetching) return
 
-      this.audiobookResults = searchResults.audiobooks || []
+      this.bookResults = searchResults.book || []
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []
       this.tagResults = searchResults.tags || []

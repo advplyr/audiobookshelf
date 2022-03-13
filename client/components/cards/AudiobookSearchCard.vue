@@ -1,13 +1,13 @@
 <template>
   <div class="flex items-center h-full px-1 overflow-hidden">
-    <covers-book-cover :audiobook="audiobook" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+    <covers-book-cover :library-item="libraryItem" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     <div class="flex-grow px-2 audiobookSearchCardContent">
       <p v-if="matchKey !== 'title'" class="truncate text-sm">{{ title }}</p>
       <p v-else class="truncate text-sm" v-html="matchHtml" />
 
       <p v-if="matchKey === 'subtitle'" class="truncate text-xs text-gray-300">{{ matchHtml }}</p>
 
-      <p v-if="matchKey !== 'authorFL'" class="text-xs text-gray-200 truncate">by {{ authorFL }}</p>
+      <p v-if="matchKey !== 'authors'" class="text-xs text-gray-200 truncate">by {{ authorName }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
 
       <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn' || matchKey === 'asin'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
@@ -18,7 +18,7 @@
 <script>
 export default {
   props: {
-    audiobook: {
+    libraryItem: {
       type: Object,
       default: () => {}
     },
@@ -37,17 +37,23 @@ export default {
       if (this.bookCoverAspectRatio === 1) return 50 * 1.2
       return 50
     },
-    book() {
-      return this.audiobook ? this.audiobook.book || {} : {}
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     title() {
-      return this.book ? this.book.title : 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
     subtitle() {
-      return this.book ? this.book.subtitle : ''
+      return this.mediaMetadata.subtitle || ''
     },
-    authorFL() {
-      return this.book ? this.book.authorFL : 'Unknown'
+    authors() {
+      return this.mediaMetadata.authors || []
+    },
+    authorName() {
+      return this.authors.map((au) => au.name).join(', ')
     },
     matchHtml() {
       if (!this.matchText || !this.search) return ''
@@ -69,7 +75,7 @@ export default {
       html += lastPart
 
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
-      if (this.matchKey === 'authorFL') return `by ${html}`
+      if (this.matchKey === 'authors') return `by ${html}`
       if (this.matchKey === 'isbn') return `<p class="truncate">ISBN: ${html}</p>`
       if (this.matchKey === 'asin') return `<p class="truncate">ASIN: ${html}</p>`
       if (this.matchKey === 'series') return `<p class="truncate">Series: ${html}</p>`

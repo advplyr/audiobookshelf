@@ -74,7 +74,7 @@ export default {
     },
     groupTo() {
       if (this.groupType === 'series') {
-        return `/library/${this.currentLibraryId}/series/${this.groupEncode}`
+        return `/library/${this.currentLibraryId}/series/${this._group.id}`
       } else if (this.groupType === 'collection') {
         return `/collection/${this._group.id}`
       } else {
@@ -119,7 +119,7 @@ export default {
       return `${this.groupType}.${this.$encode(this.groupName)}`
     },
     hasValidCovers() {
-      var validCovers = this.bookItems.map((bookItem) => bookItem.book.cover)
+      var validCovers = this.bookItems.map((bookItem) => bookItem.media.coverPath)
       return !!validCovers.length
     },
     showExperimentalFeatures() {

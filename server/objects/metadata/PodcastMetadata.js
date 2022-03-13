@@ -47,5 +47,18 @@ class PodcastMetadata {
   toJSONExpanded() {
     return this.toJSON()
   }
+
+  searchQuery(query) { // Returns key if match is found
+    var keysToCheck = ['title', 'artist', 'itunesId', 'itunesArtistId']
+    for (var key of keysToCheck) {
+      if (this[key] && String(this[key]).toLowerCase().includes(query)) {
+        return {
+          matchKey: key,
+          matchText: this[key]
+        }
+      }
+    }
+    return null
+  }
 }
 module.exports = PodcastMetadata

@@ -355,65 +355,62 @@ class LibraryController {
 
   // GET: Global library search
   search(req, res) {
-    var library = req.library
     if (!req.query.q) {
       return res.status(400).send('No query string')
     }
+    var libraryItems = req.libraryItems
     var maxResults = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
 
-    var bookMatches = []
+    var itemMatches = []
     var authorMatches = {}
     var seriesMatches = {}
     var tagMatches = {}
 
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    audiobooksInLibrary.forEach((ab) => {
-      var queryResult = ab.searchQuery(req.query.q)
-      if (queryResult.book) {
-        var bookMatchObj = {
-          audiobook: ab.toJSONExpanded(),
-          matchKey: queryResult.book,
-          matchText: queryResult.bookMatchText
-        }
-        bookMatches.push(bookMatchObj)
+    libraryItems.forEach((li) => {
+      var queryResult = li.searchQuery(req.query.q)
+      if (queryResult.matchKey) {
+        itemMatches.push({
+          libraryItem: li,
+          matchKey: queryResult.matchKey,
+          matchText: queryResult.matchText
+        })
       }
-      if (queryResult.authors) {
-        queryResult.authors.forEach((author) => {
-          if (!authorMatches[author]) {
-            authorMatches[author] = {
-              author: author,
-              numBooks: 1
-            }
+      if (queryResult.series && queryResult.series.length) {
+        queryResult.series.forEach((se) => {
+          if (!seriesMatches[se.id]) {
+            var _series = this.db.series.find(_se => _se.id === se.id)
+            if (_series) seriesMatches[se.id] = { series: _series.toJSON(), books: [li.toJSON()] }
           } else {
-            authorMatches[author].numBooks++
+            seriesMatches[se.id].books.push(li.toJSON())
           }
         })
       }
-      if (queryResult.series) {
-        if (!seriesMatches[queryResult.series]) {
-          seriesMatches[queryResult.series] = {
-            series: queryResult.series,
-            audiobooks: [ab.toJSONExpanded()]
+      if (queryResult.authors && queryResult.authors.length) {
+        queryResult.authors.forEach((au) => {
+          if (!authorMatches[au.id]) {
+            var _author = this.db.authors.find(_au => _au.id === au.id)
+            if (_author) {
+              authorMatches[au.id] = _author.toJSON()
+              authorMatches[au.id].numBooks = 1
+            }
+          } else {
+            authorMatches[au.id].numBooks++
           }
-        } else {
-          seriesMatches[queryResult.series].audiobooks.push(ab.toJSONExpanded())
-        }
+        })
       }
       if (queryResult.tags && queryResult.tags.length) {
         queryResult.tags.forEach((tag) => {
           if (!tagMatches[tag]) {
-            tagMatches[tag] = {
-              tag,
-              audiobooks: [ab.toJSONExpanded()]
-            }
+            tagMatches[tag] = { name: tag, books: [li.toJSON()] }
           } else {
-            tagMatches[tag].audiobooks.push(ab.toJSONExpanded())
+            tagMatches[tag].books.push(li.toJSON())
           }
         })
       }
     })
+    var itemKey = req.library.itemMediaType
     var results = {
-      audiobooks: bookMatches.slice(0, maxResults),
+      [itemKey]: itemMatches.slice(0, maxResults),
       tags: Object.values(tagMatches).slice(0, maxResults),
       authors: Object.values(authorMatches).slice(0, maxResults),
       series: Object.values(seriesMatches).slice(0, maxResults)

@@ -91,6 +91,13 @@ class BookMetadata {
     if (!this.authors.length) return ''
     return this.authors.map(au => au.name).join(', ')
   }
+  get seriesName() {
+    if (!this.series.length) return ''
+    return this.series.map(se => {
+      if (!se.sequence) return se.name
+      return `${se.name} #${se.sequence}`
+    }).join(', ')
+  }
   get narratorName() {
     return this.narrators.join(', ')
   }
@@ -267,6 +274,25 @@ class BookMetadata {
       name: seriesTag,
       sequence: sequenceTag || ''
     }]
+  }
+
+  searchSeries(query) {
+    return this.series.filter(se => se.name.toLowerCase().includes(query))
+  }
+  searchAuthors(query) {
+    return this.authors.filter(se => se.name.toLowerCase().includes(query))
+  }
+  searchQuery(query) { // Returns key if match is found
+    var keysToCheck = ['title', 'asin', 'isbn']
+    for (var key of keysToCheck) {
+      if (this[key] && this[key].toLowerCase().includes(query)) {
+        return {
+          matchKey: key,
+          matchText: this[key]
+        }
+      }
+    }
+    return null
   }
 }
 module.exports = BookMetadata

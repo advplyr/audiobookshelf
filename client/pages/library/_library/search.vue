@@ -30,7 +30,7 @@ export default {
       return null
     })
     results = {
-      audiobooks: results && results.audiobooks.length ? results.audiobooks : null,
+      books: results && results.book.length ? results.book : null,
       authors: results && results.authors.length ? results.authors : null,
       series: results && results.series.length ? results.series : null,
       tags: results && results.tags.length ? results.tags : null
@@ -67,7 +67,7 @@ export default {
         return null
       })
       this.results = {
-        audiobooks: results && results.audiobooks.length ? results.audiobooks : null,
+        books: results && results.book.length ? results.book : null,
         authors: results && results.authors.length ? results.authors : null,
         series: results && results.series.length ? results.series : null,
         tags: results && results.tags.length ? results.tags : null

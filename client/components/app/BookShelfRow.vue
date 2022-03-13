@@ -21,8 +21,8 @@
         </div>
         <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.name)}`">
-              <cards-author-card :width="bookCoverWidth" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" />
+            <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.id)}`">
+              <cards-author-card :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" />
             </nuxt-link>
           </template>
         </div>

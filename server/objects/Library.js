@@ -25,6 +25,9 @@ class Library {
   get folderPaths() {
     return this.folders.map(f => f.fullPath)
   }
+  get itemMediaType() {
+    return this.mediaType === 'podcast' ? 'podcast' : 'book'
+  }
 
   construct(library) {
     this.id = library.id

@@ -7,12 +7,15 @@
       <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
     </div>
 
-    <div v-if="loaded && !shelves.length && isRootUser" class="w-full flex flex-col items-center justify-center py-12">
+    <div v-if="loaded && !shelves.length && isRootUser && !search" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">Audiobookshelf is empty!</p>
       <div class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Audiobooks</ui-btn>
       </div>
+    </div>
+    <div v-else-if="loaded && !shelves.length && search" class="w-full h-40 flex items-center justify-center">
+      <p class="text-center text-xl font-book py-4">No results for query</p>
     </div>
     <div v-else class="w-full flex flex-col items-center">
       <template v-for="(shelf, index) in shelves">
@@ -97,12 +100,12 @@ export default {
     },
     async setShelvesFromSearch() {
       var shelves = []
-      if (this.results.audiobooks) {
+      if (this.results.books) {
         shelves.push({
-          id: 'audiobooks',
+          id: 'books',
           label: 'Books',
           type: 'books',
-          entities: this.results.audiobooks.map((ab) => ab.audiobook)
+          entities: this.results.books.map((res) => res.libraryItem)
         })
       }
 
@@ -113,8 +116,9 @@ export default {
           type: 'series',
           entities: this.results.series.map((seriesObj) => {
             return {
-              name: seriesObj.series,
-              books: seriesObj.audiobooks,
+              name: seriesObj.series.name,
+              series: seriesObj.series,
+              books: seriesObj.books,
               type: 'series'
             }
           })
@@ -127,8 +131,8 @@ export default {
           type: 'tags',
           entities: this.results.tags.map((tagObj) => {
             return {
-              name: tagObj.tag,
-              books: tagObj.audiobooks,
+              name: tagObj.name,
+              books: tagObj.books || [],
               type: 'tags'
             }
           })
@@ -141,9 +145,7 @@ export default {
           type: 'authors',
           entities: this.results.authors.map((a) => {
             return {
-              id: a.author,
-              name: a.author,
-              numBooks: a.numBooks,
+              ...a,
               type: 'author'
             }
           })
