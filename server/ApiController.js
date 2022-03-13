@@ -81,6 +81,7 @@ class ApiController {
     this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))
     this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
+    this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
 
     //
     // Book Routes

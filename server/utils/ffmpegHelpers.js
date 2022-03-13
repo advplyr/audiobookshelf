@@ -30,7 +30,7 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
 
   var tracksToInclude = tracks.filter(t => t.index >= trackToStartWithIndex)
   var trackPaths = tracksToInclude.map(t => {
-    var line = 'file ' + escapeSingleQuotes(t.fullPath) + '\n' + `duration ${t.duration}`
+    var line = 'file ' + escapeSingleQuotes(t.metadata.path) + '\n' + `duration ${t.duration}`
     return line
   })
   var inputstr = trackPaths.join('\n\n')

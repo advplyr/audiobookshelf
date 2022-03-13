@@ -167,19 +167,6 @@ export default {
       this.$toast.error(`Stream Failed: ${errorMessage}`)
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamError(id)
     },
-    audiobookAdded(audiobook) {
-      this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
-    },
-    audiobooksAdded(audiobooks) {
-      audiobooks.forEach((ab) => {
-        this.audiobookAdded(ab)
-      })
-    },
-    audiobooksUpdated(audiobooks) {
-      audiobooks.forEach((ab) => {
-        this.audiobookUpdated(ab)
-      })
-    },
     libraryAdded(library) {
       this.$store.commit('libraries/addUpdate', library)
     },
@@ -188,6 +175,9 @@ export default {
     },
     libraryRemoved(library) {
       this.$store.commit('libraries/remove', library)
+    },
+    libraryItemAdded(libraryItem) {
+      // this.$store.commit('libraries/updateFilterDataWithAudiobook', libraryItem)
     },
     libraryItemUpdated(libraryItem) {
       if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
@@ -201,6 +191,16 @@ export default {
           this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
         }
       }
+    },
+    libraryItemsUpdated(libraryItems) {
+      libraryItems.forEach((li) => {
+        this.libraryItemUpdated(li)
+      })
+    },
+    libraryItemsAdded(libraryItems) {
+      libraryItems.forEach((ab) => {
+        this.libraryItemAdded(ab)
+      })
     },
     scanComplete(data) {
       console.log('Scan complete received', data)
@@ -376,21 +376,17 @@ export default {
       this.socket.on('stream_reset', this.streamReset)
       this.socket.on('stream_error', this.streamError)
 
-      // Audiobook Listeners
-      this.socket.on('audiobook_updated', this.audiobookUpdated)
-      this.socket.on('audiobook_added', this.audiobookAdded)
-      this.socket.on('audiobook_removed', this.audiobookRemoved)
-      this.socket.on('audiobooks_updated', this.audiobooksUpdated)
-      this.socket.on('audiobooks_added', this.audiobooksAdded)
-
       // Library Listeners
       this.socket.on('library_updated', this.libraryUpdated)
       this.socket.on('library_added', this.libraryAdded)
       this.socket.on('library_removed', this.libraryRemoved)
 
       // Library Item Listeners
+      this.socket.on('item_added', this.libraryItemAdded)
       this.socket.on('item_updated', this.libraryItemUpdated)
       this.socket.on('item_removed', this.libraryItemRemoved)
+      this.socket.on('items_updated', this.libraryItemsUpdated)
+      this.socket.on('items_added', this.libraryItemsAdded)
 
       // User Listeners
       this.socket.on('user_updated', this.userUpdated)

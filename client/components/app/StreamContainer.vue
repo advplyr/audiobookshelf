@@ -1,17 +1,17 @@
 <template>
-  <div v-if="streamAudiobook" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
-    <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
-      <covers-book-cover :audiobook="streamAudiobook" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
+    <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
+      <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </nuxt-link>
     <div class="flex items-start pl-24 mb-6 md:mb-0">
       <div>
-        <nuxt-link :to="`/audiobook/${streamAudiobook.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
+        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
           {{ title }}
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="authorFL" class="pl-1.5 text-sm sm:text-base">
-            <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
+          <p v-if="authors.length" class="pl-1.5 text-sm sm:text-base">
+            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
           <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
         </div>
@@ -89,15 +89,15 @@ export default {
       return -64
     },
     cover() {
-      if (this.streamAudiobook && this.streamAudiobook.cover) return this.streamAudiobook.cover
+      if (this.media.coverPath) return this.media.coverPath
       return 'Logo.png'
     },
     user() {
       return this.$store.state.user.user
     },
     userAudiobook() {
-      if (!this.audiobookId) return
-      return this.$store.getters['user/getUserAudiobook'](this.audiobookId)
+      if (!this.libraryItemId) return
+      return this.$store.getters['user/getUserAudiobook'](this.libraryItemId)
     },
     userAudiobookCurrentTime() {
       return this.userAudiobook ? this.userAudiobook.currentTime || 0 : 0
@@ -106,32 +106,29 @@ export default {
       if (!this.userAudiobook) return []
       return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
-    audiobookId() {
-      return this.streamAudiobook ? this.streamAudiobook.id : null
+    libraryItemId() {
+      return this.streamLibraryItem ? this.streamLibraryItem.id : null
     },
-    book() {
-      return this.streamAudiobook ? this.streamAudiobook.book || {} : {}
+    media() {
+      return this.streamLibraryItem ? this.streamLibraryItem.media || {} : {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     chapters() {
-      return this.streamAudiobook ? this.streamAudiobook.chapters || [] : []
+      return this.media.chapters || []
     },
     title() {
-      return this.book.title || 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
-    author() {
-      return this.book.author || 'Unknown'
-    },
-    authorFL() {
-      return this.book.authorFL
-    },
-    authorsList() {
-      return this.authorFL ? this.authorFL.split(', ') : []
+    authors() {
+      return this.mediaMetadata.authors || []
     },
     libraryId() {
-      return this.streamAudiobook ? this.streamAudiobook.libraryId : null
+      return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
     },
     totalDurationPretty() {
       return this.$secondsToTimestamp(this.totalDuration)
@@ -217,7 +214,7 @@ export default {
       }
     },
     showBookmarks() {
-      this.bookmarkAudiobookId = this.audiobookId
+      this.bookmarkAudiobookId = this.libraryItemId
       this.bookmarkCurrentTime = this.currentTime
       this.showBookmarksModal = true
     },
@@ -227,7 +224,7 @@ export default {
     },
     closePlayer() {
       this.playerHandler.closePlayer()
-      this.$store.commit('setStreamAudiobook', null)
+      this.$store.commit('setLibraryItemStream', null)
     },
     streamProgress(data) {
       if (!data.numSegments) return
@@ -240,12 +237,12 @@ export default {
       }
     },
     streamOpen(stream) {
-      this.$store.commit('setStreamAudiobook', stream.audiobook)
+      this.$store.commit('setLibraryItemStream', stream.libraryItem)
       this.playerHandler.prepareStream(stream)
     },
     streamClosed(streamId) {
       // Stream was closed from the server
-      if (this.playerHandler.isPlayingLocalAudiobook && this.playerHandler.currentStreamId === streamId) {
+      if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === streamId) {
         console.warn('[StreamContainer] Closing stream due to request from server')
         this.playerHandler.closePlayer()
       }
@@ -260,7 +257,7 @@ export default {
     },
     streamError(streamId) {
       // Stream had critical error from the server
-      if (this.playerHandler.isPlayingLocalAudiobook && this.playerHandler.currentStreamId === streamId) {
+      if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === streamId) {
         console.warn('[StreamContainer] Closing stream due to stream error from server')
         this.playerHandler.closePlayer()
       }
@@ -269,32 +266,32 @@ export default {
       this.playerHandler.resetStream(startTime, streamId)
     },
     castSessionActive(isActive) {
-      if (isActive && this.playerHandler.isPlayingLocalAudiobook) {
+      if (isActive && this.playerHandler.isPlayingLocalItem) {
         // Cast session started switch to cast player
         this.playerHandler.switchPlayer()
-      } else if (!isActive && this.playerHandler.isPlayingCastedAudiobook) {
+      } else if (!isActive && this.playerHandler.isPlayingCastedItem) {
         // Cast session ended switch to local player
         this.playerHandler.switchPlayer()
       }
     },
-    async playAudiobook(audiobookId) {
-      var audiobook = await this.$axios.$get(`/api/books/${audiobookId}`).catch((error) => {
-        console.error('Failed to fetch full audiobook', error)
+    async playLibraryItem(libraryItemId) {
+      var libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}?expanded=1`).catch((error) => {
+        console.error('Failed to fetch full item', error)
         return null
       })
-      if (!audiobook) return
-      this.$store.commit('setStreamAudiobook', audiobook)
+      if (!libraryItem) return
+      this.$store.commit('setLibraryItemStream', libraryItem)
 
-      this.playerHandler.load(audiobook, true, this.userAudiobookCurrentTime)
+      this.playerHandler.load(libraryItem, true, this.userAudiobookCurrentTime)
     }
   },
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
-    this.$eventBus.$on('play-audiobook', this.playAudiobook)
+    this.$eventBus.$on('play-item', this.playLibraryItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
-    this.$eventBus.$off('play-audiobook', this.playAudiobook)
+    this.$eventBus.$off('play-item', this.playLibraryItem)
   }
 }
 </script>

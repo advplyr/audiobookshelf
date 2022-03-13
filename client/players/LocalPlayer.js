@@ -8,7 +8,7 @@ export default class LocalPlayer extends EventEmitter {
     this.ctx = ctx
     this.player = null
 
-    this.audiobook = null
+    this.libraryItem = null
     this.audioTracks = []
     this.currentTrackIndex = 0
     this.hlsStreamId = null
@@ -110,8 +110,8 @@ export default class LocalPlayer extends EventEmitter {
     }
   }
 
-  set(audiobook, tracks, hlsStreamId, startTime, playWhenReady = false) {
-    this.audiobook = audiobook
+  set(libraryItem, tracks, hlsStreamId, startTime, playWhenReady = false) {
+    this.libraryItem = libraryItem
     this.audioTracks = tracks
     this.hlsStreamId = hlsStreamId
     this.playWhenReady = playWhenReady
@@ -198,7 +198,7 @@ export default class LocalPlayer extends EventEmitter {
   async resetStream(startTime) {
     this.destroyHlsInstance()
     await new Promise((resolve) => setTimeout(resolve, 1000))
-    this.set(this.audiobook, this.audioTracks, this.hlsStreamId, startTime, true)
+    this.set(this.libraryItem, this.audioTracks, this.hlsStreamId, startTime, true)
   }
 
   playPause() {

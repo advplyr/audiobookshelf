@@ -15,10 +15,6 @@ class StreamManager {
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
   }
 
-  get audiobooks() {
-    return this.db.audiobooks
-  }
-
   getStream(streamId) {
     return this.streams.find(s => s.id === streamId)
   }
@@ -27,12 +23,12 @@ class StreamManager {
     this.streams = this.streams.filter(s => s.id !== stream.id)
   }
 
-  async openStream(client, audiobook, transcodeOptions = {}) {
+  async openStream(client, libraryItem, transcodeOptions = {}) {
     if (!client || !client.user) {
       Logger.error('[StreamManager] Cannot open stream invalid client', client)
       return
     }
-    var stream = new Stream(this.StreamsPath, client, audiobook, transcodeOptions)
+    var stream = new Stream(this.StreamsPath, client, libraryItem, transcodeOptions)
 
     stream.on('closed', () => {
       this.removeStream(stream)
@@ -43,7 +39,7 @@ class StreamManager {
     await stream.generatePlaylist()
     stream.start()
 
-    Logger.info('Stream Opened for client', client.user.username, 'for audiobook', audiobook.title, 'with streamId', stream.id)
+    Logger.info('Stream Opened for client', client.user.username, 'for item', stream.itemTitle, 'with streamId', stream.id)
 
     client.stream = stream
     client.user.stream = stream.id
@@ -103,25 +99,25 @@ class StreamManager {
     }
   }
 
-  async openStreamApiRequest(res, user, audiobook) {
-    Logger.info(`[StreamManager] User "${user.username}" open stream request for "${audiobook.title}"`)
+  async openStreamApiRequest(res, user, libraryItem) {
+    Logger.info(`[StreamManager] User "${user.username}" open stream request for "${libraryItem.media.metadata.title}"`)
     var client = {
       user
     }
-    var stream = await this.openStream(client, audiobook)
+    var stream = await this.openStream(client, libraryItem)
     this.db.updateUserStream(client.user.id, stream.id)
 
     res.json({
-      audiobookId: audiobook.id,
+      libraryItemId: libraryItem.id,
       startTime: stream.startTime,
       streamId: stream.id,
       streamUrl: stream.clientPlaylistUri
     })
   }
 
-  async openStreamSocketRequest(socket, audiobookId) {
-    Logger.info('[StreamManager] Open Stream Request', socket.id, audiobookId)
-    var audiobook = this.audiobooks.find(ab => ab.id === audiobookId)
+  async openStreamSocketRequest(socket, libraryItemId) {
+    Logger.info('[StreamManager] Open Stream Request', socket.id, libraryItemId)
+    var libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
     var client = socket.sheepClient
 
     if (client.stream) {
@@ -131,7 +127,7 @@ class StreamManager {
       client.stream = null
     }
 
-    var stream = await this.openStream(client, audiobook)
+    var stream = await this.openStream(client, libraryItem)
     this.db.updateUserStream(client.user.id, stream.id)
 
     this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))

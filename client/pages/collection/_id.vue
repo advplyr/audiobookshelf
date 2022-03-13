@@ -87,7 +87,7 @@ export default {
       })
     },
     streaming() {
-      return !!this.playableBooks.find((b) => b.id === this.$store.getters['getAudiobookIdStreaming'])
+      return !!this.playableBooks.find((b) => b.id === this.$store.getters['getLibraryItemIdStreaming'])
     },
     showPlayButton() {
       return this.playableBooks.length
@@ -120,7 +120,7 @@ export default {
     clickPlay() {
       var nextBookNotRead = this.playableBooks.find((pb) => !this.userAudiobooks[pb.id] || !this.userAudiobooks[pb.id].isRead)
       if (nextBookNotRead) {
-        this.$eventBus.$emit('play-audiobook', nextBookNotRead.id)
+        this.$eventBus.$emit('play-item', nextBookNotRead.id)
       }
     }
   },

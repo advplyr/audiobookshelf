@@ -118,7 +118,7 @@ export default {
       return this.book.numTracks
     },
     isStreaming() {
-      return this.$store.getters['getAudiobookIdStreaming'] === this.audiobookId
+      return this.$store.getters['getLibraryItemIdStreaming'] === this.audiobookId
     },
     showReadButton() {
       return this.showExperimentalFeatures && this.numEbooks
@@ -168,7 +168,7 @@ export default {
         })
     },
     startStream() {
-      this.$eventBus.$emit('play-audiobook', this.book.id)
+      this.$eventBus.$emit('play-item', this.book.id)
     },
     editClick() {
       this.$emit('edit', this.book)

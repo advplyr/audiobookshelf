@@ -418,7 +418,7 @@ export default {
         })
     },
     startStream() {
-      this.$eventBus.$emit('play-audiobook', this.libraryItem.id)
+      this.$eventBus.$emit('play-item', this.libraryItem.id)
     },
     editClick() {
       this.$store.commit('setBookshelfBookIds', [])

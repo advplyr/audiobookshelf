@@ -512,7 +512,7 @@ export default {
     },
     play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
-      eventBus.$emit('play-audiobook', this.libraryItemId)
+      eventBus.$emit('play-item', this.libraryItemId)
     },
     mouseover() {
       this.isHovering = true

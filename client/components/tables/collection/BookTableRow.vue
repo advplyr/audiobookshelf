@@ -108,7 +108,7 @@ export default {
       return this.media.tracks.length
     },
     isStreaming() {
-      return this.$store.getters['getAudiobookIdStreaming'] === this.book.id
+      return this.$store.getters['getLibraryItemIdStreaming'] === this.book.id
     },
     showPlayBtn() {
       return !this.isMissing && !this.isInvalid && !this.isStreaming && this.numTracks
@@ -136,7 +136,7 @@ export default {
       this.isHovering = false
     },
     playClick() {
-      this.$eventBus.$emit('play-audiobook', this.book.id)
+      this.$eventBus.$emit('play-item', this.book.id)
     },
     clickEdit() {
       this.$emit('edit', this.book)

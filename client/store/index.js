@@ -4,7 +4,7 @@ import Vue from 'vue'
 export const state = () => ({
   versionData: null,
   serverSettings: null,
-  streamAudiobook: null,
+  streamLibraryItem: null,
   editModalTab: 'details',
   showEditModal: false,
   showEReader: false,
@@ -37,8 +37,8 @@ export const getters = {
     return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
   },
   getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
-  getAudiobookIdStreaming: state => {
-    return state.streamAudiobook ? state.streamAudiobook.id : null
+  getLibraryItemIdStreaming: state => {
+    return state.streamLibraryItem ? state.streamLibraryItem.id : null
   }
 }
 
@@ -106,8 +106,8 @@ export const mutations = {
     if (!settings) return
     state.serverSettings = settings
   },
-  setStreamAudiobook(state, audiobook) {
-    state.streamAudiobook = audiobook
+  setLibraryItemStream(state, libraryItem) {
+    state.streamLibraryItem = libraryItem
   },
   showEditModal(state, libraryItem) {
     state.editModalTab = 'details'

@@ -61,7 +61,7 @@ class UserAudiobookData {
   }
 
   updateProgressFromStream(stream) {
-    this.audiobookId = stream.audiobookId
+    this.audiobookId = stream.libraryItemId
     this.totalDuration = stream.totalDuration
     this.progress = stream.clientProgress
     this.currentTime = stream.clientCurrentTime

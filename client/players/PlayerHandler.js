@@ -5,7 +5,7 @@ import AudioTrack from './AudioTrack'
 export default class PlayerHandler {
   constructor(ctx) {
     this.ctx = ctx
-    this.audiobook = null
+    this.libraryItem = null
     this.playWhenReady = false
     this.player = null
     this.playerState = 'IDLE'
@@ -22,11 +22,11 @@ export default class PlayerHandler {
   get isCasting() {
     return this.ctx.$store.state.globals.isCasting
   }
-  get isPlayingCastedAudiobook() {
-    return this.audiobook && (this.player instanceof CastPlayer)
+  get isPlayingCastedItem() {
+    return this.libraryItem && (this.player instanceof CastPlayer)
   }
-  get isPlayingLocalAudiobook() {
-    return this.audiobook && (this.player instanceof LocalPlayer)
+  get isPlayingLocalItem() {
+    return this.libraryItem && (this.player instanceof LocalPlayer)
   }
   get userToken() {
     return this.ctx.$store.getters['user/getToken']
@@ -35,10 +35,10 @@ export default class PlayerHandler {
     return this.playerState === 'PLAYING'
   }
 
-  load(audiobook, playWhenReady, startTime = 0) {
+  load(libraryItem, playWhenReady, startTime = 0) {
     if (!this.player) this.switchPlayer()
 
-    this.audiobook = audiobook
+    this.libraryItem = libraryItem
     this.startTime = startTime
     this.playWhenReady = playWhenReady
     this.prepare()
@@ -58,8 +58,8 @@ export default class PlayerHandler {
       this.player = new CastPlayer(this.ctx)
       this.setPlayerListeners()
 
-      if (this.audiobook) {
-        // Audiobook was already loaded - prepare for cast
+      if (this.libraryItem) {
+        // libraryItem was already loaded - prepare for cast
         this.playWhenReady = false
         this.prepare()
       }
@@ -75,8 +75,8 @@ export default class PlayerHandler {
       this.player = new LocalPlayer(this.ctx)
       this.setPlayerListeners()
 
-      if (this.audiobook) {
-        // Audiobook was already loaded - prepare for local play
+      if (this.libraryItem) {
+        // libraryItem was already loaded - prepare for local play
         this.playWhenReady = false
         this.prepare()
       }
@@ -129,10 +129,15 @@ export default class PlayerHandler {
     var useHls = false
 
     var runningTotal = 0
-    var audioTracks = (this.audiobook.tracks || []).map((track) => {
+
+    var audioTracks = (this.libraryItem.media.tracks || []).map((track) => {
+      if (!track.metadata) {
+        console.error('INVALID TRACK', track)
+        return null
+      }
       var audioTrack = new AudioTrack(track)
       audioTrack.startOffset = runningTotal
-      audioTrack.contentUrl = `/lib/${this.audiobook.libraryId}/${this.audiobook.folderId}/${this.ctx.$encodeUriPath(track.path)}?token=${this.userToken}`
+      audioTrack.contentUrl = `/s/item/${this.libraryItem.id}/${this.ctx.$encodeUriPath(track.metadata.relPath.replace(/^\//, ''))}?token=${this.userToken}`
       audioTrack.mimeType = this.getMimeTypeForTrack(track)
       audioTrack.canDirectPlay = !!this.player.playableMimetypes[audioTrack.mimeType]
 
@@ -156,7 +161,7 @@ export default class PlayerHandler {
 
 
     if (useHls) {
-      var stream = await this.ctx.$axios.$get(`/api/books/${this.audiobook.id}/stream`).catch((error) => {
+      var stream = await this.ctx.$axios.$get(`/api/items/${this.libraryItem.id}/stream`).catch((error) => {
         console.error('Failed to start stream', error)
       })
       if (stream) {
@@ -171,7 +176,7 @@ export default class PlayerHandler {
   }
 
   getMimeTypeForTrack(track) {
-    var ext = track.ext
+    var ext = track.metadata.ext
     if (ext === '.mp3' || ext === '.m4b' || ext === '.m4a') {
       return 'audio/mpeg'
     } else if (ext === '.mp4') {
@@ -187,13 +192,13 @@ export default class PlayerHandler {
   }
 
   closePlayer() {
-    console.log('[PlayerHandler] CLose Player')
+    console.log('[PlayerHandler] Close Player')
     if (this.player) {
       this.player.destroy()
     }
     this.player = null
     this.playerState = 'IDLE'
-    this.audiobook = null
+    this.libraryItem = null
     this.currentStreamId = null
     this.startTime = 0
     this.stopPlayInterval()
@@ -201,7 +206,7 @@ export default class PlayerHandler {
 
   prepareStream(stream) {
     if (!this.player) this.switchPlayer()
-    this.audiobook = stream.audiobook
+    this.libraryItem = stream.libraryItem
     this.setHlsStream({
       streamId: stream.id,
       streamUrl: stream.clientPlaylistUri,
@@ -212,19 +217,19 @@ export default class PlayerHandler {
   setHlsStream(stream) {
     this.currentStreamId = stream.streamId
     var audioTrack = new AudioTrack({
-      duration: this.audiobook.duration,
+      duration: this.libraryItem.media.duration,
       contentUrl: stream.streamUrl + '?token=' + this.userToken,
       mimeType: 'application/vnd.apple.mpegurl'
     })
     this.startTime = stream.startTime
     this.ctx.playerLoading = true
-    this.player.set(this.audiobook, [audioTrack], this.currentStreamId, stream.startTime, this.playWhenReady)
+    this.player.set(this.libraryItem, [audioTrack], this.currentStreamId, stream.startTime, this.playWhenReady)
   }
 
   setDirectPlay(audioTracks) {
     this.currentStreamId = null
     this.ctx.playerLoading = true
-    this.player.set(this.audiobook, audioTracks, null, this.startTime, this.playWhenReady)
+    this.player.set(this.libraryItem, audioTracks, null, this.startTime, this.playWhenReady)
   }
 
   resetStream(startTime, streamId) {
@@ -265,21 +270,21 @@ export default class PlayerHandler {
         timeListened: listeningTimeToAdd,
         currentTime,
         streamId: this.currentStreamId,
-        audiobookId: this.audiobook.id
+        audiobookId: this.libraryItem.id
       }
       this.ctx.$axios.$post('/api/syncStream', syncData, { timeout: 1000 }).catch((error) => {
         console.error('Failed to update stream progress', error)
       })
     } else {
       // Direct play via chromecast does not yet have backend stream session model
-      //   so the progress update for the audiobook is updated this way (instead of through the stream)
+      //   so the progress update for the libraryItem is updated this way (instead of through the stream)
       var duration = this.getDuration()
       var syncData = {
         totalDuration: duration,
         currentTime,
         progress: duration > 0 ? currentTime / duration : 0,
         isRead: false,
-        audiobookId: this.audiobook.id,
+        audiobookId: this.libraryItem.id,
         lastUpdate: Date.now()
       }
       this.ctx.$axios.$post('/api/syncLocal', syncData, { timeout: 1000 }).catch((error) => {

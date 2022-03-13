@@ -3,7 +3,7 @@ export default class AudioTrack {
     this.index = track.index || 0
     this.startOffset = track.startOffset || 0 // Total time of all previous tracks
     this.duration = track.duration || 0
-    this.title = track.filename || ''
+    this.title = track.metadata ? track.metadata.filename || '' : ''
     this.contentUrl = track.contentUrl || null
     this.mimeType = track.mimeType
   }

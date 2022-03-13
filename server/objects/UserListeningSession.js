@@ -61,14 +61,15 @@ class UserListeningSession {
     this.startedAt = session.startedAt
   }
 
-  setData(audiobook, user) {
+  setData(libraryItem, user) {
     this.id = getId('ls')
     this.userId = user.id
-    this.audiobookId = audiobook.id
-    this.audiobookTitle = audiobook.title || ''
-    this.audiobookAuthor = audiobook.authorFL || ''
-    this.audiobookDuration = audiobook.duration || 0
-    this.audiobookGenres = [...audiobook.genres]
+    this.audiobookId = libraryItem.id
+    // TODO: For podcasts this needs to be generic
+    this.audiobookTitle = libraryItem.media.metadata.title || ''
+    this.audiobookAuthor = libraryItem.media.metadata.authorName || ''
+    this.audiobookDuration = libraryItem.media.duration || 0
+    this.audiobookGenres = [...libraryItem.media.metadata.genres]
 
     this.timeListening = 0
     this.lastUpdate = Date.now()

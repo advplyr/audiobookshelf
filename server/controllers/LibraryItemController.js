@@ -177,6 +177,11 @@ class LibraryItemController {
     return this.cacheManager.handleCoverCache(res, libraryItem, options)
   }
 
+  // GET: api/items/:id/stream
+  openStream(req, res) {
+    this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
+  }
+
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)

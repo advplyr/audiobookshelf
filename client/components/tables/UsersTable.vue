@@ -26,8 +26,8 @@
           </td>
           <td class="text-sm">{{ user.type }}</td>
           <td class="hidden lg:table-cell">
-            <div v-if="usersOnline[user.id] && usersOnline[user.id].stream && usersOnline[user.id].stream.audiobook && usersOnline[user.id].stream.audiobook.book">
-              <p class="truncate text-xs">Reading: {{ usersOnline[user.id].stream.audiobook.book.title || '' }}</p>
+            <div v-if="usersOnline[user.id] && usersOnline[user.id].stream && usersOnline[user.id].stream.libraryItem && usersOnline[user.id].stream.libraryItem.media">
+              <p class="truncate text-xs">Reading: {{ usersOnline[user.id].stream.libraryItem.media.metadata.title || '' }}</p>
             </div>
             <div v-else-if="user.audiobooks && getLastRead(user.audiobooks)">
               <p class="truncate text-xs">Last: {{ getLastRead(user.audiobooks) }}</p>

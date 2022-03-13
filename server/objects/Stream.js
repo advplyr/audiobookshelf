@@ -10,12 +10,12 @@ const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 const UserListeningSession = require('./UserListeningSession')
 
 class Stream extends EventEmitter {
-  constructor(streamPath, client, audiobook, transcodeOptions = {}) {
+  constructor(streamPath, client, libraryItem, transcodeOptions = {}) {
     super()
 
     this.id = getId('str')
     this.client = client
-    this.audiobook = audiobook
+    this.libraryItem = libraryItem
 
     this.transcodeOptions = transcodeOptions
 
@@ -37,7 +37,7 @@ class Stream extends EventEmitter {
     this.clientCurrentTime = 0
 
     this.listeningSession = new UserListeningSession()
-    this.listeningSession.setData(audiobook, client.user)
+    this.listeningSession.setData(libraryItem, client.user)
 
     this.init()
   }
@@ -46,21 +46,21 @@ class Stream extends EventEmitter {
     return this.client ? this.client.socket || null : null
   }
 
-  get audiobookId() {
-    return this.audiobook.id
+  get libraryItemId() {
+    return this.libraryItem.id
   }
 
-  get audiobookTitle() {
-    return this.audiobook ? this.audiobook.title : null
+  get itemTitle() {
+    return this.libraryItem ? this.libraryItem.media.metadata.title : null
   }
 
   get totalDuration() {
-    return this.audiobook.duration
+    return this.libraryItem.media.duration
   }
 
   get tracksAudioFileType() {
     if (!this.tracks.length) return null
-    return this.tracks[0].ext.toLowerCase().slice(1)
+    return this.tracks[0].metadata.ext.toLowerCase().slice(1)
   }
 
   // Fmp4 does not work on iOS devices: https://github.com/advplyr/audiobookshelf-app/issues/85
@@ -90,7 +90,7 @@ class Stream extends EventEmitter {
   }
 
   get tracks() {
-    return this.audiobook.tracks
+    return this.libraryItem.media.tracks
   }
 
   get clientUser() {
@@ -106,7 +106,7 @@ class Stream extends EventEmitter {
   }
 
   get clientUserAudiobookData() {
-    return this.client ? this.clientUserAudiobooks[this.audiobookId] : null
+    return this.client ? this.clientUserAudiobooks[this.libraryItemId] : null
   }
 
   get clientPlaylistUri() {
@@ -132,7 +132,7 @@ class Stream extends EventEmitter {
       id: this.id,
       clientId: this.client.id,
       userId: this.client.user.id,
-      audiobook: this.audiobook.toJSONExpanded(),
+      libraryItem: this.libraryItem.toJSONExpanded(),
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,
@@ -147,7 +147,7 @@ class Stream extends EventEmitter {
   init() {
     if (this.clientUserAudiobookData) {
       var timeRemaining = this.totalDuration - this.clientUserAudiobookData.currentTime
-      Logger.info('[STREAM] User has progress for audiobook', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
+      Logger.info('[STREAM] User has progress for item', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
       if (timeRemaining > 15) {
         this.startTime = this.clientUserAudiobookData.currentTime
         this.clientCurrentTime = this.startTime
@@ -194,7 +194,7 @@ class Stream extends EventEmitter {
           return null
         }
         this.listeningSession = new UserListeningSession()
-        this.listeningSession.setData(this.audiobook, this.clientUser)
+        this.listeningSession.setData(this.libraryItem, this.clientUser)
         Logger.debug(`[Stream] Listening session rolled to next day`)
       }
 
@@ -284,7 +284,6 @@ class Stream extends EventEmitter {
   }
 
   startLoop() {
-    // Logger.info(`[Stream] ${this.audiobookTitle} (${this.id}) Start Loop`)
     if (this.socket) {
       this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
     }
@@ -295,7 +294,7 @@ class Stream extends EventEmitter {
         this.checkFiles()
       } else {
         if (this.socket) {
-          Logger.info(`[Stream] ${this.audiobookTitle} sending stream_ready`)
+          Logger.info(`[Stream] ${this.itemTitle} sending stream_ready`)
           this.socket.emit('stream_ready')
         }
         clearInterval(intervalId)
