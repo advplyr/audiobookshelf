@@ -20,6 +20,10 @@
           <p class="text-center font-semibold truncate" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ name }}</p>
           <p class="text-center text-gray-200" :style="{ fontSize: sizeMultiplier * 0.85 + 'rem' }">{{ numBooks }} Book{{ numBooks === 1 ? '' : 's' }}</p>
         </div>
+
+        <div class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200" @click.stop="searchAuthor">
+          <span class="material-icons">search</span>
+        </div>
       </div>
     </div>
   </div>
@@ -74,7 +78,15 @@ export default {
       return url.href + `?token=${this.userToken}&ts=${this.lastUpdate}`
     }
   },
-  methods: {},
+  methods: {
+    async searchAuthor() {
+      var author = await this.$axios.$post(`/api/authors/${this.authorId}/match`, { q: this.name }).catch((error) => {
+        console.error('Failed', error)
+        return null
+      })
+      console.log('Got author', author)
+    }
+  },
   mounted() {}
 }
 </script>

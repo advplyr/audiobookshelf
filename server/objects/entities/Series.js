@@ -4,6 +4,7 @@ class Series {
   constructor(series) {
     this.id = null
     this.name = null
+    this.description = null
     this.addedAt = null
     this.updatedAt = null
 
@@ -15,6 +16,7 @@ class Series {
   construct(series) {
     this.id = series.id
     this.name = series.name
+    this.description = series.description || null
     this.addedAt = series.addedAt
     this.updatedAt = series.updatedAt
   }
@@ -23,6 +25,7 @@ class Series {
     return {
       id: this.id,
       name: this.name,
+      description: this.description,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
@@ -39,6 +42,7 @@ class Series {
   setData(data) {
     this.id = getId('ser')
     this.name = data.name
+    this.description = data.description || null
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
   }

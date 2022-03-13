@@ -5,6 +5,7 @@ class Author {
     this.id = null
     this.asin = null
     this.name = null
+    this.description = null
     this.imagePath = null
     this.relImagePath = null
     this.addedAt = null
@@ -19,6 +20,7 @@ class Author {
     this.id = author.id
     this.asin = author.asin
     this.name = author.name
+    this.description = author.description || null
     this.imagePath = author.imagePath
     this.relImagePath = author.relImagePath
     this.addedAt = author.addedAt
@@ -30,6 +32,7 @@ class Author {
       id: this.id,
       asin: this.asin,
       name: this.name,
+      description: this.description,
       imagePath: this.imagePath,
       relImagePath: this.relImagePath,
       addedAt: this.addedAt,
@@ -47,6 +50,7 @@ class Author {
   setData(data) {
     this.id = getId('aut')
     this.name = data.name
+    this.description = data.description || null
     this.asin = data.asin || null
     this.imagePath = data.imagePath || null
     this.relImagePath = data.relImagePath || null

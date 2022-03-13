@@ -16,6 +16,7 @@ const MeController = require('./controllers/MeController')
 const BackupController = require('./controllers/BackupController')
 const LibraryItemController = require('./controllers/LibraryItemController')
 const SeriesController = require('./controllers/SeriesController')
+const AuthorController = require('./controllers/AuthorController')
 
 const BookFinder = require('./finders/BookFinder')
 const AuthorFinder = require('./finders/AuthorFinder')
@@ -161,12 +162,9 @@ class ApiController {
     //
     // Author Routes
     //
-    this.router.get('/authors', this.getAuthors.bind(this))
-    this.router.get('/authors/search', this.searchAuthors.bind(this))
-    this.router.get('/authors/:id', this.getAuthor.bind(this))
-    this.router.post('/authors', this.createAuthor.bind(this))
-    this.router.patch('/authors/:id', this.updateAuthor.bind(this))
-    this.router.delete('/authors/:id', this.deleteAuthor.bind(this))
+    this.router.get('/authors/:id', AuthorController.middleware.bind(this), AuthorController.findOne.bind(this))
+    this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
+    this.router.get('/authors/search', AuthorController.search.bind(this))
 
     //
     // Series Routes
@@ -228,64 +226,6 @@ class ApiController {
       return res.sendStatus(401)
     }
     res.json({ user: req.user })
-  }
-
-  async getAuthors(req, res) {
-    res.json(this.db.authors)
-  }
-
-  searchAuthors(req, res) {
-    var query = req.query.q || ''
-    var limit = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 100
-    var authors = this.db.authors.filter(au => au.name.toLowerCase().includes(query.toLowerCase()))
-    authors = authors.slice(0, limit)
-    res.json(authors)
-  }
-
-  async getAuthor(req, res) {
-    var author = this.db.authors.find(p => p.id === req.params.id)
-    if (!author) {
-      return res.status(404).send('Author not found')
-    }
-    res.json(author.toJSON())
-  }
-
-  async createAuthor(req, res) {
-    var author = await this.authorFinder.createAuthor(req.body)
-    if (!author) {
-      return res.status(500).send('Failed to create author')
-    }
-
-    await this.db.insertEntity('author', author)
-    this.emitter('author_added', author.toJSON())
-    res.json(author)
-  }
-
-  async updateAuthor(req, res) {
-    var author = this.db.authors.find(p => p.id === req.params.id)
-    if (!author) {
-      return res.status(404).send('Author not found')
-    }
-
-    var wasUpdated = author.update(req.body)
-    if (wasUpdated) {
-      await this.db.updateEntity('author', author)
-      this.emitter('author_updated', author.toJSON())
-    }
-    res.json(author)
-  }
-
-  async deleteAuthor(req, res) {
-    var author = this.db.authors.find(p => p.id === req.params.id)
-    if (!author) {
-      return res.status(404).send('Author not found')
-    }
-
-    var authorJson = author.toJSON()
-
-    await this.db.removeEntity('author', author.id)
-    this.emitter('author_removed', authorJson)
-    res.sendStatus(200)
   }
 
   async updateServerSettings(req, res) {
