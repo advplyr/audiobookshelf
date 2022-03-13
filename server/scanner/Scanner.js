@@ -354,6 +354,9 @@ class Scanner {
       }
     }
 
+    // Temp authors & series are inserted - create them if found
+    await this.createNewAuthorsAndSeries(libraryItem)
+
     if (!libraryItem.media.hasMediaFiles) { // Library item is invalid
       libraryItem.setInvalid()
       hasUpdated = true
@@ -407,49 +410,56 @@ class Scanner {
         libraryItem.media.updateLastCoverSearch(updatedCover)
       }
 
-      // Create or match all new authors and series
-      if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
-        var newAuthors = []
-        libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
-          var _author = this.db.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
-          if (!_author) {
-            _author = new Author()
-            _author.setData(tempMinAuthor)
-            newAuthors.push(_author)
-          }
-          return {
-            id: _author.id,
-            name: _author.name
-          }
-        })
-        if (newAuthors.length) {
-          await this.db.insertEntities('author', newAuthors)
-          this.emitter('authors_added', newAuthors.map(au => au.toJSON()))
-        }
-      }
-      if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
-        var newSeries = []
-        libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
-          var _series = this.db.series.find(se => se.checkNameEquals(tempMinSeries.name))
-          if (!_series) {
-            _series = new Series()
-            _series.setData(tempMinSeries)
-            newSeries.push(_series)
-          }
-          return {
-            id: _series.id,
-            name: _series.name,
-            sequence: tempMinSeries.sequence
-          }
-        })
-        if (newSeries.length) {
-          await this.db.insertEntities('series', newSeries)
-          this.emitter('series_added', newSeries.map(se => se.toJSON()))
-        }
-      }
+      // Temp authors & series are inserted - create them if found
+      await this.createNewAuthorsAndSeries(libraryItem)
     }
 
     return libraryItem
+  }
+
+  async createNewAuthorsAndSeries(libraryItem) {
+    // Create or match all new authors and series
+    if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
+      var newAuthors = []
+      libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
+        var _author = this.db.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
+        if (!_author) _author = newAuthors.find(au => au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
+        if (!_author) {
+          _author = new Author()
+          _author.setData(tempMinAuthor)
+          newAuthors.push(_author)
+        }
+        return {
+          id: _author.id,
+          name: _author.name
+        }
+      })
+      if (newAuthors.length) {
+        await this.db.insertEntities('author', newAuthors)
+        this.emitter('authors_added', newAuthors.map(au => au.toJSON()))
+      }
+    }
+    if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
+      var newSeries = []
+      libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
+        var _series = this.db.series.find(se => se.checkNameEquals(tempMinSeries.name))
+        if (!_series) _series = newSeries.find(se => se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
+        if (!_series) {
+          _series = new Series()
+          _series.setData(tempMinSeries)
+          newSeries.push(_series)
+        }
+        return {
+          id: _series.id,
+          name: _series.name,
+          sequence: tempMinSeries.sequence
+        }
+      })
+      if (newSeries.length) {
+        await this.db.insertEntities('series', newSeries)
+        this.emitter('series_added', newSeries.map(se => se.toJSON()))
+      }
+    }
   }
 
   getFileUpdatesGrouped(fileUpdates) {
@@ -529,7 +539,6 @@ class Scanner {
       // Check if book dir group is already an item
       var existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
       if (existingLibraryItem) {
-
         // Is the item exactly - check if was deleted
         if (existingLibraryItem.path === fullPath) {
           var exists = await fs.pathExists(fullPath)

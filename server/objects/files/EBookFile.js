@@ -30,5 +30,28 @@ class EBookFile {
       updatedAt: this.updatedAt
     }
   }
+
+  setData(libraryFile) {
+    this.ino = libraryFile.ino
+    this.metadata = libraryFile.metadata.clone()
+    this.ebookFormat = libraryFile.metadata.format
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
+  }
+
+  updateFromLibraryFile(libraryFile) {
+    var hasUpdated = false
+
+    if (this.metadata.update(libraryFile.metadata)) {
+      hasUpdated = true
+    }
+
+    if (this.ebookFormat !== libraryFile.metadata.format) {
+      this.ebookFormat = libraryFile.metadata.format
+      hasUpdated = true
+    }
+
+    return hasUpdated
+  }
 }
 module.exports = EBookFile

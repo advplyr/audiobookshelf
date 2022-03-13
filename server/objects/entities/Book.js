@@ -341,5 +341,11 @@ class Book {
     }
     return payload
   }
+
+  addEbookFile(libraryFile) {
+    var newEbook = new EBookFile()
+    newEbook.setData(libraryFile)
+    this.ebookFiles.push(newEbook)
+  }
 }
 module.exports = Book

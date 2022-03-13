@@ -185,7 +185,7 @@ class AudioFileScanner {
 
       var totalAudioFilesToInclude = audioScanResult.audioFiles.length
       var newAudioFiles = audioScanResult.audioFiles.filter(af => {
-        return !libraryItem.libraryFiles.find(lf => lf.ino === af.ino)
+        return !libraryItem.media.findFileWithInode(af.ino)
       })
 
       // Adding audio files to book media

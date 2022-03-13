@@ -247,7 +247,7 @@ class BookMetadata {
   parseAuthorsTag(authorsTag) {
     var parsed = parseNameString(authorsTag)
     if (!parsed) return []
-    return parsed.map((au) => {
+    return (parsed.names || []).map((au) => {
       return {
         id: `new-${Math.floor(Math.random() * 1000000)}`,
         name: au

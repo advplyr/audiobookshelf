@@ -18,7 +18,9 @@ const FileMetadata = require('../objects/metadata/FileMetadata')
 const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
 
 var authorsToAdd = []
+var existingDbAuthors = []
 var seriesToAdd = []
+var existingDbSeries = []
 
 // Load old audiobooks
 async function loadAudiobooks() {
@@ -41,6 +43,10 @@ function makeAuthorsFromOldAb(authorsList) {
     if (existingAuthor) {
       return existingAuthor.toJSONMinimal()
     }
+    var existingDbAuthor = existingDbAuthors.find(a => a.name.toLowerCase() === authorName.toLowerCase())
+    if (existingDbAuthor) {
+      return existingDbAuthor.toJSONMinimal()
+    }
 
     var newAuthor = new Author()
     newAuthor.setData({ name: authorName })
@@ -54,6 +60,10 @@ function makeSeriesFromOldAb({ series, volumeNumber }) {
   var existingSeries = seriesToAdd.find(s => s.name.toLowerCase() === series.toLowerCase())
   if (existingSeries) {
     return [existingSeries.toJSONMinimal(volumeNumber)]
+  }
+  var existingDbSeriesItem = existingDbSeries.find(s => s.name.toLowerCase() === series.toLowerCase())
+  if (existingDbSeriesItem) {
+    return [existingDbSeriesItem.toJSONMinimal(volumeNumber)]
   }
   var newSeries = new Series()
   newSeries.setData({ name: series })
@@ -190,6 +200,13 @@ async function migrateDb(db) {
     return
   }
 
+  if (db.authors && db.authors.length) {
+    existingDbAuthors = db.authors
+  }
+  if (db.series && db.series.length) {
+    existingDbSeries = db.series
+  }
+
   var libraryItems = audiobooks.map((ab) => makeLibraryItemFromOldAb(ab))
 
   Logger.info(`>>> ${libraryItems.length} Library Items made`)
@@ -202,7 +219,10 @@ async function migrateDb(db) {
     Logger.info(`>>> ${seriesToAdd.length} Series made`)
     await db.insertEntities('series', seriesToAdd)
   }
-
+  existingDbSeries = []
+  existingDbAuthors = []
+  authorsToAdd = []
+  seriesToAdd = []
   Logger.info(`==== DB Migration Complete ====`)
 }
 module.exports = migrateDb

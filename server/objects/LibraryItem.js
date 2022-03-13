@@ -3,7 +3,7 @@ const Logger = require('../Logger')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./entities/Book')
 const Podcast = require('./entities/Podcast')
-const { areEquivalent, copyValue } = require('../utils/index')
+const { areEquivalent, copyValue, getId } = require('../utils/index')
 
 class LibraryItem {
   constructor(libraryItem = null) {
@@ -149,6 +149,7 @@ class LibraryItem {
 
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {
+    this.id = getId('li')
     if (libraryMediaType === 'podcast') {
       this.mediaType = 'podcast'
       this.media = new Podcast()
@@ -319,7 +320,6 @@ class LibraryItem {
 
     dataFound.libraryFiles.forEach((lf) => {
       var fileFoundCheck = this.checkFileFound(lf, true)
-      console.log('Check library file', fileFoundCheck, lf.metadata.filename)
       if (fileFoundCheck === null) {
         newLibraryFiles.push(lf)
       } else if (fileFoundCheck) {
@@ -381,21 +381,47 @@ class LibraryItem {
     }
   }
 
+  findLibraryFileWithIno(inode) {
+    return this.libraryFiles.find(lf => lf.ino === inode)
+  }
+
   // Set metadata from files
   async syncFiles(preferOpfMetadata) {
+    var hasUpdated = false
+
+    if (this.mediaType === 'book') {
+      // Add/update ebook files (ebooks that were removed are removed in checkScanData)
+      this.libraryFiles.forEach((lf) => {
+        if (lf.fileType === 'ebook') {
+          var existingFile = this.media.findFileWithInode(lf.ino)
+          if (!existingFile) {
+            this.media.addEbookFile(lf)
+            hasUpdated = true
+          } else if (existingFile.ebookFormat) {
+            if (existingFile.updateFromLibraryFile(lf)) {// EBookFile.js
+              hasUpdated = true
+            }
+          }
+        }
+      })
+    }
+
+    // Set cover image if not set
     var imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
-    console.log('image files', imageFiles.length, 'has cover', this.media.coverPath)
     if (imageFiles.length && !this.media.coverPath) {
       this.media.coverPath = imageFiles[0].metadata.path
       Logger.debug('[LibraryItem] Set media cover path', this.media.coverPath)
+      hasUpdated = true
     }
 
+    // Parse metadata files
     var textMetadataFiles = this.libraryFiles.filter(lf => lf.fileType === 'metadata' || lf.fileType === 'text')
-    if (!textMetadataFiles.length) {
-      return false
+    if (textMetadataFiles.length) {
+      if (await this.media.syncMetadataFiles(textMetadataFiles, preferOpfMetadata)) {
+        hasUpdated = true
+      }
     }
 
-    var hasUpdated = await this.media.syncMetadataFiles(textMetadataFiles, preferOpfMetadata)
     if (hasUpdated) {
       this.updatedAt = Date.now()
     }
