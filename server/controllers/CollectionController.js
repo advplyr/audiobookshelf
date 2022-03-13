@@ -11,7 +11,7 @@ class CollectionController {
     if (!success) {
       return res.status(500).send('Invalid collection data')
     }
-    var jsonExpanded = newCollection.toJSONExpanded(this.db.audiobooks)
+    var jsonExpanded = newCollection.toJSONExpanded(this.db.libraryItems)
     await this.db.insertEntity('collection', newCollection)
     this.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
@@ -19,7 +19,7 @@ class CollectionController {
 
   findAll(req, res) {
     var collections = this.db.collections.filter(c => c.userId === req.user.id)
-    var expandedCollections = collections.map(c => c.toJSONExpanded(this.db.audiobooks))
+    var expandedCollections = collections.map(c => c.toJSONExpanded(this.db.libraryItems))
     res.json(expandedCollections)
   }
 
@@ -28,7 +28,7 @@ class CollectionController {
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
-    res.json(collection.toJSONExpanded(this.db.audiobooks))
+    res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
 
   async update(req, res) {
@@ -37,7 +37,7 @@ class CollectionController {
       return res.status(404).send('Collection not found')
     }
     var wasUpdated = collection.update(req.body)
-    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     if (wasUpdated) {
       await this.db.updateEntity('collection', collection)
       this.emitter('collection_updated', jsonExpanded)
@@ -50,7 +50,7 @@ class CollectionController {
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
-    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     await this.db.removeEntity('collection', collection.id)
     this.emitter('collection_removed', jsonExpanded)
     res.sendStatus(200)
@@ -61,18 +61,18 @@ class CollectionController {
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
-    var audiobook = this.db.audiobooks.find(ab => ab.id === req.body.id)
-    if (!audiobook) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === req.body.id)
+    if (!libraryItem) {
       return res.status(500).send('Book not found')
     }
-    if (audiobook.libraryId !== collection.libraryId) {
+    if (libraryItem.libraryId !== collection.libraryId) {
       return res.status(500).send('Book in different library')
     }
     if (collection.books.includes(req.body.id)) {
       return res.status(500).send('Book already in collection')
     }
     collection.addBook(req.body.id)
-    var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+    var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     await this.db.updateEntity('collection', collection)
     this.emitter('collection_updated', jsonExpanded)
     res.json(jsonExpanded)
@@ -87,11 +87,11 @@ class CollectionController {
 
     if (collection.books.includes(req.params.bookId)) {
       collection.removeBook(req.params.bookId)
-      var jsonExpanded = collection.toJSONExpanded(this.db.audiobooks)
+      var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
       await this.db.updateEntity('collection', collection)
       this.emitter('collection_updated', jsonExpanded)
     }
-    res.json(collection.toJSONExpanded(this.db.audiobooks))
+    res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
 
   // POST: api/collections/:id/batch/add
@@ -113,9 +113,9 @@ class CollectionController {
     }
     if (hasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', collection.toJSONExpanded(this.db.audiobooks))
+      this.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
-    res.json(collection.toJSONExpanded(this.db.audiobooks))
+    res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
 
   // POST: api/collections/:id/batch/remove
@@ -137,9 +137,9 @@ class CollectionController {
     }
     if (hasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', collection.toJSONExpanded(this.db.audiobooks))
+      this.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
-    res.json(collection.toJSONExpanded(this.db.audiobooks))
+    res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
 }
 module.exports = new CollectionController()

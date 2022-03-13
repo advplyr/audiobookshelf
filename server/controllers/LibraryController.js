@@ -93,10 +93,8 @@ class LibraryController {
   // api/libraries/:id/items
   // TODO: Optimize this method, items are iterated through several times but can be combined
   getLibraryItems(req, res) {
-    var libraryId = req.library.id
     var media = req.query.media || 'all'
-    var libraryItems = this.db.libraryItems.filter(li => {
-      if (li.libraryId !== libraryId) return false
+    var libraryItems = req.libraryItems.filter(li => {
       if (media != 'all') return li.mediaType == media
       return true
     })
@@ -151,85 +149,9 @@ class LibraryController {
     res.json(payload)
   }
 
-  // api/libraries/:id/books/all
-  // TODO: Optimize this method, audiobooks are iterated through several times but can be combined
-  getBooksForLibrary(req, res) {
-    var libraryId = req.library.id
-
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === libraryId)
-    var payload = {
-      results: [],
-      total: audiobooks.length,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
-      sortBy: req.query.sort,
-      sortDesc: req.query.desc === '1',
-      filterBy: req.query.filter,
-      minified: req.query.minified === '1',
-      collapseseries: req.query.collapseseries === '1'
-    }
-
-    if (payload.filterBy) {
-      audiobooks = libraryHelpers.getFiltered(audiobooks, payload.filterBy, req.user)
-      payload.total = audiobooks.length
-    }
-
-    if (payload.sortBy) {
-      var sortKey = payload.sortBy
-
-      // Handle server setting sortingIgnorePrefix
-      if ((sortKey === 'book.series' || sortKey === 'book.title') && this.db.serverSettings.sortingIgnorePrefix) {
-        // Book.js has seriesIgnorePrefix and titleIgnorePrefix getters
-        sortKey += 'IgnorePrefix'
-      }
-
-      var direction = payload.sortDesc ? 'desc' : 'asc'
-      audiobooks = naturalSort(audiobooks)[direction]((ab) => {
-
-        // Supports dot notation strings i.e. "book.title"
-        return sortKey.split('.').reduce((a, b) => a[b], ab)
-      })
-    }
-
-    if (payload.collapseseries) {
-      var series = {}
-      // Group abs by series
-      for (let i = 0; i < audiobooks.length; i++) {
-        var ab = audiobooks[i]
-        if (ab.book.series) {
-          if (!series[ab.book.series]) series[ab.book.series] = []
-          series[ab.book.series].push(ab)
-        }
-      }
-
-      // Sort series by volume number and filter out all but the first book in series
-      var seriesBooksToKeep = Object.values(series).map((_series) => {
-        var sorted = naturalSort(_series).asc(_ab => _ab.book.volumeNumber)
-        return sorted[0].id
-      })
-      // Add "booksInSeries" field to audiobook payload
-      audiobooks = audiobooks.filter(ab => !ab.book.series || seriesBooksToKeep.includes(ab.id)).map(ab => {
-        var abJson = payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded()
-        if (ab.book.series) abJson.booksInSeries = series[ab.book.series].length
-        return abJson
-      })
-      payload.total = audiobooks.length
-    } else {
-      audiobooks = audiobooks.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSONExpanded())
-    }
-
-    if (payload.limit) {
-      var startIndex = payload.page * payload.limit
-      audiobooks = audiobooks.slice(startIndex, startIndex + payload.limit)
-    }
-    payload.results = audiobooks
-    res.json(payload)
-  }
-
   // api/libraries/:id/series
   async getAllSeriesForLibrary(req, res) {
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
-
+    var libraryItems = req.libraryItems
     var payload = {
       results: [],
       total: 0,
@@ -241,7 +163,7 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(audiobooks, payload.minified)
+    var series = libraryHelpers.getSeriesFromBooks(libraryItems, payload.minified)
 
     var sortingIgnorePrefix = this.db.serverSettings.sortingIgnorePrefix
     series = sort(series).asc(s => {
@@ -263,24 +185,23 @@ class LibraryController {
 
   // GET: api/libraries/:id/series/:series
   async getSeriesForLibrary(req, res) {
-    var series = libraryHelpers.decode(req.params.series)
-    if (!series) {
+    if (!req.params.series) {
       return res.status(403).send('Invalid series')
     }
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id && ab.book.series === series)
-    if (!audiobooks.length) {
+    var libraryItems = this.db.libraryItems.filter(li => li.libraryId === req.library.id && li.book.series === req.params.series)
+    if (!libraryItems.length) {
       return res.status(404).send('Series not found')
     }
-    var sortedBooks = libraryHelpers.sortSeriesBooks(audiobooks, false)
+    var sortedBooks = libraryHelpers.sortSeriesBooks(libraryItems, false)
     res.json({
       results: sortedBooks,
-      total: audiobooks.length
+      total: libraryItems.length
     })
   }
 
-  // api/libraries/:id/series
+  // api/libraries/:id/collections
   async getCollectionsForLibrary(req, res) {
-    var audiobooks = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+    var libraryItems = req.libraryItems
 
     var payload = {
       results: [],
@@ -293,7 +214,7 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(audiobooks, payload.minified))
+    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(libraryItems, payload.minified))
     payload.total = collections.length
 
     if (payload.limit) {
@@ -521,19 +442,19 @@ class LibraryController {
   }
 
   async getAuthors(req, res) {
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+    var libraryItems = req.libraryItems
     var authors = {}
-    audiobooksInLibrary.forEach((ab) => {
-      if (ab.book._authorsList.length) {
-        ab.book._authorsList.forEach((author) => {
-          if (!author) return
-          if (!authors[author]) {
-            authors[author] = {
-              name: author,
-              numBooks: 1
+    libraryItems.forEach((li) => {
+      if (li.media.metadata.authors && li.media.metadata.authors.length) {
+        li.media.metadata.authors.forEach((au) => {
+          if (!authors[au.id]) {
+            var _author = this.db.authors.find(_au => _au.id === au.id)
+            if (_author) {
+              authors[au.id] = _author.toJSON()
+              authors[au.id].numBooks = 1
             }
           } else {
-            authors[author].numBooks++
+            authors[au.id].numBooks++
           }
         })
       }

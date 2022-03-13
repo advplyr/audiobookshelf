@@ -18,9 +18,16 @@ export default {
     if (!library) {
       return redirect('/oops?message=Library not found')
     }
+    var series = await app.$axios.$get(`/api/series/${params.id}`).catch((error) => {
+      console.error('Failed', error)
+      return false
+    })
+    if (!series) {
+      return redirect('/oops?message=Series not found')
+    }
 
     return {
-      series: app.$decode(params.id),
+      series: series.name,
       seriesId: params.id
     }
   },

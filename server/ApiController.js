@@ -67,7 +67,6 @@ class ApiController {
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     // Legacy
-    this.router.get('/libraries/:id/books/all', LibraryController.middleware.bind(this), LibraryController.getBooksForLibrary.bind(this))
     this.router.get('/libraries/:id/categories', LibraryController.middleware.bind(this), LibraryController.getLibraryCategories.bind(this))
     this.router.get('/libraries/:id/filters', LibraryController.middleware.bind(this), LibraryController.getLibraryFilters.bind(this))
 
@@ -171,6 +170,7 @@ class ApiController {
     //
     // Series Routes
     //
+    this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.get('/series/search', SeriesController.search.bind(this))
 
 
@@ -230,8 +230,7 @@ class ApiController {
   }
 
   async getAuthors(req, res) {
-    var authors = this.db.authors.filter(p => p.isAuthor)
-    res.json(authors)
+    res.json(this.db.authors)
   }
 
   searchAuthors(req, res) {

@@ -20,7 +20,9 @@ module.exports = {
       else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
       else if (group === 'series') {
         if (filter === 'No Series') filtered = filtered.filter(li => li.media.metadata && !li.media.metadata.series.length)
-        else filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasSeries(filter))
+        else {
+          filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasSeries(filter))
+        }
       }
       else if (group === 'authors') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasAuthor(filter))
       else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
@@ -177,23 +179,26 @@ module.exports = {
 
   getSeriesFromBooks(books, minified = false) {
     var _series = {}
-    books.forEach((audiobook) => {
-      if (audiobook.book.series) {
-        var abJson = minified ? audiobook.toJSONMinified() : audiobook.toJSONExpanded()
-        if (!_series[audiobook.book.series]) {
-          _series[audiobook.book.series] = {
-            id: audiobook.book.series,
-            name: audiobook.book.series,
-            type: 'series',
-            books: [abJson]
+    books.forEach((libraryItem) => {
+      if (libraryItem.media.metadata.series && libraryItem.media.metadata.series.length) {
+        libraryItem.media.metadata.series.forEach((series) => {
+          var abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
+          abJson.sequence = series.sequence
+          if (!_series[series.id]) {
+            _series[series.id] = {
+              id: series.id,
+              name: series.name,
+              type: 'series',
+              books: [abJson]
+            }
+          } else {
+            _series[series.id].books.push(abJson)
           }
-        } else {
-          _series[audiobook.book.series].books.push(abJson)
-        }
+        })
       }
     })
     return Object.values(_series).map((series) => {
-      series.books = naturalSort(series.books).asc(ab => ab.book.volumeNumber)
+      series.books = naturalSort(series.books).asc(li => li.sequence)
       return series
     })
   },
@@ -221,10 +226,15 @@ module.exports = {
     }).filter((series) => series.books.some((book) => book.userAudiobook && book.userAudiobook.isRead))
   },
 
-  sortSeriesBooks(books, minified = false) {
-    return naturalSort(books).asc(ab => ab.book.volumeNumber).map(ab => {
-      if (minified) return ab.toJSONMinified()
-      return ab.toJSONExpanded()
+  sortSeriesBooks(books, seriesId, minified = false) {
+    return naturalSort(books).asc(li => {
+      if (!li.media.metadata.series) return null
+      var series = li.media.metadata.series.find(se => se.id === seriesId)
+      if (!series) return null
+      return series.sequence
+    }).map(li => {
+      if (minified) return li.toJSONMinified()
+      return li.toJSONExpanded()
     })
   },
 

@@ -99,11 +99,11 @@ class BookMetadata {
     return this.title + '&' + this.authorName
   }
 
-  hasAuthor(authorName) {
-    return !!this.authors.find(au => au.name == authorName)
+  hasAuthor(id) {
+    return !!this.authors.find(au => au.id == id)
   }
-  hasSeries(seriesName) {
-    return !!this.series.find(se => se.name == seriesName)
+  hasSeries(seriesId) {
+    return !!this.series.find(se => se.id == seriesId)
   }
   hasNarrator(narratorName) {
     return this.narrators.includes(narratorName)

@@ -155,72 +155,72 @@ export default {
     scan() {
       this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
     },
-    audiobookAdded(audiobook) {
-      console.log('Audiobook added', audiobook)
-      // TODO: Check if audiobook would be on this shelf
+    libraryItemAdded(libraryItem) {
+      console.log('libraryItem added', libraryItem)
+      // TODO: Check if libraryItem would be on this shelf
       if (!this.search) {
         this.fetchCategories()
       }
     },
-    audiobookUpdated(audiobook) {
-      console.log('Audiobook updated', audiobook)
+    libraryItemUpdated(libraryItem) {
+      console.log('libraryItem updated', libraryItem)
       this.shelves.forEach((shelf) => {
         if (shelf.type === 'books') {
           shelf.entities = shelf.entities.map((ent) => {
-            if (ent.id === audiobook.id) {
-              return audiobook
+            if (ent.id === libraryItem.id) {
+              return libraryItem
             }
             return ent
           })
         } else if (shelf.type === 'series') {
           shelf.entities.forEach((ent) => {
             ent.books = ent.books.map((book) => {
-              if (book.id === audiobook.id) return audiobook
+              if (book.id === libraryItem.id) return libraryItem
               return book
             })
           })
         }
       })
     },
-    removeBookFromShelf(audiobook) {
+    removeBookFromShelf(libraryItem) {
       this.shelves.forEach((shelf) => {
         if (shelf.type === 'books') {
           shelf.entities = shelf.entities.filter((ent) => {
-            return ent.id !== audiobook.id
+            return ent.id !== libraryItem.id
           })
         } else if (shelf.type === 'series') {
           shelf.entities.forEach((ent) => {
             ent.books = ent.books.filter((book) => {
-              return book.id !== audiobook.id
+              return book.id !== libraryItem.id
             })
           })
         }
       })
     },
-    audiobookRemoved(audiobook) {
-      this.removeBookFromShelf(audiobook)
+    libraryItemRemoved(libraryItem) {
+      this.removeBookFromShelf(libraryItem)
     },
-    audiobooksAdded(audiobooks) {
-      console.log('audiobooks added', audiobooks)
+    libraryItemsAdded(libraryItems) {
+      console.log('libraryItems added', libraryItems)
       // TODO: Check if audiobook would be on this shelf
       if (!this.search) {
         this.fetchCategories()
       }
     },
-    audiobooksUpdated(audiobooks) {
-      audiobooks.forEach((ab) => {
-        this.audiobookUpdated(ab)
+    libraryItemsUpdated(items) {
+      items.forEach((li) => {
+        this.libraryItemUpdated(li)
       })
     },
     initListeners() {
       this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
 
       if (this.$root.socket) {
-        this.$root.socket.on('audiobook_updated', this.audiobookUpdated)
-        this.$root.socket.on('audiobook_added', this.audiobookAdded)
-        this.$root.socket.on('audiobook_removed', this.audiobookRemoved)
-        this.$root.socket.on('audiobooks_updated', this.audiobooksUpdated)
-        this.$root.socket.on('audiobooks_added', this.audiobooksAdded)
+        this.$root.socket.on('item_updated', this.libraryItemUpdated)
+        this.$root.socket.on('item_added', this.libraryItemAdded)
+        this.$root.socket.on('item_removed', this.libraryItemRemoved)
+        this.$root.socket.on('items_updated', this.libraryItemsUpdated)
+        this.$root.socket.on('items_added', this.libraryItemsAdded)
       } else {
         console.error('Error socket not initialized')
       }
@@ -229,11 +229,11 @@ export default {
       this.$store.commit('user/removeSettingsListener', 'bookshelf')
 
       if (this.$root.socket) {
-        this.$root.socket.off('audiobook_updated', this.audiobookUpdated)
-        this.$root.socket.off('audiobook_added', this.audiobookAdded)
-        this.$root.socket.off('audiobook_removed', this.audiobookRemoved)
-        this.$root.socket.off('audiobooks_updated', this.audiobooksUpdated)
-        this.$root.socket.off('audiobooks_added', this.audiobooksAdded)
+        this.$root.socket.off('item_updated', this.libraryItemUpdated)
+        this.$root.socket.off('item_added', this.libraryItemAdded)
+        this.$root.socket.off('item_removed', this.libraryItemRemoved)
+        this.$root.socket.off('items_updated', this.libraryItemsUpdated)
+        this.$root.socket.off('items_added', this.libraryItemsAdded)
       } else {
         console.error('Error socket not initialized')
       }

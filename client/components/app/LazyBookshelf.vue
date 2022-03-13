@@ -374,7 +374,7 @@ export default {
 
       let searchParams = new URLSearchParams()
       if (this.page === 'series-books') {
-        searchParams.set('filter', `series.${this.seriesId}`)
+        searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
         searchParams.set('sort', 'book.volumeNumber')
         searchParams.set('desc', 0)
       } else {

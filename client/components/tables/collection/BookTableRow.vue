@@ -7,7 +7,7 @@
         </div>
       </div>
       <div class="h-full relative" :style="{ width: coverWidth + 'px' }">
-        <covers-book-cover :audiobook="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
         <div class="absolute top-0 left-0 bg-black bg-opacity-50 flex items-center justify-center h-full w-full z-10" v-show="isHovering && showPlayBtn">
           <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
             <span class="material-icons">play_arrow</span>
@@ -16,8 +16,8 @@
       </div>
       <div class="w-80 h-full px-2 flex items-center">
         <div>
-          <nuxt-link :to="`/audiobook/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
-          <nuxt-link :to="`/library/${book.libraryId}/bookshelf?filter=authors.${$encode(bookAuthor)}`" class="truncate block text-gray-400 text-sm hover:underline">{{ bookAuthor }}</nuxt-link>
+          <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
+          <!-- <nuxt-link :to="`/library/${book.libraryId}/bookshelf?filter=authors.${$encode(bookAuthor)}`" class="truncate block text-gray-400 text-sm hover:underline">{{ bookAuthor }}</nuxt-link> -->
         </div>
       </div>
       <div class="flex-grow flex items-center">
@@ -83,17 +83,20 @@ export default {
     }
   },
   computed: {
-    _book() {
-      return this.book.book || {}
+    media() {
+      return this.book.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     bookTitle() {
-      return this._book.title || ''
+      return this.mediaMetadata.title || ''
     },
     bookAuthor() {
-      return this._book.authorFL || ''
+      return (this.mediaMetadata.authors || []).map((au) => au.name).join(', ')
     },
     bookDuration() {
-      return this.$secondsToTimestamp(this.book.duration)
+      return this.$secondsToTimestamp(this.media.duration)
     },
     isMissing() {
       return this.book.isMissing
@@ -102,7 +105,7 @@ export default {
       return this.book.isInvalid
     },
     numTracks() {
-      return this.book.numTracks
+      return this.media.tracks.length
     },
     isStreaming() {
       return this.$store.getters['getAudiobookIdStreaming'] === this.book.id

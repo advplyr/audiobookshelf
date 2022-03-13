@@ -168,7 +168,6 @@ export default {
       if (this.$refs.streamContainer) this.$refs.streamContainer.streamError(id)
     },
     audiobookAdded(audiobook) {
-      // this.$store.commit('audiobooks/addUpdate', audiobook)
       this.$store.commit('libraries/updateFilterDataWithAudiobook', audiobook)
     },
     audiobooksAdded(audiobooks) {
@@ -179,7 +178,6 @@ export default {
     audiobooksUpdated(audiobooks) {
       audiobooks.forEach((ab) => {
         this.audiobookUpdated(ab)
-        // this.$store.commit('audiobooks/addUpdate', ab)
       })
     },
     libraryAdded(library) {

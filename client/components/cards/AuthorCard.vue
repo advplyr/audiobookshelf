@@ -48,6 +48,9 @@ export default {
     _author() {
       return this.author || {}
     },
+    authorId() {
+      return this._author.id
+    },
     name() {
       return this._author.name || ''
     },

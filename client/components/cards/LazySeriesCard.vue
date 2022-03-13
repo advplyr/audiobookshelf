@@ -51,6 +51,9 @@ export default {
       if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
       return this.width / 240
     },
+    seriesId() {
+      return this.series ? this.series.id : ''
+    },
     title() {
       return this.series ? this.series.name : ''
     },
@@ -64,13 +67,10 @@ export default {
       return this.store.state.libraries.currentLibraryId
     },
     seriesBooksRoute() {
-      return `/library/${this.currentLibraryId}/series/${this.$encode(this.title)}`
-    },
-    seriesId() {
-      return this.series ? this.$encode(this.title) : null
+      return `/library/${this.currentLibraryId}/series/${this.seriesId}`
     },
     hasValidCovers() {
-      var validCovers = this.books.map((bookItem) => bookItem.book.cover)
+      var validCovers = this.books.map((bookItem) => bookItem.media.coverPath)
       return !!validCovers.length
     }
   },

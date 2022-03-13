@@ -73,59 +73,6 @@ export const mutations = {
       listener.meth()
     })
   },
-  addUpdate(state, audiobook) {
-    if (state.loadedLibraryId && audiobook.libraryId !== state.loadedLibraryId) {
-      console.warn('Invalid library', audiobook, 'loaded library', state.loadedLibraryId, '"')
-      return
-    }
-
-    var index = state.audiobooks.findIndex(a => a.id === audiobook.id)
-    var origAudiobook = null
-    if (index >= 0) {
-      origAudiobook = { ...state.audiobooks[index] }
-      state.audiobooks.splice(index, 1, audiobook)
-    } else {
-      state.audiobooks.push(audiobook)
-    }
-
-    if (audiobook.book) {
-      // GENRES
-      var newGenres = []
-      audiobook.book.genres.forEach((genre) => {
-        if (!state.genres.includes(genre)) newGenres.push(genre)
-      })
-      if (newGenres.length) {
-        state.genres = state.genres.concat(newGenres)
-        state.genres.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
-      }
-
-      // SERIES
-      if (audiobook.book.series && !state.series.includes(audiobook.book.series)) {
-        state.series.push(audiobook.book.series)
-        state.series.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
-      }
-      if (origAudiobook && origAudiobook.book && origAudiobook.book.series) {
-        var isInAB = state.audiobooks.find(ab => ab.book && ab.book.series === origAudiobook.book.series)
-        if (!isInAB) state.series = state.series.filter(series => series !== origAudiobook.book.series)
-      }
-    }
-
-    // TAGS
-    var newTags = []
-    audiobook.tags.forEach((tag) => {
-      if (!state.tags.includes(tag)) newTags.push(tag)
-    })
-    if (newTags.length) {
-      state.tags = state.tags.concat(newTags)
-      state.tags.sort((a, b) => a.toLowerCase() < b.toLowerCase() ? -1 : 1)
-    }
-
-    state.listeners.forEach((listener) => {
-      if (!listener.audiobookId || listener.audiobookId === audiobook.id) {
-        listener.meth()
-      }
-    })
-  },
   remove(state, audiobook) {
     state.audiobooks = state.audiobooks.filter(a => a.id !== audiobook.id)
 

@@ -52,9 +52,6 @@ export default {
       return redirect('/')
     }
     store.commit('user/addUpdateCollection', collection)
-    collection.books.forEach((book) => {
-      store.commit('audiobooks/addUpdate', book)
-    })
     return {
       collectionId: collection.id
     }
