@@ -11,12 +11,12 @@
         <template v-for="genre in top5Genres">
           <div :key="genre.genre" class="w-full py-2">
             <div class="flex items-end mb-1">
-              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalBooks) }}&nbsp;%</p>
+              <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalItems) }}&nbsp;%</p>
               <div class="flex-grow" />
               <p class="text-base font-book text-white text-opacity-70">{{ genre.genre }}</p>
             </div>
             <div class="w-full rounded-full h-3 bg-primary bg-opacity-50 overflow-hidden">
-              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalBooks) + '%' }" />
+              <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalItems) + '%' }" />
             </div>
           </div>
         </template>
@@ -39,14 +39,14 @@
         </template>
       </div>
       <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Longest Audiobooks (hrs)</h1>
-        <p v-if="!top10LongestAudiobooks.length">No Audiobooks</p>
-        <template v-for="(ab, index) in top10LongestAudiobooks">
+        <h1 class="text-2xl mb-4 font-book">Longest Items (hrs)</h1>
+        <p v-if="!top10LongestItems.length">No Items</p>
+        <template v-for="(ab, index) in top10LongestItems">
           <div :key="index" class="w-full py-2">
             <div class="flex items-center mb-1">
               <p class="text-sm font-book text-white text-opacity-70 w-44 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ ab.title }}</p>
               <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
-                <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestAudiobookDuration) + '%' }" />
+                <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestItemDuration) + '%' }" />
               </div>
               <div class="w-4 ml-3">
                 <p class="text-sm font-bold">{{ (ab.duration / 3600).toFixed(1) }}</p>
@@ -77,8 +77,8 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    totalBooks() {
-      return this.libraryStats ? this.libraryStats.totalBooks : 0
+    totalItems() {
+      return this.libraryStats ? this.libraryStats.totalItems : 0
     },
     genresWithCount() {
       return this.libraryStats ? this.libraryStats.genresWithCount : []
@@ -86,12 +86,12 @@ export default {
     top5Genres() {
       return this.genresWithCount.slice(0, 5)
     },
-    top10LongestAudiobooks() {
-      return this.libraryStats ? this.libraryStats.longestAudiobooks || [] : []
+    top10LongestItems() {
+      return this.libraryStats ? this.libraryStats.longestItems || [] : []
     },
-    longestAudiobookDuration() {
-      if (!this.top10LongestAudiobooks.length) return 0
-      return this.top10LongestAudiobooks[0].duration
+    longestItemDuration() {
+      if (!this.top10LongestItems.length) return 0
+      return this.top10LongestItems[0].duration
     },
     authorsWithCount() {
       return this.libraryStats ? this.libraryStats.authorsWithCount : []

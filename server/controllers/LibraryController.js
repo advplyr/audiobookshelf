@@ -411,19 +411,19 @@ class LibraryController {
   }
 
   async stats(req, res) {
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === req.library.id)
+    var libraryItems = req.libraryItems
 
-    var authorsWithCount = libraryHelpers.getAuthorsWithCount(audiobooksInLibrary)
-    var genresWithCount = libraryHelpers.getGenresWithCount(audiobooksInLibrary)
-    var abDurationStats = libraryHelpers.getAudiobookDurationStats(audiobooksInLibrary)
+    var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
+    var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
+    var durationStats = libraryHelpers.getItemDurationStats(libraryItems)
     var stats = {
-      totalBooks: audiobooksInLibrary.length,
+      totalItems: libraryItems.length,
       totalAuthors: Object.keys(authorsWithCount).length,
       totalGenres: Object.keys(genresWithCount).length,
-      totalDuration: abDurationStats.totalDuration,
-      longestAudiobooks: abDurationStats.longstAudiobooks,
-      numAudioTracks: abDurationStats.numAudioTracks,
-      totalSize: libraryHelpers.getAudiobooksTotalSize(audiobooksInLibrary),
+      totalDuration: durationStats.totalDuration,
+      longestItems: durationStats.longestItems,
+      numAudioTracks: durationStats.numAudioTracks,
+      totalSize: libraryHelpers.getLibraryItemsTotalSize(libraryItems),
       authorsWithCount,
       genresWithCount
     }

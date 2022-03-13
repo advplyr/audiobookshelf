@@ -244,10 +244,10 @@ module.exports = {
     return seriesSortedByAddedAt.slice(0, limit)
   },
 
-  getGenresWithCount(audiobooks) {
+  getGenresWithCount(libraryItems) {
     var genresMap = {}
-    audiobooks.forEach((ab) => {
-      var genres = ab.book.genres || []
+    libraryItems.forEach((li) => {
+      var genres = li.media.metadata.genres || []
       genres.forEach((genre) => {
         if (genresMap[genre]) genresMap[genre].count++
         else
@@ -260,15 +260,15 @@ module.exports = {
     return Object.values(genresMap).sort((a, b) => b.count - a.count)
   },
 
-  getAuthorsWithCount(audiobooks) {
+  getAuthorsWithCount(libraryItems) {
     var authorsMap = {}
-    audiobooks.forEach((ab) => {
-      var authors = ab.book.authorFL ? ab.book.authorFL.split(', ') : []
+    libraryItems.forEach((li) => {
+      var authors = li.media.metadata.authors || []
       authors.forEach((author) => {
-        if (authorsMap[author]) authorsMap[author].count++
+        if (authorsMap[author.id]) authorsMap[author.id].count++
         else
-          authorsMap[author] = {
-            author,
+          authorsMap[author.id] = {
+            author: author.name,
             count: 1
           }
       })
@@ -276,26 +276,26 @@ module.exports = {
     return Object.values(authorsMap).sort((a, b) => b.count - a.count)
   },
 
-  getAudiobookDurationStats(audiobooks) {
-    var sorted = sort(audiobooks).desc(a => a.duration)
-    var top10 = sorted.slice(0, 10).map(ab => ({ title: ab.book.title, duration: ab.duration })).filter(ab => ab.duration > 0)
+  getItemDurationStats(libraryItems) {
+    var sorted = sort(libraryItems).desc(li => li.media.duration)
+    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.duration })).filter(i => i.duration > 0)
     var totalDuration = 0
     var numAudioTracks = 0
-    audiobooks.forEach((ab) => {
-      totalDuration += ab.duration
-      numAudioTracks += ab.tracks.length
+    libraryItems.forEach((li) => {
+      totalDuration += li.media.duration
+      numAudioTracks += (li.media.tracks || []).length
     })
     return {
       totalDuration,
       numAudioTracks,
-      longstAudiobooks: top10
+      longestItems: top10
     }
   },
 
-  getAudiobooksTotalSize(audiobooks) {
+  getLibraryItemsTotalSize(libraryItems) {
     var totalSize = 0
-    audiobooks.forEach((ab) => {
-      totalSize += ab.size
+    libraryItems.forEach((li) => {
+      totalSize += li.media.size
     })
     return totalSize
   },

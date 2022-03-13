@@ -5,7 +5,7 @@
         <path fill="currentColor" d="M9 3V18H12V3H9M12 5L16 18L19 17L15 4L12 5M5 5V18H8V5H5M3 19V21H21V19H3Z" />
       </svg>
       <div class="px-2">
-        <p class="text-4xl md:text-5xl font-bold">{{ totalBooks }}</p>
+        <p class="text-4xl md:text-5xl font-bold">{{ totalItems }}</p>
         <p class="font-book text-xs md:text-sm text-white text-opacity-80">Books in Library</p>
       </div>
     </div>
@@ -13,7 +13,7 @@
     <div class="flex px-4">
       <span class="material-icons text-7xl">show_chart</span>
       <div class="px-1">
-        <p class="text-4xl md:text-5xl font-bold">{{ totalAudiobookHours }}</p>
+        <p class="text-4xl md:text-5xl font-bold">{{ totalHours }}</p>
         <p class="font-book text-xs md:text-sm text-white text-opacity-80">Overall Hours</p>
       </div>
     </div>
@@ -61,8 +61,8 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    totalBooks() {
-      return this.libraryStats ? this.libraryStats.totalBooks : 0
+    totalItems() {
+      return this.libraryStats ? this.libraryStats.totalItems : 0
     },
     totalAuthors() {
       return this.libraryStats ? this.libraryStats.totalAuthors : 0
@@ -70,11 +70,11 @@ export default {
     numAudioTracks() {
       return this.libraryStats ? this.libraryStats.numAudioTracks : 0
     },
-    totalAudiobookDuration() {
+    totalDuration() {
       return this.libraryStats ? this.libraryStats.totalDuration : 0
     },
-    totalAudiobookHours() {
-      var totalHours = Math.round(this.totalAudiobookDuration / (60 * 60))
+    totalHours() {
+      var totalHours = Math.round(this.totalDuration / (60 * 60))
       return totalHours
     },
     totalSizePretty() {

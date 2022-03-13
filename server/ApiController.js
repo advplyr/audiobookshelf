@@ -370,11 +370,11 @@ class ApiController {
     // User audiobook progress attach book details
     if (json.audiobooks && Object.keys(json.audiobooks).length) {
       for (const audiobookId in json.audiobooks) {
-        var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
-        if (!audiobook) {
-          Logger.error('[ApiController] Audiobook not found for users progress ' + audiobookId)
+        var libraryItem = this.db.libraryItems.find(li => li.id === audiobookId)
+        if (!libraryItem) {
+          Logger.error('[ApiController] Library item not found for users progress ' + audiobookId)
         } else {
-          json.audiobooks[audiobookId].book = audiobook.book.toJSON()
+          json.audiobooks[audiobookId].media = libraryItem.media.toJSONExpanded()
         }
       }
     }

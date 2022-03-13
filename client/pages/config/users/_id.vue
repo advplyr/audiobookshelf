@@ -43,11 +43,11 @@
           </tr>
           <tr v-for="ab in userAudiobooks" :key="ab.audiobookId" :class="!ab.isRead ? '' : 'isRead'">
             <td>
-              <covers-book-cover :width="50" :audiobook="ab" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              <covers-book-cover :width="50" :library-item="ab" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
             <td class="font-book">
-              <p>{{ ab.book ? ab.book.title : ab.audiobookTitle || 'Unknown' }}</p>
-              <p v-if="ab.book && ab.book.author" class="text-white text-opacity-50 text-sm font-sans">by {{ ab.book.author }}</p>
+              <p>{{ ab.media && ab.media.metadata ? ab.media.metadata.title : ab.audiobookTitle || 'Unknown' }}</p>
+              <p v-if="ab.media && ab.media.metadata && ab.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ ab.media.metadata.authorName }}</p>
             </td>
             <td class="text-center">{{ Math.floor(ab.progress * 100) }}%</td>
             <td class="text-center hidden sm:table-cell">

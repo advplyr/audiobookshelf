@@ -59,8 +59,8 @@
 export default {
   data() {
     return {
-      listeningStats: null,
-      libraryStats: null
+      listeningStats: null
+      // libraryStats: null
     }
   },
   watch: {
@@ -103,11 +103,11 @@ export default {
   },
   methods: {
     async init() {
-      this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
-        console.error('Failed to get library stats', err)
-        var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
-        this.$toast.error(`Failed to get library stats: ${errorMsg}`)
-      })
+      // this.libraryStats = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/stats`).catch((err) => {
+      //   console.error('Failed to get library stats', err)
+      //   var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
+      //   this.$toast.error(`Failed to get library stats: ${errorMsg}`)
+      // })
       this.listeningStats = await this.$axios.$get(`/api/me/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
