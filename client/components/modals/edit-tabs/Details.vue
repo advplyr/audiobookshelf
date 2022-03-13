@@ -1,106 +1,27 @@
 <template>
   <div class="w-full h-full relative">
-    <form class="w-full h-full" @submit.prevent="submitForm">
-      <div ref="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
-        <div class="flex -mx-1">
-          <div class="w-1/2 px-1">
-            <ui-text-input-with-label v-model="details.title" label="Title" />
-          </div>
-          <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" />
-          </div>
-        </div>
+    <widgets-item-details-edit ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
 
-        <div class="flex mt-2 -mx-1">
-          <div class="w-3/4 px-1">
-            <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
-          </div>
-          <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
-          </div>
-        </div>
+    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
+      <div class="flex items-center px-4">
+        <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
 
-        <div class="flex mt-2 -mx-1">
-          <div class="flex-grow px-1">
-            <ui-multi-select-query-input ref="seriesSelect" v-model="seriesItems" text-key="displayName" label="Series" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
-          </div>
-        </div>
+        <div class="flex-grow" />
 
-        <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
+        <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4 hidden sm:block">
+          <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
+        </ui-tooltip>
 
-        <div class="flex mt-2 -mx-1">
-          <div class="w-1/2 px-1">
-            <ui-multi-select ref="genresSelect" v-model="details.genres" label="Genres" :items="genres" />
-          </div>
-          <div class="flex-grow px-1">
-            <ui-multi-select ref="tagsSelect" v-model="newTags" label="Tags" :items="tags" />
-          </div>
-        </div>
+        <ui-tooltip :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
+          <ui-btn v-if="isRootUser" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
+        </ui-tooltip>
 
-        <div class="flex mt-2 -mx-1">
-          <div class="w-1/3 px-1">
-            <ui-text-input-with-label v-model="details.narrator" label="Narrator" />
-          </div>
-          <div class="w-1/3 px-1">
-            <ui-text-input-with-label v-model="details.publisher" label="Publisher" />
-          </div>
-          <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.language" label="Language" />
-          </div>
-        </div>
+        <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
+          <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
+        </ui-tooltip>
 
-        <div class="flex mt-2 -mx-1">
-          <div class="w-1/3 px-1">
-            <ui-text-input-with-label v-model="details.isbn" label="ISBN" />
-          </div>
-          <div class="w-1/3 px-1">
-            <ui-text-input-with-label v-model="details.asin" label="ASIN" />
-          </div>
-        </div>
+        <ui-btn @click="submitForm">Submit</ui-btn>
       </div>
-
-      <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
-        <div class="flex items-center px-4">
-          <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
-
-          <div class="flex-grow" />
-
-          <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4 hidden sm:block">
-            <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
-          </ui-tooltip>
-
-          <ui-tooltip :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
-            <ui-btn v-if="isRootUser" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
-          </ui-tooltip>
-
-          <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
-            <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
-          </ui-tooltip>
-
-          <ui-btn type="submit">Submit</ui-btn>
-        </div>
-      </div>
-    </form>
-
-    <div v-if="showSeriesForm" class="absolute top-0 left-0 z-20 w-full h-full bg-black bg-opacity-50 rounded-lg flex items-center justify-center" @click="cancelSeriesForm">
-      <div class="absolute top-0 right-0 p-4">
-        <span class="material-icons text-gray-200 hover:text-white text-4xl cursor-pointer">close</span>
-      </div>
-      <form @submit.prevent="submitSeriesForm">
-        <div class="bg-bg rounded-lg p-8" @click.stop>
-          <div class="flex">
-            <div class="flex-grow p-1 min-w-80">
-              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!selectedSeries.id.startsWith('new')" label="Series Name" />
-            </div>
-            <div class="w-40 p-1">
-              <ui-text-input-with-label v-model="selectedSeries.sequence" label="Sequence" />
-            </div>
-          </div>
-          <div class="flex justify-end mt-2 p-1">
-            <ui-btn type="submit">Save</ui-btn>
-          </div>
-        </div>
-      </form>
     </div>
   </div>
 </template>
@@ -116,36 +37,11 @@ export default {
   },
   data() {
     return {
-      selectedSeries: {},
-      showSeriesForm: false,
-      details: {
-        title: null,
-        subtitle: null,
-        description: null,
-        author: null,
-        narrator: null,
-        series: null,
-        publishYear: null,
-        publisher: null,
-        language: null,
-        isbn: null,
-        asin: null,
-        genres: []
-      },
-      newTags: [],
       resettingProgress: false,
       isScrollable: false,
       savingMetadata: false,
       rescanning: false,
       quickMatching: false
-    }
-  },
-  watch: {
-    libraryItem: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) this.init()
-      }
     }
   },
   computed: {
@@ -175,18 +71,6 @@ export default {
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
     },
-    genres() {
-      return this.filterData.genres || []
-    },
-    tags() {
-      return this.filterData.tags || []
-    },
-    series() {
-      return this.filterData.series || []
-    },
-    filterData() {
-      return this.$store.state.libraries.filterData || {}
-    },
     libraryId() {
       return this.libraryItem ? this.libraryItem.libraryId : null
     },
@@ -196,71 +80,9 @@ export default {
     libraryScan() {
       if (!this.libraryId) return null
       return this.$store.getters['scanners/getLibraryScan'](this.libraryId)
-    },
-    existingSeriesNames() {
-      // Only show series names not already selected
-      var alreadySelectedSeriesIds = this.details.series.map((se) => se.id)
-      return this.series.filter((se) => !alreadySelectedSeriesIds.includes(se.id)).map((se) => se.name)
-    },
-    seriesItems: {
-      get() {
-        return this.details.series.map((se) => {
-          return {
-            displayName: se.sequence ? `${se.name} #${se.sequence}` : se.name,
-            ...se
-          }
-        })
-      },
-      set(val) {
-        this.details.series = val
-      }
     }
   },
   methods: {
-    cancelSeriesForm() {
-      this.showSeriesForm = false
-    },
-    editSeriesItem(series) {
-      var _series = this.details.series.find((se) => se.id === series.id)
-      if (!_series) return
-      this.selectedSeries = {
-        ..._series
-      }
-      this.showSeriesForm = true
-    },
-    submitSeriesForm() {
-      if (!this.selectedSeries.name) {
-        this.$toast.error('Must enter a series')
-        return
-      }
-      if (this.$refs.newSeriesSelect) {
-        this.$refs.newSeriesSelect.blur()
-      }
-      var existingSeriesIndex = this.details.series.findIndex((se) => se.id === this.selectedSeries.id)
-
-      var seriesSameName = this.series.find((se) => se.name.toLowerCase() === this.selectedSeries.name.toLowerCase())
-      if (existingSeriesIndex < 0 && seriesSameName) {
-        this.selectedSeries.id = seriesSameName.id
-      }
-
-      if (existingSeriesIndex >= 0) {
-        this.details.series.splice(existingSeriesIndex, 1, { ...this.selectedSeries })
-      } else {
-        this.details.series.push({
-          ...this.selectedSeries
-        })
-      }
-
-      this.showSeriesForm = false
-    },
-    addNewSeries() {
-      this.selectedSeries = {
-        id: `new-${Date.now()}`,
-        name: '',
-        sequence: ''
-      }
-      this.showSeriesForm = true
-    },
     quickMatch() {
       this.quickMatching = true
       var matchOptions = {
@@ -326,25 +148,20 @@ export default {
       if (this.isProcessing) {
         return
       }
-      this.isProcessing = true
-      if (this.$refs.authorsSelect && this.$refs.authorsSelect.isFocused) {
-        this.$refs.authorsSelect.forceBlur()
+      if (!this.$refs.itemDetailsEdit) {
+        return
       }
-      if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
-        this.$refs.genresSelect.forceBlur()
+      var updatedDetails = this.$refs.itemDetailsEdit.getDetails()
+      if (!updatedDetails.hasChanges) {
+        this.$toast.info('No changes were made')
+        return
       }
-      if (this.$refs.tagsSelect && this.$refs.tagsSelect.isFocused) {
-        this.$refs.tagsSelect.forceBlur()
-      }
-      this.$nextTick(this.handleForm)
+      this.updateDetails(updatedDetails)
     },
-    async handleForm() {
-      const updatePayload = {
-        metadata: this.details,
-        tags: this.newTags
-      }
-      console.log('Sending update', updatePayload)
-      var updatedAudiobook = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatePayload).catch((error) => {
+    async updateDetails(updatedDetails) {
+      this.isProcessing = true
+      console.log('Sending update', updatedDetails.updatePayload)
+      var updatedAudiobook = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatedDetails.updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
       })
@@ -353,29 +170,6 @@ export default {
         this.$toast.success('Update Successful')
         this.$emit('close')
       }
-    },
-    init() {
-      this.details.title = this.mediaMetadata.title
-      this.details.subtitle = this.mediaMetadata.subtitle
-      this.details.description = this.mediaMetadata.description
-      this.$set(
-        this.details,
-        'authors',
-        (this.mediaMetadata.authors || []).map((se) => ({ ...se }))
-      )
-      this.details.narrator = this.mediaMetadata.narrator
-      this.details.genres = [...(this.mediaMetadata.genres || [])]
-      this.$set(
-        this.details,
-        'series',
-        (this.mediaMetadata.series || []).map((se) => ({ ...se }))
-      )
-      this.details.publishYear = this.mediaMetadata.publishYear
-      this.details.publisher = this.mediaMetadata.publisher || null
-      this.details.language = this.mediaMetadata.language || null
-      this.details.isbn = this.mediaMetadata.isbn || null
-      this.details.asin = this.mediaMetadata.asin || null
-      this.newTags = [...(this.media.tags || [])]
     },
     removeItem() {
       if (confirm(`Are you sure you want to remove this item?\n\n*Does not delete your files, only removes the item from audiobookshelf`)) {
@@ -396,8 +190,9 @@ export default {
     },
     checkIsScrollable() {
       this.$nextTick(() => {
-        if (this.$refs.formWrapper) {
-          if (this.$refs.formWrapper.scrollHeight > this.$refs.formWrapper.clientHeight) {
+        var formWrapper = document.getElementById('formWrapper')
+        if (formWrapper) {
+          if (formWrapper.scrollHeight > formWrapper.clientHeight) {
             this.isScrollable = true
           } else {
             this.isScrollable = false
@@ -407,12 +202,15 @@ export default {
     },
     setResizeObserver() {
       try {
-        this.$nextTick(() => {
-          const resizeObserver = new ResizeObserver(() => {
-            this.checkIsScrollable()
+        var formWrapper = document.getElementById('formWrapper')
+        if (formWrapper) {
+          this.$nextTick(() => {
+            const resizeObserver = new ResizeObserver(() => {
+              this.checkIsScrollable()
+            })
+            resizeObserver.observe(formWrapper)
           })
-          resizeObserver.observe(this.$refs.formWrapper)
-        })
+        }
       } catch (error) {
         console.error('Failed to set resize observer')
       }

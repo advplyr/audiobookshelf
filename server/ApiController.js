@@ -21,6 +21,9 @@ const AuthorController = require('./controllers/AuthorController')
 const BookFinder = require('./finders/BookFinder')
 const AuthorFinder = require('./finders/AuthorFinder')
 const PodcastFinder = require('./finders/PodcastFinder')
+
+const Author = require('./objects/entities/Author')
+const Series = require('./objects/entities/Series')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
@@ -65,11 +68,8 @@ class ApiController {
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
-    this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
-    // Legacy
-    this.router.get('/libraries/:id/categories', LibraryController.middleware.bind(this), LibraryController.getLibraryCategories.bind(this))
-    this.router.get('/libraries/:id/filters', LibraryController.middleware.bind(this), LibraryController.getLibraryFilters.bind(this))
+    this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
     // Item Routes
@@ -84,6 +84,10 @@ class ApiController {
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
 
+    this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
+    this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
+    this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
+
     //
     // Book Routes
     //
@@ -93,9 +97,6 @@ class ApiController {
     this.router.delete('/books/:id', BookController.delete.bind(this))
 
     this.router.delete('/books/all', BookController.deleteAll.bind(this))
-    this.router.post('/books/batch/delete', BookController.batchDelete.bind(this))
-    this.router.post('/books/batch/update', BookController.batchUpdate.bind(this))
-    this.router.post('/books/batch/get', BookController.batchGet.bind(this))
     this.router.patch('/books/:id/tracks', BookController.updateTracks.bind(this))
     this.router.get('/books/:id/stream', BookController.openStream.bind(this))
     this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
@@ -162,17 +163,16 @@ class ApiController {
     //
     // Author Routes
     //
+    this.router.get('/authors/search', AuthorController.search.bind(this))
     this.router.get('/authors/:id', AuthorController.middleware.bind(this), AuthorController.findOne.bind(this))
     this.router.post('/authors/:id/match', AuthorController.middleware.bind(this), AuthorController.match.bind(this))
     this.router.get('/authors/:id/image', AuthorController.middleware.bind(this), AuthorController.getImage.bind(this))
-    this.router.get('/authors/search', AuthorController.search.bind(this))
 
     //
     // Series Routes
     //
-    this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
     this.router.get('/series/search', SeriesController.search.bind(this))
-
+    this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
 
     //
     // Misc Routes
@@ -486,6 +486,60 @@ class ApiController {
     const userId = req.user.id
     this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
+  }
+
+  async createAuthorsAndSeriesForItemUpdate(mediaPayload) {
+    if (mediaPayload.metadata) {
+      var mediaMetadata = mediaPayload.metadata
+
+      // Create new authors if in payload
+      if (mediaMetadata.authors && mediaMetadata.authors.length) {
+        // TODO: validate authors
+        var newAuthors = []
+        for (let i = 0; i < mediaMetadata.authors.length; i++) {
+          if (mediaMetadata.authors[i].id.startsWith('new')) {
+            var author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
+            if (!author) {
+              author = new Author()
+              author.setData(mediaMetadata.authors[i])
+              Logger.debug(`[ApiController] Created new author "${author.name}"`)
+              newAuthors.push(author)
+            }
+
+            // Update ID in original payload
+            mediaMetadata.authors[i].id = author.id
+          }
+        }
+        if (newAuthors.length) {
+          await this.db.insertEntities('author', newAuthors)
+          this.emitter('authors_added', newAuthors)
+        }
+      }
+
+      // Create new series if in payload
+      if (mediaMetadata.series && mediaMetadata.series.length) {
+        // TODO: validate series
+        var newSeries = []
+        for (let i = 0; i < mediaMetadata.series.length; i++) {
+          if (mediaMetadata.series[i].id.startsWith('new')) {
+            var seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
+            if (!seriesItem) {
+              seriesItem = new Series()
+              seriesItem.setData(mediaMetadata.series[i])
+              Logger.debug(`[ApiController] Created new series "${seriesItem.name}"`)
+              newSeries.push(seriesItem)
+            }
+
+            // Update ID in original payload
+            mediaMetadata.series[i].id = seriesItem.id
+          }
+        }
+        if (newSeries.length) {
+          await this.db.insertEntities('series', newSeries)
+          this.emitter('authors_added', newSeries)
+        }
+      }
+    }
   }
 
   getPodcastFeed(req, res) {

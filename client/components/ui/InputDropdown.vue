@@ -8,7 +8,7 @@
         </div>
       </form>
 
-      <ul ref="menu" v-show="isFocused && items.length && (itemsToShow.length || currentSearch)" class="absolute z-50 mt-0 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+      <ul ref="menu" v-show="isFocused && itemsToShow.length" class="absolute z-50 mt-0 w-full bg-bg border border-black-200 shadow-lg max-h-56 rounded py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in itemsToShow">
           <li :key="item" class="text-gray-50 select-none relative py-2 pr-3 cursor-pointer hover:bg-black-400" role="option" @click="clickedOption($event, item)" @mouseup.stop.prevent @mousedown.prevent>
             <div class="flex items-center">
@@ -47,7 +47,7 @@ export default {
   data() {
     return {
       isFocused: false,
-      currentSearch: null,
+      // currentSearch: null,
       typingTimeout: null,
       textInput: null
     }
@@ -70,12 +70,13 @@ export default {
       }
     },
     itemsToShow() {
-      if (!this.currentSearch || !this.textInput || this.textInput === this.input) {
-        return this.items
+      if (!this.editable) return this.items
+      if (!this.textInput || this.textInput === this.input) {
+        return []
       }
       return this.items.filter((i) => {
         var iValue = String(i).toLowerCase()
-        return iValue.includes(this.currentSearch.toLowerCase())
+        return iValue.includes(this.textInput.toLowerCase())
       })
     }
   },
@@ -83,7 +84,7 @@ export default {
     keydownInput() {
       clearTimeout(this.typingTimeout)
       this.typingTimeout = setTimeout(() => {
-        this.currentSearch = this.textInput
+        // this.currentSearch = this.textInput
       }, 100)
     },
     inputFocus() {
@@ -127,11 +128,11 @@ export default {
       if (val && !this.items.includes(val)) {
         this.$emit('newItem', val)
       }
-      this.currentSearch = null
+      // this.currentSearch = null
     },
     clickedOption(e, item) {
       this.textInput = null
-      this.currentSearch = null
+      // this.currentSearch = null
       this.input = item
       if (this.$refs.input) this.$refs.input.blur()
     }

@@ -4,7 +4,7 @@
       <div class="w-full h-full pt-6">
         <div v-if="shelf.type === 'books'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectBook" @edit="editBook" />
+            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editBook" />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
@@ -90,7 +90,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     isSelectionMode() {
-      return this.$store.getters['getNumAudiobooksSelected'] > 0
+      return this.$store.getters['getNumLibraryItemsSelected'] > 0
     }
   },
   methods: {
@@ -100,19 +100,19 @@ export default {
       this.$store.commit('showEditModal', audiobook)
     },
     updateSelectionMode(val) {
-      var selectedAudiobooks = this.$store.state.selectedAudiobooks
+      var selectedLibraryItems = this.$store.state.selectedLibraryItems
       if (this.shelf.type === 'books') {
         this.shelf.entities.forEach((ent) => {
           var component = this.$refs[`shelf-book-${ent.id}`]
           if (!component || !component.length) return
           component = component[0]
           component.setSelectionMode(val)
-          component.selected = selectedAudiobooks.includes(ent.id)
+          component.selected = selectedLibraryItems.includes(ent.id)
         })
       }
     },
-    selectBook(audiobook) {
-      this.$store.commit('toggleAudiobookSelected', audiobook.id)
+    selectItem(libraryItem) {
+      this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
     },
     scrolled() {
       clearTimeout(this.scrollTimer)

@@ -183,8 +183,8 @@ export default {
       // Includes margin
       return this.entityWidth + 24
     },
-    selectedAudiobooks() {
-      return this.$store.state.selectedAudiobooks || []
+    selectedLibraryItems() {
+      return this.$store.state.selectedLibraryItems || []
     },
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
@@ -214,9 +214,9 @@ export default {
     },
     selectEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
-        this.$store.commit('toggleAudiobookSelected', entity.id)
+        this.$store.commit('toggleLibraryItemSelected', entity.id)
 
-        var newIsSelectionMode = !!this.selectedAudiobooks.length
+        var newIsSelectionMode = !!this.selectedLibraryItems.length
         if (this.isSelectionMode !== newIsSelectionMode) {
           this.isSelectionMode = newIsSelectionMode
           this.updateBookSelectionMode(newIsSelectionMode)

@@ -32,8 +32,8 @@ export default {
       if (this.$store.state.showEditModal) {
         this.$store.commit('setShowEditModal', false)
       }
-      if (this.$store.state.selectedAudiobooks) {
-        this.$store.commit('setSelectedAudiobooks', [])
+      if (this.$store.state.selectedLibraryItems) {
+        this.$store.commit('setSelectedLibraryItems', [])
       }
       if (this.$store.state.audiobooks.keywordFilter) {
         this.$store.commit('audiobooks/setKeywordFilter', '')
@@ -486,9 +486,9 @@ export default {
       }
 
       // Batch selecting
-      if (this.$store.getters['getNumAudiobooksSelected'] && name === 'Escape') {
+      if (this.$store.getters['getNumLibraryItemsSelected'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
-        this.$store.commit('setSelectedAudiobooks', [])
+        this.$store.commit('setSelectedLibraryItems', [])
         this.$eventBus.$emit('bookshelf-clear-selection')
         e.preventDefault()
         return

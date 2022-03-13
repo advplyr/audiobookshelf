@@ -12,7 +12,7 @@ export const state = () => ({
   selectedLibraryItem: null,
   selectedAudiobookFile: null,
   developerMode: false,
-  selectedAudiobooks: [],
+  selectedLibraryItems: [],
   processingBatch: false,
   previousPath: '/',
   routeHistory: [],
@@ -25,8 +25,8 @@ export const state = () => ({
 })
 
 export const getters = {
-  getIsAudiobookSelected: state => audiobookId => {
-    return !!state.selectedAudiobooks.includes(audiobookId)
+  getIsLibraryItemSelected: state => libraryItemId => {
+    return !!state.selectedLibraryItems.includes(libraryItemId)
   },
   getServerSetting: state => key => {
     if (!state.serverSettings) return null
@@ -36,7 +36,7 @@ export const getters = {
     if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1.6
     return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
   },
-  getNumAudiobooksSelected: state => state.selectedAudiobooks.length,
+  getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
   }
@@ -146,24 +146,24 @@ export const mutations = {
   setSelectedLibraryItem(state, val) {
     Vue.set(state, 'selectedLibraryItem', val)
   },
-  setSelectedAudiobooks(state, audiobooks) {
-    Vue.set(state, 'selectedAudiobooks', audiobooks)
+  setSelectedLibraryItems(state, items) {
+    Vue.set(state, 'selectedLibraryItems', items)
   },
-  toggleAudiobookSelected(state, audiobookId) {
-    if (state.selectedAudiobooks.includes(audiobookId)) {
-      state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
+  toggleLibraryItemSelected(state, itemId) {
+    if (state.selectedLibraryItems.includes(itemId)) {
+      state.selectedLibraryItems = state.selectedLibraryItems.filter(a => a !== itemId)
     } else {
-      var newSel = state.selectedAudiobooks.concat([audiobookId])
-      Vue.set(state, 'selectedAudiobooks', newSel)
+      var newSel = state.selectedLibraryItems.concat([itemId])
+      Vue.set(state, 'selectedLibraryItems', newSel)
     }
   },
-  setAudiobookSelected(state, { audiobookId, selected }) {
-    var isThere = state.selectedAudiobooks.includes(audiobookId)
+  setLibraryItemSelected(state, { libraryItemId, selected }) {
+    var isThere = state.selectedLibraryItems.includes(libraryItemId)
     if (isThere && !selected) {
-      state.selectedAudiobooks = state.selectedAudiobooks.filter(a => a !== audiobookId)
+      state.selectedLibraryItems = state.selectedLibraryItems.filter(a => a !== libraryItemId)
     } else if (selected && !isThere) {
-      var newSel = state.selectedAudiobooks.concat([audiobookId])
-      Vue.set(state, 'selectedAudiobooks', newSel)
+      var newSel = state.selectedLibraryItems.concat([libraryItemId])
+      Vue.set(state, 'selectedLibraryItems', newSel)
     }
   },
   setProcessingBatch(state, val) {

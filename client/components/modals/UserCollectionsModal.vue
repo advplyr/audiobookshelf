@@ -101,7 +101,7 @@ export default {
       return this.$store.state.globals.showBatchUserCollectionModal
     },
     selectedBookIds() {
-      return this.$store.state.selectedAudiobooks || []
+      return this.$store.state.selectedLibraryItems || []
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId

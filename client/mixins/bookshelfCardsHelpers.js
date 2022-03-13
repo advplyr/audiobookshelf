@@ -30,7 +30,7 @@ export default {
         shelfEl.appendChild(bookComponent.$el)
         if (this.isSelectionMode) {
           bookComponent.setSelectionMode(true)
-          if (this.selectedAudiobooks.includes(bookComponent.audiobookId) || this.isSelectAll) {
+          if (this.selectedLibraryItems.includes(bookComponent.libraryItemId) || this.isSelectAll) {
             bookComponent.selected = true
           } else {
             bookComponent.selected = false
@@ -85,7 +85,7 @@ export default {
       }
       if (this.isSelectionMode) {
         instance.setSelectionMode(true)
-        if (instance.audiobookId && this.selectedAudiobooks.includes(instance.audiobookId) || this.isSelectAll) {
+        if (instance.libraryItemId && this.selectedLibraryItems.includes(instance.libraryItemId) || this.isSelectAll) {
           instance.selected = true
         }
       }

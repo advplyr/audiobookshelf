@@ -226,14 +226,6 @@ class LibraryController {
     res.json(payload)
   }
 
-  // LEGACY
-  // api/libraries/:id/books/filters
-  async getLibraryFilters(req, res) {
-    var library = req.library
-    var books = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    res.json(libraryHelpers.getDistinctFilterData(books))
-  }
-
   async getLibraryFilterData(req, res) {
     res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
   }

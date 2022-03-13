@@ -44,8 +44,8 @@
         </nuxt-link>
       </div>
 
-      <div v-show="numAudiobooksSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
-        <h1 class="text-2xl px-4">{{ numAudiobooksSelected }} Selected</h1>
+      <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
+        <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
         <div class="flex-grow" />
         <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
@@ -53,7 +53,7 @@
         <ui-tooltip v-if="userCanUpdate" text="Add to Collection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
-        <template v-if="userCanUpdate && numAudiobooksSelected < 50">
+        <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
           <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
         </template>
         <ui-icon-btn v-show="userCanDelete" :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
@@ -94,11 +94,11 @@ export default {
     username() {
       return this.user ? this.user.username : 'err'
     },
-    numAudiobooksSelected() {
-      return this.selectedAudiobooks.length
+    numLibraryItemsSelected() {
+      return this.selectedLibraryItems.length
     },
-    selectedAudiobooks() {
-      return this.$store.state.selectedAudiobooks
+    selectedLibraryItems() {
+      return this.$store.state.selectedLibraryItems
     },
     userAudiobooks() {
       return this.$store.state.user.user.audiobooks || {}
@@ -117,8 +117,8 @@ export default {
     },
     selectedIsRead() {
       // Find an audiobook that is not read, if none then all audiobooks read
-      return !this.selectedAudiobooks.find((ab) => {
-        var userAb = this.userAudiobooks[ab]
+      return !this.selectedLibraryItems.find((li) => {
+        var userAb = this.userAudiobooks[li]
         return !userAb || !userAb.isRead
       })
     },
@@ -150,16 +150,16 @@ export default {
     },
     cancelSelectionMode() {
       if (this.processingBatchDelete) return
-      this.$store.commit('setSelectedAudiobooks', [])
+      this.$store.commit('setSelectedLibraryItems', [])
       this.$eventBus.$emit('bookshelf-clear-selection')
       this.isAllSelected = false
     },
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
       var newIsRead = !this.selectedIsRead
-      var updateProgressPayloads = this.selectedAudiobooks.map((ab) => {
+      var updateProgressPayloads = this.selectedLibraryItems.map((lid) => {
         return {
-          audiobookId: ab,
+          audiobookId: lid,
           isRead: newIsRead
         }
       })
@@ -168,7 +168,7 @@ export default {
         .then(() => {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)
-          this.$store.commit('setSelectedAudiobooks', [])
+          this.$store.commit('setSelectedLibraryItems', [])
           this.$eventBus.$emit('bookshelf-clear-selection')
         })
         .catch((error) => {
@@ -178,20 +178,20 @@ export default {
         })
     },
     batchDeleteClick() {
-      var audiobookText = this.numAudiobooksSelected > 1 ? `these ${this.numAudiobooksSelected} audiobooks` : 'this audiobook'
+      var audiobookText = this.numLibraryItemsSelected > 1 ? `these ${this.numLibraryItemsSelected} audiobooks` : 'this audiobook'
       var confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the audiobooks from AudioBookshelf`
       if (confirm(confirmMsg)) {
         this.processingBatchDelete = true
         this.$store.commit('setProcessingBatch', true)
         this.$axios
-          .$post(`/api/books/batch/delete`, {
-            audiobookIds: this.selectedAudiobooks
+          .$post(`/api/items/batch/delete`, {
+            libraryItemIds: this.selectedLibraryItems
           })
           .then(() => {
             this.$toast.success('Batch delete success!')
             this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
-            this.$store.commit('setSelectedAudiobooks', [])
+            this.$store.commit('setSelectedLibraryItems', [])
             this.$eventBus.$emit('bookshelf-clear-selection')
           })
           .catch((error) => {

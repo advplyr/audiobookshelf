@@ -1,5 +1,5 @@
 <template>
-  <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+  <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="border border-white border-opacity-10 max-w-7xl mx-auto mb-10 mt-5">
       <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
@@ -14,8 +14,9 @@
               <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" label="Subtitle" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
-              <ui-checkbox v-model="selectedBatchUsage.author" />
-              <ui-text-input-with-label ref="authorInput" v-model="batchDetails.author" :disabled="!selectedBatchUsage.author" label="Author" class="mb-4 ml-4" />
+              <ui-checkbox v-model="selectedBatchUsage.authors" />
+              <!-- Authors filter only contains authors in this library, use query input to query all authors -->
+              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" label="Authors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishYear" />
@@ -23,7 +24,7 @@
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
-              <ui-input-dropdown ref="seriesDropdown" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @input="seriesChanged" @newItem="newSeriesItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.genres" />
@@ -34,8 +35,8 @@
               <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
-              <ui-checkbox v-model="selectedBatchUsage.narrator" />
-              <ui-text-input-with-label ref="narratorInput" v-model="batchDetails.narrator" :disabled="!selectedBatchUsage.narrator" label="Narrator" class="mb-4 ml-4" />
+              <ui-checkbox v-model="selectedBatchUsage.narrators" />
+              <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" label="Narrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
@@ -44,6 +45,20 @@
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.language" />
               <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" label="Language" class="mb-4 ml-4" />
+            </div>
+            <div class="flex items-center px-4 w-1/2">
+              <ui-checkbox v-model="selectedBatchUsage.explicit" />
+              <div class="ml-4">
+                <ui-checkbox
+                  v-model="batchDetails.explicit"
+                  label="Explicit"
+                  :disabled="!selectedBatchUsage.explicit"
+                  :checkbox-bg="!selectedBatchUsage.explicit ? 'bg' : 'primary'"
+                  :check-color="!selectedBatchUsage.explicit ? 'gray-600' : 'green-500'"
+                  border-color="gray-600"
+                  :label-class="!selectedBatchUsage.explicit ? 'pl-2 text-base text-gray-400 font-semibold' : 'pl-2 text-base font-semibold'"
+                />
+              </div>
             </div>
 
             <div class="w-full flex items-center justify-end p-4">
@@ -55,71 +70,9 @@
     </div>
 
     <div class="flex justify-center flex-wrap">
-      <template v-for="audiobook in audiobookCopies">
-        <div :key="audiobook.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px flex">
-          <div class="w-32">
-            <covers-book-cover :audiobook="audiobook.originalAudiobook" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-          </div>
-          <div class="flex-grow pl-4">
-            <ui-text-input-with-label v-model="audiobook.book.title" label="Title" />
-
-            <ui-text-input-with-label v-model="audiobook.book.subtitle" label="Subtitle" class="mt-2" />
-
-            <div class="flex mt-2 -mx-1">
-              <div class="w-3/4 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.author" label="Author" />
-              </div>
-              <div class="flex-grow px-1">
-                <ui-text-input-with-label v-model="audiobook.book.publishYear" type="number" label="Publish Year" />
-              </div>
-            </div>
-
-            <div class="flex mt-2 -mx-1">
-              <div class="w-3/4 px-1">
-                <ui-input-dropdown v-model="audiobook.book.series" label="Series" :items="seriesItems" @input="seriesChanged" @newItem="newSeriesItem" />
-              </div>
-              <div class="flex-grow px-1">
-                <ui-text-input-with-label v-model="audiobook.book.volumeNumber" label="Volume #" />
-              </div>
-            </div>
-
-            <ui-textarea-with-label v-model="audiobook.book.description" :rows="3" label="Description" class="mt-2" />
-
-            <div class="flex mt-2 -mx-1">
-              <div class="w-1/2 px-1">
-                <ui-multi-select v-model="audiobook.book.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" />
-              </div>
-              <div class="flex-grow px-1">
-                <ui-multi-select v-model="audiobook.tags" label="Tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" />
-              </div>
-            </div>
-
-            <!-- <div class="flex mt-2 -mx-1">
-              <div class="w-1/2 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.narrator" label="Narrator" />
-              </div>
-            </div> -->
-            <div class="flex mt-2 -mx-1">
-              <div class="w-1/3 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.narrator" label="Narrator" />
-              </div>
-              <div class="w-1/3 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.publisher" label="Publisher" />
-              </div>
-              <div class="flex-grow px-1">
-                <ui-text-input-with-label v-model="audiobook.book.language" label="Language" />
-              </div>
-            </div>
-
-            <div class="flex mt-2 -mx-1">
-              <div class="w-1/3 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.isbn" label="ISBN" />
-              </div>
-              <div class="w-1/3 px-1">
-                <ui-text-input-with-label v-model="audiobook.book.asin" label="ASIN" />
-              </div>
-            </div>
-          </div>
+      <template v-for="libraryItem in libraryItemCopies">
+        <div :key="libraryItem.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px">
+          <widgets-item-details-edit :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
         </div>
       </template>
     </div>
@@ -127,7 +80,7 @@
       <ui-loading-indicator />
     </div>
 
-    <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamAudiobook ? '165px' : '0px' }">
+    <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamLibraryItem ? '165px' : '0px' }">
       <div class="flex-grow" />
       <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">Save</ui-btn>
     </div>
@@ -137,47 +90,50 @@
 <script>
 export default {
   async asyncData({ store, redirect, app }) {
-    if (!store.state.selectedAudiobooks.length) {
+    if (!store.state.selectedLibraryItems.length) {
       return redirect('/')
     }
-    var audiobooks = await app.$axios.$post(`/api/books/batch/get`, { books: store.state.selectedAudiobooks }).catch((error) => {
-      var errorMsg = error.response.data || 'Failed to get audiobooks'
+    var libraryItems = await app.$axios.$post(`/api/items/batch/get`, { libraryItemIds: store.state.selectedLibraryItems }).catch((error) => {
+      var errorMsg = error.response.data || 'Failed to get items'
       console.error(errorMsg, error)
       return []
     })
     return {
-      audiobooks
+      libraryItems
     }
   },
   data() {
     return {
       isProcessing: false,
-      audiobookCopies: [],
+      libraryItemCopies: [],
       isScrollable: false,
-      newSeriesItems: [],
+      newSeriesNames: [],
       newTagItems: [],
       newGenreItems: [],
+      newNarratorItems: [],
       batchDetails: {
         subtitle: null,
-        author: null,
+        authors: null,
         publishYear: null,
-        series: null,
+        series: [],
         genres: [],
         tags: [],
-        narrator: null,
+        narrators: [],
         publisher: null,
-        language: null
+        language: null,
+        explicit: false
       },
       selectedBatchUsage: {
         subtitle: false,
-        author: false,
+        authors: false,
         publishYear: false,
         series: false,
         genres: false,
         tags: false,
-        narrator: false,
+        narrators: false,
         publisher: false,
-        language: false
+        language: false,
+        explicit: false
       },
       openMapOptions: false
     }
@@ -189,8 +145,8 @@ export default {
     bookCoverAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     genreItems() {
       return this.genres.concat(this.newGenreItems)
@@ -199,7 +155,10 @@ export default {
       return this.tags.concat(this.newTagItems)
     },
     seriesItems() {
-      return [...this.series, ...this.newSeriesItems]
+      return [...this.existingSeriesNames, ...this.newSeriesNames]
+    },
+    narratorItems() {
+      return [...this.narrators, ...this.newNarratorItems]
     },
     genres() {
       return this.filterData.genres || []
@@ -209,6 +168,15 @@ export default {
     },
     series() {
       return this.filterData.series || []
+    },
+    narrators() {
+      return this.filterData.narrators || []
+    },
+    authors() {
+      return this.filterData.authors || []
+    },
+    existingSeriesNames() {
+      return this.series.map((se) => se.name)
     },
     filterData() {
       return this.$store.state.libraries.filterData || {}
@@ -222,8 +190,14 @@ export default {
   },
   methods: {
     blurBatchForm() {
-      if (this.$refs.seriesDropdown && this.$refs.seriesDropdown.isFocused) {
-        this.$refs.seriesDropdown.blur()
+      if (this.$refs.seriesSelect && this.$refs.seriesSelect.isFocused) {
+        this.$refs.seriesSelect.forceBlur()
+      }
+      if (this.$refs.authorsSelect && this.$refs.authorsSelect.isFocused) {
+        this.$refs.authorsSelect.forceBlur()
+      }
+      if (this.$refs.narratorsSelect && this.$refs.narratorsSelect.isFocused) {
+        this.$refs.narratorsSelect.forceBlur()
       }
       if (this.$refs.genresSelect && this.$refs.genresSelect.isFocused) {
         this.$refs.genresSelect.forceBlur()
@@ -241,69 +215,92 @@ export default {
     mapBatchDetails() {
       this.blurBatchForm()
 
-      this.audiobookCopies = this.audiobookCopies.map((ab) => {
-        for (const key in this.selectedBatchUsage) {
-          if (this.selectedBatchUsage[key]) {
-            if (key === 'tags') {
-              ab.tags = this.batchDetails.tags
-            } else {
-              ab.book[key] = this.batchDetails[key]
-            }
+      var batchMapPayload = {}
+      for (const key in this.selectedBatchUsage) {
+        if (this.selectedBatchUsage[key]) {
+          if (key === 'series') {
+            // Map string of series to series objects
+            batchMapPayload[key] = this.batchDetails[key].map((seItem) => {
+              var existingSeries = this.series.find((se) => se.name.toLowerCase() === seItem.toLowerCase().trim())
+              if (existingSeries) {
+                return existingSeries
+              } else {
+                return {
+                  id: `new-${Math.floor(Math.random() * 10000)}`,
+                  name: seItem
+                }
+              }
+            })
+          } else {
+            batchMapPayload[key] = this.batchDetails[key]
           }
         }
-        return ab
+      }
+
+      this.libraryItemCopies.forEach((li) => {
+        var ref = this.getEditFormRef(li.id)
+        ref.mapBatchDetails(batchMapPayload)
       })
       this.$toast.success('Details mapped')
     },
+    newSeriesItem(item) {},
+    removedSeriesItem(item) {},
+    newNarratorItem(item) {},
+    removedNarratorItem(item) {},
     newTagItem(item) {
-      if (item && !this.newTagItems.includes(item)) {
-        this.newTagItems.push(item)
-      }
+      // if (item && !this.newTagItems.includes(item)) {
+      //   this.newTagItems.push(item)
+      // }
     },
     removedTagItem(item) {
-      // If newly added, remove if not used on any other audiobooks
-      if (item && this.newTagItems.includes(item)) {
-        var usedByOtherAb = this.audiobookCopies.find((ab) => {
-          return ab.tags && ab.tags.includes(item)
-        })
-        if (!usedByOtherAb) {
-          this.newTagItems = this.newTagItems.filter((t) => t !== item)
-        }
-      }
+      // If newly added, remove if not used on any other items
+      // if (item && this.newTagItems.includes(item)) {
+      //   var usedByOtherAb = this.libraryItemCopies.find((ab) => {
+      //     return ab.tags && ab.tags.includes(item)
+      //   })
+      //   if (!usedByOtherAb) {
+      //     this.newTagItems = this.newTagItems.filter((t) => t !== item)
+      //   }
+      // }
     },
     newGenreItem(item) {
-      if (item && !this.newGenreItems.includes(item)) {
-        this.newGenreItems.push(item)
-      }
+      // if (item && !this.newGenreItems.includes(item)) {
+      //   this.newGenreItems.push(item)
+      // }
     },
     removedGenreItem(item) {
-      // If newly added, remove if not used on any other audiobooks
-      if (item && this.newGenreItems.includes(item)) {
-        var usedByOtherAb = this.audiobookCopies.find((ab) => {
-          return ab.book.genres && ab.book.genres.includes(item)
-        })
-        if (!usedByOtherAb) {
-          this.newGenreItems = this.newGenreItems.filter((t) => t !== item)
-        }
-      }
-    },
-    newSeriesItem(item) {
-      if (item && !this.newSeriesItems.includes(item)) {
-        this.newSeriesItems.push(item)
-      }
-    },
-    seriesChanged() {
-      this.newSeriesItems = this.newSeriesItems.filter((item) => {
-        return this.audiobookCopies.find((ab) => ab.book.series === item)
-      })
+      // If newly added, remove if not used on any other items
+      // if (item && this.newGenreItems.includes(item)) {
+      //   var usedByOtherAb = this.libraryItemCopies.find((ab) => {
+      //     return ab.book.genres && ab.book.genres.includes(item)
+      //   })
+      //   if (!usedByOtherAb) {
+      //     this.newGenreItems = this.newGenreItems.filter((t) => t !== item)
+      //   }
+      // }
     },
     init() {
-      this.audiobookCopies = this.audiobooks.map((ab) => {
-        var copy = { ...ab }
-        copy.tags = [...ab.tags]
-        copy.book = { ...ab.book }
-        copy.book.genres = [...ab.book.genres]
-        copy.originalAudiobook = ab
+      // TODO: Better deep cloning of library items
+      this.libraryItemCopies = this.libraryItems.map((li) => {
+        var copy = {
+          ...li
+        }
+        copy.media = { ...li.media }
+        if (copy.media.tags) copy.media.tags = [...copy.media.tags]
+        copy.media.metadata = { ...copy.media.metadata }
+        if (copy.media.metadata.authors) {
+          copy.media.metadata.authors = copy.media.metadata.authors.map((au) => ({ ...au }))
+        }
+        if (copy.media.metadata.series) {
+          copy.media.metadata.series = copy.media.metadata.series.map((se) => ({ ...se }))
+        }
+        if (copy.media.metadata.narrators) {
+          copy.media.metadata.narrators = [...copy.media.metadata.narrators]
+        }
+        if (copy.media.metadata.genres) {
+          copy.media.metadata.genres = [...copy.media.metadata.genres]
+        }
+        copy.originalLibraryItem = li
         return copy
       })
       this.$nextTick(() => {
@@ -312,46 +309,23 @@ export default {
         }
       })
     },
-    compareStringArrays(arr1, arr2) {
-      if (!arr1 || !arr2) return false
-      return arr1.join(',') !== arr2.join(',')
-    },
-    compareAudiobooks(newAb, origAb) {
-      const bookKeysToCheck = ['title', 'subtitle', 'narrator', 'author', 'publishYear', 'series', 'volumeNumber', 'description', 'language', 'publisher', 'isbn', 'asin']
-      var newBook = newAb.book
-      var origBook = origAb.book
-      var diffObj = {}
-      for (const key in newBook) {
-        if (bookKeysToCheck.includes(key)) {
-          if (newBook[key] !== origBook[key]) {
-            if (!diffObj.book) diffObj.book = {}
-            diffObj.book[key] = newBook[key]
-          }
-        }
-        if (key === 'genres') {
-          if (this.compareStringArrays(newBook[key], origBook[key])) {
-            if (!diffObj.book) diffObj.book = {}
-            diffObj.book[key] = newBook[key]
-          }
-        }
-      }
-      if (newAb.tags && origAb.tags && newAb.tags.join(',') !== origAb.tags.join(',')) {
-        diffObj.tags = newAb.tags
-      }
-      return diffObj
+    getEditFormRef(itemId) {
+      var refs = this.$refs[`itemForm-${itemId}`]
+      if (refs && refs.length) return refs[0]
+      return null
     },
     saveClick() {
       var updates = []
-      for (let i = 0; i < this.audiobookCopies.length; i++) {
-        var ab = { ...this.audiobookCopies[i] }
-        var origAb = ab.originalAudiobook
-        delete ab.originalAudiobook
-
-        var res = this.compareAudiobooks(ab, origAb)
-        if (res && Object.keys(res).length) {
+      for (let i = 0; i < this.libraryItemCopies.length; i++) {
+        var editForm = this.getEditFormRef(this.libraryItemCopies[i].id)
+        if (!editForm) {
+          throw new Error('Invalid edit form ref not found')
+        }
+        var details = editForm.getDetails()
+        if (details.hasChanges) {
           updates.push({
-            id: ab.id,
-            updates: res
+            id: this.libraryItemCopies[i].id,
+            mediaPayload: details.updatePayload
           })
         }
       }
@@ -362,11 +336,11 @@ export default {
       console.log('Pushing updates', updates)
       this.isProcessing = true
       this.$axios
-        .$post('/api/books/batch/update', updates)
+        .$post('/api/items/batch/update', updates)
         .then((data) => {
           this.isProcessing = false
           if (data.updates) {
-            this.$toast.success(`Successfully updated ${data.updates} audiobooks`)
+            this.$toast.success(`Successfully updated ${data.updates} items`)
             this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
             this.$toast.warning('No updates were necessary')
@@ -377,11 +351,6 @@ export default {
           this.$toast.error('Failed to batch update')
           this.isProcessing = false
         })
-    },
-    applyBatchUpdates() {
-      this.audiobookCopies = this.audiobookCopies.map((ab) => {
-        if (this.batchDetails.series) ab.book.series = this.batchDetails.series
-      })
     }
   },
   mounted() {

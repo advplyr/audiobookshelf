@@ -69,16 +69,16 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
-    audiobookId() {
+    libraryItemId() {
       return this.book.id
     },
     selected: {
       get() {
-        return this.$store.getters['getIsAudiobookSelected'](this.audiobookId)
+        return this.$store.getters['getIsLibraryItemSelected'](this.libraryItemId)
       },
       set(val) {
         if (this.processingBatch) return
-        this.$store.commit('setAudiobookSelected', { audiobookId: this.audiobookId, selected: val })
+        this.$store.commit('setLibraryItemSelected', { libraryItemId: this.libraryItemId, selected: val })
       }
     },
     processingBatch() {
@@ -118,7 +118,7 @@ export default {
       return this.book.numTracks
     },
     isStreaming() {
-      return this.$store.getters['getLibraryItemIdStreaming'] === this.audiobookId
+      return this.$store.getters['getLibraryItemIdStreaming'] === this.libraryItemId
     },
     showReadButton() {
       return this.showExperimentalFeatures && this.numEbooks
@@ -142,7 +142,7 @@ export default {
   methods: {
     selectBtnClick() {
       if (this.processingBatch) return
-      this.$store.commit('toggleAudiobookSelected', this.audiobookId)
+      this.$store.commit('toggleLibraryItemSelected', this.libraryItemId)
     },
     openEbook() {
       this.$store.commit('showEReader', this.book)
@@ -156,7 +156,7 @@ export default {
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/me/audiobook/${this.audiobookId}`, updatePayload)
+        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)

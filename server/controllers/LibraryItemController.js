@@ -1,6 +1,4 @@
 const Logger = require('../Logger')
-const Author = require('../objects/entities/Author')
-const Series = require('../objects/entities/Series')
 const { reqSupportsWebp } = require('../utils/index')
 
 class LibraryItemController {
@@ -43,49 +41,7 @@ class LibraryItemController {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
-    if (mediaPayload.metadata) {
-      var mediaMetadata = mediaPayload.metadata
-
-      // Create new authors if in payload
-      if (mediaMetadata.authors && mediaMetadata.authors.length) {
-        // TODO: validate authors
-        var newAuthors = []
-        for (let i = 0; i < mediaMetadata.authors.length; i++) {
-          if (mediaMetadata.authors[i].id.startsWith('new')) {
-            var newAuthor = new Author()
-            newAuthor.setData(mediaMetadata.authors[i])
-            Logger.debug(`[LibraryItemController] Created new author "${newAuthor.name}"`)
-            newAuthors.push(newAuthor)
-            // Update ID in original payload
-            mediaMetadata.authors[i].id = newAuthor.id
-          }
-        }
-        if (newAuthors.length) {
-          await this.db.insertEntities('author', newAuthors)
-          this.emitter('authors_added', newAuthors)
-        }
-      }
-
-      // Create new series if in payload
-      if (mediaMetadata.series && mediaMetadata.series.length) {
-        // TODO: validate series
-        var newSeries = []
-        for (let i = 0; i < mediaMetadata.series.length; i++) {
-          if (mediaMetadata.series[i].id.startsWith('new')) {
-            var newSeriesItem = new Series()
-            newSeriesItem.setData(mediaMetadata.series[i])
-            Logger.debug(`[LibraryItemController] Created new series "${newSeriesItem.name}"`)
-            newSeries.push(newSeriesItem)
-            // Update ID in original payload
-            mediaMetadata.series[i].id = newSeriesItem.id
-          }
-        }
-        if (newSeries.length) {
-          await this.db.insertEntities('series', newSeries)
-          this.emitter('authors_added', newSeries)
-        }
-      }
-    }
+    await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
 
     var hasUpdates = libraryItem.media.update(mediaPayload)
     if (hasUpdates) {
@@ -182,11 +138,76 @@ class LibraryItemController {
     this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
   }
 
+  // POST: api/items/batch/delete
+  async batchDelete(req, res) {
+    if (!req.user.canDelete) {
+      Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
+      return res.sendStatus(403)
+    }
+
+    var { libraryItemIds } = req.body
+    if (!libraryItemIds || !libraryItemIds.length) {
+      return res.sendStatus(500)
+    }
+
+    var itemsToDelete = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id))
+    if (!itemsToDelete.length) {
+      return res.sendStatus(404)
+    }
+    for (let i = 0; i < itemsToDelete.length; i++) {
+      Logger.info(`[LibraryItemController] Deleting Library Item "${itemsToDelete[i].media.metadata.title}"`)
+      await this.handleDeleteLibraryItem(itemsToDelete[i])
+    }
+    res.sendStatus(200)
+  }
+
+  // POST: api/items/batch/update
+  async batchUpdate(req, res) {
+    var updatePayloads = req.body
+    if (!updatePayloads || !updatePayloads.length) {
+      return res.sendStatus(500)
+    }
+
+    var itemsUpdated = 0
+
+    for (let i = 0; i < updatePayloads.length; i++) {
+      var mediaPayload = updatePayloads[i].mediaPayload
+      var libraryItem = this.db.libraryItems.find(_li => _li.id === updatePayloads[i].id)
+      if (!libraryItem) return null
+
+      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
+
+      var hasUpdates = libraryItem.media.update(mediaPayload)
+      if (hasUpdates) {
+        Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
+        await this.db.updateLibraryItem(libraryItem)
+        this.emitter('item_updated', libraryItem.toJSONExpanded())
+        itemsUpdated++
+      }
+    }
+
+    res.json({
+      success: true,
+      updates: itemsUpdated
+    })
+  }
+
+  // POST: api/items/batch/get
+  async batchGet(req, res) {
+    var libraryItemIds = req.body.libraryItemIds || []
+    if (!libraryItemIds.length) {
+      return res.status(403).send('Invalid payload')
+    }
+    var libraryItems = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id)).map((li) => li.toJSONExpanded())
+    res.json(libraryItems)
+  }
+
+
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)
 
-    // Check user can access this audiobooks library
+    // Check user can access this library
     if (!req.user.checkCanAccessLibrary(item.libraryId)) {
       return res.sendStatus(403)
     }

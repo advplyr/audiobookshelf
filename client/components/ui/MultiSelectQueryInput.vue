@@ -82,6 +82,9 @@ export default {
         this.$emit('input', val)
       }
     },
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     wrapperClass() {
       var classes = []
       if (this.disabled) classes.push('bg-black-300')
@@ -110,7 +113,7 @@ export default {
       if (this.searching) return
       this.currentSearch = this.textInput
       this.searching = true
-      var results = await this.$axios.$get(`/api/${this.endpoint}?q=${this.currentSearch}&limit=15`).catch((error) => {
+      var results = await this.$axios.$get(`/api/${this.endpoint}?q=${this.currentSearch}&limit=15&token=${this.userToken}`).catch((error) => {
         console.error('Failed to get search results', error)
         return []
       })

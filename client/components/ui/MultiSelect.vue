@@ -70,7 +70,7 @@ export default {
   computed: {
     selected: {
       get() {
-        return this.value
+        return this.value || []
       },
       set(val) {
         this.$emit('input', val)

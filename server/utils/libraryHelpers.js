@@ -133,50 +133,6 @@ module.exports = {
     return data
   },
 
-
-  // TODO: Remove legacy
-  getDistinctFilterData(audiobooks) {
-    var data = {
-      authors: [],
-      genres: [],
-      tags: [],
-      series: [],
-      narrators: [],
-      languages: []
-    }
-    audiobooks.forEach((ab) => {
-      if (ab.book._authorsList.length) {
-        ab.book._authorsList.forEach((author) => {
-          if (author && !data.authors.includes(author)) data.authors.push(author)
-        })
-      }
-      if (ab.book._genres.length) {
-        ab.book._genres.forEach((genre) => {
-          if (genre && !data.genres.includes(genre)) data.genres.push(genre)
-        })
-      }
-      if (ab.tags.length) {
-        ab.tags.forEach((tag) => {
-          if (tag && !data.tags.includes(tag)) data.tags.push(tag)
-        })
-      }
-      if (ab.book._series && !data.series.includes(ab.book._series)) data.series.push(ab.book._series)
-      if (ab.book._narratorsList.length) {
-        ab.book._narratorsList.forEach((narrator) => {
-          if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
-        })
-      }
-      if (ab.book._language && !data.languages.includes(ab.book._language)) data.languages.push(ab.book._language)
-    })
-    data.authors = naturalSort(data.authors).asc()
-    data.genres = naturalSort(data.genres).asc()
-    data.tags = naturalSort(data.tags).asc()
-    data.series = naturalSort(data.series).asc()
-    data.narrators = naturalSort(data.narrators).asc()
-    data.languages = naturalSort(data.languages).asc()
-    return data
-  },
-
   getSeriesFromBooks(books, minified = false) {
     var _series = {}
     books.forEach((libraryItem) => {
