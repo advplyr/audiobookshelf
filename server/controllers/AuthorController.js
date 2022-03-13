@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { reqSupportsWebp } = require('../utils/index')
 
 class AuthorController {
   constructor() { }
@@ -21,20 +22,55 @@ class AuthorController {
     if (!authorData) {
       return res.status(404).send('Author not found')
     }
-    req.author.asin = authorData.asin
-    if (authorData.image) {
+    Logger.debug(`[AuthorController] match author with "${req.body.q}"`, authorData)
+
+    var hasUpdates = false
+    if (authorData.asin && req.author.asin !== authorData.asin) {
+      req.author.asin = authorData.asin
+      hasUpdates = true
+    }
+
+    // Only updates image if there was no image before or the author ASIN was updated
+    if (authorData.image && (!req.author.imagePath || hasUpdates)) {
       var imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path
         req.author.relImagePath = imageData.relPath
+        hasUpdates = true
       }
     }
-    if (authorData.description) {
+
+    if (authorData.description && req.author.description !== authorData.description) {
       req.author.description = authorData.description
+      hasUpdates = true
     }
-    await this.db.updateEntity('author', req.author)
-    this.emitter('author_updated', req.author)
-    res.json(req.author)
+
+    if (hasUpdates) {
+      req.author.updatedAt = Date.now()
+
+      await this.db.updateEntity('author', req.author)
+      var numBooks = this.db.libraryItems.filter(li => {
+        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
+      }).length
+      this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+    }
+
+    res.json({
+      updated: hasUpdates,
+      author: req.author
+    })
+  }
+
+  // GET api/authors/:id/image
+  async getImage(req, res) {
+    let { query: { width, height, format }, author } = req
+
+    const options = {
+      format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
+      height: height ? parseInt(height) : null,
+      width: width ? parseInt(width) : null
+    }
+    return this.cacheManager.handleAuthorCache(res, author, options)
   }
 
   middleware(req, res, next) {

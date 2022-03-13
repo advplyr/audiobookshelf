@@ -61,28 +61,7 @@ class StreamManager {
     }
   }
 
-  async tempCheckStrayStreams() {
-    try {
-      var dirs = await fs.readdir(global.MetadataPath)
-      if (!dirs || !dirs.length) return true
-
-      await Promise.all(dirs.map(async (dirname) => {
-        if (dirname !== 'streams' && dirname !== 'books' && dirname !== 'downloads' && dirname !== 'backups' && dirname !== 'logs' && dirname !== 'cache') {
-          var fullPath = Path.join(global.MetadataPath, dirname)
-          Logger.warn(`Removing OLD Orphan Stream ${dirname}`)
-          return fs.remove(fullPath)
-        }
-      }))
-
-      return true
-    } catch (error) {
-      Logger.debug('No old orphan streams', error)
-      return false
-    }
-  }
-
   async removeOrphanStreams() {
-    await this.tempCheckStrayStreams()
     try {
       var dirs = await fs.readdir(this.StreamsPath)
       if (!dirs || !dirs.length) return true

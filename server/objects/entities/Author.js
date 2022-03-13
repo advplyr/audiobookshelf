@@ -40,6 +40,12 @@ class Author {
     }
   }
 
+  toJSONExpanded(numBooks = 0) {
+    var json = this.toJSON()
+    json.numBooks = numBooks
+    return json
+  }
+
   toJSONMinimal() {
     return {
       id: this.id,

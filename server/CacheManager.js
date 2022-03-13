@@ -8,6 +8,7 @@ class CacheManager {
   constructor() {
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
+    this.ImageCachePath = Path.join(this.CachePath, 'images')
   }
 
   async handleCoverCache(res, libraryItem, options = {}) {
@@ -71,6 +72,38 @@ class CacheManager {
         Logger.error(`[CacheManager] Failed to remove cache dir "${this.CachePath}"`, error)
       })
     }
+  }
+
+  async handleAuthorCache(res, author, options = {}) {
+    const format = options.format || 'webp'
+    const width = options.width || 400
+    const height = options.height || null
+
+    res.type(`image/${format}`)
+
+    var path = Path.join(this.ImageCachePath, `${author.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+
+    // Cache exists
+    if (await fs.pathExists(path)) {
+      const r = fs.createReadStream(path)
+      const ps = new stream.PassThrough()
+      stream.pipeline(r, ps, (err) => {
+        if (err) {
+          console.log(err)
+          return res.sendStatus(400)
+        }
+      })
+      return ps.pipe(res)
+    }
+
+    // Write cache
+    await fs.ensureDir(this.ImageCachePath)
+
+    let writtenFile = await resizeImage(author.imagePath, path, width, height)
+    if (!writtenFile) return res.sendStatus(400)
+
+    var readStream = fs.createReadStream(writtenFile)
+    readStream.pipe(res)
   }
 }
 module.exports = CacheManager
