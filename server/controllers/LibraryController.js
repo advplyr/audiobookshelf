@@ -1,3 +1,6 @@
+const Path = require('path')
+const fs = require('fs-extra')
+const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { sort, createNewSortInstance } = require('fast-sort')
@@ -50,6 +53,30 @@ class LibraryController {
 
   async update(req, res) {
     var library = req.library
+
+    // Validate new folder paths exist or can be created & resolve rel paths
+    //   returns 400 if a new folder fails to access
+    if (req.body.folders) {
+      var newFolderPaths = []
+      req.body.folders = req.body.folders.map(f => {
+        if (!f.id) {
+          f.fullPath = Path.resolve(f.fullPath)
+          newFolderPaths.push(f.fullPath)
+        }
+        return f
+      })
+      for (var path of newFolderPaths) {
+        var success = await fs.ensureDir(path).then(() => true).catch((error) => {
+          Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
+          return false
+        })
+        if (!success) {
+          return res.status(400).send(`Invalid folder directory "${path}"`)
+        } else {
+          await filePerms.setDefault(path)
+        }
+      }
+    }
 
     var hasUpdates = library.update(req.body)
     // TODO: Should check if this is an update to folder paths or name only
@@ -400,7 +427,7 @@ class LibraryController {
         })
       }
     })
-    var itemKey = req.library.itemMediaType
+    var itemKey = req.library.mediaType
     var results = {
       [itemKey]: itemMatches.slice(0, maxResults),
       tags: Object.values(tagMatches).slice(0, maxResults),

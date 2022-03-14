@@ -85,12 +85,15 @@ class FolderWatcher extends EventEmitter {
     if (libwatcher) {
       libwatcher.name = library.name
 
+      // If any folder paths were added or removed then re-init watcher
       var pathsToAdd = library.folderPaths.filter(path => !libwatcher.paths.includes(path))
-      if (pathsToAdd.length) {
-        Logger.info(`[Watcher] Adding paths to library watcher "${library.name}"`)
-        libwatcher.paths = library.folderPaths
-        libwatcher.folders = library.folders
-        libwatcher.watcher.watchPaths(pathsToAdd)
+      var pathsRemoved = libwatcher.paths.filter(path => !library.folderPaths.includes(path))
+      if (pathsToAdd.length || pathsRemoved.length) {
+        Logger.info(`[Watcher] Re-Initializing watcher for "${library.name}".`)
+
+        libwatcher.watcher.close()
+        this.libraryWatchers = this.libraryWatchers.filter(lw => lw.id !== libwatcher.id)
+        this.buildLibraryWatcher(library)
       }
     }
   }

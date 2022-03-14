@@ -34,7 +34,7 @@ export default {
     disabled: Boolean,
     label: {
       type: String,
-      default: 'Media Type'
+      default: 'Media Category'
     }
   },
   data() {
@@ -51,19 +51,19 @@ export default {
           name: 'Default'
         },
         {
-          id: 'audiobooks',
+          id: 'audiobook',
           name: 'Audiobooks'
         },
         {
-          id: 'books',
+          id: 'book',
           name: 'Books'
         },
         {
-          id: 'podcasts',
+          id: 'podcast',
           name: 'Podcasts'
         },
         {
-          id: 'comics',
+          id: 'comic',
           name: 'Comics'
         }
       ]

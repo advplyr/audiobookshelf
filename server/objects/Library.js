@@ -8,7 +8,8 @@ class Library {
     this.folders = []
     this.displayOrder = 1
     this.icon = 'database'
-    this.mediaType = 'default'
+    this.mediaCategory = 'default' // default, podcast, book, audiobook, comic
+    this.mediaType = 'book' // book, podcast
     this.provider = 'google'
     this.disableWatcher = false
 
@@ -25,9 +26,6 @@ class Library {
   get folderPaths() {
     return this.folders.map(f => f.fullPath)
   }
-  get itemMediaType() {
-    return this.mediaType === 'podcast' ? 'podcast' : 'book'
-  }
 
   construct(library) {
     this.id = library.id
@@ -35,12 +33,31 @@ class Library {
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
-    this.mediaType = library.mediaType || 'default'
+    this.mediaCategory = library.mediaCategory || library.mediaType || 'default' // mediaCategory used to be mediaType
+    this.mediaType = library.mediaType
     this.provider = library.provider || 'google'
     this.disableWatcher = !!library.disableWatcher
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
+    this.cleanOldValues() // mediaCategory and mediaType were changed for v2
+  }
+
+  cleanOldValues() {
+    if (this.mediaCategory.endsWith('s')) {
+      this.mediaCategory = this.mediaCategory.slice(0, -1)
+    }
+    var availableCategories = ['default', 'audiobook', 'book', 'comic', 'podcast']
+    if (!availableCategories.includes(this.mediaCategory)) {
+      this.mediaCategory = 'default'
+    }
+    if (!availableCategories.includes(this.icon)) {
+      this.icon = this.mediaCategory
+    }
+    if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book')) {
+      if (this.mediaCategory === 'podcast') this.mediaType = 'podcast'
+      else this.mediaType = 'book'
+    }
   }
 
   toJSON() {
@@ -50,6 +67,7 @@ class Library {
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
+      mediaCategory: this.mediaCategory,
       mediaType: this.mediaType,
       provider: this.provider,
       disableWatcher: this.disableWatcher,
@@ -77,7 +95,8 @@ class Library {
     }
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
-    this.mediaType = data.mediaType || 'default'
+    this.mediaCategory = data.mediaCategory || 'default'
+    this.mediaType = data.mediaType || 'book'
     this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
@@ -85,22 +104,14 @@ class Library {
 
   update(payload) {
     var hasUpdates = false
-    if (payload.name && payload.name !== this.name) {
-      this.name = payload.name
-      hasUpdates = true
-    }
-    if (payload.provider && payload.provider !== this.provider) {
-      this.provider = payload.provider
-      hasUpdates = true
-    }
-    if (payload.mediaType && payload.mediaType !== this.mediaType) {
-      this.mediaType = payload.mediaType
-      hasUpdates = true
-    }
-    if (payload.icon && payload.icon !== this.icon) {
-      this.icon = payload.icon
-      hasUpdates = true
-    }
+
+    var keysToCheck = ['name', 'provider', 'mediaCategory', 'mediaType', 'icon']
+    keysToCheck.forEach((key) => {
+      if (payload[key] && payload[key] !== this[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    })
 
     if (payload.disableWatcher !== this.disableWatcher) {
       this.disableWatcher = !!payload.disableWatcher

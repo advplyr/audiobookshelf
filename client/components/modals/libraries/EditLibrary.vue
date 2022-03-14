@@ -11,7 +11,7 @@
           <ui-text-input-with-label v-model="name" label="Library Name" />
         </div>
         <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
-          <ui-media-type-picker v-model="mediaType" />
+          <ui-media-category-picker v-model="mediaCategory" />
         </div>
         <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
           <ui-dropdown v-model="provider" :items="providers" label="Metadata Provider" small />
@@ -22,10 +22,16 @@
         <p class="px-1 text-sm font-semibold">Folders</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
-          <ui-editable-text v-model="folder.fullPath" type="text" class="w-full" />
+          <ui-editable-text v-model="folder.fullPath" readonly type="text" class="w-full" />
           <span v-show="folders.length > 1" class="material-icons ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
         </div>
-        <p v-if="!folders.length" class="text-sm text-gray-300 px-1 py-2">No folders</p>
+        <!-- <p v-if="!folders.length" class="text-sm text-gray-300 px-1 py-2">No folders</p> -->
+
+        <div class="flex py-1 px-2 items-center w-full">
+          <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
+          <ui-editable-text v-model="newFolderPath" placeholder="New folder path" type="text" class="w-full" />
+        </div>
+
         <ui-btn class="w-full mt-2" color="primary" @click="showDirectoryPicker = true">Browse for Folder</ui-btn>
       </div>
       <div class="absolute bottom-0 left-0 w-full py-4 px-4">
@@ -61,11 +67,12 @@ export default {
   data() {
     return {
       name: '',
-      provider: '',
-      mediaType: '',
+      provider: 'google',
+      mediaCategory: '',
       folders: [],
       showDirectoryPicker: false,
-      disableWatcher: false
+      disableWatcher: false,
+      newFolderPath: ''
     }
   },
   computed: {
@@ -83,7 +90,7 @@ export default {
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
-      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher && this.mediaType === this.library.mediaType
+      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher && this.mediaCategory === this.library.mediaCategory && !this.newFolderPath
     },
     providers() {
       return this.$store.state.scanners.providers
@@ -103,10 +110,10 @@ export default {
     },
     init() {
       this.name = this.library ? this.library.name : ''
-      this.provider = this.library ? this.library.provider : ''
+      this.provider = this.library ? this.library.provider : 'google'
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
       this.disableWatcher = this.library ? !!this.library.disableWatcher : false
-      this.mediaType = this.library ? this.library.mediaType : 'default'
+      this.mediaCategory = this.library ? this.library.mediaCategory : 'default'
       this.showDirectoryPicker = false
     },
     selectFolder(fullPath) {
@@ -114,6 +121,10 @@ export default {
       this.showDirectoryPicker = false
     },
     submit() {
+      if (this.newFolderPath) {
+        this.folders.push({ fullPath: this.newFolderPath })
+      }
+
       if (this.library) {
         this.updateLibrary()
       } else {
@@ -133,8 +144,8 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
-        mediaType: this.mediaType,
-        icon: this.mediaType,
+        mediaCategory: this.mediaCategory,
+        icon: this.mediaCategory,
         disableWatcher: this.disableWatcher
       }
 
@@ -169,8 +180,8 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
-        mediaType: this.mediaType,
-        icon: this.mediaType,
+        mediaCategory: this.mediaCategory,
+        icon: this.mediaCategory,
         disableWatcher: this.disableWatcher
       }
 
