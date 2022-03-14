@@ -229,9 +229,28 @@ export default {
     },
     buildMatchUpdatePayload() {
       var updatePayload = {}
+
+      var volumeNumber = this.selectedMatchUsage.volumeNumber ? this.selectedMatch.volumeNumber || null : null
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
-          updatePayload[key] = this.selectedMatch[key]
+          if (key === 'series') {
+            var seriesItem = {
+              id: `new-${Math.floor(Math.random() * 10000)}`,
+              name: this.selectedMatch[key],
+              sequence: volumeNumber
+            }
+            updatePayload.series = [seriesItem]
+          } else if (key === 'author') {
+            var authorItem = {
+              id: `new-${Math.floor(Math.random() * 10000)}`,
+              name: this.selectedMatch[key]
+            }
+            updatePayload.authors = [authorItem]
+          } else if (key === 'narrator') {
+            updatePayload.narrators = [this.selectedMatch[key]]
+          } else if (key !== 'volumeNumber') {
+            updatePayload[key] = this.selectedMatch[key]
+          }
         }
       }
       return updatePayload
@@ -252,28 +271,32 @@ export default {
           return false
         })
         if (success) {
-          this.$toast.success('Book Cover Updated')
+          this.$toast.success('Item Cover Updated')
         } else {
-          this.$toast.error('Book Cover Failed to Update')
+          this.$toast.error('Item Cover Failed to Update')
         }
         console.log('Updated cover')
         delete updatePayload.cover
       }
 
       if (Object.keys(updatePayload).length) {
-        var bookUpdatePayload = {
-          book: updatePayload
+        var mediaUpdatePayload = {
+          metadata: updatePayload
         }
-        var success = await this.$axios.$patch(`/api/items/${this.libraryItemId}`, bookUpdatePayload).catch((error) => {
+        var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
-        if (success) {
-          this.$toast.success('Book Details Updated')
+        if (updateResult) {
+          if (updateResult.updated) {
+            this.$toast.success('Item details updated')
+          } else {
+            this.$toast.info('No detail updates were necessary')
+          }
           this.selectedMatch = null
           this.$emit('selectTab', 'details')
         } else {
-          this.$toast.error('Book Details Failed to Update')
+          this.$toast.error('Item Details Failed to Update')
         }
       } else {
         this.selectedMatch = null

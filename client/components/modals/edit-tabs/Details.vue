@@ -169,14 +169,18 @@ export default {
     async updateDetails(updatedDetails) {
       this.isProcessing = true
       console.log('Sending update', updatedDetails.updatePayload)
-      var updatedAudiobook = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatedDetails.updatePayload).catch((error) => {
+      var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, updatedDetails.updatePayload).catch((error) => {
         console.error('Failed to update', error)
         return false
       })
       this.isProcessing = false
-      if (updatedAudiobook) {
-        this.$toast.success('Update Successful')
-        this.$emit('close')
+      if (updateResult) {
+        if (updateResult.updated) {
+          this.$toast.success('Item details updated')
+          // this.$emit('close')
+        } else {
+          this.$toast.info('No updates were necessary')
+        }
       }
     },
     removeItem() {

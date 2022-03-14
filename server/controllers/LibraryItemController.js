@@ -49,12 +49,15 @@ class LibraryItemController {
       await this.db.updateLibraryItem(libraryItem)
       this.emitter('item_updated', libraryItem.toJSONExpanded())
     }
-    res.json(libraryItem)
+    res.json({
+      updated: hasUpdates,
+      libraryItem
+    })
   }
 
   // POST: api/items/:id/cover
   async uploadCover(req, res) {
-    if (!req.user.canUpload || !req.user.canUpdate) {
+    if (!req.user.canUpload) {
       Logger.warn('User attempted to upload a cover without permission', req.user)
       return res.sendStatus(403)
     }
