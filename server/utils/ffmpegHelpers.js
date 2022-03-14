@@ -47,7 +47,7 @@ async function writeMetadataFile(audiobook, outputPath) {
     `title=${audiobook.title}`,
     `artist=${audiobook.authorFL}`,
     `album_artist=${audiobook.authorFL}`,
-    `date=${audiobook.book.publishYear || ''}`,
+    `date=${audiobook.book.publishedYear || ''}`,
     `description=${audiobook.book.description}`,
     `genre=${audiobook.book._genres.join(';')}`,
     `comment=Audiobookshelf v${package.version}`

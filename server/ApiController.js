@@ -8,7 +8,6 @@ const Logger = require('./Logger')
 const { isObject } = require('./utils/index')
 const { parsePodcastRssFeedXml } = require('./utils/podcastUtils')
 
-const BookController = require('./controllers/BookController')
 const LibraryController = require('./controllers/LibraryController')
 const UserController = require('./controllers/UserController')
 const CollectionController = require('./controllers/CollectionController')
@@ -74,6 +73,8 @@ class ApiController {
     //
     // Item Routes
     //
+    this.router.delete('/items/all', LibraryItemController.deleteAll.bind(this))
+
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
     this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
@@ -83,26 +84,12 @@ class ApiController {
     this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
+    this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
+    this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
     this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
-
-    //
-    // Book Routes
-    //
-    this.router.get('/books', BookController.findAll.bind(this))
-    this.router.get('/books/:id', BookController.findOne.bind(this))
-    this.router.patch('/books/:id', BookController.update.bind(this))
-    this.router.delete('/books/:id', BookController.delete.bind(this))
-
-    this.router.delete('/books/all', BookController.deleteAll.bind(this))
-    this.router.patch('/books/:id/tracks', BookController.updateTracks.bind(this))
-    this.router.get('/books/:id/stream', BookController.openStream.bind(this))
-    this.router.post('/books/:id/cover', BookController.uploadCover.bind(this))
-    this.router.get('/books/:id/cover', BookController.getCover.bind(this))
-    this.router.patch('/books/:id/coverfile', BookController.updateCoverFromFile.bind(this))
-    this.router.post('/books/:id/match', BookController.match.bind(this))
 
     //
     // User Routes

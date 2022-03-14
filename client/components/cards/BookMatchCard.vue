@@ -6,7 +6,7 @@
         <div class="flex items-center">
           <h1>{{ book.title }}</h1>
           <div class="flex-grow" />
-          <p>{{ book.publishYear }}</p>
+          <p>{{ book.publishedYear }}</p>
         </div>
         <p class="text-gray-400">{{ book.author }}</p>
         <div class="w-full max-h-12 overflow-hidden">

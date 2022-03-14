@@ -218,8 +218,6 @@ class Server {
     })
 
     // Client dynamic routes
-    app.get('/audiobook/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html'))) // LEGACY
-    app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html'))) // LEGACY
     app.get('/item/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/item/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
     app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))

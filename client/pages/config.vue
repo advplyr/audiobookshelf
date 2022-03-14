@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <app-config-side-nav :is-open.sync="sideDrawerOpen" />
     <div class="configContent" :class="`page-${currentPage}`">
       <div v-show="isMobile" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2">
@@ -38,8 +38,8 @@ export default {
     isMobile() {
       return this.$store.state.globals.isMobile
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     currentPage() {
       if (!this.$route.name) return 'Settings'

@@ -63,7 +63,7 @@ export default {
   },
   methods: {
     getCoverUrl(book) {
-      return this.store.getters['audiobooks/getLibraryItemCoverSrc'](book, '')
+      return this.store.getters['globals/getLibraryItemCoverSrc'](book, '')
     },
     async buildCoverImg(coverData, bgCoverWidth, offsetLeft, zIndex, forceCoverBg = false) {
       var src = coverData.coverUrl

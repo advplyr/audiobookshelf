@@ -1,3 +1,4 @@
+const Path = require('path')
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const AudioFile = require('../files/AudioFile')
@@ -122,6 +123,27 @@ class Book {
       }
     }
     return hasUpdates
+  }
+
+  updateAudioTracks(orderedFileData) {
+    var index = 1
+    this.audioFiles = orderedFileData.map((fileData) => {
+      var audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
+      audioFile.manuallyVerified = true
+      audioFile.invalid = false
+      audioFile.error = null
+      if (fileData.exclude !== undefined) {
+        audioFile.exclude = !!fileData.exclude
+      }
+      if (audioFile.exclude) {
+        audioFile.index = -1
+      } else {
+        audioFile.index = index++
+      }
+      return audioFile
+    })
+
+    this.rebuildTracks()
   }
 
   updateCover(coverPath) {

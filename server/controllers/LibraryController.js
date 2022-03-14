@@ -230,7 +230,7 @@ class LibraryController {
     res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
   }
 
-  // api/libraries/:id/books/personalized
+  // api/libraries/:id/personalized
   async getLibraryUserPersonalized(req, res) {
     var libraryItems = req.libraryItems
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12

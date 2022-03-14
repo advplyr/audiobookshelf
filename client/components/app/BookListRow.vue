@@ -11,7 +11,7 @@
       <covers-hover-book-cover :audiobook="book" />
     </td>
     <td class="body-cell min-w-64 max-w-64 px-2">
-      <nuxt-link :to="`/audiobook/${book.id}`" class="hover:underline">
+      <nuxt-link :to="`/item/${book.id}`" class="hover:underline">
         <p class="truncate">
           {{ book.book.title }}<span v-if="book.book.subtitle">: {{ book.book.subtitle }}</span>
         </p>
@@ -24,7 +24,7 @@
       <p class="truncate">{{ seriesText }}</p>
     </td>
     <td class="body-cell min-w-24 max-w-24 px-2">
-      <p class="truncate">{{ book.book.publishYear }}</p>
+      <p class="truncate">{{ book.book.publishedYear }}</p>
     </td>
     <td class="body-cell min-w-80 max-w-80 px-2">
       <p class="truncate">{{ book.book.description }}</p>
@@ -148,7 +148,7 @@ export default {
       this.$store.commit('showEReader', this.book)
     },
     downloadClick() {
-      this.$store.commit('showEditModalOnTab', { audiobook: this.book, tab: 'download' })
+      this.$store.commit('showEditModalOnTab', { libraryItem: this.book, tab: 'download' })
     },
     toggleRead() {
       var updatePayload = {

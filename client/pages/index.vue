@@ -1,5 +1,5 @@
 <template>
-  <div class="page" :class="streamAudiobook ? 'streaming' : ''"></div>
+  <div class="page" :class="streamLibraryItem ? 'streaming' : ''"></div>
 </template>
 
 <script>
@@ -11,8 +11,8 @@ export default {
     return {}
   },
   computed: {
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {},

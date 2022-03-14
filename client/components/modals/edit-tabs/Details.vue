@@ -84,14 +84,22 @@ export default {
   },
   methods: {
     quickMatch() {
+      if (this.quickMatching) return
+      if (!this.$refs.itemDetailsEdit) return
+
+      var { title, author } = this.$refs.itemDetailsEdit.getTitleAndAuthorName()
+      if (!title) {
+        this.$toast.error('Must have a title for quick match')
+        return
+      }
       this.quickMatching = true
       var matchOptions = {
         provider: this.libraryProvider,
-        title: this.details.title,
-        author: this.details.author !== this.book.author ? this.details.author : null
+        title: title || null,
+        author: author || null
       }
       this.$axios
-        .$post(`/api/books/${this.libraryItemId}/match`, matchOptions)
+        .$post(`/api/items/${this.libraryItemId}/match`, matchOptions)
         .then((res) => {
           this.quickMatching = false
           if (res.warning) {

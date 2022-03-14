@@ -8,7 +8,7 @@ const bookKeyMap = {
   subtitle: 'subtitle',
   author: 'authorFL',
   narrator: 'narratorFL',
-  publishYear: 'publishYear',
+  publishedYear: 'publishedYear',
   publisher: 'publisher',
   description: 'description',
   isbn: 'isbn',

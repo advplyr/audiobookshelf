@@ -19,8 +19,8 @@
               <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" label="Authors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
-              <ui-checkbox v-model="selectedBatchUsage.publishYear" />
-              <ui-text-input-with-label ref="publishYearInput" v-model="batchDetails.publishYear" :disabled="!selectedBatchUsage.publishYear" label="Publish Year" class="mb-4 ml-4" />
+              <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
+              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" label="Publish Year" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
@@ -114,7 +114,7 @@ export default {
       batchDetails: {
         subtitle: null,
         authors: null,
-        publishYear: null,
+        publishedYear: null,
         series: [],
         genres: [],
         tags: [],
@@ -126,7 +126,7 @@ export default {
       selectedBatchUsage: {
         subtitle: false,
         authors: false,
-        publishYear: false,
+        publishedYear: false,
         series: false,
         genres: false,
         tags: false,

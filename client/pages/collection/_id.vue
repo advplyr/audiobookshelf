@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
       <div class="flex flex-col sm:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block sm:w-32 md:w-52" style="min-width: 240px">
@@ -66,8 +66,8 @@ export default {
     bookCoverAspectRatio() {
       return this.$store.getters['getBookCoverAspectRatio']
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     bookItems() {
       return this.collection.books || []

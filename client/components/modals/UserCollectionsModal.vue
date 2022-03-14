@@ -15,7 +15,7 @@
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
             <template v-for="collection in sortedCollections">
-              <modals-collections-user-collection-item :key="collection.id" :collection="collection" class="list-complete-item" @add="addToCollection" @remove="removeFromCollection" @close="show = false" />
+              <modals-collections-user-collection-item :key="collection.id" :collection="collection" :book-cover-aspect-ratio="bookCoverAspectRatio" class="list-complete-item" @add="addToCollection" @remove="removeFromCollection" @close="show = false" />
             </template>
           </transition-group>
         </div>
@@ -50,7 +50,7 @@ export default {
         this.loadCollections()
         this.newCollectionName = ''
       } else {
-        this.$store.commit('setSelectedAudiobook', null)
+        this.$store.commit('setSelectedLibraryItem', null)
       }
     }
   },
@@ -65,15 +65,18 @@ export default {
     },
     title() {
       if (this.showBatchUserCollectionModal) {
-        return `${this.selectedBookIds.length} Books Selected`
+        return `${this.selectedBookIds.length} Items Selected`
       }
-      return this.selectedAudiobook ? this.selectedAudiobook.book.title : ''
+      return this.selectedLibraryItem ? this.selectedLibraryItem.media.metadata.title : ''
     },
-    selectedAudiobook() {
-      return this.$store.state.selectedAudiobook
+    bookCoverAspectRatio() {
+      return this.$store.getters['getBookCoverAspectRatio']
     },
-    selectedAudiobookId() {
-      return this.selectedAudiobook ? this.selectedAudiobook.id : null
+    selectedLibraryItem() {
+      return this.$store.state.selectedLibraryItem
+    },
+    selectedLibraryItemId() {
+      return this.selectedLibraryItem ? this.selectedLibraryItem.id : null
     },
     collections() {
       return this.$store.state.user.collections || []
@@ -87,7 +90,7 @@ export default {
             var collectionBookIds = c.books.map((b) => b.id)
             includesBook = !this.selectedBookIds.find((id) => !collectionBookIds.includes(id))
           } else {
-            includesBook = !!c.books.find((b) => b.id === this.selectedAudiobookId)
+            includesBook = !!c.books.find((b) => b.id === this.selectedLibraryItemId)
           }
 
           return {
@@ -112,7 +115,7 @@ export default {
       this.$store.dispatch('user/loadUserCollections')
     },
     removeFromCollection(collection) {
-      if (!this.selectedAudiobookId && !this.selectedBookIds.length) return
+      if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return
       this.processing = true
 
       if (this.showBatchUserCollectionModal) {
@@ -132,7 +135,7 @@ export default {
       } else {
         // Remove single book
         this.$axios
-          .$delete(`/api/collections/${collection.id}/book/${this.selectedAudiobookId}`)
+          .$delete(`/api/collections/${collection.id}/book/${this.selectedLibraryItemId}`)
           .then((updatedCollection) => {
             console.log(`Book removed from collection`, updatedCollection)
             this.$toast.success('Book removed from collection')
@@ -146,7 +149,7 @@ export default {
       }
     },
     addToCollection(collection) {
-      if (!this.selectedAudiobookId && !this.selectedBookIds.length) return
+      if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return
       this.processing = true
 
       if (this.showBatchUserCollectionModal) {
@@ -164,10 +167,10 @@ export default {
             this.processing = false
           })
       } else {
-        if (!this.selectedAudiobookId) return
+        if (!this.selectedLibraryItemId) return
 
         this.$axios
-          .$post(`/api/collections/${collection.id}/book`, { id: this.selectedAudiobookId })
+          .$post(`/api/collections/${collection.id}/book`, { id: this.selectedLibraryItemId })
           .then((updatedCollection) => {
             console.log(`Book added to collection`, updatedCollection)
             this.$toast.success('Book added to collection')
@@ -181,12 +184,12 @@ export default {
       }
     },
     submitCreateCollection() {
-      if (!this.newCollectionName || (!this.selectedAudiobookId && !this.selectedBookIds.length)) {
+      if (!this.newCollectionName || (!this.selectedLibraryItemId && !this.selectedBookIds.length)) {
         return
       }
       this.processing = true
 
-      var books = this.showBatchUserCollectionModal ? this.selectedBookIds : [this.selectedAudiobookId]
+      var books = this.showBatchUserCollectionModal ? this.selectedBookIds : [this.selectedLibraryItemId]
       var newCollection = {
         books: books,
         libraryId: this.currentLibraryId,

@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
       <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
         <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
@@ -50,12 +50,12 @@
                   </template>
                 </div>
               </div>
-              <div v-if="publishYear" class="flex py-0.5">
+              <div v-if="publishedYear" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Publish Year</span>
                 </div>
                 <div>
-                  {{ publishYear }}
+                  {{ publishedYear }}
                 </div>
               </div>
               <div class="flex py-0.5" v-if="genres.length">
@@ -283,8 +283,8 @@ export default {
     title() {
       return this.mediaMetadata.title || 'No Title'
     },
-    publishYear() {
-      return this.mediaMetadata.publishYear
+    publishedYear() {
+      return this.mediaMetadata.publishedYear
     },
     narrator() {
       return this.mediaMetadata.narratorName
@@ -376,11 +376,11 @@ export default {
     userProgressFinishedAt() {
       return this.userAudiobook ? this.userAudiobook.finishedAt : 0
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     streaming() {
-      return this.streamAudiobook && this.streamAudiobook.id === this.libraryItemId
+      return this.streamLibraryItem && this.streamLibraryItem.id === this.libraryItemId
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
@@ -425,16 +425,16 @@ export default {
       this.$store.commit('showEditModal', this.libraryItem)
     },
     audiobookUpdated() {
-      console.log('Audiobook Updated - Fetch full audiobook')
-      this.$axios
-        .$get(`/api/books/${this.libraryItemId}`)
-        .then((audiobook) => {
-          console.log('Updated audiobook', audiobook)
-          this.libraryItem = audiobook
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-        })
+      // console.log('Audiobook Updated - Fetch full audiobook')
+      // this.$axios
+      //   .$get(`/api/books/${this.libraryItemId}`)
+      //   .then((audiobook) => {
+      //     console.log('Updated audiobook', audiobook)
+      //     this.libraryItem = audiobook
+      //   })
+      //   .catch((error) => {
+      //     console.error('Failed', error)
+      //   })
     },
     clearProgressClick() {
       if (confirm(`Are you sure you want to reset your progress?`)) {
@@ -456,20 +456,16 @@ export default {
       this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'download' })
     },
     collectionsClick() {
-      this.$store.commit('setSelectedAudiobook', this.libraryItem)
+      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
     }
   },
   mounted() {
-    this.$store.commit('audiobooks/addListener', { id: 'audiobook', audiobookId: this.libraryItemId, meth: this.libraryItemUpdated })
-
     // use this audiobooks library id as the current
     if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
   },
-  beforeDestroy() {
-    this.$store.commit('audiobooks/removeListener', 'audiobook')
-  }
+  beforeDestroy() {}
 }
 </script>

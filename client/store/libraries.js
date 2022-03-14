@@ -68,11 +68,6 @@ export const actions = {
       console.warn('Access not allowed to library')
       return false
     }
-    // var library = state.libraries.find(lib => lib.id === libraryId)
-    // if (library) {
-    //   commit('setCurrentLibrary', libraryId)
-    //   return library
-    // }
 
     return this.$axios
       .$get(`/api/libraries/${libraryId}?include=filterdata`)

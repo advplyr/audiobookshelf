@@ -29,7 +29,7 @@ async function generate(audiobook, nfoFilename = 'metadata.nfo') {
     'Narrator': book.narrator,
     'Series': book.series,
     'Volume Number': book.volumeNumber,
-    'Publish Year': book.publishYear,
+    'Publish Year': book.publishedYear,
     'Genre': book.genres ? book.genres.join(', ') : '',
     'Duration': audiobook.durationPretty,
     'Chapters': jsonObj.chapters.length

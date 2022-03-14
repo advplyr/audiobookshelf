@@ -138,6 +138,26 @@ class LibraryItemController {
     this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
   }
 
+  // POST api/items/:id/match
+  async match(req, res) {
+    var libraryItem = req.libraryItem
+
+    var options = req.body || {}
+    var matchResult = await this.scanner.quickMatchBook(libraryItem, options)
+    res.json(matchResult)
+  }
+
+  // PATCH: api/items/:id/tracks
+  async updateTracks(req, res) {
+    var libraryItem = req.libraryItem
+    var orderedFileData = req.body.orderedFileData
+    Logger.info(`Updating item tracks called ${libraryItem.id}`)
+    libraryItem.media.updateAudioTracks(orderedFileData)
+    await this.db.updateLibraryItem(libraryItem)
+    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    res.json(libraryItem.toJSON())
+  }
+
   // POST: api/items/batch/delete
   async batchDelete(req, res) {
     if (!req.user.canDelete) {
@@ -200,6 +220,18 @@ class LibraryItemController {
     }
     var libraryItems = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id)).map((li) => li.toJSONExpanded())
     res.json(libraryItems)
+  }
+
+  // DELETE: api/items/all
+  async deleteAll(req, res) {
+    if (!req.user.isRoot) {
+      Logger.warn('User other than root attempted to delete all library items', req.user)
+      return res.sendStatus(403)
+    }
+    Logger.info('Removing all Library Items')
+    var success = await this.db.recreateLibraryItemsDb()
+    if (success) res.sendStatus(200)
+    else res.sendStatus(500)
   }
 
 

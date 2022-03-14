@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="page overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-4xl mx-auto">
       <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-end">
         <p class="text-2xl mr-4 mb-2 sm:mb-0">Logger</p>
@@ -93,8 +93,8 @@ export default {
     serverSettings() {
       return this.$store.state.serverSettings
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {

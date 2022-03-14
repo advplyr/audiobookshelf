@@ -76,9 +76,6 @@ export default {
     currentUserId() {
       return this.$store.state.user.user.id
     },
-    userStream() {
-      return this.$store.state.streamAudiobook
-    },
     usersOnline() {
       var usermap = {}
       this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, stream: u.stream }))

@@ -103,9 +103,6 @@ export default {
     userAudiobooks() {
       return this.$store.state.user.user.audiobooks || {}
     },
-    selectedSeries() {
-      return this.$store.state.audiobooks.selectedSeries
-    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },

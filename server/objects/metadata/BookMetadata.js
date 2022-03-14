@@ -135,7 +135,7 @@ class BookMetadata {
     this.title = scanMediaData.title || null
     this.subtitle = scanMediaData.subtitle || null
     this.narrators = []
-    this.publishYear = scanMediaData.publishYear || null
+    this.publishedYear = scanMediaData.publishedYear || null
     this.description = scanMediaData.description || null
     this.isbn = scanMediaData.isbn || null
     this.asin = scanMediaData.asin || null
@@ -166,7 +166,7 @@ class BookMetadata {
       },
       {
         tag: 'tagDate',
-        key: 'publishYear'
+        key: 'publishedYear'
       },
       {
         tag: 'tagSubtitle',

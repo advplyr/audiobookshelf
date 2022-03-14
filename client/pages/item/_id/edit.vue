@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="bg-bg page overflow-hidden relative" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-hidden relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div v-show="saving" class="absolute z-20 w-full h-full flex items-center justify-center">
       <ui-loading-indicator />
     </div>
@@ -38,7 +38,7 @@
       </div>
       <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
         <transition-group type="transition" :name="!drag ? 'flip-list' : null">
-          <li v-for="(audio, index) in files" :key="audio.path" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center">
+          <li v-for="(audio, index) in files" :key="audio.ino" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center">
             <div class="font-book text-center px-4 py-1 w-12">
               {{ audio.include ? index - numExcluded + 1 : -1 }}
             </div>
@@ -56,11 +56,11 @@
               {{ audio.discNumFromMeta }}
             </div>
             <div class="font-book truncate px-4 flex-grow">
-              {{ audio.filename }}
+              {{ audio.metadata.filename }}
             </div>
 
             <div class="font-mono w-20 text-center">
-              {{ $bytesPretty(audio.size) }}
+              {{ $bytesPretty(audio.metadata.size) }}
             </div>
             <div class="font-mono w-20">
               {{ $secondsToTimestamp(audio.duration) }}
@@ -95,17 +95,17 @@ export default {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
-    var audiobook = await app.$axios.$get(`/api/books/${params.id}`).catch((error) => {
+    var libraryItem = await app.$axios.$get(`/api/items/${params.id}?extended=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
-    if (!audiobook) {
-      console.error('No audiobook...', params.id)
+    if (!libraryItem) {
+      console.error('No item...', params.id)
       return redirect('/')
     }
     return {
-      audiobook,
-      files: audiobook.audioFiles ? audiobook.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
+      libraryItem,
+      files: libraryItem.media.audioFiles ? libraryItem.media.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
     }
   },
   data() {
@@ -121,8 +121,14 @@ export default {
     }
   },
   computed: {
+    media() {
+      return this.libraryItem.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || []
+    },
     audioFiles() {
-      return this.audiobook.audioFiles || []
+      return this.media.audioFiles || []
     },
     numExcluded() {
       var count = 0
@@ -131,69 +137,23 @@ export default {
       })
       return count
     },
-    missingPartChunks() {
-      if (this.missingParts === 1) return this.missingParts[0]
-      var chunks = []
-
-      var currentIndex = this.missingParts[0]
-      var currentChunk = [this.missingParts[0]]
-
-      for (let i = 1; i < this.missingParts.length; i++) {
-        var partIndex = this.missingParts[i]
-        if (currentIndex === partIndex - 1) {
-          currentChunk.push(partIndex)
-          currentIndex = partIndex
-        } else {
-          // console.log('Chunk ended', currentChunk.join(', '), currentIndex, partIndex)
-          if (currentChunk.length === 0) {
-            console.error('How is current chunk 0?', currentChunk.join(', '))
-          }
-          chunks.push(currentChunk)
-          currentChunk = [partIndex]
-          currentIndex = partIndex
-        }
-      }
-      if (currentChunk.length) {
-        chunks.push(currentChunk)
-      }
-      chunks = chunks.map((chunk) => {
-        if (chunk.length === 1) return chunk[0]
-        else return `${chunk[0]}-${chunk[chunk.length - 1]}`
-      })
-      return chunks
-    },
     missingParts() {
-      return this.audiobook.missingParts || []
+      return this.media.missingParts || []
     },
-    invalidParts() {
-      return this.audiobook.invalidParts || []
-    },
-    audiobookId() {
-      return this.audiobook.id
+    libraryItemId() {
+      return this.libraryItem.id
     },
     title() {
-      return this.book.title || 'No Title'
+      return this.mediaMetadata.title || 'No Title'
     },
     author() {
-      return this.book.author || 'Unknown'
+      return this.mediaMetadata.authorName || 'Unknown'
     },
     tracks() {
-      return this.audiobook.tracks
+      return this.media.tracks
     },
-    durationPretty() {
-      return this.audiobook.durationPretty
-    },
-    sizePretty() {
-      return this.audiobook.sizePretty
-    },
-    book() {
-      return this.audiobook.book || {}
-    },
-    tracks() {
-      return this.audiobook.tracks || []
-    },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
@@ -226,7 +186,7 @@ export default {
     },
     sortByFilename() {
       this.files.sort((a, b) => {
-        return (a.filename || '').toLowerCase().localeCompare((b.filename || '').toLowerCase())
+        return (a.metadata.filename || '').toLowerCase().localeCompare((b.metadata.filename || '').toLowerCase())
       })
       this.currentSort = 'filename'
     },
@@ -248,7 +208,7 @@ export default {
       var orderedFileData = this.files.map((file) => {
         return {
           index: file.index,
-          filename: file.filename,
+          filename: file.metadata.filename,
           ino: file.ino,
           exclude: !file.include
         }
@@ -256,12 +216,12 @@ export default {
 
       this.saving = true
       this.$axios
-        .$patch(`/api/books/${this.audiobook.id}/tracks`, { orderedFileData })
+        .$patch(`/api/items/${this.libraryItemId}/tracks`, { orderedFileData })
         .then((data) => {
           console.log('Finished patching files', data)
           this.saving = false
           this.$toast.success('Tracks Updated')
-          this.$router.push(`/audiobook/${this.audiobookId}`)
+          this.$router.push(`/item/${this.libraryItemId}`)
         })
         .catch((error) => {
           console.error('Failed', error)

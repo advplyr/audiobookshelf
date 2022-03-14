@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="page p-0 sm:p-6 overflow-y-auto" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page p-0 sm:p-6 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-6xl mx-auto">
       <!-- Library & folder picker -->
       <div class="flex my-6 -mx-2">
@@ -91,8 +91,8 @@ export default {
       })
       return extensions
     },
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     libraries() {
       return this.$store.state.libraries.libraries

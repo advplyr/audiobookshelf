@@ -108,7 +108,7 @@ class Scanner {
         }
       }
     }
-    console.log('Finished library item scan', libraryItem.hasMediaFiles, hasUpdated)
+
     if (!libraryItem.hasMediaFiles) { // Library Item is invalid
       libraryItem.setInvalid()
       hasUpdated = true
@@ -671,10 +671,10 @@ class Scanner {
     }
   }
 
-  async quickMatchBook(audiobook, options = {}) {
+  async quickMatchBook(libraryItem, options = {}) {
     var provider = options.provider || 'google'
-    var searchTitle = options.title || audiobook.book._title
-    var searchAuthor = options.author || audiobook.book._author
+    var searchTitle = options.title || libraryItem.media.metadata.title
+    var searchAuthor = options.author || libraryItem.media.metadata.authorName
 
     var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
     if (!results.length) {
@@ -686,40 +686,70 @@ class Scanner {
 
     // Update cover if not set OR overrideCover flag
     var hasUpdated = false
-    if (matchData.cover && (!audiobook.book.cover || options.overrideCover)) {
-      Logger.debug(`[BookController] Updating cover "${matchData.cover}"`)
-      var coverResult = await this.coverController.downloadCoverFromUrl(audiobook, matchData.cover)
+    if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
+      Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
+      var coverResult = await this.coverController.downloadCoverFromUrl(libraryItem, matchData.cover)
       if (!coverResult || coverResult.error || !coverResult.cover) {
-        Logger.warn(`[BookController] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+        Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
       } else {
         hasUpdated = true
       }
     }
 
-    // Update book details if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'author', 'narrator', 'publisher', 'publishYear', 'series', 'volumeNumber', 'asin', 'isbn']
+    // Update media metadata if not set OR overrideDetails flag
+    const detailKeysToUpdate = ['title', 'subtitle', 'narrator', 'publisher', 'publishedYear', 'asin', 'isbn']
     const updatePayload = {}
     for (const key in matchData) {
-      if (matchData[key] && detailKeysToUpdate.includes(key) && (!audiobook.book[key] || options.overrideDetails)) {
-        updatePayload[key] = matchData[key]
+      if (matchData[key] && detailKeysToUpdate.includes(key)) {
+        if (key === 'narrator') {
+          if ((!libraryItem.media.metadata.narratorName || options.overrideDetails)) {
+            updatePayload.narrators = [matchData[key]]
+          }
+        } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
+          updatePayload[key] = matchData[key]
+        }
       }
     }
 
+    // Add or set author if not set
+    if (matchData.author && !libraryItem.media.metadata.authorName) {
+      var author = this.db.authors.find(au => au.checkNameEquals(matchData.author))
+      if (!author) {
+        author = new Author()
+        author.setData({ name: matchData.author })
+        await this.db.insertEntity('author', author)
+        this.emitter('author_added', author)
+      }
+      updatePayload.authors = [author.toJSONMinimal()]
+    }
+
+    // Add or set series if not set
+    if (matchData.series && !libraryItem.media.metadata.seriesName) {
+      var seriesItem = this.db.series.find(au => au.checkNameEquals(matchData.series))
+      if (!seriesItem) {
+        seriesItem = new Series()
+        seriesItem.setData({ name: matchData.series })
+        await this.db.insertEntity('series', seriesItem)
+        this.emitter('series_added', seriesItem)
+      }
+      updatePayload.series = [seriesItem.toJSONMinimal(matchData.volumeNumber)]
+    }
+
     if (Object.keys(updatePayload).length) {
-      Logger.debug('[BookController] Updating details', updatePayload)
-      if (audiobook.update({ book: updatePayload })) {
+      Logger.debug('[Scanner] Updating details', updatePayload)
+      if (libraryItem.media.update({ metadata: updatePayload })) {
         hasUpdated = true
       }
     }
 
     if (hasUpdated) {
-      await this.db.updateAudiobook(audiobook)
-      this.emitter('audiobook_updated', audiobook.toJSONExpanded())
+      await this.db.updateLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     return {
       updated: hasUpdated,
-      audiobook: audiobook.toJSONExpanded()
+      libraryItem: libraryItem.toJSONExpanded()
     }
   }
 

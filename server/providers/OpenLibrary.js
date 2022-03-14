@@ -65,7 +65,7 @@ class OpenLibrary {
     return {
       title: doc.title,
       author: doc.author_name ? doc.author_name.join(', ') : null,
-      publishYear: this.parsePublishYear(doc, worksData),
+      publishedYear: this.parsePublishYear(doc, worksData),
       edition: doc.cover_edition_key,
       cover: doc.cover_edition_key ? `https://covers.openlibrary.org/b/OLID/${doc.cover_edition_key}-L.jpg` : null,
       ...worksData

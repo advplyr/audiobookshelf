@@ -35,9 +35,6 @@ export default {
       if (this.$store.state.selectedLibraryItems) {
         this.$store.commit('setSelectedLibraryItems', [])
       }
-      if (this.$store.state.audiobooks.keywordFilter) {
-        this.$store.commit('audiobooks/setKeywordFilter', '')
-      }
     }
   },
   computed: {
@@ -282,12 +279,6 @@ export default {
       if (!download || !download.audiobookId) {
         return console.error('Invalid download object', download)
       }
-
-      // var audiobook = this.$store.getters['audiobooks/getAudiobook'](download.audiobookId)
-      // if (!audiobook) {
-      //   return console.error('Audiobook not found for download', download)
-      // }
-      // this.$store.commit('showEditModalOnTab', { audiobook, tab: 'download' })
     },
     downloadStarted(download) {
       download.status = this.$constants.DownloadStatus.PENDING
@@ -495,7 +486,7 @@ export default {
       }
 
       // Playing audiobook
-      if (this.$store.state.streamAudiobook && Object.values(this.$hotkeys.AudioPlayer).includes(name)) {
+      if (this.$store.state.streamLibraryItem && Object.values(this.$hotkeys.AudioPlayer).includes(name)) {
         this.$eventBus.$emit('player-hotkey', name)
         e.preventDefault()
       }

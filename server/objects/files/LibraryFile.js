@@ -65,6 +65,7 @@ class LibraryFile {
     this.metadata = fileMetadata
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
+    console.log('Library file set from path', path, 'rel path', relPath)
   }
 }
 module.exports = LibraryFile

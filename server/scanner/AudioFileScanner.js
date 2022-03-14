@@ -10,15 +10,15 @@ class AudioFileScanner {
   constructor() { }
 
   getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, audioLibraryFile) {
-    const { title, author, series, publishYear } = mediaMetadataFromScan
+    const { title, author, series, publishedYear } = mediaMetadataFromScan
     const { filename, path } = audioLibraryFile.metadata
     var partbasename = Path.basename(filename, Path.extname(filename))
 
-    // Remove title, author, series, and publishYear from filename if there
+    // Remove title, author, series, and publishedYear from filename if there
     if (title) partbasename = partbasename.replace(title, '')
     if (author) partbasename = partbasename.replace(author, '')
     if (series) partbasename = partbasename.replace(series, '')
-    if (publishYear) partbasename = partbasename.replace(publishYear)
+    if (publishedYear) partbasename = partbasename.replace(publishedYear)
 
     // Look for disc number
     var discNumber = null

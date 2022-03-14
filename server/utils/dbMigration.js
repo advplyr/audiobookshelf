@@ -75,7 +75,6 @@ function makeSeriesFromOldAb({ series, volumeNumber }) {
 function getRelativePath(srcPath, basePath) {
   srcPath = srcPath.replace(/\\/g, '/')
   basePath = basePath.replace(/\\/g, '/')
-  if (basePath.endsWith('/')) basePath = basePath.slice(0, -1)
   return srcPath.replace(basePath, '')
 }
 
@@ -156,6 +155,7 @@ function makeLibraryItemFromOldAb(audiobook) {
 
   var bookEntity = new Book()
   var bookMetadata = new BookMetadata(audiobook.book)
+  bookMetadata.publishedYear = audiobook.book.publishYear || null
   if (audiobook.book.narrator) {
     bookMetadata.narrators = audiobook.book._narratorsList
   }

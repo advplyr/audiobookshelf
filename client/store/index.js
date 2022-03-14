@@ -8,7 +8,6 @@ export const state = () => ({
   editModalTab: 'details',
   showEditModal: false,
   showEReader: false,
-  selectedAudiobook: null,
   selectedLibraryItem: null,
   selectedAudiobookFile: null,
   developerMode: false,

@@ -250,11 +250,11 @@ class User {
     return madeUpdates
   }
 
-  resetAudiobookProgress(audiobook) {
-    if (!this.audiobooks || !this.audiobooks[audiobook.id]) {
+  resetAudiobookProgress(libraryItem) {
+    if (!this.audiobooks || !this.audiobooks[libraryItem.id]) {
       return false
     }
-    return this.updateAudiobookData(audiobook.id, {
+    return this.updateAudiobookData(libraryItem.id, {
       progress: 0,
       currentTime: 0,
       isRead: false,

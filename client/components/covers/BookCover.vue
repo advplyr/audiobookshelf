@@ -99,7 +99,7 @@ export default {
     fullCoverUrl() {
       if (!this.libraryItem) return null
       var store = this.$store || this.$nuxt.$store
-      return store.getters['audiobooks/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
+      return store.getters['globals/getLibraryItemCoverSrc'](this.libraryItem, this.placeholderUrl)
     },
     cover() {
       return this.media.coverPath || this.placeholderUrl

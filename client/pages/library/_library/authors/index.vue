@@ -1,5 +1,5 @@
 <template>
-  <div class="page" :class="streamAudiobook ? 'streaming' : ''">
+  <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="flex h-full">
       <app-side-rail class="hidden md:block" />
       <div class="flex-grow">
@@ -38,8 +38,8 @@ export default {
     }
   },
   computed: {
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId

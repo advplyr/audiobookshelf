@@ -149,7 +149,7 @@ export default {
       return '/book_placeholder.jpg'
     },
     bookCoverSrc() {
-      return this.store.getters['audiobooks/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
+      return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
     },
     libraryItemId() {
       return this._libraryItem.id
@@ -418,7 +418,7 @@ export default {
           toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
         })
     },
-    audiobookScanComplete(result) {
+    itemScanComplete(result) {
       this.rescanning = false
       var toast = this.$toast || this.$nuxt.$toast
       if (!result) {
@@ -433,23 +433,23 @@ export default {
     },
     rescan() {
       this.rescanning = true
-      this._socket.once('audiobook_scan_complete', this.audiobookScanComplete)
-      this._socket.emit('scan_libraryItem', this.libraryItemId)
+      this._socket.once('item_scan_complete', this.itemScanComplete)
+      this._socket.emit('scan_item', this.libraryItemId)
     },
     showEditModalTracks() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'tracks' })
+      this.store.commit('showEditModalOnTab', { libraryItem: this.audiobook, tab: 'tracks' })
     },
     showEditModalMatch() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'match' })
+      this.store.commit('showEditModalOnTab', { libraryItem: this.audiobook, tab: 'match' })
     },
     showEditModalDownload() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { audiobook: this.audiobook, tab: 'download' })
+      this.store.commit('showEditModalOnTab', { libraryItem: this.audiobook, tab: 'download' })
     },
     openCollections() {
-      this.store.commit('setSelectedAudiobook', this.audiobook)
+      this.store.commit('setSelectedLibraryItem', this.audiobook)
       this.store.commit('globals/setShowUserCollectionsModal', true)
     },
     createMoreMenu() {

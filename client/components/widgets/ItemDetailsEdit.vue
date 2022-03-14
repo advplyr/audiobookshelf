@@ -17,7 +17,7 @@
             <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
           </div>
           <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.publishYear" type="number" label="Publish Year" />
+            <ui-text-input-with-label v-model="details.publishedYear" type="number" label="Publish Year" />
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export default {
         authors: [],
         narrators: [],
         series: [],
-        publishYear: null,
+        publishedYear: null,
         publisher: null,
         language: null,
         isbn: null,
@@ -172,6 +172,13 @@ export default {
     getDetails() {
       this.forceBlur()
       return this.checkForChanges()
+    },
+    getTitleAndAuthorName() {
+      this.forceBlur()
+      return {
+        title: this.details.title,
+        author: (this.details.authors || []).map((au) => au.name).join(', ')
+      }
     },
     mapBatchDetails(batchDetails) {
       for (const key in batchDetails) {
@@ -317,7 +324,7 @@ export default {
       this.details.narrators = [...(this.mediaMetadata.narrators || [])]
       this.details.genres = [...(this.mediaMetadata.genres || [])]
       this.details.series = (this.mediaMetadata.series || []).map((se) => ({ ...se }))
-      this.details.publishYear = this.mediaMetadata.publishYear
+      this.details.publishedYear = this.mediaMetadata.publishedYear
       this.details.publisher = this.mediaMetadata.publisher || null
       this.details.language = this.mediaMetadata.language || null
       this.details.isbn = this.mediaMetadata.isbn || null

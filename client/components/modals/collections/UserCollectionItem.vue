@@ -4,7 +4,7 @@
     <!-- <span class="material-icons" :class="highlight ? 'text-success' : 'text-white text-opacity-80'">{{ highlight ? 'bookmark' : 'bookmark_border' }}</span> -->
     <div class="w-20 max-w-20 text-center">
       <!-- <img src="/Logo.png" /> -->
-      <covers-collection-cover :book-items="books" :width="80" :height="40 * 1.6" />
+      <covers-collection-cover :book-items="books" :width="80" :height="40 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </div>
     <div class="flex-grow overflow-hidden px-2">
       <!-- <template v-if="isEditing">
@@ -38,7 +38,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    highlight: Boolean
+    highlight: Boolean,
+    bookCoverAspectRatio: Number
   },
   data() {
     return {

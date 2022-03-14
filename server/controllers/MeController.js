@@ -18,16 +18,16 @@ class MeController {
 
   // PATCH: api/me/audiobook/:id/reset-progress
   async resetAudiobookProgress(req, res) {
-    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
-    if (!audiobook) {
-      return res.status(404).send('Audiobook not found')
+    var libraryItem = this.db.libraryItems.find(li => li.id === req.params.id)
+    if (!libraryItem) {
+      return res.status(404).send('Item not found')
     }
-    req.user.resetAudiobookProgress(audiobook)
+    req.user.resetAudiobookProgress(libraryItem)
     await this.db.updateEntity('user', req.user)
 
-    var userAudiobookData = req.user.audiobooks[audiobook.id]
+    var userAudiobookData = req.user.audiobooks[libraryItem.id]
     if (userAudiobookData) {
-      this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: audiobook.id, data: userAudiobookData })
+      this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: libraryItem.id, data: userAudiobookData })
     }
 
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -36,11 +36,11 @@ class MeController {
 
   // PATCH: api/me/audiobook/:id
   async updateAudiobookData(req, res) {
-    var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
-    if (!audiobook) {
-      return res.status(404).send('Audiobook not found')
+    var libraryItem = this.db.libraryItems.find(ab => ab.id === req.params.id)
+    if (!libraryItem) {
+      return res.status(404).send('Item not found')
     }
-    var wasUpdated = req.user.updateAudiobookData(audiobook.id, req.body)
+    var wasUpdated = req.user.updateAudiobookData(libraryItem.id, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -57,9 +57,9 @@ class MeController {
 
     var shouldUpdate = false
     userAbDataPayloads.forEach((userAbData) => {
-      var audiobook = this.db.audiobooks.find(ab => ab.id === userAbData.audiobookId)
-      if (audiobook) {
-        var wasUpdated = req.user.updateAudiobookData(audiobook.id, userAbData)
+      var libraryItem = this.db.libraryItems.find(li => li.id === userAbData.audiobookId)
+      if (libraryItem) {
+        var wasUpdated = req.user.updateAudiobookData(libraryItem.id, userAbData)
         if (wasUpdated) shouldUpdate = true
       }
     })

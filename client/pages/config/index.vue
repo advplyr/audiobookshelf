@@ -120,7 +120,7 @@
 
     <div class="flex items-center py-4">
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click="purgeCache">Purge Cache</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingAudiobooks" @click="resetAudiobooks">Remove All Audiobooks</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingLibraryItems" @click="resetLibraryItems">Remove All Library Items</ui-btn>
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">
         Report bugs, request features, and contribute on
@@ -169,9 +169,6 @@
             </ui-tooltip>
           </div>
         </div>
-        <!-- <div class="hidden md:block">
-          <a href="https://github.com/advplyr/audiobookshelf/discussions/75#discussion-3604812" target="_blank" class="text-blue-500 hover:text-blue-300 underline">Join the discussion</a>
-        </div>-->
       </div>
     </div>
   </div>
@@ -181,14 +178,14 @@
 export default {
   data() {
     return {
-      isResettingAudiobooks: false,
+      isResettingLibraryItems: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
       useAlternativeBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
       tooltips: {
-        scannerDisableWatcher: 'Disables the automatic adding/updating of audiobooks when file changes are detected. *Requires server restart',
+        scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
@@ -271,20 +268,20 @@ export default {
 
       this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
     },
-    resetAudiobooks() {
-      if (confirm('WARNING! This action will remove all audiobooks from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
-        this.isResettingAudiobooks = true
+    resetLibraryItems() {
+      if (confirm('WARNING! This action will remove all library items from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
+        this.isResettingLibraryItems = true
         this.$axios
-          .$delete('/api/books/all')
+          .$delete('/api/items/all')
           .then(() => {
-            this.isResettingAudiobooks = false
-            this.$toast.success('Successfully reset audiobooks')
+            this.isResettingLibraryItems = false
+            this.$toast.success('Successfully reset items')
             location.reload()
           })
           .catch((error) => {
-            console.error('failed to reset audiobooks', error)
-            this.isResettingAudiobooks = false
-            this.$toast.error('Failed to reset audiobooks - manually remove the /config/audiobooks folder')
+            console.error('failed to reset items', error)
+            this.isResettingLibraryItems = false
+            this.$toast.error('Failed to reset items - manually remove the /config/libraryItems folder')
           })
       }
     },

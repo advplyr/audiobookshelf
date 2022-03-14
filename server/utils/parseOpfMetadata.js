@@ -113,7 +113,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     title: fetchTitle(metadata),
     author: fetchCreator(creators, 'aut'),
     narrator: fetchNarrators(creators, metadata),
-    publishYear: fetchDate(metadata),
+    publishedYear: fetchDate(metadata),
     publisher: fetchPublisher(metadata),
     isbn: fetchISBN(metadata),
     description: fetchDescription(metadata),

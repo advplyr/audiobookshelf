@@ -1,5 +1,5 @@
 <template>
-  <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamAudiobook ? 'streaming' : ''">
+  <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-xl mx-auto">
       <h1 class="text-2xl">Account</h1>
 
@@ -46,8 +46,8 @@ export default {
     }
   },
   computed: {
-    streamAudiobook() {
-      return this.$store.state.streamAudiobook
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     user() {
       return this.$store.state.user.user || null

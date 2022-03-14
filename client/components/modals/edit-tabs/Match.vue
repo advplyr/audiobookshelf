@@ -61,9 +61,9 @@
           <ui-checkbox v-model="selectedMatchUsage.publisher" />
           <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" label="Publisher" class="flex-grow ml-4" />
         </div>
-        <div v-if="selectedMatch.publishYear" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.publishYear" />
-          <ui-text-input-with-label v-model="selectedMatch.publishYear" :disabled="!selectedMatchUsage.publishYear" label="Publish Year" class="flex-grow ml-4" />
+        <div v-if="selectedMatch.publishedYear" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.publishedYear" />
+          <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" label="Published Year" class="flex-grow ml-4" />
         </div>
 
         <div v-if="selectedMatch.series" class="flex items-center py-2">
@@ -117,7 +117,7 @@ export default {
         narrator: true,
         description: true,
         publisher: true,
-        publishYear: true,
+        publishedYear: true,
         series: true,
         volumeNumber: true,
         asin: true,
@@ -202,7 +202,7 @@ export default {
         narrator: true,
         description: true,
         publisher: true,
-        publishYear: true,
+        publishedYear: true,
         series: true,
         volumeNumber: true,
         asin: true,
@@ -247,7 +247,7 @@ export default {
         var coverPayload = {
           url: updatePayload.cover
         }
-        var success = await this.$axios.$post(`/api/books/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
+        var success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
@@ -264,7 +264,7 @@ export default {
         var bookUpdatePayload = {
           book: updatePayload
         }
-        var success = await this.$axios.$patch(`/api/books/${this.libraryItemId}`, bookUpdatePayload).catch((error) => {
+        var success = await this.$axios.$patch(`/api/items/${this.libraryItemId}`, bookUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })

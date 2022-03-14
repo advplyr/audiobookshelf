@@ -47,22 +47,22 @@ export default {
       return null
     },
     abTitle() {
-      return this.selectedAudiobook.book.title
+      return this.selectedLibraryItem.media.metadata.title
     },
     abAuthor() {
-      return this.selectedAudiobook.book.author
+      return this.selectedLibraryItem.media.metadata.authorName
     },
-    selectedAudiobook() {
-      return this.$store.state.selectedAudiobook
+    selectedLibraryItem() {
+      return this.$store.state.selectedLibraryItem
     },
     libraryId() {
-      return this.selectedAudiobook.libraryId
+      return this.selectedLibraryItem.libraryId
     },
     folderId() {
-      return this.selectedAudiobook.folderId
+      return this.selectedLibraryItem.folderId
     },
     ebooks() {
-      return this.selectedAudiobook.ebooks || []
+      return this.selectedLibraryItem.media.ebooks || []
     },
     epubEbook() {
       return this.ebooks.find((eb) => eb.ext === '.epub')

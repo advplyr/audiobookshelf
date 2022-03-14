@@ -169,7 +169,7 @@ export default {
       if (this.currentBookshelfIndex - 1 < 0) return
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
       this.processing = true
-      var prevBook = await this.$axios.$get(`/api/books/${prevBookId}`).catch((error) => {
+      var prevBook = await this.$axios.$get(`/api/items/${prevBookId}`).catch((error) => {
         var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)
         return null
@@ -186,7 +186,7 @@ export default {
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
       this.processing = true
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
-      var nextBook = await this.$axios.$get(`/api/books/${nextBookId}`).catch((error) => {
+      var nextBook = await this.$axios.$get(`/api/items/${nextBookId}`).catch((error) => {
         var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)
         return null

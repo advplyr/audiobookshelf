@@ -119,26 +119,14 @@ function groupFileItemsIntoLibraryItemDirs(fileItems) {
   return libraryItemGroup
 }
 
-function cleanFileObjects(libraryItemPath, libraryItemRelPath, files) {
+function cleanFileObjects(libraryItemPath, folderPath, files) {
   return Promise.all(files.map(async (file) => {
     var filePath = Path.posix.join(libraryItemPath, file)
-    var relFilePath = Path.posix.join(libraryItemRelPath, file)
+    var relFilePath = filePath.replace(folderPath, '')
     var newLibraryFile = new LibraryFile()
     await newLibraryFile.setDataFromPath(filePath, relFilePath)
     return newLibraryFile
   }))
-}
-
-function getFileType(ext) {
-  var ext_cleaned = ext.toLowerCase()
-  if (ext_cleaned.startsWith('.')) ext_cleaned = ext_cleaned.slice(1)
-  if (globals.SupportedAudioTypes.includes(ext_cleaned)) return 'audio'
-  if (globals.SupportedImageTypes.includes(ext_cleaned)) return 'image'
-  if (globals.SupportedEbookTypes.includes(ext_cleaned)) return 'ebook'
-  if (ext_cleaned === 'nfo') return 'info'
-  if (ext_cleaned === 'txt') return 'text'
-  if (ext_cleaned === 'opf') return 'opf'
-  return 'unknown'
 }
 
 // Scan folder
@@ -164,7 +152,7 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
   for (const libraryItemPath in libraryItemGrouping) {
     var libraryItemData = getDataFromMediaDir(libraryMediaType, folderPath, libraryItemPath, serverSettings)
 
-    var fileObjs = await cleanFileObjects(libraryItemData.path, libraryItemData.relPath, libraryItemGrouping[libraryItemPath])
+    var fileObjs = await cleanFileObjects(libraryItemData.path, folderPath, libraryItemGrouping[libraryItemPath])
     var libraryItemFolderStats = await getFileTimestampsWithIno(libraryItemData.path)
     items.push({
       folderId: folder.id,
@@ -236,7 +224,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
     }
   }
 
-  var publishYear = null
+  var publishedYear = null
   // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
   var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
   if (publishYearMatch && publishYearMatch.length > 2 && publishYearMatch[1]) {
@@ -245,7 +233,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
       publishYearMatch[1] = publishYearMatch[1].slice(1, -1)
     }
     if (!isNaN(publishYearMatch[1])) {
-      publishYear = publishYearMatch[1]
+      publishedYear = publishYearMatch[1]
       title = publishYearMatch[2]
     }
   }
@@ -267,7 +255,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
       subtitle,
       series,
       sequence: volumeNumber,
-      publishYear,
+      publishedYear,
     },
     relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
     path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
@@ -281,7 +269,7 @@ function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettin
 
 
 async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, serverSettings = {}) {
-  var fileItems = await recurseFiles(libraryItemPath, folder.fullPath)
+  var fileItems = await recurseFiles(libraryItemPath)
 
   libraryItemPath = libraryItemPath.replace(/\\/g, '/')
   var folderFullPath = folder.fullPath.replace(/\\/g, '/')
