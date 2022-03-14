@@ -22,7 +22,7 @@
         <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
             <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.id)}`">
-              <cards-author-card :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" />
+              <cards-author-card :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" @edit="editAuthor" />
             </nuxt-link>
           </template>
         </div>
@@ -43,6 +43,7 @@
     <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
       <span class="material-icons text-6xl text-white">chevron_right</span>
     </div>
+    <modals-authors-edit-modal v-model="showAuthorModal" :author="selectedAuthor" />
   </div>
 </template>
 
@@ -64,7 +65,9 @@ export default {
       canScrollLeft: false,
       isScrolling: false,
       scrollTimer: null,
-      updateTimer: null
+      updateTimer: null,
+      showAuthorModal: false,
+      selectedAuthor: null
     }
   },
   watch: {
@@ -94,6 +97,10 @@ export default {
     }
   },
   methods: {
+    editAuthor(author) {
+      this.selectedAuthor = author
+      this.showAuthorModal = true
+    },
     editBook(audiobook) {
       var bookIds = this.shelf.entities.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', bookIds)

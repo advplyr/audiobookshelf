@@ -43,13 +43,21 @@ class CacheManager {
     readStream.pipe(res)
   }
 
-  async purgeCoverCache(libraryItemId) {
+  purgeCoverCache(libraryItemId) {
+    return this.purgeEntityCache(libraryItemId, this.CoverCachePath)
+  }
+
+  purgeImageCache(entityId) {
+    return this.purgeEntityCache(entityId, this.ImageCachePath)
+  }
+
+  async purgeEntityCache(entityId, cachePath) {
     // If purgeAll has been called... The cover cache directory no longer exists
-    await fs.ensureDir(this.CoverCachePath)
-    return Promise.all((await fs.readdir(this.CoverCachePath)).reduce((promises, file) => {
-      if (file.startsWith(libraryItemId)) {
+    await fs.ensureDir(cachePath)
+    return Promise.all((await fs.readdir(cachePath)).reduce((promises, file) => {
+      if (file.startsWith(entityId)) {
         Logger.debug(`[CacheManager] Going to purge ${file}`);
-        promises.push(this.removeCache(Path.join(this.CoverCachePath, file)))
+        promises.push(this.removeCache(Path.join(cachePath, file)))
       }
       return promises
     }, []))

@@ -16,7 +16,8 @@ module.exports = {
     extend: {
       height: {
         '7.5': '1.75rem',
-        '18': '4.5rem'
+        '18': '4.5rem',
+        '45': '11.25rem'
       },
       width: {
         '18': '4.5rem'

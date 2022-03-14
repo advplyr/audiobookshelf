@@ -6,7 +6,7 @@
 
     <app-stream-container ref="streamContainer" />
 
-    <modals-edit-modal />
+    <modals-item-edit-modal />
     <modals-user-collections-modal />
     <modals-edit-collection-modal />
     <modals-bookshelf-texture-modal />

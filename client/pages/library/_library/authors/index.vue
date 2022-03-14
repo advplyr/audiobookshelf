@@ -8,13 +8,14 @@
           <div class="flex flex-wrap justify-center">
             <template v-for="author in authors">
               <nuxt-link :key="author.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`">
-                <cards-author-card :author="author" :width="160" :height="200" class="p-3" />
+                <cards-author-card :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
               </nuxt-link>
             </template>
           </div>
         </div>
       </div>
     </div>
+    <modals-authors-edit-modal v-model="showAuthorModal" :author="selectedAuthor" />
   </div>
 </template>
 
@@ -34,7 +35,9 @@ export default {
   data() {
     return {
       loading: true,
-      authors: []
+      authors: [],
+      showAuthorModal: false,
+      selectedAuthor: null
     }
   },
   computed: {
@@ -59,6 +62,9 @@ export default {
       }
     },
     authorUpdated(author) {
+      if (this.selectedAuthor && this.selectedAuthor.id === author.id) {
+        this.selectedAuthor = author
+      }
       this.authors = this.authors.map((au) => {
         if (au.id === author.id) {
           return author
@@ -68,6 +74,10 @@ export default {
     },
     authorRemoved(author) {
       this.authors = this.authors.filter((au) => au.id !== author.id)
+    },
+    editAuthor(author) {
+      this.selectedAuthor = author
+      this.showAuthorModal = true
     }
   },
   mounted() {

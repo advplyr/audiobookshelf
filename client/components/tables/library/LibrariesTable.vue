@@ -9,11 +9,11 @@
     <draggable :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
-          <modals-libraries-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
+          <tables-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
         </div>
       </template>
     </draggable>
-    <modals-edit-library-modal v-model="showLibraryModal" :library="selectedLibrary" />
+    <modals-libraries-edit-modal v-model="showLibraryModal" :library="selectedLibrary" />
 
     <p class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
 

@@ -35,32 +35,32 @@ export default {
         {
           id: 'details',
           title: 'Details',
-          component: 'modals-edit-tabs-details'
+          component: 'modals-item-tabs-details'
         },
         {
           id: 'cover',
           title: 'Cover',
-          component: 'modals-edit-tabs-cover'
+          component: 'modals-item-tabs-cover'
         },
         {
           id: 'chapters',
           title: 'Chapters',
-          component: 'modals-edit-tabs-chapters'
+          component: 'modals-item-tabs-chapters'
         },
         {
           id: 'files',
           title: 'Files',
-          component: 'modals-edit-tabs-files'
+          component: 'modals-item-tabs-files'
         },
         {
           id: 'download',
           title: 'Download',
-          component: 'modals-edit-tabs-download'
+          component: 'modals-item-tabs-download'
         },
         {
           id: 'match',
           title: 'Match',
-          component: 'modals-edit-tabs-match'
+          component: 'modals-item-tabs-match'
         }
       ]
     }

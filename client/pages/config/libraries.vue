@@ -1,6 +1,6 @@
 <template>
   <div>
-    <tables-libraries-table />
+    <tables-library-libraries-table />
   </div>
 </template>
 

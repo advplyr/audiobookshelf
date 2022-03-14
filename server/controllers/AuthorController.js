@@ -8,6 +8,29 @@ class AuthorController {
     return res.json(req.author)
   }
 
+  async update(req, res) {
+    var payload = req.body
+
+    // If updating or removing cover image then clear cache
+    if (payload.imagePath !== undefined && req.author.imagePath && payload.imagePath !== req.author.imagePath) {
+      this.cacheManager.purgeImageCache(req.author.id)
+      if (!payload.imagePath) { // If removing image then remove file
+        var currentImagePath = req.author.imagePath
+        await this.coverController.removeFile(currentImagePath)
+      }
+    }
+
+    var hasUpdated = req.author.update(payload)
+    if (hasUpdated) {
+      await this.db.updateEntity('author', req.author)
+      this.emitter('author_updated', req.author.toJSON())
+    }
+    res.json({
+      author: req.author.toJSON(),
+      updated: hasUpdated
+    })
+  }
+
   async search(req, res) {
     var q = (req.query.q || '').toLowerCase()
     if (!q) return res.json([])

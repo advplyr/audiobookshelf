@@ -248,6 +248,5 @@ class CoverController {
     }
     return false
   }
-
 }
 module.exports = CoverController

@@ -64,6 +64,21 @@ class Author {
     this.updatedAt = Date.now()
   }
 
+  update(payload) {
+    var json = this.toJSON()
+    delete json.id
+    delete json.addedAt
+    delete json.updatedAt
+    var hasUpdates = false
+    for (const key in json) {
+      if (payload[key] !== undefined && json[key] != payload[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    }
+    return hasUpdates
+  }
+
   checkNameEquals(name) {
     if (!name) return false
     return this.name.toLowerCase() == name.toLowerCase().trim()
