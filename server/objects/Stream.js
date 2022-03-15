@@ -7,7 +7,7 @@ const { getId, secondsToTimestamp } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 
-const UserListeningSession = require('./UserListeningSession')
+const UserListeningSession = require('./legacy/UserListeningSession')
 
 class Stream extends EventEmitter {
   constructor(streamPath, client, libraryItem, transcodeOptions = {}) {

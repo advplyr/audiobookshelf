@@ -1,5 +1,7 @@
-const Logger = require('../Logger')
-const UserAudiobookData = require('./UserAudiobookData')
+const Logger = require('../../Logger')
+const { isObject } = require('../../utils')
+const AudioBookmark = require('./AudioBookmark')
+const LibraryItemProgress = require('./LibraryItemProgress')
 
 class User {
   constructor(user) {
@@ -13,7 +15,9 @@ class User {
     this.isLocked = false
     this.lastSeen = null
     this.createdAt = null
-    this.audiobooks = null
+
+    this.libraryItemProgress = []
+    this.bookmarks = []
 
     this.settings = {}
     this.permissions = {}
@@ -70,17 +74,6 @@ class User {
     }
   }
 
-  audiobooksToJSON() {
-    if (!this.audiobooks) return null
-    var _map = {}
-    for (const key in this.audiobooks) {
-      if (this.audiobooks[key]) {
-        _map[key] = this.audiobooks[key].toJSON()
-      }
-    }
-    return _map
-  }
-
   toJSON() {
     return {
       id: this.id,
@@ -89,7 +82,8 @@ class User {
       type: this.type,
       stream: this.stream,
       token: this.token,
-      audiobooks: this.audiobooksToJSON(),
+      libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
+      bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
@@ -107,7 +101,7 @@ class User {
       type: this.type,
       stream: this.stream,
       token: this.token,
-      audiobooks: this.audiobooksToJSON(),
+      libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
@@ -138,16 +132,17 @@ class User {
     this.type = user.type
     this.stream = user.stream || null
     this.token = user.token
-    if (user.audiobooks) {
-      this.audiobooks = {}
-      for (const key in user.audiobooks) {
-        if (key === '[object Object]') { // TEMP: Bug remove bad data
-          Logger.warn('[User] Construct found invalid UAD')
-        } else if (user.audiobooks[key]) {
-          this.audiobooks[key] = new UserAudiobookData(user.audiobooks[key])
-        }
-      }
+
+    this.libraryItemProgress = []
+    if (user.libraryItemProgress) {
+      this.libraryItemProgress = user.libraryItemProgress.map(li => new LibraryItemProgress(li))
     }
+
+    this.bookmarks = []
+    if (user.bookmarks) {
+      this.bookmarks = user.bookmarks.map(bm => new AudioBookmark(bm))
+    }
+
     this.isActive = (user.isActive === undefined || user.type === 'root') ? true : !!user.isActive
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
@@ -202,26 +197,26 @@ class User {
   }
 
   updateAudiobookProgressFromStream(stream) {
-    if (!this.audiobooks) this.audiobooks = {}
-    if (!this.audiobooks[stream.audiobookId]) {
-      this.audiobooks[stream.audiobookId] = new UserAudiobookData()
-    }
-    this.audiobooks[stream.audiobookId].updateProgressFromStream(stream)
-    return this.audiobooks[stream.audiobookId]
+    // if (!this.audiobooks) this.audiobooks = {}
+    // if (!this.audiobooks[stream.audiobookId]) {
+    //   this.audiobooks[stream.audiobookId] = new UserAudiobookData()
+    // }
+    // this.audiobooks[stream.audiobookId].updateProgressFromStream(stream)
+    // return this.audiobooks[stream.audiobookId]
   }
 
   updateAudiobookData(audiobookId, updatePayload) {
-    if (!this.audiobooks) this.audiobooks = {}
-    if (!this.audiobooks[audiobookId]) {
-      this.audiobooks[audiobookId] = new UserAudiobookData()
-      this.audiobooks[audiobookId].audiobookId = audiobookId
-    }
-    var wasUpdated = this.audiobooks[audiobookId].update(updatePayload)
-    if (wasUpdated) {
-      // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobookId])}`)
-      return this.audiobooks[audiobookId]
-    }
-    return false
+    // if (!this.audiobooks) this.audiobooks = {}
+    // if (!this.audiobooks[audiobookId]) {
+    //   this.audiobooks[audiobookId] = new UserAudiobookData()
+    //   this.audiobooks[audiobookId].audiobookId = audiobookId
+    // }
+    // var wasUpdated = this.audiobooks[audiobookId].update(updatePayload)
+    // if (wasUpdated) {
+    //   // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobookId])}`)
+    //   return this.audiobooks[audiobookId]
+    // }
+    // return false
   }
 
   // Returns Boolean If update was made
@@ -251,25 +246,25 @@ class User {
   }
 
   resetAudiobookProgress(libraryItem) {
-    if (!this.audiobooks || !this.audiobooks[libraryItem.id]) {
-      return false
-    }
-    return this.updateAudiobookData(libraryItem.id, {
-      progress: 0,
-      currentTime: 0,
-      isRead: false,
-      lastUpdate: Date.now(),
-      startedAt: null,
-      finishedAt: null
-    })
+    // if (!this.audiobooks || !this.audiobooks[libraryItem.id]) {
+    //   return false
+    // }
+    // return this.updateAudiobookData(libraryItem.id, {
+    //   progress: 0,
+    //   currentTime: 0,
+    //   isRead: false,
+    //   lastUpdate: Date.now(),
+    //   startedAt: null,
+    //   finishedAt: null
+    // })
   }
 
   deleteAudiobookData(audiobookId) {
-    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-      return false
-    }
-    delete this.audiobooks[audiobookId]
-    return true
+    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+    //   return false
+    // }
+    // delete this.audiobooks[audiobookId]
+    // return true
   }
 
   checkCanAccessLibrary(libraryId) {
@@ -278,59 +273,60 @@ class User {
     return this.librariesAccessible.includes(libraryId)
   }
 
-  getAudiobookJSON(audiobookId) {
-    if (!this.audiobooks) return null
-    return this.audiobooks[audiobookId] ? this.audiobooks[audiobookId].toJSON() : null
+  getLibraryItemProgress(libraryItemId) {
+    if (!this.libraryItemProgress) return null
+    var progress = this.libraryItemProgress.find(lip => lip.id === libraryItemId)
+    return progress ? progress.toJSON() : null
   }
 
-  createBookmark({ audiobookId, time, title }) {
-    if (!this.audiobooks) this.audiobooks = {}
-    if (!this.audiobooks[audiobookId]) {
-      this.audiobooks[audiobookId] = new UserAudiobookData()
-      this.audiobooks[audiobookId].audiobookId = audiobookId
-    }
-    if (this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-      return {
-        error: 'Bookmark already exists'
-      }
-    }
+  createBookmark({ libraryItemId, time, title }) {
+    // if (!this.audiobooks) this.audiobooks = {}
+    // if (!this.audiobooks[audiobookId]) {
+    //   this.audiobooks[audiobookId] = new UserAudiobookData()
+    //   this.audiobooks[audiobookId].audiobookId = audiobookId
+    // }
+    // if (this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+    //   return {
+    //     error: 'Bookmark already exists'
+    //   }
+    // }
 
-    var success = this.audiobooks[audiobookId].createBookmark(time, title)
-    if (success) return this.audiobooks[audiobookId]
-    return null
+    // var success = this.audiobooks[audiobookId].createBookmark(time, title)
+    // if (success) return this.audiobooks[audiobookId]
+    // return null
   }
 
   updateBookmark({ audiobookId, time, title }) {
-    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-      return {
-        error: 'Invalid Audiobook'
-      }
-    }
-    if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-      return {
-        error: 'Bookmark does not exist'
-      }
-    }
+    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+    //   return {
+    //     error: 'Invalid Audiobook'
+    //   }
+    // }
+    // if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+    //   return {
+    //     error: 'Bookmark does not exist'
+    //   }
+    // }
 
-    var success = this.audiobooks[audiobookId].updateBookmark(time, title)
-    if (success) return this.audiobooks[audiobookId]
-    return null
+    // var success = this.audiobooks[audiobookId].updateBookmark(time, title)
+    // if (success) return this.audiobooks[audiobookId]
+    // return null
   }
 
   deleteBookmark({ audiobookId, time }) {
-    if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-      return {
-        error: 'Invalid Audiobook'
-      }
-    }
-    if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-      return {
-        error: 'Bookmark does not exist'
-      }
-    }
+    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
+    //   return {
+    //     error: 'Invalid Audiobook'
+    //   }
+    // }
+    // if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
+    //   return {
+    //     error: 'Bookmark does not exist'
+    //   }
+    // }
 
-    this.audiobooks[audiobookId].deleteBookmark(time)
-    return this.audiobooks[audiobookId]
+    // this.audiobooks[audiobookId].deleteBookmark(time)
+    // return this.audiobooks[audiobookId]
   }
 
   syncLocalUserAudiobookData(localUserAudiobookData, audiobook) {

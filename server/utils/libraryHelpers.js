@@ -28,7 +28,7 @@ module.exports = {
       else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
-          var userAudiobook = user.getAudiobookJSON(li.id)
+          var userAudiobook = user.getLibraryItemProgress(li.id)
           var isRead = userAudiobook && userAudiobook.isRead
           if (filter === 'Read' && isRead) return true
           if (filter === 'Unread' && !isRead) return true
@@ -67,7 +67,7 @@ module.exports = {
       else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(ab => {
-          var userAudiobook = user.getAudiobookJSON(ab.id)
+          var userAudiobook = user.getLibraryItemProgress(ab.id)
           var isRead = userAudiobook && userAudiobook.isRead
           if (filter === 'Read' && isRead) return true
           if (filter === 'Unread' && !isRead) return true
@@ -163,7 +163,7 @@ module.exports = {
     var _series = {}
     books.forEach((audiobook) => {
       if (audiobook.book.series) {
-        var bookWithUserAb = { userAudiobook: user.getAudiobookJSON(audiobook.id), book: audiobook }
+        var bookWithUserAb = { userAudiobook: user.getLibraryItemProgress(audiobook.id), book: audiobook }
         if (!_series[audiobook.book.series]) {
           _series[audiobook.book.series] = {
             id: audiobook.book.series,
@@ -197,7 +197,7 @@ module.exports = {
   getBooksWithUserAudiobook(user, books) {
     return books.map(book => {
       return {
-        userAudiobook: user.getAudiobookJSON(book.id),
+        userAudiobook: user.getLibraryItemProgress(book.id),
         book
       }
     }).filter(b => !!b.userAudiobook)

@@ -48,6 +48,10 @@ class PodcastMetadata {
     return this.toJSON()
   }
 
+  clone() {
+    return new PodcastMetadata(this.toJSON())
+  }
+
   searchQuery(query) { // Returns key if match is found
     var keysToCheck = ['title', 'artist', 'itunesId', 'itunesArtistId']
     for (var key of keysToCheck) {

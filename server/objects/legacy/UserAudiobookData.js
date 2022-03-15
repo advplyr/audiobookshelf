@@ -1,5 +1,5 @@
-const Logger = require('../Logger')
-const AudioBookmark = require('./AudioBookmark')
+const Logger = require('../../Logger')
+const AudioBookmark = require('../user/AudioBookmark')
 
 class UserAudiobookData {
   constructor(progress) {

@@ -4,6 +4,8 @@ const njodb = require("njodb")
 
 const { SupportedEbookTypes } = require('./globals')
 const Audiobook = require('../objects/legacy/Audiobook')
+const UserAudiobookData = require('../objects/legacy/UserAudiobookData')
+
 const LibraryItem = require('../objects/LibraryItem')
 
 const Logger = require('../Logger')
@@ -16,6 +18,11 @@ const EBookFile = require('../objects/files/EBookFile')
 const LibraryFile = require('../objects/files/LibraryFile')
 const FileMetadata = require('../objects/metadata/FileMetadata')
 const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
+const LibraryItemProgress = require('../objects/user/LibraryItemProgress')
+const PlaybackSession = require('../objects/user/PlaybackSession')
+
+const { isObject } = require('.')
+const User = require('../objects/user/User')
 
 var authorsToAdd = []
 var existingDbAuthors = []
@@ -184,8 +191,8 @@ function makeLibraryItemFromOldAb(audiobook) {
   return libraryItem
 }
 
-async function migrateDb(db) {
-  Logger.info(`==== Starting DB Migration ====`)
+async function migrateLibraryItems(db) {
+  Logger.info(`==== Starting Library Item migration ====`)
 
   var audiobooks = await loadAudiobooks()
   if (!audiobooks.length) {
@@ -223,6 +230,114 @@ async function migrateDb(db) {
   existingDbAuthors = []
   authorsToAdd = []
   seriesToAdd = []
-  Logger.info(`==== DB Migration Complete ====`)
+  Logger.info(`==== Library Item migration complete ====`)
 }
-module.exports = migrateDb
+module.exports.migrateLibraryItems = migrateLibraryItems
+
+function cleanUserObject(db, userObj) {
+
+  var cleanedUserPayload = {
+    ...userObj,
+    libraryItemProgress: [],
+    bookmarks: []
+  }
+
+  // UserAudiobookData is now LibraryItemProgress and AudioBookmarks separated
+  if (userObj.audiobooks) {
+    for (const audiobookId in userObj.audiobooks) {
+      if (isObject(userObj.audiobooks[audiobookId])) {
+        // Bookmarks now live on User.js object instead of inside UserAudiobookData
+        if (userObj.audiobooks[audiobookId].bookmarks) {
+          const cleanedBookmarks = userObj.audiobooks[audiobookId].bookmarks.map((bm) => {
+            bm.libraryItemId = audiobookId
+            return bm
+          })
+          cleanedUserPayload.bookmarks = cleanedUserPayload.bookmarks.concat(cleanedBookmarks)
+        }
+
+        var userAudiobookData = new UserAudiobookData(userObj.audiobooks[audiobookId]) // Legacy object
+        var liProgress = new LibraryItemProgress() // New Progress Object
+        liProgress.id = userAudiobookData.audiobookId
+        liProgress.libraryItemId = userAudiobookData.audiobookId
+        Object.keys(liProgress.toJSON()).forEach((key) => {
+          if (userAudiobookData[key] !== undefined) {
+            liProgress[key] = userAudiobookData[key]
+          }
+        })
+        cleanedUserPayload.libraryItemProgress.push(liProgress.toJSON())
+      }
+    }
+  }
+
+  const user = new User(cleanedUserPayload)
+  return db.usersDb.update((record) => record.id === user.id, () => user).then((results) => {
+    Logger.debug(`[dbMigration] Updated User: ${results.updated} | Selected: ${results.selected}`)
+    return true
+  }).catch((error) => {
+    Logger.error(`[dbMigration] Update User Failed: ${error}`)
+    return false
+  })
+}
+
+function cleanSessionObj(db, userListeningSession) {
+  var newPlaybackSession = new PlaybackSession(userListeningSession)
+  newPlaybackSession.mediaType = 'book'
+  newPlaybackSession.updatedAt = userListeningSession.lastUpdate
+  newPlaybackSession.libraryItemId = userListeningSession.audiobookId
+
+  // We only have title to transfer over nicely
+  var bookMetadata = new BookMetadata()
+  bookMetadata.title = userListeningSession.audiobookTitle || ''
+  newPlaybackSession.mediaMetadata = bookMetadata
+
+  return db.sessionsDb.update((record) => record.id === newPlaybackSession.id, () => newPlaybackSession).then((results) => true).catch((error) => {
+    Logger.error(`[dbMigration] Update Session Failed: ${error}`)
+    return false
+  })
+}
+
+async function migrateUserData(db) {
+  Logger.info(`==== Starting User migration ====`)
+
+  const userObjects = await db.usersDb.select((result) => result.audiobooks != undefined).then((results) => results.data)
+  if (!userObjects.length) {
+    Logger.warn('[dbMigration] No users found needing migration')
+    return
+  }
+
+  var userCount = 0
+  for (const userObj of userObjects) {
+    Logger.info(`[dbMigration] Migrating User "${userObj.username}"`)
+    var success = await cleanUserObject(db, userObj)
+    if (!success) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      Logger.warn(`[dbMigration] Second attempt Migrating User "${userObj.username}"`)
+      success = await cleanUserObject(db, userObj)
+      if (!success) {
+        throw new Error('Db migration failed migrating users')
+      }
+    }
+    userCount++
+  }
+
+  var sessionCount = 0
+  const userListeningSessions = await db.sessionsDb.select((result) => result.audiobookId != undefined).then((results) => results.data)
+  if (userListeningSessions.length) {
+
+    for (const session of userListeningSessions) {
+      var success = await cleanSessionObj(db, session)
+      if (!success) {
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        Logger.warn(`[dbMigration] Second attempt Migrating Session "${session.id}"`)
+        success = await cleanSessionObj(db, session)
+        if (!success) {
+          Logger.error(`[dbMigration] Failed to migrate session "${session.id}"`)
+        }
+      }
+      if (success) sessionCount++
+    }
+  }
+
+  Logger.info(`==== User migration complete (${userCount} Users, ${sessionCount} Sessions) ====`)
+}
+module.exports.migrateUserData = migrateUserData

@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const User = require('../objects/User')
+const User = require('../objects/user/User')
 
 const { getId } = require('../utils/index')
 

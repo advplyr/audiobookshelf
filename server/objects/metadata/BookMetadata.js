@@ -46,7 +46,7 @@ class BookMetadata {
       subtitle: this.subtitle,
       authors: this.authors.map(a => ({ ...a })), // Author JSONMinimal with name and id
       narrators: [...this.narrators],
-      series: this.series.map(s => ({ ...s })),
+      series: this.series.map(s => ({ ...s })), // Series JSONMinimal with name, id and sequence
       genres: [...this.genres],
       publishedYear: this.publishedYear,
       publishedDate: this.publishedDate,
@@ -78,6 +78,10 @@ class BookMetadata {
       authorName: this.authorName,
       narratorName: this.narratorName
     }
+  }
+
+  clone() {
+    return new BookMetadata(this.toJSON())
   }
 
   get titleIgnorePrefix() {

@@ -646,31 +646,6 @@ class Scanner {
     }
   }
 
-  // TEMP: Old version created ids that had a chance of repeating
-  async fixDuplicateIds() {
-    var ids = {}
-    var audiobooksUpdated = 0
-    for (let i = 0; i < this.db.audiobooks.length; i++) {
-      var ab = this.db.audiobooks[i]
-      if (ids[ab.id]) {
-        var abCopy = new Audiobook(ab.toJSON())
-        abCopy.id = getId('ab')
-        if (abCopy.book.cover) {
-          abCopy.book.cover = abCopy.book.cover.replace(ab.id, abCopy.id)
-        }
-        Logger.warn('Found duplicate ID - updating from', ab.id, 'to', abCopy.id)
-        await this.db.removeEntity('audiobook', ab.id)
-        await this.db.insertAudiobook(abCopy)
-        audiobooksUpdated++
-      } else {
-        ids[ab.id] = true
-      }
-    }
-    if (audiobooksUpdated) {
-      Logger.info(`[Scanner] Updated ${audiobooksUpdated} audiobook IDs`)
-    }
-  }
-
   async quickMatchBook(libraryItem, options = {}) {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title

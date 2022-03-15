@@ -25,3 +25,9 @@ module.exports.LogLevel = {
   FATAL: 5,
   NOTE: 6
 }
+
+module.exports.PlayMethod = {
+  DIRECTPLAY: 0,
+  DIRECTSTREAM: 1,
+  TRANSCODE: 2
+}

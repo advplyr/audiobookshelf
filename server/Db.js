@@ -6,7 +6,7 @@ const Logger = require('./Logger')
 const { version } = require('../package.json')
 // const Audiobook = require('./objects/Audiobook')
 const LibraryItem = require('./objects/LibraryItem')
-const User = require('./objects/User')
+const User = require('./objects/user/User')
 const UserCollection = require('./objects/UserCollection')
 const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
@@ -232,46 +232,6 @@ class Db {
       this.libraryItems = this.libraryItems.filter(li => li.id !== id)
     }).catch((error) => {
       Logger.error(`[DB] Remove Library Items Failed: ${error}`)
-    })
-  }
-
-  async updateAudiobook(audiobook) {
-    if (audiobook && audiobook.saveAbMetadata) {
-      // TODO: Book may have updates where this save is not necessary
-      //          add check first if metadata update is needed
-      await audiobook.saveAbMetadata()
-    } else {
-      Logger.error(`[Db] Invalid audiobook object passed to updateAudiobook`, audiobook)
-    }
-
-    return this.libraryItemsDb.update((record) => record.id === audiobook.id, () => audiobook).then((results) => {
-      Logger.debug(`[DB] Audiobook updated ${results.updated}`)
-      return true
-    }).catch((error) => {
-      Logger.error(`[DB] Audiobook update failed ${error}`)
-      return false
-    })
-  }
-
-  insertAudiobook(audiobook) {
-    return this.insertAudiobooks([audiobook])
-  }
-
-  async insertAudiobooks(audiobooks) {
-    // TODO: Books may have updates where this save is not necessary
-    //          add check first if metadata update is needed
-    await Promise.all(audiobooks.map(async (ab) => {
-      if (ab && ab.saveAbMetadata) return ab.saveAbMetadata()
-      return null
-    }))
-
-    return this.libraryItemsDb.insert(audiobooks).then((results) => {
-      Logger.debug(`[DB] Audiobooks inserted ${results.inserted}`)
-      this.audiobooks = this.audiobooks.concat(audiobooks)
-      return true
-    }).catch((error) => {
-      Logger.error(`[DB] Audiobooks insert failed ${error}`)
-      return false
     })
   }
 

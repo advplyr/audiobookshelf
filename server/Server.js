@@ -108,12 +108,13 @@ class Server {
     await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 
-
-    await this.db.init()
-
-    if (version.localeCompare('1.7.3') < 0) {
-      await dbMigration(this.db)
+    if (version.localeCompare('1.7.3') < 0) { // Old version data model migration
+      await dbMigration.migrateUserData(this.db) // Db not yet loaded
+      await this.db.init()
+      await dbMigration.migrateLibraryItems(this.db)
       // TODO: Eventually remove audiobooks db when stable
+    } else {
+      await this.db.init()
     }
 
     this.auth.init()
@@ -125,11 +126,6 @@ class Server {
     await this.backupManager.init()
     await this.logManager.init()
 
-    // Only fix duplicate ids once on upgrade
-    if (this.db.previousVersion === '1.0.0') {
-      Logger.info(`[Server] Running scan for duplicate book IDs`)
-      await this.scanner.fixDuplicateIds()
-    }
     // If server upgrade and last version was 1.7.0 or earlier - add abmetadata files
     // if (this.db.checkPreviousVersionIsBefore('1.7.1')) {
     // TODO: wait until stable
