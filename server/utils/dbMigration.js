@@ -19,7 +19,7 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const FileMetadata = require('../objects/metadata/FileMetadata')
 const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
 const LibraryItemProgress = require('../objects/user/LibraryItemProgress')
-const PlaybackSession = require('../objects/user/PlaybackSession')
+const PlaybackSession = require('../objects/PlaybackSession')
 
 const { isObject } = require('.')
 const User = require('../objects/user/User')

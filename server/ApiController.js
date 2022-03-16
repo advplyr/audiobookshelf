@@ -26,11 +26,11 @@ const Series = require('./objects/entities/Series')
 const FileSystemController = require('./controllers/FileSystemController')
 
 class ApiController {
-  constructor(db, auth, scanner, streamManager, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
-    this.streamManager = streamManager
+    this.playbackSessionManager = playbackSessionManager
     this.downloadManager = downloadManager
     this.backupManager = backupManager
     this.coverController = coverController
@@ -83,13 +83,15 @@ class ApiController {
     this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))
     this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
-    this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
+    this.router.get('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
     this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
+    // Legacy
+    this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
 
     //
     // User Routes
@@ -331,7 +333,8 @@ class ApiController {
   // Sync audiobook stream progress
   async syncStream(req, res) {
     Logger.debug(`[ApiController] syncStream for ${req.user.username} - ${req.body.streamId}`)
-    this.streamManager.streamSyncFromApi(req, res)
+    // this.streamManager.streamSyncFromApi(req, res)
+    res.sendStatus(500)
   }
 
   // Sync local downloaded audiobook progress
@@ -381,17 +384,18 @@ class ApiController {
     }
 
     // remove any streams open for this audiobook
-    var streams = this.streamManager.streams.filter(stream => stream.audiobookId === libraryItem.id)
-    for (let i = 0; i < streams.length; i++) {
-      var stream = streams[i]
-      var client = stream.client
-      await stream.close()
-      if (client && client.user) {
-        client.user.stream = null
-        client.stream = null
-        this.db.updateUserStream(client.user.id, null)
-      }
-    }
+    // TODO: Change to PlaybackSessionManager to remove open sessions for user
+    // var streams = this.streamManager.streams.filter(stream => stream.audiobookId === libraryItem.id)
+    // for (let i = 0; i < streams.length; i++) {
+    //   var stream = streams[i]
+    //   var client = stream.client
+    //   await stream.close()
+    //   if (client && client.user) {
+    //     client.user.stream = null
+    //     client.stream = null
+    //     this.db.updateUserStream(client.user.id, null)
+    //   }
+    // }
 
     // remove book from collections
     var collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
@@ -472,7 +476,7 @@ class ApiController {
   async closeStream(req, res) {
     const streamId = req.params.id
     const userId = req.user.id
-    this.streamManager.closeStreamApiRequest(userId, streamId)
+    // this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
   }
 

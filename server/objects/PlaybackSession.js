@@ -1,8 +1,8 @@
 const date = require('date-and-time')
-const { getId } = require('../../utils/index')
-const { PlayMethod } = require('../../utils/constants')
-const BookMetadata = require('../metadata/BookMetadata')
-const PodcastMetadata = require('../metadata/PodcastMetadata')
+const { getId } = require('../utils/index')
+const { PlayMethod } = require('../utils/constants')
+const BookMetadata = require('./metadata/BookMetadata')
+const PodcastMetadata = require('./metadata/PodcastMetadata')
 
 class PlaybackSession {
   constructor(session) {

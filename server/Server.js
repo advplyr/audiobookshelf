@@ -24,7 +24,8 @@ const BackupManager = require('./BackupManager')
 const LogManager = require('./LogManager')
 const ApiController = require('./ApiController')
 const HlsController = require('./HlsController')
-const StreamManager = require('./StreamManager')
+// const StreamManager = require('./objects/legacy/StreamManager')
+const PlaybackSessionManager = require('./PlaybackSessionManager')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
 const CacheManager = require('./CacheManager')
@@ -58,10 +59,11 @@ class Server {
     this.coverController = new CoverController(this.db, this.cacheManager)
     this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
 
-    this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    // this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.downloadManager = new DownloadManager(this.db)
-    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.streamManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.hlsController = new HlsController(this.db, this.auth, this.streamManager, this.emitter.bind(this), this.streamManager.StreamsPath)
+    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.playbackSessionManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.hlsController = new HlsController(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
 
     Logger.logManager = this.logManager
 
@@ -72,8 +74,9 @@ class Server {
   }
 
   get usersOnline() {
+    // TODO: Map open user sessions
     return Object.values(this.clients).filter(c => c.user).map(client => {
-      return client.user.toJSONForPublic(this.streamManager.streams)
+      return client.user.toJSONForPublic([])
     })
   }
 
@@ -104,8 +107,9 @@ class Server {
 
   async init() {
     Logger.info('[Server] Init v' + version)
-    await this.streamManager.ensureStreamsDir()
-    await this.streamManager.removeOrphanStreams()
+    // TODO: Remove orphan streams from playback session manager
+    // await this.streamManager.ensureStreamsDir()
+    // await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 
     if (version.localeCompare('1.7.3') < 0) { // Old version data model migration
@@ -264,9 +268,9 @@ class Server {
       socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
 
       // Streaming (only still used in the mobile app)
-      socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
-      socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
-      socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
+      // socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
+      // socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
+      // socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
 
       // Used to sync when playing local book on mobile, will be moved to API route
       socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
@@ -299,7 +303,7 @@ class Server {
           delete this.clients[socket.id]
         } else {
           Logger.debug('[Server] User Offline ' + _client.user.username)
-          this.io.emit('user_offline', _client.user.toJSONForPublic(this.streamManager.streams))
+          this.io.emit('user_offline', _client.user.toJSONForPublic([]))
 
           const disconnectTime = Date.now() - _client.connected_at
           Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
@@ -603,16 +607,16 @@ class Server {
     // Check if user has stream open
     if (client.user.stream) {
       Logger.info('User has stream open already', client.user.stream)
-      client.stream = this.streamManager.getStream(client.user.stream)
-      if (!client.stream) {
-        Logger.error('Invalid user stream id', client.user.stream)
-        this.streamManager.removeOrphanStreamFiles(client.user.stream)
-        await this.db.updateUserStream(client.user.id, null)
-      }
+      // client.stream = this.streamManager.getStream(client.user.stream)
+      // if (!client.stream) {
+      //   Logger.error('Invalid user stream id', client.user.stream)
+      //   this.streamManager.removeOrphanStreamFiles(client.user.stream)
+      //   await this.db.updateUserStream(client.user.id, null)
+      // }
     }
 
     Logger.debug(`[Server] User Online ${client.user.username}`)
-    this.io.emit('user_online', client.user.toJSONForPublic(this.streamManager.streams))
+    this.io.emit('user_online', client.user.toJSONForPublic([]))
 
     user.lastSeen = Date.now()
     await this.db.updateEntity('user', user)

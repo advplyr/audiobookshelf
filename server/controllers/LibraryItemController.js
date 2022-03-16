@@ -138,7 +138,13 @@ class LibraryItemController {
 
   // GET: api/items/:id/stream
   openStream(req, res) {
-    this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
+    // this.streamManager.openStreamApiRequest(res, req.user, req.libraryItem)
+    res.sendStatus(500)
+  }
+
+  // GET: api/items/:id/play
+  startPlaybackSession(req, res) {
+    res.sendStatus(200)
   }
 
   // POST api/items/:id/match
