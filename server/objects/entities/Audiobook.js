@@ -24,7 +24,7 @@ class Audiobook {
     this.name = audiobook.name || null
     this.audioFiles = audiobook.audioFiles.map(f => new AudioFile(f))
     this.chapters = audiobook.chapters.map(c => ({ ...c }))
-    this.missingParts = audiobook.missingParts ? [...book.missingParts] : []
+    this.missingParts = audiobook.missingParts ? [...audiobook.missingParts] : []
     this.addedAt = audiobook.addedAt
     this.updatedAt = audiobook.updatedAt
   }
