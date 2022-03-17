@@ -2,7 +2,8 @@ const optionDefinitions = [
   { name: 'config', alias: 'c', type: String },
   { name: 'audiobooks', alias: 'a', type: String },
   { name: 'metadata', alias: 'm', type: String },
-  { name: 'port', alias: 'p', type: String }
+  { name: 'port', alias: 'p', type: String },
+  { name: 'host', alias: 'h', type: String }
 ]
 
 const commandLineArgs = require('command-line-args')

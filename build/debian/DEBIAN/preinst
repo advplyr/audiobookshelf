@@ -6,6 +6,7 @@ FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
 DEFAULT_AUDIOBOOK_PATH="/usr/share/audiobookshelf/audiobooks"
 DEFAULT_DATA_PATH="/usr/share/audiobookshelf"
 DEFAULT_PORT=7331
+DEFAULT_HOST="0.0.0.0"
 
 CONFIG_PATH="/etc/default/audiobookshelf"
 
@@ -82,7 +83,8 @@ setup_config_interactive() {
   CONFIG_PATH=$DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
-  PORT=$PORT"
+  PORT=$PORT
+  HOST=$DEFAULT_HOST"
 
     echo "$config_text"
 
@@ -105,7 +107,8 @@ setup_config() {
   CONFIG_PATH=$DEFAULT_DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
-  PORT=$DEFAULT_PORT"
+  PORT=$DEFAULT_PORT
+  HOST=$DEFAULT_HOST"
 
     echo "$config_text"
 

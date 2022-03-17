@@ -16,6 +16,7 @@ if (isDev) {
 }
 
 const PORT = process.env.PORT || 80
+const HOST = process.env.HOST || '0.0.0.0'
 const CONFIG_PATH = process.env.CONFIG_PATH || '/config'
 const AUDIOBOOK_PATH = process.env.AUDIOBOOK_PATH || '/audiobooks'
 const METADATA_PATH = process.env.METADATA_PATH || '/metadata'
@@ -24,5 +25,5 @@ const GID = process.env.AUDIOBOOKSHELF_GID || 100
 
 console.log('Config', CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 
-const Server = new server(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
+const Server = new server(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH)
 Server.start()
