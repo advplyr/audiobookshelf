@@ -54,7 +54,7 @@ new LibraryItem({
       explicit: false
     },
     audiobooks: [
-      {
+      { // Audiobook.js 
         id: 'au_289374asf0a98',
         index: 1,
         name: 'default',
@@ -129,7 +129,7 @@ new LibraryItem({
       }
     ],
     ebooks: [
-      {
+      { // EBook.js
         id: 'eb_289374asf0a98',
         index: 1,
         name: 'default',
