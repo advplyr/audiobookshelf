@@ -31,9 +31,9 @@ const CoverController = require('./CoverController')
 const CacheManager = require('./CacheManager')
 
 class Server {
-  constructor(PORT, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
+  constructor(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
     this.Port = PORT
-    this.Host = '0.0.0.0'
+    this.Host = HOST
     global.Uid = isNaN(UID) ? 0 : Number(UID)
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
