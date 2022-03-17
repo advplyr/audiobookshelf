@@ -11,17 +11,23 @@ class PlaybackSessionManager {
     this.sessions = []
   }
 
-  startSessionRequest(req, res) {
+  async startSessionRequest(req, res) {
     var user = req.user
     var libraryItem = req.libraryItem
-    var options = req.query
-    const session = this.startSession(user, libraryItem, options)
+    var options = req.query || {}
+    const session = await this.startSession(user, libraryItem, options)
     res.json(session)
   }
 
-  startSession(user, libraryItem, options) {
+  async startSession(user, libraryItem, options) {
     // TODO: Determine what play method to use and setup playback session
+    //    temporary client can pass direct=1 in query string for direct play
+    if (options.direct) {
+      var tracks = libraryItem.media.getDirectPlayTracklist(options)
+    }
+
     const newPlaybackSession = new PlaybackSession()
+    newPlaybackSession.setData(libraryItem, user)
     this.sessions.push(newPlaybackSession)
     return newPlaybackSession
   }

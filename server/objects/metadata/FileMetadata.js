@@ -49,6 +49,9 @@ class FileMetadata {
     if (!this.ext) return ''
     return this.ext.slice(1)
   }
+  get filenameNoExt() {
+    return this.filename.replace(this.ext, '')
+  }
 
   update(payload) {
     var hasUpdates = false

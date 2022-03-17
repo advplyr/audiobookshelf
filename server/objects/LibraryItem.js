@@ -1,8 +1,8 @@
 const { version } = require('../../package.json')
 const Logger = require('../Logger')
 const LibraryFile = require('./files/LibraryFile')
-const Book = require('./entities/Book')
-const Podcast = require('./entities/Podcast')
+const Book = require('./mediaTypes/Book')
+const Podcast = require('./mediaTypes/Podcast')
 const { areEquivalent, copyValue, getId } = require('../utils/index')
 
 class LibraryItem {
@@ -143,8 +143,8 @@ class LibraryItem {
   get hasAudioFiles() {
     return this.libraryFiles.some(lf => lf.fileType === 'audio')
   }
-  get hasMediaFiles() {
-    return this.media.hasMediaFiles
+  get hasMediaEntities() {
+    return this.media.hasMediaEntities
   }
 
   // Data comes from scandir library item data
@@ -357,7 +357,7 @@ class LibraryItem {
     }
 
     // Check if invalid
-    this.isInvalid = !this.media.hasMediaFiles
+    this.isInvalid = !this.media.hasMediaEntities
 
     // If cover path is in item folder, make sure libraryFile exists for it
     if (this.media.coverPath && this.media.coverPath.startsWith(this.path)) {
@@ -431,6 +431,10 @@ class LibraryItem {
   searchQuery(query) {
     query = query.toLowerCase()
     return this.media.searchQuery(query)
+  }
+
+  getDirectPlayTracklist(options) {
+    return this.media.getDirectPlayTracklist(options)
   }
 }
 module.exports = LibraryItem

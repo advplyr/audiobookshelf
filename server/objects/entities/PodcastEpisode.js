@@ -3,6 +3,7 @@ const AudioFile = require('../files/AudioFile')
 class PodcastEpisode {
   constructor(episode) {
     this.id = null
+    this.index = null
     this.podcastId = null
     this.episodeNumber = null
 
@@ -17,6 +18,7 @@ class PodcastEpisode {
 
   construct(episode) {
     this.id = episode.id
+    this.index = episode.index
     this.podcastId = episode.podcastId
     this.episodeNumber = episode.episodeNumber
     this.audioFile = new AudioFile(episode.audioFile)
@@ -27,6 +29,7 @@ class PodcastEpisode {
   toJSON() {
     return {
       id: this.id,
+      index: this.index,
       podcastId: this.podcastId,
       episodeNumber: this.episodeNumber,
       audioFile: this.audioFile.toJSON(),

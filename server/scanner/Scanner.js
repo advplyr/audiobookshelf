@@ -109,7 +109,7 @@ class Scanner {
       }
     }
 
-    if (!libraryItem.hasMediaFiles) { // Library Item is invalid
+    if (!libraryItem.hasMediaEntities) { // Library Item is invalid
       libraryItem.setInvalid()
       hasUpdated = true
     } else if (libraryItem.isInvalid) {
@@ -357,7 +357,7 @@ class Scanner {
     // Temp authors & series are inserted - create them if found
     await this.createNewAuthorsAndSeries(libraryItem)
 
-    if (!libraryItem.media.hasMediaFiles) { // Library item is invalid
+    if (!libraryItem.hasMediaEntities) { // Library item is invalid
       libraryItem.setInvalid()
       hasUpdated = true
     } else if (libraryItem.isInvalid) {
@@ -387,7 +387,7 @@ class Scanner {
       await AudioFileScanner.scanAudioFiles(audioFiles, libraryItemData, libraryItem, preferAudioMetadata, libraryScan)
     }
 
-    if (!libraryItem.media.hasMediaFiles) {
+    if (!libraryItem.hasMediaEntities) {
       Logger.warn(`[Scanner] Library item has no media files "${libraryItemData.path}"`)
       return null
     }

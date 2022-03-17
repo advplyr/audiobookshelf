@@ -1,4 +1,4 @@
-const PodcastEpisode = require('./PodcastEpisode')
+const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
 
@@ -68,7 +68,7 @@ class Podcast {
   get size() {
     return 0
   }
-  get hasMediaFiles() {
+  get hasMediaEntities() {
     return !!this.episodes.length
   }
   get shouldSearchForCover() {
@@ -80,6 +80,7 @@ class Podcast {
 
   update(payload) {
     var json = this.toJSON()
+    delete json.episodes // do not update media entities here
     var hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined) {
@@ -128,6 +129,10 @@ class Podcast {
   searchQuery(query) {
     var payload = this.metadata.searchQuery(query)
     return payload || {}
+  }
+
+  getDirectPlayTracklist(options) {
+
   }
 }
 module.exports = Podcast

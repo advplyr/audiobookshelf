@@ -3,21 +3,27 @@ const fs = require('fs-extra')
 const njodb = require("njodb")
 
 const { SupportedEbookTypes } = require('./globals')
-const Audiobook = require('../objects/legacy/Audiobook')
+const LegacyAudiobook = require('../objects/legacy/Audiobook')
 const UserAudiobookData = require('../objects/legacy/UserAudiobookData')
 
 const LibraryItem = require('../objects/LibraryItem')
 
 const Logger = require('../Logger')
-const Book = require('../objects/entities/Book')
+const Book = require('../objects/mediaTypes/Book')
+
 const BookMetadata = require('../objects/metadata/BookMetadata')
-const Author = require('../objects/entities/Author')
-const Series = require('../objects/entities/Series')
+const FileMetadata = require('../objects/metadata/FileMetadata')
+
 const AudioFile = require('../objects/files/AudioFile')
 const EBookFile = require('../objects/files/EBookFile')
 const LibraryFile = require('../objects/files/LibraryFile')
-const FileMetadata = require('../objects/metadata/FileMetadata')
 const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
+
+const Author = require('../objects/entities/Author')
+const Series = require('../objects/entities/Series')
+const Audiobook = require('../objects/entities/Audiobook')
+const EBook = require('../objects/entities/EBook')
+
 const LibraryItemProgress = require('../objects/user/LibraryItemProgress')
 const PlaybackSession = require('../objects/PlaybackSession')
 
@@ -40,7 +46,7 @@ async function loadAudiobooks() {
 
   var audiobooksDb = new njodb.Database(audiobookPath)
   return audiobooksDb.select(() => true).then((results) => {
-    return results.data.map(a => new Audiobook(a))
+    return results.data.map(a => new LegacyAudiobook(a))
   })
 }
 
@@ -144,7 +150,7 @@ function makeFilesFromOldAb(audiobook) {
 
 function makeLibraryItemFromOldAb(audiobook) {
   var libraryItem = new LibraryItem()
-  libraryItem.id = audiobook.id
+  libraryItem.id = getId('li')
   libraryItem.ino = audiobook.ino
   libraryItem.libraryId = audiobook.libraryId
   libraryItem.folderId = audiobook.folderId
@@ -154,7 +160,7 @@ function makeLibraryItemFromOldAb(audiobook) {
   libraryItem.ctimeMs = audiobook.ctimeMs || 0
   libraryItem.birthtimeMs = audiobook.birthtimeMs || 0
   libraryItem.addedAt = audiobook.addedAt
-  libraryItem.lastUpdate = audiobook.lastUpdate
+  libraryItem.updatedAt = audiobook.lastUpdate
   libraryItem.lastScan = audiobook.lastScan
   libraryItem.scanVersion = audiobook.scanVersion
   libraryItem.isMissing = audiobook.isMissing
@@ -179,12 +185,34 @@ function makeLibraryItemFromOldAb(audiobook) {
   bookEntity.tags = [...audiobook.tags]
 
   var payload = makeFilesFromOldAb(audiobook)
-  bookEntity.audioFiles = payload.audioFiles
-  bookEntity.ebookFiles = payload.ebookFiles
+  if (payload.audioFiles.length) {
+    var newAudiobook = new Audiobook()
+    newAudiobook.id = audiobook.id
+    newAudiobook.index = 1
+    newAudiobook.name = 'default'
+    newAudiobook.audioFiles = payload.audioFiles
+    if (audiobook.chapters && audiobook.chapters.length) {
+      newAudiobook.chapters = audiobook.chapters.map(c => ({ ...c }))
+    }
+    newAudiobook.missingParts = audiobook.missingParts || []
+    newAudiobook.addedAt = audiobook.addedAt
+    newAudiobook.updatedAt = audiobook.lastUpdate
 
-  if (audiobook.chapters && audiobook.chapters.length) {
-    bookEntity.chapters = audiobook.chapters.map(c => ({ ...c }))
+    bookEntity.audiobooks.push(newAudiobook)
   }
+
+  var ebookIndex = 1
+  payload.ebookFiles.forEach(ebookFile => {
+    var newEBook = new EBook()
+    newEBook.id = getId('eb')
+    newEBook.index = ebookIndex++
+    newEBook.name = ebookFile.metadata.filenameNoExt
+    newEBook.ebookFile = ebookFile
+    newEBook.addedAt = audiobook.addedAt
+    newEBook.updatedAt = audiobook.lastUpdate
+
+    bookEntity.ebooks.push(newEBook)
+  })
 
   libraryItem.media = bookEntity
   libraryItem.libraryFiles = payload.libraryFiles
@@ -234,8 +262,8 @@ async function migrateLibraryItems(db) {
 }
 module.exports.migrateLibraryItems = migrateLibraryItems
 
-function cleanUserObject(db, userObj) {
 
+function cleanUserObject(db, userObj) {
   var cleanedUserPayload = {
     ...userObj,
     libraryItemProgress: [],

@@ -1,12 +1,13 @@
 const Path = require('path')
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
-const AudioFile = require('../files/AudioFile')
-const EBookFile = require('../files/EBookFile')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parseOpfMetadata')
 const { readTextFile } = require('../../utils/fileUtils')
+
+const Audiobook = require('../entities/Audiobook')
+const EBook = require('../entities/EBook')
 
 class Book {
   constructor(book) {
@@ -14,10 +15,9 @@ class Book {
 
     this.coverPath = null
     this.tags = []
-    this.audioFiles = []
-    this.ebookFiles = []
-    this.chapters = []
-    this.missingParts = []
+
+    this.audiobooks = []
+    this.ebooks = []
 
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
@@ -31,10 +31,8 @@ class Book {
     this.metadata = new BookMetadata(book.metadata)
     this.coverPath = book.coverPath
     this.tags = [...book.tags]
-    this.audioFiles = book.audioFiles.map(f => new AudioFile(f))
-    this.ebookFiles = book.ebookFiles.map(f => new EBookFile(f))
-    this.chapters = book.chapters.map(c => ({ ...c }))
-    this.missingParts = book.missingParts ? [...book.missingParts] : []
+    this.audiobooks = book.audiobooks.map(ab => new Audiobook(ab))
+    this.ebooks = book.ebooks.map(eb => new EBook(eb))
     this.lastCoverSearch = book.lastCoverSearch || null
     this.lastCoverSearchQuery = book.lastCoverSearchQuery || null
   }
@@ -44,10 +42,8 @@ class Book {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      audioFiles: this.audioFiles.map(f => f.toJSON()),
-      ebookFiles: this.ebookFiles.map(f => f.toJSON()),
-      chapters: this.chapters.map(c => ({ ...c })),
-      missingParts: [...this.missingParts]
+      audiobooks: this.audiobooks.map(ab => ab.toJSON()),
+      ebooks: this.ebooks.map(eb => eb.toJSON())
     }
   }
 
@@ -56,11 +52,8 @@ class Book {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      numTracks: this.tracks.length,
-      numAudioFiles: this.audioFiles.length,
-      numEbooks: this.ebookFiles.length,
-      numChapters: this.chapters.length,
-      numMissingParts: this.missingParts.length,
+      audiobooks: this.audiobooks.map(ab => ab.toJSONMinified()),
+      ebooks: this.ebooks.map(eb => eb.toJSONMinified()),
       duration: this.duration,
       size: this.size
     }
@@ -71,13 +64,10 @@ class Book {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      audioFiles: this.audioFiles.map(f => f.toJSON()),
-      ebookFiles: this.ebookFiles.map(f => f.toJSON()),
-      chapters: this.chapters.map(c => ({ ...c })),
+      audiobooks: this.audiobooks.map(ab => ab.toJSONExpanded()),
+      ebooks: this.ebooks.map(eb => eb.toJSONExpanded()),
       duration: this.duration,
       size: this.size,
-      tracks: this.tracks.map(t => t.toJSON()),
-      missingParts: [...this.missingParts]
     }
   }
 
@@ -94,8 +84,8 @@ class Book {
     this.audioFiles.forEach((af) => total += af.metadata.size)
     return total
   }
-  get hasMediaFiles() {
-    return !!(this.tracks.length + this.ebookFiles.length)
+  get hasMediaEntities() {
+    return !!(this.audiobooks.length + this.ebooks.length)
   }
   get shouldSearchForCover() {
     if (this.coverPath) return false
@@ -103,11 +93,14 @@ class Book {
     return (Date.now() - this.lastCoverSearch) > 1000 * 60 * 60 * 24 * 7 // 7 day
   }
   get hasEmbeddedCoverArt() {
-    return this.audioFiles.some(af => af.embeddedCoverArt)
+    return this.audiobooks.some(ab => ab.hasEmbeddedCoverArt)
   }
 
   update(payload) {
     var json = this.toJSON()
+    delete json.audiobooks // do not update media entities here
+    delete json.ebooks
+
     var hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined) {
@@ -125,27 +118,6 @@ class Book {
     return hasUpdates
   }
 
-  updateAudioTracks(orderedFileData) {
-    var index = 1
-    this.audioFiles = orderedFileData.map((fileData) => {
-      var audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
-      audioFile.manuallyVerified = true
-      audioFile.invalid = false
-      audioFile.error = null
-      if (fileData.exclude !== undefined) {
-        audioFile.exclude = !!fileData.exclude
-      }
-      if (audioFile.exclude) {
-        audioFile.index = -1
-      } else {
-        audioFile.index = index++
-      }
-      return audioFile
-    })
-
-    this.rebuildTracks()
-  }
-
   updateCover(coverPath) {
     coverPath = coverPath.replace(/\\/g, '/')
     if (this.coverPath === coverPath) return false
@@ -153,50 +125,27 @@ class Book {
     return true
   }
 
-  checkUpdateMissingTracks() {
-    var currMissingParts = (this.missingParts || []).join(',') || ''
-
-    var current_index = 1
-    var missingParts = []
-
-    for (let i = 0; i < this.tracks.length; i++) {
-      var _track = this.tracks[i]
-      if (_track.index > current_index) {
-        var num_parts_missing = _track.index - current_index
-        for (let x = 0; x < num_parts_missing && x < 9999; x++) {
-          missingParts.push(current_index + x)
-        }
-      }
-      current_index = _track.index + 1
-    }
-
-    this.missingParts = missingParts
-
-    var newMissingParts = (this.missingParts || []).join(',') || ''
-    var wasUpdated = newMissingParts !== currMissingParts
-    if (wasUpdated && this.missingParts.length) {
-      Logger.info(`[Book] "${this.metadata.title}" has ${missingParts.length} missing parts`)
-    }
-
-    return wasUpdated
-  }
-
   removeFileWithInode(inode) {
-    if (this.audioFiles.some(af => af.ino === inode)) {
-      this.audioFiles = this.audioFiles.filter(af => af.ino !== inode)
+    var audiobookWithIno = this.audiobooks.find(ab => ab.findFileWithInode(inode))
+    if (audiobookWithIno) {
+      audiobookWithIno.removeFileWithInode(inode)
+      if (!audiobookWithIno.audioFiles.length) { // All audio files removed = remove audiobook
+        this.audiobooks = this.audiobooks.filter(ab => ab.id !== audiobookWithIno.id)
+      }
       return true
     }
-    if (this.ebookFiles.some(ef => ef.ino === inode)) {
-      this.ebookFiles = this.ebookFiles.filter(ef => ef.ino !== inode)
+    var ebookWithIno = this.ebooks.find(eb => eb.findFileWithInode(inode))
+    if (ebookWithIno) {
+      this.ebooks = this.ebooks.filter(eb => eb.id !== ebookWithIno.id) // Remove ebook
       return true
     }
     return false
   }
 
   findFileWithInode(inode) {
-    var audioFile = this.audioFiles.find(af => af.ino == inode)
+    var audioFile = this.audiobooks.find(ab => ab.findFileWithInode(inode))
     if (audioFile) return audioFile
-    var ebookFile = this.ebookFiles.find(ef => ef.inode == inode)
+    var ebookFile = this.ebooks.find(eb => eb.findFileWithInode(inode))
     if (ebookFile) return ebookFile
     return null
   }
@@ -208,62 +157,11 @@ class Book {
 
   // Audio file metadata tags map to book details (will not overwrite)
   setMetadataFromAudioFile(overrideExistingDetails = false) {
-    if (!this.audioFiles.length) return false
-    var audioFile = this.audioFiles[0]
+    if (!this.audiobooks.length) return false
+    var audiobook = this.audiobooks[0]
+    var audioFile = audiobook.audioFiles[0]
     if (!audioFile.metaTags) return false
     return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
-  }
-
-  rebuildTracks() {
-    this.audioFiles.sort((a, b) => a.index - b.index)
-    this.missingParts = []
-    this.setChapters()
-    this.checkUpdateMissingTracks()
-  }
-
-  setChapters() {
-    // If 1 audio file without chapters, then no chapters will be set
-    var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
-    if (includedAudioFiles.length === 1) {
-      // 1 audio file with chapters
-      if (includedAudioFiles[0].chapters) {
-        this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
-      }
-    } else {
-      this.chapters = []
-      var currChapterId = 0
-      var currStartTime = 0
-      includedAudioFiles.forEach((file) => {
-        // If audio file has chapters use chapters
-        if (file.chapters && file.chapters.length) {
-          file.chapters.forEach((chapter) => {
-            var chapterDuration = chapter.end - chapter.start
-            if (chapterDuration > 0) {
-              var title = `Chapter ${currChapterId}`
-              if (chapter.title) {
-                title += ` (${chapter.title})`
-              }
-              this.chapters.push({
-                id: currChapterId++,
-                start: currStartTime,
-                end: currStartTime + chapterDuration,
-                title
-              })
-              currStartTime += chapterDuration
-            }
-          })
-        } else if (file.duration) {
-          // Otherwise just use track has chapter
-          this.chapters.push({
-            id: currChapterId++,
-            start: currStartTime,
-            end: currStartTime + file.duration,
-            title: file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
-          })
-          currStartTime += file.duration
-        }
-      })
-    }
   }
 
   setData(scanMediaMetadata) {
@@ -365,9 +263,13 @@ class Book {
   }
 
   addEbookFile(libraryFile) {
-    var newEbook = new EBookFile()
-    newEbook.setData(libraryFile)
-    this.ebookFiles.push(newEbook)
+    // var newEbook = new EBookFile()
+    // newEbook.setData(libraryFile)
+    // this.ebookFiles.push(newEbook)
+  }
+
+  getDirectPlayTracklist(options) {
+
   }
 }
 module.exports = Book
