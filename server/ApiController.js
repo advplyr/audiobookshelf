@@ -131,9 +131,9 @@ class ApiController {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
-    this.router.patch('/me/audiobook/:id/reset-progress', MeController.resetAudiobookProgress.bind(this))
-    this.router.patch('/me/audiobook/:id', MeController.updateAudiobookData.bind(this))
-    this.router.patch('/me/audiobook/batch/update', MeController.batchUpdateAudiobookData.bind(this))
+    this.router.patch('/me/progress/:id', MeController.createUpdateLibraryItemProgress.bind(this))
+    this.router.delete('/me/progress/:id', MeController.removeLibraryItemProgress.bind(this))
+    this.router.patch('/me/progress/batch/update', MeController.batchUpdateLibraryItemProgress.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
 
@@ -306,35 +306,35 @@ class ApiController {
   }
 
   async syncUserAudiobookData(req, res) {
-    if (!req.body.data) {
-      return res.status(403).send('Invalid local user audiobook data')
-    }
+    // if (!req.body.data) {
+    //   return res.status(403).send('Invalid local user audiobook data')
+    // }
 
-    var hasUpdates = false
+    // var hasUpdates = false
 
-    // Local user audiobook data use the latest update
-    req.body.data.forEach((uab) => {
-      if (!uab || !uab.audiobookId) {
-        Logger.error('[ApiController] Invalid user audiobook data', uab)
-        return
-      }
-      var audiobook = this.db.audiobooks.find(ab => ab.id === uab.audiobookId)
-      if (!audiobook) {
-        Logger.info('[ApiController] syncUserAudiobookData local audiobook data audiobook no longer exists', uab.audiobookId)
-        return
-      }
-      if (req.user.syncLocalUserAudiobookData(uab, audiobook)) {
-        this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: uab.audiobookId, data: uab })
-        hasUpdates = true
-      }
-    })
+    // // Local user audiobook data use the latest update
+    // req.body.data.forEach((uab) => {
+    //   if (!uab || !uab.audiobookId) {
+    //     Logger.error('[ApiController] Invalid user audiobook data', uab)
+    //     return
+    //   }
+    //   var audiobook = this.db.audiobooks.find(ab => ab.id === uab.audiobookId)
+    //   if (!audiobook) {
+    //     Logger.info('[ApiController] syncUserAudiobookData local audiobook data audiobook no longer exists', uab.audiobookId)
+    //     return
+    //   }
+    //   if (req.user.syncLocalUserAudiobookData(uab, audiobook)) {
+    //     this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: uab.audiobookId, data: uab })
+    //     hasUpdates = true
+    //   }
+    // })
 
-    if (hasUpdates) {
-      await this.db.updateEntity('user', req.user)
-    }
+    // if (hasUpdates) {
+    //   await this.db.updateEntity('user', req.user)
+    // }
 
-    var allUserAudiobookData = Object.values(req.user.audiobooksToJSON())
-    res.json(allUserAudiobookData)
+    // var allUserAudiobookData = Object.values(req.user.audiobooksToJSON())
+    // res.json(allUserAudiobookData)
   }
 
   // Sync audiobook stream progress
@@ -346,16 +346,16 @@ class ApiController {
 
   // Sync local downloaded audiobook progress
   async syncLocal(req, res) {
-    Logger.debug(`[ApiController] syncLocal for ${req.user.username}`)
-    var progressPayload = req.body
-    var audiobookProgress = req.user.updateAudiobookData(progressPayload.audiobookId, progressPayload)
-    if (audiobookProgress) {
-      await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'current_user_audiobook_update', {
-        id: progressPayload.audiobookId,
-        data: audiobookProgress || null
-      })
-    }
+    // Logger.debug(`[ApiController] syncLocal for ${req.user.username}`)
+    // var progressPayload = req.body
+    // var itemProgress = req.user.updateLibraryItemProgress(progressPayload.libraryItemId, progressPayload)
+    // if (itemProgress) {
+    //   await this.db.updateEntity('user', req.user)
+    //   this.clientEmitter(req.user.id, 'current_user_audiobook_update', {
+    //     id: progressPayload.libraryItemId,
+    //     data: itemProgress || null
+    //   })
+    // }
     res.sendStatus(200)
   }
 
@@ -384,7 +384,7 @@ class ApiController {
     // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.deleteAudiobookData(libraryItem.id)
+      var madeUpdates = user.removeLibraryItemProgress(libraryItem.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }

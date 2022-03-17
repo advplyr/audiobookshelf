@@ -258,8 +258,9 @@ export default {
     userStreamUpdate(user) {
       this.$store.commit('users/updateUser', user)
     },
-    currentUserAudiobookUpdate(payload) {
-      this.$store.commit('user/updateUserAudiobook', payload)
+    userItemProgressUpdate(payload) {
+      console.log('User item progress update', payload)
+      this.$store.commit('user/updateItemProgress', payload)
     },
     collectionAdded(collection) {
       this.$store.commit('user/addUpdateCollection', collection)
@@ -384,7 +385,7 @@ export default {
       this.socket.on('user_online', this.userOnline)
       this.socket.on('user_offline', this.userOffline)
       this.socket.on('user_stream_update', this.userStreamUpdate)
-      this.socket.on('current_user_audiobook_update', this.currentUserAudiobookUpdate)
+      this.socket.on('user_item_progress_updated', this.userItemProgressUpdate)
 
       // User Collection Listeners
       this.socket.on('collection_added', this.collectionAdded)

@@ -150,23 +150,6 @@ export default {
     downloadClick() {
       this.$store.commit('showEditModalOnTab', { libraryItem: this.book, tab: 'download' })
     },
-    toggleRead() {
-      var updatePayload = {
-        isRead: !this.userIsRead
-      }
-      this.isProcessingReadUpdate = true
-      this.$axios
-        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
-        .then(() => {
-          this.isProcessingReadUpdate = false
-          this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
-        })
-    },
     startStream() {
       this.$eventBus.$emit('play-item', this.book.id)
     },

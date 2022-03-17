@@ -204,18 +204,22 @@ class User {
     // return this.audiobooks[stream.audiobookId]
   }
 
-  updateAudiobookData(audiobookId, updatePayload) {
-    // if (!this.audiobooks) this.audiobooks = {}
-    // if (!this.audiobooks[audiobookId]) {
-    //   this.audiobooks[audiobookId] = new UserAudiobookData()
-    //   this.audiobooks[audiobookId].audiobookId = audiobookId
-    // }
-    // var wasUpdated = this.audiobooks[audiobookId].update(updatePayload)
-    // if (wasUpdated) {
-    //   // Logger.debug(`[User] UserAudiobookData was updated ${JSON.stringify(this.audiobooks[audiobookId])}`)
-    //   return this.audiobooks[audiobookId]
-    // }
-    // return false
+  createUpdateLibraryItemProgress(libraryItemId, updatePayload) {
+    var itemProgress = this.libraryItemProgress.find(li => li.id === libraryItemId)
+    if (!itemProgress) {
+      var newItemProgress = new LibraryItemProgress()
+      newItemProgress.setData(libraryItemId, updatePayload)
+      this.libraryItemProgress.push(newItemProgress)
+      return true
+    }
+    var wasUpdated = itemProgress.update(updatePayload)
+    return wasUpdated
+  }
+
+  removeLibraryItemProgress(libraryItemId) {
+    if (!this.libraryItemProgress.some(lip => lip.id == libraryItemId)) return false
+    this.libraryItemProgress = this.libraryItemProgress.filter(lip => lip != libraryItemId)
+    return true
   }
 
   // Returns Boolean If update was made
@@ -242,28 +246,6 @@ class User {
     }
 
     return madeUpdates
-  }
-
-  resetAudiobookProgress(libraryItem) {
-    // if (!this.audiobooks || !this.audiobooks[libraryItem.id]) {
-    //   return false
-    // }
-    // return this.updateAudiobookData(libraryItem.id, {
-    //   progress: 0,
-    //   currentTime: 0,
-    //   isRead: false,
-    //   lastUpdate: Date.now(),
-    //   startedAt: null,
-    //   finishedAt: null
-    // })
-  }
-
-  deleteAudiobookData(audiobookId) {
-    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-    //   return false
-    // }
-    // delete this.audiobooks[audiobookId]
-    // return true
   }
 
   checkCanAccessLibrary(libraryId) {

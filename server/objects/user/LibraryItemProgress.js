@@ -5,7 +5,6 @@ class LibraryItemProgress {
     this.id = null // Same as library item id
     this.libraryItemId = null
 
-    this.totalDuration = null // seconds
     this.progress = null // 0 to 1
     this.currentTime = null // seconds
     this.isFinished = false
@@ -23,7 +22,6 @@ class LibraryItemProgress {
     return {
       id: this.id,
       libraryItemId: this.libraryItemId,
-      totalDuration: this.totalDuration,
       progress: this.progress,
       currentTime: this.currentTime,
       isFinished: this.isFinished,
@@ -36,7 +34,6 @@ class LibraryItemProgress {
   construct(progress) {
     this.id = progress.id
     this.libraryItemId = progress.libraryItemId
-    this.totalDuration = progress.totalDuration
     this.progress = progress.progress
     this.currentTime = progress.currentTime
     this.isFinished = !!progress.isFinished
@@ -46,25 +43,40 @@ class LibraryItemProgress {
   }
 
   updateProgressFromStream(stream) {
-    this.audiobookId = stream.libraryItemId
-    this.totalDuration = stream.totalDuration
-    this.progress = stream.clientProgress
-    this.currentTime = stream.clientCurrentTime
+    // this.audiobookId = stream.libraryItemId
+    // this.totalDuration = stream.totalDuration
+    // this.progress = stream.clientProgress
+    // this.currentTime = stream.clientCurrentTime
+    // this.lastUpdate = Date.now()
+
+    // if (!this.startedAt) {
+    //   this.startedAt = Date.now()
+    // }
+
+    // // If has < 10 seconds remaining mark as read
+    // var timeRemaining = this.totalDuration - this.currentTime
+    // if (timeRemaining < 10) {
+    //   this.isFinished = true
+    //   this.progress = 1
+    //   this.finishedAt = Date.now()
+    // } else {
+    //   this.isFinished = false
+    //   this.finishedAt = null
+    // }
+  }
+
+  setData(libraryItemId, progress) {
+    this.id = libraryItemId
+    this.libraryItemId = libraryItemId
+    this.progress = Math.min(1, (progress.progress || 0))
+    this.currentTime = progress.currentTime || 0
+    this.isFinished = !!progress.isFinished || this.progress == 1
     this.lastUpdate = Date.now()
-
-    if (!this.startedAt) {
-      this.startedAt = Date.now()
-    }
-
-    // If has < 10 seconds remaining mark as read
-    var timeRemaining = this.totalDuration - this.currentTime
-    if (timeRemaining < 10) {
-      this.isFinished = true
-      this.progress = 1
+    this.startedAt = Date.now()
+    this.finishedAt = null
+    if (this.isFinished) {
       this.finishedAt = Date.now()
-    } else {
-      this.isFinished = false
-      this.finishedAt = null
+      this.progress = 1
     }
   }
 

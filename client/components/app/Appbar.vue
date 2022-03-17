@@ -47,8 +47,8 @@
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
         <div class="flex-grow" />
-        <ui-tooltip :text="`Mark as ${selectedIsRead ? 'Not Read' : 'Read'}`" direction="bottom">
-          <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsRead" @click="toggleBatchRead" class="mx-1.5" />
+        <ui-tooltip :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+          <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
         <ui-tooltip v-if="userCanUpdate" text="Add to Collection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
@@ -100,8 +100,8 @@ export default {
     selectedLibraryItems() {
       return this.$store.state.selectedLibraryItems
     },
-    userAudiobooks() {
-      return this.$store.state.user.user.audiobooks || {}
+    userItemProgress() {
+      return this.$store.state.user.user.libraryItemProgress || []
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
@@ -112,11 +112,11 @@ export default {
     userCanUpload() {
       return this.$store.getters['user/getUserCanUpload']
     },
-    selectedIsRead() {
-      // Find an audiobook that is not read, if none then all audiobooks read
-      return !this.selectedLibraryItems.find((li) => {
-        var userAb = this.userAudiobooks[li]
-        return !userAb || !userAb.isRead
+    selectedIsFinished() {
+      // Find an item that is not finished, if none then all items finished
+      return !this.selectedLibraryItems.find((libraryItemId) => {
+        var itemProgress = this.userItemProgress.find((lip) => lip.id === libraryItemId)
+        return !itemProgress || !itemProgress.isFinished
       })
     },
     processingBatch() {
@@ -153,15 +153,15 @@ export default {
     },
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
-      var newIsRead = !this.selectedIsRead
+      var newIsFinished = !this.selectedIsFinished
       var updateProgressPayloads = this.selectedLibraryItems.map((lid) => {
         return {
-          audiobookId: lid,
-          isRead: newIsRead
+          id: lid,
+          isFinished: newIsFinished
         }
       })
       this.$axios
-        .patch(`/api/me/audiobook/batch/update`, updateProgressPayloads)
+        .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)

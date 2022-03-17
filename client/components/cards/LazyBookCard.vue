@@ -301,8 +301,8 @@ export default {
     moreMenuItems() {
       var items = [
         {
-          func: 'toggleRead',
-          text: `Mark as ${this.itemIsFinished ? 'Not Read' : 'Read'}`
+          func: 'toggleFinished',
+          text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
         },
         {
           func: 'openCollections',
@@ -398,8 +398,7 @@ export default {
     editClick() {
       this.$emit('edit', this.audiobook)
     },
-    toggleRead() {
-      // More menu func
+    toggleFinished() {
       var updatePayload = {
         isFinished: !this.itemIsFinished
       }
@@ -407,15 +406,15 @@ export default {
       var toast = this.$toast || this.$nuxt.$toast
       var axios = this.$axios || this.$nuxt.$axios
       axios
-        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
+        .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          toast.success(`"${this.title}" Marked as ${updatePayload.isFinished ? 'Read' : 'Not Read'}`)
+          toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Read' : 'Not Read'}`)
+          toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
     itemScanComplete(result) {

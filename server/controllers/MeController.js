@@ -16,31 +16,26 @@ class MeController {
     res.json(listeningStats)
   }
 
-  // PATCH: api/me/audiobook/:id/reset-progress
-  async resetAudiobookProgress(req, res) {
-    var libraryItem = this.db.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) {
-      return res.status(404).send('Item not found')
+  // DELETE: api/me/progress/:id
+  async removeLibraryItemProgress(req, res) {
+    var wasRemoved = req.user.removeLibraryItemProgress(req.params.id)
+    if (!wasRemoved) {
+      return res.sendStatus(200)
     }
-    req.user.resetAudiobookProgress(libraryItem)
     await this.db.updateEntity('user', req.user)
-
-    var userAudiobookData = req.user.audiobooks[libraryItem.id]
-    if (userAudiobookData) {
-      this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: libraryItem.id, data: userAudiobookData })
-    }
+    this.clientEmitter(req.user.id, 'user_item_progress_updated', { id: libraryItem.id, data: null })
 
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }
 
-  // PATCH: api/me/audiobook/:id
-  async updateAudiobookData(req, res) {
+  // PATCH: api/me/progress/:id
+  async createUpdateLibraryItemProgress(req, res) {
     var libraryItem = this.db.libraryItems.find(ab => ab.id === req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
-    var wasUpdated = req.user.updateAudiobookData(libraryItem.id, req.body)
+    var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem.id, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -48,19 +43,21 @@ class MeController {
     res.sendStatus(200)
   }
 
-  // PATCH: api/me/audiobook/batch/update
-  async batchUpdateAudiobookData(req, res) {
-    var userAbDataPayloads = req.body
-    if (!userAbDataPayloads || !userAbDataPayloads.length) {
+  // PATCH: api/me/progress/batch/update
+  async batchUpdateLibraryItemProgress(req, res) {
+    var itemProgressPayloads = req.body
+    if (!itemProgressPayloads || !itemProgressPayloads.length) {
       return res.sendStatus(500)
     }
 
     var shouldUpdate = false
-    userAbDataPayloads.forEach((userAbData) => {
-      var libraryItem = this.db.libraryItems.find(li => li.id === userAbData.audiobookId)
+    itemProgressPayloads.forEach((itemProgress) => {
+      var libraryItem = this.db.libraryItems.find(li => li.id === itemProgress.id) // Make sure this library item exists
       if (libraryItem) {
-        var wasUpdated = req.user.updateAudiobookData(libraryItem.id, userAbData)
+        var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem.id, itemProgress)
         if (wasUpdated) shouldUpdate = true
+      } else {
+        Logger.error(`[MeController] batchUpdateLibraryItemProgress: Library Item does not exist ${itemProgress.id}`)
       }
     })
 

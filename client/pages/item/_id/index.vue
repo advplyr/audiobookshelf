@@ -7,7 +7,7 @@
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Book Progress Bar -->
-            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
             <!-- Book Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
@@ -130,8 +130,8 @@
               <ui-icon-btn icon="download" :disabled="isMissing" class="mx-0.5" @click="downloadClick" />
             </ui-tooltip>
 
-            <ui-tooltip :text="isRead ? 'Mark as Not Read' : 'Mark as Read'" direction="top">
-              <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" class="mx-0.5" @click="toggleRead" />
+            <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+              <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
             <ui-tooltip text="Collections" direction="top">
@@ -173,17 +173,8 @@ export default {
   },
   data() {
     return {
-      isRead: false,
       resettingProgress: false,
       isProcessingReadUpdate: false
-    }
-  },
-  watch: {
-    userIsRead: {
-      immediate: true,
-      handler(newVal) {
-        this.isRead = newVal
-      }
     }
   },
   computed: {
@@ -298,29 +289,26 @@ export default {
     description() {
       return this.mediaMetadata.description || ''
     },
-    userAudiobooks() {
-      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
-    },
-    userAudiobook() {
-      return this.userAudiobooks[this.libraryItemId] || null
+    userItemProgress() {
+      return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
     },
     userCurrentTime() {
-      return this.userAudiobook ? this.userAudiobook.currentTime : 0
+      return this.userItemProgress ? this.userItemProgress.currentTime : 0
     },
-    userIsRead() {
-      return this.userAudiobook ? !!this.userAudiobook.isRead : false
+    userIsFinished() {
+      return this.userItemProgress ? !!this.userItemProgress.isFinished : false
     },
     userTimeRemaining() {
       return this.duration - this.userCurrentTime
     },
     progressPercent() {
-      return this.userAudiobook ? Math.max(Math.min(1, this.userAudiobook.progress), 0) : 0
+      return this.userItemProgress ? Math.max(Math.min(1, this.userItemProgress.progress), 0) : 0
     },
     userProgressStartedAt() {
-      return this.userAudiobook ? this.userAudiobook.startedAt : 0
+      return this.userItemProgress ? this.userItemProgress.startedAt : 0
     },
     userProgressFinishedAt() {
-      return this.userAudiobook ? this.userAudiobook.finishedAt : 0
+      return this.userItemProgress ? this.userItemProgress.finishedAt : 0
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -346,21 +334,21 @@ export default {
     openEbook() {
       this.$store.commit('showEReader', this.libraryItem)
     },
-    toggleRead() {
+    toggleFinished() {
       var updatePayload = {
-        isRead: !this.isRead
+        isFinished: !this.userIsFinished
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
+        .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
     startStream() {
@@ -386,7 +374,7 @@ export default {
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$patch(`/api/me/audiobook/${this.libraryItemId}/reset-progress`)
+          .$delete(`/api/me/progress/${this.libraryItemId}`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)

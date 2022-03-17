@@ -35,8 +35,8 @@
     </div> -->
     <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : '-translate-x-24'">
       <div class="flex h-full items-center">
-        <ui-tooltip :text="isRead ? 'Mark as Not Read' : 'Mark as Read'" direction="top">
-          <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="isRead" borderless class="mx-1 mt-0.5" @click="toggleRead" />
+        <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+          <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
         </ui-tooltip>
         <div class="mx-1" :class="isHovering ? '' : 'ml-6'">
           <ui-icon-btn icon="edit" borderless @click="clickEdit" />
@@ -68,12 +68,6 @@ export default {
     }
   },
   watch: {
-    userIsRead: {
-      immediate: true,
-      handler(newVal) {
-        this.isRead = newVal
-      }
-    },
     isDragging: {
       handler(newVal) {
         if (newVal) {
@@ -113,14 +107,11 @@ export default {
     showPlayBtn() {
       return !this.isMissing && !this.isInvalid && !this.isStreaming && this.numTracks
     },
-    userAudiobooks() {
-      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
+    itemProgress() {
+      return this.$store.getters['user/getUserLibraryItemProgress'](this.book.id)
     },
-    userAudiobook() {
-      return this.userAudiobooks[this.book.id] || null
-    },
-    userIsRead() {
-      return this.userAudiobook ? !!this.userAudiobook.isRead : false
+    userIsFinished() {
+      return this.itemProgress ? !!this.itemProgress.isFinished : false
     },
     coverWidth() {
       if (this.bookCoverAspectRatio === 1) return 50 * 1.6
@@ -141,21 +132,21 @@ export default {
     clickEdit() {
       this.$emit('edit', this.book)
     },
-    toggleRead() {
+    toggleFinished() {
       var updatePayload = {
-        isRead: !this.isRead
+        isFinished: !this.userIsFinished
       }
       this.isProcessingReadUpdate = true
       this.$axios
-        .$patch(`/api/me/audiobook/${this.book.id}`, updatePayload)
+        .$patch(`/api/me/progress/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`"${this.bookTitle}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
     removeClick() {
