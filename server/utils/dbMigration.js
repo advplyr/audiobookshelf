@@ -3,12 +3,13 @@ const fs = require('fs-extra')
 const njodb = require("njodb")
 
 const { SupportedEbookTypes } = require('./globals')
+const { getId } = require('./index')
+const Logger = require('../Logger')
+
 const LegacyAudiobook = require('../objects/legacy/Audiobook')
 const UserAudiobookData = require('../objects/legacy/UserAudiobookData')
 
 const LibraryItem = require('../objects/LibraryItem')
-
-const Logger = require('../Logger')
 const Book = require('../objects/mediaTypes/Book')
 
 const BookMetadata = require('../objects/metadata/BookMetadata')
@@ -64,7 +65,7 @@ function makeAuthorsFromOldAb(authorsList) {
     var newAuthor = new Author()
     newAuthor.setData({ name: authorName })
     authorsToAdd.push(newAuthor)
-    Logger.info(`>>> Created new author named "${authorName}"`)
+    Logger.debug(`>>> Created new author named "${authorName}"`)
     return newAuthor.toJSONMinimal()
   })
 }

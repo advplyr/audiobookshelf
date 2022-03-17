@@ -54,7 +54,6 @@ class Book {
       tags: [...this.tags],
       audiobooks: this.audiobooks.map(ab => ab.toJSONMinified()),
       ebooks: this.ebooks.map(eb => eb.toJSONMinified()),
-      duration: this.duration,
       size: this.size
     }
   }
@@ -66,22 +65,14 @@ class Book {
       tags: [...this.tags],
       audiobooks: this.audiobooks.map(ab => ab.toJSONExpanded()),
       ebooks: this.ebooks.map(eb => eb.toJSONExpanded()),
-      duration: this.duration,
       size: this.size,
     }
   }
 
-  get tracks() {
-    return this.audioFiles.filter(af => !af.exclude && !af.invalid)
-  }
-  get duration() {
-    var total = 0
-    this.tracks.forEach((track) => total += track.duration)
-    return total
-  }
   get size() {
     var total = 0
-    this.audioFiles.forEach((af) => total += af.metadata.size)
+    this.audiobooks.forEach((ab) => total += ab.size)
+    this.ebooks.forEach((eb) => total += eb.size)
     return total
   }
   get hasMediaEntities() {
