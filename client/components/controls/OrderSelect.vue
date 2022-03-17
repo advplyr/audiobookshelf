@@ -38,20 +38,20 @@ export default {
         },
         {
           text: 'Author (First Last)',
-          value: 'media.metadata.author'
+          value: 'media.metadata.authorName'
         },
         {
           text: 'Author (Last, First)',
-          value: 'media.metadata.authorLF'
+          value: 'media.metadata.authorNameLF'
         },
         {
           text: 'Added At',
           value: 'addedAt'
         },
-        {
-          text: 'Duration',
-          value: 'media.duration'
-        },
+        // {
+        //   text: 'Duration',
+        //   value: 'media.duration'
+        // },
         {
           text: 'Size',
           value: 'size'

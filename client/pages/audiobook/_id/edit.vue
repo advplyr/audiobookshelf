@@ -95,17 +95,19 @@ export default {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
-    var libraryItem = await app.$axios.$get(`/api/items/${params.id}?extended=1`).catch((error) => {
+    var payload = await app.$axios.$get(`/api/audiobooks/${params.id}/item?expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
-    if (!libraryItem) {
-      console.error('No item...', params.id)
+    if (!payload) {
+      console.error('Not found...', params.id)
       return redirect('/')
     }
+    const audiobook = payload.audiobook
     return {
-      libraryItem,
-      files: libraryItem.media.audioFiles ? libraryItem.media.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
+      audiobook,
+      libraryItem: payload.libraryItem,
+      files: audiobook.audioFiles ? audiobook.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
     }
   },
   data() {
@@ -128,7 +130,7 @@ export default {
       return this.media.metadata || []
     },
     audioFiles() {
-      return this.media.audioFiles || []
+      return this.audiobook.audioFiles || []
     },
     numExcluded() {
       var count = 0
@@ -138,7 +140,7 @@ export default {
       return count
     },
     missingParts() {
-      return this.media.missingParts || []
+      return this.audiobook.missingParts || []
     },
     libraryItemId() {
       return this.libraryItem.id
@@ -150,7 +152,7 @@ export default {
       return this.mediaMetadata.authorName || 'Unknown'
     },
     tracks() {
-      return this.media.tracks
+      return this.audiobook.tracks
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -216,7 +218,7 @@ export default {
 
       this.saving = true
       this.$axios
-        .$patch(`/api/items/${this.libraryItemId}/tracks`, { orderedFileData })
+        .$patch(`/api/audiobooks/${this.audiobook.id}/tracks`, { orderedFileData })
         .then((data) => {
           console.log('Finished patching files', data)
           this.saving = false

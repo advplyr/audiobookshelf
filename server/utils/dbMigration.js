@@ -245,6 +245,27 @@ async function migrateLibraryItems(db) {
 
   var libraryItems = audiobooks.map((ab) => makeLibraryItemFromOldAb(ab))
 
+  // User library item progress was using the auidobook ID when migrated
+  //   now that library items are created the LibraryItemProgress objects
+  //   need the library item id to be set
+  for (const user of db.users) {
+    if (user.libraryItemProgress.length) {
+      user.libraryItemProgress = user.libraryItemProgress.map(lip => {
+        var audiobookId = lip.id
+        var libraryItemWithAudiobook = libraryItems.find(li => li.media.getAudiobookById && !!li.media.getAudiobookById(audiobookId))
+        if (!libraryItemWithAudiobook) {
+          Logger.error('[dbMigration] Failed to find library item with audiobook id', audiobookId)
+          return null
+        }
+        lip.id = libraryItemWithAudiobook.id
+        lip.libraryItemId = libraryItemWithAudiobook.id
+        return lip
+      }).filter(lip => !!lip)
+      await db.updateEntity('user', user)
+      Logger.debug(`>>> User ${user.username} with ${user.libraryItemProgress.length} progress entries were updated`)
+    }
+  }
+
   Logger.info(`>>> ${libraryItems.length} Library Items made`)
   await db.insertEntities('libraryItem', libraryItems)
   if (authorsToAdd.length) {
@@ -286,8 +307,9 @@ function cleanUserObject(db, userObj) {
 
         var userAudiobookData = new UserAudiobookData(userObj.audiobooks[audiobookId]) // Legacy object
         var liProgress = new LibraryItemProgress() // New Progress Object
-        liProgress.id = userAudiobookData.audiobookId
+        liProgress.id = userAudiobookData.audiobookId // This ID is INCORRECT, will be updated when library item is created
         liProgress.libraryItemId = userAudiobookData.audiobookId
+        liProgress.isFinished = !!userAudiobookData.isRead
         Object.keys(liProgress.toJSON()).forEach((key) => {
           if (userAudiobookData[key] !== undefined) {
             liProgress[key] = userAudiobookData[key]

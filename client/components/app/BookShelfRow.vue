@@ -2,7 +2,7 @@
   <div class="relative">
     <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem', height: shelfHeight + 'px' }" @scroll="scrolled">
       <div class="w-full h-full pt-6">
-        <div v-if="shelf.type === 'books'" class="flex items-center">
+        <div v-if="shelf.type === 'book'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
             <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editBook" />
           </template>
@@ -108,7 +108,7 @@ export default {
     },
     updateSelectionMode(val) {
       var selectedLibraryItems = this.$store.state.selectedLibraryItems
-      if (this.shelf.type === 'books') {
+      if (this.shelf.type === 'book') {
         this.shelf.entities.forEach((ent) => {
           var component = this.$refs[`shelf-book-${ent.id}`]
           if (!component || !component.length) return

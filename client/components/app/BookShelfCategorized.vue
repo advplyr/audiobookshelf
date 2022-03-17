@@ -104,7 +104,7 @@ export default {
         shelves.push({
           id: 'books',
           label: 'Books',
-          type: 'books',
+          type: 'book',
           entities: this.results.books.map((res) => res.libraryItem)
         })
       }

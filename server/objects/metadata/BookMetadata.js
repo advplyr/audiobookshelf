@@ -76,6 +76,7 @@ class BookMetadata {
       language: this.language,
       explicit: this.explicit,
       authorName: this.authorName,
+      authorNameLF: this.authorNameLF,
       narratorName: this.narratorName
     }
   }
@@ -94,6 +95,10 @@ class BookMetadata {
   get authorName() {
     if (!this.authors.length) return ''
     return this.authors.map(au => au.name).join(', ')
+  }
+  get authorNameLF() { // Last, First
+    if (!this.authors.length) return ''
+    return this.authors.map(au => parseNameString.nameToLastFirst(au.name)).join(', ')
   }
   get seriesName() {
     if (!this.series.length) return ''
@@ -243,13 +248,13 @@ class BookMetadata {
 
   // Returns array of names in First Last format
   parseNarratorsTag(narratorsTag) {
-    var parsed = parseNameString(narratorsTag)
+    var parsed = parseNameString.parse(narratorsTag)
     return parsed ? parsed.names : []
   }
 
   // Return array of authors minified with placeholder id
   parseAuthorsTag(authorsTag) {
-    var parsed = parseNameString(authorsTag)
+    var parsed = parseNameString.parse(authorsTag)
     if (!parsed) return []
     return (parsed.names || []).map((au) => {
       return {

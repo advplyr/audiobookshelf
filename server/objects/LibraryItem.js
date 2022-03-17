@@ -106,7 +106,8 @@ class LibraryItem {
       isInvalid: !!this.isInvalid,
       mediaType: this.mediaType,
       media: this.media.toJSONMinified(),
-      numFiles: this.libraryFiles.length
+      numFiles: this.libraryFiles.length,
+      size: this.size
     }
   }
 

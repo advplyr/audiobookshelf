@@ -194,21 +194,21 @@ module.exports = {
     })
   },
 
-  getBooksWithUserAudiobook(user, books) {
-    return books.map(book => {
+  getItemsWithUserProgress(user, libraryItems) {
+    return libraryItems.map(li => {
       return {
-        userAudiobook: user.getLibraryItemProgress(book.id),
-        book
+        userProgress: user.getLibraryItemProgress(li.id),
+        libraryItem: li
       }
-    }).filter(b => !!b.userAudiobook)
+    }).filter(b => !!b.userProgress)
   },
 
-  getBooksMostRecentlyRead(booksWithUserAb, limit, minified = false) {
-    var booksWithProgress = booksWithUserAb.filter((data) => data.userAudiobook && data.userAudiobook.progress > 0 && !data.userAudiobook.isRead)
-    booksWithProgress.sort((a, b) => {
-      return b.userAudiobook.lastUpdate - a.userAudiobook.lastUpdate
+  getItemsMostRecentlyListened(itemsWithUserProgress, limit, minified = false) {
+    var itemsInProgress = itemsWithUserProgress.filter((data) => data.userProgress && data.userProgress.progress > 0 && !data.userProgress.isFinished)
+    itemsInProgress.sort((a, b) => {
+      return b.userProgress.lastUpdate - a.userProgress.lastUpdate
     })
-    return booksWithProgress.map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
+    return itemsInProgress.map(b => minified ? b.libraryItem.toJSONMinified() : b.libraryItem.toJSONExpanded()).slice(0, limit)
   },
 
   getBooksNextInSeries(seriesWithUserAb, limit, minified = false) {
@@ -223,17 +223,17 @@ module.exports = {
     return booksNextInSeries.sort((a, b) => { return b.DateLastReadSeries - a.DateLastReadSeries }).map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
   },
 
-  getBooksMostRecentlyAdded(books, limit, minified = false) {
-    var booksSortedByAddedAt = sort(books).desc(book => book.addedAt)
-    return booksSortedByAddedAt.map(b => minified ? b.toJSONMinified() : b.toJSONExpanded()).slice(0, limit)
+  getItemsMostRecentlyAdded(libraryItems, limit, minified = false) {
+    var itemsSortedByAddedAt = sort(libraryItems).desc(li => li.addedAt)
+    return itemsSortedByAddedAt.map(b => minified ? b.toJSONMinified() : b.toJSONExpanded()).slice(0, limit)
   },
 
-  getBooksMostRecentlyFinished(booksWithUserAb, limit, minified = false) {
-    var booksRead = booksWithUserAb.filter((data) => data.userAudiobook && data.userAudiobook.isRead)
-    booksRead.sort((a, b) => {
-      return b.userAudiobook.finishedAt - a.userAudiobook.finishedAt
+  getItemsMostRecentlyFinished(itemsWithUserProgress, limit, minified = false) {
+    var itemsFinished = itemsWithUserProgress.filter((data) => data.userProgress && data.userProgress.isFinished)
+    itemsFinished.sort((a, b) => {
+      return b.userProgress.finishedAt - a.userProgress.finishedAt
     })
-    return booksRead.map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
+    return itemsFinished.map(i => minified ? i.libraryItem.toJSONMinified() : i.libraryItem.toJSONExpanded()).slice(0, limit)
   },
 
   getSeriesMostRecentlyAdded(series, limit) {

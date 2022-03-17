@@ -36,6 +36,10 @@ class CacheManager {
     // Write cache
     await fs.ensureDir(this.CoverCachePath)
 
+    if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
+      return res.sendStatus(404)
+    }
+
     let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(400)
 

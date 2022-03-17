@@ -116,6 +116,10 @@ class Book {
     return true
   }
 
+  getAudiobookById(audiobookId) {
+    return this.audiobooks.find(ab => ab.id === audiobookId)
+  }
+
   removeFileWithInode(inode) {
     var audiobookWithIno = this.audiobooks.find(ab => ab.findFileWithInode(inode))
     if (audiobookWithIno) {

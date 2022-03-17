@@ -16,6 +16,7 @@ const BackupController = require('./controllers/BackupController')
 const LibraryItemController = require('./controllers/LibraryItemController')
 const SeriesController = require('./controllers/SeriesController')
 const AuthorController = require('./controllers/AuthorController')
+const AudiobookController = require('./controllers/AudiobookController')
 
 const BookFinder = require('./finders/BookFinder')
 const AuthorFinder = require('./finders/AuthorFinder')
@@ -71,6 +72,13 @@ class ApiController {
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
+    // Audiobook Routes
+    //
+    this.router.get('/audiobooks/:id', AudiobookController.middleware.bind(this), AudiobookController.findOne.bind(this))
+    this.router.get('/audiobooks/:id/item', AudiobookController.middleware.bind(this), AudiobookController.findWithItem.bind(this))
+    this.router.patch('/audiobooks/:id/tracks', AudiobookController.middleware.bind(this), AudiobookController.updateTracks.bind(this))
+
+    //
     // Item Routes
     //
     this.router.delete('/items/all', LibraryItemController.deleteAll.bind(this))
@@ -84,7 +92,6 @@ class ApiController {
     this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
-    this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
     this.router.get('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))

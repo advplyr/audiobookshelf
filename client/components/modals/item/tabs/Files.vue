@@ -1,47 +1,8 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
-    <div class="mb-4">
-      <template v-if="hasTracks">
-        <div class="w-full bg-primary px-4 py-2 flex items-center">
-          <p class="pr-4">Audio Tracks</p>
-          <div class="h-7 w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
-            <span class="text-sm font-mono">{{ tracks.length }}</span>
-          </div>
-          <div class="flex-grow" />
-          <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
-          <nuxt-link v-if="userCanUpdate" :to="`/item/${libraryItem.id}/edit`">
-            <ui-btn small color="primary">Manage Tracks</ui-btn>
-          </nuxt-link>
-        </div>
-        <table class="text-sm tracksTable break-all">
-          <tr class="font-book">
-            <th class="w-16">#</th>
-            <th class="text-left">Filename</th>
-            <th class="text-left w-24 min-w-24">Size</th>
-            <th class="text-left w-24 min-w-24">Duration</th>
-            <th v-if="showDownload" class="text-center w-24 min-w-24">Download</th>
-          </tr>
-          <template v-for="track in tracks">
-            <tr :key="track.index">
-              <td class="text-center">
-                <p>{{ track.index }}</p>
-              </td>
-              <td class="font-sans">{{ showFullPath ? track.metadata.path : track.metadata.filename }}</td>
-              <td class="font-mono">
-                {{ $bytesPretty(track.metadata.size) }}
-              </td>
-              <td class="font-mono">
-                {{ $secondsToTimestamp(track.duration) }}
-              </td>
-              <td v-if="showDownload" class="font-mono text-center">
-                <a :href="`/s/item/${libraryItem.id}/${track.metadata.relPath}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
-              </td>
-            </tr>
-          </template>
-        </table>
-      </template>
-      <div v-else class="flex my-4 text-center justify-center text-xl">No Audio Tracks</div>
-    </div>
+    <template v-for="audiobook in audiobooks">
+      <tables-tracks-table :key="audiobook.id" :title="`Audiobook Tracks (${audiobook.name})`" :audiobook-id="audiobook.id" :tracks="audiobook.tracks" class="mb-4" />
+    </template>
 
     <tables-library-files-table :files="libraryFiles" :library-item-id="libraryItem.id" :is-missing="isMissing" />
   </div>
@@ -91,8 +52,11 @@ export default {
     showDownload() {
       return this.userCanDownload && !this.isMissing
     },
-    hasTracks() {
-      return this.tracks.length
+    audiobooks() {
+      return this.media.audiobooks || []
+    },
+    ebooks() {
+      return this.media.ebooks || []
     }
   },
   methods: {

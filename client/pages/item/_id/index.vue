@@ -117,7 +117,7 @@
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
-            <ui-btn v-if="showExperimentalFeatures && numEbooks" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showExperimentalFeatures && ebooks.length" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
             </ui-btn>
@@ -143,26 +143,9 @@
             <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
-          <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">
-            <p class="text-sm mb-2">
-              Missing Parts <span class="text-sm">({{ missingParts.length }})</span>
-            </p>
-            <p class="text-sm font-mono">{{ missingPartChunks.join(', ') }}</p>
-          </div>
-
-          <div v-if="invalidParts.length" class="bg-error border-red-800 shadow-md p-4">
-            <p class="text-sm mb-2">
-              Invalid Parts <span class="text-sm">({{ invalidParts.length }})</span>
-            </p>
-            <div>
-              <p v-for="part in invalidParts" :key="part.filename" class="text-sm font-mono">{{ part.filename }}: {{ part.error }}</p>
-            </div>
-          </div>
-
-          <tables-tracks-table v-if="tracks.length" :tracks="tracks" :library-item-id="libraryItemId" class="mt-6" />
-
-          <!-- <tables-audio-files-table v-if="otherAudioFiles.length" :library-item-id="libraryItemId" :files="otherAudioFiles" class="mt-6" /> -->
-
+          <template v-for="audiobook in audiobooks">
+            <widgets-audiobook-data :key="audiobook.id" :audiobook="audiobook" />
+          </template>
           <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
         </div>
       </div>
@@ -219,37 +202,6 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
-    missingPartChunks() {
-      if (this.missingParts === 1) return this.missingParts[0]
-      var chunks = []
-
-      var currentIndex = this.missingParts[0]
-      var currentChunk = [this.missingParts[0]]
-
-      for (let i = 1; i < this.missingParts.length; i++) {
-        var partIndex = this.missingParts[i]
-        if (currentIndex === partIndex - 1) {
-          currentChunk.push(partIndex)
-          currentIndex = partIndex
-        } else {
-          // console.log('Chunk ended', currentChunk.join(', '), currentIndex, partIndex)
-          if (currentChunk.length === 0) {
-            console.error('How is current chunk 0?', currentChunk.join(', '))
-          }
-          chunks.push(currentChunk)
-          currentChunk = [partIndex]
-          currentIndex = partIndex
-        }
-      }
-      if (currentChunk.length) {
-        chunks.push(currentChunk)
-      }
-      chunks = chunks.map((chunk) => {
-        if (chunk.length === 1) return chunk[0]
-        else return `${chunk[0]}-${chunk[chunk.length - 1]}`
-      })
-      return chunks
-    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -257,13 +209,7 @@ export default {
       return this.libraryItem.isInvalid
     },
     showPlayButton() {
-      return !this.isMissing && !this.isInvalid && this.tracks.length
-    },
-    missingParts() {
-      return this.libraryItem.missingParts || []
-    },
-    invalidParts() {
-      return this.libraryItem.invalidParts || []
+      return !this.isMissing && !this.isInvalid && this.audiobooks.length
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -279,6 +225,9 @@ export default {
     },
     mediaMetadata() {
       return this.media.metadata || {}
+    },
+    audiobooks() {
+      return this.media.audiobooks || []
     },
     title() {
       return this.mediaMetadata.title || 'No Title'
@@ -341,13 +290,10 @@ export default {
       return this.media.audioFiles || []
     },
     ebooks() {
-      return this.media.ebookFiles
+      return this.media.ebooks || []
     },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
-    },
-    numEbooks() {
-      return this.media.numEbooks
     },
     description() {
       return this.mediaMetadata.description || ''

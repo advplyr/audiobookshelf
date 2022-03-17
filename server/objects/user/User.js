@@ -1,5 +1,4 @@
 const Logger = require('../../Logger')
-const { isObject } = require('../../utils')
 const AudioBookmark = require('./AudioBookmark')
 const LibraryItemProgress = require('./LibraryItemProgress')
 

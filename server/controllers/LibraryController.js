@@ -146,7 +146,7 @@ class LibraryController {
     if (payload.sortBy) {
       var sortKey = payload.sortBy
 
-      // old sort key
+      // old sort key TODO: should be mutated in dbMigration
       if (sortKey.startsWith('book.')) {
         sortKey = sortKey.replace('book.', 'media.metadata.')
       }
@@ -263,26 +263,26 @@ class LibraryController {
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     var minified = req.query.minified === '1'
 
-    var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, libraryItems)
+    var itemsWithUserProgress = libraryHelpers.getItemsWithUserProgress(req.user, libraryItems)
 
     var categories = [
       {
         id: 'continue-reading',
         label: 'Continue Reading',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf, minified)
+        type: req.library.mediaType,
+        entities: libraryHelpers.getItemsMostRecentlyListened(itemsWithUserProgress, limitPerShelf, minified)
       },
       {
         id: 'recently-added',
         label: 'Recently Added',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyAdded(libraryItems, limitPerShelf, minified)
+        type: req.library.mediaType,
+        entities: libraryHelpers.getItemsMostRecentlyAdded(libraryItems, limitPerShelf, minified)
       },
       {
         id: 'read-again',
         label: 'Read Again',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf, minified)
+        type: req.library.mediaType,
+        entities: libraryHelpers.getItemsMostRecentlyFinished(itemsWithUserProgress, limitPerShelf, minified)
       }
     ].filter(cats => { // Remove categories with no items
       return cats.entities.length
@@ -299,7 +299,7 @@ class LibraryController {
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     var minified = req.query.minified === '1'
 
-    var booksWithUserAb = libraryHelpers.getBooksWithUserAudiobook(req.user, books)
+    var booksWithUserAb = libraryHelpers.getItemsWithUserProgress(req.user, books)
     var series = libraryHelpers.getSeriesFromBooks(books, minified)
     var seriesWithUserAb = libraryHelpers.getSeriesWithProgressFromBooks(req.user, books)
 

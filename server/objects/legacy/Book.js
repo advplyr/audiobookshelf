@@ -137,7 +137,7 @@ class Book {
       return hasUpdated
     }
     try {
-      var { authorLF, authorFL } = parseAuthors(author)
+      var { authorLF, authorFL } = parseAuthors.parse(author)
       var hasUpdated = authorLF !== this.authorLF || authorFL !== this.authorFL
       this.authorFL = authorFL || null
       this.authorLF = authorLF || null
@@ -155,7 +155,7 @@ class Book {
       return hasUpdated
     }
     try {
-      var { authorFL } = parseAuthors(narrator)
+      var { authorFL } = parseAuthors.parse(narrator)
       var hasUpdated = authorFL !== this.narratorFL
       this.narratorFL = authorFL || null
       return hasUpdated

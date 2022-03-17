@@ -27,7 +27,16 @@ function checkIsALastName(name) {
   return false
 }
 
-module.exports = (nameString) => {
+// Handle name already in First Last format and return Last, First
+module.exports.nameToLastFirst = (firstLast) => {
+  var nameObj = parseName(firstLast)
+  if (!nameObj.last_name) return nameObj.first_name
+  else if (!nameObj.first_name) return nameObj.last_name
+  return `${nameObj.last_name}, ${nameObj.first_name}`
+}
+
+// Handle any name string
+module.exports.parse = (nameString) => {
   if (!nameString) return null
 
   var splitNames = []

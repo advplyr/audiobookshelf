@@ -97,7 +97,7 @@ export default {
     },
     userAudiobook() {
       if (!this.libraryItemId) return
-      return this.$store.getters['user/getUserAudiobook'](this.libraryItemId)
+      return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
     },
     userAudiobookCurrentTime() {
       return this.userAudiobook ? this.userAudiobook.currentTime || 0 : 0

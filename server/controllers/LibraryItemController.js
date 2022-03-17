@@ -156,17 +156,6 @@ class LibraryItemController {
     res.json(matchResult)
   }
 
-  // PATCH: api/items/:id/tracks
-  async updateTracks(req, res) {
-    var libraryItem = req.libraryItem
-    var orderedFileData = req.body.orderedFileData
-    Logger.info(`Updating item tracks called ${libraryItem.id}`)
-    libraryItem.media.updateAudioTracks(orderedFileData)
-    await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
-  }
-
   // POST: api/items/batch/delete
   async batchDelete(req, res) {
     if (!req.user.canDelete) {

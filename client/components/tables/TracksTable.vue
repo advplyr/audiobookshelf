@@ -1,14 +1,14 @@
 <template>
   <div class="w-full my-2">
     <div class="w-full bg-primary px-4 md:px-6 py-2 flex items-center cursor-pointer" @click.stop="clickBar">
-      <p class="pr-2 md:pr-4">Audio Tracks</p>
+      <p class="pr-2 md:pr-4">{{ title }}</p>
       <div class="h-5 md:h-7 w-5 md:w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
         <span class="text-sm font-mono">{{ tracks.length }}</span>
       </div>
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
       <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
-      <nuxt-link v-if="userCanUpdate" :to="`/item/${libraryItemId}/edit`" class="mr-2 md:mr-4">
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobookId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
@@ -38,7 +38,7 @@
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/s/item/${libraryItemId}${$encodeUriPath(track.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/item/${audiobookId}${$encodeUriPath(track.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -51,11 +51,15 @@
 <script>
 export default {
   props: {
+    title: {
+      type: String,
+      default: 'Audio Tracks'
+    },
     tracks: {
       type: Array,
       default: () => []
     },
-    libraryItemId: String
+    audiobookId: String
   },
   data() {
     return {

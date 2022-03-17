@@ -139,7 +139,18 @@ export default {
       if (!this.selected) return ''
       var parts = this.selected.split('.')
       if (parts.length > 1) {
-        return this.$decode(parts[1])
+        var decoded = this.$decode(parts[1])
+        if (decoded.startsWith('aut_')) {
+          var author = this.authors.find((au) => au.id == decoded)
+          if (author) return author.name
+          return ''
+        }
+        if (decoded.startsWith('ser_')) {
+          var series = this.series.find((se) => se.id == decoded)
+          if (series) return series.name
+          return ''
+        }
+        return decoded
       }
       var _sel = this.items.find((i) => i.value === this.selected)
       if (!_sel) return ''
@@ -176,7 +187,7 @@ export default {
         } else {
           return {
             text: item.name,
-            value: item.id
+            value: this.$encode(item.id)
           }
         }
       })

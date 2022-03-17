@@ -35,7 +35,7 @@
     </div>
 
     <!-- No progress shown for collapsed series in library -->
-    <div v-if="!booksInSeries" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="userIsRead ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <div v-if="!booksInSeries" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && audiobook && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -214,7 +214,7 @@ export default {
       return this.title
     },
     displayAuthor() {
-      if (this.orderBy === 'media.metadata.authorLF') return this.authorLF
+      if (this.orderBy === 'media.metadata.authorNameLF') return this.authorLF
       return this.author
     },
     displaySortLine() {
@@ -226,13 +226,13 @@ export default {
       return null
     },
     userProgress() {
-      return this.store.getters['user/getUserAudiobook'](this.libraryItemId)
+      return this.store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
     },
     userProgressPercent() {
       return this.userProgress ? this.userProgress.progress || 0 : 0
     },
-    userIsRead() {
-      return this.userProgress ? !!this.userProgress.isRead : false
+    itemIsFinished() {
+      return this.userProgress ? !!this.userProgress.isFinished : false
     },
     showError() {
       return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isInvalid
@@ -302,7 +302,7 @@ export default {
       var items = [
         {
           func: 'toggleRead',
-          text: `Mark as ${this.userIsRead ? 'Not Read' : 'Read'}`
+          text: `Mark as ${this.itemIsFinished ? 'Not Read' : 'Read'}`
         },
         {
           func: 'openCollections',
@@ -401,7 +401,7 @@ export default {
     toggleRead() {
       // More menu func
       var updatePayload = {
-        isRead: !this.userIsRead
+        isFinished: !this.itemIsFinished
       }
       this.isProcessingReadUpdate = true
       var toast = this.$toast || this.$nuxt.$toast
@@ -410,12 +410,12 @@ export default {
         .$patch(`/api/me/audiobook/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          toast.success(`"${this.title}" Marked as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          toast.success(`"${this.title}" Marked as ${updatePayload.isFinished ? 'Read' : 'Not Read'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          toast.error(`Failed to mark as ${updatePayload.isRead ? 'Read' : 'Not Read'}`)
+          toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Read' : 'Not Read'}`)
         })
     },
     itemScanComplete(result) {

@@ -4,7 +4,7 @@
       <p class="pr-4">Other Audio Files</p>
       <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ files.length }}</span>
       <div class="flex-grow" />
-      <nuxt-link v-if="userCanUpdate" :to="`/item/${audiobookId}/edit`" class="mr-4">
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobookId}/edit`" class="mr-4">
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">

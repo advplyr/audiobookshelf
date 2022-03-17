@@ -52,11 +52,11 @@ export default {
           title: 'Files',
           component: 'modals-item-tabs-files'
         },
-        {
-          id: 'download',
-          title: 'Download',
-          component: 'modals-item-tabs-download'
-        },
+        // {
+        //   id: 'download',
+        //   title: 'Download',
+        //   component: 'modals-item-tabs-download'
+        // },
         {
           id: 'match',
           title: 'Match',
