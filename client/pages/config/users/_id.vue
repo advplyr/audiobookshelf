@@ -13,6 +13,9 @@
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
+      <div class="cursor-pointer text-gray-400 hover:text-white" @click="copyToClipboard(userToken)">
+        <p class="py-2 text-xs"><strong class="text-white">API Token: </strong><br /><span class="text-white">{{ userToken }}</span><span class="material-icons pl-2 text-base">content_copy</span></p>
+      </div>
       <div v-if="showExperimentalFeatures" class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div v-if="showExperimentalFeatures" class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats <span class="pl-2 text-xs text-error">(experimental)</span></h1>
@@ -87,6 +90,9 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.user.token
+    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },
@@ -127,6 +133,9 @@ export default {
     }
   },
   methods: {
+    copyToClipboard(str) {
+      this.$copyToClipboard(str, this)
+    },
     async init() {
       this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions`).catch((err) => {
         console.error('Failed to load listening sesions', err)

@@ -125,6 +125,23 @@ Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
   return sanitized
 }
 
+Vue.prototype.$copyToClipboard = (str, ctx) => {
+  return new Promise((resolve) => {
+    if (!navigator.clipboard) {
+      console.warn('Clipboard not supported')
+      return resolve(false)
+    }
+    navigator.clipboard.writeText(str).then(() => {
+      console.log('Clipboard copy success', str)
+      ctx.$toast.success('Copied to clipboard')
+      resolve(true)
+    }, (err) => {
+      console.error('Clipboard copy failed', str, err)
+      resolve(false)
+    })
+  })
+}
+
 
 function xmlToJson(xml) {
   const json = {};
