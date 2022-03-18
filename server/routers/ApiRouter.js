@@ -142,8 +142,10 @@ class ApiRouter {
     //
     // Backup Routes
     //
-    this.router.delete('/backup/:id', BackupController.delete.bind(this))
-    this.router.post('/backup/upload', BackupController.upload.bind(this))
+    this.router.post('/backups', BackupController.create.bind(this))
+    this.router.delete('/backups/:id', BackupController.delete.bind(this))
+    this.router.get('/backups/:id/apply', BackupController.apply.bind(this))
+    this.router.post('/backups/upload', BackupController.upload.bind(this))
 
     //
     // File System Routes

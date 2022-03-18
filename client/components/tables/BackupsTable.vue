@@ -23,7 +23,7 @@
             <div class="w-full flex flex-row items-center justify-center">
               <ui-btn small color="primary" @click="applyBackup(backup)">Apply</ui-btn>
 
-              <a :href="`/metadata/${backup.path.replace(/%/g, '%25').replace(/#/g, '%23')}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
+              <a :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
 
               <span class="material-icons text-xl hover:text-error hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="deleteBackupClick(backup)">delete</span>
             </div>
@@ -42,7 +42,7 @@
       <div v-if="selectedBackup" class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
         <p class="text-error text-lg font-semibold">Important Notice!</p>
         <p class="text-base py-1">Applying a backup will overwrite users, user progress, book details, settings, and covers stored in metadata with the backed up data.</p>
-        <p class="text-base py-1">Backups <strong>do not</strong> modify any files in your library folders, only data in the audiobookshelf created <span class="font-mono">/config</span> and <span class="font-mono">/metadata</span> directories.</p>
+        <p class="text-base py-1">Backups <strong>do not</strong> modify any files in your library folders, only data in the audiobookshelf created <span class="font-mono">/config</span> and <span class="font-mono">/metadata</span> directories. If you have enabled server settings to store cover art and metadata in your library folders then those are not backup up or overwritten.</p>
         <p class="text-base py-1">All clients using your server will be automatically refreshed.</p>
 
         <p class="text-lg text-center my-8">Are you sure you want to apply the backup created on {{ selectedBackup.datePretty }}?</p>
@@ -77,14 +77,24 @@ export default {
   methods: {
     confirm() {
       this.showConfirmApply = false
-      this.$root.socket.once('apply_backup_complete', this.applyBackupComplete)
-      this.$root.socket.emit('apply_backup', this.selectedBackup.id)
+
+      this.$axios
+        .$get(`/api/backups/${this.selectedBackup.id}/apply`)
+        .then(() => {
+          this.isBackingUp = false
+          location.replace('/config/backups?backup=1')
+        })
+        .catch((error) => {
+          this.isBackingUp = false
+          console.error('Failed', error)
+          this.$toast.error('Failed to apply backup')
+        })
     },
     deleteBackupClick(backup) {
       if (confirm(`Are you sure you want to delete backup for ${backup.datePretty}?`)) {
         this.processing = true
         this.$axios
-          .$delete(`/api/backup/${backup.id}`)
+          .$delete(`/api/backups/${backup.id}`)
           .then((backups) => {
             console.log('Backup deleted', backups)
             this.$store.commit('setBackups', backups)
@@ -98,29 +108,24 @@ export default {
           })
       }
     },
-    applyBackupComplete(success) {
-      if (success) {
-        // this.$toast.success('Backup Applied, refresh the page')
-        location.replace('/config/backups?backup=1')
-      } else {
-        this.$toast.error('Failed to apply backup')
-      }
-    },
     applyBackup(backup) {
       this.selectedBackup = backup
       this.showConfirmApply = true
     },
-    backupComplete(backups) {
-      this.isBackingUp = false
-      if (backups) {
-        this.$toast.success('Backup Successful')
-        this.$store.commit('setBackups', backups)
-      } else this.$toast.error('Backup Failed')
-    },
     clickCreateBackup() {
       this.isBackingUp = true
-      this.$root.socket.once('backup_complete', this.backupComplete)
-      this.$root.socket.emit('create_backup')
+      this.$axios
+        .$post('/api/backups')
+        .then((backups) => {
+          this.isBackingUp = false
+          this.$toast.success('Backup Successful')
+          this.$store.commit('setBackups', backups)
+        })
+        .catch((error) => {
+          this.isBackingUp = false
+          console.error('Failed', error)
+          this.$toast.error('Backup Failed')
+        })
     },
     backupUploaded(file) {
       var form = new FormData()
@@ -129,7 +134,7 @@ export default {
       this.processing = true
 
       this.$axios
-        .$post('/api/backup/upload', form)
+        .$post('/api/backups/upload', form)
         .then((result) => {
           console.log('Upload backup result', result)
           this.$store.commit('setBackups', result)

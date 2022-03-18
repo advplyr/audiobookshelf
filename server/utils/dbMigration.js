@@ -373,7 +373,7 @@ function cleanSessionObj(db, userListeningSession) {
   bookMetadata.title = userListeningSession.audiobookTitle || ''
   newPlaybackSession.mediaMetadata = bookMetadata
 
-  return db.sessionsDb.update((record) => record.id === newPlaybackSession.id, () => newPlaybackSession).then((results) => true).catch((error) => {
+  return db.sessionsDb.update((record) => record.id === userListeningSession.id, () => newPlaybackSession).then((results) => true).catch((error) => {
     Logger.error(`[dbMigration] Update Session Failed: ${error}`)
     return false
   })

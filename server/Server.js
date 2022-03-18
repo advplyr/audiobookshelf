@@ -49,7 +49,7 @@ class Server {
 
     this.db = new Db()
     this.auth = new Auth(this.db)
-    this.backupManager = new BackupManager(this.db)
+    this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
     this.watcher = new Watcher()
@@ -158,9 +158,11 @@ class Server {
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
 
-    // TODO: Are these necessary?
+
     // Metadata folder static path
-    // app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
+    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
+
+    // TODO: Are these necessary?
     // Downloads folder static path
     // app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
     // Static folder
@@ -222,9 +224,6 @@ class Server {
 
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
 
-      // TODO: Most of these web socket listeners will be moved to API routes instead
-      //         with the goal of the web socket connection being a nice-to-have not need-to-have
-
       // Scanning
       socket.on('cancel_scan', this.cancelScan.bind(this))
       socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
@@ -236,10 +235,6 @@ class Server {
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
-
-      // Backups
-      socket.on('create_backup', () => this.backupManager.requestCreateBackup(socket))
-      socket.on('apply_backup', (id) => this.backupManager.requestApplyBackup(socket, id))
 
       socket.on('disconnect', () => {
         Logger.removeSocketListener(socket.id)

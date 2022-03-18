@@ -13,11 +13,12 @@ const Logger = require('./Logger')
 const Backup = require('./objects/Backup')
 
 class BackupManager {
-  constructor(db) {
+  constructor(db, emitter) {
     this.BackupPath = Path.join(global.MetadataPath, 'backups')
     this.MetadataBooksPath = Path.join(global.MetadataPath, 'books')
 
     this.db = db
+    this.emitter = emitter
 
     this.scheduleTask = null
 
@@ -104,59 +105,20 @@ class BackupManager {
     return res.json(this.backups.map(b => b.toJSON()))
   }
 
-  async requestCreateBackup(socket) {
-    // Only Root User allowed
-    var client = socket.sheepClient
-    if (!client || !client.user) {
-      Logger.error(`[BackupManager] Invalid user attempting to create backup`)
-      socket.emit('backup_complete', false)
-      return
-    } else if (!client.user.isRoot) {
-      Logger.error(`[BackupManager] Non-Root user attempting to create backup`)
-      socket.emit('backup_complete', false)
-      return
-    }
-
+  async requestCreateBackup(res) {
     var backupSuccess = await this.runBackup()
-    socket.emit('backup_complete', backupSuccess ? this.backups.map(b => b.toJSON()) : false)
+    if (backupSuccess) res.json(this.backups.map(b => b.toJSON()))
+    else res.sendStatus(500)
   }
 
-  async requestApplyBackup(socket, id) {
-    // Only Root User allowed
-    var client = socket.sheepClient
-    if (!client || !client.user) {
-      Logger.error(`[BackupManager] Invalid user attempting to create backup`)
-      socket.emit('apply_backup_complete', false)
-      return
-    } else if (!client.user.isRoot) {
-      Logger.error(`[BackupManager] Non-Root user attempting to create backup`)
-      socket.emit('apply_backup_complete', false)
-      return
-    }
-
-    var backup = this.backups.find(b => b.id === id)
-    if (!backup) {
-      socket.emit('apply_backup_complete', false)
-      return
-    }
+  async requestApplyBackup(backup) {
     const zip = new StreamZip.async({ file: backup.fullPath })
     await zip.extract('config/', global.ConfigPath)
     if (backup.backupMetadataCovers) {
       await zip.extract('metadata-books/', this.MetadataBooksPath)
     }
     await this.db.reinit()
-    socket.emit('apply_backup_complete', true)
-    socket.broadcast.emit('backup_applied')
-  }
-
-  async setLastBackup() {
-    this.backups.sort((a, b) => b.createdAt - a.createdAt)
-    var lastBackup = this.backups.shift()
-
-    const zip = new StreamZip.async({ file: lastBackup.fullPath })
-    await zip.extract('config/', global.ConfigPath)
-    console.log('Set Last Backup')
-    await this.db.reinit()
+    this.emitter('backup_applied')
   }
 
   async loadBackups() {
@@ -178,7 +140,6 @@ class BackupManager {
           } else {
             this.backups.push(backup)
           }
-
 
           Logger.debug(`[BackupManager] Backup found "${backup.id}"`)
           zip.close()
@@ -304,12 +265,14 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      archive.directory(this.db.AudiobooksPath, 'config/audiobooks')
-      archive.directory(this.db.LibrariesPath, 'config/libraries')
-      archive.directory(this.db.SettingsPath, 'config/settings')
+      archive.directory(this.db.LibraryItemsPath, 'config/libraryItems')
       archive.directory(this.db.UsersPath, 'config/users')
       archive.directory(this.db.SessionsPath, 'config/sessions')
+      archive.directory(this.db.LibrariesPath, 'config/libraries')
+      archive.directory(this.db.SettingsPath, 'config/settings')
       archive.directory(this.db.CollectionsPath, 'config/collections')
+      archive.directory(this.db.AuthorsPath, 'config/authors')
+      archive.directory(this.db.SeriesPath, 'config/series')
 
       if (metadataBooksPath) {
         Logger.debug(`[BackupManager] Backing up Metadata Books "${metadataBooksPath}"`)
