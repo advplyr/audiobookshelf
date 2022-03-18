@@ -1,4 +1,5 @@
 const AudioFile = require('../files/AudioFile')
+const AudioTrack = require('../files/AudioTrack')
 
 class PodcastEpisode {
   constructor(episode) {
@@ -36,6 +37,23 @@ class PodcastEpisode {
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
+  }
+
+  get isPlaybackMediaEntity() { return true }
+  get tracks() {
+    return [this.audioFile]
+  }
+
+  // Only checks container format
+  checkCanDirectPlay(payload) {
+    var supportedMimeTypes = payload.supportedMimeTypes || []
+    return supportedMimeTypes.includes(this.audioFile.mimeType)
+  }
+
+  getDirectPlayTracklist(libraryItemId) {
+    var audioTrack = new AudioTrack()
+    audioTrack.setData(libraryItemId, this.audioFile, 0)
+    return [audioTrack]
   }
 }
 module.exports = PodcastEpisode

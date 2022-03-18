@@ -9,7 +9,8 @@ export default class PlayerHandler {
     this.playWhenReady = false
     this.player = null
     this.playerState = 'IDLE'
-    this.currentStreamId = null
+    this.isHlsTranscode = false
+    this.currentSessionId = null
     this.startTime = 0
 
     this.lastSyncTime = 0
@@ -35,11 +36,10 @@ export default class PlayerHandler {
     return this.playerState === 'PLAYING'
   }
 
-  load(libraryItem, playWhenReady, startTime = 0) {
+  load(libraryItem, playWhenReady) {
     if (!this.player) this.switchPlayer()
 
     this.libraryItem = libraryItem
-    this.startTime = startTime
     this.playWhenReady = playWhenReady
     this.prepare()
   }
@@ -125,118 +125,61 @@ export default class PlayerHandler {
     this.ctx.setBufferTime(buffertime)
   }
 
-  async prepare(forceHls = false) {
-    var useHls = false
-
-    var runningTotal = 0
-
-    var audioTracks = (this.libraryItem.media.tracks || []).map((track) => {
-      if (!track.metadata) {
-        console.error('INVALID TRACK', track)
-        return null
-      }
-      var audioTrack = new AudioTrack(track)
-      audioTrack.startOffset = runningTotal
-      audioTrack.contentUrl = `/s/item/${this.libraryItem.id}/${this.ctx.$encodeUriPath(track.metadata.relPath.replace(/^\//, ''))}?token=${this.userToken}`
-      audioTrack.mimeType = this.getMimeTypeForTrack(track)
-      audioTrack.canDirectPlay = !!this.player.playableMimetypes[audioTrack.mimeType]
-
-      runningTotal += audioTrack.duration
-      return audioTrack
+  async prepare(forceTranscode = false) {
+    var payload = {
+      supportedMimeTypes: Object.keys(this.player.playableMimeTypes),
+      mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
+      forceTranscode,
+      forceDirectPlay: this.isCasting // TODO: add transcode support for chromecast
+    }
+    var session = await this.ctx.$axios.$post(`/api/items/${this.libraryItem.id}/play`, payload).catch((error) => {
+      console.error('Failed to start stream', error)
     })
-
-    // All html5 audio player plays use HLS unless experimental features is on
-    if (!this.isCasting) {
-      if (forceHls || !this.ctx.showExperimentalFeatures) {
-        useHls = true
-      } else {
-        // Use HLS if any audio track cannot be direct played
-        useHls = !!audioTracks.find(at => !at.canDirectPlay)
-
-        if (useHls) {
-          console.warn(`[PlayerHandler] An audio track cannot be direct played`, audioTracks.find(at => !at.canDirectPlay))
-        }
-      }
-    }
-
-
-    if (useHls) {
-      var stream = await this.ctx.$axios.$get(`/api/items/${this.libraryItem.id}/stream`).catch((error) => {
-        console.error('Failed to start stream', error)
-      })
-      if (stream) {
-        console.log(`[PlayerHandler] prepare hls stream`, stream)
-        this.setHlsStream(stream)
-      } else {
-        console.error(`[PlayerHandler] Failed to start HLS stream`)
-      }
-    } else {
-      this.setDirectPlay(audioTracks)
-    }
+    this.prepareSession(session)
   }
 
-  getMimeTypeForTrack(track) {
-    var ext = track.metadata.ext
-    if (ext === '.mp3' || ext === '.m4b' || ext === '.m4a') {
-      return 'audio/mpeg'
-    } else if (ext === '.mp4') {
-      return 'audio/mp4'
-    } else if (ext === '.ogg') {
-      return 'audio/ogg'
-    } else if (ext === '.aac' || ext === '.m4p') {
-      return 'audio/aac'
-    } else if (ext === '.flac') {
-      return 'audio/flac'
+  prepareOpenSession(session) { // Session opened on init socket
+    if (!this.player) this.switchPlayer()
+
+    this.libraryItem = session.libraryItem
+    this.playWhenReady = false
+    this.prepareSession(session)
+  }
+
+  prepareSession(session) {
+    this.startTime = session.currentTime
+    this.currentSessionId = session.id
+
+    console.log('[PlayerHandler] Preparing Session', session)
+    var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
+
+    this.ctx.playerLoading = true
+    this.isHlsTranscode = true
+    if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
+      this.isHlsTranscode = false
     }
-    return 'audio/mpeg'
+
+    this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
   }
 
   closePlayer() {
     console.log('[PlayerHandler] Close Player')
+    this.sendCloseSession()
     if (this.player) {
       this.player.destroy()
     }
     this.player = null
     this.playerState = 'IDLE'
     this.libraryItem = null
-    this.currentStreamId = null
     this.startTime = 0
     this.stopPlayInterval()
   }
 
-  prepareStream(stream) {
-    if (!this.player) this.switchPlayer()
-    this.libraryItem = stream.libraryItem
-    this.setHlsStream({
-      streamId: stream.id,
-      streamUrl: stream.clientPlaylistUri,
-      startTime: stream.clientCurrentTime
-    })
-  }
-
-  setHlsStream(stream) {
-    this.currentStreamId = stream.streamId
-    var audioTrack = new AudioTrack({
-      duration: this.libraryItem.media.duration,
-      contentUrl: stream.streamUrl + '?token=' + this.userToken,
-      mimeType: 'application/vnd.apple.mpegurl'
-    })
-    this.startTime = stream.startTime
-    this.ctx.playerLoading = true
-    this.player.set(this.libraryItem, [audioTrack], this.currentStreamId, stream.startTime, this.playWhenReady)
-  }
-
-  setDirectPlay(audioTracks) {
-    this.currentStreamId = null
-    this.ctx.playerLoading = true
-    this.player.set(this.libraryItem, audioTracks, null, this.startTime, this.playWhenReady)
-  }
-
   resetStream(startTime, streamId) {
-    if (this.currentStreamId === streamId) {
+    if (this.isHlsTranscode && this.currentSessionId === streamId) {
       this.player.resetStream(startTime)
     } else {
-      console.warn('resetStream mismatch streamId', this.currentStreamId, streamId)
+      console.warn('resetStream mismatch streamId', this.currentSessionId, streamId)
     }
   }
 
@@ -254,9 +197,23 @@ export default class PlayerHandler {
       this.listeningTimeSinceSync += exactTimeElapsed
       if (this.listeningTimeSinceSync >= 5) {
         this.sendProgressSync(currentTime)
-        this.listeningTimeSinceSync = 0
       }
     }, 1000)
+  }
+
+  sendCloseSession() {
+    var syncData = null
+    if (this.player) {
+      var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
+      syncData = {
+        timeListened: listeningTimeToAdd,
+        currentTime: this.player.getCurrentTime()
+      }
+    }
+    this.listeningTimeSinceSync = 0
+    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 1000 }).catch((error) => {
+      console.error('Failed to close session', error)
+    })
   }
 
   sendProgressSync(currentTime) {
@@ -264,33 +221,15 @@ export default class PlayerHandler {
     if (diffSinceLastSync < 1) return
 
     this.lastSyncTime = currentTime
-    if (this.currentStreamId) { // Updating stream progress (HLS stream)
-      var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
-      var syncData = {
-        timeListened: listeningTimeToAdd,
-        currentTime,
-        streamId: this.currentStreamId,
-        audiobookId: this.libraryItem.id
-      }
-      this.ctx.$axios.$post('/api/syncStream', syncData, { timeout: 1000 }).catch((error) => {
-        console.error('Failed to update stream progress', error)
-      })
-    } else {
-      // Direct play via chromecast does not yet have backend stream session model
-      //   so the progress update for the libraryItem is updated this way (instead of through the stream)
-      var duration = this.getDuration()
-      var syncData = {
-        totalDuration: duration,
-        currentTime,
-        progress: duration > 0 ? currentTime / duration : 0,
-        isRead: false,
-        audiobookId: this.libraryItem.id,
-        lastUpdate: Date.now()
-      }
-      this.ctx.$axios.$post('/api/syncLocal', syncData, { timeout: 1000 }).catch((error) => {
-        console.error('Failed to update local progress', error)
-      })
+    var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
+    var syncData = {
+      timeListened: listeningTimeToAdd,
+      currentTime
     }
+    this.listeningTimeSinceSync = 0
+    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 1000 }).catch((error) => {
+      console.error('Failed to update session progress', error)
+    })
   }
 
   stopPlayInterval() {

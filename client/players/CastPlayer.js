@@ -12,17 +12,19 @@ export default class CastPlayer extends EventEmitter {
     this.audiobook = null
     this.audioTracks = []
     this.currentTrackIndex = 0
-    this.hlsStreamId = null
+    this.isHlsTranscode = null
     this.currentTime = 0
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
 
-    this.playableMimetypes = {}
+    // TODO: Use canDisplayType on receiver to check mime types
+    this.playableMimeTypes = {}
 
     this.coverUrl = ''
     this.castPlayerState = 'IDLE'
 
     // Supported audio codecs for chromecast
+
     this.supportedAudioCodecs = ['opus', 'mp3', 'aac', 'flac', 'webma', 'wav']
 
     this.initialize()
@@ -68,10 +70,10 @@ export default class CastPlayer extends EventEmitter {
     }
   }
 
-  async set(audiobook, tracks, hlsStreamId, startTime, playWhenReady = false) {
+  async set(audiobook, tracks, isHlsTranscode, startTime, playWhenReady = false) {
     this.audiobook = audiobook
     this.audioTracks = tracks
-    this.hlsStreamId = hlsStreamId
+    this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
 
     this.currentTime = startTime

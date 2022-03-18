@@ -1,6 +1,7 @@
 const Path = require('path')
 const AudioFile = require('../files/AudioFile')
 const { areEquivalent, copyValue } = require('../../utils/index')
+const AudioTrack = require('../files/AudioTrack')
 
 class Audiobook {
   constructor(audiobook) {
@@ -74,6 +75,7 @@ class Audiobook {
     }
   }
 
+  get isPlaybackMediaEntity() { return true }
   get tracks() {
     return this.audioFiles.filter(af => !af.exclude && !af.invalid)
   }
@@ -213,6 +215,26 @@ class Audiobook {
 
   removeFileWithInode(inode) {
     this.audioFiles = this.audioFiles.filter(af => af.ino !== inode)
+  }
+
+  // Only checks container format
+  checkCanDirectPlay(payload) {
+    var supportedMimeTypes = payload.supportedMimeTypes || []
+    return !this.tracks.some((t) => !supportedMimeTypes.includes(t.mimeType))
+  }
+
+  getDirectPlayTracklist(libraryItemId) {
+    var tracklist = []
+
+    var startOffset = 0
+    this.tracks.forEach((audioFile) => {
+      var audioTrack = new AudioTrack()
+      audioTrack.setData(libraryItemId, audioFile, startOffset)
+      startOffset += audioTrack.duration
+      tracklist.push(audioTrack)
+    })
+
+    return tracklist
   }
 }
 module.exports = Audiobook

@@ -108,8 +108,6 @@ class StreamManager {
 
     var stream = await this.openStream(client, libraryItem)
     this.db.updateUserStream(client.user.id, stream.id)
-
-    this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   async closeStreamRequest(socket) {
@@ -125,8 +123,6 @@ class StreamManager {
     client.user.stream = null
     client.stream = null
     this.db.updateUserStream(client.user.id, null)
-
-    this.emitter('user_stream_update', client.user.toJSONForPublic(this.streams))
   }
 
   async closeStreamApiRequest(userId, streamId) {

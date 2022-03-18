@@ -24,11 +24,18 @@ const BookshelfView = {
   TITLES: 1
 }
 
+const PlayMethod = {
+  DIRECTPLAY: 0,
+  DIRECTSTREAM: 1,
+  TRANSCODE: 2
+}
+
 const Constants = {
   SupportedFileTypes,
   DownloadStatus,
   BookCoverAspectRatio,
-  BookshelfView
+  BookshelfView,
+  PlayMethod
 }
 
 const KeyNames = {

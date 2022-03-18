@@ -35,7 +35,6 @@ class Db {
 
     this.libraryItems = []
     this.users = []
-    this.sessions = []
     this.libraries = []
     this.settings = []
     this.collections = []
@@ -263,7 +262,7 @@ class Db {
       Logger.debug(`[DB] Inserted ${results.inserted} ${entityName}`)
 
       var arrayKey = this.getEntityArrayKey(entityName)
-      this[arrayKey] = this[arrayKey].concat(entities)
+      if (this[arrayKey]) this[arrayKey] = this[arrayKey].concat(entities)
       return true
     }).catch((error) => {
       Logger.error(`[DB] Failed to insert ${entityName}`, error)
@@ -277,7 +276,7 @@ class Db {
       Logger.debug(`[DB] Inserted ${results.inserted} ${entityName}`)
 
       var arrayKey = this.getEntityArrayKey(entityName)
-      this[arrayKey].push(entity)
+      if (this[arrayKey]) this[arrayKey].push(entity)
       return true
     }).catch((error) => {
       Logger.error(`[DB] Failed to insert ${entityName}`, error)
@@ -294,10 +293,12 @@ class Db {
     }).then((results) => {
       Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
       var arrayKey = this.getEntityArrayKey(entityName)
-      this[arrayKey] = this[arrayKey].map(e => {
-        if (entityIds.includes(e.id)) return entities.find(_e => _e.id === e.id)
-        return e
-      })
+      if (this[arrayKey]) {
+        this[arrayKey] = this[arrayKey].map(e => {
+          if (entityIds.includes(e.id)) return entities.find(_e => _e.id === e.id)
+          return e
+        })
+      }
       return true
     }).catch((error) => {
       Logger.error(`[DB] Update ${entityName} Failed: ${error}`)
@@ -321,9 +322,11 @@ class Db {
       }
 
       var arrayKey = this.getEntityArrayKey(entityName)
-      this[arrayKey] = this[arrayKey].map(e => {
-        return e.id === entity.id ? entity : e
-      })
+      if (this[arrayKey]) {
+        this[arrayKey] = this[arrayKey].map(e => {
+          return e.id === entity.id ? entity : e
+        })
+      }
       return true
     }).catch((error) => {
       Logger.error(`[DB] Update entity ${entityName} Failed: ${error}`)
@@ -336,9 +339,11 @@ class Db {
     return entityDb.delete((record) => record.id === entityId).then((results) => {
       Logger.debug(`[DB] Deleted entity ${entityName}: ${results.deleted}`)
       var arrayKey = this.getEntityArrayKey(entityName)
-      this[arrayKey] = this[arrayKey].filter(e => {
-        return e.id !== entityId
-      })
+      if (this[arrayKey]) {
+        this[arrayKey] = this[arrayKey].filter(e => {
+          return e.id !== entityId
+        })
+      }
     }).catch((error) => {
       Logger.error(`[DB] Remove entity ${entityName} Failed: ${error}`)
     })

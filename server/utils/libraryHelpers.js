@@ -28,11 +28,10 @@ module.exports = {
       else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
-          var userAudiobook = user.getLibraryItemProgress(li.id)
-          var isRead = userAudiobook && userAudiobook.isRead
-          if (filter === 'Read' && isRead) return true
-          if (filter === 'Unread' && !isRead) return true
-          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
+          var itemProgress = user.getLibraryItemProgress(li.id)
+          if (filter === 'Finished' && (itemProgress && itemProgress.isFinished)) return true
+          if (filter === 'Not Started' && !itemProgress) return true
+          if (filter === 'In Progress' && (itemProgress && itemProgress.inProgress)) return true
           return false
         })
       } else if (group === 'languages') {
@@ -43,43 +42,6 @@ module.exports = {
         // TODO: Update filter for issues
         return ab.isMissing
         // return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
-      })
-    }
-
-    return filtered
-  },
-
-  getFiltered(audiobooks, filterBy, user) {
-    var filtered = audiobooks
-
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'languages']
-    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
-    if (group) {
-      var filterVal = filterBy.replace(`${group}.`, '')
-      var filter = this.decode(filterVal)
-      if (group === 'genres') filtered = filtered.filter(ab => ab.book && ab.book.genres.includes(filter))
-      else if (group === 'tags') filtered = filtered.filter(ab => ab.tags.includes(filter))
-      else if (group === 'series') {
-        if (filter === 'No Series') filtered = filtered.filter(ab => ab.book && !ab.book.series)
-        else filtered = filtered.filter(ab => ab.book && ab.book.series === filter)
-      }
-      else if (group === 'authors') filtered = filtered.filter(ab => ab.book && ab.book.authorFL && ab.book.authorFL.split(', ').includes(filter))
-      else if (group === 'narrators') filtered = filtered.filter(ab => ab.book && ab.book.narratorFL && ab.book.narratorFL.split(', ').includes(filter))
-      else if (group === 'progress') {
-        filtered = filtered.filter(ab => {
-          var userAudiobook = user.getLibraryItemProgress(ab.id)
-          var isRead = userAudiobook && userAudiobook.isRead
-          if (filter === 'Read' && isRead) return true
-          if (filter === 'Unread' && !isRead) return true
-          if (filter === 'In Progress' && (userAudiobook && !userAudiobook.isRead && userAudiobook.progress > 0)) return true
-          return false
-        })
-      } else if (group === 'languages') {
-        filtered = filtered.filter(ab => ab.book && ab.book.language === filter)
-      }
-    } else if (filterBy === 'issues') {
-      filtered = filtered.filter(ab => {
-        return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
       })
     }
 
@@ -160,26 +122,27 @@ module.exports = {
   },
 
   getSeriesWithProgressFromBooks(user, books) {
-    var _series = {}
-    books.forEach((audiobook) => {
-      if (audiobook.book.series) {
-        var bookWithUserAb = { userAudiobook: user.getLibraryItemProgress(audiobook.id), book: audiobook }
-        if (!_series[audiobook.book.series]) {
-          _series[audiobook.book.series] = {
-            id: audiobook.book.series,
-            name: audiobook.book.series,
-            type: 'series',
-            books: [bookWithUserAb]
-          }
-        } else {
-          _series[audiobook.book.series].books.push(bookWithUserAb)
-        }
-      }
-    })
-    return Object.values(_series).map((series) => {
-      series.books = naturalSort(series.books).asc(ab => ab.book.book.volumeNumber)
-      return series
-    }).filter((series) => series.books.some((book) => book.userAudiobook && book.userAudiobook.isRead))
+    return []
+    // var _series = {}
+    // books.forEach((audiobook) => {
+    //   if (audiobook.book.series) {
+    //     var bookWithUserAb = { userAudiobook: user.getLibraryItemProgress(audiobook.id), book: audiobook }
+    //     if (!_series[audiobook.book.series]) {
+    //       _series[audiobook.book.series] = {
+    //         id: audiobook.book.series,
+    //         name: audiobook.book.series,
+    //         type: 'series',
+    //         books: [bookWithUserAb]
+    //       }
+    //     } else {
+    //       _series[audiobook.book.series].books.push(bookWithUserAb)
+    //     }
+    //   }
+    // })
+    // return Object.values(_series).map((series) => {
+    //   series.books = naturalSort(series.books).asc(ab => ab.book.book.volumeNumber)
+    //   return series
+    // }).filter((series) => series.books.some((book) => book.userAudiobook && book.userAudiobook.isRead))
   },
 
   sortSeriesBooks(books, seriesId, minified = false) {
@@ -196,8 +159,9 @@ module.exports = {
 
   getItemsWithUserProgress(user, libraryItems) {
     return libraryItems.map(li => {
+      var itemProgress = user.getLibraryItemProgress(li.id)
       return {
-        userProgress: user.getLibraryItemProgress(li.id),
+        userProgress: itemProgress ? itemProgress.toJSON() : null,
         libraryItem: li
       }
     }).filter(b => !!b.userProgress)

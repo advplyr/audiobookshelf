@@ -33,20 +33,6 @@ class Scanner {
     this.bookFinder = new BookFinder()
   }
 
-  getCoverDirectory(audiobook) {
-    if (this.db.serverSettings.storeCoverWithBook) {
-      return {
-        fullPath: audiobook.fullPath,
-        relPath: '/s/book/' + audiobook.id
-      }
-    } else {
-      return {
-        fullPath: Path.posix.join(this.BookMetadataPath, audiobook.id),
-        relPath: Path.posix.join('/metadata', 'books', audiobook.id)
-      }
-    }
-  }
-
   isLibraryScanning(libraryId) {
     return this.librariesScanning.find(ls => ls.id === libraryId)
   }

@@ -117,6 +117,14 @@ class Podcast {
     return null
   }
 
+  getMediaEntityById(entityId) {
+    return this.episodes.find(ep => ep.id === entityId)
+  }
+  getPlaybackMediaEntity() { // Get first playback media entity
+    if (!this.episodes.length) return null
+    return this.episodes[0]
+  }
+
   setData(scanMediaMetadata) {
     this.metadata = new PodcastMetadata()
     this.metadata.setData(scanMediaMetadata)
@@ -129,10 +137,6 @@ class Podcast {
   searchQuery(query) {
     var payload = this.metadata.searchQuery(query)
     return payload || {}
-  }
-
-  getDirectPlayTracklist(options) {
-
   }
 }
 module.exports = Podcast

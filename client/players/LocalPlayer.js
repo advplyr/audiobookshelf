@@ -11,7 +11,7 @@ export default class LocalPlayer extends EventEmitter {
     this.libraryItem = null
     this.audioTracks = []
     this.currentTrackIndex = 0
-    this.hlsStreamId = null
+    this.isHlsTranscode = null
     this.hlsInstance = null
     this.usingNativeplayer = false
     this.startTime = 0
@@ -19,7 +19,7 @@ export default class LocalPlayer extends EventEmitter {
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
 
-    this.playableMimetypes = {}
+    this.playableMimeTypes = {}
 
     this.initialize()
   }
@@ -48,9 +48,9 @@ export default class LocalPlayer extends EventEmitter {
 
     var mimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac']
     mimeTypes.forEach((mt) => {
-      this.playableMimetypes[mt] = this.player.canPlayType(mt)
+      this.playableMimeTypes[mt] = this.player.canPlayType(mt)
     })
-    console.log(`[LocalPlayer] Supported mime types`, this.playableMimetypes)
+    console.log(`[LocalPlayer] Supported mime types`, this.playableMimeTypes)
   }
 
   evtPlay() {
@@ -80,7 +80,7 @@ export default class LocalPlayer extends EventEmitter {
     this.emit('error', error)
   }
   evtLoadedMetadata(data) {
-    if (!this.hlsStreamId) {
+    if (!this.isHlsTranscode) {
       this.player.currentTime = this.trackStartTime
     }
 
@@ -97,23 +97,16 @@ export default class LocalPlayer extends EventEmitter {
   }
 
   destroy() {
-    if (this.hlsStreamId) {
-      // Close HLS Stream
-      console.log('Closing HLS Streams', this.hlsStreamId)
-      this.ctx.$axios.$post(`/api/streams/${this.hlsStreamId}/close`).catch((error) => {
-        console.error('Failed to request close hls stream', this.hlsStreamId, error)
-      })
-    }
     this.destroyHlsInstance()
     if (this.player) {
       this.player.remove()
     }
   }
 
-  set(libraryItem, tracks, hlsStreamId, startTime, playWhenReady = false) {
+  set(libraryItem, tracks, isHlsTranscode, startTime, playWhenReady = false) {
     this.libraryItem = libraryItem
     this.audioTracks = tracks
-    this.hlsStreamId = hlsStreamId
+    this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
     this.startTime = startTime
 
@@ -121,7 +114,7 @@ export default class LocalPlayer extends EventEmitter {
       this.destroyHlsInstance()
     }
 
-    if (this.hlsStreamId) {
+    if (this.isHlsTranscode) {
       this.setHlsStream()
     } else {
       this.setDirectPlay()
@@ -198,7 +191,7 @@ export default class LocalPlayer extends EventEmitter {
   async resetStream(startTime) {
     this.destroyHlsInstance()
     await new Promise((resolve) => setTimeout(resolve, 1000))
-    this.set(this.libraryItem, this.audioTracks, this.hlsStreamId, startTime, true)
+    this.set(this.libraryItem, this.audioTracks, this.isHlsTranscode, startTime, true)
   }
 
   playPause() {
@@ -234,7 +227,7 @@ export default class LocalPlayer extends EventEmitter {
 
   seek(time) {
     if (!this.player) return
-    if (this.hlsStreamId) {
+    if (this.isHlsTranscode) {
       // Seeking HLS stream
       var offsetTime = time - (this.currentTrack.startOffset || 0)
       this.player.currentTime = Math.max(0, offsetTime)

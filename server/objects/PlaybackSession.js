@@ -9,8 +9,11 @@ class PlaybackSession {
     this.id = null
     this.userId = null
     this.libraryItemId = null
+    this.mediaEntityId = null
+
     this.mediaType = null
     this.mediaMetadata = null
+    this.duration = null
 
     this.playMethod = null
 
@@ -20,6 +23,12 @@ class PlaybackSession {
     this.timeListening = null
     this.startedAt = null
     this.updatedAt = null
+
+    // Not saved in DB
+    this.lastSave = 0
+    this.audioTracks = []
+    this.currentTime = 0
+    this.stream = null
 
     if (session) {
       this.construct(session)
@@ -32,8 +41,10 @@ class PlaybackSession {
       sessionType: this.sessionType,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
+      mediaEntityId: this.mediaEntityId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      duration: this.duration,
       playMethod: this.playMethod,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
@@ -43,12 +54,35 @@ class PlaybackSession {
     }
   }
 
+  toJSONForClient() {
+    return {
+      id: this.id,
+      sessionType: this.sessionType,
+      userId: this.userId,
+      libraryItemId: this.libraryItemId,
+      mediaEntityId: this.mediaEntityId,
+      mediaType: this.mediaType,
+      mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      duration: this.duration,
+      playMethod: this.playMethod,
+      date: this.date,
+      dayOfWeek: this.dayOfWeek,
+      timeListening: this.timeListening,
+      lastUpdate: this.lastUpdate,
+      updatedAt: this.updatedAt,
+      audioTracks: this.audioTracks.map(at => at.toJSON()),
+      currentTime: this.currentTime
+    }
+  }
+
   construct(session) {
     this.id = session.id
     this.sessionType = session.sessionType
     this.userId = session.userId
     this.libraryItemId = session.libraryItemId
+    this.mediaEntityId = session.mediaEntityId
     this.mediaType = session.mediaType
+    this.duration = session.duration
     this.playMethod = session.playMethod
 
     this.mediaMetadata = null
@@ -68,30 +102,38 @@ class PlaybackSession {
     this.updatedAt = session.updatedAt || null
   }
 
-  setData(libraryItem, user) {
-    this.id = getId('ls')
+  get progress() { // Value between 0 and 1
+    if (!this.duration) return 0
+    return Math.max(0, Math.min(this.currentTime / this.duration, 1))
+  }
+
+  setData(libraryItem, mediaEntity, user) {
+    this.id = getId('play')
     this.userId = user.id
     this.libraryItemId = libraryItem.id
+    this.mediaEntityId = mediaEntity.id
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
-    this.playMethod = PlayMethod.TRANSCODE
+    this.duration = mediaEntity.duration
 
     this.timeListening = 0
+    this.date = date.format(new Date(), 'YYYY-MM-DD')
+    this.dayOfWeek = date.format(new Date(), 'dddd')
     this.startedAt = Date.now()
     this.updatedAt = Date.now()
   }
 
   addListeningTime(timeListened) {
-    if (timeListened && !isNaN(timeListened)) {
-      if (!this.date) {
-        // Set date info on first listening update
-        this.date = date.format(new Date(), 'YYYY-MM-DD')
-        this.dayOfWeek = date.format(new Date(), 'dddd')
-      }
+    if (!timeListened || isNaN(timeListened)) return
 
-      this.timeListening += timeListened
-      this.updatedAt = Date.now()
+    if (!this.date) {
+      // Set date info on first listening update
+      this.date = date.format(new Date(), 'YYYY-MM-DD')
+      this.dayOfWeek = date.format(new Date(), 'dddd')
     }
+
+    this.timeListening += timeListened
+    this.updatedAt = Date.now()
   }
 
   // New date since start of listening session

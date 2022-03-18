@@ -142,9 +142,16 @@ class LibraryItemController {
     res.sendStatus(500)
   }
 
-  // GET: api/items/:id/play
+
+  // POST: api/items/:id/play
   startPlaybackSession(req, res) {
-    res.sendStatus(200)
+    var playbackMediaEntity = req.libraryItem.getPlaybackMediaEntity()
+    if (!playbackMediaEntity) {
+      Logger.error(`[LibraryItemController] startPlaybackSession no playback media entity ${req.libraryItem.id}`)
+      return res.sendStatus(404)
+    }
+    const options = req.body || {}
+    this.playbackSessionManager.startSessionRequest(req.user, req.libraryItem, playbackMediaEntity, options, res)
   }
 
   // POST api/items/:id/match

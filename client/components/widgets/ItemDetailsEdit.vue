@@ -276,7 +276,7 @@ export default {
         if (!matchingItem) return false
         for (var key in item) {
           if (item[key] !== matchingItem[key]) {
-            console.log('Object array item keys changed', key, item[key], matchingItem[key])
+            // console.log('Object array item keys changed', key, item[key], matchingItem[key])
             return false
           }
         }

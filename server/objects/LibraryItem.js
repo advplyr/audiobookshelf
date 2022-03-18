@@ -434,8 +434,8 @@ class LibraryItem {
     return this.media.searchQuery(query)
   }
 
-  getDirectPlayTracklist(options) {
-    return this.media.getDirectPlayTracklist(options)
+  getPlaybackMediaEntity() {
+    return this.media.getPlaybackMediaEntity()
   }
 }
 module.exports = LibraryItem

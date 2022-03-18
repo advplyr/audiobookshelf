@@ -6,6 +6,26 @@ const { getId } = require('../utils/index')
 class UserController {
   constructor() { }
 
+  findAll(req, res) {
+    if (!req.user.isRoot) return res.sendStatus(403)
+    var users = this.db.users.map(u => this.userJsonWithItemProgressDetails(u))
+    res.json(users)
+  }
+
+  findOne(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error('User other than root attempting to get user', req.user)
+      return res.sendStatus(403)
+    }
+
+    var user = this.db.users.find(u => u.id === req.params.id)
+    if (!user) {
+      return res.sendStatus(404)
+    }
+
+    res.json(this.userJsonWithItemProgressDetails(user))
+  }
+
   async create(req, res) {
     if (!req.user.isRoot) {
       Logger.warn('Non-root user attempted to create user', req.user)
@@ -34,26 +54,6 @@ class UserController {
     } else {
       return res.status(500).send('Failed to save new user')
     }
-  }
-
-  findAll(req, res) {
-    if (!req.user.isRoot) return res.sendStatus(403)
-    var users = this.db.users.map(u => this.userJsonWithBookProgressDetails(u))
-    res.json(users)
-  }
-
-  findOne(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to get user', req.user)
-      return res.sendStatus(403)
-    }
-
-    var user = this.db.users.find(u => u.id === req.params.id)
-    if (!user) {
-      return res.sendStatus(404)
-    }
-
-    res.json(this.userJsonWithBookProgressDetails(user))
   }
 
   async update(req, res) {

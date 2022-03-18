@@ -8,7 +8,6 @@ class User {
     this.username = null
     this.pash = null
     this.type = null
-    this.stream = null
     this.token = null
     this.isActive = true
     this.isLocked = false
@@ -79,7 +78,6 @@ class User {
       username: this.username,
       pash: this.pash,
       type: this.type,
-      stream: this.stream,
       token: this.token,
       libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
@@ -98,7 +96,6 @@ class User {
       id: this.id,
       username: this.username,
       type: this.type,
-      stream: this.stream,
       token: this.token,
       libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
       isActive: this.isActive,
@@ -112,13 +109,14 @@ class User {
   }
 
   // Data broadcasted
-  toJSONForPublic(streams) {
-    var stream = this.stream && streams ? streams.find(s => s.id === this.stream) : null
+  toJSONForPublic(sessions, libraryItems) {
+    var session = sessions ? sessions.find(s => s.userId === this.id) : null
     return {
       id: this.id,
       username: this.username,
       type: this.type,
-      stream: stream ? stream.toJSON() : null,
+      session: session ? session.toJSONForClient() : null,
+      mostRecent: this.getMostRecentItemProgress(libraryItems),
       lastSeen: this.lastSeen,
       createdAt: this.createdAt
     }
@@ -129,12 +127,11 @@ class User {
     this.username = user.username
     this.pash = user.pash
     this.type = user.type
-    this.stream = user.stream || null
     this.token = user.token
 
     this.libraryItemProgress = []
     if (user.libraryItemProgress) {
-      this.libraryItemProgress = user.libraryItemProgress.map(li => new LibraryItemProgress(li))
+      this.libraryItemProgress = user.libraryItemProgress.map(li => new LibraryItemProgress(li)).filter(lip => lip.id)
     }
 
     this.bookmarks = []
@@ -195,13 +192,22 @@ class User {
     return hasUpdates
   }
 
-  updateAudiobookProgressFromStream(stream) {
-    // if (!this.audiobooks) this.audiobooks = {}
-    // if (!this.audiobooks[stream.audiobookId]) {
-    //   this.audiobooks[stream.audiobookId] = new UserAudiobookData()
-    // }
-    // this.audiobooks[stream.audiobookId].updateProgressFromStream(stream)
-    // return this.audiobooks[stream.audiobookId]
+  getMostRecentItemProgress(libraryItems) {
+    if (!this.libraryItemProgress.length) return null
+    var lip = this.libraryItemProgress.map(lip => lip.toJSON())
+    lip.sort((a, b) => b.lastUpdate - a.lastUpdate)
+    var mostRecentWithLip = lip.find(li => libraryItems.find(_li => _li.id === li.id))
+    if (!mostRecentWithLip) return null
+    var libraryItem = libraryItems.find(li => li.id === mostRecentWithLip.id)
+    return {
+      ...mostRecentWithLip,
+      media: libraryItem.media.toJSONExpanded()
+    }
+  }
+
+  getLibraryItemProgress(libraryItemId) {
+    if (!this.libraryItemProgress) return null
+    return this.libraryItemProgress.find(lip => lip.id === libraryItemId)
   }
 
   createUpdateLibraryItemProgress(libraryItemId, updatePayload) {
@@ -252,12 +258,6 @@ class User {
     if (this.permissions.accessAllLibraries) return true
     if (!this.librariesAccessible) return false
     return this.librariesAccessible.includes(libraryId)
-  }
-
-  getLibraryItemProgress(libraryItemId) {
-    if (!this.libraryItemProgress) return null
-    var progress = this.libraryItemProgress.find(lip => lip.id === libraryItemId)
-    return progress ? progress.toJSON() : null
   }
 
   createBookmark({ libraryItemId, time, title }) {

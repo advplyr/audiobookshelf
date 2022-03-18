@@ -161,10 +161,12 @@ export default {
       return this._libraryItem.libraryId
     },
     hasEbook() {
-      return this.media.numEbooks
+      if (!this.media.ebooks) return 0
+      return this.media.ebooks.length
     },
-    hasTracks() {
-      return this.media.numTracks
+    hasAudiobook() {
+      if (!this.media.audiobooks) return 0
+      return this.media.audiobooks.length
     },
     processingBatch() {
       return this.store.state.processingBatch
@@ -244,7 +246,7 @@ export default {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && this.hasTracks && !this.isStreaming
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && this.hasAudiobook && !this.isStreaming
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
@@ -310,7 +312,7 @@ export default {
         }
       ]
       if (this.userCanUpdate) {
-        if (this.hasTracks) {
+        if (this.hasAudiobook) {
           items.push({
             func: 'showEditModalTracks',
             text: 'Tracks'

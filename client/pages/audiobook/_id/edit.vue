@@ -95,7 +95,7 @@ export default {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
-    var payload = await app.$axios.$get(`/api/audiobooks/${params.id}/item?expanded=1`).catch((error) => {
+    var payload = await app.$axios.$get(`/api/entities/${params.id}/item?expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -103,7 +103,7 @@ export default {
       console.error('Not found...', params.id)
       return redirect('/')
     }
-    const audiobook = payload.audiobook
+    const audiobook = payload.mediaEntity
     return {
       audiobook,
       libraryItem: payload.libraryItem,
@@ -218,7 +218,7 @@ export default {
 
       this.saving = true
       this.$axios
-        .$patch(`/api/audiobooks/${this.audiobook.id}/tracks`, { orderedFileData })
+        .$patch(`/api/entities/${this.audiobook.id}/tracks`, { orderedFileData })
         .then((data) => {
           console.log('Finished patching files', data)
           this.saving = false

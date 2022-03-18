@@ -132,9 +132,6 @@ async function recurseFiles(path, relPathToReplace = null) {
   // Sort from least deep to most
   list.sort((a, b) => a.deep - b.deep)
 
-  // list.forEach((l) => {
-  //   console.log(`${l.deep}: ${l.path}`)
-  // })
   return list
 }
 module.exports.recurseFiles = recurseFiles

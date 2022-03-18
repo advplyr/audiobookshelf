@@ -64,7 +64,8 @@ class AudioFile {
       channelLayout: this.channelLayout,
       chapters: this.chapters,
       embeddedCoverArt: this.embeddedCoverArt,
-      metaTags: this.metaTags ? this.metaTags.toJSON() : {}
+      metaTags: this.metaTags ? this.metaTags.toJSON() : {},
+      mimeType: this.mimeType
     }
   }
 
@@ -72,9 +73,6 @@ class AudioFile {
     this.index = data.index
     this.ino = data.ino
     this.metadata = new FileMetadata(data.metadata || {})
-    if (!this.metadata.toJSON) {
-      console.error('No metadata tojosnm\n\n\n\n\n\n', this)
-    }
     this.addedAt = data.addedAt
     this.updatedAt = data.updatedAt
     this.manuallyVerified = !!data.manuallyVerified
@@ -101,6 +99,22 @@ class AudioFile {
     this.embeddedCoverArt = data.embeddedCoverArt || null
 
     this.metaTags = new AudioMetaTags(data.metaTags || {})
+  }
+
+  get mimeType() {
+    var ext = this.metadata.ext
+    if (ext === '.mp3' || ext === '.m4b' || ext === '.m4a') {
+      return 'audio/mpeg'
+    } else if (ext === '.mp4') {
+      return 'audio/mp4'
+    } else if (ext === '.ogg') {
+      return 'audio/ogg'
+    } else if (ext === '.aac' || ext === '.m4p') {
+      return 'audio/aac'
+    } else if (ext === '.flac') {
+      return 'audio/flac'
+    }
+    return 'audio/mpeg'
   }
 
   // New scanner creates AudioFile from AudioFileScanner

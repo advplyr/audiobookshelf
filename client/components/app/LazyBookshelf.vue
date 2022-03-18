@@ -300,11 +300,11 @@ export default {
       var firstBookPage = Math.floor(firstBookIndex / this.booksPerFetch)
       var lastBookPage = Math.floor(lastBookIndex / this.booksPerFetch)
       if (!this.pagesLoaded[firstBookPage]) {
-        console.log('Must load next batch', firstBookPage, 'book index', firstBookIndex)
+        // console.log('Must load next batch', firstBookPage, 'book index', firstBookIndex)
         this.loadPage(firstBookPage)
       }
       if (!this.pagesLoaded[lastBookPage]) {
-        console.log('Must load last next batch', lastBookPage, 'book index', lastBookIndex)
+        // console.log('Must load last next batch', lastBookPage, 'book index', lastBookIndex)
         this.loadPage(lastBookPage)
       }
 

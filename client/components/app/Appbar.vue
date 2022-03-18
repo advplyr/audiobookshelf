@@ -175,8 +175,8 @@ export default {
         })
     },
     batchDeleteClick() {
-      var audiobookText = this.numLibraryItemsSelected > 1 ? `these ${this.numLibraryItemsSelected} audiobooks` : 'this audiobook'
-      var confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the audiobooks from AudioBookshelf`
+      var audiobookText = this.numLibraryItemsSelected > 1 ? `these ${this.numLibraryItemsSelected} items` : 'this item'
+      var confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the items from Audiobookshelf`
       if (confirm(confirmMsg)) {
         this.processingBatchDelete = true
         this.$store.commit('setProcessingBatch', true)

@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 const njodb = require("njodb")
 
 const { SupportedEbookTypes } = require('./globals')
+const { PlayMethod } = require('./constants')
 const { getId } = require('./index')
 const Logger = require('../Logger')
 
@@ -335,6 +336,8 @@ function cleanSessionObj(db, userListeningSession) {
   newPlaybackSession.mediaType = 'book'
   newPlaybackSession.updatedAt = userListeningSession.lastUpdate
   newPlaybackSession.libraryItemId = userListeningSession.audiobookId
+  newPlaybackSession.mediaEntityId = userListeningSession.audiobookId
+  newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 
   // We only have title to transfer over nicely
   var bookMetadata = new BookMetadata()

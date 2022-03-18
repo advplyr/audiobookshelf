@@ -5,7 +5,7 @@ class BackupController {
 
   async delete(req, res) {
     if (!req.user.isRoot) {
-      Logger.error(`[ApiController] Non-Root user attempting to delete backup`, req.user)
+      Logger.error(`[BackupController] Non-Root user attempting to delete backup`, req.user)
       return res.sendStatus(403)
     }
     var backup = this.backupManager.backups.find(b => b.id === req.params.id)
@@ -18,11 +18,11 @@ class BackupController {
 
   async upload(req, res) {
     if (!req.user.isRoot) {
-      Logger.error(`[ApiController] Non-Root user attempting to upload backup`, req.user)
+      Logger.error(`[BackupController] Non-Root user attempting to upload backup`, req.user)
       return res.sendStatus(403)
     }
     if (!req.files.file) {
-      Logger.error('[ApiController] Upload backup invalid')
+      Logger.error('[BackupController] Upload backup invalid')
       return res.sendStatus(500)
     }
     this.backupManager.uploadBackup(req, res)

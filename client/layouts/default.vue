@@ -97,9 +97,9 @@ export default {
         return
       }
       console.log('Init Payload', payload)
-      if (payload.stream) {
+      if (payload.session) {
         if (this.$refs.streamContainer) {
-          this.$refs.streamContainer.streamOpen(payload.stream)
+          this.$refs.streamContainer.sessionOpen(payload.session)
         } else {
           console.warn('Stream Container not mounted')
         }

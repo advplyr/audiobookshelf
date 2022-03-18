@@ -11,7 +11,6 @@ const { version } = require('../package.json')
 // Utils
 const { ScanResult } = require('./utils/constants')
 const filePerms = require('./utils/filePerms')
-const { secondsToTimestamp } = require('./utils/index')
 const dbMigration = require('./utils/dbMigration')
 const Logger = require('./Logger')
 
@@ -22,9 +21,9 @@ const Scanner = require('./scanner/Scanner')
 const Db = require('./Db')
 const BackupManager = require('./BackupManager')
 const LogManager = require('./LogManager')
-const ApiController = require('./ApiController')
-const HlsController = require('./HlsController')
-// const StreamManager = require('./objects/legacy/StreamManager')
+const ApiRouter = require('./routers/ApiRouter')
+const HlsRouter = require('./routers/HlsRouter')
+const StaticRouter = require('./routers/StaticRouter')
 const PlaybackSessionManager = require('./PlaybackSessionManager')
 const DownloadManager = require('./DownloadManager')
 const CoverController = require('./CoverController')
@@ -58,12 +57,13 @@ class Server {
     this.watcher = new Watcher()
     this.coverController = new CoverController(this.db, this.cacheManager)
     this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
-
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
-    // this.streamManager = new StreamManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.downloadManager = new DownloadManager(this.db)
-    this.apiController = new ApiController(this.db, this.auth, this.scanner, this.playbackSessionManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.hlsController = new HlsController(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
+
+    // Routers
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
+    this.staticRouter = new StaticRouter(this.db)
 
     Logger.logManager = this.logManager
 
@@ -76,7 +76,7 @@ class Server {
   get usersOnline() {
     // TODO: Map open user sessions
     return Object.values(this.clients).filter(c => c.user).map(client => {
-      return client.user.toJSONForPublic([])
+      return client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems)
     })
   }
 
@@ -169,41 +169,9 @@ class Server {
     // Static folder
     app.use(express.static(Path.join(global.appRoot, 'static')))
 
-    app.use('/api', this.authMiddleware.bind(this), this.apiController.router)
-    app.use('/hls', this.authMiddleware.bind(this), this.hlsController.router)
-
-    // Static file routes
-    app.get('/lib/:library/:folder/*', this.authMiddleware.bind(this), (req, res) => {
-      var library = this.db.libraries.find(lib => lib.id === req.params.library)
-      if (!library) return res.sendStatus(404)
-      var folder = library.folders.find(fol => fol.id === req.params.folder)
-      if (!folder) return res.status(404).send('Folder not found')
-
-      var remainingPath = req.params['0']
-      var fullPath = Path.join(folder.fullPath, remainingPath)
-      res.sendFile(fullPath)
-    })
-
-    // Book static file routes
-    // LEGACY
-    app.get('/s/book/:id/*', this.authMiddleware.bind(this), (req, res) => {
-      var audiobook = this.db.audiobooks.find(ab => ab.id === req.params.id)
-      if (!audiobook) return res.status(404).send('Book not found with id ' + req.params.id)
-
-      var remainingPath = req.params['0']
-      var fullPath = Path.join(audiobook.fullPath, remainingPath)
-      res.sendFile(fullPath)
-    })
-
-    // Library Item static file routes
-    app.get('/s/item/:id/*', this.authMiddleware.bind(this), (req, res) => {
-      var item = this.db.libraryItems.find(ab => ab.id === req.params.id)
-      if (!item) return res.status(404).send('Item not found with id ' + req.params.id)
-
-      var remainingPath = req.params['0']
-      var fullPath = Path.join(item.path, remainingPath)
-      res.sendFile(fullPath)
-    })
+    app.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
+    app.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    app.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
     app.get('/ebook/:library/:folder/*', (req, res) => {
@@ -267,14 +235,6 @@ class Server {
       socket.on('scan_item', (libraryItemId) => this.scanLibraryItem(socket, libraryItemId))
       socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
 
-      // Streaming (only still used in the mobile app)
-      // socket.on('open_stream', (audiobookId) => this.streamManager.openStreamSocketRequest(socket, audiobookId))
-      // socket.on('close_stream', () => this.streamManager.closeStreamRequest(socket))
-      // socket.on('stream_sync', (syncData) => this.streamManager.streamSync(socket, syncData))
-
-      // Used to sync when playing local book on mobile, will be moved to API route
-      // socket.on('progress_update', (payload) => this.audiobookProgressUpdate(socket, payload))
-
       // Downloading
       socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
       socket.on('remove_download', (downloadId) => this.downloadManager.removeSocketRequest(socket, downloadId))
@@ -303,7 +263,7 @@ class Server {
           delete this.clients[socket.id]
         } else {
           Logger.debug('[Server] User Offline ' + _client.user.username)
-          this.io.emit('user_offline', _client.user.toJSONForPublic([]))
+          this.io.emit('user_offline', _client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
           const disconnectTime = Date.now() - _client.connected_at
           Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
@@ -487,11 +447,10 @@ class Server {
 
       if (client.user) {
         Logger.debug('[Server] User Offline ' + client.user.username)
-        this.io.emit('user_offline', client.user.toJSONForPublic(null))
+        this.io.emit('user_offline', client.user.toJSONForPublic(null, this.db.libraryItems))
       }
 
       delete this.clients[socketId].user
-      delete this.clients[socketId].stream
       if (clientSocket && clientSocket.sheepClient) delete this.clients[socketId].socket.sheepClient
     } else if (socketId) {
       Logger.warn(`[Server] No client for socket ${socketId}`)
@@ -604,19 +563,23 @@ class Server {
       return
     }
 
-    // Check if user has stream open
-    if (client.user.stream) {
-      Logger.info('User has stream open already', client.user.stream)
-      // client.stream = this.streamManager.getStream(client.user.stream)
-      // if (!client.stream) {
-      //   Logger.error('Invalid user stream id', client.user.stream)
-      //   this.streamManager.removeOrphanStreamFiles(client.user.stream)
-      //   await this.db.updateUserStream(client.user.id, null)
-      // }
+    // Check if user has session open
+    var session = this.playbackSessionManager.getUserSession(user.id)
+    if (session) {
+      Logger.debug(`[Server] User Online "${client.user.username}" with session open "${session.id}"`)
+      session = session.toJSONForClient()
+      var sessionLibraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
+      if (!sessionLibraryItem) {
+        Logger.error(`[Server] Library Item for session "${session.id}" does not exist "${session.libraryItemId}"`)
+        this.playbackSessionManager.removeSession(session.id)
+        session = null
+      } else {
+        session.libraryItem = sessionLibraryItem.toJSONExpanded()
+      }
+    } else {
+      Logger.debug(`[Server] User Online ${client.user.username}`)
     }
-
-    Logger.debug(`[Server] User Online ${client.user.username}`)
-    this.io.emit('user_online', client.user.toJSONForPublic([]))
+    this.io.emit('user_online', client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
     user.lastSeen = Date.now()
     await this.db.updateEntity('user', user)
@@ -627,7 +590,7 @@ class Server {
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),
-      stream: client.stream || null,
+      session,
       librariesScanning: this.scanner.librariesScanning,
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }

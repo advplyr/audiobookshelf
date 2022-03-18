@@ -4,29 +4,30 @@ const fs = require('fs-extra')
 const date = require('date-and-time')
 const axios = require('axios')
 
-const Logger = require('./Logger')
-const { isObject } = require('./utils/index')
-const { parsePodcastRssFeedXml } = require('./utils/podcastUtils')
+const Logger = require('../Logger')
+const { isObject } = require('../utils/index')
+const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 
-const LibraryController = require('./controllers/LibraryController')
-const UserController = require('./controllers/UserController')
-const CollectionController = require('./controllers/CollectionController')
-const MeController = require('./controllers/MeController')
-const BackupController = require('./controllers/BackupController')
-const LibraryItemController = require('./controllers/LibraryItemController')
-const SeriesController = require('./controllers/SeriesController')
-const AuthorController = require('./controllers/AuthorController')
-const AudiobookController = require('./controllers/AudiobookController')
+const LibraryController = require('../controllers/LibraryController')
+const UserController = require('../controllers/UserController')
+const CollectionController = require('../controllers/CollectionController')
+const MeController = require('../controllers/MeController')
+const BackupController = require('../controllers/BackupController')
+const LibraryItemController = require('../controllers/LibraryItemController')
+const SeriesController = require('../controllers/SeriesController')
+const AuthorController = require('../controllers/AuthorController')
+const MediaEntityController = require('../controllers/MediaEntityController')
+const SessionController = require('../controllers/SessionController')
 
-const BookFinder = require('./finders/BookFinder')
-const AuthorFinder = require('./finders/AuthorFinder')
-const PodcastFinder = require('./finders/PodcastFinder')
+const BookFinder = require('../finders/BookFinder')
+const AuthorFinder = require('../finders/AuthorFinder')
+const PodcastFinder = require('../finders/PodcastFinder')
 
-const Author = require('./objects/entities/Author')
-const Series = require('./objects/entities/Series')
-const FileSystemController = require('./controllers/FileSystemController')
+const Author = require('../objects/entities/Author')
+const Series = require('../objects/entities/Series')
+const FileSystemController = require('../controllers/FileSystemController')
 
-class ApiController {
+class ApiRouter {
   constructor(db, auth, scanner, playbackSessionManager, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
@@ -72,11 +73,12 @@ class ApiController {
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
-    // Audiobook Routes
+    // Media Entity Routes
     //
-    this.router.get('/audiobooks/:id', AudiobookController.middleware.bind(this), AudiobookController.findOne.bind(this))
-    this.router.get('/audiobooks/:id/item', AudiobookController.middleware.bind(this), AudiobookController.findWithItem.bind(this))
-    this.router.patch('/audiobooks/:id/tracks', AudiobookController.middleware.bind(this), AudiobookController.updateTracks.bind(this))
+    this.router.get('/entities/:id', MediaEntityController.middleware.bind(this), MediaEntityController.findOne.bind(this))
+    this.router.get('/entities/:id/item', MediaEntityController.middleware.bind(this), MediaEntityController.findWithItem.bind(this))
+    this.router.patch('/entities/:id/tracks', MediaEntityController.middleware.bind(this), MediaEntityController.updateTracks.bind(this))
+    this.router.post('/entities/:id/play', MediaEntityController.middleware.bind(this), MediaEntityController.startPlaybackSession.bind(this))
 
     //
     // Item Routes
@@ -92,13 +94,11 @@ class ApiController {
     this.router.patch('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.updateCover.bind(this))
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
-    this.router.get('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
+    this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
     this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
-    // Legacy
-    this.router.get('/items/:id/stream', LibraryItemController.middleware.bind(this), LibraryItemController.openStream.bind(this))
 
     //
     // User Routes
@@ -172,6 +172,12 @@ class ApiController {
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
 
     //
+    // Playback Session Routes
+    //
+    this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
+    this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
+
+    //
     // Misc Routes
     //
     this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
@@ -180,14 +186,10 @@ class ApiController {
 
     this.router.get('/download/:id', this.download.bind(this))
 
-    this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
-
     this.router.post('/purgecache', this.purgeCache.bind(this))
 
-    this.router.post('/syncStream', this.syncStream.bind(this))
-    this.router.post('/syncLocal', this.syncLocal.bind(this))
-
-    this.router.post('/streams/:id/close', this.closeStream.bind(this))
+    // OLD
+    // this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
 
     this.router.post('/getPodcastFeed', this.getPodcastFeed.bind(this))
   }
@@ -337,45 +339,21 @@ class ApiController {
     // res.json(allUserAudiobookData)
   }
 
-  // Sync audiobook stream progress
-  async syncStream(req, res) {
-    Logger.debug(`[ApiController] syncStream for ${req.user.username} - ${req.body.streamId}`)
-    // this.streamManager.streamSyncFromApi(req, res)
-    res.sendStatus(500)
-  }
-
-  // Sync local downloaded audiobook progress
-  async syncLocal(req, res) {
-    // Logger.debug(`[ApiController] syncLocal for ${req.user.username}`)
-    // var progressPayload = req.body
-    // var itemProgress = req.user.updateLibraryItemProgress(progressPayload.libraryItemId, progressPayload)
-    // if (itemProgress) {
-    //   await this.db.updateEntity('user', req.user)
-    //   this.clientEmitter(req.user.id, 'current_user_audiobook_update', {
-    //     id: progressPayload.libraryItemId,
-    //     data: itemProgress || null
-    //   })
-    // }
-    res.sendStatus(200)
-  }
-
   //
   // Helper Methods
   //
-  userJsonWithBookProgressDetails(user) {
+  userJsonWithItemProgressDetails(user) {
     var json = user.toJSONForBrowser()
 
-    // User audiobook progress attach book details
-    if (json.audiobooks && Object.keys(json.audiobooks).length) {
-      for (const audiobookId in json.audiobooks) {
-        var libraryItem = this.db.libraryItems.find(li => li.id === audiobookId)
-        if (!libraryItem) {
-          Logger.error('[ApiController] Library item not found for users progress ' + audiobookId)
-        } else {
-          json.audiobooks[audiobookId].media = libraryItem.media.toJSONExpanded()
-        }
+    json.libraryItemProgress = json.libraryItemProgress.map(lip => {
+      var libraryItem = this.db.libraryItems.find(li => li.id === lip.id)
+      if (!libraryItem) {
+        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.id)
+        return null
       }
-    }
+      lip.media = libraryItem.media.toJSONExpanded()
+      return lip
+    }).filter(lip => !!lip)
 
     return json
   }
@@ -425,8 +403,7 @@ class ApiController {
 
   async getUserListeningSessionsHelper(userId) {
     var userSessions = await this.db.selectUserSessions(userId)
-    var listeningSessions = userSessions.filter(us => us.sessionType === 'listeningSession')
-    return listeningSessions.sort((a, b) => b.lastUpdate - a.lastUpdate)
+    return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
   async getUserListeningStatsHelpers(userId) {
@@ -435,7 +412,7 @@ class ApiController {
     var listeningSessions = await this.getUserListeningSessionsHelper(userId)
     var listeningStats = {
       totalTime: 0,
-      books: {},
+      items: {},
       days: {},
       dayOfWeek: {},
       today: 0,
@@ -454,16 +431,15 @@ class ApiController {
           listeningStats.today += s.timeListening
         }
       }
-      if (!listeningStats.books[s.audiobookId]) {
-        listeningStats.books[s.audiobookId] = {
-          id: s.audiobookId,
+      if (!listeningStats.items[s.libraryItemId]) {
+        listeningStats.items[s.libraryItemId] = {
+          id: s.libraryItemId,
           timeListening: s.timeListening,
-          title: s.audiobookTitle,
-          author: s.audiobookAuthor,
+          mediaMetadata: s.mediaMetadata,
           lastUpdate: s.lastUpdate
         }
       } else {
-        listeningStats.books[s.audiobookId].timeListening += s.timeListening
+        listeningStats.items[s.libraryItemId].timeListening += s.timeListening
       }
 
       listeningStats.totalTime += s.timeListening
@@ -475,15 +451,8 @@ class ApiController {
     if (!req.user.isRoot) {
       return res.sendStatus(403)
     }
-    Logger.info(`[ApiController] Purging all cache`)
+    Logger.info(`[ApiRouter] Purging all cache`)
     await this.cacheManager.purgeAll()
-    res.sendStatus(200)
-  }
-
-  async closeStream(req, res) {
-    const streamId = req.params.id
-    const userId = req.user.id
-    // this.streamManager.closeStreamApiRequest(userId, streamId)
     res.sendStatus(200)
   }
 
@@ -501,7 +470,7 @@ class ApiController {
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
-              Logger.debug(`[ApiController] Created new author "${author.name}"`)
+              Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
               newAuthors.push(author)
             }
 
@@ -525,7 +494,7 @@ class ApiController {
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])
-              Logger.debug(`[ApiController] Created new series "${seriesItem.name}"`)
+              Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
             }
 
@@ -563,4 +532,4 @@ class ApiController {
     })
   }
 }
-module.exports = ApiController
+module.exports = ApiRouter

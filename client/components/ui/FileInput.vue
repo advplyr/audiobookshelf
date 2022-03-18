@@ -33,7 +33,6 @@ export default {
       var _files = Array.from(e.target.files)
       if (_files && _files.length) {
         var file = _files[0]
-        console.log('File', file)
         this.$emit('change', file)
       }
     }

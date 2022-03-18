@@ -47,7 +47,7 @@ class EBook {
     }
   }
 
-  toJSONMinified() {
+  toJSONExpanded() {
     return {
       id: this.id,
       index: this.index,
@@ -59,6 +59,7 @@ class EBook {
     }
   }
 
+  get isPlaybackMediaEntity() { return false }
   get size() {
     return this.ebookFile.metadata.size
   }

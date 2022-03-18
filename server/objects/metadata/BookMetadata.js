@@ -37,7 +37,7 @@ class BookMetadata {
     this.isbn = metadata.isbn
     this.asin = metadata.asin
     this.language = metadata.language
-    this.explicit = metadata.explicit
+    this.explicit = !!metadata.explicit
   }
 
   toJSON() {
@@ -150,6 +150,7 @@ class BookMetadata {
     this.asin = scanMediaData.asin || null
     this.language = scanMediaData.language || null
     this.genres = []
+    this.explicit = !!scanMediaData.explicit
 
     if (scanMediaData.author) {
       this.authors = this.parseAuthorsTag(scanMediaData.author)

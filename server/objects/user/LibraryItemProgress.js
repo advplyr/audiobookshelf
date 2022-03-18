@@ -42,27 +42,8 @@ class LibraryItemProgress {
     this.finishedAt = progress.finishedAt || null
   }
 
-  updateProgressFromStream(stream) {
-    // this.audiobookId = stream.libraryItemId
-    // this.totalDuration = stream.totalDuration
-    // this.progress = stream.clientProgress
-    // this.currentTime = stream.clientCurrentTime
-    // this.lastUpdate = Date.now()
-
-    // if (!this.startedAt) {
-    //   this.startedAt = Date.now()
-    // }
-
-    // // If has < 10 seconds remaining mark as read
-    // var timeRemaining = this.totalDuration - this.currentTime
-    // if (timeRemaining < 10) {
-    //   this.isFinished = true
-    //   this.progress = 1
-    //   this.finishedAt = Date.now()
-    // } else {
-    //   this.isFinished = false
-    //   this.finishedAt = null
-    // }
+  get inProgress() {
+    return !this.isFinished && this.progress > 0
   }
 
   setData(libraryItemId, progress) {

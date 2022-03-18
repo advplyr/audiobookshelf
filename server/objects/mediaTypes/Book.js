@@ -119,6 +119,15 @@ class Book {
   getAudiobookById(audiobookId) {
     return this.audiobooks.find(ab => ab.id === audiobookId)
   }
+  getMediaEntityById(entityId) {
+    var ent = this.audiobooks.find(ab => ab.id === entityId)
+    if (ent) return ent
+    return this.ebooks.find(eb => eb.id === entityId)
+  }
+  getPlaybackMediaEntity() { // Get first playback media entity
+    if (!this.audiobooks.length) return null
+    return this.audiobooks[0]
+  }
 
   removeFileWithInode(inode) {
     var audiobookWithIno = this.audiobooks.find(ab => ab.findFileWithInode(inode))
@@ -261,10 +270,6 @@ class Book {
     // var newEbook = new EBookFile()
     // newEbook.setData(libraryFile)
     // this.ebookFiles.push(newEbook)
-  }
-
-  getDirectPlayTracklist(options) {
-
   }
 }
 module.exports = Book

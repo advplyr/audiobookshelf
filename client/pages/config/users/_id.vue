@@ -14,7 +14,10 @@
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
       <div class="cursor-pointer text-gray-400 hover:text-white" @click="copyToClipboard(userToken)">
-        <p class="py-2 text-xs"><strong class="text-white">API Token: </strong><br /><span class="text-white">{{ userToken }}</span><span class="material-icons pl-2 text-base">content_copy</span></p>
+        <p class="py-2 text-xs">
+          <strong class="text-white">API Token: </strong><br /><span class="text-white">{{ userToken }}</span
+          ><span class="material-icons pl-2 text-base">content_copy</span>
+        </p>
       </div>
       <div v-if="showExperimentalFeatures" class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div v-if="showExperimentalFeatures" class="py-2">
@@ -35,32 +38,32 @@
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Reading Progress</h1>
-        <table v-if="userAudiobooks.length" class="userAudiobooksTable">
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Item Progress</h1>
+        <table v-if="libraryItemProgress.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
-            <th class="w-16 text-left">Book</th>
+            <th class="w-16 text-left">Item</th>
             <th class="text-left"></th>
             <th class="w-32">Progress</th>
             <th class="w-40 hidden sm:table-cell">Started At</th>
             <th class="w-40 hidden sm:table-cell">Last Update</th>
           </tr>
-          <tr v-for="ab in userAudiobooks" :key="ab.audiobookId" :class="!ab.isRead ? '' : 'isRead'">
+          <tr v-for="item in libraryItemProgress" :key="item.id" :class="!item.isFinished ? '' : 'isFinished'">
             <td>
-              <covers-book-cover :width="50" :library-item="ab" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              <covers-book-cover :width="50" :library-item="item" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
             <td class="font-book">
-              <p>{{ ab.media && ab.media.metadata ? ab.media.metadata.title : ab.audiobookTitle || 'Unknown' }}</p>
-              <p v-if="ab.media && ab.media.metadata && ab.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ ab.media.metadata.authorName }}</p>
+              <p>{{ item.media && item.media.metadata ? item.media.metadata.title : 'Unknown' }}</p>
+              <p v-if="item.media && item.media.metadata && item.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ item.media.metadata.authorName }}</p>
             </td>
-            <td class="text-center">{{ Math.floor(ab.progress * 100) }}%</td>
+            <td class="text-center">{{ Math.floor(item.progress * 100) }}%</td>
             <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="ab.startedAt" direction="top" :text="$formatDate(ab.startedAt, 'MMMM do, yyyy HH:mm')">
-                <p class="text-sm">{{ $dateDistanceFromNow(ab.startedAt) }}</p>
+              <ui-tooltip v-if="item.startedAt" direction="top" :text="$formatDate(item.startedAt, 'MMMM do, yyyy HH:mm')">
+                <p class="text-sm">{{ $dateDistanceFromNow(item.startedAt) }}</p>
               </ui-tooltip>
             </td>
             <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="ab.lastUpdate" direction="top" :text="$formatDate(ab.lastUpdate, 'MMMM do, yyyy HH:mm')">
-                <p class="text-sm">{{ $dateDistanceFromNow(ab.lastUpdate) }}</p>
+              <ui-tooltip v-if="item.lastUpdate" direction="top" :text="$formatDate(item.lastUpdate, 'MMMM do, yyyy HH:mm')">
+                <p class="text-sm">{{ $dateDistanceFromNow(item.lastUpdate) }}</p>
               </ui-tooltip>
             </td>
           </tr>
@@ -108,15 +111,8 @@ export default {
     userOnline() {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
-    userAudiobooks() {
-      return Object.values(this.user.audiobooks || {})
-        .map((uab) => {
-          return {
-            id: uab.audiobookId,
-            ...uab
-          }
-        })
-        .sort((a, b) => b.lastUpdate - a.lastUpdate)
+    libraryItemProgress() {
+      return this.user.libraryItemProgress.sort((a, b) => b.lastUpdate - a.lastUpdate)
     },
     totalListeningTime() {
       return this.listeningStats.totalTime || 0
@@ -169,7 +165,7 @@ export default {
 .userAudiobooksTable tr:hover:not(:first-child) {
   background-color: #474747;
 }
-.userAudiobooksTable tr.isRead {
+.userAudiobooksTable tr.isFinished {
   background-color: rgba(76, 175, 80, 0.1);
 }
 .userAudiobooksTable td {

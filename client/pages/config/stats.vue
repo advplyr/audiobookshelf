@@ -9,8 +9,8 @@
           />
         </svg>
         <div class="px-3">
-          <p class="text-4xl md:text-5xl font-bold">{{ userAudiobooksRead.length }}</p>
-          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Books Read</p>
+          <p class="text-4xl md:text-5xl font-bold">{{ userItemsFinished.length }}</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Items Finished</p>
         </div>
       </div>
 
@@ -35,17 +35,17 @@
       <div class="w-80 my-6 mx-auto">
         <h1 class="text-2xl mb-4 font-book">Recent Listening Sessions</h1>
         <p v-if="!mostRecentListeningSessions.length">No Listening Sessions</p>
-        <template v-for="(book, index) in mostRecentListeningSessions">
-          <div :key="book.id" class="w-full py-0.5">
+        <template v-for="(item, index) in mostRecentListeningSessions">
+          <div :key="item.id" class="w-full py-0.5">
             <div class="flex items-center mb-1">
               <p class="text-sm font-book text-white text-opacity-70 w-6 truncate">{{ index + 1 }}.&nbsp;</p>
               <div class="w-56">
-                <p class="text-sm font-book text-white text-opacity-80 truncate">{{ book.audiobookTitle }}</p>
-                <p class="text-xs text-white text-opacity-50">{{ $dateDistanceFromNow(book.lastUpdate) }}</p>
+                <p class="text-sm font-book text-white text-opacity-80 truncate">{{ item.mediaMetadata.title }}</p>
+                <p class="text-xs text-white text-opacity-50">{{ $dateDistanceFromNow(item.lastUpdate) }}</p>
               </div>
               <div class="flex-grow" />
               <div class="w-18 text-right">
-                <p class="text-sm font-bold">{{ $elapsedPretty(book.timeListening) }}</p>
+                <p class="text-sm font-bold">{{ $elapsedPretty(item.timeListening) }}</p>
               </div>
             </div>
           </div>
@@ -76,16 +76,11 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    userAudiobooks() {
-      return Object.values(this.user.audiobooks || {})
+    userItemProgress() {
+      return this.user.libraryItemProgress || []
     },
-    userAudiobooksRead() {
-      return this.userAudiobooks.filter((ab) => !!ab.isRead)
-    },
-    mostRecentBooksListened() {
-      if (!this.listeningStats) return []
-      var sorted = Object.values(this.listeningStats.books || {}).sort((a, b) => b.lastUpdate - a.lastUpdate)
-      return sorted.slice(0, 10)
+    userItemsFinished() {
+      return this.userItemProgress.filter((lip) => !!lip.isFinished)
     },
     mostRecentListeningSessions() {
       if (!this.listeningStats) return []

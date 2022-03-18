@@ -95,16 +95,17 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    userAudiobook() {
+    userLibraryItemProgress() {
       if (!this.libraryItemId) return
       return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
     },
-    userAudiobookCurrentTime() {
-      return this.userAudiobook ? this.userAudiobook.currentTime || 0 : 0
+    userItemCurrentTime() {
+      return this.userLibraryItemProgress ? this.userLibraryItemProgress.currentTime || 0 : 0
     },
     bookmarks() {
-      if (!this.userAudiobook) return []
-      return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
+      return []
+      // if (!this.userAudiobook) return []
+      // return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -236,9 +237,9 @@ export default {
         console.error('No Audio Ref')
       }
     },
-    streamOpen(stream) {
-      this.$store.commit('setLibraryItemStream', stream.libraryItem)
-      this.playerHandler.prepareStream(stream)
+    sessionOpen(session) {
+      this.$store.commit('setLibraryItemStream', session.libraryItem)
+      this.playerHandler.prepareOpenSession(session)
     },
     streamClosed(streamId) {
       // Stream was closed from the server
@@ -282,7 +283,7 @@ export default {
       if (!libraryItem) return
       this.$store.commit('setLibraryItemStream', libraryItem)
 
-      this.playerHandler.load(libraryItem, true, this.userAudiobookCurrentTime)
+      this.playerHandler.load(libraryItem, true)
     }
   },
   mounted() {

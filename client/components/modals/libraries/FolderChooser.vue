@@ -64,7 +64,6 @@ export default {
   computed: {
     _directories() {
       return this.directories.map((d) => {
-        console.log('Directories', d)
         var isUsed = !!this.paths.find((path) => path.endsWith(d.path))
         var isSelected = d.path === this.selectedPath
         var classes = []

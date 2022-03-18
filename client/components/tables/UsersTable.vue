@@ -26,11 +26,11 @@
           </td>
           <td class="text-sm">{{ user.type }}</td>
           <td class="hidden lg:table-cell">
-            <div v-if="usersOnline[user.id] && usersOnline[user.id].stream && usersOnline[user.id].stream.libraryItem && usersOnline[user.id].stream.libraryItem.media">
-              <p class="truncate text-xs">Reading: {{ usersOnline[user.id].stream.libraryItem.media.metadata.title || '' }}</p>
+            <div v-if="usersOnline[user.id] && usersOnline[user.id].session && usersOnline[user.id].session.libraryItem && usersOnline[user.id].session.libraryItem.media">
+              <p class="truncate text-xs">Listening: {{ usersOnline[user.id].session.libraryItem.media.metadata.title || '' }}</p>
             </div>
-            <div v-else-if="user.audiobooks && getLastRead(user.audiobooks)">
-              <p class="truncate text-xs">Last: {{ getLastRead(user.audiobooks) }}</p>
+            <div v-else-if="user.mostRecent">
+              <p class="truncate text-xs">Last: {{ user.mostRecent.metadata.title }}</p>
             </div>
           </td>
           <td class="text-xs font-mono hidden sm:table-cell">
@@ -78,23 +78,11 @@ export default {
     },
     usersOnline() {
       var usermap = {}
-      this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, stream: u.stream }))
+      this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, session: u.session }))
       return usermap
     }
   },
   methods: {
-    getLastRead(audiobooks) {
-      var abs = Object.values(audiobooks).filter((ab) => {
-        return ab.progress > 0
-      })
-      if (abs.length) {
-        abs = abs.sort((a, b) => b.lastUpdate - a.lastUpdate)
-        // Book object is attached on request
-        if (abs[0].book) return abs[0].book.title
-        return abs[0].audiobookTitle ? abs[0].audiobookTitle : null
-      }
-      return null
-    },
     deleteUserClick(user) {
       if (this.isDeletingUser) return
       if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {

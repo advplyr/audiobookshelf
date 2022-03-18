@@ -6,16 +6,17 @@ const Logger = require('../Logger')
 const { getId, secondsToTimestamp } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
-
-const UserListeningSession = require('./legacy/UserListeningSession')
+const AudioTrack = require('./files/AudioTrack')
 
 class Stream extends EventEmitter {
-  constructor(streamPath, client, libraryItem, transcodeOptions = {}) {
+  constructor(sessionId, streamPath, user, libraryItem, mediaEntity, startTime, clientEmitter, transcodeOptions = {}) {
     super()
 
-    this.id = getId('str')
-    this.client = client
+    this.id = sessionId
+    this.user = user
     this.libraryItem = libraryItem
+    this.mediaEntity = mediaEntity
+    this.clientEmitter = clientEmitter
 
     this.transcodeOptions = transcodeOptions
 
@@ -25,7 +26,7 @@ class Stream extends EventEmitter {
     this.concatFilesPath = Path.join(this.streamPath, 'files.txt')
     this.playlistPath = Path.join(this.streamPath, 'output.m3u8')
     this.finalPlaylistPath = Path.join(this.streamPath, 'final-output.m3u8')
-    this.startTime = 0
+    this.startTime = startTime
 
     this.ffmpeg = null
     this.loop = null
@@ -34,53 +35,49 @@ class Stream extends EventEmitter {
     this.isTranscodeComplete = false
     this.segmentsCreated = new Set()
     this.furthestSegmentCreated = 0
-    this.clientCurrentTime = 0
-
-    this.listeningSession = new UserListeningSession()
-    this.listeningSession.setData(libraryItem, client.user)
+    // this.clientCurrentTime = 0
 
     this.init()
-  }
-
-  get socket() {
-    return this.client ? this.client.socket || null : null
   }
 
   get libraryItemId() {
     return this.libraryItem.id
   }
-
+  get mediaTitle() {
+    return this.libraryItem.media.metadata.title || ''
+  }
+  get mediaEntityName() {
+    return this.mediaEntity.name
+  }
   get itemTitle() {
-    return this.libraryItem ? this.libraryItem.media.metadata.title : null
+    return `${this.mediaTitle} (${this.mediaEntityName})`
   }
-
   get totalDuration() {
-    return this.libraryItem.media.duration
+    return this.mediaEntity.duration
   }
-
+  get tracks() {
+    return this.mediaEntity.tracks
+  }
   get tracksAudioFileType() {
     if (!this.tracks.length) return null
-    return this.tracks[0].metadata.ext.toLowerCase().slice(1)
+    return this.tracks[0].metadata.format
   }
-
+  get userToken() {
+    return this.user.token
+  }
   // Fmp4 does not work on iOS devices: https://github.com/advplyr/audiobookshelf-app/issues/85
   //   Workaround: Force AAC transcode for FLAC
   get hlsSegmentType() {
     return 'mpegts'
-    // var hasFlac = this.tracks.find(t => t.ext.toLowerCase() === '.flac')
-    // return hasFlac ? 'fmp4' : 'mpegts'
   }
-
   get segmentBasename() {
     if (this.hlsSegmentType === 'fmp4') return 'output-%d.m4s'
     return 'output-%d.ts'
   }
-
   get segmentStartNumber() {
     if (!this.startTime) return 0
     return Math.floor(Math.max(this.startTime - this.maxSeekBackTime, 0) / this.segmentLength)
   }
-
   get numSegments() {
     var numSegs = Math.floor(this.totalDuration / this.segmentLength)
     if (this.totalDuration - (numSegs * this.segmentLength) > 0) {
@@ -88,41 +85,17 @@ class Stream extends EventEmitter {
     }
     return numSegs
   }
-
-  get tracks() {
-    return this.libraryItem.media.tracks
-  }
-
-  get clientUser() {
-    return this.client ? this.client.user || {} : null
-  }
-
-  get userToken() {
-    return this.clientUser ? this.clientUser.token : null
-  }
-
-  get clientUserAudiobooks() {
-    return this.client ? this.clientUser.audiobooks || {} : null
-  }
-
-  get clientUserAudiobookData() {
-    return this.client ? this.clientUserAudiobooks[this.libraryItemId] : null
-  }
-
   get clientPlaylistUri() {
     return `/hls/${this.id}/output.m3u8`
   }
-
-  get clientProgress() {
-    if (!this.clientCurrentTime) return 0
-    var prog = Math.min(1, this.clientCurrentTime / this.totalDuration)
-    return Number(prog.toFixed(3))
-  }
-
+  // get clientProgress() {
+  //   if (!this.clientCurrentTime) return 0
+  //   var prog = Math.min(1, this.clientCurrentTime / this.totalDuration)
+  //   return Number(prog.toFixed(3))
+  // }
   get isAACEncodable() {
     return ['mp4', 'm4a', 'm4b'].includes(this.tracksAudioFileType)
   }
-
   get transcodeForceAAC() {
     return !!this.transcodeOptions.forceAAC
   }
@@ -130,29 +103,28 @@ class Stream extends EventEmitter {
   toJSON() {
     return {
       id: this.id,
-      clientId: this.client.id,
-      userId: this.client.user.id,
+      userId: this.user.id,
       libraryItem: this.libraryItem.toJSONExpanded(),
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,
-      clientCurrentTime: this.clientCurrentTime,
+      // clientCurrentTime: this.clientCurrentTime,
       startTime: this.startTime,
       segmentStartNumber: this.segmentStartNumber,
       isTranscodeComplete: this.isTranscodeComplete,
-      lastUpdate: this.clientUserAudiobookData ? this.clientUserAudiobookData.lastUpdate : 0
+      // lastUpdate: this.clientUserAudiobookData ? this.clientUserAudiobookData.lastUpdate : 0
     }
   }
 
   init() {
-    if (this.clientUserAudiobookData) {
-      var timeRemaining = this.totalDuration - this.clientUserAudiobookData.currentTime
-      Logger.info('[STREAM] User has progress for item', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
-      if (timeRemaining > 15) {
-        this.startTime = this.clientUserAudiobookData.currentTime
-        this.clientCurrentTime = this.startTime
-      }
-    }
+    // if (this.clientUserAudiobookData) {
+    //   var timeRemaining = this.totalDuration - this.clientUserAudiobookData.currentTime
+    //   Logger.info('[STREAM] User has progress for item', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
+    //   if (timeRemaining > 15) {
+    //     this.startTime = this.clientUserAudiobookData.currentTime
+    //     this.clientCurrentTime = this.startTime
+    //   }
+    // }
   }
 
   async checkSegmentNumberRequest(segNum) {
@@ -173,39 +145,6 @@ class Stream extends EventEmitter {
     }
 
     return false
-  }
-
-  syncStream({ timeListened, currentTime }) {
-    var syncLog = ''
-    // Set user current time
-    if (currentTime !== null && !isNaN(currentTime)) {
-      syncLog = `Update client current time ${secondsToTimestamp(currentTime)}`
-      this.clientCurrentTime = currentTime
-    }
-
-    // Update user listening session
-    var saveListeningSession = false
-    if (timeListened && !isNaN(timeListened)) {
-
-      // Check if listening session should roll to next day
-      if (this.listeningSession.checkDateRollover()) {
-        if (!this.clientUser) {
-          Logger.error(`[Stream] Sync stream invalid client user`)
-          return null
-        }
-        this.listeningSession = new UserListeningSession()
-        this.listeningSession.setData(this.libraryItem, this.clientUser)
-        Logger.debug(`[Stream] Listening session rolled to next day`)
-      }
-
-      this.listeningSession.addListeningTime(timeListened)
-      if (syncLog) syncLog += ' | '
-      syncLog += `Add listening time ${timeListened}s, Total time listened ${this.listeningSession.timeListening}s`
-      saveListeningSession = true
-    }
-
-    Logger.debug('[Stream]', syncLog)
-    return saveListeningSession ? this.listeningSession : null
   }
 
   async generatePlaylist() {
@@ -234,10 +173,8 @@ class Stream extends EventEmitter {
 
       if (this.segmentsCreated.size > 6 && !this.isClientInitialized) {
         this.isClientInitialized = true
-        if (this.socket) {
-          Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
-          this.socket.emit('stream_open', this.toJSON())
-        }
+        Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
+        this.clientEmit('stream_open', this.toJSON())
       }
 
       var chunks = []
@@ -270,33 +207,27 @@ class Stream extends EventEmitter {
       Logger.info('[STREAM-CHECK] Check Files', this.segmentsCreated.size, 'of', this.numSegments, perc, `Furthest Segment: ${this.furthestSegmentCreated}`)
       // Logger.debug('[STREAM-CHECK] Chunks', chunks.join(', '))
 
-      if (this.socket) {
-        this.socket.emit('stream_progress', {
-          stream: this.id,
-          percent: perc,
-          chunks,
-          numSegments: this.numSegments
-        })
-      }
+      this.clientEmit('stream_progress', {
+        stream: this.id,
+        percent: perc,
+        chunks,
+        numSegments: this.numSegments
+      })
     } catch (error) {
       Logger.error('Failed checking files', error)
     }
   }
 
   startLoop() {
-    if (this.socket) {
-      this.socket.emit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
-    }
+    this.clientEmit('stream_progress', { stream: this.id, chunks: [], numSegments: 0, percent: '0%' })
 
     clearInterval(this.loop)
     var intervalId = setInterval(() => {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
       } else {
-        if (this.socket) {
-          Logger.info(`[Stream] ${this.itemTitle} sending stream_ready`)
-          this.socket.emit('stream_ready')
-        }
+        Logger.info(`[Stream] ${this.itemTitle} sending stream_ready`)
+        this.clientEmit('stream_ready')
         clearInterval(intervalId)
       }
     }, 2000)
@@ -409,10 +340,10 @@ class Stream extends EventEmitter {
       // For very small fast load
       if (!this.isClientInitialized) {
         this.isClientInitialized = true
-        if (this.socket) {
-          Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
-          this.socket.emit('stream_open', this.toJSON())
-        }
+
+        Logger.info(`[STREAM] ${this.id} notifying client that stream is ready`)
+        this.clientEmit('stream_open', this.toJSON())
+
       }
       this.isTranscodeComplete = true
       this.ffmpeg = null
@@ -436,10 +367,8 @@ class Stream extends EventEmitter {
       Logger.error('Failed to delete session data', err)
     })
 
-    if (this.socket) {
-      if (errorMessage) this.socket.emit('stream_error', { id: this.id, error: (errorMessage || '').trim() })
-      else this.socket.emit('stream_closed', this.id)
-    }
+    if (errorMessage) this.clientEmit('stream_error', { id: this.id, error: (errorMessage || '').trim() })
+    else this.clientEmit('stream_closed', this.id)
 
     this.emit('closed')
   }
@@ -474,9 +403,19 @@ class Stream extends EventEmitter {
 
     this.isTranscodeComplete = false
     this.startTime = time
-    this.clientCurrentTime = this.startTime
+    // this.clientCurrentTime = this.startTime
     Logger.info(`Stream Reset New Start Time ${secondsToTimestamp(this.startTime)}`)
     this.start()
+  }
+
+  clientEmit(evtName, data) {
+    if (this.clientEmitter) this.clientEmitter(this.user.id, evtName, data)
+  }
+
+  getAudioTrack() {
+    var newAudioTrack = new AudioTrack()
+    newAudioTrack.setFromStream(this.itemTitle, this.totalDuration, this.clientPlaylistUri)
+    return newAudioTrack
   }
 }
 module.exports = Stream

@@ -1,13 +1,13 @@
 const express = require('express')
 const Path = require('path')
 const fs = require('fs-extra')
-const Logger = require('./Logger')
+const Logger = require('../Logger')
 
-class HlsController {
+class HlsRouter {
   constructor(db, auth, playbackSessionManager, emitter) {
     this.db = db
     this.auth = auth
-    this.streamManager = playbackSessionManager
+    this.playbackSessionManager = playbackSessionManager
     this.emitter = emitter
 
     this.router = express()
@@ -26,13 +26,7 @@ class HlsController {
 
   async streamFileRequest(req, res) {
     var streamId = req.params.stream
-    var fullFilePath = Path.join(this.streamManager.StreamsPath, streamId, req.params.file)
-
-    // development test stream - ignore
-    if (streamId === 'test') {
-      Logger.debug('Test Stream Request', streamId, req.headers, fullFilePath)
-      return res.sendFile(fullFilePath)
-    }
+    var fullFilePath = Path.join(this.playbackSessionManager.StreamsPath, streamId, req.params.file)
 
     var exists = await fs.pathExists(fullFilePath)
     if (!exists) {
@@ -41,20 +35,20 @@ class HlsController {
       var fileExt = Path.extname(req.params.file)
       if (fileExt === '.ts' || fileExt === '.m4s') {
         var segNum = this.parseSegmentFilename(req.params.file)
-        var stream = this.streamManager.getStream(streamId)
+        var stream = this.playbackSessionManager.getStream(streamId)
         if (!stream) {
-          Logger.error(`[HLS-CONTROLLER] Stream ${streamId} does not exist`)
+          Logger.error(`[HlsRouter] Stream ${streamId} does not exist`)
           return res.sendStatus(500)
         }
 
         if (stream.isResetting) {
-          Logger.info(`[HLS-CONTROLLER] Stream ${streamId} is currently resetting`)
+          Logger.info(`[HlsRouter] Stream ${streamId} is currently resetting`)
           return res.sendStatus(404)
         } else {
           var startTimeForReset = await stream.checkSegmentNumberRequest(segNum)
           if (startTimeForReset) {
             // HLS.js will restart the stream at the new time
-            Logger.info(`[HLS-CONTROLLER] Resetting Stream - notify client @${startTimeForReset}s`)
+            Logger.info(`[HlsRouter] Resetting Stream - notify client @${startTimeForReset}s`)
             this.emitter('stream_reset', {
               startTime: startTimeForReset,
               streamId: stream.id
@@ -69,4 +63,4 @@ class HlsController {
     res.sendFile(fullFilePath)
   }
 }
-module.exports = HlsController
+module.exports = HlsRouter

@@ -344,7 +344,7 @@ class LibraryController {
   // PATCH: Change the order of libraries
   async reorder(req, res) {
     if (!req.user.isRoot) {
-      Logger.error('[ApiController] ReorderLibraries invalid user', req.user)
+      Logger.error('[LibraryController] ReorderLibraries invalid user', req.user)
       return res.sendStatus(403)
     }
 
@@ -353,7 +353,7 @@ class LibraryController {
     for (let i = 0; i < orderdata.length; i++) {
       var library = this.db.libraries.find(lib => lib.id === orderdata[i].id)
       if (!library) {
-        Logger.error(`[ApiController] Invalid library not found in reorder ${orderdata[i].id}`)
+        Logger.error(`[LibraryController] Invalid library not found in reorder ${orderdata[i].id}`)
         return res.sendStatus(500)
       }
       if (library.update({ displayOrder: orderdata[i].newOrder })) {
@@ -363,9 +363,9 @@ class LibraryController {
     }
 
     if (hasUpdates) {
-      Logger.info(`[ApiController] Updated library display orders`)
+      Logger.info(`[LibraryController] Updated library display orders`)
     } else {
-      Logger.info(`[ApiController] Library orders were up to date`)
+      Logger.info(`[LibraryController] Library orders were up to date`)
     }
 
     var libraries = this.db.libraries.map(lib => lib.toJSON())

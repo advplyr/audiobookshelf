@@ -47,7 +47,7 @@ class FileMetadata {
 
   get format() {
     if (!this.ext) return ''
-    return this.ext.slice(1)
+    return this.ext.slice(1).toLowerCase()
   }
   get filenameNoExt() {
     return this.filename.replace(this.ext, '')

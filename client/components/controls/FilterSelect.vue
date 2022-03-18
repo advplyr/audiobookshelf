@@ -175,7 +175,7 @@ export default {
       return this.filterData.languages || []
     },
     progress() {
-      return ['Read', 'Unread', 'In Progress']
+      return ['Finished', 'In Progress', 'Not Started']
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {
