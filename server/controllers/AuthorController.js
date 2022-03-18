@@ -20,10 +20,26 @@ class AuthorController {
       }
     }
 
+    var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
+
     var hasUpdated = req.author.update(payload)
     if (hasUpdated) {
+      if (authorNameUpdate) { // Update author name on all books
+        var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+        itemsWithAuthor.forEach(libraryItem => {
+          libraryItem.media.metadata.updateAuthor(req.author)
+        })
+        if (itemsWithAuthor.length) {
+          await this.db.updateLibraryItems(itemsWithAuthor)
+          this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+        }
+      }
+
       await this.db.updateEntity('author', req.author)
-      this.emitter('author_updated', req.author.toJSON())
+      var numBooks = this.db.libraryItems.filter(li => {
+        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
+      }).length
+      this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
     res.json({
       author: req.author.toJSON(),
