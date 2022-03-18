@@ -286,7 +286,7 @@ async function migrateLibraryItems(db) {
     sessions = sessions.map(se => {
       var libraryItemWithAudiobook = libraryItems.find(li => li.media.getAudiobookById && !!li.media.getAudiobookById(se.mediaEntityId))
       if (!libraryItemWithAudiobook) {
-        Logger.error('[dbMigration] Failed to find library item with audiobook id', audiobookId)
+        Logger.error('[dbMigration] Failed to find library item with audiobook id', se.mediaEntityId)
         return null
       }
       se.libraryItemId = libraryItemWithAudiobook.id

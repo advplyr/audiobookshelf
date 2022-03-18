@@ -44,7 +44,7 @@ class LibraryController {
     if (req.query.include && req.query.include === 'filterdata') {
       return res.json({
         filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
-        issues: libraryHelpers.getNumIssues(req.libraryItems),
+        issues: req.libraryItems.filter(li => li.hasIssues).length,
         library: req.library
       })
     }
@@ -439,7 +439,6 @@ class LibraryController {
 
   async stats(req, res) {
     var libraryItems = req.libraryItems
-
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
     var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
     var durationStats = libraryHelpers.getItemDurationStats(libraryItems)

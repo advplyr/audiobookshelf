@@ -43,8 +43,7 @@ class Podcast {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
-
+      episodes: this.episodes.map(e => e.toJSON())
     }
   }
 
@@ -54,19 +53,14 @@ class Podcast {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
-
+      episodes: this.episodes.map(e => e.toJSON())
     }
   }
 
-  get tracks() {
-    return []
-  }
-  get duration() {
-    return 0
-  }
   get size() {
-    return 0
+    var total = 0
+    this.episodes.forEach((ep) => total += ep.size)
+    return total
   }
   get hasMediaEntities() {
     return !!this.episodes.length
@@ -75,6 +69,9 @@ class Podcast {
     return false
   }
   get hasEmbeddedCoverArt() {
+    return false
+  }
+  get hasIssues() {
     return false
   }
 
@@ -105,10 +102,6 @@ class Podcast {
     return true
   }
 
-  checkUpdateMissingTracks() {
-    return false
-  }
-
   removeFileWithInode(inode) {
     return false
   }
@@ -137,6 +130,24 @@ class Podcast {
   searchQuery(query) {
     var payload = this.metadata.searchQuery(query)
     return payload || {}
+  }
+
+  getLongestDuration() {
+    if (!this.episodes.length) return 0
+    var longest = 0
+    this.episodes.forEach((ab) => {
+      if (ab.duration > longest) longest = ab.duration
+    })
+    return longest
+  }
+
+  getTotalAudioTracks() {
+    return this.episodes.length
+  }
+  getTotalDuration() {
+    var total = 0
+    this.episodes.forEach((ep) => total += ep.duration)
+    return total
   }
 }
 module.exports = Podcast

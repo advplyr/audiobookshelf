@@ -15,7 +15,7 @@ class EBookFile {
 
   construct(file) {
     this.ino = file.ino
-    this.metadata = new FileMetadata(file)
+    this.metadata = new FileMetadata(file.metadata)
     this.ebookFormat = file.ebookFormat
     this.addedAt = file.addedAt
     this.updatedAt = file.updatedAt

@@ -72,8 +72,12 @@ class Book {
 
   get size() {
     var total = 0
-    this.audiobooks.forEach((ab) => total += ab.size)
-    this.ebooks.forEach((eb) => total += eb.size)
+    this.audiobooks.forEach((ab) => {
+      total += ab.size
+    })
+    this.ebooks.forEach((eb) => {
+      total += eb.size
+    })
     return total
   }
   get hasMediaEntities() {
@@ -86,6 +90,9 @@ class Book {
   }
   get hasEmbeddedCoverArt() {
     return this.audiobooks.some(ab => ab.hasEmbeddedCoverArt)
+  }
+  get hasIssues() {
+    return this.audiobooks.some(ab => ab.missingParts.length)
   }
 
   update(payload) {
@@ -292,6 +299,25 @@ class Book {
   addAudioFileToAudiobook(audioFile, variant = 'default') { // Create if none
     var audiobook = this.getCreateAudiobookVariant(variant)
     audiobook.audioFiles.push(audioFile)
+  }
+
+  getLongestDuration() {
+    if (!this.audiobooks.length) return 0
+    var longest = 0
+    this.audiobooks.forEach((ab) => {
+      if (ab.duration > longest) longest = ab.duration
+    })
+    return longest
+  }
+  getTotalAudioTracks() {
+    var total = 0
+    this.audiobooks.forEach((ab) => total += ab.tracks.length)
+    return total
+  }
+  getTotalDuration() {
+    var total = 0
+    this.audiobooks.forEach((ab) => total += ab.duration)
+    return total
   }
 }
 module.exports = Book

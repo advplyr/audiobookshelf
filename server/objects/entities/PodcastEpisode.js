@@ -43,6 +43,10 @@ class PodcastEpisode {
   get tracks() {
     return [this.audioFile]
   }
+  get duration() {
+    return this.audioFile.duration
+  }
+  get size() { return this.audioFile.metadata.size }
 
   // Only checks container format
   checkCanDirectPlay(payload) {

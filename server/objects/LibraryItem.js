@@ -152,6 +152,10 @@ class LibraryItem {
   get hasMediaEntities() {
     return this.media.hasMediaEntities
   }
+  get hasIssues() {
+    if (this.isMissing || this.isInvalid) return true
+    return this.media.hasIssues
+  }
 
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {

@@ -241,13 +241,13 @@ module.exports = {
   },
 
   getItemDurationStats(libraryItems) {
-    var sorted = sort(libraryItems).desc(li => li.media.duration)
-    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.duration })).filter(i => i.duration > 0)
+    var sorted = sort(libraryItems).desc(li => li.media.getLongestDuration())
+    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.getLongestDuration() })).filter(i => i.duration > 0)
     var totalDuration = 0
     var numAudioTracks = 0
     libraryItems.forEach((li) => {
-      totalDuration += li.media.duration
-      numAudioTracks += (li.media.tracks || []).length
+      totalDuration += li.media.getTotalDuration()
+      numAudioTracks += li.media.getTotalAudioTracks()
     })
     return {
       totalDuration,
@@ -263,12 +263,4 @@ module.exports = {
     })
     return totalSize
   },
-
-  getNumIssues(libraryItems) {
-    // TODO: Implement issues
-    return libraryItems.filter(li => li.isMissing).length
-    // return books.filter(ab => {
-    //   return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
-    // }).length
-  }
 }
