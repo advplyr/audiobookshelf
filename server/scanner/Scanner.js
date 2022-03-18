@@ -93,6 +93,8 @@ class Scanner {
       }
     }
 
+    await this.createNewAuthorsAndSeries(libraryItem)
+
     if (!libraryItem.hasMediaEntities) { // Library Item is invalid
       libraryItem.setInvalid()
       hasUpdated = true
@@ -289,6 +291,12 @@ class Scanner {
     var itemsUpdated = await Promise.all(itemDataToRescan.map((lid) => {
       return this.rescanLibraryItem(lid, libraryScan)
     }))
+
+    for (const libraryItem of itemsUpdated) {
+      // Temp authors & series are inserted - create them if found
+      await this.createNewAuthorsAndSeries(libraryItem)
+    }
+
     itemsUpdated = itemsUpdated.filter(li => li) // Filter out nulls
     if (itemsUpdated.length) {
       libraryScan.resultsUpdated += itemsUpdated.length
@@ -302,6 +310,12 @@ class Scanner {
       return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan)
     }))
     newLibraryItems = newLibraryItems.filter(li => li) // Filter out nulls
+
+    for (const libraryItem of newLibraryItems) {
+      // Temp authors & series are inserted - create them if found
+      await this.createNewAuthorsAndSeries(libraryItem)
+    }
+
     libraryScan.resultsAdded += newLibraryItems.length
     await this.db.insertLibraryItems(newLibraryItems)
     this.emitter('items_added', newLibraryItems.map(li => li.toJSONExpanded()))
@@ -342,9 +356,6 @@ class Scanner {
         }
       }
     }
-
-    // Temp authors & series are inserted - create them if found
-    await this.createNewAuthorsAndSeries(libraryItem)
 
     if (!libraryItem.hasMediaEntities) { // Library item is invalid
       libraryItem.setInvalid()
@@ -398,15 +409,14 @@ class Scanner {
         var updatedCover = await this.searchForCover(libraryItem, libraryScan)
         libraryItem.media.updateLastCoverSearch(updatedCover)
       }
-
-      // Temp authors & series are inserted - create them if found
-      await this.createNewAuthorsAndSeries(libraryItem)
     }
 
     return libraryItem
   }
 
   async createNewAuthorsAndSeries(libraryItem) {
+    if (libraryItem.mediaType !== 'book') return
+
     // Create or match all new authors and series
     if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
       var newAuthors = []
@@ -559,6 +569,7 @@ class Scanner {
       Logger.debug(`[Scanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
       var newLibraryItem = await this.scanPotentialNewLibraryItem(library.mediaType, folder, fullPath)
       if (newLibraryItem) {
+        await this.createNewAuthorsAndSeries(newLibraryItem)
         await this.db.insertLibraryItem(newLibraryItem)
         this.emitter('item_added', newLibraryItem.toJSONExpanded())
       }
