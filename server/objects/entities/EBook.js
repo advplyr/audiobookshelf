@@ -1,5 +1,5 @@
 const EBookFile = require('../files/EBookFile')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, getId } = require('../../utils/index')
 
 class EBook {
   constructor(ebook) {
@@ -62,6 +62,15 @@ class EBook {
   get isPlaybackMediaEntity() { return false }
   get size() {
     return this.ebookFile.metadata.size
+  }
+
+  setData(ebookFile, index) {
+    this.id = getId('eb')
+    this.name = ebookFile.metadata.filename
+    this.index = index
+    this.ebookFile = ebookFile
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
   }
 
   findFileWithInode(inode) {

@@ -1,6 +1,6 @@
 const Path = require('path')
 const AudioFile = require('../files/AudioFile')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, getId } = require('../../utils/index')
 const AudioTrack = require('../files/AudioTrack')
 
 class Audiobook {
@@ -91,6 +91,14 @@ class Audiobook {
   }
   get hasEmbeddedCoverArt() {
     return this.audioFiles.some(af => af.embeddedCoverArt)
+  }
+
+  setData(name, index) {
+    this.id = getId('ab')
+    this.name = name
+    this.index = index
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
   }
 
   update(payload) {

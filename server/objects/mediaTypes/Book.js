@@ -6,6 +6,7 @@ const { areEquivalent, copyValue } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parseOpfMetadata')
 const { readTextFile } = require('../../utils/fileUtils')
 
+const EBookFile = require('../files/EBookFile')
 const Audiobook = require('../entities/Audiobook')
 const EBook = require('../entities/EBook')
 
@@ -267,9 +268,30 @@ class Book {
   }
 
   addEbookFile(libraryFile) {
-    // var newEbook = new EBookFile()
-    // newEbook.setData(libraryFile)
-    // this.ebookFiles.push(newEbook)
+    var ebookFile = new EBookFile()
+    ebookFile.setData(libraryFile)
+
+    var ebookIndex = this.ebooks.length + 1
+    var newEBook = new EBook()
+    newEBook.setData(ebookFile, ebookIndex)
+    this.ebooks.push(newEBook)
+  }
+
+  getCreateAudiobookVariant(variant) {
+    if (this.audiobooks.length) {
+      var ab = this.audiobooks.find(ab => ab.name == variantName)
+      if (ab) return ab
+    }
+    var abIndex = this.audiobooks.length + 1
+    var newAb = new Audiobook()
+    newAb.setData(variant, abIndex)
+    this.audiobooks.push(newAb)
+    return newAb
+  }
+
+  addAudioFileToAudiobook(audioFile, variant = 'default') { // Create if none
+    var audiobook = this.getCreateAudiobookVariant(variant)
+    audiobook.audioFiles.push(audioFile)
   }
 }
 module.exports = Book

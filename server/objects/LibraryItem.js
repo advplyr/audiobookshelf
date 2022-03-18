@@ -141,6 +141,11 @@ class LibraryItem {
     this.libraryFiles.forEach((lf) => total += lf.metadata.size)
     return total
   }
+  get audioFileTotalSize() {
+    var total = 0
+    this.libraryFiles.filter(lf => lf.fileType == 'audio').forEach((lf) => total += lf.metadata.size)
+    return total
+  }
   get hasAudioFiles() {
     return this.libraryFiles.some(lf => lf.fileType === 'audio')
   }
@@ -347,7 +352,9 @@ class LibraryItem {
       return true
     })
     if (filesRemoved.length) {
-      this.media.checkUpdateMissingTracks()
+      if (this.media.audiobooks && this.media.audiobooks.length) {
+        this.media.audiobooks.forEach(ab => ab.checkUpdateMissingTracks())
+      }
       hasUpdated = true
     }
 

@@ -3,14 +3,12 @@ const Path = require('path')
 
 // Utils
 const Logger = require('../Logger')
-const { version } = require('../../package.json')
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
-const { comparePaths, getId } = require('../utils/index')
+const { comparePaths } = require('../utils/index')
 const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
 const BookFinder = require('../finders/BookFinder')
-const Audiobook = require('../objects/legacy/Audiobook')
 const LibraryItem = require('../objects/LibraryItem')
 const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
@@ -181,13 +179,14 @@ class Scanner {
     libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino)
     var libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
 
-    const NumScansPerChunk = 25
-    const itemsToUpdateChunks = []
+    const MaxSizePerChunk = 2.5e9
     const itemDataToRescanChunks = []
     const newItemDataToScanChunks = []
     var itemsToUpdate = []
     var itemDataToRescan = []
+    var itemDataToRescanSize = 0
     var newItemDataToScan = []
+    var newItemDataToScanSize = 0
     var itemsToFindCovers = []
 
     // Check for existing & removed library items
@@ -200,40 +199,37 @@ class Scanner {
         libraryScan.resultsMissing++
         libraryItem.setMissing()
         itemsToUpdate.push(libraryItem)
-        if (itemsToUpdate.length === NumScansPerChunk) {
-          itemsToUpdateChunks.push(itemsToUpdate)
-          itemsToUpdate = []
-        }
       } else {
         var checkRes = libraryItem.checkScanData(dataFound)
         if (checkRes.newLibraryFiles.length || libraryScan.scanOptions.forceRescan) { // Item has new files
           checkRes.libraryItem = libraryItem
           checkRes.scanData = dataFound
-          itemDataToRescan.push(checkRes)
-          if (itemDataToRescan.length === NumScansPerChunk) {
+
+          // If this item will go over max size then push current chunk
+          if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
             itemDataToRescanChunks.push(itemDataToRescan)
+            itemDataToRescanSize = 0
             itemDataToRescan = []
           }
-        } else if (libraryScan.findCovers && libraryItem.media.shouldSearchForCover) {
+
+          itemDataToRescan.push(checkRes)
+          itemDataToRescanSize += libraryItem.audioFileTotalSize
+          if (itemDataToRescanSize >= MaxSizePerChunk) {
+            itemDataToRescanChunks.push(itemDataToRescan)
+            itemDataToRescanSize = 0
+            itemDataToRescan = []
+          }
+        } else if (libraryScan.findCovers && libraryItem.media.shouldSearchForCover) { // Search cover
           libraryScan.resultsUpdated++
           itemsToFindCovers.push(libraryItem)
           itemsToUpdate.push(libraryItem)
-          if (itemsToUpdate.length === NumScansPerChunk) {
-            itemsToUpdateChunks.push(itemsToUpdate)
-            itemsToUpdate = []
-          }
         } else if (checkRes.updated) { // Updated but no scan required
           libraryScan.resultsUpdated++
           itemsToUpdate.push(libraryItem)
-          if (itemsToUpdate.length === NumScansPerChunk) {
-            itemsToUpdateChunks.push(itemsToUpdate)
-            itemsToUpdate = []
-          }
         }
         libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino !== dataFound.ino)
       }
     }
-    if (itemsToUpdate.length) itemsToUpdateChunks.push(itemsToUpdate)
     if (itemDataToRescan.length) itemDataToRescanChunks.push(itemDataToRescan)
 
     // Potential NEW Library Items
@@ -244,9 +240,21 @@ class Scanner {
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Directory found "${libraryItemDataFound.path}" has no media files`)
       } else {
-        newItemDataToScan.push(dataFound)
-        if (newItemDataToScan.length === NumScansPerChunk) {
+        var audioFileSize = 0
+        dataFound.libraryFiles.filter(lf => lf.fileType == 'audio').forEach(lf => audioFileSize += lf.metadata.size)
+
+        // If this item will go over max size then push current chunk
+        if (audioFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
           newItemDataToScanChunks.push(newItemDataToScan)
+          newItemDataToScanSize = 0
+          newItemDataToScan = []
+        }
+
+        newItemDataToScan.push(dataFound)
+        newItemDataToScanSize += audioFileSize
+        if (newItemDataToScanSize >= MaxSizePerChunk) {
+          newItemDataToScanChunks.push(newItemDataToScan)
+          newItemDataToScanSize = 0
           newItemDataToScan = []
         }
       }
@@ -260,10 +268,9 @@ class Scanner {
       libraryItem.media.updateLastCoverSearch(updatedCover)
     }
 
-    for (let i = 0; i < itemsToUpdateChunks.length; i++) {
-      await this.updateLibraryItemChunk(itemsToUpdateChunks[i])
+    if (itemsToUpdate.length) {
+      await this.updateLibraryItemChunk(itemsToUpdate)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
-      // console.log('Update chunk done', i, 'of', itemsToUpdateChunks.length)
     }
     for (let i = 0; i < itemDataToRescanChunks.length; i++) {
       await this.rescanLibraryItemDataChunk(itemDataToRescanChunks[i], libraryScan)
