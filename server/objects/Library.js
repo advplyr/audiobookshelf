@@ -7,8 +7,7 @@ class Library {
     this.name = null
     this.folders = []
     this.displayOrder = 1
-    this.icon = 'database'
-    this.mediaCategory = 'default' // default, podcast, book, audiobook, comic
+    this.icon = 'database' // database, podcast, book, audiobook, comic
     this.mediaType = 'book' // book, podcast
     this.provider = 'google'
     this.disableWatcher = false
@@ -33,30 +32,24 @@ class Library {
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
     this.icon = library.icon || 'database'
-    this.mediaCategory = library.mediaCategory || library.mediaType || 'default' // mediaCategory used to be mediaType
     this.mediaType = library.mediaType
     this.provider = library.provider || 'google'
     this.disableWatcher = !!library.disableWatcher
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
-    this.cleanOldValues() // mediaCategory and mediaType were changed for v2
+    this.cleanOldValues() // mediaType changed for v2
   }
 
   cleanOldValues() {
-    if (this.mediaCategory.endsWith('s')) {
-      this.mediaCategory = this.mediaCategory.slice(0, -1)
-    }
-    var availableCategories = ['default', 'audiobook', 'book', 'comic', 'podcast']
-    if (!availableCategories.includes(this.mediaCategory)) {
-      this.mediaCategory = 'default'
-    }
-    if (!availableCategories.includes(this.icon)) {
-      this.icon = this.mediaCategory
+    var availableIcons = ['database', 'audiobook', 'book', 'comic', 'podcast']
+    if (!availableIcons.includes(this.icon)) {
+      if (this.icon === 'default') this.icon = 'database'
+      else if (this.icon.endsWith('s') && availableIcons.includes(this.icon.slice(0, -1))) this.icon = this.icon.slice(0, -1)
+      else this.icon = 'database'
     }
     if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book')) {
-      if (this.mediaCategory === 'podcast') this.mediaType = 'podcast'
-      else this.mediaType = 'book'
+      this.mediaType = 'book'
     }
   }
 
@@ -67,7 +60,6 @@ class Library {
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
       icon: this.icon,
-      mediaCategory: this.mediaCategory,
       mediaType: this.mediaType,
       provider: this.provider,
       disableWatcher: this.disableWatcher,
@@ -95,7 +87,6 @@ class Library {
     }
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
-    this.mediaCategory = data.mediaCategory || 'default'
     this.mediaType = data.mediaType || 'book'
     this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
@@ -105,7 +96,7 @@ class Library {
   update(payload) {
     var hasUpdates = false
 
-    var keysToCheck = ['name', 'provider', 'mediaCategory', 'mediaType', 'icon']
+    var keysToCheck = ['name', 'provider', 'mediaType', 'icon']
     keysToCheck.forEach((key) => {
       if (payload[key] && payload[key] !== this[key]) {
         this[key] = payload[key]

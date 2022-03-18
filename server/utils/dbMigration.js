@@ -10,6 +10,7 @@ const Logger = require('../Logger')
 const LegacyAudiobook = require('../objects/legacy/Audiobook')
 const UserAudiobookData = require('../objects/legacy/UserAudiobookData')
 
+const Library = require('../objects/Library')
 const LibraryItem = require('../objects/LibraryItem')
 const Book = require('../objects/mediaTypes/Book')
 
@@ -383,6 +384,25 @@ function cleanSessionObj(db, userListeningSession) {
 
 async function migrateUserData(db) {
   Logger.info(`==== Starting User migration ====`)
+
+  // Libraries with previous mediaType of "podcast" moved to "book"
+  //   because migrating those items to podcast objects will be a nightmare
+  //   users will need to create a new library for podcasts
+  var availableIcons = ['database', 'audiobook', 'book', 'comic', 'podcast']
+  const libraries = await db.librariesDb.select((result) => (result.mediaType != 'book' || !availableIcons.includes(result.icon)))
+    .then((results) => results.data.map(lib => new Library(lib)))
+  if (!libraries.length) {
+    Logger.info('[dbMigration] No libraries found needing migration')
+  } else {
+    for (const library of libraries) {
+      Logger.info(`>> Migrating library "${library.name}" with media type "${library.mediaType}"`)
+      await db.librariesDb.update((record) => record.id === library.id, () => library).then(() => true).catch((error) => {
+        Logger.error(`[dbMigration] Update library failed: ${error}`)
+        return false
+      })
+    }
+  }
+
 
   const userObjects = await db.usersDb.select((result) => result.audiobooks != undefined).then((results) => results.data)
   if (!userObjects.length) {

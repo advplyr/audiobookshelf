@@ -17,6 +17,12 @@ export const state = () => ({
       text: 'iTunes',
       value: 'itunes'
     }
+  ],
+  podcastProviders: [
+    {
+      text: 'iTunes',
+      value: 'itunes'
+    }
   ]
 })
 

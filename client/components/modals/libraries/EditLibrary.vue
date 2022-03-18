@@ -7,13 +7,16 @@
 
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
       <div class="flex flex-wrap md:flex-nowrap -mx-1">
+        <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
+          <ui-dropdown v-model="mediaType" :items="mediaTypes" label="Media Type" :disabled="!!library" small @input="changedMediaType" />
+        </div>
         <div class="w-full md:flex-grow px-1 py-1 md:py-0">
           <ui-text-input-with-label v-model="name" label="Library Name" />
         </div>
-        <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
-          <ui-media-category-picker v-model="mediaCategory" />
+        <div class="w-1/5 md:w-18 px-1 py-1 md:py-0">
+          <ui-media-icon-picker v-model="icon" />
         </div>
-        <div class="w-1/2 md:w-72 px-1 py-1 md:py-0">
+        <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
           <ui-dropdown v-model="provider" :items="providers" label="Metadata Provider" small />
         </div>
       </div>
@@ -68,11 +71,22 @@ export default {
     return {
       name: '',
       provider: 'google',
-      mediaCategory: '',
+      icon: '',
       folders: [],
       showDirectoryPicker: false,
       disableWatcher: false,
-      newFolderPath: ''
+      newFolderPath: '',
+      mediaType: null,
+      mediaTypes: [
+        {
+          value: 'book',
+          text: 'Books'
+        },
+        {
+          value: 'podcast',
+          text: 'Podcasts'
+        }
+      ]
     }
   },
   computed: {
@@ -90,9 +104,10 @@ export default {
       var newfolderpaths = this.folderPaths.join(',')
       var origfolderpaths = this.library.folders.map((f) => f.fullPath).join(',')
 
-      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher && this.mediaCategory === this.library.mediaCategory && !this.newFolderPath
+      return newfolderpaths === origfolderpaths && this.name === this.library.name && this.provider === this.library.provider && this.disableWatcher === this.library.disableWatcher && this.icon === this.library.icon && !this.newFolderPath
     },
     providers() {
+      if (this.mediaType === 'podcast') return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
     },
     globalWatcherDisabled() {
@@ -100,6 +115,9 @@ export default {
     }
   },
   methods: {
+    changedMediaType() {
+      this.provider = this.providers[0].value
+    },
     removeFolder(folder) {
       this.folders = this.folders.filter((f) => f.fullPath !== folder.fullPath)
     },
@@ -113,7 +131,8 @@ export default {
       this.provider = this.library ? this.library.provider : 'google'
       this.folders = this.library ? this.library.folders.map((p) => ({ ...p })) : []
       this.disableWatcher = this.library ? !!this.library.disableWatcher : false
-      this.mediaCategory = this.library ? this.library.mediaCategory : 'default'
+      this.icon = this.library ? this.library.icon : 'default'
+      this.mediaType = this.library ? this.library.mediaType : 'book'
       this.showDirectoryPicker = false
     },
     selectFolder(fullPath) {
@@ -144,8 +163,7 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
-        mediaCategory: this.mediaCategory,
-        icon: this.mediaCategory,
+        icon: this.icon,
         disableWatcher: this.disableWatcher
       }
 
@@ -180,8 +198,8 @@ export default {
         name: this.name,
         provider: this.provider,
         folders: this.folders,
-        mediaCategory: this.mediaCategory,
-        icon: this.mediaCategory,
+        icon: this.icon,
+        mediaType: this.mediaType,
         disableWatcher: this.disableWatcher
       }
 

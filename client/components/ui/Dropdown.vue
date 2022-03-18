@@ -1,12 +1,12 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutsideObj">
-    <p class="text-sm font-semibold">{{ label }}</p>
-    <button type="button" :disabled="disabled" class="relative w-full border border-gray-600 rounded shadow-sm pl-3 pr-8 py-2 text-left focus:outline-none sm:text-sm cursor-pointer bg-primary" :class="small ? 'h-9' : 'h-10'" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <p class="text-sm font-semibold" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
+    <button type="button" :disabled="disabled" class="relative w-full border rounded shadow-sm pl-3 pr-8 py-2 text-left focus:outline-none sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate" :class="small ? 'text-sm' : ''">{{ selectedText }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <span class="material-icons text-gray-100">expand_more</span>
+        <span class="material-icons">expand_more</span>
       </span>
     </button>
 
@@ -63,6 +63,16 @@ export default {
     },
     selectedText() {
       return this.selectedItem ? this.selectedItem.text : ''
+    },
+    buttonClass() {
+      var classes = []
+      if (this.small) classes.push('h-9')
+      else classes.push('h-10')
+
+      if (this.disabled) classes.push('cursor-not-allowed border-gray-600 bg-primary bg-opacity-70 border-opacity-70 text-gray-400')
+      else classes.push('cursor-pointer border-gray-600 bg-primary text-gray-100')
+
+      return classes.join(' ')
     }
   },
   methods: {
