@@ -80,15 +80,23 @@ class PlaybackSessionManager {
   }
 
   async syncSession(user, session, syncData) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${sessino.libraryItemId}"`)
+      return
+    }
+
     session.currentTime = syncData.currentTime
     session.addListeningTime(syncData.timeListened)
     Logger.debug(`[PlaybackSessionManager] syncSession "${session.id}" | Total Time Listened: ${session.timeListening}`)
 
     const itemProgressUpdate = {
+      mediaEntityId: syncData.mediaEntityId || null,
+      duration: syncData.duration,
       currentTime: syncData.currentTime,
       progress: session.progress
     }
-    var wasUpdated = user.createUpdateLibraryItemProgress(session.libraryItemId, itemProgressUpdate)
+    var wasUpdated = user.createUpdateLibraryItemProgress(libraryItem, itemProgressUpdate)
     if (wasUpdated) {
       await this.db.updateEntity('user', user)
       var itemProgress = user.getLibraryItemProgress(session.libraryItemId)
@@ -112,6 +120,8 @@ class PlaybackSessionManager {
   }
 
   saveSession(session) {
+    if (!session.timeListening) return // Do not save a session with no listening time
+
     if (session.lastSave) {
       return this.db.updateEntity('session', session)
     } else {

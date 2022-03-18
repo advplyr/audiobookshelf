@@ -11,6 +11,7 @@ export default class PlayerHandler {
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
     this.currentSessionId = null
+    this.mediaEntityId = null
     this.startTime = 0
 
     this.lastSyncTime = 0
@@ -107,7 +108,7 @@ export default class PlayerHandler {
       this.stopPlayInterval()
     }
     if (this.playerState === 'LOADED' || this.playerState === 'PLAYING') {
-      this.ctx.setDuration(this.player.getDuration())
+      this.ctx.setDuration(this.getDuration())
     }
     if (this.playerState !== 'LOADING') {
       this.ctx.setCurrentTime(this.player.getCurrentTime())
@@ -149,6 +150,7 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.startTime = session.currentTime
     this.currentSessionId = session.id
+    this.mediaEntityId = session.mediaEntityId
 
     console.log('[PlayerHandler] Preparing Session', session)
     var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
@@ -207,7 +209,9 @@ export default class PlayerHandler {
       var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
       syncData = {
         timeListened: listeningTimeToAdd,
-        currentTime: this.player.getCurrentTime()
+        duration: this.getDuration(),
+        mediaEntityId: this.mediaEntityId,
+        currentTime: this.getCurrentTime()
       }
     }
     this.listeningTimeSinceSync = 0
@@ -224,6 +228,8 @@ export default class PlayerHandler {
     var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
     var syncData = {
       timeListened: listeningTimeToAdd,
+      duration: this.getDuration(),
+      mediaEntityId: this.mediaEntityId,
       currentTime
     }
     this.listeningTimeSinceSync = 0

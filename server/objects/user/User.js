@@ -211,11 +211,20 @@ class User {
     return this.libraryItemProgress.find(lip => lip.id === libraryItemId)
   }
 
-  createUpdateLibraryItemProgress(libraryItemId, updatePayload) {
-    var itemProgress = this.libraryItemProgress.find(li => li.id === libraryItemId)
+  createUpdateLibraryItemProgress(libraryItem, updatePayload) {
+    var itemProgress = this.libraryItemProgress.find(li => li.id === libraryItem.id)
     if (!itemProgress) {
       var newItemProgress = new LibraryItemProgress()
-      newItemProgress.setData(libraryItemId, updatePayload)
+
+      var mediaEntity = null
+      if (updatePayload.mediaEntityId) mediaEntity = libraryItem.media.getMediaEntityById(updatePayload.mediaEntityId)
+      if (!mediaEntity) mediaEntity = libraryItem.media.getPlaybackMediaEntity()
+      if (!mediaEntity) {
+        Logger.error(`[User] createUpdateLibraryItemProgress invalid library item has no playback media entity "${libraryItem.id}"`)
+        return false
+      }
+
+      newItemProgress.setData(libraryItem.id, mediaEntity.id, updatePayload)
       this.libraryItemProgress.push(newItemProgress)
       return true
     }
@@ -225,7 +234,7 @@ class User {
 
   removeLibraryItemProgress(libraryItemId) {
     if (!this.libraryItemProgress.some(lip => lip.id == libraryItemId)) return false
-    this.libraryItemProgress = this.libraryItemProgress.filter(lip => lip != libraryItemId)
+    this.libraryItemProgress = this.libraryItemProgress.filter(lip => lip.id != libraryItemId)
     return true
   }
 

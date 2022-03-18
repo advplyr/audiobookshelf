@@ -338,6 +338,8 @@ function cleanUserObject(db, userObj) {
         var liProgress = new LibraryItemProgress() // New Progress Object
         liProgress.id = userAudiobookData.audiobookId // This ID will be updated when library item is created
         liProgress.libraryItemId = userAudiobookData.audiobookId
+        liProgress.mediaEntityId = userAudiobookData.audiobookId
+        liProgress.duration = userAudiobookData.totalDuration
         liProgress.isFinished = !!userAudiobookData.isRead
         Object.keys(liProgress.toJSON()).forEach((key) => {
           if (userAudiobookData[key] !== undefined) {

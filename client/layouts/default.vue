@@ -259,7 +259,6 @@ export default {
       this.$store.commit('users/updateUser', user)
     },
     userItemProgressUpdate(payload) {
-      console.log('User item progress update', payload)
       this.$store.commit('user/updateItemProgress', payload)
     },
     collectionAdded(collection) {

@@ -23,7 +23,7 @@ class MeController {
       return res.sendStatus(200)
     }
     await this.db.updateEntity('user', req.user)
-    this.clientEmitter(req.user.id, 'user_item_progress_updated', { id: libraryItem.id, data: null })
+    // this.clientEmitter(req.user.id, 'user_item_progress_updated', { id: libraryItem.id, data: null })
 
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
@@ -35,7 +35,7 @@ class MeController {
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
-    var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem.id, req.body)
+    var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -54,7 +54,7 @@ class MeController {
     itemProgressPayloads.forEach((itemProgress) => {
       var libraryItem = this.db.libraryItems.find(li => li.id === itemProgress.id) // Make sure this library item exists
       if (libraryItem) {
-        var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem.id, itemProgress)
+        var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem, itemProgress)
         if (wasUpdated) shouldUpdate = true
       } else {
         Logger.error(`[MeController] batchUpdateLibraryItemProgress: Library Item does not exist ${itemProgress.id}`)

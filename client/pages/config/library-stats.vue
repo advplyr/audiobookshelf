@@ -117,7 +117,6 @@ export default {
         var errorMsg = err.response ? err.response.data || 'Unknown Error' : 'Unknown Error'
         this.$toast.error(`Failed to get library stats: ${errorMsg}`)
       })
-      console.log('lib stats', this.libraryStats)
     }
   },
   mounted() {

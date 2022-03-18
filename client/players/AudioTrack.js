@@ -26,6 +26,6 @@ export default class AudioTrack {
       return `${process.env.serverUrl}${this.contentUrl}?token=${this.userToken}`
     }
 
-    return this.contentUrl + '?token=${this.userToken}'
+    return this.contentUrl + `?token=${this.userToken}`
   }
 }

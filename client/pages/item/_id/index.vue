@@ -30,7 +30,6 @@
                 </h1>
                 <p v-if="subtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ subtitle }}</p>
               </div>
-              <!-- <p v-if="subtitle" class="ml-4 text-gray-400 text-2xl block sm:hidden">{{ subtitle }}</p> -->
 
               <p v-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
@@ -69,7 +68,7 @@
                   </template>
                 </div>
               </div>
-              <div v-if="tracks.length" class="flex py-0.5">
+              <div v-if="audiobooks.length" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Duration</span>
                 </div>
@@ -77,7 +76,7 @@
                   {{ durationPretty }}
                 </div>
               </div>
-              <div v-if="tracks.length" class="flex py-0.5">
+              <div v-if="audiobooks.length" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Size</span>
                 </div>
@@ -220,6 +219,10 @@ export default {
     audiobooks() {
       return this.media.audiobooks || []
     },
+    defaultAudiobook() {
+      if (!this.audiobooks.length) return null
+      return this.audiobooks[0]
+    },
     title() {
       return this.mediaMetadata.title || 'No Title'
     },
@@ -258,33 +261,28 @@ export default {
       })
     },
     durationPretty() {
-      return this.$elapsedPretty(this.media.duration)
+      if (!this.defaultAudiobook) return 'N/A'
+      return this.$elapsedPretty(this.defaultAudiobook.duration)
     },
     duration() {
-      return this.media.duration
+      if (!this.defaultAudiobook) return 0
+      return this.defaultAudiobook.duration
     },
     sizePretty() {
-      return this.$bytesPretty(this.media.size)
+      if (!this.defaultAudiobook) return 'N/A'
+      return this.$bytesPretty(this.defaultAudiobook.size)
     },
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
     },
-    otherAudioFiles() {
-      return this.audioFiles.filter((af) => {
-        return !this.tracks.find((t) => t.path === af.path)
-      })
-    },
-    tracks() {
-      return this.media.tracks || []
-    },
-    audioFiles() {
-      return this.media.audioFiles || []
+    audiobooks() {
+      return this.media.audiobooks || []
     },
     ebooks() {
       return this.media.ebooks || []
     },
     showExperimentalReadAlert() {
-      return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
+      return !this.audiobooks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
     description() {
       return this.mediaMetadata.description || ''
@@ -292,14 +290,13 @@ export default {
     userItemProgress() {
       return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
     },
-    userCurrentTime() {
-      return this.userItemProgress ? this.userItemProgress.currentTime : 0
-    },
     userIsFinished() {
       return this.userItemProgress ? !!this.userItemProgress.isFinished : false
     },
     userTimeRemaining() {
-      return this.duration - this.userCurrentTime
+      if (!this.userItemProgress) return 0
+      var duration = this.userItemProgress.duration || this.duration
+      return duration - this.userItemProgress.currentTime
     },
     progressPercent() {
       return this.userItemProgress ? Math.max(Math.min(1, this.userItemProgress.progress), 0) : 0

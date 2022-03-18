@@ -4,7 +4,9 @@ class LibraryItemProgress {
   constructor(progress) {
     this.id = null // Same as library item id
     this.libraryItemId = null
+    this.mediaEntityId = null
 
+    this.duration = null
     this.progress = null // 0 to 1
     this.currentTime = null // seconds
     this.isFinished = false
@@ -22,6 +24,8 @@ class LibraryItemProgress {
     return {
       id: this.id,
       libraryItemId: this.libraryItemId,
+      mediaEntityId: this.mediaEntityId,
+      duration: this.duration,
       progress: this.progress,
       currentTime: this.currentTime,
       isFinished: this.isFinished,
@@ -34,6 +38,8 @@ class LibraryItemProgress {
   construct(progress) {
     this.id = progress.id
     this.libraryItemId = progress.libraryItemId
+    this.mediaEntityId = progress.mediaEntityId || null
+    this.duration = progress.duration || 0
     this.progress = progress.progress
     this.currentTime = progress.currentTime
     this.isFinished = !!progress.isFinished
@@ -46,9 +52,11 @@ class LibraryItemProgress {
     return !this.isFinished && this.progress > 0
   }
 
-  setData(libraryItemId, progress) {
+  setData(libraryItemId, mediaEntityId, progress) {
     this.id = libraryItemId
     this.libraryItemId = libraryItemId
+    this.mediaEntityId = mediaEntityId
+    this.duration = progress.duration || 0
     this.progress = Math.min(1, (progress.progress || 0))
     this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished || this.progress == 1
