@@ -563,7 +563,7 @@ export default {
       }
     },
     scan() {
-      this.$root.socket.emit('scan', this.currentLibraryId)
+      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
     }
   },
   mounted() {

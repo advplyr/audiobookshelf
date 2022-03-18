@@ -155,7 +155,7 @@ export default {
     },
     settingsUpdated(settings) {},
     scan() {
-      this.$root.socket.emit('scan', this.$store.state.libraries.currentLibraryId)
+      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.$store.state.libraries.currentLibraryId })
     },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)

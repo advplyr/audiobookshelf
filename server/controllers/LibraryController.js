@@ -487,6 +487,20 @@ class LibraryController {
     res.sendStatus(200)
   }
 
+  // GET: api/scan (Root)
+  async scan(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
+      return res.sendStatus(403)
+    }
+    var options = {
+      forceRescan: req.query.force == 1
+    }
+    res.sendStatus(200)
+    await this.scanner.scan(req.library, options)
+    Logger.info('[LibraryController] Scan complete')
+  }
+
   middleware(req, res, next) {
     var librariesAccessible = req.user.librariesAccessible || []
     if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.params.id)) {

@@ -2,11 +2,7 @@ const express = require('express')
 const Path = require('path')
 const fs = require('fs-extra')
 const date = require('date-and-time')
-const axios = require('axios')
-
 const Logger = require('../Logger')
-const { isObject } = require('../utils/index')
-const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -18,6 +14,7 @@ const SeriesController = require('../controllers/SeriesController')
 const AuthorController = require('../controllers/AuthorController')
 const MediaEntityController = require('../controllers/MediaEntityController')
 const SessionController = require('../controllers/SessionController')
+const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
@@ -69,6 +66,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
+    this.router.get('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this)) // Root only
 
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
@@ -95,6 +93,7 @@ class ApiRouter {
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
     this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
+    this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this)) // Root only
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
@@ -147,14 +146,6 @@ class ApiRouter {
     this.router.post('/backup/upload', BackupController.upload.bind(this))
 
     //
-    // Search Routes
-    //
-    this.router.get('/search/covers', this.findCovers.bind(this))
-    this.router.get('/search/books', this.findBooks.bind(this))
-    this.router.get('/search/podcast', this.findPodcasts.bind(this))
-    this.router.get('/search/authors', this.findAuthor.bind(this))
-
-    //
     // File System Routes
     //
     this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
@@ -183,102 +174,19 @@ class ApiRouter {
     //
     // Misc Routes
     //
-    this.router.patch('/serverSettings', this.updateServerSettings.bind(this))
-
-    this.router.post('/authorize', this.authorize.bind(this))
-
-    this.router.get('/download/:id', this.download.bind(this))
-
-    this.router.post('/purgecache', this.purgeCache.bind(this))
+    this.router.post('/upload', MiscController.handleUpload.bind(this))
+    this.router.get('/download/:id', MiscController.download.bind(this))
+    this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
+    this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
+    this.router.post('/getPodcastFeed', MiscController.getPodcastFeed.bind(this))
+    this.router.post('/authorize', MiscController.authorize.bind(this))
+    this.router.get('/search/covers', MiscController.findCovers.bind(this))
+    this.router.get('/search/books', MiscController.findBooks.bind(this))
+    this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
+    this.router.get('/search/authors', MiscController.findAuthor.bind(this))
 
     // OLD
     // this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
-
-    this.router.post('/getPodcastFeed', this.getPodcastFeed.bind(this))
-  }
-
-  async findBooks(req, res) {
-    var provider = req.query.provider || 'google'
-    var title = req.query.title || ''
-    var author = req.query.author || ''
-    var results = await this.bookFinder.search(provider, title, author)
-    res.json(results)
-  }
-
-  async findCovers(req, res) {
-    var query = req.query
-    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
-    res.json(result)
-  }
-
-  async findPodcasts(req, res) {
-    var term = req.query.term
-    var results = await this.podcastFinder.search(term)
-    res.json(results)
-  }
-
-  async findAuthor(req, res) {
-    var query = req.query.q
-    var author = await this.authorFinder.findAuthorByName(query)
-    res.json(author)
-  }
-
-  authorize(req, res) {
-    if (!req.user) {
-      Logger.error('Invalid user in authorize')
-      return res.sendStatus(401)
-    }
-    res.json({ user: req.user })
-  }
-
-  async updateServerSettings(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to update server settings', req.user)
-      return res.sendStatus(403)
-    }
-    var settingsUpdate = req.body
-    if (!settingsUpdate || !isObject(settingsUpdate)) {
-      return res.status(500).send('Invalid settings update object')
-    }
-
-    var madeUpdates = this.db.serverSettings.update(settingsUpdate)
-    if (madeUpdates) {
-      // If backup schedule is updated - update backup manager
-      if (settingsUpdate.backupSchedule !== undefined) {
-        this.backupManager.updateCronSchedule()
-      }
-
-      await this.db.updateServerSettings()
-    }
-    return res.json({
-      success: true,
-      serverSettings: this.db.serverSettings
-    })
-  }
-
-  async download(req, res) {
-    if (!req.user.canDownload) {
-      Logger.error('User attempting to download without permission', req.user)
-      return res.sendStatus(403)
-    }
-    var downloadId = req.params.id
-    Logger.info('Download Request', downloadId)
-    var download = this.downloadManager.getDownload(downloadId)
-    if (!download) {
-      Logger.error('Download request not found', downloadId)
-      return res.sendStatus(404)
-    }
-
-    var options = {
-      headers: {
-        'Content-Type': download.mimeType
-      }
-    }
-    res.download(download.fullPath, download.filename, options, (err) => {
-      if (err) {
-        Logger.error('Download Error', err)
-      }
-    })
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {
@@ -450,15 +358,6 @@ class ApiRouter {
     return listeningStats
   }
 
-  async purgeCache(req, res) {
-    if (!req.user.isRoot) {
-      return res.sendStatus(403)
-    }
-    Logger.info(`[ApiRouter] Purging all cache`)
-    await this.cacheManager.purgeAll()
-    res.sendStatus(200)
-  }
-
   async createAuthorsAndSeriesForItemUpdate(mediaPayload) {
     if (mediaPayload.metadata) {
       var mediaMetadata = mediaPayload.metadata
@@ -511,28 +410,6 @@ class ApiRouter {
         }
       }
     }
-  }
-
-  getPodcastFeed(req, res) {
-    var url = req.body.rssFeed
-    if (!url) {
-      return res.status(400).send('Bad request')
-    }
-
-    axios.get(url).then(async (data) => {
-      if (!data || !data.data) {
-        Logger.error('Invalid podcast feed request response')
-        return res.status(500).send('Bad response from feed request')
-      }
-      var podcast = await parsePodcastRssFeedXml(data.data)
-      if (!podcast) {
-        return res.status(500).send('Invalid podcast RSS feed')
-      }
-      res.json(podcast)
-    }).catch((error) => {
-      console.error('Failed', error)
-      res.status(500).send(error)
-    })
   }
 }
 module.exports = ApiRouter

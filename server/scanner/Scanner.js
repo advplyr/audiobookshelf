@@ -109,17 +109,13 @@ class Scanner {
     return ScanResult.UPTODATE
   }
 
-  async scan(libraryId, options = {}) {
-    if (this.isLibraryScanning(libraryId)) {
-      Logger.error(`[Scanner] Already scanning ${libraryId}`)
+  async scan(library, options = {}) {
+    if (this.isLibraryScanning(library.id)) {
+      Logger.error(`[Scanner] Already scanning ${library.id}`)
       return
     }
 
-    var library = this.db.libraries.find(lib => lib.id === libraryId)
-    if (!library) {
-      Logger.error(`[Scanner] Library not found for scan ${libraryId}`)
-      return
-    } else if (!library.folders.length) {
+    if (!library.folders.length) {
       Logger.warn(`[Scanner] Library has no folders to scan "${library.name}"`)
       return
     }

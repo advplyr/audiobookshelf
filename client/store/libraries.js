@@ -33,6 +33,14 @@ export const getters = {
 }
 
 export const actions = {
+  requestLibraryScan({ state, commit }, { libraryId, force }) {
+    this.$axios.$get(`/api/libraries/${libraryId}/scan`, { params: { force } }).then(() => {
+      this.$toast.success('Library scan started')
+    }).catch((error) => {
+      console.error('Failed to start scan', error)
+      this.$toast.error('Failed to start scan')
+    })
+  },
   loadFolders({ state, commit }) {
     if (state.folders.length) {
       var lastCheck = Date.now() - state.folderLastUpdate

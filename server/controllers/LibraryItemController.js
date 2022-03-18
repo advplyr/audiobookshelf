@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const { reqSupportsWebp } = require('../utils/index')
+const { ScanResult } = require('../utils/constants')
 
 class LibraryItemController {
   constructor() { }
@@ -237,6 +238,18 @@ class LibraryItemController {
     var success = await this.db.recreateLibraryItemsDb()
     if (success) res.sendStatus(200)
     else res.sendStatus(500)
+  }
+
+  // GET: api/items/:id/scan (Root)
+  async scan(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[LibraryItemController] Non-root user attempted to scan library item`, req.user)
+      return res.sendStatus(403)
+    }
+    var result = await this.scanner.scanLibraryItemById(req.libraryItem.id)
+    res.json({
+      result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
+    })
   }
 
 

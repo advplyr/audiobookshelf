@@ -9,8 +9,6 @@ const rateLimit = require('express-rate-limit')
 const { version } = require('../package.json')
 
 // Utils
-const { ScanResult } = require('./utils/constants')
-const filePerms = require('./utils/filePerms')
 const dbMigration = require('./utils/dbMigration')
 const Logger = require('./Logger')
 
@@ -160,12 +158,11 @@ class Server {
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
 
+    // TODO: Are these necessary?
     // Metadata folder static path
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
-
+    // app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
     // Downloads folder static path
-    app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
-
+    // app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
     // Static folder
     app.use(express.static(Path.join(global.appRoot, 'static')))
 
@@ -197,7 +194,6 @@ class Server {
     app.get('/collection/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
 
     app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
-    app.post('/upload', this.authMiddleware.bind(this), this.handleUpload.bind(this))
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
@@ -230,9 +226,7 @@ class Server {
       //         with the goal of the web socket connection being a nice-to-have not need-to-have
 
       // Scanning
-      socket.on('scan', this.scan.bind(this))
       socket.on('cancel_scan', this.cancelScan.bind(this))
-      socket.on('scan_item', (libraryItemId) => this.scanLibraryItem(socket, libraryItemId))
       socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
 
       // Downloading
@@ -271,24 +265,6 @@ class Server {
   async filesChanged(fileUpdates) {
     Logger.info('[Server]', fileUpdates.length, 'Files Changed')
     await this.scanner.scanFilesChanged(fileUpdates)
-  }
-
-  async scan(libraryId, options = {}) {
-    Logger.info('[Server] Starting Scan')
-    await this.scanner.scan(libraryId, options)
-    // await this.scanner.scan(libraryId)
-    Logger.info('[Server] Scan complete')
-  }
-
-  async scanLibraryItem(socket, libraryItemId) {
-    var result = await this.scanner.scanLibraryItemById(libraryItemId)
-    var scanResultName = ''
-    for (const key in ScanResult) {
-      if (ScanResult[key] === result) {
-        scanResultName = key
-      }
-    }
-    socket.emit('item_scan_complete', scanResultName)
   }
 
   cancelScan(id) {
@@ -349,70 +325,6 @@ class Server {
         }
       }
     }
-  }
-
-  async handleUpload(req, res) {
-    if (!req.user.canUpload) {
-      Logger.warn('User attempted to upload without permission', req.user)
-      return res.sendStatus(403)
-    }
-    var files = Object.values(req.files)
-    var title = req.body.title
-    var author = req.body.author
-    var series = req.body.series
-    var libraryId = req.body.library
-    var folderId = req.body.folder
-
-    var library = this.db.libraries.find(lib => lib.id === libraryId)
-    if (!library) {
-      return res.status(500).send(`Library not found with id ${libraryId}`)
-    }
-    var folder = library.folders.find(fold => fold.id === folderId)
-    if (!folder) {
-      return res.status(500).send(`Folder not found with id ${folderId} in library ${library.name}`)
-    }
-
-    if (!files.length || !title) {
-      return res.status(500).send(`Invalid post data`)
-    }
-
-    // For setting permissions recursively
-    var firstDirPath = Path.join(folder.fullPath, author)
-
-    var outputDirectory = ''
-    if (series && author) {
-      outputDirectory = Path.join(folder.fullPath, author, series, title)
-    } else if (author) {
-      outputDirectory = Path.join(folder.fullPath, author, title)
-    } else {
-      outputDirectory = Path.join(folder.fullPath, title)
-    }
-
-    var exists = await fs.pathExists(outputDirectory)
-    if (exists) {
-      Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.status(500).send(`Directory "${outputDirectory}" already exists`)
-    }
-
-    await fs.ensureDir(outputDirectory)
-
-    Logger.info(`Uploading ${files.length} files to`, outputDirectory)
-
-    for (let i = 0; i < files.length; i++) {
-      var file = files[i]
-
-      var path = Path.join(outputDirectory, file.name)
-      await file.mv(path).then(() => {
-        return true
-      }).catch((error) => {
-        Logger.error('Failed to move file', path, error)
-        return false
-      })
-    }
-
-    await filePerms.setDefault(firstDirPath)
-
-    res.sendStatus(200)
   }
 
   // First time login rate limit is hit

@@ -232,7 +232,7 @@ export default {
       })
 
       return this.$axios
-        .$post('/upload', form)
+        .$post('/api/upload', form)
         .then(() => true)
         .catch((error) => {
           console.error('Failed', error)

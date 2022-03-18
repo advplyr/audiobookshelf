@@ -76,10 +76,10 @@ export default {
       this.$emit('edit', this.library)
     },
     scan() {
-      this.$root.socket.emit('scan', this.library.id)
+      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
     },
     forceScan() {
-      this.$root.socket.emit('scan', this.library.id, { forceRescan: true })
+      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
     },
     deleteClick() {
       if (this.isMain) return
