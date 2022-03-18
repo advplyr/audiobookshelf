@@ -26,6 +26,10 @@ export const getters = {
     if (!state.user.libraryItemProgress) return null
     return state.user.libraryItemProgress.find(li => li.id == libraryItemId)
   },
+  getUserBookmarksForItem: (state) => (libraryItemId) => {
+    if (!state.user.bookmarks) return []
+    return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId)
+  },
   getUserSetting: (state) => (key) => {
     return state.settings ? state.settings[key] : null
   },
@@ -97,7 +101,6 @@ export const actions = {
 export const mutations = {
   setUser(state, user) {
     state.user = user
-
     if (user) {
       if (user.token) localStorage.setItem('token', user.token)
     } else {

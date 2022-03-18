@@ -134,6 +134,9 @@ class ApiRouter {
     this.router.patch('/me/progress/:id', MeController.createUpdateLibraryItemProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeLibraryItemProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateLibraryItemProgress.bind(this))
+    this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
+    this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
+    this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
 

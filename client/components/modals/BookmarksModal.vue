@@ -39,7 +39,7 @@ export default {
       type: Number,
       default: 0
     },
-    audiobookId: String
+    libraryItemId: String
   },
   data() {
     return {
@@ -76,8 +76,15 @@ export default {
       this.showBookmarkTitleInput = true
     },
     deleteBookmark(bm) {
-      var bookmark = { ...bm, audiobookId: this.audiobookId }
-      this.$root.socket.emit('delete_bookmark', bookmark)
+      this.$axios
+        .$delete(`/api/me/item/${this.libraryItemId}/bookmark/${bm.time}`)
+        .then(() => {
+          this.$toast.success('Bookmark removed')
+        })
+        .catch((error) => {
+          this.$toast.error(`Failed to remove bookmark`)
+          console.error(error)
+        })
       this.show = false
     },
     clickBookmark(bm) {
@@ -85,9 +92,15 @@ export default {
     },
     submitUpdateBookmark(updatedBookmark) {
       var bookmark = { ...updatedBookmark }
-      bookmark.audiobookId = this.audiobookId
-
-      this.$root.socket.emit('update_bookmark', bookmark)
+      this.$axios
+        .$patch(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
+        .then(() => {
+          this.$toast.success('Bookmark updated')
+        })
+        .catch((error) => {
+          this.$toast.error(`Failed to update bookmark`)
+          console.error(error)
+        })
       this.show = false
     },
     submitCreateBookmark() {
@@ -95,11 +108,18 @@ export default {
         this.newBookmarkTitle = this.$formatDate(Date.now(), 'MMM dd, yyyy HH:mm')
       }
       var bookmark = {
-        audiobookId: this.audiobookId,
         title: this.newBookmarkTitle,
-        time: this.currentTime
+        time: Math.floor(this.currentTime)
       }
-      this.$root.socket.emit('create_bookmark', bookmark)
+      this.$axios
+        .$post(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
+        .then(() => {
+          this.$toast.success('Bookmark added')
+        })
+        .catch((error) => {
+          this.$toast.error(`Failed to create bookmark`)
+          console.error(error)
+        })
 
       this.newBookmarkTitle = ''
       this.showBookmarkTitleInput = false

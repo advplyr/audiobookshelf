@@ -98,6 +98,7 @@ class User {
       type: this.type,
       token: this.token,
       libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
+      bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
@@ -136,7 +137,7 @@ class User {
 
     this.bookmarks = []
     if (user.bookmarks) {
-      this.bookmarks = user.bookmarks.map(bm => new AudioBookmark(bm))
+      this.bookmarks = user.bookmarks.filter(bm => typeof bm.libraryItemId == 'string').map(bm => new AudioBookmark(bm))
     }
 
     this.isActive = (user.isActive === undefined || user.type === 'root') ? true : !!user.isActive
@@ -260,54 +261,35 @@ class User {
     return this.librariesAccessible.includes(libraryId)
   }
 
-  createBookmark({ libraryItemId, time, title }) {
-    // if (!this.audiobooks) this.audiobooks = {}
-    // if (!this.audiobooks[audiobookId]) {
-    //   this.audiobooks[audiobookId] = new UserAudiobookData()
-    //   this.audiobooks[audiobookId].audiobookId = audiobookId
-    // }
-    // if (this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-    //   return {
-    //     error: 'Bookmark already exists'
-    //   }
-    // }
-
-    // var success = this.audiobooks[audiobookId].createBookmark(time, title)
-    // if (success) return this.audiobooks[audiobookId]
-    // return null
+  findBookmark(libraryItemId, time) {
+    return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time)
   }
 
-  updateBookmark({ audiobookId, time, title }) {
-    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-    //   return {
-    //     error: 'Invalid Audiobook'
-    //   }
-    // }
-    // if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-    //   return {
-    //     error: 'Bookmark does not exist'
-    //   }
-    // }
-
-    // var success = this.audiobooks[audiobookId].updateBookmark(time, title)
-    // if (success) return this.audiobooks[audiobookId]
-    // return null
+  createBookmark(libraryItemId, time, title) {
+    var existingBookmark = this.findBookmark(libraryItemId, time)
+    if (existingBookmark) {
+      Logger.warn('[User] Create Bookmark already exists for this time')
+      existingBookmark.title = title
+      return existingBookmark
+    }
+    var newBookmark = new AudioBookmark()
+    newBookmark.setData(libraryItemId, time, title)
+    this.bookmarks.push(newBookmark)
+    return newBookmark
   }
 
-  deleteBookmark({ audiobookId, time }) {
-    // if (!this.audiobooks || !this.audiobooks[audiobookId]) {
-    //   return {
-    //     error: 'Invalid Audiobook'
-    //   }
-    // }
-    // if (!this.audiobooks[audiobookId].checkBookmarkExists(time)) {
-    //   return {
-    //     error: 'Bookmark does not exist'
-    //   }
-    // }
+  updateBookmark(libraryItemId, time, title) {
+    var bookmark = this.findBookmark(libraryItemId, time)
+    if (!bookmark) {
+      Logger.error(`[User] updateBookmark not found`)
+      return null
+    }
+    bookmark.title = title
+    return bookmark
+  }
 
-    // this.audiobooks[audiobookId].deleteBookmark(time)
-    // return this.audiobooks[audiobookId]
+  removeBookmark(libraryItemId, time) {
+    this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time))
   }
 
   syncLocalUserAudiobookData(localUserAudiobookData, audiobook) {

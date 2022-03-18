@@ -69,6 +69,50 @@ class MeController {
     res.sendStatus(200)
   }
 
+  // POST: api/me/item/:id/bookmark
+  async createBookmark(req, res) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === req.params.id)
+    if (!libraryItem) return res.sendStatus(404)
+    const { time, title } = req.body
+    var bookmark = req.user.createBookmark(libraryItem.id, time, title)
+    await this.db.updateEntity('user', req.user)
+    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    res.json(bookmark)
+  }
+
+  // PATCH: api/me/item/:id/bookmark
+  async updateBookmark(req, res) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === req.params.id)
+    if (!libraryItem) return res.sendStatus(404)
+    const { time, title } = req.body
+    if (!req.user.findBookmark(libraryItem.id, time)) {
+      Logger.error(`[MeController] updateBookmark not found`)
+      return res.sendStatus(404)
+    }
+    var bookmark = req.user.updateBookmark(libraryItem.id, time, title)
+    if (!bookmark) return res.sendStatus(500)
+    await this.db.updateEntity('user', req.user)
+    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    res.json(bookmark)
+  }
+
+  // DELETE: api/me/item/:id/bookmark/:time
+  async removeBookmark(req, res) {
+    var libraryItem = this.db.libraryItems.find(li => li.id === req.params.id)
+    if (!libraryItem) return res.sendStatus(404)
+    var time = Number(req.params.time)
+    if (isNaN(time)) return res.sendStatus(500)
+
+    if (!req.user.findBookmark(libraryItem.id, time)) {
+      Logger.error(`[MeController] removeBookmark not found`)
+      return res.sendStatus(404)
+    }
+    req.user.removeBookmark(libraryItem.id, time)
+    await this.db.updateEntity('user', req.user)
+    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    res.sendStatus(200)
+  }
+
   // PATCH: api/me/password
   updatePassword(req, res) {
     this.auth.userChangePassword(req, res)

@@ -262,9 +262,37 @@ async function migrateLibraryItems(db) {
         lip.libraryItemId = libraryItemWithAudiobook.id
         return lip
       }).filter(lip => !!lip)
-      await db.updateEntity('user', user)
-      Logger.debug(`>>> User ${user.username} with ${user.libraryItemProgress.length} progress entries were updated`)
     }
+    if (user.bookmarks.length) {
+      user.bookmarks = user.bookmarks.map((bookmark) => {
+        var audiobookId = bookmark.libraryItemId
+        var libraryItemWithAudiobook = libraryItems.find(li => li.media.getAudiobookById && !!li.media.getAudiobookById(audiobookId))
+        if (!libraryItemWithAudiobook) {
+          Logger.error('[dbMigration] Failed to find library item with audiobook id', audiobookId)
+          return null
+        }
+        bookmark.libraryItemId = libraryItemWithAudiobook.id
+        return bookmark
+      }).filter(bm => !!bm)
+    }
+    if (user.libraryItemProgress.length || user.bookmarks.length) {
+      await db.updateEntity('user', user)
+    }
+  }
+
+  // Update session LibraryItemId's
+  var sessions = await db.sessionsDb.select(() => true).then((results) => results.data)
+  if (sessions.length) {
+    sessions = sessions.map(se => {
+      var libraryItemWithAudiobook = libraryItems.find(li => li.media.getAudiobookById && !!li.media.getAudiobookById(se.mediaEntityId))
+      if (!libraryItemWithAudiobook) {
+        Logger.error('[dbMigration] Failed to find library item with audiobook id', audiobookId)
+        return null
+      }
+      se.libraryItemId = libraryItemWithAudiobook.id
+      return se
+    }).filter(se => !!se)
+    await db.updateEntities('session', sessions)
   }
 
   Logger.info(`>>> ${libraryItems.length} Library Items made`)
@@ -300,7 +328,7 @@ function cleanUserObject(db, userObj) {
         // Bookmarks now live on User.js object instead of inside UserAudiobookData
         if (userObj.audiobooks[audiobookId].bookmarks) {
           const cleanedBookmarks = userObj.audiobooks[audiobookId].bookmarks.map((bm) => {
-            bm.libraryItemId = audiobookId
+            bm.libraryItemId = audiobookId // Temp placeholder replace with libraryItemId when created
             return bm
           })
           cleanedUserPayload.bookmarks = cleanedUserPayload.bookmarks.concat(cleanedBookmarks)
@@ -308,7 +336,7 @@ function cleanUserObject(db, userObj) {
 
         var userAudiobookData = new UserAudiobookData(userObj.audiobooks[audiobookId]) // Legacy object
         var liProgress = new LibraryItemProgress() // New Progress Object
-        liProgress.id = userAudiobookData.audiobookId // This ID is INCORRECT, will be updated when library item is created
+        liProgress.id = userAudiobookData.audiobookId // This ID will be updated when library item is created
         liProgress.libraryItemId = userAudiobookData.audiobookId
         liProgress.isFinished = !!userAudiobookData.isRead
         Object.keys(liProgress.toJSON()).forEach((key) => {
@@ -333,9 +361,10 @@ function cleanUserObject(db, userObj) {
 
 function cleanSessionObj(db, userListeningSession) {
   var newPlaybackSession = new PlaybackSession(userListeningSession)
+  newPlaybackSession.id = getId('play')
   newPlaybackSession.mediaType = 'book'
   newPlaybackSession.updatedAt = userListeningSession.lastUpdate
-  newPlaybackSession.libraryItemId = userListeningSession.audiobookId
+  newPlaybackSession.libraryItemId = userListeningSession.audiobookId // Temp
   newPlaybackSession.mediaEntityId = userListeningSession.audiobookId
   newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 

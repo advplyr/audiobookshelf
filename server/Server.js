@@ -247,11 +247,6 @@ class Server {
       socket.on('create_backup', () => this.backupManager.requestCreateBackup(socket))
       socket.on('apply_backup', (id) => this.backupManager.requestApplyBackup(socket, id))
 
-      // Bookmarks
-      socket.on('create_bookmark', (payload) => this.createBookmark(socket, payload))
-      socket.on('update_bookmark', (payload) => this.updateBookmark(socket, payload))
-      socket.on('delete_bookmark', (payload) => this.deleteBookmark(socket, payload))
-
       socket.on('disconnect', () => {
         Logger.removeSocketListener(socket.id)
 
@@ -457,91 +452,6 @@ class Server {
     }
 
     res.sendStatus(200)
-  }
-
-  // async audiobookProgressUpdate(socket, progressPayload) {
-  //   var client = socket.sheepClient
-  //   if (!client || !client.user) {
-  //     Logger.error('[Server] audiobookProgressUpdate invalid socket client')
-  //     return
-  //   }
-  //   var audiobookProgress = client.user.createUpdateLibraryItemProgress(progressPayload.audiobookId, progressPayload)
-  //   if (audiobookProgress) {
-  //     await this.db.updateEntity('user', client.user)
-  //     this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
-  //       id: progressPayload.audiobookId,
-  //       data: audiobookProgress || null
-  //     })
-  //   }
-  // }
-
-  async createBookmark(socket, payload) {
-    // var client = socket.sheepClient
-    // if (!client || !client.user) {
-    //   Logger.error('[Server] createBookmark invalid socket client')
-    //   return
-    // }
-    // var userAudiobook = client.user.createBookmark(payload)
-    // if (!userAudiobook || userAudiobook.error) {
-    //   var failMessage = (userAudiobook ? userAudiobook.error : null) || 'Unknown Error'
-    //   socket.emit('show_error_toast', `Failed to create Bookmark: ${failMessage}`)
-    //   return
-    // }
-
-    // await this.db.updateEntity('user', client.user)
-
-    // socket.emit('show_success_toast', `${secondsToTimestamp(payload.time)} Bookmarked`)
-
-    // this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
-    //   id: userAudiobook.audiobookId,
-    //   data: userAudiobook || null
-    // })
-  }
-
-  async updateBookmark(socket, payload) {
-    // var client = socket.sheepClient
-    // if (!client || !client.user) {
-    //   Logger.error('[Server] updateBookmark invalid socket client')
-    //   return
-    // }
-    // var userAudiobook = client.user.updateBookmark(payload)
-    // if (!userAudiobook || userAudiobook.error) {
-    //   var failMessage = (userAudiobook ? userAudiobook.error : null) || 'Unknown Error'
-    //   socket.emit('show_error_toast', `Failed to update Bookmark: ${failMessage}`)
-    //   return
-    // }
-
-    // await this.db.updateEntity('user', client.user)
-
-    // socket.emit('show_success_toast', `Bookmark ${secondsToTimestamp(payload.time)} Updated`)
-
-    // this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
-    //   id: userAudiobook.audiobookId,
-    //   data: userAudiobook || null
-    // })
-  }
-
-  async deleteBookmark(socket, payload) {
-    // var client = socket.sheepClient
-    // if (!client || !client.user) {
-    //   Logger.error('[Server] deleteBookmark invalid socket client')
-    //   return
-    // }
-    // var userAudiobook = client.user.deleteBookmark(payload)
-    // if (!userAudiobook || userAudiobook.error) {
-    //   var failMessage = (userAudiobook ? userAudiobook.error : null) || 'Unknown Error'
-    //   socket.emit('show_error_toast', `Failed to delete Bookmark: ${failMessage}`)
-    //   return
-    // }
-
-    // await this.db.updateEntity('user', client.user)
-
-    // socket.emit('show_success_toast', `Bookmark ${secondsToTimestamp(payload.time)} Removed`)
-
-    // this.clientEmitter(client.user.id, 'current_user_audiobook_update', {
-    //   id: userAudiobook.audiobookId,
-    //   data: userAudiobook || null
-    // })
   }
 
   async authenticateSocket(socket, token) {

@@ -24,7 +24,6 @@
       <div class="flex-grow" />
       <span class="material-icons px-2 py-1 md:p-4 cursor-pointer" @click="closePlayer">close</span>
     </div>
-
     <audio-player
       ref="audioPlayer"
       :chapters="chapters"
@@ -44,7 +43,7 @@
       @showSleepTimer="showSleepTimerModal = true"
     />
 
-    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :audiobook-id="bookmarkAudiobookId" :current-time="bookmarkCurrentTime" @select="selectBookmark" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
 
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-time="sleepTimerTime" :remaining="sleepTimerRemaining" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
   </div>
@@ -60,7 +59,6 @@ export default {
       totalDuration: 0,
       showBookmarksModal: false,
       bookmarkCurrentTime: 0,
-      bookmarkAudiobookId: null,
       playerLoading: false,
       isPlaying: false,
       currentTime: 0,
@@ -103,9 +101,8 @@ export default {
       return this.userLibraryItemProgress ? this.userLibraryItemProgress.currentTime || 0 : 0
     },
     bookmarks() {
-      return []
-      // if (!this.userAudiobook) return []
-      // return (this.userAudiobook.bookmarks || []).map((bm) => ({ ...bm })).sort((a, b) => a.time - b.time)
+      if (!this.libraryItemId) return []
+      return this.$store.getters['user/getUserBookmarksForItem'](this.libraryItemId)
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -215,7 +212,6 @@ export default {
       }
     },
     showBookmarks() {
-      this.bookmarkAudiobookId = this.libraryItemId
       this.bookmarkCurrentTime = this.currentTime
       this.showBookmarksModal = true
     },
