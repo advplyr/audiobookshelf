@@ -91,7 +91,6 @@ function cleanPodcastJson(rssJson) {
     Logger.error(`[podcastUtil] Invalid podcast no episodes`)
     return null
   }
-
   var podcast = {
     metadata: extractPodcastMetadata(channel),
     episodes: extractPodcastEpisodes(channel.item)

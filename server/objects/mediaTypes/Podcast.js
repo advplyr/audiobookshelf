@@ -11,6 +11,8 @@ class Podcast {
     this.tags = []
     this.episodes = []
 
+    this.autoDownloadEpisodes = false
+
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
 
@@ -25,6 +27,7 @@ class Podcast {
     this.coverPath = podcast.coverPath
     this.tags = [...podcast.tags]
     this.episodes = podcast.episodes.map((e) => new PodcastEpisode(e))
+    this.autoDownloadEpisodes = !!podcast.autoDownloadEpisodes
   }
 
   toJSON() {
@@ -34,6 +37,7 @@ class Podcast {
       coverPath: this.coverPath,
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
+      autoDownloadEpisodes: this.autoDownloadEpisodes
     }
   }
 
@@ -43,7 +47,8 @@ class Podcast {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON())
+      episodes: this.episodes.map(e => e.toJSON()),
+      autoDownloadEpisodes: this.autoDownloadEpisodes
     }
   }
 
@@ -53,7 +58,8 @@ class Podcast {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON())
+      episodes: this.episodes.map(e => e.toJSON()),
+      autoDownloadEpisodes: this.autoDownloadEpisodes
     }
   }
 

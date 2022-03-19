@@ -1,5 +1,5 @@
 <template>
-  <nuxt-link v-if="to" :to="to" class="btn outline-none rounded-md shadow-md relative border border-gray-600" :disabled="disabled || loading" :class="classList">
+  <nuxt-link v-if="to" :to="to" class="btn outline-none rounded-md shadow-md relative border border-gray-600 text-center" :disabled="disabled || loading" :class="classList">
     <slot />
     <div v-if="loading" class="text-white absolute top-0 left-0 w-full h-full flex items-center justify-center text-opacity-100">
       <!-- <span class="material-icons animate-spin">refresh</span> -->

@@ -35,6 +35,8 @@
         </div>
       </div>
     </div>
+
+    <modals-podcast-new-modal v-model="showNewPodcastModal" :podcast-data="selectedPodcast" :podcast-feed-data="selectedPodcastFeed" />
   </div>
 </template>
 
@@ -45,7 +47,11 @@ export default {
       searchTerm: '',
       results: [],
       termSearched: '',
-      processing: false
+      processing: false,
+
+      showNewPodcastModal: false,
+      selectedPodcast: null,
+      selectedPodcastFeed: null
     }
   },
   computed: {
@@ -83,6 +89,9 @@ export default {
       })
       this.processing = false
       if (!podcastfeed) return
+      this.selectedPodcastFeed = podcastfeed
+      this.selectedPodcast = podcast
+      this.showNewPodcastModal = true
       console.log('Got podcast feed', podcastfeed)
     }
   },
