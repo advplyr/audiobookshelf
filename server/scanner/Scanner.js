@@ -18,7 +18,6 @@ const Series = require('../objects/entities/Series')
 
 class Scanner {
   constructor(db, coverController, emitter) {
-    this.BookMetadataPath = Path.posix.join(global.MetadataPath, 'books')
     this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
     this.db = db

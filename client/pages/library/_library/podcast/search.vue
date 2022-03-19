@@ -82,7 +82,7 @@ export default {
         return
       }
       this.processing = true
-      var podcastfeed = await this.$axios.$post(`/api/getPodcastFeed`, { rssFeed: podcast.feedUrl }).catch((error) => {
+      var podcastfeed = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error('Failed to get podcast feed')
         return null

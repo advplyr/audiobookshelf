@@ -14,6 +14,7 @@ const SeriesController = require('../controllers/SeriesController')
 const AuthorController = require('../controllers/AuthorController')
 const MediaEntityController = require('../controllers/MediaEntityController')
 const SessionController = require('../controllers/SessionController')
+const PodcastController = require('../controllers/PodcastController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -174,13 +175,18 @@ class ApiRouter {
     this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
 
     //
+    // Podcast Routes
+    //
+    this.router.post('/podcasts', PodcastController.create.bind(this))
+    this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
+
+    //
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
     this.router.get('/download/:id', MiscController.download.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
     this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
-    this.router.post('/getPodcastFeed', MiscController.getPodcastFeed.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/search/covers', MiscController.findCovers.bind(this))
     this.router.get('/search/books', MiscController.findBooks.bind(this))

@@ -111,27 +111,18 @@ class Server {
     await this.downloadManager.removeOrphanDownloads()
 
     if (version.localeCompare('1.7.3') < 0) { // Old version data model migration
-      await dbMigration.migrateUserData(this.db) // Db not yet loaded
-      await this.db.init()
-      await dbMigration.migrateLibraryItems(this.db)
-      // TODO: Eventually remove audiobooks db when stable
+      await dbMigration.migrate(this.db)
     } else {
       await this.db.init()
     }
 
     this.auth.init()
 
-    // TODO: Implement method to remove old user auidobook data and book metadata folders
-    // await this.checkUserAudiobookData()
-    // await this.purgeMetadata()
+    await this.checkUserLibraryItemProgress() // Remove invalid user item progress
+    await this.purgeMetadata() // Remove metadata folders without library item
 
     await this.backupManager.init()
     await this.logManager.init()
-
-    // If server upgrade and last version was 1.7.0 or earlier - add abmetadata files
-    // if (this.db.checkPreviousVersionIsBefore('1.7.1')) {
-    // TODO: wait until stable
-    // }
 
     if (this.db.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -275,18 +266,17 @@ class Server {
     socket.emit('save_metadata_complete', response)
   }
 
-  // Remove unused /metadata/books/{id} folders
+  // Remove unused /metadata/items/{id} folders
   async purgeMetadata() {
-    var booksMetadata = Path.join(global.MetadataPath, 'books')
-    var booksMetadataExists = await fs.pathExists(booksMetadata)
-    if (!booksMetadataExists) return
-    var foldersInBooksMetadata = await fs.readdir(booksMetadata)
+    var itemsMetadata = Path.join(global.MetadataPath, 'items')
+    if (!(await fs.pathExists(itemsMetadata))) return
+    var foldersInItemsMetadata = await fs.readdir(itemsMetadata)
 
     var purged = 0
-    await Promise.all(foldersInBooksMetadata.map(async foldername => {
-      var hasMatchingAudiobook = this.db.audiobooks.find(ab => ab.id === foldername)
-      if (!hasMatchingAudiobook) {
-        var folderPath = Path.join(booksMetadata, foldername)
+    await Promise.all(foldersInItemsMetadata.map(async foldername => {
+      var hasMatchingItem = this.db.libraryItems.find(ab => ab.id === foldername)
+      if (!hasMatchingItem) {
+        var folderPath = Path.join(itemsMetadata, foldername)
         Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
 
         await fs.remove(folderPath).then(() => {
@@ -297,24 +287,21 @@ class Server {
       }
     }))
     if (purged > 0) {
-      Logger.info(`[Server] Purged ${purged} unused audiobook metadata`)
+      Logger.info(`[Server] Purged ${purged} unused library item metadata`)
     }
     return purged
   }
 
-  // Check user audiobook data has matching audiobook
-  async checkUserAudiobookData() {
+  // Remove user library item progress entries that dont have a library item
+  async checkUserLibraryItemProgress() {
     for (let i = 0; i < this.db.users.length; i++) {
       var _user = this.db.users[i]
-      if (_user.audiobooks) {
-        // Find user audiobook data that has no matching audiobook
-        var audiobookIdsToRemove = Object.keys(_user.audiobooks).filter(aid => {
-          return !this.db.audiobooks.find(ab => ab.id === aid)
-        })
-        if (audiobookIdsToRemove.length) {
-          Logger.debug(`[Server] Found ${audiobookIdsToRemove.length} audiobook data to remove from user ${_user.username}`)
-          for (let y = 0; y < audiobookIdsToRemove.length; y++) {
-            _user.removeLibraryItemProgress(audiobookIdsToRemove[y])
+      if (_user.libraryItemProgress) {
+        var itemProgressIdsToRemove = _user.libraryItemProgress.map(lip => lip.id).filter(lipId => !this.db.libraryItems.find(_li => _li.id == lipId))
+        if (itemProgressIdsToRemove.length) {
+          Logger.debug(`[Server] Found ${itemProgressIdsToRemove.length} library item progress data to remove from user ${_user.username}`)
+          for (const lipId of itemProgressIdsToRemove) {
+            _user.removeLibraryItemProgress(lipId)
           }
           await this.db.updateEntity('user', _user)
         }

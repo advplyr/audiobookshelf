@@ -1,9 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const axios = require('axios')
-
 const Logger = require('../Logger')
-const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
+
 const { isObject } = require('../utils/index')
 
 //
@@ -137,28 +135,6 @@ class MiscController {
     Logger.info(`[ApiRouter] Purging all cache`)
     await this.cacheManager.purgeAll()
     res.sendStatus(200)
-  }
-
-  getPodcastFeed(req, res) {
-    var url = req.body.rssFeed
-    if (!url) {
-      return res.status(400).send('Bad request')
-    }
-
-    axios.get(url).then(async (data) => {
-      if (!data || !data.data) {
-        Logger.error('Invalid podcast feed request response')
-        return res.status(500).send('Bad response from feed request')
-      }
-      var podcast = await parsePodcastRssFeedXml(data.data)
-      if (!podcast) {
-        return res.status(500).send('Invalid podcast RSS feed')
-      }
-      res.json(podcast)
-    }).catch((error) => {
-      console.error('Failed', error)
-      res.status(500).send(error)
-    })
   }
 
   async findBooks(req, res) {

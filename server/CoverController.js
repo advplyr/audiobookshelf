@@ -15,14 +15,14 @@ class CoverController {
     this.db = db
     this.cacheManager = cacheManager
 
-    this.BookMetadataPath = Path.posix.join(global.MetadataPath, 'books')
+    this.ItemMetadataPath = Path.posix.join(global.MetadataPath, 'items')
   }
 
   getCoverDirectory(libraryItem) {
     if (this.db.serverSettings.storeCoverWithBook) {
       return libraryItem.path
     } else {
-      return Path.posix.join(this.BookMetadataPath, libraryItem.id)
+      return Path.posix.join(this.ItemMetadataPath, libraryItem.id)
     }
   }
 
@@ -237,7 +237,7 @@ class CoverController {
 
     var coverAlreadyExists = await fs.pathExists(coverFilePath)
     if (coverAlreadyExists) {
-      Logger.warn(`[Audiobook] Extract embedded cover art but cover already exists for "${libraryItem.media.metadata.title}" - bail`)
+      Logger.warn(`[CoverController] Extract embedded cover art but cover already exists for "${libraryItem.media.metadata.title}" - bail`)
       return false
     }
 

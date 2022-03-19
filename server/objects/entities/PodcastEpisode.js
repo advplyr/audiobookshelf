@@ -1,3 +1,4 @@
+const { getId } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 
@@ -5,9 +6,8 @@ class PodcastEpisode {
   constructor(episode) {
     this.id = null
     this.index = null
-    this.podcastId = null
-    this.episodeNumber = null
 
+    this.episodeNumber = null
     this.title = null
     this.description = null
     this.enclosure = null
@@ -25,7 +25,6 @@ class PodcastEpisode {
   construct(episode) {
     this.id = episode.id
     this.index = episode.index
-    this.podcastId = episode.podcastId
     this.episodeNumber = episode.episodeNumber
     this.title = episode.title
     this.description = episode.description
@@ -40,7 +39,6 @@ class PodcastEpisode {
     return {
       id: this.id,
       index: this.index,
-      podcastId: this.podcastId,
       episodeNumber: this.episodeNumber,
       title: this.title,
       description: this.description,
@@ -60,6 +58,18 @@ class PodcastEpisode {
     return this.audioFile.duration
   }
   get size() { return this.audioFile.metadata.size }
+
+  setData(data, index = 1) {
+    this.id = getId('ep')
+    this.index = index
+    this.title = data.title
+    this.pubDate = data.pubDate || ''
+    this.description = data.description || ''
+    this.enclosure = data.enclosure ? { ...data.enclosure } : null
+    this.episodeNumber = data.episodeNumber || ''
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
+  }
 
   // Only checks container format
   checkCanDirectPlay(payload) {

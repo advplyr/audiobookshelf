@@ -4,8 +4,6 @@ const { areEquivalent, copyValue } = require('../../utils/index')
 
 class Podcast {
   constructor(podcast) {
-    this.id = null
-
     this.metadata = null
     this.coverPath = null
     this.tags = []
@@ -22,7 +20,6 @@ class Podcast {
   }
 
   construct(podcast) {
-    this.id = podcast.id
     this.metadata = new PodcastMetadata(podcast.metadata)
     this.coverPath = podcast.coverPath
     this.tags = [...podcast.tags]
@@ -32,7 +29,6 @@ class Podcast {
 
   toJSON() {
     return {
-      id: this.id,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -43,7 +39,6 @@ class Podcast {
 
   toJSONMinified() {
     return {
-      id: this.id,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -54,7 +49,6 @@ class Podcast {
 
   toJSONExpanded() {
     return {
-      id: this.id,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -124,9 +118,10 @@ class Podcast {
     return this.episodes[0]
   }
 
-  setData(scanMediaMetadata) {
-    this.metadata = new PodcastMetadata()
-    this.metadata.setData(scanMediaMetadata)
+  setData(metadata, coverPath = null, autoDownload = false) {
+    this.metadata = new PodcastMetadata(metadata)
+    this.coverPath = coverPath
+    this.autoDownloadEpisodes = autoDownload
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {

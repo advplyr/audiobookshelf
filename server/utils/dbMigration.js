@@ -151,6 +151,17 @@ function makeFilesFromOldAb(audiobook) {
   }
 }
 
+// Metadata path was changed to /metadata/items make sure cover is using new path
+function cleanOldCoverPath(coverPath) {
+  if (!coverPath) return null
+  var oldMetadataPath = Path.posix.join(global.MetadataPath, 'books')
+  if (coverPath.startsWith(oldMetadataPath)) {
+    const newMetadataPath = Path.posix.join(global.MetadataPath, 'items')
+    return coverPath.replace(oldMetadataPath, newMetadataPath)
+  }
+  return coverPath
+}
+
 function makeLibraryItemFromOldAb(audiobook) {
   var libraryItem = new LibraryItem()
   libraryItem.id = getId('li')
@@ -184,7 +195,7 @@ function makeLibraryItemFromOldAb(audiobook) {
   }
 
   bookEntity.metadata = bookMetadata
-  bookEntity.coverPath = audiobook.book.coverFullPath
+  bookEntity.coverPath = cleanOldCoverPath(audiobook.book.coverFullPath)
   bookEntity.tags = [...audiobook.tags]
 
   var payload = makeFilesFromOldAb(audiobook)
@@ -312,8 +323,6 @@ async function migrateLibraryItems(db) {
   seriesToAdd = []
   Logger.info(`==== Library Item migration complete ====`)
 }
-module.exports.migrateLibraryItems = migrateLibraryItems
-
 
 function cleanUserObject(db, userObj) {
   var cleanedUserPayload = {
@@ -445,4 +454,24 @@ async function migrateUserData(db) {
 
   Logger.info(`==== User migration complete (${userCount} Users, ${sessionCount} Sessions) ====`)
 }
-module.exports.migrateUserData = migrateUserData
+
+async function checkUpdateMetadataPath() {
+  var bookMetadataPath = Path.posix.join(global.MetadataPath, 'books') // OLD
+  if (!(await fs.pathExists(bookMetadataPath))) {
+    Logger.debug(`[dbMigration] No need to update books metadata path`)
+    return
+  }
+  var itemsMetadataPath = Path.posix.join(global.MetadataPath, 'items')
+  await fs.rename(bookMetadataPath, itemsMetadataPath)
+  Logger.info(`>>> Renamed metadata dir from /metadata/books to /metadata/items`)
+}
+
+module.exports.migrate = async (db) => {
+  await checkUpdateMetadataPath()
+  // Before DB Load clean data
+  await migrateUserData(db)
+  await db.init()
+  // After DB Load
+  await migrateLibraryItems(db)
+  // TODO: Eventually remove audiobooks db when stable
+}
