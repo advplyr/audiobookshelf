@@ -19,6 +19,24 @@ class LibraryController {
       return res.status(500).send('Invalid request')
     }
 
+    // Validate folder paths exist or can be created & resolve rel paths
+    //   returns 400 if a folder fails to access
+    newLibraryPayload.folders = newLibraryPayload.folders.map(f => {
+      f.fullPath = Path.resolve(f.fullPath)
+      return f
+    })
+    for (var folder of newLibraryPayload.folders) {
+      var success = await fs.ensureDir(folder.fullPath).then(() => true).catch((error) => {
+        Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.fullPath}"`, error)
+        return false
+      })
+      if (!success) {
+        return res.status(400).send(`Invalid folder directory "${folder.fullPath}"`)
+      } else {
+        await filePerms.setDefault(folder.fullPath)
+      }
+    }
+
     var library = new Library()
     newLibraryPayload.displayOrder = this.db.libraries.length + 1
     library.setData(newLibraryPayload)

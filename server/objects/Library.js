@@ -88,6 +88,7 @@ class Library {
     this.displayOrder = data.displayOrder || 1
     this.icon = data.icon || 'database'
     this.mediaType = data.mediaType || 'book'
+    this.provider = data.provider || 'google'
     this.disableWatcher = !!data.disableWatcher
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()

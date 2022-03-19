@@ -8,6 +8,11 @@ class PodcastEpisode {
     this.podcastId = null
     this.episodeNumber = null
 
+    this.title = null
+    this.description = null
+    this.enclosure = null
+    this.pubDate = null
+
     this.audioFile = null
     this.addedAt = null
     this.updatedAt = null
@@ -22,6 +27,10 @@ class PodcastEpisode {
     this.index = episode.index
     this.podcastId = episode.podcastId
     this.episodeNumber = episode.episodeNumber
+    this.title = episode.title
+    this.description = episode.description
+    this.enclosure = episode.enclosure ? { ...episode.enclosure } : null
+    this.pubDate = episode.pubDate
     this.audioFile = new AudioFile(episode.audioFile)
     this.addedAt = episode.addedAt
     this.updatedAt = episode.updatedAt
@@ -33,6 +42,10 @@ class PodcastEpisode {
       index: this.index,
       podcastId: this.podcastId,
       episodeNumber: this.episodeNumber,
+      title: this.title,
+      description: this.description,
+      enclosure: this.enclosure ? { ...this.enclosure } : null,
+      pubDate: this.pubDate,
       audioFile: this.audioFile.toJSON(),
       addedAt: this.addedAt,
       updatedAt: this.updatedAt

@@ -4,7 +4,6 @@
       <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="backArrowPress">arrow_back</span>
       <p class="px-4 text-xl">{{ title }}</p>
     </div>
-
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
       <div class="flex flex-wrap md:flex-nowrap -mx-1">
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
@@ -202,7 +201,6 @@ export default {
         mediaType: this.mediaType,
         disableWatcher: this.disableWatcher
       }
-
       this.$emit('update:processing', true)
       this.$axios
         .$post('/api/libraries', newLibraryPayload)

@@ -10,26 +10,29 @@
         <div class="w-full md:w-1/2 p-4">
           <p class="text-lg font-semibold mb-2">Details</p>
           <div class="flex flex-wrap">
-            <div class="p-2 w-full">
+            <div v-if="podcast.imageUrl" class="p-1 w-full">
+              <img :src="podcast.imageUrl" class="h-16 w-16 object-contain" />
+            </div>
+            <div class="p-1 w-full">
               <ui-text-input-with-label v-model="podcast.title" label="Title" />
             </div>
-            <div class="p-2 w-full">
+            <div class="p-1 w-full">
               <ui-text-input-with-label v-model="podcast.author" label="Author" />
             </div>
-            <div class="p-2 w-full">
-              <ui-text-input-with-label v-model="podcast.feedUrl" label="Feed URL" />
+            <div class="p-1 w-full">
+              <ui-text-input-with-label v-model="podcast.feedUrl" label="Feed URL" readonly />
             </div>
-            <div class="p-2 w-full">
+            <div class="p-1 w-full">
               <ui-multi-select v-model="podcast.genres" :items="podcast.genres" label="Genres" />
             </div>
-            <div class="p-2 w-full">
-              <ui-text-input-with-label v-model="podcast.releaseDate" label="Release Date" />
+            <div class="p-1 w-full">
+              <ui-textarea-with-label v-model="podcast.description" label="Description" />
             </div>
-            <div class="p-2 w-full">
-              <ui-text-input-with-label v-model="podcast.itunesPageUrl" label="Page URL" />
+            <div class="p-1 w-full">
+              <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" label="Folder" @input="folderUpdated" />
             </div>
-            <div class="p-2 w-full">
-              <ui-text-input-with-label v-model="podcast.feedImageUrl" label="Feed Image URL" />
+            <div class="p-1 w-full">
+              <ui-text-input-with-label v-model="fullPath" label="Podcast Path" readonly />
             </div>
             <div class="p-2 w-full">
               <ui-checkbox v-model="podcast.autoDownloadEpisodes" label="Auto Download Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
@@ -39,14 +42,15 @@
         <div class="w-full md:w-1/2 p-4">
           <p class="text-lg font-semibold mb-2">Episodes</p>
           <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
-            <div v-for="(episode, index) in episodes" :key="index" class="relative cursor-pointer" :class="index % 2 == 0 ? 'bg-primary bg-opacity-25 hover:bg-opacity-40' : 'bg-primary bg-opacity-5 hover:bg-opacity-25'" @click="toggleSelectEpisode(index)">
+            <div v-for="(episode, index) in episodes" :key="index" class="relative cursor-pointer" :class="selectedEpisodes[String(index)] ? 'bg-success bg-opacity-10' : index % 2 == 0 ? 'bg-primary bg-opacity-25 hover:bg-opacity-40' : 'bg-primary bg-opacity-5 hover:bg-opacity-25'" @click="toggleSelectEpisode(index)">
               <div class="absolute top-0 left-0 h-full flex items-center p-2">
                 <ui-checkbox v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
               </div>
               <div class="px-8 py-2">
                 <p v-if="episode.episode" class="font-semibold text-gray-200">#{{ episode.episode }}</p>
-                <p class="break-words">{{ episode.title }}</p>
-                <p class="text-xs text-gray-300">Published {{ episode.pubDate || 'Unknown' }}</p>
+                <p class="break-words mb-1">{{ episode.title }}</p>
+                <p v-if="episode.subtitle" class="break-words mb-1 text-sm text-gray-300 episode-subtitle">{{ episode.subtitle }}</p>
+                <p class="text-xs text-gray-300">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
                 <!-- <span class="material-icons cursor-pointer text-lg hover:text-success" @click="saveEpisode(episode)">save</span> -->
               </div>
             </div>
@@ -62,6 +66,8 @@
 </template>
 
 <script>
+import Path from 'path'
+
 export default {
   props: {
     value: Boolean,
@@ -77,6 +83,8 @@ export default {
   data() {
     return {
       processing: false,
+      selectedFolderId: null,
+      fullPath: null,
       podcast: {
         title: '',
         author: '',
@@ -115,11 +123,27 @@ export default {
     title() {
       return this._podcastData.title
     },
+    currentLibrary() {
+      return this.$store.getters['libraries/getCurrentLibrary']
+    },
+    folders() {
+      if (!this.currentLibrary) return []
+      return this.currentLibrary.folders || []
+    },
+    folderItems() {
+      return this.folders.map((fold) => {
+        return {
+          value: fold.id,
+          text: fold.fullPath
+        }
+      })
+    },
     _podcastData() {
       return this.podcastData || {}
     },
     feedMetadata() {
-      return this._podcastData.metadata || {}
+      if (!this.podcastFeedData) return {}
+      return this.podcastFeedData.metadata || {}
     },
     episodes() {
       if (!this.podcastFeedData) return []
@@ -135,9 +159,23 @@ export default {
       if (!this.episodesSelected.length) return 'Add Podcast'
       if (this.episodesSelected.length == 1) return 'Add Podcast & Download 1 Episode'
       return `Add Podcast & Download ${this.episodesSelected.length} Episodes`
+    },
+    selectedFolder() {
+      return this.folders.find((f) => f.id === this.selectedFolderId)
+    },
+    selectedFolderPath() {
+      if (!this.selectedFolder) return ''
+      return this.selectedFolder.fullPath
     }
   },
   methods: {
+    folderUpdated() {
+      if (!this.selectedFolderPath || !this.podcast.title) {
+        this.fullPath = ''
+        return
+      }
+      this.fullPath = Path.join(this.selectedFolderPath, this.podcast.title)
+    },
     toggleSelectEpisode(index) {
       this.selectedEpisodes[String(index)] = !this.selectedEpisodes[String(index)]
     },
@@ -152,14 +190,20 @@ export default {
       this.podcast.releaseDate = this._podcastData.releaseDate || ''
       this.podcast.genres = this._podcastData.genres || []
       this.podcast.feedUrl = this._podcastData.feedUrl
-      this.podcast.feedImageUrl = this._podcastData.cover || ''
+      this.podcast.imageUrl = this._podcastData.cover || ''
       this.podcast.itunesPageUrl = this._podcastData.pageUrl || ''
       this.podcast.itunesId = this._podcastData.id || ''
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
+      this.podcast.language = this._podcastData.language || ''
       this.podcast.autoDownloadEpisodes = false
 
       for (let i = 0; i < this.episodes.length; i++) {
         this.$set(this.selectedEpisodes, String(i), false)
+      }
+
+      if (this.folderItems[0]) {
+        this.selectedFolderId = this.folderItems[0].value
+        this.folderUpdated()
       }
     }
   }
@@ -173,5 +217,15 @@ export default {
 }
 #episodes-scroll {
   max-height: calc(80vh - 200px);
+}
+.episode-subtitle {
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-height: 16px; /* fallback */
+  max-height: 32px; /* fallback */
+  -webkit-line-clamp: 2; /* number of lines to show */
+  -webkit-box-orient: vertical;
 }
 </style>

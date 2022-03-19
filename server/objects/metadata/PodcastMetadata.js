@@ -6,11 +6,12 @@ class PodcastMetadata {
     this.releaseDate = null
     this.genres = []
     this.feedUrl = null
-    this.feedImageUrl = null
+    this.imageUrl = null
     this.itunesPageUrl = null
     this.itunesId = null
     this.itunesArtistId = null
     this.explicit = false
+    this.language = null
 
     if (metadata) {
       this.construct(metadata)
@@ -24,11 +25,12 @@ class PodcastMetadata {
     this.releaseDate = metadata.releaseDate
     this.genres = [...metadata.genres]
     this.feedUrl = metadata.feedUrl
-    this.feedImageUrl = metadata.feedImageUrl
+    this.imageUrl = metadata.imageUrl
     this.itunesPageUrl = metadata.itunesPageUrl
     this.itunesId = metadata.itunesId
     this.itunesArtistId = metadata.itunesArtistId
     this.explicit = metadata.explicit
+    this.language = metadata.language || null
   }
 
   toJSON() {
@@ -39,11 +41,12 @@ class PodcastMetadata {
       releaseDate: this.releaseDate,
       genres: [...this.genres],
       feedUrl: this.feedUrl,
-      feedImageUrl: this.feedImageUrl,
+      imageUrl: this.imageUrl,
       itunesPageUrl: this.itunesPageUrl,
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
-      explicit: this.explicit
+      explicit: this.explicit,
+      language: this.language
     }
   }
 

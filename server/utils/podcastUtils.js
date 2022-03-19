@@ -57,7 +57,7 @@ function extractEpisodeData(item) {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
-  var arrayFields = ['title', 'pubDate', 'description', 'itunes:episodeType', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit']
+  var arrayFields = ['title', 'pubDate', 'description', 'itunes:episodeType', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   var episode = {
     enclosure: {
       ...item.enclosure[0]['$']
@@ -70,12 +70,27 @@ function extractEpisodeData(item) {
   return episode
 }
 
+function cleanEpisodeData(data) {
+  return {
+    title: data.title,
+    subtitle: data.subtitle || '',
+    description: data.description || '',
+    pubDate: data.pubDate || '',
+    episodeType: data.episodeType || '',
+    episode: data.episode || '',
+    author: data.author || '',
+    duration: data.duration || '',
+    explicit: data.explicit || '',
+    publishedAt: (new Date(data.pubDate)).valueOf()
+  }
+}
+
 function extractPodcastEpisodes(items) {
   var episodes = []
   items.forEach((item) => {
-    var cleaned = extractEpisodeData(item)
-    if (cleaned) {
-      episodes.push(cleaned)
+    var extracted = extractEpisodeData(item)
+    if (extracted) {
+      episodes.push(cleanEpisodeData(extracted))
     }
   })
   return episodes
