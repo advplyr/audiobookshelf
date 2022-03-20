@@ -17,15 +17,18 @@ const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./scanner/Scanner')
 const Db = require('./Db')
-const BackupManager = require('./BackupManager')
-const LogManager = require('./LogManager')
+
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
-const PlaybackSessionManager = require('./PlaybackSessionManager')
-const DownloadManager = require('./DownloadManager')
-const CoverController = require('./CoverController')
-const CacheManager = require('./CacheManager')
+
+const CoverManager = require('./managers/CoverManager')
+const DownloadManager = require('./managers/DownloadManager')
+const CacheManager = require('./managers/CacheManager')
+const LogManager = require('./managers/LogManager')
+const BackupManager = require('./managers/BackupManager')
+const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
+const PodcastManager = require('./managers/PodcastManager')
 
 class Server {
   constructor(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -48,18 +51,22 @@ class Server {
     fs.ensureDirSync(global.AudiobookPath, 0o774)
 
     this.db = new Db()
+    this.watcher = new Watcher()
     this.auth = new Auth(this.db)
+
+    // Managers
     this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
-    this.watcher = new Watcher()
-    this.coverController = new CoverController(this.db, this.cacheManager)
-    this.scanner = new Scanner(this.db, this.coverController, this.emitter.bind(this))
-    this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.downloadManager = new DownloadManager(this.db)
+    this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.coverManager = new CoverManager(this.db, this.cacheManager)
+    this.podcastManager = new PodcastManager(this.db)
+
+    this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.downloadManager, this.coverController, this.backupManager, this.watcher, this.cacheManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.downloadManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 

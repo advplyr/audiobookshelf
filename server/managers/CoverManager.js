@@ -1,16 +1,16 @@
 const fs = require('fs-extra')
 const Path = require('path')
 const axios = require('axios')
-const Logger = require('./Logger')
+const Logger = require('../Logger')
 const readChunk = require('read-chunk')
 const imageType = require('image-type')
-const filePerms = require('./utils/filePerms')
+const filePerms = require('../utils/filePerms')
 
-const globals = require('./utils/globals')
-const { downloadFile } = require('./utils/fileUtils')
-const { extractCoverArt } = require('./utils/ffmpegHelpers')
+const globals = require('../utils/globals')
+const { downloadFile } = require('../utils/fileUtils')
+const { extractCoverArt } = require('../utils/ffmpegHelpers')
 
-class CoverController {
+class CoverManager {
   constructor(db, cacheManager) {
     this.db = db
     this.cacheManager = cacheManager
@@ -30,7 +30,7 @@ class CoverController {
     try {
       return fs.readdir(dir)
     } catch (error) {
-      Logger.error(`[CoverController] Failed to get files in dir ${dir}`, error)
+      Logger.error(`[CoverManager] Failed to get files in dir ${dir}`, error)
       return []
     }
   }
@@ -38,11 +38,11 @@ class CoverController {
   removeFile(filepath) {
     try {
       return fs.pathExists(filepath).then((exists) => {
-        if (!exists) Logger.warn(`[CoverController] Attempting to remove file that does not exist ${filepath}`)
+        if (!exists) Logger.warn(`[CoverManager] Attempting to remove file that does not exist ${filepath}`)
         return exists ? fs.unlink(filepath) : false
       })
     } catch (error) {
-      Logger.error(`[CoverController] Failed to remove file "${filepath}"`, error)
+      Logger.error(`[CoverManager] Failed to remove file "${filepath}"`, error)
       return false
     }
   }
@@ -57,7 +57,7 @@ class CoverController {
       var _filename = Path.basename(file, _extname)
       if (_filename === 'cover' && _extname !== newCoverExt) {
         var filepath = Path.join(dirpath, file)
-        Logger.debug(`[CoverController] Removing old cover from metadata "${filepath}"`)
+        Logger.debug(`[CoverManager] Removing old cover from metadata "${filepath}"`)
         await this.removeFile(filepath)
       }
     }
@@ -97,7 +97,7 @@ class CoverController {
 
     // Move cover from temp upload dir to destination
     var success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
-      Logger.error('[CoverController] Failed to move cover file', path, error)
+      Logger.error('[CoverManager] Failed to move cover file', path, error)
       return false
     })
 
@@ -110,7 +110,7 @@ class CoverController {
     await this.removeOldCovers(coverDirPath, extname)
     await this.cacheManager.purgeCoverCache(libraryItem.id)
 
-    Logger.info(`[CoverController] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.metadata.title}"`)
+    Logger.info(`[CoverManager] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.metadata.title}"`)
 
     libraryItem.updateMediaCover(coverFullPath)
     return {
@@ -125,7 +125,7 @@ class CoverController {
 
       var temppath = Path.posix.join(coverDirPath, 'cover')
       var success = await downloadFile(url, temppath).then(() => true).catch((err) => {
-        Logger.error(`[CoverController] Download image file failed for "${url}"`, err)
+        Logger.error(`[CoverManager] Download image file failed for "${url}"`, err)
         return false
       })
       if (!success) {
@@ -147,14 +147,14 @@ class CoverController {
       await this.removeOldCovers(coverDirPath, '.' + imgtype.ext)
       await this.cacheManager.purgeCoverCache(libraryItem.id)
 
-      Logger.info(`[CoverController] Downloaded libraryItem cover "${coverFullPath}" from url "${url}" for "${libraryItem.media.metadata.title}"`)
+      Logger.info(`[CoverManager] Downloaded libraryItem cover "${coverFullPath}" from url "${url}" for "${libraryItem.media.metadata.title}"`)
 
       libraryItem.updateMediaCover(coverFullPath)
       return {
         cover: coverFullPath
       }
     } catch (error) {
-      Logger.error(`[CoverController] Fetch cover image from url "${url}" failed`, error)
+      Logger.error(`[CoverManager] Fetch cover image from url "${url}" failed`, error)
       return {
         error: 'Failed to fetch image from url'
       }
@@ -164,7 +164,7 @@ class CoverController {
   async validateCoverPath(coverPath, libraryItem) {
     // Invalid cover path
     if (!coverPath || coverPath.startsWith('http:') || coverPath.startsWith('https:')) {
-      Logger.error(`[CoverController] validate cover path invalid http url "${coverPath}"`)
+      Logger.error(`[CoverManager] validate cover path invalid http url "${coverPath}"`)
       return {
         error: 'Invalid cover path'
       }
@@ -172,7 +172,7 @@ class CoverController {
     coverPath = coverPath.replace(/\\/g, '/')
     // Cover path already set on media
     if (libraryItem.media.coverPath == coverPath) {
-      Logger.debug(`[CoverController] validate cover path already set "${coverPath}"`)
+      Logger.debug(`[CoverManager] validate cover path already set "${coverPath}"`)
       return {
         cover: coverPath,
         updated: false
@@ -180,7 +180,7 @@ class CoverController {
     }
     // Cover path does not exist
     if (!await fs.pathExists(coverPath)) {
-      Logger.error(`[CoverController] validate cover path does not exist "${coverPath}"`)
+      Logger.error(`[CoverManager] validate cover path does not exist "${coverPath}"`)
       return {
         error: 'Cover path does not exist'
       }
@@ -199,10 +199,10 @@ class CoverController {
 
       var coverFilename = `cover.${imgtype.ext}`
       var newCoverPath = Path.posix.join(coverDirPath, coverFilename)
-      Logger.debug(`[CoverController] validate cover path copy cover from "${coverPath}" to "${newCoverPath}"`)
+      Logger.debug(`[CoverManager] validate cover path copy cover from "${coverPath}" to "${newCoverPath}"`)
 
       var copySuccess = await fs.copy(coverPath, newCoverPath, { overwrite: true }).then(() => true).catch((error) => {
-        Logger.error(`[CoverController] validate cover path failed to copy cover`, error)
+        Logger.error(`[CoverManager] validate cover path failed to copy cover`, error)
         return false
       })
       if (!copySuccess) {
@@ -212,7 +212,7 @@ class CoverController {
       }
       await filePerms.setDefault(newCoverPath)
       await this.removeOldCovers(coverDirPath, '.' + imgtype.ext)
-      Logger.debug(`[CoverController] cover copy success`)
+      Logger.debug(`[CoverManager] cover copy success`)
       coverPath = newCoverPath
     }
 
@@ -237,7 +237,7 @@ class CoverController {
 
     var coverAlreadyExists = await fs.pathExists(coverFilePath)
     if (coverAlreadyExists) {
-      Logger.warn(`[CoverController] Extract embedded cover art but cover already exists for "${libraryItem.media.metadata.title}" - bail`)
+      Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${libraryItem.media.metadata.title}" - bail`)
       return false
     }
 
@@ -249,4 +249,4 @@ class CoverController {
     return false
   }
 }
-module.exports = CoverController
+module.exports = CoverManager

@@ -1,8 +1,8 @@
 const Path = require('path')
-const { PlayMethod } = require('./utils/constants')
-const PlaybackSession = require('./objects/PlaybackSession')
-const Stream = require('./objects/Stream')
-const Logger = require('./Logger')
+const { PlayMethod } = require('../utils/constants')
+const PlaybackSession = require('../objects/PlaybackSession')
+const Stream = require('../objects/Stream')
+const Logger = require('../Logger')
 
 class PlaybackSessionManager {
   constructor(db, emitter, clientEmitter) {

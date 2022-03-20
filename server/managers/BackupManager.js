@@ -6,11 +6,11 @@ const archiver = require('archiver')
 const StreamZip = require('node-stream-zip')
 
 // Utils
-const { getFileSize } = require('./utils/fileUtils')
-const filePerms = require('./utils/filePerms')
-const Logger = require('./Logger')
+const { getFileSize } = require('../utils/fileUtils')
+const filePerms = require('../utils/filePerms')
+const Logger = require('../Logger')
 
-const Backup = require('./objects/Backup')
+const Backup = require('../objects/Backup')
 
 class BackupManager {
   constructor(db, emitter) {

@@ -16,7 +16,7 @@ class AuthorController {
       this.cacheManager.purgeImageCache(req.author.id)
       if (!payload.imagePath) { // If removing image then remove file
         var currentImagePath = req.author.imagePath
-        await this.coverController.removeFile(currentImagePath)
+        await this.coverManager.removeFile(currentImagePath)
       }
     }
 

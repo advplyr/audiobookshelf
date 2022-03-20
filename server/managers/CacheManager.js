@@ -1,8 +1,8 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const stream = require('stream')
-const Logger = require('./Logger')
-const { resizeImage } = require('./utils/ffmpegHelpers')
+const Logger = require('../Logger')
+const { resizeImage } = require('../utils/ffmpegHelpers')
 
 class CacheManager {
   constructor() {

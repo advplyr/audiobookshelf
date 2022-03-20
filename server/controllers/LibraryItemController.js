@@ -68,10 +68,10 @@ class LibraryItemController {
     var result = null
     if (req.body && req.body.url) {
       Logger.debug(`[LibraryItemController] Requesting download cover from url "${req.body.url}"`)
-      result = await this.coverController.downloadCoverFromUrl(libraryItem, req.body.url)
+      result = await this.coverManager.downloadCoverFromUrl(libraryItem, req.body.url)
     } else if (req.files && req.files.cover) {
       Logger.debug(`[LibraryItemController] Handling uploaded cover`)
-      result = await this.coverController.uploadCover(libraryItem, req.files.cover)
+      result = await this.coverManager.uploadCover(libraryItem, req.files.cover)
     } else {
       return res.status(400).send('Invalid request no file or url')
     }
@@ -97,7 +97,7 @@ class LibraryItemController {
       return res.status(400).error('Invalid request no cover path')
     }
 
-    var validationResult = await this.coverController.validateCoverPath(req.body.cover, libraryItem)
+    var validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }

@@ -17,11 +17,11 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class Scanner {
-  constructor(db, coverController, emitter) {
+  constructor(db, coverManager, emitter) {
     this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
     this.db = db
-    this.coverController = coverController
+    this.coverManager = coverManager
     this.emitter = emitter
 
     this.cancelLibraryScan = {}
@@ -84,7 +84,7 @@ class Scanner {
 
       // Extract embedded cover art if cover is not already in directory
       if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-        var coverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+        var coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
         if (coverPath) {
           Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
           hasUpdated = true
@@ -348,7 +348,7 @@ class Scanner {
     // If an audio file has embedded cover art and no cover is set yet, extract & use it
     if (newAudioFiles.length || libraryScan.scanOptions.forceRescan) {
       if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-        var savedCoverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+        var savedCoverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
         if (savedCoverPath) {
           hasUpdated = true
           libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${savedCoverPath}"`)
@@ -395,7 +395,7 @@ class Scanner {
 
     // Extract embedded cover art if cover is not already in directory
     if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-      var coverPath = await this.coverController.saveEmbeddedCoverArt(libraryItem)
+      var coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
       if (coverPath) {
         if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${coverPath}"`)
         else Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
@@ -600,7 +600,7 @@ class Scanner {
       for (let i = 0; i < results.length && i < 2; i++) {
 
         // Downloads and updates the book cover
-        var result = await this.coverController.downloadCoverFromUrl(libraryItem, results[i])
+        var result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
 
         if (result.error) {
           Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)
@@ -662,7 +662,7 @@ class Scanner {
     var hasUpdated = false
     if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
       Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
-      var coverResult = await this.coverController.downloadCoverFromUrl(libraryItem, matchData.cover)
+      var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
       if (!coverResult || coverResult.error || !coverResult.cover) {
         Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
       } else {

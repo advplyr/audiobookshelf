@@ -1,9 +1,9 @@
 const Path = require('path')
 const fs = require('fs-extra')
 
-const DailyLog = require('./objects/DailyLog')
+const DailyLog = require('../objects/DailyLog')
 
-const Logger = require('./Logger')
+const Logger = require('../Logger')
 
 const TAG = '[LogManager]'
 

@@ -26,16 +26,17 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, downloadManager, coverController, backupManager, watcher, cacheManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, downloadManager, coverManager, backupManager, watcher, cacheManager, podcastManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
     this.playbackSessionManager = playbackSessionManager
     this.downloadManager = downloadManager
     this.backupManager = backupManager
-    this.coverController = coverController
+    this.coverManager = coverManager
     this.watcher = watcher
     this.cacheManager = cacheManager
+    this.podcastManager = podcastManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 

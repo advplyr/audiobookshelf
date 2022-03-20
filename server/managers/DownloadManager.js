@@ -3,13 +3,14 @@ const fs = require('fs-extra')
 const archiver = require('archiver')
 
 const workerThreads = require('worker_threads')
-const Logger = require('./Logger')
-const Download = require('./objects/Download')
-const filePerms = require('./utils/filePerms')
-const { getId } = require('./utils/index')
-const { writeConcatFile, writeMetadataFile } = require('./utils/ffmpegHelpers')
-const { getFileSize } = require('./utils/fileUtils')
+const Logger = require('../Logger')
+const Download = require('../objects/Download')
+const filePerms = require('../utils/filePerms')
+const { getId } = require('../utils/index')
+const { writeConcatFile, writeMetadataFile } = require('../utils/ffmpegHelpers')
+const { getFileSize } = require('../utils/fileUtils')
 const TAG = 'DownloadManager'
+
 class DownloadManager {
   constructor(db) {
     this.db = db
