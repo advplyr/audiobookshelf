@@ -233,7 +233,9 @@ class LibraryController {
     if (!req.params.series) {
       return res.status(403).send('Invalid series')
     }
-    var libraryItems = this.db.libraryItems.filter(li => li.libraryId === req.library.id && li.book.series === req.params.series)
+    var libraryItems = this.db.libraryItems.filter(li => {
+      return li.libraryId === req.library.id && li.book.series === req.params.series
+    })
     if (!libraryItems.length) {
       return res.status(404).send('Series not found')
     }
@@ -530,7 +532,9 @@ class LibraryController {
       return res.status(404).send('Library not found')
     }
     req.library = library
-    req.libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
+    req.libraryItems = this.db.libraryItems.filter(li => {
+      return li.libraryId === library.id && req.user.checkCanAccessLibraryItemWithTags(li.media.tags)
+    })
     next()
   }
 }

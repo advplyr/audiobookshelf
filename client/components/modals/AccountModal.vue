@@ -77,6 +77,19 @@
             <div v-if="!newUser.permissions.accessAllLibraries" class="my-4">
               <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" label="Libraries Accessible to User" />
             </div>
+
+            <div class="flex items-cen~ter my-2 max-w-md">
+              <div class="w-1/2">
+                <p>Can Access All Tags</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.accessAllTags" @input="accessAllTagsToggled" />
+              </div>
+            </div>
+
+            <div v-if="!newUser.permissions.accessAllTags" class="my-4">
+              <ui-multi-select-dropdown v-model="newUser.itemsTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
+            </div>
           </div>
 
           <div class="flex pt-4">
@@ -103,7 +116,9 @@ export default {
       processing: false,
       newUser: {},
       isNew: true,
-      accountTypes: ['guest', 'user', 'admin']
+      accountTypes: ['guest', 'user', 'admin'],
+      tags: [],
+      loadingTags: false
     }
   },
   watch: {
@@ -135,9 +150,40 @@ export default {
     },
     libraryItems() {
       return this.libraries.map((lib) => ({ text: lib.name, value: lib.id }))
+    },
+    itemTags() {
+      return this.tags.map((t) => {
+        return {
+          text: t,
+          value: t
+        }
+      })
     }
   },
   methods: {
+    accessAllTagsToggled(val) {
+      if (!val) {
+        this.fetchAllTags()
+      }
+      if (!val && !this.newUser.itemTagsAccessible.length) {
+        this.newUser.itemTagsAccessible = this.libraries.map((l) => l.id)
+      } else if (val && this.newUser.itemTagsAccessible.length) {
+        this.newUser.itemTagsAccessible = []
+      }
+    },
+    fetchAllTags() {
+      this.loadingTags = true
+      this.$axios
+        .$get(`/api/tags`)
+        .then((tags) => {
+          this.tags = tags
+          this.loadingTags = false
+        })
+        .catch((error) => {
+          console.error('Failed to load tags', error)
+          this.loadingTags = false
+        })
+    },
     accessAllLibrariesToggled(val) {
       if (!val && !this.newUser.librariesAccessible.length) {
         this.newUser.librariesAccessible = this.libraries.map((l) => l.id)
@@ -223,20 +269,22 @@ export default {
         download: type !== 'guest',
         update: type === 'admin',
         delete: type === 'admin',
-        upload: type === 'admin'
+        upload: type === 'admin',
+        accessAllLibraries: true,
+        accessAllTags: true
       }
     },
     init() {
       this.isNew = !this.account
       if (this.account) {
-        var librariesAccessible = this.account.librariesAccessible || []
         this.newUser = {
           username: this.account.username,
           password: this.account.password,
           type: this.account.type,
           isActive: this.account.isActive,
           permissions: { ...this.account.permissions },
-          librariesAccessible: [...librariesAccessible]
+          librariesAccessible: [...(this.account.librariesAccessible || [])],
+          itemTagsAccessible: [...(this.account.itemTagsAccessible || [])]
         }
       } else {
         this.newUser = {
@@ -249,7 +297,8 @@ export default {
             update: false,
             delete: false,
             upload: false,
-            accessAllLibraries: true
+            accessAllLibraries: true,
+            accessAllTags: true
           },
           librariesAccessible: []
         }

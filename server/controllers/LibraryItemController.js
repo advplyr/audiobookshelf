@@ -262,6 +262,11 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
+    // Check user can access this library item
+    if (!req.user.checkCanAccessLibraryItemWithTags(item.media.tags)) {
+      return res.sendStatus(403)
+    }
+
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
       return res.sendStatus(403)

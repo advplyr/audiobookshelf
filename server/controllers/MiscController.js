@@ -170,5 +170,21 @@ class MiscController {
     }
     res.json({ user: req.user })
   }
+
+  getAllTags(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[MiscController] Non-root user attempted to getAllTags`)
+      return res.sendStatus(404)
+    }
+    var tags = []
+    this.db.libraryItems.forEach((li) => {
+      if (li.media.tags && li.media.tags.length) {
+        li.media.tags.forEach((tag) => {
+          if (!tags.includes(tag)) tags.push(tag)
+        })
+      }
+    })
+    res.json(tags)
+  }
 }
 module.exports = new MiscController()

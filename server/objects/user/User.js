@@ -20,6 +20,7 @@ class User {
     this.settings = {}
     this.permissions = {}
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
+    this.itemTagsAccessible = [] // Empty if ALL item tags accessible
 
     if (user) {
       this.construct(user)
@@ -43,6 +44,9 @@ class User {
   }
   get canAccessAllLibraries() {
     return !!this.permissions.accessAllLibraries && this.isActive
+  }
+  get canAccessAllTags() {
+    return !!this.permissions.accessAllTags && this.isActive
   }
   get hasPw() {
     return !!this.pash && !!this.pash.length
@@ -68,7 +72,8 @@ class User {
       update: true,
       delete: this.type === 'root',
       upload: this.type === 'root' || this.type === 'admin',
-      accessAllLibraries: true
+      accessAllLibraries: true,
+      accessAllTags: true
     }
   }
 
@@ -87,7 +92,8 @@ class User {
       createdAt: this.createdAt,
       settings: this.settings,
       permissions: this.permissions,
-      librariesAccessible: [...this.librariesAccessible]
+      librariesAccessible: [...this.librariesAccessible],
+      itemTagsAccessible: [...this.itemTagsAccessible]
     }
   }
 
@@ -105,7 +111,8 @@ class User {
       createdAt: this.createdAt,
       settings: this.settings,
       permissions: this.permissions,
-      librariesAccessible: [...this.librariesAccessible]
+      librariesAccessible: [...this.librariesAccessible],
+      itemTagsAccessible: [...this.itemTagsAccessible]
     }
   }
 
@@ -151,8 +158,11 @@ class User {
 
     // Library restriction permissions added v1.4.14, defaults to all libraries
     if (this.permissions.accessAllLibraries === undefined) this.permissions.accessAllLibraries = true
+    // Library restriction permissions added v2.0, defaults to all libraries
+    if (this.permissions.accessAllTags === undefined) this.permissions.accessAllTags = true
 
-    this.librariesAccessible = (user.librariesAccessible || []).map(l => l)
+    this.librariesAccessible = [...(user.librariesAccessible || [])]
+    this.itemTagsAccessible = [...(user.itemTagsAccessible || [])]
   }
 
   update(payload) {
@@ -188,6 +198,19 @@ class User {
       } else if (this.librariesAccessible.length > 0) {
         hasUpdates = true
         this.librariesAccessible = []
+      }
+    }
+
+    // Update accessible libraries
+    if (payload.itemTagsAccessible !== undefined) {
+      if (payload.itemTagsAccessible.length) {
+        if (payload.itemTagsAccessible.join(',') !== this.itemTagsAccessible.join(',')) {
+          hasUpdates = true
+          this.itemTagsAccessible = [...payload.itemTagsAccessible]
+        }
+      } else if (this.itemTagsAccessible.length > 0) {
+        hasUpdates = true
+        this.itemTagsAccessible = []
       }
     }
     return hasUpdates
@@ -268,6 +291,11 @@ class User {
     if (this.permissions.accessAllLibraries) return true
     if (!this.librariesAccessible) return false
     return this.librariesAccessible.includes(libraryId)
+  }
+
+  checkCanAccessLibraryItemWithTags(tags) {
+    if (this.permissions.accessAllTags || !tags || !tags.length) return true
+    return this.itemTagsAccessible.some(tag => tags.includes(tag))
   }
 
   findBookmark(libraryItemId, time) {

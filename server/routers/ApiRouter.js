@@ -192,6 +192,7 @@ class ApiRouter {
     this.router.get('/search/books', MiscController.findBooks.bind(this))
     this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
+    this.router.get('/tags', MiscController.getAllTags.bind(this))
 
     // OLD
     // this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
