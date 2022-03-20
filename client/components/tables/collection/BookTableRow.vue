@@ -17,7 +17,6 @@
       <div class="w-80 h-full px-2 flex items-center">
         <div>
           <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
-          <!-- <nuxt-link :to="`/library/${book.libraryId}/bookshelf?filter=authors.${$encode(bookAuthor)}`" class="truncate block text-gray-400 text-sm hover:underline">{{ bookAuthor }}</nuxt-link> -->
         </div>
       </div>
       <div class="flex-grow flex items-center">
@@ -89,8 +88,12 @@ export default {
     bookAuthor() {
       return (this.mediaMetadata.authors || []).map((au) => au.name).join(', ')
     },
+    defaultAudiobook() {
+      if (!this.media.audiobooks.length) return null
+      return this.media.audiobooks[0]
+    },
     bookDuration() {
-      return this.$secondsToTimestamp(this.media.duration)
+      return this.$secondsToTimestamp(this.defaultAudiobook.duration)
     },
     isMissing() {
       return this.book.isMissing
@@ -98,14 +101,11 @@ export default {
     isInvalid() {
       return this.book.isInvalid
     },
-    numTracks() {
-      return this.media.tracks.length
-    },
     isStreaming() {
       return this.$store.getters['getLibraryItemIdStreaming'] === this.book.id
     },
     showPlayBtn() {
-      return !this.isMissing && !this.isInvalid && !this.isStreaming && this.numTracks
+      return !this.isMissing && !this.isInvalid && !this.isStreaming && this.defaultAudiobook
     },
     itemProgress() {
       return this.$store.getters['user/getUserLibraryItemProgress'](this.book.id)

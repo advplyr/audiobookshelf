@@ -83,7 +83,7 @@ export default {
     },
     playableBooks() {
       return this.bookItems.filter((book) => {
-        return !book.isMissing && !book.isInvalid && book.numTracks
+        return !book.isMissing && !book.isInvalid && book.media.audiobooks.length
       })
     },
     streaming() {
@@ -91,9 +91,6 @@ export default {
     },
     showPlayButton() {
       return this.playableBooks.length
-    },
-    userAudiobooks() {
-      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
     }
   },
   methods: {
@@ -118,7 +115,10 @@ export default {
       }
     },
     clickPlay() {
-      var nextBookNotRead = this.playableBooks.find((pb) => !this.userAudiobooks[pb.id] || !this.userAudiobooks[pb.id].isRead)
+      var nextBookNotRead = this.playableBooks.find((pb) => {
+        var prog = this.$store.getters['user/getUserLibraryItemProgress'](pb.id)
+        return !prog || !prog.isFinished
+      })
       if (nextBookNotRead) {
         this.$eventBus.$emit('play-item', nextBookNotRead.id)
       }
