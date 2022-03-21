@@ -158,10 +158,11 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors`).catch((error) => {
       console.error('Failed', error)
       return false
     })
+    console.log(item)
     if (!item) {
       console.error('No item...', params.id)
       return redirect('/')

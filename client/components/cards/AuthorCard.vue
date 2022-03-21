@@ -1,11 +1,11 @@
 <template>
   <div @mouseover="mouseover" @mouseout="mouseout">
-    <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-lg relative overflow-hidden">
+    <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
       <!-- Image or placeholder -->
       <covers-author-image :author="author" />
 
       <!-- Author name & num books overlay -->
-      <div v-show="!searching" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
+      <div v-show="!searching && !nameBelow" class="absolute bottom-0 left-0 w-full py-1 bg-black bg-opacity-60 px-2">
         <p class="text-center font-semibold truncate" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
         <p class="text-center text-gray-200" :style="{ fontSize: sizeMultiplier * 0.65 + 'rem' }">{{ numBooks }} Book{{ numBooks === 1 ? '' : 's' }}</p>
       </div>
@@ -23,6 +23,9 @@
         <widgets-loading-spinner size="" />
       </div>
     </div>
+    <div v-show="nameBelow" class="w-full py-1 px-2">
+      <p class="text-center font-semibold truncate text-gray-200" :style="{ fontSize: sizeMultiplier * 0.75 + 'rem' }">{{ name }}</p>
+    </div>
   </div>
 </template>
 
@@ -38,7 +41,8 @@ export default {
     sizeMultiplier: {
       type: Number,
       default: 1
-    }
+    },
+    nameBelow: Boolean
   },
   data() {
     return {

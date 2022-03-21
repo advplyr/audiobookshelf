@@ -5,8 +5,26 @@ const { ScanResult } = require('../utils/constants')
 class LibraryItemController {
   constructor() { }
 
+  // Example expand with authors: api/items/:id?expanded=1&include=authors
   findOne(req, res) {
-    if (req.query.expanded == 1) return res.json(req.libraryItem.toJSONExpanded())
+    const includeEntities = (req.query.include || '').split(',')
+    if (req.query.expanded == 1) {
+      var item = req.libraryItem.toJSONExpanded()
+
+      if (item.mediaType == 'book') {
+        if (includeEntities.includes('authors')) {
+          item.media.metadata.authors = item.media.metadata.authors.map(au => {
+            var author = this.db.authors.find(_au => _au.id === au.id)
+            if (!author) return null
+            return {
+              ...author
+            }
+          }).filter(au => au)
+        }
+      }
+
+      return res.json(item)
+    }
     res.json(req.libraryItem)
   }
 
