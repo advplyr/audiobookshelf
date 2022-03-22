@@ -166,7 +166,9 @@ class LibraryItem {
     } else {
       this.mediaType = 'book'
       this.media = new Book()
+
     }
+
 
     for (const key in payload) {
       if (key === 'libraryFiles') {
@@ -175,13 +177,13 @@ class LibraryItem {
         // Use first image library file as cover
         var firstImageFile = this.libraryFiles.find(lf => lf.fileType === 'image')
         if (firstImageFile) this.media.coverPath = firstImageFile.metadata.path
-      } else if (this[key] !== undefined) {
+      } else if (this[key] !== undefined && key !== 'media') {
         this[key] = payload[key]
       }
     }
 
-    if (payload.mediaMetadata) {
-      this.media.setData(payload.mediaMetadata)
+    if (payload.media) {
+      this.media.setData(payload.media)
     }
 
     this.addedAt = Date.now()

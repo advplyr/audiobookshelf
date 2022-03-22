@@ -6,10 +6,10 @@
           <div class="relative" style="height: fit-content">
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
-            <!-- Book Progress Bar -->
+            <!-- Item Progress Bar -->
             <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
-            <!-- Book Cover Overlay -->
+            <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
               <div v-show="showPlayButton && !streaming" class="h-full flex items-center justify-center pointer-events-none">
                 <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="startStream">
@@ -28,10 +28,11 @@
                 <h1 class="text-2xl md:text-3xl font-sans">
                   {{ title }}
                 </h1>
-                <p v-if="subtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ subtitle }}</p>
+                <p v-if="bookSubtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ bookSubtitle }}</p>
               </div>
 
-              <p v-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
+              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor }}</p>
+              <p v-else-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
@@ -162,7 +163,6 @@ export default {
       console.error('Failed', error)
       return false
     })
-    console.log(item)
     if (!item) {
       console.error('No item...', params.id)
       return redirect('/')
@@ -193,6 +193,9 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
+    isPodcast() {
+      return this.libraryItem.mediaType === 'podcast'
+    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -200,7 +203,9 @@ export default {
       return this.libraryItem.isInvalid
     },
     showPlayButton() {
-      return !this.isMissing && !this.isInvalid && this.audiobooks.length
+      if (this.isMissing || this.isInvalid) return false
+      if (this.isPodcast) return this.podcastEpisodes.length
+      return this.audiobooks.length
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -217,8 +222,8 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
-    audiobooks() {
-      return this.media.audiobooks || []
+    podcastEpisodes() {
+      return this.media.episodes || []
     },
     defaultAudiobook() {
       if (!this.audiobooks.length) return null
@@ -233,11 +238,15 @@ export default {
     narrator() {
       return this.mediaMetadata.narratorName
     },
-    subtitle() {
+    bookSubtitle() {
+      if (this.isPodcast) return null
       return this.mediaMetadata.subtitle
     },
     genres() {
       return this.mediaMetadata.genres || []
+    },
+    podcastAuthor() {
+      return this.mediaMetadata.author || ''
     },
     authors() {
       return this.mediaMetadata.authors || []

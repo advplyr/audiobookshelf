@@ -14,6 +14,7 @@ class FolderWatcher extends EventEmitter {
     this.pendingDelay = 4000
     this.pendingTimeout = null
 
+    this.ignoreDirs = []
     this.disabled = false
   }
 
@@ -115,11 +116,17 @@ class FolderWatcher extends EventEmitter {
   }
 
   onNewFile(libraryId, path) {
+    if (this.checkShouldIgnorePath(path)) {
+      return
+    }
     Logger.debug('[Watcher] File Added', path)
     this.addFileUpdate(libraryId, path, 'added')
   }
 
   onFileRemoved(libraryId, path) {
+    if (this.checkShouldIgnorePath(path)) {
+      return
+    }
     Logger.debug('[Watcher] File Removed', path)
     this.addFileUpdate(libraryId, path, 'deleted')
   }
@@ -129,6 +136,9 @@ class FolderWatcher extends EventEmitter {
   }
 
   onRename(libraryId, pathFrom, pathTo) {
+    if (this.checkShouldIgnorePath(pathTo)) {
+      return
+    }
     Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
     this.addFileUpdate(libraryId, pathFrom, 'renamed')
     this.addFileUpdate(libraryId, pathTo, 'renamed')
@@ -184,6 +194,32 @@ class FolderWatcher extends EventEmitter {
       this.emit('files', this.pendingFileUpdates)
       this.pendingFileUpdates = []
     }, this.pendingDelay)
+  }
+
+  checkShouldIgnorePath(path) {
+    return !!this.ignoreDirs.find(dirpath => {
+      return path.replace(/\\/g, '/').startsWith(dirpath)
+    })
+  }
+
+  cleanDirPath(path) {
+    var path = path.replace(/\\/g, '/')
+    if (path.endsWith('/')) path = path.slice(0, -1)
+    return path
+  }
+
+  addIgnoreDir(path) {
+    path = this.cleanDirPath(path)
+    if (this.ignoreDirs.includes(path)) return
+    Logger.debug(`[Watcher] Ignoring directory "${path}"`)
+    this.ignoreDirs.push(path)
+  }
+
+  removeIgnoreDir(path) {
+    path = this.cleanDirPath(path)
+    if (!this.ignoreDirs.includes(path)) return
+    Logger.debug(`[Watcher] No longer ignoring directory "${path}"`)
+    this.ignoreDirs = this.ignoreDirs.filter(p => p !== path)
   }
 }
 module.exports = FolderWatcher

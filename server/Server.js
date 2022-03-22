@@ -61,7 +61,7 @@ class Server {
     this.downloadManager = new DownloadManager(this.db)
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db)
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
 

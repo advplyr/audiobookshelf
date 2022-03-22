@@ -59,12 +59,12 @@ module.exports = {
     }
     libraryItems.forEach((li) => {
       var mediaMetadata = li.media.metadata
-      if (mediaMetadata.authors.length) {
+      if (mediaMetadata.authors && mediaMetadata.authors.length) {
         mediaMetadata.authors.forEach((author) => {
           if (author && !data.authors.find(au => au.id === author.id)) data.authors.push({ id: author.id, name: author.name })
         })
       }
-      if (mediaMetadata.series.length) {
+      if (mediaMetadata.series && mediaMetadata.series.length) {
         mediaMetadata.series.forEach((series) => {
           if (series && !data.series.find(se => se.id === series.id)) data.series.push({ id: series.id, name: series.name })
         })
@@ -79,7 +79,7 @@ module.exports = {
           if (tag && !data.tags.includes(tag)) data.tags.push(tag)
         })
       }
-      if (mediaMetadata.narrators.length) {
+      if (mediaMetadata.narrators && mediaMetadata.narrators.length) {
         mediaMetadata.narrators.forEach((narrator) => {
           if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
         })

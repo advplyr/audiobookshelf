@@ -118,10 +118,14 @@ class Podcast {
     return this.episodes[0]
   }
 
-  setData(metadata, coverPath = null, autoDownload = false) {
-    this.metadata = new PodcastMetadata(metadata)
-    this.coverPath = coverPath
-    this.autoDownloadEpisodes = autoDownload
+  setData(mediaMetadata) {
+    this.metadata = new PodcastMetadata()
+    if (mediaMetadata.metadata) {
+      this.metadata.setData(mediaMetadata.metadata)
+    }
+
+    this.coverPath = mediaMetadata.coverPath || null
+    this.autoDownloadEpisodes = !!mediaMetadata.autoDownloadEpisodes
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
@@ -149,6 +153,10 @@ class Podcast {
     var total = 0
     this.episodes.forEach((ep) => total += ep.duration)
     return total
+  }
+
+  addPodcastEpisode(podcastEpisode) {
+    this.episodes.push(podcastEpisode)
   }
 }
 module.exports = Podcast

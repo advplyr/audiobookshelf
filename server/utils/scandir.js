@@ -161,7 +161,11 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
       mtimeMs: libraryItemFolderStats.mtimeMs || 0,
       ctimeMs: libraryItemFolderStats.ctimeMs || 0,
       birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-      ...libraryItemData,
+      path: libraryItemData.path,
+      relPath: libraryItemData.relPath,
+      media: {
+        metadata: libraryItemData.mediaMetadata || null
+      },
       libraryFiles: fileObjs
     })
   }
@@ -262,9 +266,21 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   }
 }
 
+function getPodcastDataFromDir(folderPath, relPath) {
+  relPath = relPath.replace(/\\/g, '/')
+  return {
+    relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
+    path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+  }
+}
+
 function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettings) {
   var parseSubtitle = !!serverSettings.scannerParseSubtitle
-  return getBookDataFromDir(folderPath, relPath, parseSubtitle)
+  if (libraryMediaType === 'podcast') {
+    return getPodcastDataFromDir(folderPath, relPath, parseSubtitle)
+  } else {
+    return getBookDataFromDir(folderPath, relPath, parseSubtitle)
+  }
 }
 
 
@@ -284,7 +300,11 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
     birthtimeMs: libraryItemDirStats.birthtimeMs || 0,
     folderId: folder.id,
     libraryId: folder.libraryId,
-    ...libraryItemData,
+    path: libraryItemData.path,
+    relPath: libraryItemData.relPath,
+    media: {
+      metadata: libraryItemData.mediaMetadata || null
+    },
     libraryFiles: []
   }
 

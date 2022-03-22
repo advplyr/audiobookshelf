@@ -42,6 +42,16 @@
 
 <script>
 export default {
+  async asyncData({ params, query, store, app, redirect }) {
+    var libraryId = params.library
+    var library = await store.dispatch('libraries/fetch', libraryId)
+    if (!library) {
+      return redirect('/oops?message=Library not found')
+    }
+    return {
+      libraryId
+    }
+  },
   data() {
     return {
       searchTerm: '',

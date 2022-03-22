@@ -179,7 +179,51 @@ export default {
     toggleSelectEpisode(index) {
       this.selectedEpisodes[String(index)] = !this.selectedEpisodes[String(index)]
     },
-    submit() {},
+    submit() {
+      var episodesToDownload = []
+      if (this.episodesSelected.length) {
+        episodesToDownload = this.episodesSelected.map((episodeIndex) => this.episodes[Number(episodeIndex)])
+      }
+
+      const podcastPayload = {
+        path: this.fullPath,
+        folderId: this.selectedFolderId,
+        libraryId: this.currentLibrary.id,
+        media: {
+          metadata: {
+            title: this.podcast.title,
+            author: this.podcast.author,
+            description: this.podcast.description,
+            releaseDate: this.podcast.releaseDate,
+            genres: [...this.podcast.genres],
+            feedUrl: this.podcast.feedUrl,
+            imageUrl: this.podcast.imageUrl,
+            itunesPageUrl: this.podcast.itunesPageUrl,
+            itunesId: this.podcast.itunesId,
+            itunesArtistId: this.podcast.itunesArtistId,
+            language: this.podcast.language
+          },
+          autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
+        },
+        episodesToDownload
+      }
+      console.log('Podcast payload', podcastPayload)
+
+      this.processing = true
+      this.$axios
+        .$post('/api/podcasts', podcastPayload)
+        .then((libraryItem) => {
+          this.processing = false
+          this.$toast.success('Podcast created successfully')
+          this.show = false
+          this.$router.push(`/item/${libraryItem.id}`)
+        })
+        .catch((error) => {
+          console.error('Failed to create podcast', error)
+          this.processing = false
+          this.$toast.error('Failed to create podcast')
+        })
+    },
     saveEpisode(episode) {
       console.log('Save episode', episode)
     },

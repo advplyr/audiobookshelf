@@ -502,6 +502,7 @@ class Scanner {
 
   async scanFolderUpdates(library, folder, fileUpdateGroup) {
     Logger.debug(`[Scanner] Scanning file update groups in folder "${folder.id}" of library "${library.name}"`)
+    Logger.debug(`[Scanner] scanFolderUpdates fileUpdateGroup`, fileUpdateGroup)
 
     // First pass - Remove files in parent dirs of items and remap the fileupdate group
     //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item

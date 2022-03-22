@@ -54,7 +54,7 @@ class AudioFileScanner {
     return Math.floor(total / results.length)
   }
 
-  async scan(audioLibraryFile, mediaMetadataFromScan, verbose = false) {
+  async scan(mediaType, audioLibraryFile, mediaMetadataFromScan, verbose = false) {
     var probeStart = Date.now()
     var probeData = await prober.probe(audioLibraryFile.metadata.path, verbose)
     if (probeData.error) {
@@ -65,11 +65,11 @@ class AudioFileScanner {
     var audioFile = new AudioFile()
     audioFile.trackNumFromMeta = probeData.trackNumber
     audioFile.discNumFromMeta = probeData.discNumber
-
-    const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, audioLibraryFile)
-    audioFile.trackNumFromFilename = trackNumber
-    audioFile.discNumFromFilename = discNumber
-
+    if (mediaType === 'book') {
+      const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, audioLibraryFile)
+      audioFile.trackNumFromFilename = trackNumber
+      audioFile.discNumFromFilename = discNumber
+    }
     audioFile.setDataFromProbe(audioLibraryFile, probeData)
 
     return {
@@ -79,11 +79,11 @@ class AudioFileScanner {
   }
 
   // Returns array of { AudioFile, elapsed, averageScanDuration } from audio file scan objects
-  async executeAudioFileScans(audioLibraryFiles, scanData) {
+  async executeAudioFileScans(mediaType, audioLibraryFiles, scanData) {
     var mediaMetadataFromScan = scanData.mediaMetadata || null
     var proms = []
     for (let i = 0; i < audioLibraryFiles.length; i++) {
-      proms.push(this.scan(audioLibraryFiles[i], mediaMetadataFromScan))
+      proms.push(this.scan(mediaType, audioLibraryFiles[i], mediaMetadataFromScan))
     }
     var scanStart = Date.now()
     var results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
@@ -178,7 +178,7 @@ class AudioFileScanner {
   async scanAudioFiles(audioLibraryFiles, scanData, libraryItem, preferAudioMetadata, libraryScan = null) {
     var hasUpdated = false
 
-    var audioScanResult = await this.executeAudioFileScans(audioLibraryFiles, scanData)
+    var audioScanResult = await this.executeAudioFileScans(libraryItem.mediaType, audioLibraryFiles, scanData)
     if (audioScanResult.audioFiles.length) {
       if (libraryScan) {
         libraryScan.addLog(LogLevel.DEBUG, `Library Item "${scanData.path}" Audio file scan took ${audioScanResult.elapsed}ms for ${audioScanResult.audioFiles.length} with average time of ${audioScanResult.averageScanDuration}ms`)

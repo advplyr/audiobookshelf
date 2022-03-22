@@ -176,9 +176,11 @@ class Book {
     return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
   }
 
-  setData(scanMediaMetadata) {
+  setData(mediaPayload) {
     this.metadata = new BookMetadata()
-    this.metadata.setData(scanMediaMetadata)
+    if (mediaPayload.metadata) {
+      this.metadata.setData(mediaPayload.metadata)
+    }
   }
 
   // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found

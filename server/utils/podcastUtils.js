@@ -81,7 +81,8 @@ function cleanEpisodeData(data) {
     author: data.author || '',
     duration: data.duration || '',
     explicit: data.explicit || '',
-    publishedAt: (new Date(data.pubDate)).valueOf()
+    publishedAt: (new Date(data.pubDate)).valueOf(),
+    enclosure: data.enclosure
   }
 }
 
