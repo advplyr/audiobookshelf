@@ -1,12 +1,12 @@
 ### STAGE 0: Build client ###
-FROM node:12-alpine AS build
+FROM node:16-alpine AS build
 WORKDIR /client
 COPY /client /client
 RUN npm install
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM node:12-alpine
+FROM node:16-alpine
 RUN apk update && apk add --no-cache --update ffmpeg
 ENV NODE_ENV=production
 COPY --from=build /client/dist /client/dist
