@@ -172,7 +172,7 @@ class Scanner {
 
     if (this.cancelLibraryScan[libraryScan.libraryId]) return true
 
-    // Remove audiobooks with no inode
+    // Remove items with no inode
     libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino)
     var libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
 

@@ -80,7 +80,7 @@ class AudioFileScanner {
 
   // Returns array of { AudioFile, elapsed, averageScanDuration } from audio file scan objects
   async executeAudioFileScans(mediaType, audioLibraryFiles, scanData) {
-    var mediaMetadataFromScan = scanData.mediaMetadata || null
+    var mediaMetadataFromScan = scanData.media.metadata || null
     var proms = []
     for (let i = 0; i < audioLibraryFiles.length; i++) {
       proms.push(this.scan(mediaType, audioLibraryFiles[i], mediaMetadataFromScan))
@@ -149,7 +149,6 @@ class AudioFileScanner {
     } else {
       trackKey = 'trackNumFromMeta'
     }
-
 
     if (discKey !== null) {
       Logger.debug(`[AudioFileScanner] Smart track order for "${libraryItem.media.metadata.title}" using disc key ${discKey} and track key ${trackKey}`)
@@ -222,8 +221,28 @@ class AudioFileScanner {
         if (hasUpdated) {
           libraryItem.media.rebuildTracks()
         }
-      } // End Book media type
+      } else { // Podcast Media Type
+        var existingAudioFiles = audioScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))
+
+        if (newAudioFiles.length) {
+          var newIndex = libraryItem.media.episodes.length + 1
+          newAudioFiles.forEach((newAudioFile) => {
+            libraryItem.media.addNewEpisodeFromAudioFile(newAudioFile, newIndex++)
+          })
+          libraryItem.media.reorderEpisodes()
+          hasUpdated = true
+        }
+
+        // Update audio file metadata for audio files already there
+        existingAudioFiles.forEach((af) => {
+          var peAudioFile = libraryItem.media.findFileWithInode(af.ino)
+          if (peAudioFile.updateFromScan && peAudioFile.updateFromScan(af)) {
+            hasUpdated = true
+          }
+        })
+      }
     }
+
     return hasUpdated
   }
 }

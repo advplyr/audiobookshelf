@@ -226,7 +226,9 @@ class CoverManager {
   }
 
   async saveEmbeddedCoverArt(libraryItem) {
-    var audioFileWithCover = libraryItem.media.audioFiles.find(af => af.embeddedCoverArt)
+    var audioFileWithCover = null
+    if (libraryItem.mediaType === 'book') audioFileWithCover = libraryItem.media.audioFiles.find(af => af.embeddedCoverArt)
+    else audioFileWithCover = libraryItem.media.episodes.find(ep => ep.audioFile.embeddedCoverArt)
     if (!audioFileWithCover) return false
 
     var coverDirPath = this.getCoverDirectory(libraryItem)

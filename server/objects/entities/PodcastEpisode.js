@@ -86,6 +86,15 @@ class PodcastEpisode {
     this.updatedAt = Date.now()
   }
 
+  setDataFromAudioFile(audioFile, index) {
+    this.id = getId('ep')
+    this.audioFile = audioFile
+    this.title = audioFile.metadata.filename
+    this.index = index
+    this.addedAt = Date.now()
+    this.updatedAt = Date.now()
+  }
+
   // Only checks container format
   checkCanDirectPlay(payload) {
     var supportedMimeTypes = payload.supportedMimeTypes || []

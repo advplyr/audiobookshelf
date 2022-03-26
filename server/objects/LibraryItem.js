@@ -166,7 +166,6 @@ class LibraryItem {
     } else {
       this.mediaType = 'book'
       this.media = new Book()
-
     }
 
 
@@ -235,6 +234,7 @@ class LibraryItem {
   saveMetadata() { }
 
   // Returns null if file not found, true if file was updated, false if up to date
+  //  updates existing LibraryFile, AudioFile, EBookFile's
   checkFileFound(fileFound) {
     var hasUpdated = false
 
@@ -270,8 +270,8 @@ class LibraryItem {
       hasUpdated = true
     }
 
-    var keysToCheck = ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size']
-    keysToCheck.forEach((key) => {
+    // FileMetadata keys
+    ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size'].forEach((key) => {
       if (existingFile.metadata[key] !== fileFound.metadata[key]) {
 
         // Add modified flag on file data object if exists and was changed
@@ -319,8 +319,7 @@ class LibraryItem {
       hasUpdated = true
     }
 
-    var keysToCheck = ['mtimeMs', 'ctimeMs', 'birthtimeMs']
-    keysToCheck.forEach((key) => {
+    ['mtimeMs', 'ctimeMs', 'birthtimeMs'].forEach((key) => {
       if (dataFound[key] != this[key]) {
         this[key] = dataFound[key] || 0
         hasUpdated = true
@@ -347,6 +346,7 @@ class LibraryItem {
     // Remove files not found (inodes will all be up to date at this point)
     this.libraryFiles = this.libraryFiles.filter(lf => {
       if (!dataFound.libraryFiles.find(_lf => _lf.ino === lf.ino)) {
+        // Check if removing cover path
         if (lf.metadata.path === this.media.coverPath) {
           Logger.debug(`[LibraryItem] "${this.media.metadata.title}" check scan cover removed`)
           this.media.updateCover('')
@@ -393,10 +393,6 @@ class LibraryItem {
       filesRemoved,
       existingLibraryFiles // Existing file data may get re-scanned if forceRescan is set
     }
-  }
-
-  findLibraryFileWithIno(inode) {
-    return this.libraryFiles.find(lf => lf.ino === inode)
   }
 
   // Set metadata from files

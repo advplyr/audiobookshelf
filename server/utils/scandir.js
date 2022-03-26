@@ -5,11 +5,12 @@ const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
 
-function isMediaFile(path) {
+function isMediaFile(mediaType, path) {
   if (!path) return false
   var ext = Path.extname(path)
   if (!ext) return false
   var extclean = ext.slice(1).toLowerCase()
+  if (mediaType === 'podcast') return globals.SupportedAudioTypes.includes(extclean)
   return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
@@ -60,7 +61,7 @@ module.exports.groupFilesIntoLibraryItemPaths = groupFilesIntoLibraryItemPaths
 
 // Input: array of relative file items (see recurseFiles)
 // Output: map of files grouped into potential libarary item dirs
-function groupFileItemsIntoLibraryItemDirs(fileItems) {
+function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems) {
   // Step 1: Filter out files in root dir (with depth of 0)
   var itemsFiltered = fileItems.filter(i => i.deep > 0)
 
@@ -69,7 +70,7 @@ function groupFileItemsIntoLibraryItemDirs(fileItems) {
   var mediaFileItems = []
   var otherFileItems = []
   itemsFiltered.forEach(item => {
-    if (isMediaFile(item.fullpath)) mediaFileItems.push(item)
+    if (isMediaFile(mediaType, item.fullpath)) mediaFileItems.push(item)
     else otherFileItems.push(item)
   })
 
@@ -141,7 +142,7 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
 
   var fileItems = await recurseFiles(folderPath)
 
-  var libraryItemGrouping = groupFileItemsIntoLibraryItemDirs(fileItems)
+  var libraryItemGrouping = groupFileItemsIntoLibraryItemDirs(libraryMediaType, fileItems)
 
   if (!Object.keys(libraryItemGrouping).length) {
     Logger.error('Root path has no media folders', fileItems.length)
@@ -268,17 +269,24 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
 
 function getPodcastDataFromDir(folderPath, relPath) {
   relPath = relPath.replace(/\\/g, '/')
+  var splitDir = relPath.split('/')
+
+  // Audio files will always be in the directory named for the title
+  var title = splitDir.pop()
   return {
+    mediaMetadata: {
+      title
+    },
     relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
     path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
   }
 }
 
 function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettings) {
-  var parseSubtitle = !!serverSettings.scannerParseSubtitle
   if (libraryMediaType === 'podcast') {
-    return getPodcastDataFromDir(folderPath, relPath, parseSubtitle)
+    return getPodcastDataFromDir(folderPath, relPath)
   } else {
+    var parseSubtitle = !!serverSettings.scannerParseSubtitle
     return getBookDataFromDir(folderPath, relPath, parseSubtitle)
   }
 }

@@ -1,6 +1,10 @@
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
+const { createNewSortInstance } = require('fast-sort')
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 
 class Podcast {
   constructor(podcast) {
@@ -69,7 +73,7 @@ class Podcast {
     return false
   }
   get hasEmbeddedCoverArt() {
-    return false
+    return this.episodes.some(ep => ep.audioFile.embeddedCoverArt)
   }
   get hasIssues() {
     return false
@@ -111,11 +115,11 @@ class Podcast {
   }
 
   removeFileWithInode(inode) {
-    return false
+    this.episodes = this.episodes.filter(ep => ep.ino !== inode)
   }
 
   findFileWithInode(inode) {
-    return null
+    return this.episodes.find(ep => ep.audioFile.ino === inode)
   }
 
   setData(mediaMetadata) {
@@ -137,10 +141,6 @@ class Podcast {
     return payload || {}
   }
 
-  addPodcastEpisode(podcastEpisode) {
-    this.episodes.push(podcastEpisode)
-  }
-
   // Only checks container format
   checkCanDirectPlay(payload, epsiodeIndex = 0) {
     var episode = this.episodes[epsiodeIndex]
@@ -150,6 +150,28 @@ class Podcast {
   getDirectPlayTracklist(libraryItemId, episodeIndex = 0) {
     var episode = this.episodes[episodeIndex]
     return episode.getDirectPlayTracklist(libraryItemId)
+  }
+
+  addPodcastEpisode(podcastEpisode) {
+    this.episodes.push(podcastEpisode)
+  }
+
+  addNewEpisodeFromAudioFile(audioFile, index) {
+    var pe = new PodcastEpisode()
+    pe.setDataFromAudioFile(audioFile, index)
+    this.episodes.push(pe)
+  }
+
+  reorderEpisodes() {
+    var hasUpdates = false
+    this.episodes = naturalSort(this.episodes).asc((ep) => ep.bestFilename)
+    for (let i = 0; i < this.episodes.length; i++) {
+      if (this.episodes[i].index !== (i + 1)) {
+        this.episodes[i].index = i + 1
+        hasUpdates = true
+      }
+    }
+    return hasUpdates
   }
 }
 module.exports = Podcast
