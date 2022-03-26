@@ -83,7 +83,7 @@ export default {
     },
     playableBooks() {
       return this.bookItems.filter((book) => {
-        return !book.isMissing && !book.isInvalid && book.media.audiobooks.length
+        return !book.isMissing && !book.isInvalid && book.media.tracks.length
       })
     },
     streaming() {
@@ -116,7 +116,7 @@ export default {
     },
     clickPlay() {
       var nextBookNotRead = this.playableBooks.find((pb) => {
-        var prog = this.$store.getters['user/getUserLibraryItemProgress'](pb.id)
+        var prog = this.$store.getters['user/getUserMediaProgress'](pb.id)
         return !prog || !prog.isFinished
       })
       if (nextBookNotRead) {

@@ -11,7 +11,6 @@ export default class PlayerHandler {
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
     this.currentSessionId = null
-    this.mediaEntityId = null
     this.startTime = 0
 
     this.lastSyncTime = 0
@@ -150,7 +149,6 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.startTime = session.currentTime
     this.currentSessionId = session.id
-    this.mediaEntityId = session.mediaEntityId
 
     console.log('[PlayerHandler] Preparing Session', session)
     var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
@@ -210,7 +208,6 @@ export default class PlayerHandler {
       syncData = {
         timeListened: listeningTimeToAdd,
         duration: this.getDuration(),
-        mediaEntityId: this.mediaEntityId,
         currentTime: this.getCurrentTime()
       }
     }
@@ -229,7 +226,6 @@ export default class PlayerHandler {
     var syncData = {
       timeListened: listeningTimeToAdd,
       duration: this.getDuration(),
-      mediaEntityId: this.mediaEntityId,
       currentTime
     }
     this.listeningTimeSinceSync = 0

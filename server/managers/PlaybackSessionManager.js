@@ -25,14 +25,16 @@ class PlaybackSessionManager {
     return session ? session.stream : null
   }
 
-  async startSessionRequest(user, libraryItem, mediaEntity, options, res) {
-    const session = await this.startSession(user, libraryItem, mediaEntity, options)
-    res.json(session.toJSONForClient())
+  async startSessionRequest(user, libraryItem, options, res) {
+    const session = await this.startSession(user, libraryItem, options)
+    res.json(session.toJSONForClient(libraryItem))
   }
 
   async syncSessionRequest(user, session, payload, res) {
-    await this.syncSession(user, session, payload)
-    res.json(session.toJSONForClient())
+    var result = await this.syncSession(user, session, payload)
+    if (result) {
+      res.json(session.toJSONForClient(result.libraryItem))
+    }
   }
 
   async closeSessionRequest(user, session, syncData, res) {
@@ -40,23 +42,23 @@ class PlaybackSessionManager {
     res.sendStatus(200)
   }
 
-  async startSession(user, libraryItem, mediaEntity, options) {
-    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && mediaEntity.checkCanDirectPlay(options))
+  async startSession(user, libraryItem, options) {
+    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options))
 
-    const userProgress = user.getLibraryItemProgress(libraryItem.id)
+    const userProgress = user.getMediaProgress(libraryItem.id)
     var userStartTime = 0
     if (userProgress) userStartTime = userProgress.currentTime || 0
     const newPlaybackSession = new PlaybackSession()
-    newPlaybackSession.setData(libraryItem, mediaEntity, user)
+    newPlaybackSession.setData(libraryItem, user)
 
     var audioTracks = []
     if (shouldDirectPlay) {
-      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for media entity "${mediaEntity.id}"`)
-      audioTracks = mediaEntity.getDirectPlayTracklist(libraryItem.id)
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
+      audioTracks = libraryItem.getDirectPlayTracklist(libraryItem.id)
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
-      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for media entity "${mediaEntity.id}"`)
-      var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, mediaEntity, userStartTime, this.clientEmitter.bind(this))
+      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
+      var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, userStartTime, this.clientEmitter.bind(this))
       await stream.generatePlaylist()
       audioTracks = [stream.getAudioTrack()]
       newPlaybackSession.stream = stream
@@ -83,7 +85,7 @@ class PlaybackSessionManager {
     var libraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${sessino.libraryItemId}"`)
-      return
+      return null
     }
 
     session.currentTime = syncData.currentTime
@@ -91,21 +93,23 @@ class PlaybackSessionManager {
     Logger.debug(`[PlaybackSessionManager] syncSession "${session.id}" | Total Time Listened: ${session.timeListening}`)
 
     const itemProgressUpdate = {
-      mediaEntityId: syncData.mediaEntityId || null,
       duration: syncData.duration,
       currentTime: syncData.currentTime,
       progress: session.progress
     }
-    var wasUpdated = user.createUpdateLibraryItemProgress(libraryItem, itemProgressUpdate)
+    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate)
     if (wasUpdated) {
       await this.db.updateEntity('user', user)
-      var itemProgress = user.getLibraryItemProgress(session.libraryItemId)
+      var itemProgress = user.getMediaProgress(session.libraryItemId)
       this.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()
       })
     }
     this.saveSession(session)
+    return {
+      libraryItem
+    }
   }
 
   async closeSession(user, session, syncData = null) {

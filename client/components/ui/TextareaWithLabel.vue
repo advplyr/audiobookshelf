@@ -1,7 +1,7 @@
 <template>
   <div class="w-full">
     <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">{{ label }}</p>
-    <ui-textarea-input v-model="inputValue" :disabled="disabled" :rows="rows" class="w-full" />
+    <ui-textarea-input ref="input" v-model="inputValue" :disabled="disabled" :rows="rows" class="w-full" />
   </div>
 </template>
 
@@ -29,7 +29,13 @@ export default {
       }
     }
   },
-  methods: {},
+  methods: {
+    blur() {
+      if (this.$refs.input && this.$refs.input.blur) {
+        this.$refs.input.blur()
+      }
+    }
+  },
   mounted() {}
 }
 </script>

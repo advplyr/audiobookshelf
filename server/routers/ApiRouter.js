@@ -12,7 +12,6 @@ const BackupController = require('../controllers/BackupController')
 const LibraryItemController = require('../controllers/LibraryItemController')
 const SeriesController = require('../controllers/SeriesController')
 const AuthorController = require('../controllers/AuthorController')
-const MediaEntityController = require('../controllers/MediaEntityController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
 const MiscController = require('../controllers/MiscController')
@@ -73,14 +72,6 @@ class ApiRouter {
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
-    // Media Entity Routes
-    //
-    this.router.get('/entities/:id', MediaEntityController.middleware.bind(this), MediaEntityController.findOne.bind(this))
-    this.router.get('/entities/:id/item', MediaEntityController.middleware.bind(this), MediaEntityController.findWithItem.bind(this))
-    this.router.patch('/entities/:id/tracks', MediaEntityController.middleware.bind(this), MediaEntityController.updateTracks.bind(this))
-    this.router.post('/entities/:id/play', MediaEntityController.middleware.bind(this), MediaEntityController.startPlaybackSession.bind(this))
-
-    //
     // Item Routes
     //
     this.router.delete('/items/all', LibraryItemController.deleteAll.bind(this))
@@ -95,6 +86,7 @@ class ApiRouter {
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
     this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
+    this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this)) // Root only
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
@@ -132,9 +124,9 @@ class ApiRouter {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
-    this.router.patch('/me/progress/:id', MeController.createUpdateLibraryItemProgress.bind(this))
-    this.router.delete('/me/progress/:id', MeController.removeLibraryItemProgress.bind(this))
-    this.router.patch('/me/progress/batch/update', MeController.batchUpdateLibraryItemProgress.bind(this))
+    this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
+    this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
+    this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
@@ -266,7 +258,7 @@ class ApiRouter {
   userJsonWithItemProgressDetails(user) {
     var json = user.toJSONForBrowser()
 
-    json.libraryItemProgress = json.libraryItemProgress.map(lip => {
+    json.mediaProgress = json.mediaProgress.map(lip => {
       var libraryItem = this.db.libraryItems.find(li => li.id === lip.id)
       if (!libraryItem) {
         Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.id)
@@ -283,7 +275,7 @@ class ApiRouter {
     // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.removeLibraryItemProgress(libraryItem.id)
+      var madeUpdates = user.removeMediaProgress(libraryItem.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }

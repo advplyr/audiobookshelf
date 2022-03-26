@@ -138,11 +138,7 @@ class LibraryController {
   // api/libraries/:id/items
   // TODO: Optimize this method, items are iterated through several times but can be combined
   getLibraryItems(req, res) {
-    var media = req.query.media || 'all'
-    var libraryItems = req.libraryItems.filter(li => {
-      if (media != 'all') return li.mediaType == media
-      return true
-    })
+    var libraryItems = req.libraryItems
     var payload = {
       results: [],
       total: libraryItems.length,
@@ -151,7 +147,7 @@ class LibraryController {
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
-      media,
+      mediaType: req.library.mediaType,
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1'
     }

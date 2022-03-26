@@ -16,14 +16,15 @@
       </div>
     </div>
 
-    <tables-tracks-table :key="audiobook.id" :title="`Audiobook Tracks (${audiobook.name})`" :tracks="audiobook.tracks" :audiobook-id="audiobook.id" class="mt-6" />
+    <tables-tracks-table :title="`Audiobook Tracks`" :tracks="media.tracks" :library-item-id="libraryItemId" class="mt-6" />
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    audiobook: {
+    libraryItemId: String,
+    media: {
       type: Object,
       default: () => {}
     }
@@ -64,10 +65,10 @@ export default {
       return chunks
     },
     missingParts() {
-      return this.audiobook.missingParts || []
+      return this.media.missingParts || []
     },
     invalidParts() {
-      return this.audiobook.invalidParts || []
+      return this.media.invalidParts || []
     }
   },
   methods: {},

@@ -69,7 +69,7 @@
                   </template>
                 </div>
               </div>
-              <div v-if="audiobooks.length" class="flex py-0.5">
+              <div v-if="tracks.length" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Duration</span>
                 </div>
@@ -77,7 +77,7 @@
                   {{ durationPretty }}
                 </div>
               </div>
-              <div v-if="audiobooks.length" class="flex py-0.5">
+              <div class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">Size</span>
                 </div>
@@ -143,9 +143,8 @@
             <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
-          <template v-for="audiobook in audiobooks">
-            <widgets-audiobook-data :key="audiobook.id" :audiobook="audiobook" />
-          </template>
+          <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :media="media" />
+
           <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
         </div>
       </div>
@@ -205,7 +204,7 @@ export default {
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
       if (this.isPodcast) return this.podcastEpisodes.length
-      return this.audiobooks.length
+      return this.tracks.length
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -222,12 +221,11 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
+    tracks() {
+      return this.media.tracks || []
+    },
     podcastEpisodes() {
       return this.media.episodes || []
-    },
-    defaultAudiobook() {
-      if (!this.audiobooks.length) return null
-      return this.audiobooks[0]
     },
     title() {
       return this.mediaMetadata.title || 'No Title'
@@ -271,51 +269,47 @@ export default {
       })
     },
     durationPretty() {
-      if (!this.defaultAudiobook) return 'N/A'
-      return this.$elapsedPretty(this.defaultAudiobook.duration)
+      if (!this.tracks.length) return 'N/A'
+      return this.$elapsedPretty(this.media.duration)
     },
     duration() {
-      if (!this.defaultAudiobook) return 0
-      return this.defaultAudiobook.duration
+      if (!this.tracks.length) return 0
+      return this.media.duration
     },
     sizePretty() {
-      if (!this.defaultAudiobook) return 'N/A'
-      return this.$bytesPretty(this.defaultAudiobook.size)
+      return this.$bytesPretty(this.media.size)
     },
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
-    },
-    audiobooks() {
-      return this.media.audiobooks || []
     },
     ebooks() {
       return this.media.ebooks || []
     },
     showExperimentalReadAlert() {
-      return !this.audiobooks.length && this.ebooks.length && !this.showExperimentalFeatures
+      return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
     },
     description() {
       return this.mediaMetadata.description || ''
     },
-    userItemProgress() {
-      return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
+    userMediaProgress() {
+      return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userIsFinished() {
-      return this.userItemProgress ? !!this.userItemProgress.isFinished : false
+      return this.userMediaProgress ? !!this.userMediaProgress.isFinished : false
     },
     userTimeRemaining() {
-      if (!this.userItemProgress) return 0
-      var duration = this.userItemProgress.duration || this.duration
-      return duration - this.userItemProgress.currentTime
+      if (!this.userMediaProgress) return 0
+      var duration = this.userMediaProgress.duration || this.duration
+      return duration - this.userMediaProgress.currentTime
     },
     progressPercent() {
-      return this.userItemProgress ? Math.max(Math.min(1, this.userItemProgress.progress), 0) : 0
+      return this.userMediaProgress ? Math.max(Math.min(1, this.userMediaProgress.progress), 0) : 0
     },
     userProgressStartedAt() {
-      return this.userItemProgress ? this.userItemProgress.startedAt : 0
+      return this.userMediaProgress ? this.userMediaProgress.startedAt : 0
     },
     userProgressFinishedAt() {
-      return this.userItemProgress ? this.userItemProgress.finishedAt : 0
+      return this.userMediaProgress ? this.userMediaProgress.finishedAt : 0
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -365,17 +359,11 @@ export default {
       this.$store.commit('setBookshelfBookIds', [])
       this.$store.commit('showEditModal', this.libraryItem)
     },
-    audiobookUpdated() {
-      // console.log('Audiobook Updated - Fetch full audiobook')
-      // this.$axios
-      //   .$get(`/api/books/${this.libraryItemId}`)
-      //   .then((audiobook) => {
-      //     console.log('Updated audiobook', audiobook)
-      //     this.libraryItem = audiobook
-      //   })
-      //   .catch((error) => {
-      //     console.error('Failed', error)
-      //   })
+    libraryItemUpdated(libraryItem) {
+      if (libraryItem.id === this.libraryItemId) {
+        console.log('Item was updated', libraryItem)
+        this.libraryItem = libraryItem
+      }
     },
     clearProgressClick() {
       if (confirm(`Are you sure you want to reset your progress?`)) {
@@ -402,11 +390,14 @@ export default {
     }
   },
   mounted() {
-    // use this audiobooks library id as the current
+    // use this items library id as the current
     if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
+    this.$root.socket.on('item_updated', this.libraryItemUpdated)
   },
-  beforeDestroy() {}
+  beforeDestroy() {
+    this.$root.socket.off('item_updated', this.libraryItemUpdated)
+  }
 }
 </script>

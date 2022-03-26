@@ -125,7 +125,7 @@ class Server {
 
     this.auth.init()
 
-    await this.checkUserLibraryItemProgress() // Remove invalid user item progress
+    await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
 
     await this.backupManager.init()
@@ -299,16 +299,17 @@ class Server {
     return purged
   }
 
-  // Remove user library item progress entries that dont have a library item
-  async checkUserLibraryItemProgress() {
+  // Remove user media progress entries that dont have a library item
+  // TODO: Check podcast episode exists still
+  async checkUserMediaProgress() {
     for (let i = 0; i < this.db.users.length; i++) {
       var _user = this.db.users[i]
-      if (_user.libraryItemProgress) {
-        var itemProgressIdsToRemove = _user.libraryItemProgress.map(lip => lip.id).filter(lipId => !this.db.libraryItems.find(_li => _li.id == lipId))
+      if (_user.mediaProgress) {
+        var itemProgressIdsToRemove = _user.mediaProgress.map(lip => lip.id).filter(lipId => !this.db.libraryItems.find(_li => _li.id == lipId))
         if (itemProgressIdsToRemove.length) {
-          Logger.debug(`[Server] Found ${itemProgressIdsToRemove.length} library item progress data to remove from user ${_user.username}`)
+          Logger.debug(`[Server] Found ${itemProgressIdsToRemove.length} media progress data to remove from user ${_user.username}`)
           for (const lipId of itemProgressIdsToRemove) {
-            _user.removeLibraryItemProgress(lipId)
+            _user.removeMediaProgress(lipId)
           }
           await this.db.updateEntity('user', _user)
         }
@@ -378,14 +379,14 @@ class Server {
     var session = this.playbackSessionManager.getUserSession(user.id)
     if (session) {
       Logger.debug(`[Server] User Online "${client.user.username}" with session open "${session.id}"`)
-      session = session.toJSONForClient()
       var sessionLibraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
       if (!sessionLibraryItem) {
         Logger.error(`[Server] Library Item for session "${session.id}" does not exist "${session.libraryItemId}"`)
         this.playbackSessionManager.removeSession(session.id)
         session = null
-      } else {
-        session.libraryItem = sessionLibraryItem.toJSONExpanded()
+      }
+      if (session) {
+        session = session.toJSONForClient(sessionLibraryItem)
       }
     } else {
       Logger.debug(`[Server] User Online ${client.user.username}`)

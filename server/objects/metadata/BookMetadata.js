@@ -77,7 +77,8 @@ class BookMetadata {
       explicit: this.explicit,
       authorName: this.authorName,
       authorNameLF: this.authorNameLF,
-      narratorName: this.narratorName
+      narratorName: this.narratorName,
+      seriesName: this.seriesName
     }
   }
 

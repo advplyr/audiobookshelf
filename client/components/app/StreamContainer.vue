@@ -93,12 +93,12 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    userLibraryItemProgress() {
+    userMediaProgress() {
       if (!this.libraryItemId) return
-      return this.$store.getters['user/getUserLibraryItemProgress'](this.libraryItemId)
+      return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userItemCurrentTime() {
-      return this.userLibraryItemProgress ? this.userLibraryItemProgress.currentTime || 0 : 0
+      return this.userMediaProgress ? this.userMediaProgress.currentTime || 0 : 0
     },
     bookmarks() {
       if (!this.libraryItemId) return []

@@ -95,19 +95,21 @@ export default {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
-    var payload = await app.$axios.$get(`/api/entities/${params.id}/item?expanded=1`).catch((error) => {
+    var libraryItem = await app.$axios.$get(`/api/items/${params.id}?expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
-    if (!payload) {
+    if (!libraryItem) {
       console.error('Not found...', params.id)
       return redirect('/')
     }
-    const audiobook = payload.mediaEntity
+    if (libraryItem.mediaType != 'book') {
+      console.error('Invalid media type')
+      return redirect('/')
+    }
     return {
-      audiobook,
-      libraryItem: payload.libraryItem,
-      files: audiobook.audioFiles ? audiobook.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
+      libraryItem,
+      files: libraryItem.media.audioFiles ? libraryItem.media.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []
     }
   },
   data() {
@@ -130,7 +132,7 @@ export default {
       return this.media.metadata || []
     },
     audioFiles() {
-      return this.audiobook.audioFiles || []
+      return this.media.audioFiles || []
     },
     numExcluded() {
       var count = 0
@@ -140,7 +142,7 @@ export default {
       return count
     },
     missingParts() {
-      return this.audiobook.missingParts || []
+      return this.media.missingParts || []
     },
     libraryItemId() {
       return this.libraryItem.id
@@ -152,7 +154,7 @@ export default {
       return this.mediaMetadata.authorName || 'Unknown'
     },
     tracks() {
-      return this.audiobook.tracks
+      return this.media.tracks
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -218,7 +220,7 @@ export default {
 
       this.saving = true
       this.$axios
-        .$patch(`/api/entities/${this.audiobook.id}/tracks`, { orderedFileData })
+        .$patch(`/api/items/${this.libraryItem.id}/tracks`, { orderedFileData })
         .then((data) => {
           console.log('Finished patching files', data)
           this.saving = false

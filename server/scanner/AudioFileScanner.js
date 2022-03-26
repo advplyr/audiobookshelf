@@ -169,12 +169,11 @@ class AudioFileScanner {
       if (existingAF) {
         if (existingAF.updateFromScan) existingAF.updateFromScan(audioFiles[i])
       } else {
-        libraryItem.media.addAudioFileToAudiobook(audioFiles[i])
+        libraryItem.media.addAudioFile(audioFiles[i])
       }
     }
   }
 
-  // TODO: support for multiple audiobooks in a book item will need to pass an audiobook variant name here
   async scanAudioFiles(audioLibraryFiles, scanData, libraryItem, preferAudioMetadata, libraryScan = null) {
     var hasUpdated = false
 
@@ -189,14 +188,14 @@ class AudioFileScanner {
         return !libraryItem.media.findFileWithInode(af.ino)
       })
 
-      // Adding audio files to book media
+      // Book: Adding audio files to book media
       if (libraryItem.mediaType === 'book') {
         if (newAudioFiles.length) {
           // Single Track Audiobooks
           if (totalAudioFilesToInclude === 1) {
             var af = audioScanResult.audioFiles[0]
             af.index = 1
-            libraryItem.media.addAudioFileToAudiobook(af)
+            libraryItem.media.addAudioFile(af)
             hasUpdated = true
           } else {
             this.runSmartTrackOrder(libraryItem, audioScanResult.audioFiles)
@@ -221,12 +220,7 @@ class AudioFileScanner {
         }
 
         if (hasUpdated) {
-          if (!libraryItem.media.audiobooks.length) {
-            Logger.error(`[AudioFileScanner] Updates were made but library item has no audiobooks`, libraryItem)
-          } else {
-            var audiobook = libraryItem.media.audiobooks[0]
-            audiobook.rebuildTracks()
-          }
+          libraryItem.media.rebuildTracks()
         }
       } // End Book media type
     }

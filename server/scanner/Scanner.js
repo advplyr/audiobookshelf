@@ -613,37 +613,38 @@ class Scanner {
     return false
   }
 
+  // TODO: Redo metadata
   async saveMetadata(audiobookId) {
-    if (audiobookId) {
-      var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
-      if (!audiobook) {
-        return {
-          error: 'Audiobook not found'
-        }
-      }
-      var savedPath = await audiobook.writeNfoFile()
-      return {
-        audiobookId,
-        audiobookTitle: audiobook.title,
-        savedPath
-      }
-    } else {
-      var response = {
-        success: 0,
-        failed: 0
-      }
-      for (let i = 0; i < this.db.audiobooks.length; i++) {
-        var audiobook = this.db.audiobooks[i]
-        var savedPath = await audiobook.writeNfoFile()
-        if (savedPath) {
-          Logger.info(`[Scanner] Saved metadata nfo ${savedPath}`)
-          response.success++
-        } else {
-          response.failed++
-        }
-      }
-      return response
-    }
+    // if (audiobookId) {
+    //   var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
+    //   if (!audiobook) {
+    //     return {
+    //       error: 'Audiobook not found'
+    //     }
+    //   }
+    //   var savedPath = await audiobook.writeNfoFile()
+    //   return {
+    //     audiobookId,
+    //     audiobookTitle: audiobook.title,
+    //     savedPath
+    //   }
+    // } else {
+    //   var response = {
+    //     success: 0,
+    //     failed: 0
+    //   }
+    //   for (let i = 0; i < this.db.audiobooks.length; i++) {
+    //     var audiobook = this.db.audiobooks[i]
+    //     var savedPath = await audiobook.writeNfoFile()
+    //     if (savedPath) {
+    //       Logger.info(`[Scanner] Saved metadata nfo ${savedPath}`)
+    //       response.success++
+    //     } else {
+    //       response.failed++
+    //     }
+    //   }
+    //   return response
+    // }
   }
 
   async quickMatchBook(libraryItem, options = {}) {
@@ -728,48 +729,49 @@ class Scanner {
     }
   }
 
+  // TODO: Redo quick match full library
   async matchLibraryBooks(library) {
-    if (this.isLibraryScanning(library.id)) {
-      Logger.error(`[Scanner] Already scanning ${library.id}`)
-      return
-    }
+    // if (this.isLibraryScanning(library.id)) {
+    //   Logger.error(`[Scanner] Already scanning ${library.id}`)
+    //   return
+    // }
 
-    const provider = library.provider || 'google'
-    var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    if (!audiobooksInLibrary.length) {
-      return
-    }
+    // const provider = library.provider || 'google'
+    // var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
+    // if (!audiobooksInLibrary.length) {
+    //   return
+    // }
 
-    var libraryScan = new LibraryScan()
-    libraryScan.setData(library, null, 'match')
-    this.librariesScanning.push(libraryScan.getScanEmitData)
-    this.emitter('scan_start', libraryScan.getScanEmitData)
+    // var libraryScan = new LibraryScan()
+    // libraryScan.setData(library, null, 'match')
+    // this.librariesScanning.push(libraryScan.getScanEmitData)
+    // this.emitter('scan_start', libraryScan.getScanEmitData)
 
-    Logger.info(`[Scanner] Starting library match books scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+    // Logger.info(`[Scanner] Starting library match books scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    for (let i = 0; i < audiobooksInLibrary.length; i++) {
-      var audiobook = audiobooksInLibrary[i]
-      Logger.debug(`[Scanner] Quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
-      var result = await this.quickMatchBook(audiobook, { provider })
-      if (result.warning) {
-        Logger.warn(`[Scanner] Match warning ${result.warning} for audiobook "${audiobook.title}"`)
-      } else if (result.updated) {
-        libraryScan.resultsUpdated++
-      }
+    // for (let i = 0; i < audiobooksInLibrary.length; i++) {
+    //   var audiobook = audiobooksInLibrary[i]
+    //   Logger.debug(`[Scanner] Quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
+    //   var result = await this.quickMatchBook(audiobook, { provider })
+    //   if (result.warning) {
+    //     Logger.warn(`[Scanner] Match warning ${result.warning} for audiobook "${audiobook.title}"`)
+    //   } else if (result.updated) {
+    //     libraryScan.resultsUpdated++
+    //   }
 
-      if (this.cancelLibraryScan[libraryScan.libraryId]) {
-        Logger.info(`[Scanner] Library match scan canceled for "${libraryScan.libraryName}"`)
-        delete this.cancelLibraryScan[libraryScan.libraryId]
-        var scanData = libraryScan.getScanEmitData
-        scanData.results = false
-        this.emitter('scan_complete', scanData)
-        this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-        return
-      }
-    }
+    //   if (this.cancelLibraryScan[libraryScan.libraryId]) {
+    //     Logger.info(`[Scanner] Library match scan canceled for "${libraryScan.libraryName}"`)
+    //     delete this.cancelLibraryScan[libraryScan.libraryId]
+    //     var scanData = libraryScan.getScanEmitData
+    //     scanData.results = false
+    //     this.emitter('scan_complete', scanData)
+    //     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    //     return
+    //   }
+    // }
 
-    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-    this.emitter('scan_complete', libraryScan.getScanEmitData)
+    // this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    // this.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 }
 module.exports = Scanner

@@ -53,106 +53,88 @@ new LibraryItem({
       language: 'english',
       explicit: false
     },
-    audiobooks: [
-      { // Audiobook.js 
-        id: 'au_289374asf0a98',
+    audioFiles: [
+      { // AudioFile.js
+        ino: "55450570412017066",
         index: 1,
-        name: 'default',
-        audioFiles: [
-          { // AudioFile.js
-            ino: "55450570412017066",
-            index: 1,
-            metadata: { // FileMetadata.js
-              filename: 'audiofile.mp3',
-              ext: '.mp3',
-              path: '/audiobooks/Terry Goodkind/Sword of Truth/1 - Wizards First Rule/CD01/audiofile.mp3',
-              relPath: '/CD01/audiofile.mp3',
-              mtimeMs: 1646784672127,
-              ctimeMs: 1646784672127,
-              birthtimeMs: 1646784672127,
-              size: 1197449516
-            },
-            trackNumFromMeta: 1,
-            discNumFromMeta: null,
-            trackNumFromFilename: null,
-            discNumFromFilename: 1,
-            manuallyVerified: false,
-            exclude: false,
-            invalid: false,
-            format: "MP2/3 (MPEG audio layer 2/3)",
-            duration: 2342342,
-            bitRate: 324234,
-            language: null,
-            codec: 'mp3',
-            timeBase: "1/14112000",
-            channels: 1,
-            channelLayout: "mono",
-            chapters: [],
-            embeddedCoverArt: 'jpeg', // Video stream codec ['mjpeg', 'jpeg', 'png'] or null
-            metaTags: { // AudioMetaTags.js
-              tagAlbum: '',
-              tagArtist: '',
-              tagGenre: '',
-              tagTitle: '',
-              tagSeries: '',
-              tagSeriesPart: '',
-              tagTrack: '',
-              tagDisc: '',
-              tagSubtitle: '',
-              tagAlbumArtist: '',
-              tagDate: '',
-              tagComposer: '',
-              tagPublisher: '',
-              tagComment: '',
-              tagDescription: '',
-              tagEncoder: '',
-              tagEncodedBy: '',
-              tagIsbn: '',
-              tagLanguage: '',
-              tagASIN: ''
-            },
-            addedAt: 1646784672127,
-            updatedAt: 1646784672127
-          }
-        ],
-        chapters: [
-          {
-            id: 0,
-            title: 'Chapter 01',
-            start: 0,
-            end: 2467.753
-          }
-        ],
-        missingParts: [4, 10], // Array of missing parts in tracklist
-        addedAt: 1646784672127,
-        updatedAt: 1646784672127
-      }
-    ],
-    ebooks: [
-      { // EBook.js
-        id: 'eb_289374asf0a98',
-        index: 1,
-        name: 'default',
-        ebookFile: { // EBookFile.js
-          ino: "55450570412017066",
-          metadata: { // FileMetadata.js
-            filename: 'ebookfile.mobi',
-            ext: '.mobi',
-            path: '/audiobooks/Terry Goodkind/Sword of Truth/1 - Wizards First Rule/ebookfile.mobi',
-            relPath: '/ebookfile.mobi',
-            mtimeMs: 1646784672127,
-            ctimeMs: 1646784672127,
-            birthtimeMs: 1646784672127,
-            size: 1197449516
-          },
-          ebookFormat: 'mobi',
-          addedAt: 1646784672127,
-          updatedAt: 1646784672127
+        metadata: { // FileMetadata.js
+          filename: 'audiofile.mp3',
+          ext: '.mp3',
+          path: '/audiobooks/Terry Goodkind/Sword of Truth/1 - Wizards First Rule/CD01/audiofile.mp3',
+          relPath: '/CD01/audiofile.mp3',
+          mtimeMs: 1646784672127,
+          ctimeMs: 1646784672127,
+          birthtimeMs: 1646784672127,
+          size: 1197449516
+        },
+        trackNumFromMeta: 1,
+        discNumFromMeta: null,
+        trackNumFromFilename: null,
+        discNumFromFilename: 1,
+        manuallyVerified: false,
+        exclude: false,
+        invalid: false,
+        format: "MP2/3 (MPEG audio layer 2/3)",
+        duration: 2342342,
+        bitRate: 324234,
+        language: null,
+        codec: 'mp3',
+        timeBase: "1/14112000",
+        channels: 1,
+        channelLayout: "mono",
+        chapters: [],
+        embeddedCoverArt: 'jpeg', // Video stream codec ['mjpeg', 'jpeg', 'png'] or null
+        metaTags: { // AudioMetaTags.js
+          tagAlbum: '',
+          tagArtist: '',
+          tagGenre: '',
+          tagTitle: '',
+          tagSeries: '',
+          tagSeriesPart: '',
+          tagTrack: '',
+          tagDisc: '',
+          tagSubtitle: '',
+          tagAlbumArtist: '',
+          tagDate: '',
+          tagComposer: '',
+          tagPublisher: '',
+          tagComment: '',
+          tagDescription: '',
+          tagEncoder: '',
+          tagEncodedBy: '',
+          tagIsbn: '',
+          tagLanguage: '',
+          tagASIN: ''
         },
         addedAt: 1646784672127,
         updatedAt: 1646784672127
       }
-    ]
+    ],
+    chapters: [
+      {
+        id: 0,
+        title: 'Chapter 01',
+        start: 0,
+        end: 2467.753
+      }
+    ],
+    missingParts: [4, 10], // Array of missing parts in tracklist
+    ebookFile: { // EBookFile.js
+      ino: "55450570412017066",
+      metadata: { // FileMetadata.js
+        filename: 'ebookfile.mobi',
+        ext: '.mobi',
+        path: '/audiobooks/Terry Goodkind/Sword of Truth/1 - Wizards First Rule/ebookfile.mobi',
+        relPath: '/ebookfile.mobi',
+        mtimeMs: 1646784672127,
+        ctimeMs: 1646784672127,
+        birthtimeMs: 1646784672127,
+        size: 1197449516
+      },
+      ebookFormat: 'mobi',
+      addedAt: 1646784672127,
+      updatedAt: 1646784672127
+    }
   },
   libraryFiles: [
     { // LibraryFile.js

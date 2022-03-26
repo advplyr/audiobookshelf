@@ -59,7 +59,6 @@ class PodcastEpisode {
     }
   }
 
-  get isPlaybackMediaEntity() { return true }
   get tracks() {
     return [this.audioFile]
   }

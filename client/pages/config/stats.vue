@@ -76,11 +76,11 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
-    userItemProgress() {
-      return this.user.libraryItemProgress || []
+    userMediaProgress() {
+      return this.user.mediaProgress || []
     },
     userItemsFinished() {
-      return this.userItemProgress.filter((lip) => !!lip.isFinished)
+      return this.userMediaProgress.filter((lip) => !!lip.isFinished)
     },
     mostRecentListeningSessions() {
       if (!this.listeningStats) return []

@@ -39,7 +39,7 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Item Progress</h1>
-        <table v-if="libraryItemProgress.length" class="userAudiobooksTable">
+        <table v-if="mediaProgress.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="w-16 text-left">Item</th>
             <th class="text-left"></th>
@@ -47,7 +47,7 @@
             <th class="w-40 hidden sm:table-cell">Started At</th>
             <th class="w-40 hidden sm:table-cell">Last Update</th>
           </tr>
-          <tr v-for="item in libraryItemProgress" :key="item.id" :class="!item.isFinished ? '' : 'isFinished'">
+          <tr v-for="item in mediaProgress" :key="item.id" :class="!item.isFinished ? '' : 'isFinished'">
             <td>
               <covers-book-cover :width="50" :library-item="item" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
@@ -111,8 +111,8 @@ export default {
     userOnline() {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
-    libraryItemProgress() {
-      return this.user.libraryItemProgress.sort((a, b) => b.lastUpdate - a.lastUpdate)
+    mediaProgress() {
+      return this.user.mediaProgress.sort((a, b) => b.lastUpdate - a.lastUpdate)
     },
     totalListeningTime() {
       return this.listeningStats.totalTime || 0

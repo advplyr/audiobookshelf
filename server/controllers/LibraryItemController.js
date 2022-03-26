@@ -164,13 +164,26 @@ class LibraryItemController {
 
   // POST: api/items/:id/play
   startPlaybackSession(req, res) {
-    var playbackMediaEntity = req.libraryItem.getPlaybackMediaEntity()
-    if (!playbackMediaEntity) {
-      Logger.error(`[LibraryItemController] startPlaybackSession no playback media entity ${req.libraryItem.id}`)
+    if (!req.libraryItem.media.numTracks) {
+      Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
     const options = req.body || {}
-    this.playbackSessionManager.startSessionRequest(req.user, req.libraryItem, playbackMediaEntity, options, res)
+    this.playbackSessionManager.startSessionRequest(req.user, req.libraryItem, options, res)
+  }
+
+  // PATCH: api/items/:id/tracks
+  async updateTracks(req, res) {
+    var libraryItem = req.libraryItem
+    var orderedFileData = req.body.orderedFileData
+    if (!libraryItem.media.updateAudioTracks) {
+      Logger.error(`[LibraryItemController] updateTracks invalid media type ${libraryItem.id}`)
+      return res.sendStatus(500)
+    }
+    libraryItem.media.updateAudioTracks(orderedFileData)
+    await this.db.updateLibraryItem(libraryItem)
+    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    res.json(libraryItem.toJSON())
   }
 
   // POST api/items/:id/match

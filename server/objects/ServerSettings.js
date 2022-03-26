@@ -39,6 +39,9 @@ class ServerSettings {
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
     this.bookshelfView = BookshelfView.STANDARD
 
+    // Podcasts
+    this.podcastEpisodeSchedule = '0 * * * *' // Every hour
+
     this.sortingIgnorePrefix = false
     this.chromecastEnabled = false
     this.logLevel = Logger.logLevel

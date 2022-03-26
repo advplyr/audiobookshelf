@@ -4,10 +4,10 @@
       <div id="formWrapper" class="px-4 py-6 details-form-wrapper w-full overflow-hidden overflow-y-auto">
         <div class="flex -mx-1">
           <div class="w-1/2 px-1">
-            <ui-text-input-with-label v-model="details.title" label="Title" />
+            <ui-text-input-with-label ref="titleInput" v-model="details.title" label="Title" />
           </div>
           <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.subtitle" label="Subtitle" />
+            <ui-text-input-with-label ref="subtitleInput" v-model="details.subtitle" label="Subtitle" />
           </div>
         </div>
 
@@ -17,7 +17,7 @@
             <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
           </div>
           <div class="flex-grow px-1">
-            <ui-text-input-with-label v-model="details.publishedYear" type="number" label="Publish Year" />
+            <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" label="Publish Year" />
           </div>
         </div>
 
@@ -27,7 +27,7 @@
           </div>
         </div>
 
-        <ui-textarea-with-label v-model="details.description" :rows="3" label="Description" class="mt-2" />
+        <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" label="Description" class="mt-2" />
 
         <div class="flex mt-2 -mx-1">
           <div class="w-1/2 px-1">
@@ -43,19 +43,19 @@
             <ui-multi-select ref="narratorsSelect" v-model="details.narrators" label="Narrators" :items="narrators" />
           </div>
           <div class="w-1/4 px-1">
-            <ui-text-input-with-label v-model="details.isbn" label="ISBN" />
+            <ui-text-input-with-label ref="isbnInput" v-model="details.isbn" label="ISBN" />
           </div>
           <div class="w-1/4 px-1">
-            <ui-text-input-with-label v-model="details.asin" label="ASIN" />
+            <ui-text-input-with-label ref="asinInput" v-model="details.asin" label="ASIN" />
           </div>
         </div>
 
         <div class="flex mt-2 -mx-1">
           <div class="w-1/2 px-1">
-            <ui-text-input-with-label v-model="details.publisher" label="Publisher" />
+            <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" label="Publisher" />
           </div>
           <div class="w-1/4 px-1">
-            <ui-text-input-with-label v-model="details.language" label="Language" />
+            <ui-text-input-with-label ref="languageInput" v-model="details.language" label="Language" />
           </div>
           <div class="flex-grow px-1 pt-6">
             <div class="flex justify-center">
@@ -194,6 +194,15 @@ export default {
       }
     },
     forceBlur() {
+      if (this.$refs.titleInput) this.$refs.titleInput.blur()
+      if (this.$refs.subtitleInput) this.$refs.subtitleInput.blur()
+      if (this.$refs.publishYearInput) this.$refs.publishYearInput.blur()
+      if (this.$refs.descriptionInput) this.$refs.descriptionInput.blur()
+      if (this.$refs.isbnInput) this.$refs.isbnInput.blur()
+      if (this.$refs.asinInput) this.$refs.asinInput.blur()
+      if (this.$refs.publisherInput) this.$refs.publisherInput.blur()
+      if (this.$refs.languageInput) this.$refs.languageInput.blur()
+
       if (this.$refs.authorsSelect && this.$refs.authorsSelect.isFocused) {
         this.$refs.authorsSelect.forceBlur()
       }

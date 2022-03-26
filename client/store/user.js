@@ -22,9 +22,9 @@ export const getters = {
   getToken: (state) => {
     return state.user ? state.user.token : null
   },
-  getUserLibraryItemProgress: (state) => (libraryItemId) => {
-    if (!state.user.libraryItemProgress) return null
-    return state.user.libraryItemProgress.find(li => li.id == libraryItemId)
+  getUserMediaProgress: (state) => (libraryItemId) => {
+    if (!state.user.mediaProgress) return null
+    return state.user.mediaProgress.find(li => li.id == libraryItemId)
   },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user.bookmarks) return []
@@ -107,16 +107,16 @@ export const mutations = {
       localStorage.removeItem('token')
     }
   },
-  updateItemProgress(state, { id, data }) {
+  updateMediaProgress(state, { id, data }) {
     if (!state.user) return
     if (!data) {
-      state.user.libraryItemProgress = state.user.libraryItemProgress.filter(lip => lip.id != id)
+      state.user.mediaProgress = state.user.mediaProgress.filter(lip => lip.id != id)
     } else {
-      var indexOf = state.user.libraryItemProgress.findIndex(lip => lip.id == id)
+      var indexOf = state.user.mediaProgress.findIndex(lip => lip.id == id)
       if (indexOf >= 0) {
-        state.user.libraryItemProgress.splice(indexOf, 1, data)
+        state.user.mediaProgress.splice(indexOf, 1, data)
       } else {
-        state.user.libraryItemProgress.push(data)
+        state.user.mediaProgress.push(data)
       }
     }
   },

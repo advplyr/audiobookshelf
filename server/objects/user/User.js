@@ -1,6 +1,6 @@
 const Logger = require('../../Logger')
 const AudioBookmark = require('./AudioBookmark')
-const LibraryItemProgress = require('./LibraryItemProgress')
+const MediaProgress = require('./MediaProgress')
 
 class User {
   constructor(user) {
@@ -14,7 +14,7 @@ class User {
     this.lastSeen = null
     this.createdAt = null
 
-    this.libraryItemProgress = []
+    this.mediaProgress = []
     this.bookmarks = []
 
     this.settings = {}
@@ -84,7 +84,7 @@ class User {
       pash: this.pash,
       type: this.type,
       token: this.token,
-      libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
+      mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -103,7 +103,7 @@ class User {
       username: this.username,
       type: this.type,
       token: this.token,
-      libraryItemProgress: this.libraryItemProgress ? this.libraryItemProgress.map(li => li.toJSON()) : [],
+      mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -118,12 +118,19 @@ class User {
 
   // Data broadcasted
   toJSONForPublic(sessions, libraryItems) {
-    var session = sessions ? sessions.find(s => s.userId === this.id) : null
+    var userSession = sessions ? sessions.find(s => s.userId === this.id) : null
+    var session = null
+    if (session) {
+      var libraryItem = libraryItems.find(li => li.id === session.libraryItemId)
+      if (libraryItem) {
+        session = userSession.toJSONForClient(libraryItem)
+      }
+    }
     return {
       id: this.id,
       username: this.username,
       type: this.type,
-      session: session ? session.toJSONForClient() : null,
+      session,
       mostRecent: this.getMostRecentItemProgress(libraryItems),
       lastSeen: this.lastSeen,
       createdAt: this.createdAt
@@ -137,9 +144,9 @@ class User {
     this.type = user.type
     this.token = user.token
 
-    this.libraryItemProgress = []
-    if (user.libraryItemProgress) {
-      this.libraryItemProgress = user.libraryItemProgress.map(li => new LibraryItemProgress(li)).filter(lip => lip.id)
+    this.mediaProgress = []
+    if (user.mediaProgress) {
+      this.mediaProgress = user.mediaProgress.map(li => new MediaProgress(li)).filter(lip => lip.id)
     }
 
     this.bookmarks = []
@@ -217,8 +224,8 @@ class User {
   }
 
   getMostRecentItemProgress(libraryItems) {
-    if (!this.libraryItemProgress.length) return null
-    var lip = this.libraryItemProgress.map(lip => lip.toJSON())
+    if (!this.mediaProgress.length) return null
+    var lip = this.mediaProgress.map(lip => lip.toJSON())
     lip.sort((a, b) => b.lastUpdate - a.lastUpdate)
     var mostRecentWithLip = lip.find(li => libraryItems.find(_li => _li.id === li.id))
     if (!mostRecentWithLip) return null
@@ -229,35 +236,27 @@ class User {
     }
   }
 
-  getLibraryItemProgress(libraryItemId) {
-    if (!this.libraryItemProgress) return null
-    return this.libraryItemProgress.find(lip => lip.id === libraryItemId)
+  getMediaProgress(libraryItemId) {
+    if (!this.mediaProgress) return null
+    return this.mediaProgress.find(lip => lip.id === libraryItemId)
   }
 
-  createUpdateLibraryItemProgress(libraryItem, updatePayload) {
-    var itemProgress = this.libraryItemProgress.find(li => li.id === libraryItem.id)
+  createUpdateMediaProgress(libraryItem, updatePayload) {
+    var itemProgress = this.mediaProgress.find(li => li.id === libraryItem.id)
     if (!itemProgress) {
-      var newItemProgress = new LibraryItemProgress()
+      var newItemProgress = new MediaProgress()
 
-      var mediaEntity = null
-      if (updatePayload.mediaEntityId) mediaEntity = libraryItem.media.getMediaEntityById(updatePayload.mediaEntityId)
-      if (!mediaEntity) mediaEntity = libraryItem.media.getPlaybackMediaEntity()
-      if (!mediaEntity) {
-        Logger.error(`[User] createUpdateLibraryItemProgress invalid library item has no playback media entity "${libraryItem.id}"`)
-        return false
-      }
-
-      newItemProgress.setData(libraryItem.id, mediaEntity.id, updatePayload)
-      this.libraryItemProgress.push(newItemProgress)
+      newItemProgress.setData(libraryItem.id, updatePayload)
+      this.mediaProgress.push(newItemProgress)
       return true
     }
     var wasUpdated = itemProgress.update(updatePayload)
     return wasUpdated
   }
 
-  removeLibraryItemProgress(libraryItemId) {
-    if (!this.libraryItemProgress.some(lip => lip.id == libraryItemId)) return false
-    this.libraryItemProgress = this.libraryItemProgress.filter(lip => lip.id != libraryItemId)
+  removeMediaProgress(libraryItemId) {
+    if (!this.mediaProgress.some(lip => lip.id == libraryItemId)) return false
+    this.mediaProgress = this.mediaProgress.filter(lip => lip.id != libraryItemId)
     return true
   }
 
@@ -329,30 +328,31 @@ class User {
     this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time))
   }
 
+  // TODO: re-do mobile sync
   syncLocalUserAudiobookData(localUserAudiobookData, audiobook) {
-    if (!localUserAudiobookData || !localUserAudiobookData.audiobookId) {
-      Logger.error(`[User] Invalid local user audiobook data`, localUserAudiobookData)
-      return false
-    }
-    if (!this.audiobooks) this.audiobooks = {}
+    // if (!localUserAudiobookData || !localUserAudiobookData.audiobookId) {
+    //   Logger.error(`[User] Invalid local user audiobook data`, localUserAudiobookData)
+    //   return false
+    // }
+    // if (!this.audiobooks) this.audiobooks = {}
 
-    if (!this.audiobooks[localUserAudiobookData.audiobookId]) {
-      this.audiobooks[localUserAudiobookData.audiobookId] = new UserAudiobookData(localUserAudiobookData)
-      return true
-    }
+    // if (!this.audiobooks[localUserAudiobookData.audiobookId]) {
+    //   this.audiobooks[localUserAudiobookData.audiobookId] = new UserAudiobookData(localUserAudiobookData)
+    //   return true
+    // }
 
-    var userAbD = this.audiobooks[localUserAudiobookData.audiobookId]
-    if (userAbD.lastUpdate >= localUserAudiobookData.lastUpdate) {
-      // Server audiobook data is more recent
-      return false
-    }
+    // var userAbD = this.audiobooks[localUserAudiobookData.audiobookId]
+    // if (userAbD.lastUpdate >= localUserAudiobookData.lastUpdate) {
+    //   // Server audiobook data is more recent
+    //   return false
+    // }
 
-    // Local Data More recent
-    var wasUpdated = this.audiobooks[localUserAudiobookData.audiobookId].update(localUserAudiobookData)
-    if (wasUpdated) {
-      Logger.debug(`[User] syncLocalUserAudiobookData local data was more recent for "${audiobook.title}"`)
-    }
-    return wasUpdated
+    // // Local Data More recent
+    // var wasUpdated = this.audiobooks[localUserAudiobookData.audiobookId].update(localUserAudiobookData)
+    // if (wasUpdated) {
+    //   Logger.debug(`[User] syncLocalUserAudiobookData local data was more recent for "${audiobook.title}"`)
+    // }
+    // return wasUpdated
   }
 }
 module.exports = User

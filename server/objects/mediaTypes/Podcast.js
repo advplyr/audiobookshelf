@@ -74,6 +74,14 @@ class Podcast {
   get hasIssues() {
     return false
   }
+  get duration() {
+    var total = 0
+    this.episodes.forEach((ep) => total += ep.duration)
+    return total
+  }
+  get numTracks() {
+    return this.episodes.length
+  }
 
   update(payload) {
     var json = this.toJSON()
@@ -110,14 +118,6 @@ class Podcast {
     return null
   }
 
-  getMediaEntityById(entityId) {
-    return this.episodes.find(ep => ep.id === entityId)
-  }
-  getPlaybackMediaEntity() { // Get first playback media entity
-    if (!this.episodes.length) return null
-    return this.episodes[0]
-  }
-
   setData(mediaMetadata) {
     this.metadata = new PodcastMetadata()
     if (mediaMetadata.metadata) {
@@ -137,26 +137,19 @@ class Podcast {
     return payload || {}
   }
 
-  getLongestDuration() {
-    if (!this.episodes.length) return 0
-    var longest = 0
-    this.episodes.forEach((ab) => {
-      if (ab.duration > longest) longest = ab.duration
-    })
-    return longest
-  }
-
-  getTotalAudioTracks() {
-    return this.episodes.length
-  }
-  getTotalDuration() {
-    var total = 0
-    this.episodes.forEach((ep) => total += ep.duration)
-    return total
-  }
-
   addPodcastEpisode(podcastEpisode) {
     this.episodes.push(podcastEpisode)
+  }
+
+  // Only checks container format
+  checkCanDirectPlay(payload, epsiodeIndex = 0) {
+    var episode = this.episodes[epsiodeIndex]
+    return episode.checkCanDirectPlay(payload)
+  }
+
+  getDirectPlayTracklist(libraryItemId, episodeIndex = 0) {
+    var episode = this.episodes[episodeIndex]
+    return episode.getDirectPlayTracklist(libraryItemId)
   }
 }
 module.exports = Podcast

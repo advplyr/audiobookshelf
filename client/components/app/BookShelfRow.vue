@@ -82,9 +82,6 @@ export default {
     shelfHeight() {
       return this.bookCoverHeight + 48
     },
-    userAudiobooks() {
-      return this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {}
-    },
     paddingLeft() {
       if (window.innerWidth < 768) return 1
       return 2.5

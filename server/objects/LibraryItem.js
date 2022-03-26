@@ -358,8 +358,8 @@ class LibraryItem {
       return true
     })
     if (filesRemoved.length) {
-      if (this.media.audiobooks && this.media.audiobooks.length) {
-        this.media.audiobooks.forEach(ab => ab.checkUpdateMissingTracks())
+      if (this.media.mediaType === 'book') {
+        this.media.checkUpdateMissingTracks()
       }
       hasUpdated = true
     }
@@ -404,17 +404,14 @@ class LibraryItem {
     var hasUpdated = false
 
     if (this.mediaType === 'book') {
-      // Add/update ebook files (ebooks that were removed are removed in checkScanData)
+      // Add/update ebook file (ebooks that were removed are removed in checkScanData)
       this.libraryFiles.forEach((lf) => {
         if (lf.fileType === 'ebook') {
-          var existingFile = this.media.findFileWithInode(lf.ino)
-          if (!existingFile) {
-            this.media.addEbookFile(lf)
+          if (!this.media.ebookFile) {
+            this.media.setEbookFile(lf)
             hasUpdated = true
-          } else if (existingFile.ebookFormat) {
-            if (existingFile.updateFromLibraryFile(lf)) {// EBookFile.js
-              hasUpdated = true
-            }
+          } else if (this.media.ebookFile.ino == lf.ino && this.media.ebookFile.updateFromLibraryFile(lf)) { // Update existing ebookFile
+            hasUpdated = true
           }
         }
       })
@@ -447,8 +444,8 @@ class LibraryItem {
     return this.media.searchQuery(query)
   }
 
-  getPlaybackMediaEntity() {
-    return this.media.getPlaybackMediaEntity()
+  getDirectPlayTracklist(libraryItemId) {
+    return this.media.getDirectPlayTracklist(libraryItemId)
   }
 }
 module.exports = LibraryItem

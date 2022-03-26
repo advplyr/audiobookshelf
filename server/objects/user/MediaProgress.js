@@ -1,10 +1,10 @@
 const Logger = require('../../Logger')
 
-class LibraryItemProgress {
+class MediaProgress {
   constructor(progress) {
     this.id = null // Same as library item id
     this.libraryItemId = null
-    this.mediaEntityId = null
+    this.episodeId = null // For podcasts
 
     this.duration = null
     this.progress = null // 0 to 1
@@ -24,7 +24,7 @@ class LibraryItemProgress {
     return {
       id: this.id,
       libraryItemId: this.libraryItemId,
-      mediaEntityId: this.mediaEntityId,
+      episodeId: this.episodeId,
       duration: this.duration,
       progress: this.progress,
       currentTime: this.currentTime,
@@ -38,7 +38,7 @@ class LibraryItemProgress {
   construct(progress) {
     this.id = progress.id
     this.libraryItemId = progress.libraryItemId
-    this.mediaEntityId = progress.mediaEntityId || null
+    this.episodeId = progress.episodeId
     this.duration = progress.duration || 0
     this.progress = progress.progress
     this.currentTime = progress.currentTime
@@ -52,10 +52,10 @@ class LibraryItemProgress {
     return !this.isFinished && this.progress > 0
   }
 
-  setData(libraryItemId, mediaEntityId, progress) {
+  setData(libraryItemId, progress) {
     this.id = libraryItemId
     this.libraryItemId = libraryItemId
-    this.mediaEntityId = mediaEntityId
+    this.episodeId = progress.episodeId || null
     this.duration = progress.duration || 0
     this.progress = Math.min(1, (progress.progress || 0))
     this.currentTime = progress.currentTime || 0
@@ -97,4 +97,4 @@ class LibraryItemProgress {
     return hasUpdates
   }
 }
-module.exports = LibraryItemProgress
+module.exports = MediaProgress

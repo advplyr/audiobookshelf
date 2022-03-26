@@ -17,8 +17,8 @@ class MeController {
   }
 
   // DELETE: api/me/progress/:id
-  async removeLibraryItemProgress(req, res) {
-    var wasRemoved = req.user.removeLibraryItemProgress(req.params.id)
+  async removeMediaProgress(req, res) {
+    var wasRemoved = req.user.removeMediaProgress(req.params.id)
     if (!wasRemoved) {
       return res.sendStatus(200)
     }
@@ -30,12 +30,12 @@ class MeController {
   }
 
   // PATCH: api/me/progress/:id
-  async createUpdateLibraryItemProgress(req, res) {
+  async createUpdateMediaProgress(req, res) {
     var libraryItem = this.db.libraryItems.find(ab => ab.id === req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
-    var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem, req.body)
+    var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
       this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
@@ -44,7 +44,7 @@ class MeController {
   }
 
   // PATCH: api/me/progress/batch/update
-  async batchUpdateLibraryItemProgress(req, res) {
+  async batchUpdateMediaProgress(req, res) {
     var itemProgressPayloads = req.body
     if (!itemProgressPayloads || !itemProgressPayloads.length) {
       return res.sendStatus(500)
@@ -54,10 +54,10 @@ class MeController {
     itemProgressPayloads.forEach((itemProgress) => {
       var libraryItem = this.db.libraryItems.find(li => li.id === itemProgress.id) // Make sure this library item exists
       if (libraryItem) {
-        var wasUpdated = req.user.createUpdateLibraryItemProgress(libraryItem, itemProgress)
+        var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, itemProgress)
         if (wasUpdated) shouldUpdate = true
       } else {
-        Logger.error(`[MeController] batchUpdateLibraryItemProgress: Library Item does not exist ${itemProgress.id}`)
+        Logger.error(`[MeController] batchUpdateMediaProgress: Library Item does not exist ${itemProgress.id}`)
       }
     })
 

@@ -138,6 +138,7 @@ export default {
       this.$nextTick(() => {
         this.imageReady = true
       })
+
       if (this.$refs.cover && this.cover !== this.placeholderUrl) {
         var { naturalWidth, naturalHeight } = this.$refs.cover
         var aspectRatio = naturalHeight / naturalWidth

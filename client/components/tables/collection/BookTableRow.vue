@@ -82,18 +82,17 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
+    tracks() {
+      return this.media.tracks || []
+    },
     bookTitle() {
       return this.mediaMetadata.title || ''
     },
     bookAuthor() {
       return (this.mediaMetadata.authors || []).map((au) => au.name).join(', ')
     },
-    defaultAudiobook() {
-      if (!this.media.audiobooks.length) return null
-      return this.media.audiobooks[0]
-    },
     bookDuration() {
-      return this.$secondsToTimestamp(this.defaultAudiobook.duration)
+      return this.$secondsToTimestamp(this.media.duration)
     },
     isMissing() {
       return this.book.isMissing
@@ -105,10 +104,10 @@ export default {
       return this.$store.getters['getLibraryItemIdStreaming'] === this.book.id
     },
     showPlayBtn() {
-      return !this.isMissing && !this.isInvalid && !this.isStreaming && this.defaultAudiobook
+      return !this.isMissing && !this.isInvalid && !this.isStreaming && this.tracks.length
     },
     itemProgress() {
-      return this.$store.getters['user/getUserLibraryItemProgress'](this.book.id)
+      return this.$store.getters['user/getUserMediaProgress'](this.book.id)
     },
     userIsFinished() {
       return this.itemProgress ? !!this.itemProgress.isFinished : false

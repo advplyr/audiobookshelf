@@ -9,10 +9,10 @@ class PlaybackSession {
     this.id = null
     this.userId = null
     this.libraryItemId = null
-    this.mediaEntityId = null
 
     this.mediaType = null
     this.mediaMetadata = null
+    this.coverPath = null
     this.duration = null
 
     this.playMethod = null
@@ -41,9 +41,9 @@ class PlaybackSession {
       sessionType: this.sessionType,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
-      mediaEntityId: this.mediaEntityId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
       date: this.date,
@@ -54,15 +54,15 @@ class PlaybackSession {
     }
   }
 
-  toJSONForClient() {
+  toJSONForClient(libraryItem) {
     return {
       id: this.id,
       sessionType: this.sessionType,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
-      mediaEntityId: this.mediaEntityId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
       date: this.date,
@@ -71,7 +71,8 @@ class PlaybackSession {
       lastUpdate: this.lastUpdate,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map(at => at.toJSON()),
-      currentTime: this.currentTime
+      currentTime: this.currentTime,
+      libraryItem: libraryItem.toJSONExpanded()
     }
   }
 
@@ -80,7 +81,6 @@ class PlaybackSession {
     this.sessionType = session.sessionType
     this.userId = session.userId
     this.libraryItemId = session.libraryItemId
-    this.mediaEntityId = session.mediaEntityId
     this.mediaType = session.mediaType
     this.duration = session.duration
     this.playMethod = session.playMethod
@@ -93,7 +93,7 @@ class PlaybackSession {
         this.mediaMetadata = new PodcastMetadata(session.mediaMetadata)
       }
     }
-
+    this.coverPath = session.coverPath
     this.date = session.date
     this.dayOfWeek = session.dayOfWeek
 
@@ -107,14 +107,14 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
-  setData(libraryItem, mediaEntity, user) {
+  setData(libraryItem, user) {
     this.id = getId('play')
     this.userId = user.id
     this.libraryItemId = libraryItem.id
-    this.mediaEntityId = mediaEntity.id
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
-    this.duration = mediaEntity.duration
+    this.coverPath = libraryItem.media.coverPath
+    this.duration = libraryItem.media.duration
 
     this.timeListening = 0
     this.date = date.format(new Date(), 'YYYY-MM-DD')

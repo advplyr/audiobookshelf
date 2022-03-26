@@ -28,7 +28,7 @@ module.exports = {
       else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
-          var itemProgress = user.getLibraryItemProgress(li.id)
+          var itemProgress = user.getMediaProgress(li.id)
           if (filter === 'Finished' && (itemProgress && itemProgress.isFinished)) return true
           if (filter === 'Not Started' && !itemProgress) return true
           if (filter === 'In Progress' && (itemProgress && itemProgress.inProgress)) return true
@@ -126,7 +126,7 @@ module.exports = {
     // var _series = {}
     // books.forEach((audiobook) => {
     //   if (audiobook.book.series) {
-    //     var bookWithUserAb = { userAudiobook: user.getLibraryItemProgress(audiobook.id), book: audiobook }
+    //     var bookWithUserAb = { userAudiobook: user.getMediaProgress(audiobook.id), book: audiobook }
     //     if (!_series[audiobook.book.series]) {
     //       _series[audiobook.book.series] = {
     //         id: audiobook.book.series,
@@ -159,7 +159,7 @@ module.exports = {
 
   getItemsWithUserProgress(user, libraryItems) {
     return libraryItems.map(li => {
-      var itemProgress = user.getLibraryItemProgress(li.id)
+      var itemProgress = user.getMediaProgress(li.id)
       return {
         userProgress: itemProgress ? itemProgress.toJSON() : null,
         libraryItem: li
@@ -241,13 +241,13 @@ module.exports = {
   },
 
   getItemDurationStats(libraryItems) {
-    var sorted = sort(libraryItems).desc(li => li.media.getLongestDuration())
-    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.getLongestDuration() })).filter(i => i.duration > 0)
+    var sorted = sort(libraryItems).desc(li => li.media.duration)
+    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.duration })).filter(i => i.duration > 0)
     var totalDuration = 0
     var numAudioTracks = 0
     libraryItems.forEach((li) => {
-      totalDuration += li.media.getTotalDuration()
-      numAudioTracks += li.media.getTotalAudioTracks()
+      totalDuration += li.media.duration
+      numAudioTracks += li.media.numTracks
     })
     return {
       totalDuration,

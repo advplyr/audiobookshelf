@@ -1,4 +1,8 @@
 const fs = require('fs-extra')
+const cron = require('node-cron')
+const axios = require('axios')
+
+const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile } = require('../utils/fileUtils')
@@ -16,6 +20,15 @@ class PodcastManager {
 
     this.downloadQueue = []
     this.currentDownload = null
+
+    this.episodeScheduleTask = null
+  }
+
+  init() {
+    var podcastsWithAutoDownload = this.db.libraryItems.find(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
+    if (podcastsWithAutoDownload.length) {
+      this.schedulePodcastEpisodeCron()
+    }
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload) {
@@ -96,6 +109,38 @@ class PodcastManager {
     var newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, audioProbeData)
     return newAudioFile
+  }
+
+  schedulePodcastEpisodeCron() {
+    try {
+      this.episodeScheduleTask = cron.schedule(this.serverSettings.podcastEpisodeSchedule, this.checkForNewEpisodes.bind(this))
+    } catch (error) {
+      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.backupSchedule}`, error)
+    }
+  }
+
+  checkForNewEpisodes() {
+    var podcastsWithAutoDownload = this.db.libraryItems.find(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
+    for (const libraryItem of podcastsWithAutoDownload) {
+
+    }
+  }
+
+  getPodcastFeed(podcastMedia) {
+    axios.get(podcastMedia.feedUrl).then(async (data) => {
+      if (!data || !data.data) {
+        Logger.error('Invalid podcast feed request response')
+        return res.status(500).send('Bad response from feed request')
+      }
+      var podcast = await parsePodcastRssFeedXml(data.data)
+      if (!podcast) {
+        return res.status(500).send('Invalid podcast RSS feed')
+      }
+      res.json(podcast)
+    }).catch((error) => {
+      console.error('Failed', error)
+      res.status(500).send(error)
+    })
   }
 }
 module.exports = PodcastManager

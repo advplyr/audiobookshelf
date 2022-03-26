@@ -8,7 +8,7 @@
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
       <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
-      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${audiobookId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
+      <nuxt-link v-if="userCanUpdate" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
         <ui-btn small color="primary">Manage Tracks</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
@@ -38,7 +38,7 @@
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/s/item/${audiobookId}${$encodeUriPath(track.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/item/${libraryItemId}${$encodeUriPath(track.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>
@@ -59,7 +59,7 @@ export default {
       type: Array,
       default: () => []
     },
-    audiobookId: String
+    libraryItemId: String
   },
   data() {
     return {

@@ -9,13 +9,12 @@ const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 const AudioTrack = require('./files/AudioTrack')
 
 class Stream extends EventEmitter {
-  constructor(sessionId, streamPath, user, libraryItem, mediaEntity, startTime, clientEmitter, transcodeOptions = {}) {
+  constructor(sessionId, streamPath, user, libraryItem, startTime, clientEmitter, transcodeOptions = {}) {
     super()
 
     this.id = sessionId
     this.user = user
     this.libraryItem = libraryItem
-    this.mediaEntity = mediaEntity
     this.clientEmitter = clientEmitter
 
     this.transcodeOptions = transcodeOptions
@@ -46,17 +45,12 @@ class Stream extends EventEmitter {
   get mediaTitle() {
     return this.libraryItem.media.metadata.title || ''
   }
-  get mediaEntityName() {
-    return this.mediaEntity.name
-  }
-  get itemTitle() {
-    return `${this.mediaTitle} (${this.mediaEntityName})`
-  }
   get totalDuration() {
-    return this.mediaEntity.duration
+    return this.libraryItem.media.duration
   }
   get tracks() {
-    return this.mediaEntity.tracks
+    // TODO: Podcast episode tracks
+    return this.libraryItem.media.tracks
   }
   get tracksAudioFileType() {
     if (!this.tracks.length) return null
@@ -226,7 +220,7 @@ class Stream extends EventEmitter {
       if (!this.isTranscodeComplete) {
         this.checkFiles()
       } else {
-        Logger.info(`[Stream] ${this.itemTitle} sending stream_ready`)
+        Logger.info(`[Stream] ${this.mediaTitle} sending stream_ready`)
         this.clientEmit('stream_ready')
         clearInterval(intervalId)
       }
@@ -414,7 +408,7 @@ class Stream extends EventEmitter {
 
   getAudioTrack() {
     var newAudioTrack = new AudioTrack()
-    newAudioTrack.setFromStream(this.itemTitle, this.totalDuration, this.clientPlaylistUri)
+    newAudioTrack.setFromStream(this.mediaTitle, this.totalDuration, this.clientPlaylistUri)
     return newAudioTrack
   }
 }
