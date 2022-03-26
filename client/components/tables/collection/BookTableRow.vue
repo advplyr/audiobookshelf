@@ -27,11 +27,6 @@
         <span class="material-icons text-lg text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">radio_button_unchecked</span>
       </div> -->
     </div>
-    <!-- <div class="absolute top-0 left-0 z-40 bg-red-500 w-full h-full">
-      <div class="w-24 h-full absolute top-0 -right-24 transform transition-transform" :class="isHovering ? 'translate-x-0' : '-translate-x-24'">
-        <span class="material-icons">edit</span>
-      </div>
-    </div> -->
     <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : '-translate-x-24'">
       <div class="flex h-full items-center">
         <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
@@ -126,7 +121,9 @@ export default {
       this.isHovering = false
     },
     playClick() {
-      this.$eventBus.$emit('play-item', this.book.id)
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: this.book.id
+      })
     },
     clickEdit() {
       this.$emit('edit', this.book)

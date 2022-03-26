@@ -22,9 +22,12 @@ export const getters = {
   getToken: (state) => {
     return state.user ? state.user.token : null
   },
-  getUserMediaProgress: (state) => (libraryItemId) => {
+  getUserMediaProgress: (state) => (libraryItemId, episodeId = null) => {
     if (!state.user.mediaProgress) return null
-    return state.user.mediaProgress.find(li => li.id == libraryItemId)
+    return state.user.mediaProgress.find(li => {
+      if (episodeId && li.episodeId !== episodeId) return false
+      return li.id == libraryItemId
+    })
   },
   getUserBookmarksForItem: (state) => (libraryItemId) => {
     if (!state.user.bookmarks) return []

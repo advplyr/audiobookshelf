@@ -120,7 +120,9 @@ export default {
         return !prog || !prog.isFinished
       })
       if (nextBookNotRead) {
-        this.$eventBus.$emit('play-item', nextBookNotRead.id)
+        this.$eventBus.$emit('play-item', {
+          libraryItemId: nextBookNotRead.id
+        })
       }
     }
   },

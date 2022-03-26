@@ -151,7 +151,9 @@ export default {
       this.$store.commit('showEditModalOnTab', { libraryItem: this.book, tab: 'download' })
     },
     startStream() {
-      this.$eventBus.$emit('play-item', this.book.id)
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: this.book.id
+      })
     },
     editClick() {
       this.$emit('edit', this.book)

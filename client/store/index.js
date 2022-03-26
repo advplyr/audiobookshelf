@@ -5,6 +5,8 @@ export const state = () => ({
   versionData: null,
   serverSettings: null,
   streamLibraryItem: null,
+  streamEpisodeId: null,
+  streamIsPlaying: false,
   editModalTab: 'details',
   showEditModal: false,
   showEReader: false,
@@ -38,6 +40,10 @@ export const getters = {
   getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
+  },
+  getIsEpisodeStreaming: state => (libraryItemId, episodeId) => {
+    if (!state.streamLibraryItem) return null
+    return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
   }
 }
 
@@ -105,8 +111,18 @@ export const mutations = {
     if (!settings) return
     state.serverSettings = settings
   },
-  setLibraryItemStream(state, libraryItem) {
-    state.streamLibraryItem = libraryItem
+  setMediaPlaying(state, payload) {
+    if (!payload) {
+      state.streamLibraryItem = null
+      state.streamEpisodeId = null
+      state.streamIsPlaying = false
+    } else {
+      state.streamLibraryItem = payload.libraryItem
+      state.streamEpisodeId = payload.episodeId || null
+    }
+  },
+  setIsPlaying(state, isPlaying) {
+    state.streamIsPlaying = isPlaying
   },
   showEditModal(state, libraryItem) {
     state.editModalTab = 'details'

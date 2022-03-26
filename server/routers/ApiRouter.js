@@ -86,7 +86,10 @@ class ApiRouter {
     this.router.delete('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.removeCover.bind(this))
     this.router.post('/items/:id/match', LibraryItemController.middleware.bind(this), LibraryItemController.match.bind(this))
     this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
+    this.router.post('/items/:id/play/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.startEpisodePlaybackSession.bind(this))
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
+    this.router.patch('/items/:id/episodes', LibraryItemController.middleware.bind(this), LibraryItemController.updateEpisodes.bind(this))
+    this.router.delete('/items/:id/episode/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.removeEpisode.bind(this))
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this)) // Root only
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
@@ -126,6 +129,7 @@ class ApiRouter {
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
     this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
+    this.router.patch('/me/progress/:id/:episodeId', MeController.createUpdateEpisodeMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.post('/me/item/:id/bookmark', MeController.createBookmark.bind(this))
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))

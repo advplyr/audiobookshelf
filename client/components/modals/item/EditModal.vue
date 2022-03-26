@@ -123,8 +123,9 @@ export default {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.id === 'download' && this.isMissing) return false
-        if (tab.id === 'chapters' && this.mediaType !== 'book') return false
-        if (tab.id === 'episodes' && this.mediaType !== 'podcast') return false
+        if (this.mediaType == 'podcast' && (tab.id == 'match' || tab.id == 'chapters')) return false
+        if (this.mediaType == 'book' && tab.id == 'episodes') return false
+
         if ((tab.id === 'download' || tab.id === 'files') && this.userCanDownload) return true
         if (tab.id !== 'download' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate && this.showExperimentalFeatures) return true

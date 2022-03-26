@@ -6,6 +6,7 @@ export default class PlayerHandler {
   constructor(ctx) {
     this.ctx = ctx
     this.libraryItem = null
+    this.episodeId = null
     this.playWhenReady = false
     this.player = null
     this.playerState = 'IDLE'
@@ -23,6 +24,9 @@ export default class PlayerHandler {
   get isCasting() {
     return this.ctx.$store.state.globals.isCasting
   }
+  get libraryItemId() {
+    return this.libraryItem ? this.libraryItem.id : null
+  }
   get isPlayingCastedItem() {
     return this.libraryItem && (this.player instanceof CastPlayer)
   }
@@ -36,10 +40,11 @@ export default class PlayerHandler {
     return this.playerState === 'PLAYING'
   }
 
-  load(libraryItem, playWhenReady) {
+  load(libraryItem, episodeId, playWhenReady) {
     if (!this.player) this.switchPlayer()
 
     this.libraryItem = libraryItem
+    this.episodeId = episodeId
     this.playWhenReady = playWhenReady
     this.prepare()
   }
@@ -113,7 +118,7 @@ export default class PlayerHandler {
       this.ctx.setCurrentTime(this.player.getCurrentTime())
     }
 
-    this.ctx.isPlaying = this.playerState === 'PLAYING'
+    this.ctx.setPlaying(this.playerState === 'PLAYING')
     this.ctx.playerLoading = this.playerState === 'LOADING'
   }
 
@@ -132,7 +137,9 @@ export default class PlayerHandler {
       forceTranscode,
       forceDirectPlay: this.isCasting // TODO: add transcode support for chromecast
     }
-    var session = await this.ctx.$axios.$post(`/api/items/${this.libraryItem.id}/play`, payload).catch((error) => {
+
+    var path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
+    var session = await this.ctx.$axios.$post(path, payload).catch((error) => {
       console.error('Failed to start stream', error)
     })
     this.prepareSession(session)

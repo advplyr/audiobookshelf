@@ -236,17 +236,23 @@ class User {
     }
   }
 
-  getMediaProgress(libraryItemId) {
+  getMediaProgress(libraryItemId, episodeId = null) {
     if (!this.mediaProgress) return null
-    return this.mediaProgress.find(lip => lip.id === libraryItemId)
+    return this.mediaProgress.find(lip => {
+      if (episodeId && lip.episodeId !== episodeId) return false
+      return lip.id === libraryItemId
+    })
   }
 
-  createUpdateMediaProgress(libraryItem, updatePayload) {
-    var itemProgress = this.mediaProgress.find(li => li.id === libraryItem.id)
+  createUpdateMediaProgress(libraryItem, updatePayload, episodeId = null) {
+    var itemProgress = this.mediaProgress.find(li => {
+      if (episodeId && li.episodeId !== episodeId) return false
+      return li.id === libraryItem.id
+    })
     if (!itemProgress) {
       var newItemProgress = new MediaProgress()
 
-      newItemProgress.setData(libraryItem.id, updatePayload)
+      newItemProgress.setData(libraryItem.id, updatePayload, episodeId)
       this.mediaProgress.push(newItemProgress)
       return true
     }

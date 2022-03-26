@@ -527,7 +527,9 @@ export default {
     },
     play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
-      eventBus.$emit('play-item', this.libraryItemId)
+      eventBus.$emit('play-item', {
+        libraryItemId: this.libraryItemId
+      })
     },
     mouseover() {
       this.isHovering = true

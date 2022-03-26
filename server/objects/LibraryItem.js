@@ -440,8 +440,8 @@ class LibraryItem {
     return this.media.searchQuery(query)
   }
 
-  getDirectPlayTracklist(libraryItemId) {
-    return this.media.getDirectPlayTracklist(libraryItemId)
+  getDirectPlayTracklist(libraryItemId, episodeId) {
+    return this.media.getDirectPlayTracklist(libraryItemId, episodeId)
   }
 }
 module.exports = LibraryItem

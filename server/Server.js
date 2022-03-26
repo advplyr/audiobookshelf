@@ -384,6 +384,10 @@ class Server {
         Logger.error(`[Server] Library Item for session "${session.id}" does not exist "${session.libraryItemId}"`)
         this.playbackSessionManager.removeSession(session.id)
         session = null
+      } else if (session.mediaType === 'podcast' && !sessionLibraryItem.media.checkHasEpisode(session.episodeId)) {
+        Logger.error(`[Server] Library Item for session "${session.id}" episode ${session.episodeId} does not exist "${session.libraryItemId}"`)
+        this.playbackSessionManager.removeSession(session.id)
+        session = null
       }
       if (session) {
         session = session.toJSONForClient(sessionLibraryItem)

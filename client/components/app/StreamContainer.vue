@@ -133,6 +133,10 @@ export default {
     }
   },
   methods: {
+    setPlaying(isPlaying) {
+      this.isPlaying = isPlaying
+      this.$store.commit('setIsPlaying', isPlaying)
+    },
     setSleepTimer(seconds) {
       this.sleepTimerSet = true
       this.sleepTimerTime = seconds
@@ -221,7 +225,7 @@ export default {
     },
     closePlayer() {
       this.playerHandler.closePlayer()
-      this.$store.commit('setLibraryItemStream', null)
+      this.$store.commit('setMediaPlaying', null)
     },
     streamProgress(data) {
       if (!data.numSegments) return
@@ -234,7 +238,10 @@ export default {
       }
     },
     sessionOpen(session) {
-      this.$store.commit('setLibraryItemStream', session.libraryItem)
+      this.$store.commit('setMediaPlaying', {
+        libraryItem: session.libraryItem,
+        episodeId: session.episodeId
+      })
       this.playerHandler.prepareOpenSession(session)
     },
     streamClosed(streamId) {
@@ -271,24 +278,40 @@ export default {
         this.playerHandler.switchPlayer()
       }
     },
-    async playLibraryItem(libraryItemId) {
+    async playLibraryItem(payload) {
+      var libraryItemId = payload.libraryItemId
+      var episodeId = payload.episodeId || null
+
+      if (this.playerHandler.libraryItemId == libraryItemId && this.playerHandler.episodeId == episodeId) {
+        this.playerHandler.play()
+        return
+      }
+
       var libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}?expanded=1`).catch((error) => {
         console.error('Failed to fetch full item', error)
         return null
       })
       if (!libraryItem) return
-      this.$store.commit('setLibraryItemStream', libraryItem)
+      this.$store.commit('setMediaPlaying', {
+        libraryItem,
+        episodeId
+      })
 
-      this.playerHandler.load(libraryItem, true)
+      this.playerHandler.load(libraryItem, episodeId, true)
+    },
+    pauseItem() {
+      this.playerHandler.pause()
     }
   },
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
     this.$eventBus.$on('play-item', this.playLibraryItem)
+    this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
     this.$eventBus.$off('play-item', this.playLibraryItem)
+    this.$eventBus.$off('pause-item', this.pauseItem)
   }
 }
 </script>

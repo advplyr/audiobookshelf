@@ -9,6 +9,7 @@ class PlaybackSession {
     this.id = null
     this.userId = null
     this.libraryItemId = null
+    this.episodeId = null
 
     this.mediaType = null
     this.mediaMetadata = null
@@ -41,6 +42,7 @@ class PlaybackSession {
       sessionType: this.sessionType,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
+      episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
       coverPath: this.coverPath,
@@ -60,6 +62,7 @@ class PlaybackSession {
       sessionType: this.sessionType,
       userId: this.userId,
       libraryItemId: this.libraryItemId,
+      episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
       coverPath: this.coverPath,
@@ -81,7 +84,8 @@ class PlaybackSession {
     this.sessionType = session.sessionType
     this.userId = session.userId
     this.libraryItemId = session.libraryItemId
-    this.mediaType = session.mediaType
+    this.episodeId = session.episodeId,
+      this.mediaType = session.mediaType
     this.duration = session.duration
     this.playMethod = session.playMethod
 
@@ -107,10 +111,11 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
-  setData(libraryItem, user) {
+  setData(libraryItem, user, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id
     this.libraryItemId = libraryItem.id
+    this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
     this.coverPath = libraryItem.media.coverPath

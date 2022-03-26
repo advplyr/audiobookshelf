@@ -25,8 +25,8 @@ class PlaybackSessionManager {
     return session ? session.stream : null
   }
 
-  async startSessionRequest(user, libraryItem, options, res) {
-    const session = await this.startSession(user, libraryItem, options)
+  async startSessionRequest(user, libraryItem, episodeId, options, res) {
+    const session = await this.startSession(user, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
   }
 
@@ -42,23 +42,23 @@ class PlaybackSessionManager {
     res.sendStatus(200)
   }
 
-  async startSession(user, libraryItem, options) {
-    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options))
+  async startSession(user, libraryItem, episodeId, options) {
+    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
 
-    const userProgress = user.getMediaProgress(libraryItem.id)
+    const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
     var userStartTime = 0
     if (userProgress) userStartTime = userProgress.currentTime || 0
     const newPlaybackSession = new PlaybackSession()
-    newPlaybackSession.setData(libraryItem, user)
+    newPlaybackSession.setData(libraryItem, user, episodeId)
 
     var audioTracks = []
     if (shouldDirectPlay) {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
-      audioTracks = libraryItem.getDirectPlayTracklist(libraryItem.id)
+      audioTracks = libraryItem.getDirectPlayTracklist(libraryItem.id, episodeId)
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
-      var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, userStartTime, this.clientEmitter.bind(this))
+      var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime, this.clientEmitter.bind(this))
       await stream.generatePlaylist()
       audioTracks = [stream.getAudioTrack()]
       newPlaybackSession.stream = stream
@@ -84,7 +84,7 @@ class PlaybackSessionManager {
   async syncSession(user, session, syncData) {
     var libraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
     if (!libraryItem) {
-      Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${sessino.libraryItemId}"`)
+      Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
       return null
     }
 
@@ -97,10 +97,11 @@ class PlaybackSessionManager {
       currentTime: syncData.currentTime,
       progress: session.progress
     }
-    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate)
+    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
     if (wasUpdated) {
+
       await this.db.updateEntity('user', user)
-      var itemProgress = user.getMediaProgress(session.libraryItemId)
+      var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
       this.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()

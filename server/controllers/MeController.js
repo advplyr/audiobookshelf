@@ -43,6 +43,26 @@ class MeController {
     res.sendStatus(200)
   }
 
+  // PATCH: api/me/progress/:id/:episodeId
+  async createUpdateEpisodeMediaProgress(req, res) {
+    var episodeId = req.params.episodeId
+    var libraryItem = this.db.libraryItems.find(ab => ab.id === req.params.id)
+    if (!libraryItem) {
+      return res.status(404).send('Item not found')
+    }
+    if (!libraryItem.media.episodes.find(ep => ep.id === episodeId)) {
+      Logger.error(`[MeController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      return res.status(404).send('Episode not found')
+    }
+
+    var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, req.body, episodeId)
+    if (wasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.sendStatus(200)
+  }
+
   // PATCH: api/me/progress/batch/update
   async batchUpdateMediaProgress(req, res) {
     var itemProgressPayloads = req.body

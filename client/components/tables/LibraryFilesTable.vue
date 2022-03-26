@@ -35,7 +35,7 @@
                 </div>
               </td>
               <td v-if="userCanDownload && !isMissing" class="text-center">
-                <a :href="`/s/item/${libraryItemId}${$encodeUriPath(file.metadata.relPath)}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`/s/item/${libraryItemId}/${$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>

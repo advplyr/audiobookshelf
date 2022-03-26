@@ -9,12 +9,13 @@ const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 const AudioTrack = require('./files/AudioTrack')
 
 class Stream extends EventEmitter {
-  constructor(sessionId, streamPath, user, libraryItem, startTime, clientEmitter, transcodeOptions = {}) {
+  constructor(sessionId, streamPath, user, libraryItem, episodeId, startTime, clientEmitter, transcodeOptions = {}) {
     super()
 
     this.id = sessionId
     this.user = user
     this.libraryItem = libraryItem
+    this.episodeId = episodeId
     this.clientEmitter = clientEmitter
 
     this.transcodeOptions = transcodeOptions
@@ -34,22 +35,28 @@ class Stream extends EventEmitter {
     this.isTranscodeComplete = false
     this.segmentsCreated = new Set()
     this.furthestSegmentCreated = 0
-    // this.clientCurrentTime = 0
-
-    this.init()
   }
 
+  get isPodcast() {
+    return this.libraryItem.mediaType === 'podcast'
+  }
+  get episode() {
+    if (!this.isPodcast) return null
+    return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
+  }
   get libraryItemId() {
     return this.libraryItem.id
   }
   get mediaTitle() {
+    if (this.episode) return this.episode.title || ''
     return this.libraryItem.media.metadata.title || ''
   }
   get totalDuration() {
+    if (this.episode) return this.episode.duration
     return this.libraryItem.media.duration
   }
   get tracks() {
-    // TODO: Podcast episode tracks
+    if (this.episode) return this.episode.tracks
     return this.libraryItem.media.tracks
   }
   get tracksAudioFileType() {
@@ -99,26 +106,14 @@ class Stream extends EventEmitter {
       id: this.id,
       userId: this.user.id,
       libraryItem: this.libraryItem.toJSONExpanded(),
+      episode: this.episode ? this.episode.toJSONExpanded() : null,
       segmentLength: this.segmentLength,
       playlistPath: this.playlistPath,
       clientPlaylistUri: this.clientPlaylistUri,
-      // clientCurrentTime: this.clientCurrentTime,
       startTime: this.startTime,
       segmentStartNumber: this.segmentStartNumber,
       isTranscodeComplete: this.isTranscodeComplete,
-      // lastUpdate: this.clientUserAudiobookData ? this.clientUserAudiobookData.lastUpdate : 0
     }
-  }
-
-  init() {
-    // if (this.clientUserAudiobookData) {
-    //   var timeRemaining = this.totalDuration - this.clientUserAudiobookData.currentTime
-    //   Logger.info('[STREAM] User has progress for item', this.clientUserAudiobookData.progress, `Time Remaining: ${timeRemaining}s`)
-    //   if (timeRemaining > 15) {
-    //     this.startTime = this.clientUserAudiobookData.currentTime
-    //     this.clientCurrentTime = this.startTime
-    //   }
-    // }
   }
 
   async checkSegmentNumberRequest(segNum) {

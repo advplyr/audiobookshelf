@@ -52,10 +52,10 @@ class MediaProgress {
     return !this.isFinished && this.progress > 0
   }
 
-  setData(libraryItemId, progress) {
+  setData(libraryItemId, progress, episodeId = null) {
     this.id = libraryItemId
     this.libraryItemId = libraryItemId
-    this.episodeId = progress.episodeId || null
+    this.episodeId = episodeId
     this.duration = progress.duration || 0
     this.progress = Math.min(1, (progress.progress || 0))
     this.currentTime = progress.currentTime || 0
@@ -74,11 +74,11 @@ class MediaProgress {
     for (const key in payload) {
       if (this[key] !== undefined && payload[key] !== this[key]) {
         if (key === 'isFinished') {
-          if (!payload[key]) { // Updating to Not Read - Reset progress and current time
+          if (!payload[key]) { // Updating to Not Finished - Reset progress and current time
             this.finishedAt = null
             this.progress = 0
             this.currentTime = 0
-          } else { // Updating to Read
+          } else { // Updating to Finished
             if (!this.finishedAt) this.finishedAt = Date.now()
             this.progress = 1
           }
@@ -88,6 +88,16 @@ class MediaProgress {
         hasUpdates = true
       }
     }
+
+    if (this.progress >= 1 && !this.isFinished) {
+      this.isFinished = true
+      this.finishedAt = Date.now()
+      this.progress = 1
+    } else if (this.progress < 1 && this.isFinished) {
+      this.isFinished = false
+      this.finishedAt = null
+    }
+
     if (!this.startedAt) {
       this.startedAt = Date.now()
     }

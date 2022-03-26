@@ -143,14 +143,20 @@ class Podcast {
     return payload || {}
   }
 
+  checkHasEpisode(episodeId) {
+    return this.episodes.some(ep => ep.id === episodeId)
+  }
+
   // Only checks container format
-  checkCanDirectPlay(payload, epsiodeIndex = 0) {
-    var episode = this.episodes[epsiodeIndex]
+  checkCanDirectPlay(payload, episodeId) {
+    var episode = this.episodes.find(ep => ep.id === episodeId)
+    if (!episode) return false
     return episode.checkCanDirectPlay(payload)
   }
 
-  getDirectPlayTracklist(libraryItemId, episodeIndex = 0) {
-    var episode = this.episodes[episodeIndex]
+  getDirectPlayTracklist(libraryItemId, episodeId) {
+    var episode = this.episodes.find(ep => ep.id === episodeId)
+    if (!episode) return false
     return episode.getDirectPlayTracklist(libraryItemId)
   }
 
@@ -164,6 +170,15 @@ class Podcast {
     this.episodes.push(pe)
   }
 
+  setEpisodeOrder(episodeIds) {
+    this.episodes = this.episodes.map(ep => {
+      var indexOf = episodeIds.findIndex(id => id === ep.id)
+      ep.index = indexOf + 1
+      return ep
+    })
+    this.episodes.sort((a, b) => b.index - a.index)
+  }
+
   reorderEpisodes() {
     var hasUpdates = false
     this.episodes = naturalSort(this.episodes).asc((ep) => ep.bestFilename)
@@ -173,7 +188,12 @@ class Podcast {
         hasUpdates = true
       }
     }
+    this.episodes.sort((a, b) => b.index - a.index)
     return hasUpdates
+  }
+
+  removeEpisode(episodeId) {
+    this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
   }
 }
 module.exports = Podcast

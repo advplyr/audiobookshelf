@@ -7,7 +7,7 @@
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Item Progress Bar -->
-            <div class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+            <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
@@ -96,7 +96,7 @@
           </div>
 
           <!-- Progress -->
-          <div v-if="progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
+          <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p v-if="progressPercent < 1" class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
             <p v-else class="text-xs">Finished {{ $formatDate(userProgressFinishedAt, 'MM/dd/yyyy') }}</p>
             <p v-if="progressPercent < 1" class="text-gray-200 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
@@ -144,6 +144,8 @@
           </div>
 
           <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :media="media" />
+
+          <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
 
           <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
         </div>
@@ -353,7 +355,20 @@ export default {
         })
     },
     startStream() {
-      this.$eventBus.$emit('play-item', this.libraryItem.id)
+      var episodeId = null
+      if (this.isPodcast) {
+        var episode = this.podcastEpisodes.find((ep) => {
+          var podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
+          return !podcastProgress || !podcastProgress.isFinished
+        })
+        if (!episode) episode = this.podcastEpisodes[0]
+        episodeId = episode.id
+      }
+
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: this.libraryItem.id,
+        episodeId
+      })
     },
     editClick() {
       this.$store.commit('setBookshelfBookIds', [])

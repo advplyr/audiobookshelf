@@ -167,7 +167,7 @@ export default {
     libraryItemUpdated(libraryItem) {
       console.log('libraryItem updated', libraryItem)
       this.shelves.forEach((shelf) => {
-        if (shelf.type === 'books') {
+        if (shelf.type == 'book' || shelf.type == 'podcast') {
           shelf.entities = shelf.entities.map((ent) => {
             if (ent.id === libraryItem.id) {
               return libraryItem
@@ -186,7 +186,7 @@ export default {
     },
     removeBookFromShelf(libraryItem) {
       this.shelves.forEach((shelf) => {
-        if (shelf.type === 'books') {
+        if (shelf.type == 'book' || shelf.type == 'podcast') {
           shelf.entities = shelf.entities.filter((ent) => {
             return ent.id !== libraryItem.id
           })
