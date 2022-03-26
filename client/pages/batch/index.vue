@@ -9,20 +9,20 @@
       <div class="overflow-hidden">
         <transition name="slide">
           <div v-if="openMapOptions" class="flex flex-wrap">
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.subtitle" />
               <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" label="Subtitle" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.authors" />
               <!-- Authors filter only contains authors in this library, use query input to query all authors -->
               <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" label="Authors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
               <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" label="Publish Year" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
               <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
             </div>
@@ -34,11 +34,11 @@
               <ui-checkbox v-model="selectedBatchUsage.tags" />
               <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.narrators" />
               <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" label="Narrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
               <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" label="Publisher" class="mb-4 ml-4" />
             </div>
@@ -72,7 +72,8 @@
     <div class="flex justify-center flex-wrap">
       <template v-for="libraryItem in libraryItemCopies">
         <div :key="libraryItem.id" class="w-full max-w-3xl border border-black-300 p-6 -ml-px -mt-px">
-          <widgets-item-details-edit :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
+          <widgets-book-details-edit v-if="libraryItem.mediaType === 'book'" :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
+          <widgets-podcast-details-edit v-else :ref="`itemForm-${libraryItem.id}`" :library-item="libraryItem" />
         </div>
       </template>
     </div>
@@ -99,6 +100,7 @@ export default {
       return []
     })
     return {
+      mediaType: libraryItems[0].mediaType,
       libraryItems
     }
   },
@@ -139,6 +141,9 @@ export default {
     }
   },
   computed: {
+    isPodcastLibrary() {
+      return this.mediaType === 'podcast'
+    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },

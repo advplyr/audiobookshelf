@@ -31,7 +31,7 @@
                 <p v-if="bookSubtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ bookSubtitle }}</p>
               </div>
 
-              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor }}</p>
+              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
               <p v-else-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
                 by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
               </p>
@@ -126,15 +126,15 @@
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="userCanDownload" :disabled="isMissing" text="Download" direction="top">
+            <ui-tooltip v-if="userCanDownload && !isPodcast" :disabled="isMissing" text="Download" direction="top">
               <ui-icon-btn icon="download" :disabled="isMissing" class="mx-0.5" @click="downloadClick" />
             </ui-tooltip>
 
-            <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip text="Collections" direction="top">
+            <ui-tooltip v-if="!isPodcast" text="Collections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
           </div>

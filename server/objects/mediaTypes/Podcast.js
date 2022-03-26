@@ -47,7 +47,8 @@ class Podcast {
       coverPath: this.coverPath,
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
-      autoDownloadEpisodes: this.autoDownloadEpisodes
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      size: this.size
     }
   }
 
@@ -56,8 +57,9 @@ class Podcast {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
-      autoDownloadEpisodes: this.autoDownloadEpisodes
+      episodes: this.episodes.map(e => e.toJSONExpanded()),
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      size: this.size
     }
   }
 

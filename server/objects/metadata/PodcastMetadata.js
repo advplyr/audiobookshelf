@@ -1,3 +1,6 @@
+const Logger = require('../../Logger')
+const { areEquivalent, copyValue } = require('../../utils/index')
+
 class PodcastMetadata {
   constructor(metadata) {
     this.title = null
@@ -86,6 +89,21 @@ class PodcastMetadata {
     if (mediaMetadata.genres && mediaMetadata.genres.length) {
       this.genres = [...mediaMetadata.genres]
     }
+  }
+
+  update(payload) {
+    var json = this.toJSON()
+    var hasUpdates = false
+    for (const key in json) {
+      if (payload[key] !== undefined) {
+        if (!areEquivalent(payload[key], json[key])) {
+          this[key] = copyValue(payload[key])
+          Logger.debug('[PodcastMetadata] Key updated', key, this[key])
+          hasUpdates = true
+        }
+      }
+    }
+    return hasUpdates
   }
 }
 module.exports = PodcastMetadata

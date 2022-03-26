@@ -120,12 +120,11 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems) {
   return libraryItemGroup
 }
 
-function cleanFileObjects(libraryItemPath, folderPath, files) {
+function cleanFileObjects(libraryItemPath, files) {
   return Promise.all(files.map(async (file) => {
     var filePath = Path.posix.join(libraryItemPath, file)
-    var relFilePath = filePath.replace(folderPath, '')
     var newLibraryFile = new LibraryFile()
-    await newLibraryFile.setDataFromPath(filePath, relFilePath)
+    await newLibraryFile.setDataFromPath(filePath, file)
     return newLibraryFile
   }))
 }
@@ -153,7 +152,7 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
   for (const libraryItemPath in libraryItemGrouping) {
     var libraryItemData = getDataFromMediaDir(libraryMediaType, folderPath, libraryItemPath, serverSettings)
 
-    var fileObjs = await cleanFileObjects(libraryItemData.path, folderPath, libraryItemGrouping[libraryItemPath])
+    var fileObjs = await cleanFileObjects(libraryItemData.path, libraryItemGrouping[libraryItemPath])
     var libraryItemFolderStats = await getFileTimestampsWithIno(libraryItemData.path)
     items.push({
       folderId: folder.id,

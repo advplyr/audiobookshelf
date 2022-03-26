@@ -47,10 +47,10 @@
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
         <div class="flex-grow" />
-        <ui-tooltip :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+        <ui-tooltip v-if="!isPodcastLibrary" :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="userCanUpdate" text="Add to Collection" direction="bottom">
+        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" text="Add to Collection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
@@ -78,6 +78,12 @@ export default {
     },
     libraryName() {
       return this.currentLibrary ? this.currentLibrary.name : 'unknown'
+    },
+    libraryMediaType() {
+      return this.currentLibrary ? this.currentLibrary.mediaType : null
+    },
+    isPodcastLibrary() {
+      return this.libraryMediaType === 'podcast'
     },
     isHome() {
       return this.$route.name === 'library-library'

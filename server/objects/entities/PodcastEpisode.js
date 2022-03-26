@@ -59,6 +59,26 @@ class PodcastEpisode {
     }
   }
 
+  toJSONExpanded() {
+    return {
+      id: this.id,
+      index: this.index,
+      episode: this.episode,
+      episodeType: this.episodeType,
+      title: this.title,
+      subtitle: this.subtitle,
+      description: this.description,
+      enclosure: this.enclosure ? { ...this.enclosure } : null,
+      pubDate: this.pubDate,
+      audioFile: this.audioFile.toJSON(),
+      publishedAt: this.publishedAt,
+      addedAt: this.addedAt,
+      updatedAt: this.updatedAt,
+      duration: this.duration,
+      size: this.size
+    }
+  }
+
   get tracks() {
     return [this.audioFile]
   }

@@ -48,6 +48,11 @@ export default {
           component: 'modals-item-tabs-chapters'
         },
         {
+          id: 'episodes',
+          title: 'Episodes',
+          component: 'modals-item-tabs-episodes'
+        },
+        {
           id: 'files',
           title: 'Files',
           component: 'modals-item-tabs-files'
@@ -118,8 +123,10 @@ export default {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.id === 'download' && this.isMissing) return false
-        if ((tab.id === 'download' || tab.id === 'files' || tab.id === 'authors') && this.userCanDownload) return true
-        if (tab.id !== 'download' && tab.id !== 'files' && tab.id !== 'authors' && this.userCanUpdate) return true
+        if (tab.id === 'chapters' && this.mediaType !== 'book') return false
+        if (tab.id === 'episodes' && this.mediaType !== 'podcast') return false
+        if ((tab.id === 'download' || tab.id === 'files') && this.userCanDownload) return true
+        if (tab.id !== 'download' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate && this.showExperimentalFeatures) return true
         return false
       })
@@ -146,6 +153,9 @@ export default {
     },
     mediaMetadata() {
       return this.media.metadata || {}
+    },
+    mediaType() {
+      return this.libraryItem ? this.libraryItem.mediaType : null
     },
     title() {
       return this.mediaMetadata.title || 'No Title'

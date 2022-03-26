@@ -1,6 +1,7 @@
 <template>
   <div class="w-full h-full relative">
-    <widgets-item-details-edit ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
+    <widgets-book-details-edit v-if="mediaType == 'book'" ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
+    <widgets-podcast-details-edit v-else ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
 
     <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
       <div class="flex items-center px-4">
@@ -8,11 +9,11 @@
 
         <div class="flex-grow" />
 
-        <ui-tooltip v-if="!isMissing" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4 hidden sm:block">
+        <ui-tooltip v-if="!isMissing && mediaType == 'book'" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4 hidden sm:block">
           <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
+        <ui-tooltip v-if="mediaType == 'book'" :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
           <ui-btn v-if="isRootUser" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
         </ui-tooltip>
 
@@ -64,6 +65,9 @@ export default {
     },
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    mediaType() {
+      return this.libraryItem ? this.libraryItem.mediaType : null
     },
     mediaMetadata() {
       return this.media.metadata || {}

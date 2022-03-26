@@ -10,7 +10,7 @@
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         {{ displayTitle }}
       </p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
 
@@ -146,6 +146,12 @@ export default {
     mediaMetadata() {
       return this.media.metadata || {}
     },
+    mediaType() {
+      return this._libraryItem.mediaType
+    },
+    isPodcast() {
+      return this.mediaType === 'podcast'
+    },
     placeholderUrl() {
       return '/book_placeholder.jpg'
     },
@@ -195,6 +201,7 @@ export default {
       return this.mediaMetadata.authors || []
     },
     author() {
+      if (this.isPodcast) return this.mediaMetadata.author
       return this.authors.map((au) => au.name).join(', ')
     },
     authorLF() {
@@ -216,6 +223,7 @@ export default {
       return this.title
     },
     displayAuthor() {
+      if (this.isPodcast) return this.author
       if (this.orderBy === 'media.metadata.authorNameLF') return this.authorLF
       return this.author
     },
@@ -301,29 +309,30 @@ export default {
       return this.store.getters['user/getIsRoot']
     },
     moreMenuItems() {
-      var items = [
-        {
-          func: 'toggleFinished',
-          text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
-        },
-        {
-          func: 'openCollections',
-          text: 'Add to Collection'
-        }
-      ]
+      var items = []
+      if (!this.isPodcast) {
+        items = [
+          {
+            func: 'toggleFinished',
+            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+          },
+          {
+            func: 'openCollections',
+            text: 'Add to Collection'
+          }
+        ]
+      }
       if (this.userCanUpdate) {
-        if (this.numTracks) {
-          items.push({
-            func: 'showEditModalTracks',
-            text: 'Tracks'
-          })
-        }
+        items.push({
+          func: 'showEditModalTracks',
+          text: 'Files'
+        })
         items.push({
           func: 'showEditModalMatch',
           text: 'Match'
         })
       }
-      if (this.userCanDownload) {
+      if (this.userCanDownload && !this.isPodcast) {
         items.push({
           func: 'showEditModalDownload',
           text: 'Download'
