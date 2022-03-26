@@ -1,3 +1,4 @@
+const Logger = require('../../Logger')
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')

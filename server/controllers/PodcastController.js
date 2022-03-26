@@ -62,6 +62,7 @@ class PodcastController {
 
     // Download and save cover image
     if (payload.media.metadata.imageUrl) {
+      // TODO: Scan cover image to library files
       var coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl)
       if (coverResponse) {
         if (coverResponse.error) {

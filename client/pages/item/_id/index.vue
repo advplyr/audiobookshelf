@@ -110,7 +110,7 @@
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ streaming ? 'Streaming' : 'Play' }}
+              {{ streaming ? 'Playing' : 'Play' }}
             </ui-btn>
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>

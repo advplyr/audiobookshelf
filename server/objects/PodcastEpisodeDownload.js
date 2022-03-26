@@ -24,7 +24,7 @@ class PodcastEpisodeDownload {
   }
 
   get targetRelPath() {
-    return Path.join(this.libraryItem.relPath, this.targetFilename)
+    return this.targetFilename
   }
 
   setData(podcastEpisode, libraryItem) {

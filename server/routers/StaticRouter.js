@@ -18,6 +18,7 @@ class StaticRouter {
 
       var remainingPath = req.params['0']
       var fullPath = Path.join(item.path, remainingPath)
+      console.log('fullpath', fullPath)
       res.sendFile(fullPath)
     })
   }

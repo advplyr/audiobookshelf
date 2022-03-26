@@ -10,13 +10,13 @@
         <p class="text-sm font-semibold">
           {{ title }}
         </p>
-        <p class="text-sm">
+        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">
           {{ description }}
         </p>
         <div class="flex items-center pt-2">
           <div class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click="playClick">
-            <span class="material-icons">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-            <p class="pl-2 pr-1 text-sm">{{ timeRemaining }}</p>
+            <span class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </div>
 
           <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
@@ -37,7 +37,7 @@
       </div>
     </div>
 
-    <div v-if="!userIsFinished" class="absolute bottom-0 left-0 h-1 bg-warning" :style="{ width: itemProgressPercent * 100 + '%' }" />
+    <div v-if="!userIsFinished" class="absolute bottom-0 left-0 h-0.5 bg-warning" :style="{ width: itemProgressPercent * 100 + '%' }" />
   </div>
 </template>
 
@@ -75,7 +75,9 @@ export default {
       return this.episode.title || ''
     },
     description() {
-      return this.episode.description || ''
+      if (this.episode.subtitle) return this.episode.subtitle
+      var desc = this.episode.description || ''
+      return desc
     },
     duration() {
       return this.$secondsToTimestamp(this.episode.duration)

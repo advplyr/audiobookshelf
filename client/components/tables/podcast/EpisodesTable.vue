@@ -1,6 +1,9 @@
 <template>
   <div class="w-full py-6">
     <p class="text-lg mb-0 font-semibold">Episodes</p>
+    <p v-if="!episodes.length" class="py-4 text-center text-lg">
+      No Episodes
+    </p>
     <draggable v-model="episodesCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'episode' : null">
         <template v-for="episode in episodesCopy">

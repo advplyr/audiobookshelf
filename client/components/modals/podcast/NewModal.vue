@@ -34,9 +34,6 @@
             <div class="p-1 w-full">
               <ui-text-input-with-label v-model="fullPath" label="Podcast Path" readonly />
             </div>
-            <div class="p-2 w-full">
-              <ui-checkbox v-model="podcast.autoDownloadEpisodes" label="Auto Download Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
-            </div>
           </div>
         </div>
         <div class="w-full md:w-1/2 p-4">
@@ -59,6 +56,9 @@
       </div>
       <div class="flex items-center py-4">
         <div class="flex-grow" />
+        <div class="px-4">
+          <ui-checkbox v-model="podcast.autoDownloadEpisodes" label="Auto Download Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+        </div>
         <ui-btn color="success" :disabled="disableSubmit" @click="submit">{{ buttonText }}</ui-btn>
       </div>
     </div>
@@ -261,15 +261,5 @@ export default {
 }
 #episodes-scroll {
   max-height: calc(80vh - 200px);
-}
-.episode-subtitle {
-  word-break: break-word;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-height: 16px; /* fallback */
-  max-height: 32px; /* fallback */
-  -webkit-line-clamp: 2; /* number of lines to show */
-  -webkit-box-orient: vertical;
 }
 </style>

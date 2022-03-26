@@ -1,5 +1,5 @@
 const Path = require('path')
-
+const { encodeUriPath } = require('../../utils/index')
 class AudioTrack {
   constructor() {
     this.index = null
@@ -26,7 +26,7 @@ class AudioTrack {
     this.startOffset = startOffset
     this.duration = audioFile.duration
     this.title = audioFile.metadata.filename || ''
-    this.contentUrl = Path.join(`/s/item/${itemId}`, audioFile.metadata.relPath)
+    this.contentUrl = Path.join(`/s/item/${itemId}`, encodeUriPath(audioFile.metadata.relPath))
     this.mimeType = audioFile.mimeType
   }
 

@@ -40,6 +40,10 @@
             </div>
           </div>
         </div>
+
+        <div class="flex-grow px-1 pt-6">
+          <ui-checkbox v-model="autoDownloadEpisodes" label="Auto Download New Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+        </div>
       </div>
     </form>
   </div>
@@ -193,6 +197,11 @@ export default {
       if (!this.stringArrayEqual(this.newTags, this.media.tags || [])) {
         updatePayload.tags = [...this.newTags]
       }
+
+      if (this.media.autoDownloadEpisodes !== this.autoDownloadEpisodes) {
+        updatePayload.autoDownloadEpisodes = !!this.autoDownloadEpisodes
+      }
+
       return {
         updatePayload,
         hasChanges: !!Object.keys(updatePayload).length

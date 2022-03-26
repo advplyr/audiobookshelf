@@ -84,9 +84,11 @@ class PodcastManager {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
     }
+
     var podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
     libraryItem.media.addPodcastEpisode(podcastEpisode)
+    libraryItem.libraryFiles.push(libraryFile)
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
     this.emitter('item_updated', libraryItem.toJSONExpanded())

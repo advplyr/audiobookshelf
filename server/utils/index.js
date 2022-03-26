@@ -118,3 +118,7 @@ module.exports.copyValue = (val) => {
     return final
   }
 }
+
+module.exports.encodeUriPath = (path) => {
+  return path.replace(/\\/g, '/').replace(/%/g, '%25').replace(/#/g, '%23')
+}
