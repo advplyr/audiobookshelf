@@ -24,8 +24,6 @@ const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
-const Audiobook = require('../objects/entities/Audiobook')
-const EBook = require('../objects/entities/EBook')
 
 const MediaProgress = require('../objects/user/MediaProgress')
 const PlaybackSession = require('../objects/PlaybackSession')

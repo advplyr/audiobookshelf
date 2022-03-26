@@ -171,6 +171,20 @@
         </div>
       </div>
     </div>
+
+    <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
+      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+        <p class="text-error text-lg font-semibold">Important Notice!</p>
+        <p class="text-lg my-2 text-center">Purge cache will delete the entire directory at <span class="font-mono">/metadata/cache</span>.</p>
+
+        <p class="text-lg text-center mb-8">Are you sure you want to remove the cache directory?</p>
+        <div class="flex px-1 items-center">
+          <ui-btn color="primary" @click="showConfirmPurgeCache = false">Nevermind</ui-btn>
+          <div class="flex-grow" />
+          <ui-btn color="success" @click="confirmPurge">Yes, Purge!</ui-btn>
+        </div>
+      </div>
+    </prompt-dialog>
   </div>
 </template>
 
@@ -194,7 +208,8 @@ export default {
         storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers in the books folder. Only one file named "cover" will be kept',
         storeMetadataWithBook: 'By default metadata files are stored in /metadata/books, enabling this setting will store metadata files in the books folder. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
-      }
+      },
+      showConfirmPurgeCache: false
     }
   },
   watch: {
@@ -285,7 +300,11 @@ export default {
           })
       }
     },
-    async purgeCache() {
+    purgeCache() {
+      this.showConfirmPurgeCache = true
+    },
+    async confirmPurge() {
+      this.showConfirmPurgeCache = false
       this.isPurgingCache = true
       await this.$axios
         .$post('/api/purgecache')
