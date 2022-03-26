@@ -39,6 +39,10 @@ export default class PlayerHandler {
   get playerPlaying() {
     return this.playerState === 'PLAYING'
   }
+  get episode() {
+    if (!this.episodeId) return null
+    return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
+  }
 
   load(libraryItem, episodeId, playWhenReady) {
     if (!this.player) this.switchPlayer()

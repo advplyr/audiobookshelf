@@ -10,7 +10,8 @@
         </nuxt-link>
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="authors.length" class="pl-1.5 text-sm sm:text-base">
+          <p v-if="podcastAuthor">{{ podcastAuthor }}</p>
+          <p v-else-if="authors.length" class="pl-1.5 text-sm sm:text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
           <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
@@ -113,6 +114,12 @@ export default {
     media() {
       return this.streamLibraryItem ? this.streamLibraryItem.media || {} : {}
     },
+    isPodcast() {
+      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
+    },
+    episode() {
+      return this.playerHandler.episode
+    },
     mediaMetadata() {
       return this.media.metadata || {}
     },
@@ -120,6 +127,7 @@ export default {
       return this.media.chapters || []
     },
     title() {
+      if (this.episode) return this.episode.title
       return this.mediaMetadata.title || 'No Title'
     },
     authors() {
@@ -130,6 +138,10 @@ export default {
     },
     totalDurationPretty() {
       return this.$secondsToTimestamp(this.totalDuration)
+    },
+    podcastAuthor() {
+      if (!this.isPodcast) return null
+      return this.mediaMetadata.author || 'Unknown'
     }
   },
   methods: {
