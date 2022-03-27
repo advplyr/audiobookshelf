@@ -122,7 +122,9 @@ class Podcast {
   }
 
   findFileWithInode(inode) {
-    return this.episodes.find(ep => ep.audioFile.ino === inode)
+    var episode = this.episodes.find(ep => ep.audioFile.ino === inode)
+    if (episode) return episode.audioFile
+    return null
   }
 
   setData(mediaMetadata) {

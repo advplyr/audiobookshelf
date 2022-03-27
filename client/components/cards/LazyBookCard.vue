@@ -324,7 +324,7 @@ export default {
       }
       if (this.userCanUpdate) {
         items.push({
-          func: 'showEditModalTracks',
+          func: 'showEditModalFiles',
           text: 'Files'
         })
         items.push({
@@ -451,9 +451,9 @@ export default {
           this.rescanning = false
         })
     },
-    showEditModalTracks() {
+    showEditModalFiles() {
       // More menu func
-      this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'tracks' })
+      this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'files' })
     },
     showEditModalMatch() {
       // More menu func
