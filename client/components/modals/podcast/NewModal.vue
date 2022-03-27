@@ -250,6 +250,9 @@ export default {
         this.folderUpdated()
       }
     }
+  },
+  mounted() {
+    console.log('Podcast feed data', this.podcastFeedData)
   }
 }
 </script>

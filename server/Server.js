@@ -130,6 +130,7 @@ class Server {
 
     await this.backupManager.init()
     await this.logManager.init()
+    this.podcastManager.init()
 
     if (this.db.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)

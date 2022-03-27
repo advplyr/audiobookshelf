@@ -183,6 +183,10 @@ class Db {
     }
   }
 
+  getLibraryItem(id) {
+    return this.libraryItems.find(li => li.id === id)
+  }
+
   async updateLibraryItem(libraryItem) {
     return this.updateLibraryItems([libraryItem])
   }

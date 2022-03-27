@@ -126,5 +126,10 @@ class PodcastEpisode {
     audioTrack.setData(libraryItemId, this.audioFile, 0)
     return [audioTrack]
   }
+
+  checkEqualsEnclosureUrl(url) {
+    if (!this.enclosure || !this.enclosure.url) return false
+    return this.enclosure.url == url
+  }
 }
 module.exports = PodcastEpisode

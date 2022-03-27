@@ -24,15 +24,19 @@ class PodcastManager {
     this.episodeScheduleTask = null
   }
 
+  get serverSettings() {
+    return this.db.serverSettings || {}
+  }
+
   init() {
-    var podcastsWithAutoDownload = this.db.libraryItems.find(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
-    if (podcastsWithAutoDownload.length) {
+    var podcastsWithAutoDownload = this.db.libraryItems.some(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
+    if (podcastsWithAutoDownload) {
       this.schedulePodcastEpisodeCron()
     }
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload) {
-    var index = 1
+    var index = libraryItem.media.episodes.length + 1
     episodesToDownload.forEach((ep) => {
       var newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
@@ -115,33 +119,81 @@ class PodcastManager {
 
   schedulePodcastEpisodeCron() {
     try {
+      Logger.debug(`[PodcastManager] Scheduled podcast episode check cron "${this.serverSettings.podcastEpisodeSchedule}"`)
       this.episodeScheduleTask = cron.schedule(this.serverSettings.podcastEpisodeSchedule, this.checkForNewEpisodes.bind(this))
     } catch (error) {
-      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.backupSchedule}`, error)
+      Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.podcastEpisodeSchedule}`, error)
     }
   }
 
-  checkForNewEpisodes() {
+  cancelCron() {
+    Logger.debug(`[PodcastManager] Canceled new podcast episode check cron`)
+    if (this.episodeScheduleTask) {
+      this.episodeScheduleTask.destroy()
+      this.episodeScheduleTask = null
+    }
+  }
+
+  async checkForNewEpisodes() {
     var podcastsWithAutoDownload = this.db.libraryItems.find(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
-    for (const libraryItem of podcastsWithAutoDownload) {
+    if (!podcastsWithAutoDownload.length) {
+      this.cancelCron()
+      return
+    }
 
+    for (const libraryItem of podcastsWithAutoDownload) {
+      Logger.info(`[PodcastManager] checkForNewEpisodes Cron for "${libraryItem.media.metadata.title}"`)
+      var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
+      var hasUpdates = false
+      if (!newEpisodes) { // Failed
+        libraryItem.media.autoDownloadEpisodes = false
+        hasUpdates = true
+      } else if (newEpisodes.length) {
+        Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
+        this.downloadPodcastEpisodes(libraryItem, newEpisodes)
+        hasUpdates = true
+      }
+
+      if (hasUpdates) {
+        libraryItem.media.lastEpisodeCheck = Date.now()
+        libraryItem.updatedAt = Date.now()
+        await this.db.updateLibraryItem(libraryItem)
+        this.emitter('item_updated', libraryItem.toJSONExpanded())
+      }
     }
   }
 
-  getPodcastFeed(podcastMedia) {
-    axios.get(podcastMedia.feedUrl).then(async (data) => {
+  async checkPodcastForNewEpisodes(podcastLibraryItem) {
+    if (!podcastLibraryItem.media.metadata.feedUrl) {
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for item ${podcastLibraryItem.id} - disabling auto download`)
+      return false
+    }
+    var feed = await this.getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
+    if (!feed || !feed.episodes) {
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload ${podcastLibraryItem.id} - disabling auto download`)
+      return false
+    }
+    // Filter new and not already has
+    var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > podcastLibraryItem.media.lastEpisodeCheck && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
+    // Max new episodes for safety = 2
+    newEpisodes = newEpisodes.slice(0, 2)
+    return newEpisodes
+  }
+
+  getPodcastFeed(feedUrl) {
+    return axios.get(feedUrl).then(async (data) => {
       if (!data || !data.data) {
         Logger.error('Invalid podcast feed request response')
-        return res.status(500).send('Bad response from feed request')
+        return false
       }
       var podcast = await parsePodcastRssFeedXml(data.data)
       if (!podcast) {
-        return res.status(500).send('Invalid podcast RSS feed')
+        return false
       }
-      res.json(podcast)
+      return podcast
     }).catch((error) => {
       console.error('Failed', error)
-      res.status(500).send(error)
+      return false
     })
   }
 }

@@ -37,6 +37,12 @@ class LibraryItemController {
 
     var hasUpdates = libraryItem.update(req.body)
     if (hasUpdates) {
+
+      // Turn on podcast auto download cron if not already on
+      if (libraryItem.mediaType == 'podcast' && req.body.media.autoDownloadEpisodes && !this.podcastManager.episodeScheduleTask) {
+        this.podcastManager.schedulePodcastEpisodeCron()
+      }
+
       Logger.debug(`[LibraryItemController] Updated now saving`)
       await this.db.updateLibraryItem(libraryItem)
       this.emitter('item_updated', libraryItem.toJSONExpanded())

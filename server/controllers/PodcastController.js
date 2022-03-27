@@ -82,6 +82,11 @@ class PodcastController {
       Logger.info(`[PodcastController] Podcast created now starting ${payload.episodesToDownload.length} episode downloads`)
       this.podcastManager.downloadPodcastEpisodes(libraryItem, payload.episodesToDownload)
     }
+
+    // Turn on podcast auto download cron if not already on
+    if (libraryItem.media.autoDownloadEpisodes && !this.podcastManager.episodeScheduleTask) {
+      this.podcastManager.schedulePodcastEpisodeCron()
+    }
   }
 
   getPodcastFeed(req, res) {
@@ -103,6 +108,22 @@ class PodcastController {
     }).catch((error) => {
       console.error('Failed', error)
       res.status(500).send(error)
+    })
+  }
+
+  async checkNewEpisodes(req, res) {
+    var libraryItem = this.db.getLibraryItem(req.params.id)
+    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
+      return res.sendStatus(404)
+    }
+    if (!libraryItem.media.metadata.feedUrl) {
+      Logger.error(`[PodcastController] checkNewEpisodes no feed url for item ${libraryItem.id}`)
+      return res.status(500).send('Podcast has no rss feed url')
+    }
+
+    var newEpisodes = await this.podcastManager.checkPodcastForNewEpisodes(libraryItem)
+    res.json({
+      episodes: newEpisodes || []
     })
   }
 }

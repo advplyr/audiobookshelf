@@ -1,6 +1,12 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
+      <div class="flex items-center mb-4">
+        <p v-if="autoDownloadEpisodes">Last new episode check {{ $formatDate(lastEpisodeCheck) }}</p>
+        <div class="flex-grow" />
+        <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check for new episodes</ui-btn>
+      </div>
+
       <div class="w-full p-4 bg-primary">
         <p>Podcast Episodes</p>
       </div>
@@ -40,16 +46,48 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      checkingNewEpisodes: false
+    }
   },
   computed: {
+    autoDownloadEpisodes() {
+      return !!this.media.autoDownloadEpisodes
+    },
+    lastEpisodeCheck() {
+      return this.media.lastEpisodeCheck
+    },
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    libraryItemId() {
+      return this.libraryItem ? this.libraryItem.id : null
     },
     episodes() {
       return this.media.episodes || []
     }
   },
-  methods: {}
+  methods: {
+    checkForNewEpisodes() {
+      this.checkingNewEpisodes = true
+      this.$axios
+        .$get(`/api/podcasts/${this.libraryItemId}/checknew`)
+        .then((response) => {
+          if (response.episodes && response.episodes.length) {
+            console.log('New episodes', response.episodes.length)
+            this.$toast.success(`${response.episodes.length} new episodes found!`)
+          } else {
+            this.$toast.info('No new episodes found')
+          }
+          this.checkingNewEpisodes = false
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          var errorMsg = error.response && error.response.data ? error.response.data : 'Unknown Error'
+          this.$toast.error(errorMsg)
+          this.checkingNewEpisodes = false
+        })
+    }
+  }
 }
 </script>

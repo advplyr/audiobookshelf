@@ -15,6 +15,7 @@ class Podcast {
     this.episodes = []
 
     this.autoDownloadEpisodes = false
+    this.lastEpisodeCheck = 0
 
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
@@ -30,6 +31,7 @@ class Podcast {
     this.tags = [...podcast.tags]
     this.episodes = podcast.episodes.map((e) => new PodcastEpisode(e))
     this.autoDownloadEpisodes = !!podcast.autoDownloadEpisodes
+    this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
   }
 
   toJSON() {
@@ -38,7 +40,8 @@ class Podcast {
       coverPath: this.coverPath,
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
-      autoDownloadEpisodes: this.autoDownloadEpisodes
+      autoDownloadEpisodes: this.autoDownloadEpisodes,
+      lastEpisodeCheck: this.lastEpisodeCheck
     }
   }
 
@@ -49,6 +52,7 @@ class Podcast {
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
+      lastEpisodeCheck: this.lastEpisodeCheck,
       size: this.size
     }
   }
@@ -60,6 +64,7 @@ class Podcast {
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSONExpanded()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
+      lastEpisodeCheck: this.lastEpisodeCheck,
       size: this.size
     }
   }
@@ -135,6 +140,7 @@ class Podcast {
 
     this.coverPath = mediaMetadata.coverPath || null
     this.autoDownloadEpisodes = !!mediaMetadata.autoDownloadEpisodes
+    this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
@@ -148,6 +154,9 @@ class Podcast {
 
   checkHasEpisode(episodeId) {
     return this.episodes.some(ep => ep.id === episodeId)
+  }
+  checkHasEpisodeByFeedUrl(url) {
+    return this.episodes.some(ep => ep.checkEqualsEnclosureUrl(url))
   }
 
   // Only checks container format
