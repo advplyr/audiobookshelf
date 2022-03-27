@@ -217,10 +217,34 @@ export default {
         this.libraryItemUpdated(li)
       })
     },
+    authorUpdated(author) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'authors') {
+          shelf.entities = shelf.entities.map((ent) => {
+            if (ent.id === author.id) {
+              return {
+                ...ent,
+                ...author
+              }
+            }
+            return ent
+          })
+        }
+      })
+    },
+    authorRemoved(author) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'authors') {
+          shelf.entities = shelf.entities.filter((ent) => ent.id != author.id)
+        }
+      })
+    },
     initListeners() {
       this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
 
       if (this.$root.socket) {
+        this.$root.socket.on('author_updated', this.authorUpdated)
+        this.$root.socket.on('author_removed', this.authorRemoved)
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
         this.$root.socket.on('item_added', this.libraryItemAdded)
         this.$root.socket.on('item_removed', this.libraryItemRemoved)
@@ -234,6 +258,8 @@ export default {
       this.$store.commit('user/removeSettingsListener', 'bookshelf')
 
       if (this.$root.socket) {
+        this.$root.socket.off('author_updated', this.authorUpdated)
+        this.$root.socket.off('author_removed', this.authorRemoved)
         this.$root.socket.off('item_updated', this.libraryItemUpdated)
         this.$root.socket.off('item_added', this.libraryItemAdded)
         this.$root.socket.off('item_removed', this.libraryItemRemoved)

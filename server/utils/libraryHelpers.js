@@ -98,22 +98,21 @@ module.exports = {
   getSeriesFromBooks(books, minified = false) {
     var _series = {}
     books.forEach((libraryItem) => {
-      if (libraryItem.media.metadata.series && libraryItem.media.metadata.series.length) {
-        libraryItem.media.metadata.series.forEach((series) => {
-          var abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
-          abJson.sequence = series.sequence
-          if (!_series[series.id]) {
-            _series[series.id] = {
-              id: series.id,
-              name: series.name,
-              type: 'series',
-              books: [abJson]
-            }
-          } else {
-            _series[series.id].books.push(abJson)
+      var bookSeries = libraryItem.media.metadata.series || []
+      bookSeries.forEach((series) => {
+        var abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
+        abJson.sequence = series.sequence
+        if (!_series[series.id]) {
+          _series[series.id] = {
+            id: series.id,
+            name: series.name,
+            type: 'series',
+            books: [abJson]
           }
-        })
-      }
+        } else {
+          _series[series.id].books.push(abJson)
+        }
+      })
     })
     return Object.values(_series).map((series) => {
       series.books = naturalSort(series.books).asc(li => li.sequence)

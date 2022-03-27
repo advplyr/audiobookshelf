@@ -125,6 +125,11 @@ class BookMetadata {
   hasNarrator(narratorName) {
     return this.narrators.includes(narratorName)
   }
+  getSeriesSequence(seriesId) {
+    var series = this.series.find(se => se.id == seriesId)
+    if (!series) return null
+    return series.sequence || ''
+  }
 
   update(payload) {
     var json = this.toJSON()

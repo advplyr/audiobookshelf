@@ -224,24 +224,6 @@ class LibraryController {
     res.json(payload)
   }
 
-  // GET: api/libraries/:id/series/:series
-  async getSeriesForLibrary(req, res) {
-    if (!req.params.series) {
-      return res.status(403).send('Invalid series')
-    }
-    var libraryItems = this.db.libraryItems.filter(li => {
-      return li.libraryId === req.library.id && li.book.series === req.params.series
-    })
-    if (!libraryItems.length) {
-      return res.status(404).send('Series not found')
-    }
-    var sortedBooks = libraryHelpers.sortSeriesBooks(libraryItems, false)
-    res.json({
-      results: sortedBooks,
-      total: libraryItems.length
-    })
-  }
-
   // api/libraries/:id/collections
   async getCollectionsForLibrary(req, res) {
     var libraryItems = req.libraryItems
@@ -282,7 +264,6 @@ class LibraryController {
     var minified = req.query.minified === '1'
 
     var itemsWithUserProgress = libraryHelpers.getItemsWithUserProgress(req.user, libraryItems)
-
     var categories = [
       {
         id: 'continue-listening',
@@ -305,6 +286,56 @@ class LibraryController {
     ].filter(cats => { // Remove categories with no items
       return cats.entities.length
     })
+
+
+    // New Series section
+    //  TODO: optimize and move to libraryHelpers
+    if (!isPodcastLibrary) {
+      var series = this.db.series.map(se => {
+        var books = libraryItems.filter(li => li.media.metadata.hasSeries(se.id))
+        if (!books.length) return null
+        books = books.map(b => {
+          var json = b.toJSONMinified()
+          json.sequence = b.media.metadata.getSeriesSequence(se.id)
+          return json
+        })
+        books = naturalSort(books).asc(b => b.sequence)
+        return {
+          id: se.id,
+          name: se.name,
+          type: 'series',
+          addedAt: se.addedAt,
+          books
+        }
+      }).filter(se => se).sort((a, b) => a.addedAt - b.addedAt).slice(0, 5)
+
+      if (series.length) {
+        categories.push({
+          id: 'recent-series',
+          label: 'Recent Series',
+          type: 'series',
+          entities: series
+        })
+      }
+
+      var authors = this.db.authors.map(author => {
+        var books = libraryItems.filter(li => li.media.metadata.hasAuthor(author.id))
+        if (!books.length) return null
+        // books = books.map(b => b.toJSONMinified())
+        return {
+          ...author.toJSON(),
+          numBooks: books.length
+        }
+      }).filter(au => au).sort((a, b) => a.addedAt - b.addedAt).slice(0, 10)
+      if (authors.length) {
+        categories.push({
+          id: 'newest-authors',
+          label: 'Newest Authors',
+          type: 'authors',
+          entities: authors
+        })
+      }
+    }
 
     res.json(categories)
   }
