@@ -146,6 +146,7 @@ class Db {
     })
     var p3 = this.librariesDb.select(() => true).then((results) => {
       this.libraries = results.data.map(l => new Library(l))
+      this.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
       Logger.info(`[DB] ${this.libraries.length} Libraries Loaded`)
     })
     var p4 = this.settingsDb.select(() => true).then((results) => {

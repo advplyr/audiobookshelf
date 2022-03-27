@@ -48,22 +48,8 @@ export default {
     }
   },
   methods: {
-    setUser(user) {
-      // If user is not able to access main library, then set current library
-      // var userLibrariesAccessible = this.$store.getters['user/getLibrariesAccessible']
-      var userCanAccessAll = user.permissions ? !!user.permissions.accessAllLibraries : false
-      if (!userCanAccessAll) {
-        var accessibleLibraries = user.librariesAccessible || []
-        console.log('Setting user without all library access', accessibleLibraries)
-        if (accessibleLibraries.length && !accessibleLibraries.includes('main')) {
-          console.log('Setting current library', accessibleLibraries[0])
-          this.$store.commit('libraries/setCurrentLibrary', accessibleLibraries[0])
-        }
-      }
-      // if (userLibrariesAccessible.length && !userLibrariesAccessible.includes('main')) {
-      //   this.$store.commit('libraries/setCurrentLibrary', userLibrariesAccessible[0])
-      // }
-
+    setUser(user, defaultLibraryId) {
+      this.$store.commit('libraries/setCurrentLibrary', defaultLibraryId)
       this.$store.commit('user/setUser', user)
     },
     async submitForm() {
@@ -83,7 +69,7 @@ export default {
       if (authRes && authRes.error) {
         this.error = authRes.error
       } else if (authRes) {
-        this.setUser(authRes.user)
+        this.setUser(authRes.user, authRes.userDefaultLibraryId)
       }
       this.processing = false
     },
@@ -101,7 +87,7 @@ export default {
               }
             })
             .then((res) => {
-              this.setUser(res.user)
+              this.setUser(res.user, res.userDefaultLibraryId)
               this.processing = false
             })
             .catch((error) => {

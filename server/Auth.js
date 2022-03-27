@@ -120,7 +120,7 @@ class Auth {
       if (password) {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
-        return res.json({ user: user.toJSONForBrowser() })
+        return res.json({ user: user.toJSONForBrowser(), userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries) })
       }
     }
 
@@ -128,7 +128,8 @@ class Auth {
     var compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       res.json({
-        user: user.toJSONForBrowser()
+        user: user.toJSONForBrowser(),
+        userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries)
       })
     } else {
       Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)

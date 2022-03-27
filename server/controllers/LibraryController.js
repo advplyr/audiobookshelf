@@ -381,9 +381,10 @@ class LibraryController {
     }
 
     if (hasUpdates) {
-      Logger.info(`[LibraryController] Updated library display orders`)
+      this.db.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
+      Logger.debug(`[LibraryController] Updated library display orders`)
     } else {
-      Logger.info(`[LibraryController] Library orders were up to date`)
+      Logger.debug(`[LibraryController] Library orders were up to date`)
     }
 
     var libraries = this.db.libraries.map(lib => lib.toJSON())

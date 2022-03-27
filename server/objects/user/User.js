@@ -223,6 +223,13 @@ class User {
     return hasUpdates
   }
 
+  getDefaultLibraryId(libraries) {
+    // Libraries should already be in ascending display order, find first accessible
+    var firstAccessibleLibrary = libraries.find(lib => this.checkCanAccessLibrary(lib.id))
+    if (!firstAccessibleLibrary) return null
+    return firstAccessibleLibrary.id
+  }
+
   getMostRecentItemProgress(libraryItems) {
     if (!this.mediaProgress.length) return null
     var lip = this.mediaProgress.map(lip => lip.toJSON())

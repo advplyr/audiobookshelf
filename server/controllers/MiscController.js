@@ -168,7 +168,7 @@ class MiscController {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    res.json({ user: req.user })
+    res.json({ user: req.user, userDefaultLibraryId: req.user.getDefaultLibraryId(this.db.libraries) })
   }
 
   getAllTags(req, res) {
