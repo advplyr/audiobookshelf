@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
-      <div class="flex items-center mb-4">
+      <!-- <div class="flex items-center mb-4">
         <p v-if="autoDownloadEpisodes">Last new episode check {{ $formatDate(lastEpisodeCheck) }}</p>
         <div class="flex-grow" />
         <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check for new episodes</ui-btn>
-      </div>
+      </div> -->
 
       <div class="w-full p-4 bg-primary">
         <p>Podcast Episodes</p>

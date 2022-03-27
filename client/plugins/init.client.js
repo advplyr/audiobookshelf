@@ -25,7 +25,7 @@ Vue.prototype.$addDaysToToday = (daysToAdd) => {
 }
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
-  if (isNaN(bytes) || !bytes === 0) {
+  if (isNaN(bytes) || bytes == 0) {
     return '0 Bytes'
   }
   const k = 1024

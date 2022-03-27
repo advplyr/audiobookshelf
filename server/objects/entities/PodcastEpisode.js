@@ -115,6 +115,20 @@ class PodcastEpisode {
     this.updatedAt = Date.now()
   }
 
+  update(payload) {
+    var hasUpdates = false
+    for (const key in this.toJSON()) {
+      if (payload[key] != undefined && payload[key] != this[key]) {
+        this[key] = payload[key]
+        hasUpdates = true
+      }
+    }
+    if (hasUpdates) {
+      this.updatedAt = Date.now()
+    }
+    return hasUpdates
+  }
+
   // Only checks container format
   checkCanDirectPlay(payload) {
     var supportedMimeTypes = payload.supportedMimeTypes || []

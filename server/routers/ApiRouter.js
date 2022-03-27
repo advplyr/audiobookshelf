@@ -177,6 +177,8 @@ class ApiRouter {
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.checkNewEpisodes.bind(this))
+    this.router.post('/podcasts/:id/download-episodes', PodcastController.downloadEpisodes.bind(this))
+    this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.updateEpisode.bind(this))
 
     //
     // Misc Routes

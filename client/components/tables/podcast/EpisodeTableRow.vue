@@ -113,7 +113,9 @@ export default {
     mouseleave() {
       this.isHovering = false
     },
-    clickEdit() {},
+    clickEdit() {
+      this.$emit('edit', this.episode)
+    },
     playClick() {
       if (this.streamIsPlaying) {
         this.$eventBus.$emit('pause-item')

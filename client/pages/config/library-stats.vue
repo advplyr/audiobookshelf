@@ -2,7 +2,7 @@
   <div>
     <p class="text-xl">Stats for library {{ currentLibraryName }}</p>
 
-    <stats-preview-icons :library-stats="libraryStats" />
+    <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
 
     <div class="flex md:flex-row flex-wrap justify-between flex-col mt-12">
       <div class="w-80 my-6 mx-auto">

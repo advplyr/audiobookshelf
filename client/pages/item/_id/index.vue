@@ -107,6 +107,7 @@
             </div>
           </div>
 
+          <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
@@ -137,6 +138,10 @@
             <ui-tooltip v-if="!isPodcast" text="Collections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
+
+            <ui-tooltip v-if="isPodcast" text="Find Episodes" direction="top">
+              <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
+            </ui-tooltip>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -151,6 +156,8 @@
         </div>
       </div>
     </div>
+
+    <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
   </div>
 </template>
 
@@ -175,7 +182,10 @@ export default {
   data() {
     return {
       resettingProgress: false,
-      isProcessingReadUpdate: false
+      isProcessingReadUpdate: false,
+      fetchingRSSFeed: false,
+      showPodcastEpisodeFeed: false,
+      podcastFeedEpisodes: []
     }
   },
   computed: {
@@ -330,6 +340,28 @@ export default {
     }
   },
   methods: {
+    async findEpisodesClick() {
+      if (!this.mediaMetadata.feedUrl) {
+        return this.$toast.error('Podcast does not have an RSS Feed')
+      }
+      this.fetchingRSSFeed = true
+      var podcastfeed = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: this.mediaMetadata.feedUrl }).catch((error) => {
+        console.error('Failed to get feed', error)
+        this.$toast.error('Failed to get podcast feed')
+        return null
+      })
+      this.fetchingRSSFeed = false
+      if (!podcastfeed) return
+
+      console.log('Podcast feed', podcastfeed)
+      if (!podcastfeed.episodes || !podcastfeed.episodes.length) {
+        this.$toast.info('No episodes found in RSS feed')
+        return
+      }
+
+      this.podcastFeedEpisodes = podcastfeed.episodes
+      this.showPodcastEpisodeFeed = true
+    },
     showEditCover() {
       this.$store.commit('setBookshelfBookIds', [])
       this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'cover' })

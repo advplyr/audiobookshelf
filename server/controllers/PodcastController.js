@@ -126,5 +126,46 @@ class PodcastController {
       episodes: newEpisodes || []
     })
   }
+
+  async downloadEpisodes(req, res) {
+    var libraryItem = this.db.getLibraryItem(req.params.id)
+    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
+      return res.sendStatus(404)
+    }
+    if (!req.user.canUpload || !req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
+      return res.sendStatus(404)
+    }
+
+    var episodes = req.body
+    if (!episodes || !episodes.length) {
+      return res.sendStatus(400)
+    }
+
+    this.podcastManager.downloadPodcastEpisodes(libraryItem, episodes)
+    res.sendStatus(200)
+  }
+
+  async updateEpisode(req, res) {
+    var libraryItem = this.db.getLibraryItem(req.params.id)
+    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
+      return res.sendStatus(404)
+    }
+    if (!req.user.canUpload || !req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
+      return res.sendStatus(404)
+    }
+
+    var episodeId = req.params.episodeId
+    if (!libraryItem.media.checkHasEpisode(episodeId)) {
+      return res.status(500).send('Episode not found')
+    }
+
+    var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)
+    if (wasUpdated) {
+      await this.db.insertLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
+    }
+
+    res.json(libraryItem.toJSONExpanded())
+  }
 }
 module.exports = new PodcastController()

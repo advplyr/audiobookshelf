@@ -1,16 +1,16 @@
 <template>
   <div class="w-full py-6">
     <p class="text-lg mb-0 font-semibold">Episodes</p>
-    <p v-if="!episodes.length" class="py-4 text-center text-lg">
-      No Episodes
-    </p>
+    <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
     <draggable v-model="episodesCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'episode' : null">
         <template v-for="episode in episodesCopy">
-          <tables-podcast-episode-table-row :key="episode.id" :is-dragging="drag" :episode="episode" :library-item-id="libraryItem.id" class="item" :class="drag ? '' : 'episode'" />
+          <tables-podcast-episode-table-row :key="episode.id" :is-dragging="drag" :episode="episode" :library-item-id="libraryItem.id" class="item" :class="drag ? '' : 'episode'" @edit="editEpisode" />
         </template>
       </transition-group>
     </draggable>
+
+    <modals-podcast-edit-episode v-model="showEditEpisodeModal" :library-item="libraryItem" :episode="selectedEpisode" />
   </div>
 </template>
 
@@ -35,7 +35,9 @@ export default {
         group: 'description',
         ghostClass: 'ghost'
       },
-      episodesCopy: []
+      episodesCopy: [],
+      selectedEpisode: null,
+      showEditEpisodeModal: false
     }
   },
   watch: {
@@ -57,6 +59,10 @@ export default {
     }
   },
   methods: {
+    editEpisode(episode) {
+      this.selectedEpisode = episode
+      this.showEditEpisodeModal = true
+    },
     draggableUpdate() {
       var episodesUpdate = {
         episodes: this.episodesCopy.map((b) => b.id)

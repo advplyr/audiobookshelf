@@ -14,7 +14,7 @@
               <img :src="podcast.imageUrl" class="h-16 w-16 object-contain" />
             </div>
             <div class="p-1 w-full">
-              <ui-text-input-with-label v-model="podcast.title" label="Title" />
+              <ui-text-input-with-label v-model="podcast.title" label="Title" @input="titleUpdated" />
             </div>
             <div class="p-1 w-full">
               <ui-text-input-with-label v-model="podcast.author" label="Author" />
@@ -169,6 +169,9 @@ export default {
     }
   },
   methods: {
+    titleUpdated() {
+      this.folderUpdated()
+    },
     folderUpdated() {
       if (!this.selectedFolderPath || !this.podcast.title) {
         this.fullPath = ''
@@ -219,9 +222,10 @@ export default {
           this.$router.push(`/item/${libraryItem.id}`)
         })
         .catch((error) => {
+          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to create podcast'
           console.error('Failed to create podcast', error)
           this.processing = false
-          this.$toast.error('Failed to create podcast')
+          this.$toast.error(errorMsg)
         })
     },
     saveEpisode(episode) {
@@ -251,13 +255,11 @@ export default {
       }
     }
   },
-  mounted() {
-    console.log('Podcast feed data', this.podcastFeedData)
-  }
+  mounted() {}
 }
 </script>
 
-<style>
+<style scoped>
 #podcast-wrapper {
   min-height: 400px;
   max-height: 80vh;

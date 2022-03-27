@@ -115,6 +115,12 @@ class Podcast {
     return hasUpdates
   }
 
+  updateEpisode(id, payload) {
+    var episode = this.episodes.find(ep => ep.id == id)
+    if (!episode) return false
+    return episode.update(payload)
+  }
+
   updateCover(coverPath) {
     coverPath = coverPath.replace(/\\/g, '/')
     if (this.coverPath === coverPath) return false
