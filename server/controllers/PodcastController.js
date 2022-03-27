@@ -161,7 +161,7 @@ class PodcastController {
 
     var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)
     if (wasUpdated) {
-      await this.db.insertLibraryItem(libraryItem)
+      await this.db.updateLibraryItem(libraryItem)
       this.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
