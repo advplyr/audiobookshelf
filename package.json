@@ -41,7 +41,6 @@
     "image-type": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
     "libgen": "^2.1.0",
-    "njodb": "^0.4.29",
     "node-cron": "^3.0.0",
     "node-ffprobe": "^3.0.0",
     "node-stream-zip": "^1.15.0",

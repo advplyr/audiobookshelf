@@ -1,5 +1,6 @@
 const Path = require('path')
-const njodb = require("njodb")
+// const njodb = require("njodb")
+const njodb = require('./njodb')
 const fs = require('fs-extra')
 const jwt = require('jsonwebtoken')
 const Logger = require('./Logger')
@@ -322,6 +323,16 @@ class Db {
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
       if (process.env.NODE_ENV !== 'production') {
         Logger.debug(`[DB] Updated ${entityName}: ${results.updated} | Selected: ${results.selected}`)
+
+        if (!results.selected) {
+          entityDb.select(match => match.id == jsonEntity.id).then((results) => {
+            if (results.data.length) {
+              console.log('Said selected 0 but found it right here...', results.data[0].id)
+            } else {
+              console.log('Said selected 0 and no results for json entity id', jsonEntity.id)
+            }
+          })
+        }
       } else {
         Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
       }
