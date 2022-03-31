@@ -39,19 +39,31 @@
         </div>
         <div v-if="selectedMatch.title" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.title" />
-          <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" label="Title" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" label="Title" />
+            <p v-if="mediaMetadata.title" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.title || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.subtitle" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.subtitle" />
-          <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" label="Subtitle" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" label="Subtitle" />
+            <p v-if="mediaMetadata.subtitle" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.subtitle || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.author" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.author" />
-          <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" label="Author" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" label="Author" />
+            <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.authorName || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.narrator" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.narrator" />
-          <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" label="Narrator" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" label="Narrator" />
+            <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.narratorName || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.description" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.description" />
@@ -59,16 +71,25 @@
         </div>
         <div v-if="selectedMatch.publisher" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publisher" />
-          <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" label="Publisher" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" label="Publisher" />
+            <p v-if="mediaMetadata.publisher" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.publisher || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.publishedYear" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publishedYear" />
-          <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" label="Published Year" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" label="Published Year" />
+            <p v-if="mediaMetadata.publishedYear" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.publishedYear || '' }}</p>
+          </div>
         </div>
 
         <div v-if="selectedMatch.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" />
-          <ui-text-input-with-label v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" label="Series" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" label="Series" />
+            <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.seriesName || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.volumeNumber" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.volumeNumber" />
@@ -76,11 +97,17 @@
         </div>
         <div v-if="selectedMatch.isbn" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.isbn" />
-          <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" />
+            <p v-if="mediaMetadata.isbn" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.isbn || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.asin" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.asin" />
-          <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" />
+            <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white text-opacity-60">Current: {{ mediaMetadata.asin || '' }}</p>
+          </div>
         </div>
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">Update</ui-btn>
@@ -152,6 +179,12 @@ export default {
       if (this.provider == 'audible') return 'Search Title or ASIN'
       else if (this.provider == 'itunes') return 'Search Term'
       return 'Search Title'
+    },
+    media() {
+      return this.libraryItem ? this.libraryItem.media || {} : {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     }
   },
   methods: {
