@@ -1,6 +1,6 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const njodb = require("njodb")
+const njodb = require('../njodb')
 
 const { SupportedEbookTypes } = require('./globals')
 const { PlayMethod } = require('./constants')

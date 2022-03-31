@@ -44,6 +44,7 @@
     "node-cron": "^3.0.0",
     "node-ffprobe": "^3.0.0",
     "node-stream-zip": "^1.15.0",
+    "proper-lockfile": "^4.1.2",
     "read-chunk": "^3.1.0",
     "recursive-readdir-async": "^1.1.8",
     "socket.io": "^4.4.1",
