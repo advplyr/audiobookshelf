@@ -59,9 +59,31 @@ class BookMetadata {
     }
   }
 
+  toJSONMinified() {
+    return {
+      title: this.title,
+      titleIgnorePrefix: this.titleIgnorePrefix,
+      subtitle: this.subtitle,
+      authorName: this.authorName,
+      authorNameLF: this.authorNameLF,
+      narratorName: this.narratorName,
+      seriesName: this.seriesName,
+      genres: [...this.genres],
+      publishedYear: this.publishedYear,
+      publishedDate: this.publishedDate,
+      publisher: this.publisher,
+      description: this.description,
+      isbn: this.isbn,
+      asin: this.asin,
+      language: this.language,
+      explicit: this.explicit
+    }
+  }
+
   toJSONExpanded() {
     return {
       title: this.title,
+      titleIgnorePrefix: this.titleIgnorePrefix,
       subtitle: this.subtitle,
       authors: this.authors.map(a => ({ ...a })), // Author JSONMinimal with name and id
       narrators: [...this.narrators],
@@ -88,8 +110,12 @@ class BookMetadata {
 
   get titleIgnorePrefix() {
     if (!this.title) return ''
-    if (this.title.toLowerCase().startsWith('the ')) {
-      return this.title.substr(4) + ', The'
+    var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
+    for (const prefix of prefixesToIgnore) {
+      // e.g. for prefix "the". If title is "The Book Title" return "Book Title, The"
+      if (this.title.toLowerCase().startsWith(`${prefix} `)) {
+        return this.title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
+      }
     }
     return this.title
   }

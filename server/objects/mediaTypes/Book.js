@@ -55,7 +55,7 @@ class Book {
 
   toJSONMinified() {
     return {
-      metadata: this.metadata.toJSON(),
+      metadata: this.metadata.toJSONMinified(),
       coverPath: this.coverPath,
       tags: [...this.tags],
       numTracks: this.tracks.length,

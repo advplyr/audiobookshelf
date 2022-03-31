@@ -197,28 +197,19 @@ export default {
     playIconFontSize() {
       return Math.max(2, 3 * this.sizeMultiplier)
     },
-    authors() {
-      return this.mediaMetadata.authors || []
-    },
     author() {
       if (this.isPodcast) return this.mediaMetadata.author
-      return this.authors.map((au) => au.name).join(', ')
+      return this.mediaMetadata.authorName
     },
     authorLF() {
-      return this.authors
-        .map((au) => {
-          var parts = au.name.split(' ')
-          if (parts.length === 1) return parts[0]
-          return `${parts[1]}, ${parts[0]}`
-        })
-        .join(', ')
+      return this.mediaMetadata.authorNameLF
     },
     volumeNumber() {
       return this.mediaMetadata.volumeNumber || null
     },
     displayTitle() {
-      if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix && this.title.toLowerCase().startsWith('the ')) {
-        return this.title.substr(4) + ', The'
+      if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
+        return this.mediaMetadata.titleIgnorePrefix
       }
       return this.title
     },

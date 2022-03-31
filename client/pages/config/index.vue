@@ -47,9 +47,21 @@
         </ui-tooltip>
       </div>
 
+      <!-- <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
+        <p class="pl-4 text-lg">Ignore prefixes when sorting title and series</p>
+      </div> -->
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
-        <p class="pl-4 text-lg">Ignore prefix "The" when sorting title and series</p>
+        <ui-tooltip :text="tooltips.sortingIgnorePrefix">
+          <p class="pl-4 text-lg">
+            Ignore prefixes when sorting title and series
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+      <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
+        <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" label="Prefixes to Ignore (case insensitive)" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
       </div>
 
       <div class="flex items-center py-2">
@@ -203,6 +215,7 @@ export default {
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
+        sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
         bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
         storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers in the books folder. Only one file named "cover" will be kept',
@@ -215,7 +228,6 @@ export default {
   watch: {
     serverSettings(newVal, oldVal) {
       if (newVal && !oldVal) {
-        this.newServerSettings = { ...this.serverSettings }
         this.initServerSettings()
       }
     }
@@ -242,6 +254,16 @@ export default {
   methods: {
     updateEnableChromecast(val) {
       this.updateServerSettings({ enableChromecast: val })
+    },
+    updateSortingPrefixes(val) {
+      if (!val || !val.length) {
+        this.$toast.error('Must have at least 1 prefix')
+        return
+      }
+      var prefixes = val.map((prefix) => prefix.trim().toLowerCase())
+      this.updateServerSettings({
+        sortingPrefixes: prefixes
+      })
     },
     updateScannerCoverProvider(val) {
       this.updateServerSettings({
@@ -278,6 +300,7 @@ export default {
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
+      this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
 

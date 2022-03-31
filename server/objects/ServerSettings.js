@@ -43,6 +43,8 @@ class ServerSettings {
     this.podcastEpisodeSchedule = '0 * * * *' // Every hour
 
     this.sortingIgnorePrefix = false
+    this.sortingPrefixes = ['the', 'a']
+
     this.chromecastEnabled = false
     this.logLevel = Logger.logLevel
     this.version = null
@@ -82,6 +84,7 @@ class ServerSettings {
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
+    this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
@@ -114,6 +117,7 @@ class ServerSettings {
       coverAspectRatio: this.coverAspectRatio,
       bookshelfView: this.bookshelfView,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
+      sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
       logLevel: this.logLevel,
       version: this.version
@@ -123,7 +127,13 @@ class ServerSettings {
   update(payload) {
     var hasUpdates = false
     for (const key in payload) {
-      if (this[key] !== payload[key]) {
+      if (key === 'sortingPrefixes' && payload[key] && payload[key].length) {
+        var prefixesCleaned = payload[key].filter(prefix => !!prefix).map(prefix => prefix.toLowerCase())
+        if (prefixesCleaned.join(',') !== this[key].join(',')) {
+          this[key] = [...prefixesCleaned]
+          hasUpdates = true
+        }
+      } else if (this[key] !== payload[key]) {
         if (key === 'logLevel') {
           Logger.setLogLevel(payload[key])
         }

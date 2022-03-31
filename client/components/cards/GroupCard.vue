@@ -12,9 +12,6 @@
           <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none z-40">
             <p class="font-book text-xl">{{ bookItems.length }}</p>
           </div>
-          <div class="absolute bottom-0 left-0 w-full h-1 flex flex-nowrap z-40">
-            <div v-for="userProgress in userProgressItems" :key="userProgress.audiobookId" class="h-full w-full" :class="userProgress.isRead ? 'bg-success' : userProgress.progress > 0 ? 'bg-yellow-400' : ''" />
-          </div>
         </div>
       </nuxt-link>
     </div>
@@ -99,15 +96,6 @@ export default {
     },
     bookItems() {
       return this._group.books || []
-    },
-    userAudiobooks() {
-      return Object.values(this.$store.state.user.user ? this.$store.state.user.user.audiobooks || {} : {})
-    },
-    userProgressItems() {
-      return this.bookItems.map((item) => {
-        var userAudiobook = this.userAudiobooks.find((ab) => ab.audiobookId === item.id)
-        return userAudiobook || {}
-      })
     },
     groupName() {
       return this._group.name || 'No Name'
