@@ -19,6 +19,7 @@ class PlaybackSession {
     this.duration = null
 
     this.playMethod = null
+    this.mediaPlayer = null
 
     this.date = null
     this.dayOfWeek = null
@@ -52,6 +53,7 @@ class PlaybackSession {
       coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
+      mediaPlayer: this.mediaPlayer,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
@@ -74,6 +76,7 @@ class PlaybackSession {
       coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
+      mediaPlayer: this.mediaPlayer,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
@@ -94,6 +97,7 @@ class PlaybackSession {
     this.mediaType = session.mediaType
     this.duration = session.duration
     this.playMethod = session.playMethod
+    this.mediaPlayer = session.mediaPlayer || null
 
     this.mediaMetadata = null
     if (session.mediaMetadata) {
@@ -119,7 +123,7 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
-  setData(libraryItem, user, episodeId = null) {
+  setData(libraryItem, user, mediaPlayer, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id
     this.libraryItemId = libraryItem.id
@@ -130,6 +134,8 @@ class PlaybackSession {
     this.displayAuthor = libraryItem.media.getPlaybackAuthor(episodeId)
     this.coverPath = libraryItem.media.coverPath
     this.duration = libraryItem.media.duration
+
+    this.mediaPlayer = mediaPlayer
 
     this.timeListening = 0
     this.date = date.format(new Date(), 'YYYY-MM-DD')

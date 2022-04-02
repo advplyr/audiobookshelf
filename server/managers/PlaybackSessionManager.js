@@ -44,12 +44,13 @@ class PlaybackSessionManager {
 
   async startSession(user, libraryItem, episodeId, options) {
     var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
+    var mediaPlayer = options.mediaPlayer || 'unknown'
 
     const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
     var userStartTime = 0
     if (userProgress) userStartTime = userProgress.currentTime || 0
     const newPlaybackSession = new PlaybackSession()
-    newPlaybackSession.setData(libraryItem, user, episodeId)
+    newPlaybackSession.setData(libraryItem, user, mediaPlayer, episodeId)
 
     var audioTracks = []
     if (shouldDirectPlay) {
