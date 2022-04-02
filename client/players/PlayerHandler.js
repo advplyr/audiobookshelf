@@ -7,6 +7,8 @@ export default class PlayerHandler {
     this.ctx = ctx
     this.libraryItem = null
     this.episodeId = null
+    this.displayTitle = null
+    this.displayAuthor = null
     this.playWhenReady = false
     this.player = null
     this.playerState = 'IDLE'
@@ -160,6 +162,8 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.startTime = session.currentTime
     this.currentSessionId = session.id
+    this.displayTitle = session.displayTitle
+    this.displayAuthor = session.displayAuthor
 
     console.log('[PlayerHandler] Preparing Session', session)
     var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))

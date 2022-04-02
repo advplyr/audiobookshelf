@@ -13,6 +13,8 @@ class PlaybackSession {
 
     this.mediaType = null
     this.mediaMetadata = null
+    this.displayTitle = null
+    this.displayAuthor = null
     this.coverPath = null
     this.duration = null
 
@@ -45,6 +47,8 @@ class PlaybackSession {
       episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      displayTitle: this.displayTitle,
+      displayAuthor: this.displayAuthor,
       coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
@@ -65,6 +69,8 @@ class PlaybackSession {
       episodeId: this.episodeId,
       mediaType: this.mediaType,
       mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      displayTitle: this.displayTitle,
+      displayAuthor: this.displayAuthor,
       coverPath: this.coverPath,
       duration: this.duration,
       playMethod: this.playMethod,
@@ -84,8 +90,8 @@ class PlaybackSession {
     this.sessionType = session.sessionType
     this.userId = session.userId
     this.libraryItemId = session.libraryItemId
-    this.episodeId = session.episodeId,
-      this.mediaType = session.mediaType
+    this.episodeId = session.episodeId
+    this.mediaType = session.mediaType
     this.duration = session.duration
     this.playMethod = session.playMethod
 
@@ -97,6 +103,8 @@ class PlaybackSession {
         this.mediaMetadata = new PodcastMetadata(session.mediaMetadata)
       }
     }
+    this.displayTitle = session.displayTitle || ''
+    this.displayAuthor = session.displayAuthor || ''
     this.coverPath = session.coverPath
     this.date = session.date
     this.dayOfWeek = session.dayOfWeek
@@ -118,6 +126,8 @@ class PlaybackSession {
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
+    this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
+    this.displayAuthor = libraryItem.media.getPlaybackAuthor(episodeId)
     this.coverPath = libraryItem.media.coverPath
     this.duration = libraryItem.media.duration
 

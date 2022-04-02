@@ -67,7 +67,8 @@ export default {
       sleepTimerSet: false,
       sleepTimerTime: 0,
       sleepTimerRemaining: 0,
-      sleepTimer: null
+      sleepTimer: null,
+      displayTitle: null
     }
   },
   computed: {
@@ -117,9 +118,6 @@ export default {
     isPodcast() {
       return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
     },
-    episode() {
-      return this.playerHandler.episode
-    },
     mediaMetadata() {
       return this.media.metadata || {}
     },
@@ -127,7 +125,7 @@ export default {
       return this.media.chapters || []
     },
     title() {
-      if (this.episode) return this.episode.title
+      if (this.playerHandler.displayTitle) return this.playerHandler.displayTitle
       return this.mediaMetadata.title || 'No Title'
     },
     authors() {

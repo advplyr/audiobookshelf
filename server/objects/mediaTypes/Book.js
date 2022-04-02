@@ -408,5 +408,13 @@ class Book {
 
     return tracklist
   }
+
+  getPlaybackTitle() {
+    return this.metadata.title
+  }
+
+  getPlaybackAuthor() {
+    return this.metadata.authorName
+  }
 }
 module.exports = Book

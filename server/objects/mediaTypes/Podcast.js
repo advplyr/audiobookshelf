@@ -213,5 +213,15 @@ class Podcast {
   removeEpisode(episodeId) {
     this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
   }
+
+  getPlaybackTitle(episodeId) {
+    var episode = this.episodes.find(ep => ep.id == episodeId)
+    if (!episode) return this.metadata.title
+    return episode.title
+  }
+
+  getPlaybackAuthor() {
+    return this.metadata.author
+  }
 }
 module.exports = Podcast
