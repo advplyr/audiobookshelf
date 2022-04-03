@@ -5,7 +5,7 @@
         <span class="block truncate">{{ label }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <span class="material-icons text-gray-100">Account</span>
+        <span class="material-icons text-gray-100">User Account</span>
       </span>
     </button>
 
