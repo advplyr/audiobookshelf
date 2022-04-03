@@ -11,6 +11,7 @@ const EBookFile = require('../files/EBookFile')
 
 class Book {
   constructor(book) {
+    this.libraryItemId = null
     this.metadata = null
 
     this.coverPath = null
@@ -30,6 +31,7 @@ class Book {
   }
 
   construct(book) {
+    this.libraryItemId = book.libraryItemId
     this.metadata = new BookMetadata(book.metadata)
     this.coverPath = book.coverPath
     this.tags = [...book.tags]
@@ -43,6 +45,7 @@ class Book {
 
   toJSON() {
     return {
+      libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -70,6 +73,7 @@ class Book {
 
   toJSONExpanded() {
     return {
+      libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -106,8 +110,13 @@ class Book {
     return this.missingParts.length || this.audioFiles.some(af => af.invalid)
   }
   get tracks() {
-
-    return this.audioFiles.filter(af => !af.exclude && !af.invalid)
+    var startOffset = 0
+    return this.audioFiles.filter(af => !af.exclude && !af.invalid).map((af) => {
+      var audioTrack = new AudioTrack()
+      audioTrack.setData(this.libraryItemId, af, startOffset)
+      startOffset += audioTrack.duration
+      return audioTrack
+    })
   }
   get duration() {
     var total = 0
@@ -395,18 +404,8 @@ class Book {
     return !this.tracks.some((t) => !supportedMimeTypes.includes(t.mimeType))
   }
 
-  getDirectPlayTracklist(libraryItemId) {
-    var tracklist = []
-
-    var startOffset = 0
-    this.tracks.forEach((audioFile) => {
-      var audioTrack = new AudioTrack()
-      audioTrack.setData(libraryItemId, audioFile, startOffset)
-      startOffset += audioTrack.duration
-      tracklist.push(audioTrack)
-    })
-
-    return tracklist
+  getDirectPlayTracklist() {
+    return this.tracks
   }
 
   getPlaybackTitle() {

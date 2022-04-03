@@ -55,7 +55,7 @@ class PlaybackSessionManager {
     var audioTracks = []
     if (shouldDirectPlay) {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
-      audioTracks = libraryItem.getDirectPlayTracklist(libraryItem.id, episodeId)
+      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
       newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
     } else {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)

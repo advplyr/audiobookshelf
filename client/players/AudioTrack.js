@@ -6,6 +6,7 @@ export default class AudioTrack {
     this.title = track.title || ''
     this.contentUrl = track.contentUrl || null
     this.mimeType = track.mimeType
+    this.metadata = track.metadata || {}
 
     this.userToken = userToken
   }

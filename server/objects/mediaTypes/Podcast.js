@@ -9,6 +9,7 @@ const naturalSort = createNewSortInstance({
 
 class Podcast {
   constructor(podcast) {
+    this.libraryItemId = null
     this.metadata = null
     this.coverPath = null
     this.tags = []
@@ -26,6 +27,7 @@ class Podcast {
   }
 
   construct(podcast) {
+    this.libraryItemId = podcast.libraryItemId
     this.metadata = new PodcastMetadata(podcast.metadata)
     this.coverPath = podcast.coverPath
     this.tags = [...podcast.tags]
@@ -36,6 +38,7 @@ class Podcast {
 
   toJSON() {
     return {
+      libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -59,6 +62,7 @@ class Podcast {
 
   toJSONExpanded() {
     return {
+      libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -172,10 +176,10 @@ class Podcast {
     return episode.checkCanDirectPlay(payload)
   }
 
-  getDirectPlayTracklist(libraryItemId, episodeId) {
+  getDirectPlayTracklist(episodeId) {
     var episode = this.episodes.find(ep => ep.id === episodeId)
     if (!episode) return false
-    return episode.getDirectPlayTracklist(libraryItemId)
+    return episode.getDirectPlayTracklist(this.libraryItemId)
   }
 
   addPodcastEpisode(podcastEpisode) {

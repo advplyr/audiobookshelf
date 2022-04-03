@@ -1,5 +1,6 @@
 const Path = require('path')
 const { encodeUriPath } = require('../../utils/index')
+
 class AudioTrack {
   constructor() {
     this.index = null
@@ -8,6 +9,7 @@ class AudioTrack {
     this.title = null
     this.contentUrl = null
     this.mimeType = null
+    this.metadata = null
   }
 
   toJSON() {
@@ -17,7 +19,8 @@ class AudioTrack {
       duration: this.duration,
       title: this.title,
       contentUrl: this.contentUrl,
-      mimeType: this.mimeType
+      mimeType: this.mimeType,
+      metadata: this.metadata ? this.metadata.toJSON() : null
     }
   }
 
@@ -28,6 +31,7 @@ class AudioTrack {
     this.title = audioFile.metadata.filename || ''
     this.contentUrl = Path.join(`/s/item/${itemId}`, encodeUriPath(audioFile.metadata.relPath))
     this.mimeType = audioFile.mimeType
+    this.metadata = audioFile.metadata.clone()
   }
 
   setFromStream(title, duration, contentUrl) {

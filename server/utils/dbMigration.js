@@ -192,6 +192,7 @@ function makeLibraryItemFromOldAb(audiobook) {
     bookMetadata.series = makeSeriesFromOldAb(audiobook.book)
   }
 
+  bookEntity.libraryItemId = libraryItem.id
   bookEntity.metadata = bookMetadata
   bookEntity.coverPath = cleanOldCoverPath(audiobook.book.coverFullPath)
   bookEntity.tags = [...audiobook.tags]

@@ -59,8 +59,10 @@ class LibraryItem {
     this.mediaType = libraryItem.mediaType
     if (this.mediaType === 'book') {
       this.media = new Book(libraryItem.media)
+      this.media.libraryItemId = this.id
     } else if (this.mediaType === 'podcast') {
       this.media = new Podcast(libraryItem.media)
+      this.media.libraryItemId = this.id
     }
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
@@ -163,9 +165,11 @@ class LibraryItem {
     if (libraryMediaType === 'podcast') {
       this.mediaType = 'podcast'
       this.media = new Podcast()
+      this.media.libraryItemId = this.id
     } else {
       this.mediaType = 'book'
       this.media = new Book()
+      this.media.libraryItemId = this.id
     }
 
 
@@ -440,8 +444,8 @@ class LibraryItem {
     return this.media.searchQuery(query)
   }
 
-  getDirectPlayTracklist(libraryItemId, episodeId) {
-    return this.media.getDirectPlayTracklist(libraryItemId, episodeId)
+  getDirectPlayTracklist(episodeId) {
+    return this.media.getDirectPlayTracklist(episodeId)
   }
 }
 module.exports = LibraryItem
