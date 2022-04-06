@@ -31,7 +31,11 @@ class Podcast {
     this.metadata = new PodcastMetadata(podcast.metadata)
     this.coverPath = podcast.coverPath
     this.tags = [...podcast.tags]
-    this.episodes = podcast.episodes.map((e) => new PodcastEpisode(e))
+    this.episodes = podcast.episodes.map((e) => {
+      var podcastEpisode = new PodcastEpisode(e)
+      podcastEpisode.libraryItemId = this.libraryItemId
+      return podcastEpisode
+    })
     this.autoDownloadEpisodes = !!podcast.autoDownloadEpisodes
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
   }
@@ -179,7 +183,7 @@ class Podcast {
   getDirectPlayTracklist(episodeId) {
     var episode = this.episodes.find(ep => ep.id === episodeId)
     if (!episode) return false
-    return episode.getDirectPlayTracklist(this.libraryItemId)
+    return episode.getDirectPlayTracklist()
   }
 
   addPodcastEpisode(podcastEpisode) {
@@ -188,6 +192,7 @@ class Podcast {
 
   addNewEpisodeFromAudioFile(audioFile, index) {
     var pe = new PodcastEpisode()
+    pe.libraryItemId = this.libraryItemId
     pe.setDataFromAudioFile(audioFile, index)
     this.episodes.push(pe)
   }

@@ -4,6 +4,7 @@ const AudioTrack = require('../files/AudioTrack')
 
 class PodcastEpisode {
   constructor(episode) {
+    this.libraryItemId = null
     this.id = null
     this.index = null
 
@@ -26,6 +27,7 @@ class PodcastEpisode {
   }
 
   construct(episode) {
+    this.libraryItemId = episode.libraryItemId
     this.id = episode.id
     this.index = episode.index
     this.episode = episode.episode
@@ -43,6 +45,7 @@ class PodcastEpisode {
 
   toJSON() {
     return {
+      libraryItemId: this.libraryItemId,
       id: this.id,
       index: this.index,
       episode: this.episode,
@@ -61,6 +64,7 @@ class PodcastEpisode {
 
   toJSONExpanded() {
     return {
+      libraryItemId: this.libraryItemId,
       id: this.id,
       index: this.index,
       episode: this.episode,
@@ -71,6 +75,7 @@ class PodcastEpisode {
       enclosure: this.enclosure ? { ...this.enclosure } : null,
       pubDate: this.pubDate,
       audioFile: this.audioFile.toJSON(),
+      audioTrack: this.audioTrack.toJSON(),
       publishedAt: this.publishedAt,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,
@@ -79,8 +84,13 @@ class PodcastEpisode {
     }
   }
 
+  get audioTrack() {
+    var audioTrack = new AudioTrack()
+    audioTrack.setData(this.libraryItemId, this.audioFile, 0)
+    return audioTrack
+  }
   get tracks() {
-    return [this.audioFile]
+    return [this.audioTrack]
   }
   get duration() {
     return this.audioFile.duration
@@ -135,10 +145,8 @@ class PodcastEpisode {
     return supportedMimeTypes.includes(this.audioFile.mimeType)
   }
 
-  getDirectPlayTracklist(libraryItemId) {
-    var audioTrack = new AudioTrack()
-    audioTrack.setData(libraryItemId, this.audioFile, 0)
-    return [audioTrack]
+  getDirectPlayTracklist() {
+    return this.tracks
   }
 
   checkEqualsEnclosureUrl(url) {

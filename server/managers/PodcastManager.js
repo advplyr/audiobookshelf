@@ -40,6 +40,7 @@ class PodcastManager {
     episodesToDownload.forEach((ep) => {
       var newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
+      newPe.libraryItemId = libraryItem.id
       var newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem)
       this.startPodcastEpisodeDownload(newPeDl)
