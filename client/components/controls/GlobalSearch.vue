@@ -31,7 +31,7 @@
           <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Authors</p>
           <template v-for="item in authorResults">
             <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${item.id}`">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.id)}`">
                 <cards-author-search-card :author="item" />
               </nuxt-link>
             </li>

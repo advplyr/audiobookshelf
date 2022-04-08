@@ -32,8 +32,8 @@
               </div>
 
               <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
-              <p v-else-if="authorsList.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
-                by <nuxt-link v-for="(author, index) in authorsList" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author)}`" class="hover:underline">{{ author }}<span v-if="index < authorsList.length - 1">,&nbsp;</span></nuxt-link>
+              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
+                by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
@@ -260,9 +260,6 @@ export default {
     },
     authors() {
       return this.mediaMetadata.authors || []
-    },
-    authorsList() {
-      return this.authors.map((au) => au.name)
     },
     narrators() {
       return this.mediaMetadata.narrators || []
