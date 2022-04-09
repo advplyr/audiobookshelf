@@ -23,8 +23,6 @@ class MeController {
       return res.sendStatus(200)
     }
     await this.db.updateEntity('user', req.user)
-    // this.clientEmitter(req.user.id, 'user_item_progress_updated', { id: libraryItem.id, data: null })
-
     this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }

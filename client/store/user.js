@@ -26,7 +26,7 @@ export const getters = {
     if (!state.user.mediaProgress) return null
     return state.user.mediaProgress.find(li => {
       if (episodeId && li.episodeId !== episodeId) return false
-      return li.id == libraryItemId
+      return li.libraryItemId == libraryItemId
     })
   },
   getUserBookmarksForItem: (state) => (libraryItemId) => {

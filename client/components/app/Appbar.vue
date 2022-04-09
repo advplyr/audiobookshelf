@@ -121,7 +121,7 @@ export default {
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
       return !this.selectedLibraryItems.find((libraryItemId) => {
-        var itemProgress = this.userMediaProgress.find((lip) => lip.id === libraryItemId)
+        var itemProgress = this.userMediaProgress.find((lip) => lip.libraryItemId === libraryItemId)
         return !itemProgress || !itemProgress.isFinished
       })
     },
