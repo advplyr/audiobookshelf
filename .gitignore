@@ -12,3 +12,4 @@ test/
 /dist/
 
 sw.*
+.DS_STORE
