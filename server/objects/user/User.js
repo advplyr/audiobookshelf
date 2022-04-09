@@ -247,14 +247,14 @@ class User {
     if (!this.mediaProgress) return null
     return this.mediaProgress.find(lip => {
       if (episodeId && lip.episodeId !== episodeId) return false
-      return lip.id === libraryItemId
+      return lip.libraryItemId === libraryItemId
     })
   }
 
   createUpdateMediaProgress(libraryItem, updatePayload, episodeId = null) {
     var itemProgress = this.mediaProgress.find(li => {
       if (episodeId && li.episodeId !== episodeId) return false
-      return li.id === libraryItem.id
+      return li.libraryItemId === libraryItem.id
     })
     if (!itemProgress) {
       var newItemProgress = new MediaProgress()
@@ -269,7 +269,7 @@ class User {
 
   removeMediaProgress(libraryItemId) {
     if (!this.mediaProgress.some(lip => lip.id == libraryItemId)) return false
-    this.mediaProgress = this.mediaProgress.filter(lip => lip.id != libraryItemId)
+    this.mediaProgress = this.mediaProgress.filter(lip => lip.libraryItemId != libraryItemId)
     return true
   }
 

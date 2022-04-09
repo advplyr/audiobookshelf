@@ -53,7 +53,7 @@ class MediaProgress {
   }
 
   setData(libraryItemId, progress, episodeId = null) {
-    this.id = libraryItemId
+    this.id = episodeId ? `${libraryItemId}-${episodeId}` : libraryItemId
     this.libraryItemId = libraryItemId
     this.episodeId = episodeId
     this.duration = progress.duration || 0
