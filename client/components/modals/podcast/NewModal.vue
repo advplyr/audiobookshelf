@@ -39,6 +39,14 @@
         <div class="w-full md:w-1/2 p-4">
           <p class="text-lg font-semibold mb-2">Episodes</p>
           <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
+            <div class="relative">
+              <div class="absolute top-0 left-0 h-full flex items-center p-2">
+                <ui-checkbox small checkbox-bg="primary" border-color="gray-600" v-on:input="selectedEpisodes = episodes.map(_ => !allSelected)" v-bind:value="allSelected" />
+              </div>
+              <div class="px-8 py-2">
+                <p class="font-semibold text-gray-200">Select all episodes</p>
+              </div>
+            </div>
             <div v-for="(episode, index) in episodes" :key="index" class="relative cursor-pointer" :class="selectedEpisodes[String(index)] ? 'bg-success bg-opacity-10' : index % 2 == 0 ? 'bg-primary bg-opacity-25 hover:bg-opacity-40' : 'bg-primary bg-opacity-5 hover:bg-opacity-25'" @click="toggleSelectEpisode(index)">
               <div class="absolute top-0 left-0 h-full flex items-center p-2">
                 <ui-checkbox v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
@@ -148,6 +156,9 @@ export default {
     episodes() {
       if (!this.podcastFeedData) return []
       return this.podcastFeedData.episodes || []
+    },
+    allSelected() {
+      return Object.values(this.selectedEpisodes).filter(episode => !episode).length === 0
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])

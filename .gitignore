@@ -4,6 +4,7 @@ node_modules/
 /config/
 /audiobooks/
 /audiobooks2/
+/podcasts/
 /media/
 /metadata/
 test/
@@ -12,3 +13,4 @@ test/
 /dist/
 
 sw.*
+.DS_STORE

@@ -150,8 +150,8 @@ class Server {
 
     app.use(this.auth.cors)
     app.use(fileUpload())
-    app.use(express.urlencoded({ extended: true }));
-    app.use(express.json())
+    app.use(express.urlencoded({ extended: true, limit: "3mb" }));
+    app.use(express.json({ limit: "3mb" }))
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
