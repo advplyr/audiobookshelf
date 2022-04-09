@@ -29,6 +29,14 @@
         </div>
       </div>
       <div class="flex justify-end pt-4">
+        <div class="relative">
+          <div class="absolute top-0 left-0 h-full flex items-center p-2">
+            <ui-checkbox small checkbox-bg="primary" border-color="gray-600" v-on:input="selectedEpisodes = episodes.map(episode => episode.enclosure && itemEpisodeMap[episode.enclosure.url] ? false : !allSelected)" v-bind:value="allSelected" v-bind:disabled="allDownloaded" />
+          </div>
+          <div class="px-8 py-2">
+            <p :class="!allDownloaded ? 'font-semibold text-gray-200' : 'text-gray-400'">Select all episodes</p>
+          </div>
+        </div>
         <ui-btn :disabled="!episodesSelected.length" @click="submit">{{ buttonText }}</ui-btn>
       </div>
     </div>
@@ -66,6 +74,20 @@ export default {
     title() {
       if (!this.libraryItem) return ''
       return this.libraryItem.media.metadata.title || 'Unknown'
+    },
+    allSelected() {
+      try {
+        const values = Object.values(this.selectedEpisodes).filter((_, index) => !(this.episodes[index].enclosure && this.itemEpisodeMap[this.episodes[index].enclosure.url]))
+
+        if(!values.length) return false
+        return values.filter(episode => !episode).length === 0
+      } catch(error) {
+        console.error("Error while filtering selected episodes", error);
+        return false
+      }
+    },
+    allDownloaded() {
+      return Object.values(this.episodes).filter(episode => !(episode.enclosure && this.itemEpisodeMap[episode.enclosure.url])).length === 0
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
