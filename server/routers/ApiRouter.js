@@ -135,6 +135,7 @@ class ApiRouter {
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
+    this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
 
     //
     // Backup Routes
@@ -169,6 +170,7 @@ class ApiRouter {
     //
     this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
     this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
+    this.router.post('/session/local', SessionController.syncLocal.bind(this))
 
     //
     // Podcast Routes
@@ -192,9 +194,6 @@ class ApiRouter {
     this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
-
-    // OLD
-    // this.router.post('/syncUserAudiobookData', this.syncUserAudiobookData.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {
@@ -224,38 +223,6 @@ class ApiRouter {
       Logger.error('Failed to readdir', dir, error)
       return []
     }
-  }
-
-  async syncUserAudiobookData(req, res) {
-    // if (!req.body.data) {
-    //   return res.status(403).send('Invalid local user audiobook data')
-    // }
-
-    // var hasUpdates = false
-
-    // // Local user audiobook data use the latest update
-    // req.body.data.forEach((uab) => {
-    //   if (!uab || !uab.audiobookId) {
-    //     Logger.error('[ApiController] Invalid user audiobook data', uab)
-    //     return
-    //   }
-    //   var audiobook = this.db.audiobooks.find(ab => ab.id === uab.audiobookId)
-    //   if (!audiobook) {
-    //     Logger.info('[ApiController] syncUserAudiobookData local audiobook data audiobook no longer exists', uab.audiobookId)
-    //     return
-    //   }
-    //   if (req.user.syncLocalUserAudiobookData(uab, audiobook)) {
-    //     this.clientEmitter(req.user.id, 'current_user_audiobook_update', { id: uab.audiobookId, data: uab })
-    //     hasUpdates = true
-    //   }
-    // })
-
-    // if (hasUpdates) {
-    //   await this.db.updateEntity('user', req.user)
-    // }
-
-    // var allUserAudiobookData = Object.values(req.user.audiobooksToJSON())
-    // res.json(allUserAudiobookData)
   }
 
   //

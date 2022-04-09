@@ -13,6 +13,7 @@ const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/ServerSettings')
+const PlaybackSession = require('./objects/PlaybackSession')
 
 class Db {
   constructor() {
@@ -187,6 +188,17 @@ class Db {
 
   getLibraryItem(id) {
     return this.libraryItems.find(li => li.id === id)
+  }
+  getPlaybackSession(id) {
+    return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
+      if (results.data.length) {
+        return new PlaybackSession(results.data[0])
+      }
+      return null
+    }).catch((error) => {
+      Logger.error('Failed to get session', error)
+      return null
+    })
   }
 
   async updateLibraryItem(libraryItem) {

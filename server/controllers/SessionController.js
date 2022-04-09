@@ -17,6 +17,11 @@ class SessionController {
     this.playbackSessionManager.closeSessionRequest(req.user, req.session, req.body, res)
   }
 
+  // POST: api/session/local
+  syncLocal(req, res) {
+    this.playbackSessionManager.syncLocalSessionRequest(req.user, req.body, res)
+  }
+
   middleware(req, res, next) {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)

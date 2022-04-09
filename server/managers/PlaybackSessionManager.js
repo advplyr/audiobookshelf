@@ -37,6 +37,40 @@ class PlaybackSessionManager {
     }
   }
 
+  async syncLocalSessionRequest(user, sessionJson, res) {
+    var libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
+
+    var session = await this.db.getPlaybackSession(sessionJson.id)
+    if (!session) {
+      // New session from local
+      session = new PlaybackSession(sessionJson)
+      await this.db.insertEntity('session', session)
+    } else {
+      session.timeListening = sessionJson.timeListening
+      session.updatedAt = sessionJson.updatedAt
+      await this.db.updateEntity('session', session)
+    }
+
+    session.currentTime = sessionJson.currentTime
+
+    const itemProgressUpdate = {
+      duration: session.duration,
+      currentTime: session.currentTime,
+      progress: session.progress,
+      lastUpdate: session.updatedAt // Keep media progress update times the same as local
+    }
+    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
+    if (wasUpdated) {
+      await this.db.updateEntity('user', user)
+      var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
+      this.clientEmitter(user.id, 'user_item_progress_updated', {
+        id: itemProgress.id,
+        data: itemProgress.toJSON()
+      })
+    }
+    res.sendStatus(200)
+  }
+
   async closeSessionRequest(user, session, syncData, res) {
     await this.closeSession(user, session, syncData)
     res.sendStatus(200)

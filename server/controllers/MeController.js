@@ -151,5 +151,63 @@ class MeController {
       settings: req.user.settings
     })
   }
+
+  // POST: api/me/sync-local-progress
+  async syncLocalMediaProgress(req, res) {
+    if (!req.body.localMediaProgress) {
+      Logger.error(`[MeController] syncLocalMediaProgress invalid post body`)
+      return res.sendStatus(500)
+    }
+    const updatedLocalMediaProgress = []
+    var numServerProgressUpdates = 0
+    var localMediaProgress = req.body.localMediaProgress || []
+    localMediaProgress.forEach(localProgress => {
+      if (!localProgress.libraryItemId) {
+        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
+        return
+      }
+      var libraryItem = this.db.getLibraryItem(localProgress.libraryItemId)
+      if (!libraryItem) {
+        Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item`, localProgress)
+        return
+      }
+
+      var mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
+      if (!mediaProgress) {
+        // New media progress from mobile
+        Logger.debug(`[MeController] syncLocalMediaProgress local progress is new - creating ${localProgress.id}`)
+        req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
+        numServerProgressUpdates++
+      } else if (mediaProgress.lastUpdate < localProgress.lastUpdate) {
+        Logger.debug(`[MeController] syncLocalMediaProgress local progress is more recent - updating ${mediaProgress.id}`)
+        req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
+        numServerProgressUpdates++
+      } else if (mediaProgress.lastUpdate > localProgress.lastUpdate) {
+        var updateTimeDifference = mediaProgress.lastUpdate - localProgress.lastUpdate
+        Logger.debug(`[MeController] syncLocalMediaProgress server progress is more recent by ${updateTimeDifference}ms - ${mediaProgress.id}`)
+
+        for (const key in localProgress) {
+          if (mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
+            // Logger.debug(`[MeController] syncLocalMediaProgress key ${key} changed from ${localProgress[key]} to ${mediaProgress[key]} - ${mediaProgress.id}`)
+            localProgress[key] = mediaProgress[key]
+          }
+        }
+        updatedLocalMediaProgress.push(localProgress)
+      } else {
+        Logger.debug(`[MeController] syncLocalMediaProgress server and local are in sync - ${mediaProgress.id}`)
+      }
+    })
+
+    Logger.debug(`[MeController] syncLocalMediaProgress server updates = ${numServerProgressUpdates}, local updates = ${updatedLocalMediaProgress.length}`)
+    if (numServerProgressUpdates > 0) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+
+    res.json({
+      numServerProgressUpdates,
+      localProgressUpdates: updatedLocalMediaProgress
+    })
+  }
 }
 module.exports = new MeController()
