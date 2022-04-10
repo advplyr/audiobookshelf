@@ -117,7 +117,7 @@ class Server {
     // await this.streamManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 
-    if (version.localeCompare('1.7.3') < 0) { // Old version data model migration
+    if (version.localeCompare('2.0.0') < 0) { // Old version data model migration
       await dbMigration.migrate(this.db)
     } else {
       await this.db.init()

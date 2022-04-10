@@ -27,7 +27,7 @@ const max = (a, b) => {
 const convertSize = (size) => {
     const sizes = ["bytes", "KB", "MB", "GB"];
 
-    var index = Math.floor(Math.log2(size)/10);
+    var index = Math.floor(Math.log2(size) / 10);
     if (index > 3) index = 3;
 
     return Math.round(((size / Math.pow(1024, index)) + Number.EPSILON) * 100) / 100 + " " + sizes[index];
@@ -38,7 +38,7 @@ const fileExists = async (a) => {
         await promisify(access)(a, constants.F_OK);
         return true;
     } catch (error) {
-        console.error(error);
+        // console.error(error); file does not exist no need for error
         return false;
     }
 }

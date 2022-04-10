@@ -7,9 +7,6 @@ const { PlayMethod } = require('./constants')
 const { getId } = require('./index')
 const Logger = require('../Logger')
 
-const LegacyAudiobook = require('../objects/legacy/Audiobook')
-const UserAudiobookData = require('../objects/legacy/UserAudiobookData')
-
 const Library = require('../objects/Library')
 const LibraryItem = require('../objects/LibraryItem')
 const Book = require('../objects/mediaTypes/Book')
@@ -40,14 +37,17 @@ var existingDbSeries = []
 async function loadAudiobooks() {
   var audiobookPath = Path.join(global.ConfigPath, 'audiobooks')
 
+  Logger.debug(`[dbMigration] loadAudiobooks path ${audiobookPath}`)
   var pathExists = await fs.pathExists(audiobookPath)
   if (!pathExists) {
+    Logger.debug(`[dbMigration] loadAudiobooks path does not exist ${audiobookPath}`)
     return []
   }
 
   var audiobooksDb = new njodb.Database(audiobookPath)
   return audiobooksDb.select(() => true).then((results) => {
-    return results.data.map(a => new LegacyAudiobook(a))
+    Logger.debug(`[dbMigration] loadAudiobooks select results ${results.data.length}`)
+    return results.data
   })
 }
 
@@ -65,7 +65,7 @@ function makeAuthorsFromOldAb(authorsList) {
     var newAuthor = new Author()
     newAuthor.setData({ name: authorName })
     authorsToAdd.push(newAuthor)
-    Logger.debug(`>>> Created new author named "${authorName}"`)
+    // Logger.debug(`>>> Created new author named "${authorName}"`)
     return newAuthor.toJSONMinimal()
   })
 }
@@ -96,7 +96,8 @@ function makeFilesFromOldAb(audiobook) {
   var libraryFiles = []
   var ebookFiles = []
 
-  var audioFiles = audiobook._audioFiles.map((af) => {
+  var _audioFiles = audiobook.audioFiles || []
+  var audioFiles = _audioFiles.map((af) => {
     var fileMetadata = new FileMetadata(af)
     fileMetadata.path = af.fullPath
     fileMetadata.relPath = getRelativePath(af.fullPath, audiobook.fullPath)
@@ -118,7 +119,8 @@ function makeFilesFromOldAb(audiobook) {
     return newAudioFile
   })
 
-  audiobook._otherFiles.forEach((file) => {
+  var _otherFiles = audiobook.otherFiles || []
+  _otherFiles.forEach((file) => {
     var fileMetadata = new FileMetadata(file)
     fileMetadata.path = file.fullPath
     fileMetadata.relPath = getRelativePath(file.fullPath, audiobook.fullPath)
@@ -182,10 +184,10 @@ function makeLibraryItemFromOldAb(audiobook) {
   var bookMetadata = new BookMetadata(audiobook.book)
   bookMetadata.publishedYear = audiobook.book.publishYear || null
   if (audiobook.book.narrator) {
-    bookMetadata.narrators = audiobook.book._narratorsList
+    bookMetadata.narrators = (audiobook.book.narrator || '').split(', ')
   }
   // Returns array of json minimal authors
-  bookMetadata.authors = makeAuthorsFromOldAb(audiobook.book._authorsList)
+  bookMetadata.authors = makeAuthorsFromOldAb((audiobook.book.authorFL || '').split(', '))
 
   // Returns array of json minimal series
   if (audiobook.book.series) {
@@ -276,7 +278,7 @@ function cleanUserObject(db, userObj) {
           cleanedUserPayload.bookmarks = cleanedUserPayload.bookmarks.concat(cleanedBookmarks)
         }
 
-        var userAudiobookData = new UserAudiobookData(userObj.audiobooks[audiobookId]) // Legacy object
+        var userAudiobookData = userObj.audiobooks[audiobookId]
         var liProgress = new MediaProgress() // New Progress Object
         liProgress.id = userAudiobookData.audiobookId
         liProgress.libraryItemId = userAudiobookData.audiobookId
