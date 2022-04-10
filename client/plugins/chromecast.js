@@ -2,8 +2,8 @@ export default (ctx) => {
   var sendInit = async (castContext) => {
     // Fetch background covers for chromecast (temp)
     var covers = await ctx.$axios.$get(`/api/libraries/${ctx.$store.state.libraries.currentLibraryId}/items?limit=40&minified=1`).then((data) => {
-      return data.results.filter((b) => b.book.cover).map((ab) => {
-        var coverUrl = ctx.$store.getters['globals/getLibraryItemCoverSrc'](ab)
+      return data.results.filter((b) => b.media.coverPath).map((libraryItem) => {
+        var coverUrl = ctx.$store.getters['globals/getLibraryItemCoverSrc'](libraryItem)
         if (process.env.NODE_ENV === 'development') return coverUrl
         return `${window.location.origin}${coverUrl}`
       })

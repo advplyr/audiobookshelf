@@ -9,7 +9,7 @@ export default class CastPlayer extends EventEmitter {
     this.player = null
     this.playerController = null
 
-    this.audiobook = null
+    this.libraryItem = null
     this.audioTracks = []
     this.currentTrackIndex = 0
     this.isHlsTranscode = null
@@ -70,22 +70,22 @@ export default class CastPlayer extends EventEmitter {
     }
   }
 
-  async set(audiobook, tracks, isHlsTranscode, startTime, playWhenReady = false) {
-    this.audiobook = audiobook
+  async set(libraryItem, tracks, isHlsTranscode, startTime, playWhenReady = false) {
+    this.libraryItem = libraryItem
     this.audioTracks = tracks
     this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
 
     this.currentTime = startTime
 
-    var coverImg = this.ctx.$store.getters['globals/getLibraryItemCoverSrc'](audiobook)
+    var coverImg = this.ctx.$store.getters['globals/getLibraryItemCoverSrc'](libraryItem)
     if (process.env.NODE_ENV === 'development') {
       this.coverUrl = coverImg
     } else {
       this.coverUrl = `${window.location.origin}${coverImg}`
     }
 
-    var request = buildCastLoadRequest(this.audiobook, this.coverUrl, this.audioTracks, this.currentTime, playWhenReady, this.defaultPlaybackRate)
+    var request = buildCastLoadRequest(this.libraryItem, this.coverUrl, this.audioTracks, this.currentTime, playWhenReady, this.defaultPlaybackRate)
 
     var castSession = cast.framework.CastContext.getInstance().getCurrentSession()
     await castLoadMedia(castSession, request)
@@ -126,7 +126,7 @@ export default class CastPlayer extends EventEmitter {
     if (!this.player) return
     if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
       // Change Track
-      var request = buildCastLoadRequest(this.audiobook, this.coverUrl, this.audioTracks, time, playWhenReady, this.defaultPlaybackRate)
+      var request = buildCastLoadRequest(this.libraryItem, this.coverUrl, this.audioTracks, time, playWhenReady, this.defaultPlaybackRate)
       var castSession = cast.framework.CastContext.getInstance().getCurrentSession()
       await castLoadMedia(castSession, request)
     } else {
