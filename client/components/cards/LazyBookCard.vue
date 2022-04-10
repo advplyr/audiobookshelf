@@ -35,8 +35,8 @@
       </div>
     </div>
 
-    <!-- No progress shown for collapsed series in library -->
-    <div v-if="!booksInSeries" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <!-- No progress shown for collapsed series in library and podcasts -->
+    <div v-if="!booksInSeries && !isPodcast" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -78,8 +78,13 @@
     </ui-tooltip>
 
     <!-- Volume number -->
-    <div v-if="volumeNumber && showVolumeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ volumeNumber }}</p>
+    <div v-if="seriesSequence && showSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
+    </div>
+
+    <!-- Podcast Num Episodes -->
+    <div v-if="numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodes }}</p>
     </div>
   </div>
 </template>
@@ -100,7 +105,7 @@ export default {
       default: 192
     },
     bookCoverAspectRatio: Number,
-    showVolumeNumber: Boolean,
+    showSequence: Boolean,
     bookshelfView: Number,
     bookMount: {
       // Book can be passed as prop or set with setEntity()
@@ -162,7 +167,11 @@ export default {
       return this._libraryItem.id
     },
     series() {
+      // Only included when filtering by series or collapse series
       return this.mediaMetadata.series
+    },
+    seriesSequence() {
+      return this.series ? this.series.sequence : null
     },
     libraryId() {
       return this._libraryItem.libraryId
@@ -174,12 +183,20 @@ export default {
       if (this.media.tracks) return this.media.tracks.length
       return this.media.numTracks || 0 // toJSONMinified
     },
+    numEpisodes() {
+      if (!this.isPodcast) return 0
+      return this.media.numEpisodes || 0
+    },
     processingBatch() {
       return this.store.state.processingBatch
     },
+    collapsedSeries() {
+      // Only added to item object when collapseSeries is enabled
+      return this._libraryItem.collapsedSeries
+    },
     booksInSeries() {
       // Only added to item object when collapseSeries is enabled
-      return this._libraryItem.booksInSeries
+      return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
     },
     hasCover() {
       return !!this.media.coverPath
@@ -203,9 +220,6 @@ export default {
     },
     authorLF() {
       return this.mediaMetadata.authorNameLF
-    },
-    volumeNumber() {
-      return this.mediaMetadata.volumeNumber || null
     },
     displayTitle() {
       if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
@@ -392,7 +406,7 @@ export default {
       } else {
         var router = this.$router || this.$nuxt.$router
         if (router) {
-          if (this.booksInSeries) router.push(`/library/${this.libraryId}/series/${this.$encode(this.series)}`)
+          if (this.collapsedSeries) router.push(`/library/${this.libraryId}/series/${this.collapsedSeries.id}`)
           else router.push(`/item/${this.libraryItemId}`)
         }
       }

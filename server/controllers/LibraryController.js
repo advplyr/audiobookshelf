@@ -152,7 +152,11 @@ class LibraryController {
       collapseseries: req.query.collapseseries === '1'
     }
 
+    var filterSeries = null
     if (payload.filterBy) {
+      // If filtering by series, will include seriesName and seriesSequence on media metadata
+      filterSeries = (payload.mediaType == 'book' && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
+
       libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user)
       payload.total = libraryItems.length
     }
@@ -180,7 +184,21 @@ class LibraryController {
     }
 
     // TODO: Potentially implement collapse series again
-    libraryItems = libraryItems.map(ab => payload.minified ? ab.toJSONMinified() : ab.toJSON())
+    if (payload.collapseseries) {
+      libraryItems = libraryHelpers.collapseBookSeries(libraryItems)
+      payload.total = libraryItems.length
+    } else if (filterSeries) {
+      // Book media when filtering series will include series object on media metadata
+      libraryItems = libraryItems.map(li => {
+        var series = li.media.metadata.getSeries(filterSeries)
+        var liJson = payload.minified ? li.toJSONMinified() : li.toJSON()
+        liJson.media.metadata.series = series
+        return liJson
+      })
+      libraryItems = naturalSort(libraryItems).asc(li => li.media.metadata.series.sequence)
+    } else {
+      libraryItems = libraryItems.map(li => payload.minified ? li.toJSONMinified() : li.toJSON())
+    }
 
     if (payload.limit) {
       var startIndex = payload.page * payload.limit

@@ -262,4 +262,33 @@ module.exports = {
     })
     return totalSize
   },
+
+  collapseBookSeries(libraryItems) {
+    var seriesObjects = this.getSeriesFromBooks(libraryItems, true)
+    var seriesToUse = {}
+    var libraryItemIdsToHide = []
+    seriesObjects.forEach((series) => {
+      series.firstBook = series.books.find(b => !seriesToUse[b.id]) // Find first book not already used
+      if (series.firstBook) {
+        seriesToUse[series.firstBook.id] = series
+        libraryItemIdsToHide = libraryItemIdsToHide.concat(series.books.filter(b => !seriesToUse[b.id]).map(b => b.id))
+      }
+    })
+
+    return libraryItems.map((li) => {
+      if (li.mediaType != 'book') return
+      var libraryItemJson = li.toJSONMinified()
+      if (libraryItemIdsToHide.includes(li.id)) {
+        return null
+      }
+      if (seriesToUse[li.id]) {
+        libraryItemJson.collapsedSeries = {
+          id: seriesToUse[li.id].id,
+          name: seriesToUse[li.id].name,
+          numBooks: seriesToUse[li.id].books.length
+        }
+      }
+      return libraryItemJson
+    }).filter(li => li)
+  }
 }

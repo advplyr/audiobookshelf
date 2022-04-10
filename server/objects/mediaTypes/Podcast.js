@@ -57,7 +57,7 @@ class Podcast {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
+      numEpisodes: this.episodes.length,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       lastEpisodeCheck: this.lastEpisodeCheck,
       size: this.size
