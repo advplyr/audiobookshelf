@@ -22,6 +22,8 @@
           <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
+
+          <p v-if="publishedAt" class="px-4 text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
         </div>
       </div>
       <div class="w-24 min-w-24" />
@@ -103,6 +105,9 @@ export default {
       if (this.userIsFinished) return 'Finished'
       var remaining = Math.floor(this.itemProgress.duration - this.itemProgress.currentTime)
       return `${this.$elapsedPretty(remaining)} left`
+    },
+    publishedAt() {
+      return this.episode.publishedAt
     }
   },
   methods: {
@@ -144,20 +149,22 @@ export default {
         })
     },
     removeClick() {
-      this.processingRemove = true
+      if (confirm(`Are you sure you want to remove episode ${this.title}?\nNote: Does not delete from file system`)) {
+        this.processingRemove = true
 
-      this.$axios
-        .$delete(`/api/items/${this.libraryItemId}/episode/${this.episode.id}`)
-        .then((updatedPodcast) => {
-          console.log(`Episode removed from podcast`, updatedPodcast)
-          this.$toast.success('Episode removed from podcast')
-          this.processingRemove = false
-        })
-        .catch((error) => {
-          console.error('Failed to remove episode from podcast', error)
-          this.$toast.error('Failed to remove episode from podcast')
-          this.processingRemove = false
-        })
+        this.$axios
+          .$delete(`/api/items/${this.libraryItemId}/episode/${this.episode.id}`)
+          .then((updatedPodcast) => {
+            console.log(`Episode removed from podcast`, updatedPodcast)
+            this.$toast.success('Episode removed from podcast')
+            this.processingRemove = false
+          })
+          .catch((error) => {
+            console.error('Failed to remove episode from podcast', error)
+            this.$toast.error('Failed to remove episode from podcast')
+            this.processingRemove = false
+          })
+      }
     }
   },
   mounted() {}

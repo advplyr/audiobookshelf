@@ -210,7 +210,7 @@ class LibraryItemController {
   }
 
   // PATCH: api/items/:id/episodes
-  async updateEpisodes(req, res) {
+  async updateEpisodes(req, res) { // For updating podcast episode order
     var libraryItem = req.libraryItem
     var orderedFileData = req.body.episodes
     if (!libraryItem.media.setEpisodeOrder) {
@@ -227,7 +227,7 @@ class LibraryItemController {
   async removeEpisode(req, res) {
     var episodeId = req.params.episodeId
     var libraryItem = req.libraryItem
-    if (!libraryItem.mediaType !== 'podcast') {
+    if (libraryItem.mediaType !== 'podcast') {
       Logger.error(`[LibraryItemController] removeEpisode invalid media type ${libraryItem.id}`)
       return res.sendStatus(500)
     }

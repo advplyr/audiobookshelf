@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
-      <div class="w-full p-4 bg-primary">
+      <div v-if="chapters.length" class="w-full p-4 bg-primary">
         <p>Audiobook Chapters</p>
       </div>
       <div v-if="!chapters.length" class="flex my-4 text-center justify-center text-xl">No Chapters</div>

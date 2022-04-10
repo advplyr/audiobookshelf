@@ -31,7 +31,7 @@
       <div class="flex justify-end pt-4">
         <div class="relative">
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <ui-checkbox small checkbox-bg="primary" border-color="gray-600" v-on:input="selectedEpisodes = episodes.map(episode => episode.enclosure && itemEpisodeMap[episode.enclosure.url] ? false : !allSelected)" v-bind:value="allSelected" v-bind:disabled="allDownloaded" />
+            <ui-checkbox v-model="selectAll" small checkbox-bg="primary" border-color="gray-600" :disabled="allDownloaded" />
           </div>
           <div class="px-8 py-2">
             <p :class="!allDownloaded ? 'font-semibold text-gray-200' : 'text-gray-400'">Select all episodes</p>
@@ -62,6 +62,14 @@ export default {
       selectedEpisodes: {}
     }
   },
+  watch: {
+    show: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) this.init()
+      }
+    }
+  },
   computed: {
     show: {
       get() {
@@ -71,23 +79,22 @@ export default {
         this.$emit('input', val)
       }
     },
+    selectAll: {
+      get() {
+        return this.episodesSelected.length == this.episodes.length
+      },
+      set(val) {
+        for (const key in this.selectedEpisodes) {
+          this.selectedEpisodes[key] = val
+        }
+      }
+    },
     title() {
       if (!this.libraryItem) return ''
       return this.libraryItem.media.metadata.title || 'Unknown'
     },
-    allSelected() {
-      try {
-        const values = Object.values(this.selectedEpisodes).filter((_, index) => !(this.episodes[index].enclosure && this.itemEpisodeMap[this.episodes[index].enclosure.url]))
-
-        if(!values.length) return false
-        return values.filter(episode => !episode).length === 0
-      } catch(error) {
-        console.error("Error while filtering selected episodes", error);
-        return false
-      }
-    },
     allDownloaded() {
-      return Object.values(this.episodes).filter(episode => !(episode.enclosure && this.itemEpisodeMap[episode.enclosure.url])).length === 0
+      return Object.values(this.episodes).filter((episode) => !(episode.enclosure && this.itemEpisodeMap[episode.enclosure.url])).length === 0
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
@@ -134,6 +141,14 @@ export default {
           this.processing = false
           this.$toast.error(errorMsg)
         })
+    },
+    init() {
+      for (let i = 0; i < this.episodes.length; i++) {
+        var episode = this.episodes[i]
+        if (episode.enclosure && !this.itemEpisodeMap[episode.enclosure.url]) { // Do not include episodes already downloaded
+          this.$set(this.selectedEpisodes, String(i), false)
+        }
+      }
     }
   },
   mounted() {}

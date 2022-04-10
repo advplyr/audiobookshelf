@@ -198,6 +198,7 @@ class Podcast {
   }
 
   setEpisodeOrder(episodeIds) {
+    episodeIds.reverse() // episode Ids will already be in descending order
     this.episodes = this.episodes.map(ep => {
       var indexOf = episodeIds.findIndex(id => id === ep.id)
       ep.index = indexOf + 1

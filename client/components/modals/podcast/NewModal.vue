@@ -41,7 +41,7 @@
           <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
             <div class="relative">
               <div class="absolute top-0 left-0 h-full flex items-center p-2">
-                <ui-checkbox small checkbox-bg="primary" border-color="gray-600" v-on:input="selectedEpisodes = episodes.map(_ => !allSelected)" v-bind:value="allSelected" />
+                <ui-checkbox v-model="selectAll" small checkbox-bg="primary" border-color="gray-600" />
               </div>
               <div class="px-8 py-2">
                 <p class="font-semibold text-gray-200">Select all episodes</p>
@@ -128,6 +128,16 @@ export default {
         this.$emit('input', val)
       }
     },
+    selectAll: {
+      get() {
+        return this.episodesSelected.length == this.episodes.length
+      },
+      set(val) {
+        for (const key in this.selectedEpisodes) {
+          this.selectedEpisodes[key] = val
+        }
+      }
+    },
     title() {
       return this._podcastData.title
     },
@@ -156,9 +166,6 @@ export default {
     episodes() {
       if (!this.podcastFeedData) return []
       return this.podcastFeedData.episodes || []
-    },
-    allSelected() {
-      return Object.values(this.selectedEpisodes).filter(episode => !episode).length === 0
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
