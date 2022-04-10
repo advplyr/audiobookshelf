@@ -270,7 +270,7 @@ class User {
   }
 
   removeMediaProgress(libraryItemId) {
-    if (!this.mediaProgress.some(lip => lip.id == libraryItemId)) return false
+    if (!this.mediaProgress.some(lip => lip.libraryItemId == libraryItemId)) return false
     this.mediaProgress = this.mediaProgress.filter(lip => lip.libraryItemId != libraryItemId)
     return true
   }
