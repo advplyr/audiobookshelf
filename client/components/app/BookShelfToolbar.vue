@@ -27,7 +27,7 @@
         </div>
         <div class="flex-grow hidden sm:inline-block" />
 
-        <ui-checkbox v-show="showSortFilters" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <ui-checkbox v-show="showSortFilters && !isPodcast" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
         <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
@@ -70,6 +70,9 @@ export default {
     }
   },
   computed: {
+    isPodcast() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
     isGridMode() {
       return this.viewMode === 'grid'
     },
@@ -80,6 +83,7 @@ export default {
       return this.totalEntities
     },
     entityName() {
+      if (this.isPodcast) return 'Podcasts'
       if (!this.page) return 'Books'
       if (this.page === 'series') return 'Series'
       if (this.page === 'collections') return 'Collections'

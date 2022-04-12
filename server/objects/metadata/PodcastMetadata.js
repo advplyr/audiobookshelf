@@ -53,12 +53,42 @@ class PodcastMetadata {
     }
   }
 
+  toJSONMinified() {
+    return {
+      title: this.title,
+      titleIgnorePrefix: this.titleIgnorePrefix,
+      author: this.author,
+      description: this.description,
+      releaseDate: this.releaseDate,
+      genres: [...this.genres],
+      feedUrl: this.feedUrl,
+      imageUrl: this.imageUrl,
+      itunesPageUrl: this.itunesPageUrl,
+      itunesId: this.itunesId,
+      itunesArtistId: this.itunesArtistId,
+      explicit: this.explicit,
+      language: this.language
+    }
+  }
+
   toJSONExpanded() {
-    return this.toJSON()
+    return this.toJSONMinified()
   }
 
   clone() {
     return new PodcastMetadata(this.toJSON())
+  }
+
+  get titleIgnorePrefix() {
+    if (!this.title) return ''
+    var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
+    for (const prefix of prefixesToIgnore) {
+      // e.g. for prefix "the". If title is "The Book Title" return "Book Title, The"
+      if (this.title.toLowerCase().startsWith(`${prefix} `)) {
+        return this.title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
+      }
+    }
+    return this.title
   }
 
   searchQuery(query) { // Returns key if match is found

@@ -235,6 +235,13 @@ class Server {
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
       socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
 
+      socket.on('ping', () => {
+        var client = this.clients[socket.id] || {}
+        var user = client.user || {}
+        Logger.debug(`[Server] Received ping from socket ${user.username || 'No User'}`)
+        socket.emit('pong')
+      })
+
       socket.on('disconnect', () => {
         Logger.removeSocketListener(socket.id)
 

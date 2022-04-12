@@ -16,7 +16,7 @@
 
     <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
       <ul v-show="!sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
-        <template v-for="item in items">
+        <template v-for="item in selectItems">
           <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item)">
             <div class="flex items-center justify-between">
               <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
@@ -67,7 +67,7 @@ export default {
     return {
       showMenu: false,
       sublist: null,
-      items: [
+      bookItems: [
         {
           text: 'All',
           value: 'all'
@@ -112,6 +112,22 @@ export default {
           value: 'issues',
           sublist: false
         }
+      ],
+      podcastItems: [
+        {
+          text: 'All',
+          value: 'all'
+        },
+        {
+          text: 'Genre',
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: 'Tag',
+          value: 'tags',
+          sublist: true
+        }
       ]
     }
   },
@@ -131,6 +147,13 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    isPodcast() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
+    selectItems() {
+      if (this.isPodcast) return this.podcastItems
+      return this.bookItems
     },
     selectedItemSublist() {
       return this.selected && this.selected.includes('.') ? this.selected.split('.')[0] : false
@@ -152,7 +175,7 @@ export default {
         }
         return decoded
       }
-      var _sel = this.items.find((i) => i.value === this.selected)
+      var _sel = this.selectItems.find((i) => i.value === this.selected)
       if (!_sel) return ''
       return _sel.text
     },

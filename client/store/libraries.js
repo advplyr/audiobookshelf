@@ -65,7 +65,7 @@ export const actions = {
         return []
       })
   },
-  fetch({ state, commit, rootState, rootGetters }, libraryId) {
+  fetch({ state, dispatch, commit, rootState, rootGetters }, libraryId) {
     if (!rootState.user || !rootState.user.user) {
       console.error('libraries/fetch - User not set')
       return false
@@ -83,6 +83,9 @@ export const actions = {
         var library = data.library
         var filterData = data.filterdata
         var issues = data.issues || 0
+
+        dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
+
         commit('addUpdate', library)
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)

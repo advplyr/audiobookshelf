@@ -1,10 +1,7 @@
-
-import Vue from 'vue'
-
 export const state = () => ({
   user: null,
   settings: {
-    orderBy: 'book.title',
+    orderBy: 'media.metadata.title',
     orderDesc: false,
     filterBy: 'all',
     playbackRate: 1,
@@ -67,6 +64,27 @@ export const getters = {
 }
 
 export const actions = {
+  // When changing libraries make sure sort and filter is still valid
+  checkUpdateLibrarySortFilter({ state, dispatch, commit }, mediaType) {
+    var settingsUpdate = {}
+    if (mediaType == 'podcast') {
+      if (state.settings.orderBy == 'media.metadata.authorName' || state.settings.orderBy == 'media.metadata.authorNameLF') {
+        settingsUpdate.orderBy = 'media.metadata.author'
+      }
+      var invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
+      var filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
+      if (invalidFilters.includes(filterByFirstPart)) {
+        settingsUpdate.filterBy = 'all'
+      }
+    } else {
+      if (state.settings.orderBy == 'media.metadata.author') {
+        settingsUpdate.orderBy = 'media.metadata.authorName'
+      }
+    }
+    if (Object.keys(settingsUpdate).length) {
+      dispatch('updateUserSettings', settingsUpdate)
+    }
+  },
   updateUserSettings({ commit }, payload) {
     var updatePayload = {
       ...payload
@@ -104,6 +122,7 @@ export const actions = {
 export const mutations = {
   setUser(state, user) {
     state.user = user
+    state.settings = user.settings
     if (user) {
       if (user.token) localStorage.setItem('token', user.token)
     } else {
@@ -125,7 +144,6 @@ export const mutations = {
   },
   setSettings(state, settings) {
     if (!settings) return
-
     var hasChanges = false
     for (const key in settings) {
       if (state.settings[key] !== settings[key]) {

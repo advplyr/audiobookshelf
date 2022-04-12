@@ -12,7 +12,7 @@
           </div>
         </div>
 
-        <div class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+        <div v-if="!isPodcast" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
           <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
         </div>
 
@@ -99,7 +99,8 @@ export default {
       default: () => []
     },
     sleepTimerSet: Boolean,
-    sleepTimerRemaining: Number
+    sleepTimerRemaining: Number,
+    isPodcast: Boolean
   },
   data() {
     return {

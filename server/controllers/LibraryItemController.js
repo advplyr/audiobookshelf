@@ -167,7 +167,6 @@ class LibraryItemController {
     res.sendStatus(500)
   }
 
-
   // POST: api/items/:id/play
   startPlaybackSession(req, res) {
     if (!req.libraryItem.media.numTracks) {
@@ -337,7 +336,6 @@ class LibraryItemController {
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
     })
   }
-
 
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)

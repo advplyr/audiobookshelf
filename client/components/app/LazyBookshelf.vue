@@ -85,6 +85,9 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
+    isPodcast() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
     emptyMessage() {
       if (this.page === 'series') return `You have no series`
       if (this.page === 'collections') return "You haven't made any collections yet"
@@ -386,7 +389,7 @@ export default {
           searchParams.set('sort', this.orderBy)
           searchParams.set('desc', this.orderDesc ? 1 : 0)
         }
-        if (this.collapseSeries) {
+        if (this.collapseSeries && !this.isPodcast) {
           searchParams.set('collapseseries', 1)
         }
       }

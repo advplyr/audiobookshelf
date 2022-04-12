@@ -33,6 +33,7 @@
       :bookmarks="bookmarks"
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
+      :is-podcast="isPodcast"
       @playPause="playPause"
       @jumpForward="jumpForward"
       @jumpBackward="jumpBackward"

@@ -54,7 +54,7 @@ class Podcast {
 
   toJSONMinified() {
     return {
-      metadata: this.metadata.toJSON(),
+      metadata: this.metadata.toJSONMinified(),
       coverPath: this.coverPath,
       tags: [...this.tags],
       numEpisodes: this.episodes.length,
