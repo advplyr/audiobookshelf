@@ -83,4 +83,7 @@ input:read-only {
   color: #bbb;
   background-color: #444;
 }
+input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
 </style>

@@ -14,7 +14,7 @@
           <ui-text-input-with-label v-model="newEpisode.episodeType" label="Episode Type" />
         </div>
         <div class="w-1/3 p-1">
-          <ui-text-input-with-label v-model="newEpisode.pubDate" label="Pub Date" />
+          <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" label="Pub Date" />
         </div>
         <div class="w-full p-1">
           <ui-text-input-with-label v-model="newEpisode.title" label="Title" />
@@ -55,8 +55,10 @@ export default {
         title: null,
         subtitle: null,
         description: null,
-        pubDate: null
-      }
+        pubDate: null,
+        publishedAt: null
+      },
+      pubDateInput: null
     }
   },
   watch: {
@@ -85,6 +87,15 @@ export default {
     }
   },
   methods: {
+    updatePubDate(val) {
+      if (val) {
+        this.newEpisode.pubDate = this.$formatJsDate(new Date(val), 'E, d MMM yyyy HH:mm:ssxx')
+        this.newEpisode.publishedAt = new Date(val).valueOf()
+      } else {
+        this.newEpisode.pubDate = null
+        this.newEpisode.publishedAt = null
+      }
+    },
     init() {
       this.newEpisode.episode = this.episode.episode || ''
       this.newEpisode.episodeType = this.episode.episodeType || ''
@@ -92,6 +103,9 @@ export default {
       this.newEpisode.subtitle = this.episode.subtitle || ''
       this.newEpisode.description = this.episode.description || ''
       this.newEpisode.pubDate = this.episode.pubDate || ''
+      this.newEpisode.publishedAt = this.episode.publishedAt
+
+      this.pubDateInput = this.episode.pubDate ? this.$formatJsDate(new Date(this.episode.pubDate), "yyyy-MM-dd'T'HH:mm") : null
     },
     getUpdatePayload() {
       var updatePayload = {}

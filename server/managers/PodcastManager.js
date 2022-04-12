@@ -79,6 +79,9 @@ class PodcastManager {
 
   async scanAddPodcastEpisodeAudioFile() {
     var libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
+
+    // TODO: Set meta tags on new audio file
+
     var audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
