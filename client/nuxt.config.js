@@ -136,6 +136,6 @@ module.exports = {
   },
   server: {
     port: process.env.NODE_ENV === 'production' ? 80 : 3000,
-    host: process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost'
+    host: '0.0.0.0'
   }
 }
