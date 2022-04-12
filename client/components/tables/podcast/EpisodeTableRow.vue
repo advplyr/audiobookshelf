@@ -1,7 +1,7 @@
 <template>
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="episode" class="flex items-center h-24">
-      <div class="w-12 min-w-12 max-w-16 h-full">
+      <div v-show="userCanUpdate" class="w-12 min-w-12 max-w-16 h-full">
         <div class="flex h-full items-center justify-center">
           <span class="material-icons drag-handle text-lg text-white text-opacity-50 hover:text-opacity-100">menu</span>
         </div>
