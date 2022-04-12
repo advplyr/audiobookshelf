@@ -81,7 +81,7 @@ export default {
     },
     selectAll: {
       get() {
-        return this.episodesSelected.length == this.episodes.length
+        return this.episodesSelected.length == this.episodes.filter((_, index) => !(this.episodes[index].enclosure && this.itemEpisodeMap[this.episodes[index].enclosure.url])).length
       },
       set(val) {
         for (const key in this.selectedEpisodes) {
