@@ -5,7 +5,7 @@
         <h1 class="text-xl">Backups</h1>
       </div>
 
-      <p class="text-base mb-4 text-gray-300">Backups include users, user progress, book details, server settings and covers stored in <span class="font-mono text-gray-100">/metadata/books</span>. <br />Backups <strong>do not</strong> include any files stored in your library folders.</p>
+      <p class="text-base mb-4 text-gray-300">Backups include users, user progress, book details, server settings and covers stored in <span class="font-mono text-gray-100">/metadata/items</span>. <br />Backups <strong>do not</strong> include any files stored in your library folders.</p>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="dailyBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />

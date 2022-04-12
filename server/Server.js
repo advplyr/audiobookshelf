@@ -373,7 +373,7 @@ class Server {
     var client = this.clients[socket.id]
 
     if (client.user !== undefined) {
-      Logger.debug(`[Server] Authenticating socket client already has user`, client.user)
+      Logger.debug(`[Server] Authenticating socket client already has user`, client.user.username)
     }
 
     client.user = user

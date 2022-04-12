@@ -19,7 +19,7 @@ class CoverManager {
   }
 
   getCoverDirectory(libraryItem) {
-    if (this.db.serverSettings.storeCoverWithBook) {
+    if (this.db.serverSettings.storeCoverWithItem) {
       return libraryItem.path
     } else {
       return Path.posix.join(this.ItemMetadataPath, libraryItem.id)

@@ -1,5 +1,7 @@
+const Path = require('path')
 const { version } = require('../../package.json')
 const Logger = require('../Logger')
+const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
@@ -36,6 +38,9 @@ class LibraryItem {
     if (libraryItem) {
       this.construct(libraryItem)
     }
+
+    // Temporary attributes
+    this.isSavingMetadata = false
   }
 
   construct(libraryItem) {
@@ -446,6 +451,28 @@ class LibraryItem {
 
   getDirectPlayTracklist(episodeId) {
     return this.media.getDirectPlayTracklist(episodeId)
+  }
+
+  // Saves metadata.abs file
+  async saveMetadata() {
+    if (this.isSavingMetadata) return
+    this.isSavingMetadata = true
+
+    var metadataPath = Path.join(global.MetadataPath, 'items', this.id)
+    if (global.ServerSettings.storeMetadataWithItem) {
+      metadataPath = this.path
+    } else {
+      // Make sure metadata book dir exists
+      await fs.ensureDir(metadataPath)
+    }
+    metadataPath = Path.join(metadataPath, 'metadata.abs')
+
+    return abmetadataGenerator.generate(this, metadataPath).then((success) => {
+      this.isSavingMetadata = false
+      if (!success) Logger.error(`[LibraryItem] Failed saving abmetadata to "${metadataPath}"`)
+      else Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataPath}"`)
+      return success
+    })
   }
 }
 module.exports = LibraryItem

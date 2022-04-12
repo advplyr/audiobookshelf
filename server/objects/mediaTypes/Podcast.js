@@ -2,6 +2,8 @@ const Logger = require('../../Logger')
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
+const abmetadataGenerator = require('../../utils/abmetadataGenerator')
+const { readTextFile } = require('../../utils/fileUtils')
 const { createNewSortInstance } = require('fast-sort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -158,6 +160,21 @@ class Podcast {
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
+    var metadataUpdatePayload = {}
+
+    var metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    if (metadataAbs) {
+      var metadataText = await readTextFile(metadataAbs.metadata.path)
+      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'podcast')
+      if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
+        Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
+        metadataUpdatePayload = abmetadataUpdates
+      }
+    }
+
+    if (Object.keys(metadataUpdatePayload).length) {
+      return this.metadata.update(metadataUpdatePayload)
+    }
     return false
   }
 

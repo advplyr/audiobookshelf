@@ -8,20 +8,20 @@
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.storeCoverWithBook" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithBook', val)" />
-        <ui-tooltip :text="tooltips.storeCoverWithBook">
+        <ui-toggle-switch v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
+        <ui-tooltip :text="tooltips.storeCoverWithItem">
           <p class="pl-4 text-lg">
-            Store covers with book
+            Store covers with item
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.storeMetadataWithBook" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithBook', val)" />
-        <ui-tooltip :text="tooltips.storeMetadataWithBook">
+        <ui-toggle-switch v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
+        <ui-tooltip :text="tooltips.storeMetadataWithItem">
           <p class="pl-4 text-lg">
-            Store metadata with book
+            Store metadata with item
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -47,10 +47,6 @@
         </ui-tooltip>
       </div>
 
-      <!-- <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
-        <p class="pl-4 text-lg">Ignore prefixes when sorting title and series</p>
-      </div> -->
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
         <ui-tooltip :text="tooltips.sortingIgnorePrefix">
@@ -218,8 +214,8 @@ export default {
         sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
         bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
-        storeCoverWithBook: 'By default covers are stored in /metadata/books, enabling this setting will store covers in the books folder. Only one file named "cover" will be kept',
-        storeMetadataWithBook: 'By default metadata files are stored in /metadata/books, enabling this setting will store metadata files in the books folder. Uses .abs file extension',
+        storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
+        storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
       },
       showConfirmPurgeCache: false

@@ -413,6 +413,8 @@ class Scanner {
     return libraryItem
   }
 
+  // Any series or author object on library item with an id starting with "new"
+  //   will create a new author/series OR find a matching author/series
   async createNewAuthorsAndSeries(libraryItem) {
     if (libraryItem.mediaType !== 'book') return
 
@@ -422,11 +424,12 @@ class Scanner {
       libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
         var _author = this.db.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
         if (!_author) _author = newAuthors.find(au => au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
-        if (!_author) {
+        if (!_author) { // Must create new author
           _author = new Author()
           _author.setData(tempMinAuthor)
           newAuthors.push(_author)
         }
+
         return {
           id: _author.id,
           name: _author.name
@@ -442,7 +445,7 @@ class Scanner {
       libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
         var _series = this.db.series.find(se => se.checkNameEquals(tempMinSeries.name))
         if (!_series) _series = newSeries.find(se => se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
-        if (!_series) {
+        if (!_series) { // Must create new series
           _series = new Series()
           _series.setData(tempMinSeries)
           newSeries.push(_series)

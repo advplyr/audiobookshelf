@@ -1,9 +1,9 @@
 const Path = require('path')
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
-const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parseOpfMetadata')
+const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -215,10 +215,18 @@ class Book {
       }
     }
 
-    // TODO: Implement metadata.abs
     var metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
     if (metadataAbs) {
-
+      Logger.debug(`[Book] Found metadata.abs file for "${this.metadata.title}"`)
+      var metadataText = await readTextFile(metadataAbs.metadata.path)
+      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'book')
+      if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
+        Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
+        metadataUpdatePayload = {
+          ...metadataUpdatePayload,
+          ...abmetadataUpdates
+        }
+      }
     }
 
     var metadataOpf = textMetadataFiles.find(lf => lf.isOPFFile || lf.metadata.filename === 'metadata.xml')

@@ -17,9 +17,9 @@ class ServerSettings {
     this.scannerPreferOpfMetadata = false
     this.scannerDisableWatcher = false
 
-    // Metadata
-    this.storeCoverWithBook = false
-    this.storeMetadataWithBook = false
+    // Metadata - choose to store inside users library item folder
+    this.storeCoverWithItem = false
+    this.storeMetadataWithItem = false
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -64,11 +64,14 @@ class ServerSettings {
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
 
-    this.storeCoverWithBook = settings.storeCoverWithBook
-    if (this.storeCoverWithBook == undefined) { // storeCoverWithBook added in 1.7.1 to replace coverDestination
-      this.storeCoverWithBook = !!settings.coverDestination
+    this.storeCoverWithItem = !!settings.storeCoverWithItem
+    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
+      this.storeCoverWithItem = !!settings.storeCoverWithBook
     }
-    this.storeMetadataWithBook = !!settings.storeCoverWithBook
+    this.storeMetadataWithItem = !!settings.storeMetadataWithItem
+    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was old name of setting < v2
+      this.storeMetadataWithItem = !!settings.storeMetadataWithBook
+    }
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -105,8 +108,8 @@ class ServerSettings {
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
-      storeCoverWithBook: this.storeCoverWithBook,
-      storeMetadataWithBook: this.storeMetadataWithBook,
+      storeCoverWithItem: this.storeCoverWithItem,
+      storeMetadataWithItem: this.storeMetadataWithItem,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,

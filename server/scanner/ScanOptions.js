@@ -5,7 +5,7 @@ class ScanOptions {
     // Server settings
     this.parseSubtitles = false
     this.findCovers = false
-    this.storeCoverWithBook = false
+    this.storeCoverWithItem = false
     this.preferAudioMetadata = false
     this.preferOpfMetadata = false
 
@@ -30,7 +30,7 @@ class ScanOptions {
       metadataPrecedence: this.metadataPrecedence,
       parseSubtitles: this.parseSubtitles,
       findCovers: this.findCovers,
-      storeCoverWithBook: this.storeCoverWithBook,
+      storeCoverWithItem: this.storeCoverWithItem,
       preferAudioMetadata: this.preferAudioMetadata,
       preferOpfMetadata: this.preferOpfMetadata
     }
@@ -41,7 +41,7 @@ class ScanOptions {
 
     this.parseSubtitles = !!serverSettings.scannerParseSubtitle
     this.findCovers = !!serverSettings.scannerFindCovers
-    this.storeCoverWithBook = serverSettings.storeCoverWithBook
+    this.storeCoverWithItem = serverSettings.storeCoverWithItem
     this.preferAudioMetadata = serverSettings.scannerPreferAudioMetadata
     this.preferOpfMetadata = serverSettings.scannerPreferOpfMetadata
   }
