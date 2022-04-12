@@ -104,10 +104,6 @@ export default {
           console.warn('Stream Container not mounted')
         }
       }
-      if (payload.user) {
-        this.$store.commit('user/setUser', payload.user)
-        this.$store.commit('user/setSettings', payload.user.settings)
-      }
       if (payload.serverSettings) {
         this.$store.commit('setServerSettings', payload.serverSettings)
 

@@ -7,13 +7,13 @@
     </svg>
     <p class="text-xl font-book pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
     <div class="flex-grow" />
-    <ui-btn v-show="isHovering && !libraryScan && canScan" small color="success" @click.stop="scan">Scan</ui-btn>
-    <ui-btn v-show="isHovering && !libraryScan && canScan" small color="bg" class="ml-2" @click.stop="forceScan">Force Re-Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="success" @click.stop="scan">Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="forceScan">Force Re-Scan</ui-btn>
 
-    <ui-btn v-show="isHovering && !libraryScan && canScan" small color="bg" class="ml-2" @click.stop="matchAll">Match Books</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="matchAll">Match Books</ui-btn>
 
-    <span v-show="isHovering && !libraryScan && showEdit && canEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
-    <span v-show="!libraryScan && isHovering && showEdit && canDelete && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50 cursor-pointer'" @click.stop="deleteClick">delete</span>
+    <span v-show="isHovering && !libraryScan && showEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
+    <span v-show="!libraryScan && isHovering && showEdit && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50 cursor-pointer'" @click.stop="deleteClick">delete</span>
     <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin">
       <svg viewBox="0 0 24 24" class="w-6 h-6">
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
@@ -48,15 +48,6 @@ export default {
     },
     libraryScan() {
       return this.$store.getters['scanners/getLibraryScan'](this.library.id)
-    },
-    canEdit() {
-      return this.$store.getters['user/getIsRoot']
-    },
-    canDelete() {
-      return this.$store.getters['user/getIsRoot']
-    },
-    canScan() {
-      return this.$store.getters['user/getIsRoot']
     }
   },
   methods: {

@@ -31,10 +31,10 @@
     <div class="w-24 min-w-24 -right-0 absolute top-0 h-full transform transition-transform" :class="!isHovering ? 'translate-x-32' : 'translate-x-0'">
       <div class="flex h-full items-center">
         <div class="mx-1">
-          <ui-icon-btn icon="edit" borderless @click="clickEdit" />
+          <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
         </div>
         <div class="mx-1">
-          <ui-icon-btn icon="close" borderless @click="removeClick" />
+          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
         </div>
       </div>
     </div>
@@ -70,6 +70,12 @@ export default {
     }
   },
   computed: {
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
     audioFile() {
       return this.episode.audioFile
     },

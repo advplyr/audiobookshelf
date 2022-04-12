@@ -8,7 +8,7 @@
     </button>
 
     <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
-      <template v-for="item in items">
+      <template v-for="item in selectItems">
         <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item.value)">
           <div class="flex items-center">
             <span class="font-normal ml-3 block truncate text-xs">{{ item.text }}</span>
@@ -31,7 +31,7 @@ export default {
   data() {
     return {
       showMenu: false,
-      items: [
+      bookItems: [
         {
           text: 'Title',
           value: 'media.metadata.title'
@@ -48,10 +48,32 @@ export default {
           text: 'Added At',
           value: 'addedAt'
         },
-        // {
-        //   text: 'Duration',
-        //   value: 'media.duration'
-        // },
+        {
+          text: 'Size',
+          value: 'size'
+        },
+        {
+          text: 'File Birthtime',
+          value: 'birthtimeMs'
+        },
+        {
+          text: 'File Modified',
+          value: 'mtimeMs'
+        }
+      ],
+      podcastItems: [
+        {
+          text: 'Title',
+          value: 'media.metadata.title'
+        },
+        {
+          text: 'Author',
+          value: 'media.metadata.author'
+        },
+        {
+          text: 'Added At',
+          value: 'addedAt'
+        },
         {
           text: 'Size',
           value: 'size'
@@ -84,11 +106,18 @@ export default {
         this.$emit('update:descending', val)
       }
     },
+    isPodcast() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
+    selectItems() {
+      if (this.isPodcast) return this.podcastItems
+      return this.bookItems
+    },
     selectedText() {
       var _selected = this.selected
       if (!_selected) return ''
       if (this.selected.startsWith('book.')) _selected = _selected.replace('book.', 'media.metadata.')
-      var _sel = this.items.find((i) => i.value === _selected)
+      var _sel = this.selectItems.find((i) => i.value === _selected)
       if (!_sel) return ''
       return _sel.text
     }
