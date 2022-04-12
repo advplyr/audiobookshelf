@@ -78,7 +78,6 @@ export default {
         console.error('Failed to get search results', error)
         return []
       })
-      // console.log('Search results', results)
       this.items = results || []
       this.searching = false
     },

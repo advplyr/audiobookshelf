@@ -30,7 +30,8 @@ export default {
       return null
     })
     results = {
-      books: results && results.book.length ? results.book : null,
+      podcasts: results && results.podcast ? results.podcast : null,
+      books: results && results.book ? results.book : null,
       authors: results && results.authors.length ? results.authors : null,
       series: results && results.series.length ? results.series : null,
       tags: results && results.tags.length ? results.tags : null
@@ -57,7 +58,7 @@ export default {
       return this.$store.state.streamLibraryItem
     },
     hasResults() {
-      return Object.values(this.results).find((r) => !!r)
+      return Object.values(this.results).find((r) => !!r && r.length)
     }
   },
   methods: {
@@ -67,7 +68,8 @@ export default {
         return null
       })
       this.results = {
-        books: results && results.book.length ? results.book : null,
+        podcasts: results && results.podcast ? results.podcast : null,
+        books: results && results.book ? results.book : null,
         authors: results && results.authors.length ? results.authors : null,
         series: results && results.series.length ? results.series : null,
         tags: results && results.tags.length ? results.tags : null

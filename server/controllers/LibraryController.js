@@ -457,7 +457,7 @@ class LibraryController {
       var queryResult = li.searchQuery(req.query.q)
       if (queryResult.matchKey) {
         itemMatches.push({
-          libraryItem: li,
+          libraryItem: li.toJSONExpanded(),
           matchKey: queryResult.matchKey,
           matchText: queryResult.matchText
         })

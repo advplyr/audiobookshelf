@@ -103,7 +103,7 @@ export default {
     },
     async setShelvesFromSearch() {
       var shelves = []
-      if (this.results.books) {
+      if (this.results.books && this.results.books.length) {
         shelves.push({
           id: 'books',
           label: 'Books',
@@ -112,7 +112,16 @@ export default {
         })
       }
 
-      if (this.results.series) {
+      if (this.results.podcasts && this.results.podcasts.length) {
+        shelves.push({
+          id: 'podcasts',
+          label: 'Podcasts',
+          type: 'podcast',
+          entities: this.results.podcasts.map((res) => res.libraryItem)
+        })
+      }
+
+      if (this.results.series && this.results.series.length) {
         shelves.push({
           id: 'series',
           label: 'Series',
@@ -127,7 +136,7 @@ export default {
           })
         })
       }
-      if (this.results.tags) {
+      if (this.results.tags && this.results.tags.length) {
         shelves.push({
           id: 'tags',
           label: 'Tags',
@@ -141,7 +150,7 @@ export default {
           })
         })
       }
-      if (this.results.authors) {
+      if (this.results.authors && this.results.authors.length) {
         shelves.push({
           id: 'authors',
           label: 'Authors',

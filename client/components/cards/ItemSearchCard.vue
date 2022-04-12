@@ -40,6 +40,12 @@ export default {
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
     },
+    mediaType() {
+      return this.libraryItem ? this.libraryItem.mediaType : null
+    },
+    isPodcast() {
+      return this.mediaType == 'podcast'
+    },
     mediaMetadata() {
       return this.media.metadata || {}
     },
@@ -49,11 +55,9 @@ export default {
     subtitle() {
       return this.mediaMetadata.subtitle || ''
     },
-    authors() {
-      return this.mediaMetadata.authors || []
-    },
     authorName() {
-      return this.authors.map((au) => au.name).join(', ')
+      if (this.isPodcast) return this.mediaMetadata.author || 'Unknown'
+      return this.mediaMetadata.authorName || 'Unknown'
     },
     matchHtml() {
       if (!this.matchText || !this.search) return ''

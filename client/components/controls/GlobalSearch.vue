@@ -19,11 +19,20 @@
           <p>No Results</p>
         </li>
         <template v-else>
-          <p class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
+          <p v-if="bookResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
           <template v-for="item in bookResults">
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
               <nuxt-link :to="`/item/${item.id}`">
-                <cards-audiobook-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
+                <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
+              </nuxt-link>
+            </li>
+          </template>
+
+          <p v-if="podcastResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Podcasts</p>
+          <template v-for="item in podcastResults">
+            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+              <nuxt-link :to="`/item/${item.id}`">
+                <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
             </li>
           </template>
@@ -70,6 +79,7 @@ export default {
       isTyping: false,
       isFetching: false,
       search: null,
+      podcastResults: [],
       bookResults: [],
       authorResults: [],
       seriesResults: [],
@@ -83,7 +93,7 @@ export default {
       return this.$store.state.libraries.currentLibraryId
     },
     totalResults() {
-      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length
+      return this.bookResults.length + this.seriesResults.length + this.authorResults.length + this.tagResults.length + this.podcastResults.length
     }
   },
   methods: {
@@ -96,6 +106,7 @@ export default {
     clearResults() {
       this.search = null
       this.lastSearch = null
+      this.podcastResults = []
       this.bookResults = []
       this.authorResults = []
       this.seriesResults = []
@@ -136,6 +147,7 @@ export default {
       // Search was canceled
       if (!this.isFetching) return
 
+      this.podcastResults = searchResults.podcast || []
       this.bookResults = searchResults.book || []
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []
