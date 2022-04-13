@@ -1,3 +1,4 @@
+const fs = require('fs-extra')
 const Path = require('path')
 const { version } = require('../../package.json')
 const Logger = require('../Logger')

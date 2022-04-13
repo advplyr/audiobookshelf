@@ -21,9 +21,6 @@ export default {
     return {}
   },
   computed: {
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     name() {
       return this.author.name
     }
