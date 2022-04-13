@@ -4,7 +4,7 @@
       <tables-tracks-table :key="audiobook.id" :title="`Audiobook Tracks (${audiobook.name})`" :audiobook-id="audiobook.id" :tracks="audiobook.tracks" class="mb-4" />
     </template>
 
-    <tables-library-files-table :files="libraryFiles" :library-item-id="libraryItem.id" :is-missing="isMissing" />
+    <tables-library-files-table expanded :files="libraryFiles" :library-item-id="libraryItem.id" :is-missing="isMissing" />
   </div>
 </template>
 

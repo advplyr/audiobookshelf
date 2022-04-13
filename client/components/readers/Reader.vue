@@ -18,10 +18,7 @@
 <script>
 export default {
   data() {
-    return {
-      ebookType: '',
-      ebookUrl: ''
-    }
+    return {}
   },
   watch: {
     show(newVal) {
@@ -47,13 +44,19 @@ export default {
       return null
     },
     abTitle() {
-      return this.selectedLibraryItem.media.metadata.title
+      return this.mediaMetadata.title
     },
     abAuthor() {
-      return this.selectedLibraryItem.media.metadata.authorName
+      return this.mediaMetadata.authorName
     },
     selectedLibraryItem() {
-      return this.$store.state.selectedLibraryItem
+      return this.$store.state.selectedLibraryItem || {}
+    },
+    media() {
+      return this.selectedLibraryItem.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
     },
     libraryId() {
       return this.selectedLibraryItem.libraryId
@@ -61,32 +64,45 @@ export default {
     folderId() {
       return this.selectedLibraryItem.folderId
     },
-    ebooks() {
-      return this.selectedLibraryItem.media.ebooks || []
+    ebookFile() {
+      return this.media.ebookFile
     },
-    epubEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.epub')
+    ebookFormat() {
+      if (!this.ebookFile) return null
+      return this.ebookFile.ebookFormat
     },
-    mobiEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.mobi' || eb.ext === '.azw3')
+    ebookType() {
+      if (this.isMobi) return 'mobi'
+      else if (this.isEpub) return 'epub'
+      else if (this.isPdf) return 'pdf'
+      else if (this.isComic) return 'comic'
+      return null
     },
-    pdfEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.pdf')
+    isEpub() {
+      return this.ebookFormat == 'epub'
     },
-    comicEbook() {
-      return this.ebooks.find((eb) => eb.ext === '.cbz' || eb.ext === '.cbr')
+    isMobi() {
+      return this.ebookFormat == 'mobi' || this.ebookFormat == 'azw3'
+    },
+    isPdf() {
+      return this.ebookFormat == 'pdf'
+    },
+    isComic() {
+      return this.ebookFormat == 'cbz' || this.ebookFormat == 'cbr'
+    },
+    ebookUrl() {
+      if (!this.ebookFile) return null
+      var itemRelPath = this.selectedLibraryItem.relPath
+      if (itemRelPath.startsWith('/')) itemRelPath = itemRelPath.slice(1)
+      var relPath = this.ebookFile.metadata.relPath
+      if (relPath.startsWith('/')) relPath = relPath.slice(1)
+      return `/ebook/${this.libraryId}/${this.folderId}/${itemRelPath}/${relPath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']
-    },
-    selectedAudiobookFile() {
-      return this.$store.state.selectedAudiobookFile
     }
   },
   methods: {
-    getEbookUrl(path) {
-      return `/ebook/${this.libraryId}/${this.folderId}/${path}`
-    },
     hotkey(action) {
       console.log('Reader hotkey', action)
       if (!this.$refs.readerComponent) return
@@ -107,31 +123,6 @@ export default {
     },
     init() {
       this.registerListeners()
-
-      if (this.selectedAudiobookFile) {
-        this.ebookUrl = this.getEbookUrl(this.selectedAudiobookFile.path)
-        if (this.selectedAudiobookFile.ext === '.pdf') {
-          this.ebookType = 'pdf'
-        } else if (this.selectedAudiobookFile.ext === '.mobi' || this.selectedAudiobookFile.ext === '.azw3') {
-          this.ebookType = 'mobi'
-        } else if (this.selectedAudiobookFile.ext === '.epub') {
-          this.ebookType = 'epub'
-        } else if (this.selectedAudiobookFile.ext === '.cbr' || this.selectedAudiobookFile.ext === '.cbz') {
-          this.ebookType = 'comic'
-        }
-      } else if (this.epubEbook) {
-        this.ebookType = 'epub'
-        this.ebookUrl = this.getEbookUrl(this.epubEbook.path)
-      } else if (this.mobiEbook) {
-        this.ebookType = 'mobi'
-        this.ebookUrl = this.getEbookUrl(this.mobiEbook.path)
-      } else if (this.pdfEbook) {
-        this.ebookType = 'pdf'
-        this.ebookUrl = this.getEbookUrl(this.pdfEbook.path)
-      } else if (this.comicEbook) {
-        this.ebookType = 'comic'
-        this.ebookUrl = this.getEbookUrl(this.comicEbook.path)
-      }
     },
     close() {
       this.unregisterListeners()

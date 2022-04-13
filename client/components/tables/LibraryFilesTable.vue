@@ -30,7 +30,6 @@
               </td>
               <td class="text-xs">
                 <div class="flex items-center">
-                  <span v-if="file.filetype === 'ebook'" class="material-icons text-base mr-1 cursor-pointer text-white text-opacity-60 hover:text-opacity-100" @click="readEbookClick(file)">auto_stories </span>
                   <p>{{ file.fileType }}</p>
                 </div>
               </td>
@@ -53,7 +52,8 @@ export default {
       default: () => []
     },
     libraryItemId: String,
-    isMissing: Boolean
+    isMissing: Boolean,
+    expanded: Boolean // start expanded
   },
   data() {
     return {
@@ -70,13 +70,12 @@ export default {
     }
   },
   methods: {
-    readEbookClick(file) {
-      // this.$store.commit('showEReaderForFile', { audiobook: this.audiobook, file })
-    },
     clickBar() {
       this.showFiles = !this.showFiles
     }
   },
-  mounted() {}
+  mounted() {
+    this.showFiles = this.expanded
+  }
 }
 </script>

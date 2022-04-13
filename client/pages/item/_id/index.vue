@@ -118,7 +118,7 @@
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
-            <ui-btn v-if="showExperimentalFeatures && ebooks.length" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showExperimentalFeatures && ebookFile" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
             </ui-btn>
@@ -291,11 +291,11 @@ export default {
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
     },
-    ebooks() {
-      return this.media.ebooks || []
+    ebookFile() {
+      return this.media.ebookFile
     },
     showExperimentalReadAlert() {
-      return !this.tracks.length && this.ebooks.length && !this.showExperimentalFeatures
+      return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures
     },
     description() {
       return this.mediaMetadata.description || ''

@@ -177,7 +177,7 @@ export default {
       return this._libraryItem.libraryId
     },
     hasEbook() {
-      return this.media.ebookFile
+      return this.media.ebookFormat
     },
     numTracks() {
       if (this.media.tracks) return this.media.tracks.length
@@ -522,8 +522,14 @@ export default {
     clickShowMore() {
       this.createMoreMenu()
     },
-    clickReadEBook() {
-      this.store.commit('showEReader', this.media.ebookFile)
+    async clickReadEBook() {
+      var libraryItem = await this.$axios.$get(`/api/items/${this.libraryItemId}?expanded=1`).catch((error) => {
+        console.error('Failed to get lirbary item', this.libraryItemId)
+        return null
+      })
+      if (!libraryItem) return
+      console.log('Got library itemn', libraryItem)
+      this.store.commit('showEReader', libraryItem)
     },
     selectBtnClick() {
       if (this.processingBatch) return
