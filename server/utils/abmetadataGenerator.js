@@ -214,7 +214,7 @@ function parseChapterLines(lines) {
     }
   })
 
-  if (chapter.start === null || chapter.end === null || chapter.end > chapter.start) {
+  if (chapter.start === null || chapter.end === null || chapter.end < chapter.start) {
     Logger.warn(`[abmetadataGenerator] Invalid chapter`)
     return null
   }
