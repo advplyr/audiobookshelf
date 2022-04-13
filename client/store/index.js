@@ -11,7 +11,6 @@ export const state = () => ({
   showEditModal: false,
   showEReader: false,
   selectedLibraryItem: null,
-  selectedAudiobookFile: null,
   developerMode: false,
   selectedLibraryItems: [],
   processingBatch: false,
@@ -141,13 +140,6 @@ export const mutations = {
     state.showEditModal = val
   },
   showEReader(state, libraryItem) {
-    state.selectedAudiobookFile = null
-    state.selectedLibraryItem = libraryItem
-
-    state.showEReader = true
-  },
-  showEReaderForFile(state, { libraryItem, file }) {
-    state.selectedAudiobookFile = file
     state.selectedLibraryItem = libraryItem
 
     state.showEReader = true

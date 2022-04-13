@@ -1,7 +1,9 @@
 <template>
   <div class="w-full border-b border-gray-700 pb-2">
     <div class="flex py-1 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer" @click="selectMatch">
-      <img :src="selectedCover || '/book_placeholder.jpg'" class="h-24 object-cover" :style="{ width: 96 / bookCoverAspectRatio + 'px' }" />
+      <div class="h-24 bg-primary" :style="{ minWidth: 96 / bookCoverAspectRatio + 'px' }">
+        <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
+      </div>
       <div class="px-4 flex-grow">
         <div class="flex items-center">
           <h1>{{ book.title }}</h1>
