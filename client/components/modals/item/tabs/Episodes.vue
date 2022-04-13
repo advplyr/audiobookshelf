@@ -13,7 +13,8 @@
       <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">No Episodes</div>
       <table v-else class="text-sm tracksTable">
         <tr class="font-book">
-          <th class="text-left w-16"><span class="px-4">#</span></th>
+          <th class="text-left">Sort #</th>
+          <th class="text-left">Episode #</th>
           <th class="text-left">Title</th>
           <th class="text-center w-28">Duration</th>
           <th class="text-center w-28">Size</th>
@@ -21,6 +22,9 @@
         <tr v-for="episode in episodes" :key="episode.id">
           <td class="text-left">
             <p class="px-4">{{ episode.index }}</p>
+          </td>
+          <td class="text-left">
+            <p class="px-4">{{ episode.episode }}</p>
           </td>
           <td class="font-book">
             {{ episode.title }}
