@@ -66,7 +66,9 @@ class LibraryItemController {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
-    await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
+    if (libraryItem.isBook) {
+      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
+    }
 
     var hasUpdates = libraryItem.media.update(mediaPayload)
     if (hasUpdates) {

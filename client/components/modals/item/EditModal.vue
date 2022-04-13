@@ -116,19 +116,16 @@ export default {
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.id === 'download' && this.isMissing) return false
-        if (this.mediaType == 'podcast' && (tab.id == 'match' || tab.id == 'chapters')) return false
+        if (this.mediaType == 'podcast' && tab.id == 'chapters') return false
         if (this.mediaType == 'book' && tab.id == 'episodes') return false
 
         if ((tab.id === 'download' || tab.id === 'files') && this.userCanDownload) return true
         if (tab.id !== 'download' && tab.id !== 'files' && this.userCanUpdate) return true
-        if (tab.id === 'match' && this.userCanUpdate && this.showExperimentalFeatures) return true
+        if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })
     },

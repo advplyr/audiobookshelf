@@ -22,7 +22,7 @@
     </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper">
       <template v-for="(res, index) in searchResults">
-        <cards-book-match-card :key="index" :book="res" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
+        <cards-book-match-card :key="index" :book="res" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
     </div>
     <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full p-8 max-h-full overflow-y-auto overflow-x-hidden">
@@ -109,6 +109,36 @@
             <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.asin || '' }}</p>
           </div>
         </div>
+
+        <div v-if="selectedMatch.itunesId" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.itunesId" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.itunesId" type="number" :disabled="!selectedMatchUsage.itunesId" label="iTunes ID" />
+            <p v-if="mediaMetadata.itunesId" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesId || '' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatch.feedUrl" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.feedUrl" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.feedUrl" :disabled="!selectedMatchUsage.feedUrl" label="RSS Feed URL" />
+            <p v-if="mediaMetadata.feedUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.feedUrl || '' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatch.itunesPageUrl" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.itunesPageUrl" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.itunesPageUrl" :disabled="!selectedMatchUsage.itunesPageUrl" label="iTunes Page URL" />
+            <p v-if="mediaMetadata.itunesPageUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesPageUrl || '' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatch.releaseDate" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.releaseDate" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.releaseDate" :disabled="!selectedMatchUsage.releaseDate" label="Release Date" />
+            <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.releaseDate || '' }}</p>
+          </div>
+        </div>
+
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">Update</ui-btn>
         </div>
@@ -148,7 +178,12 @@ export default {
         series: true,
         volumeNumber: true,
         asin: true,
-        isbn: true
+        isbn: true,
+        // Podcast specific
+        itunesPageUrl: true,
+        itunesId: true,
+        feedUrl: true,
+        releaseDate: true
       }
     }
   },
@@ -173,6 +208,7 @@ export default {
       return this.$store.getters['getBookCoverAspectRatio']
     },
     providers() {
+      if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
@@ -185,6 +221,12 @@ export default {
     },
     mediaMetadata() {
       return this.media.metadata || {}
+    },
+    mediaType() {
+      return this.libraryItem ? this.libraryItem.mediaType : null
+    },
+    isPodcast() {
+      return this.mediaType == 'podcast'
     }
   },
   methods: {
@@ -196,6 +238,7 @@ export default {
       }
     },
     getSearchQuery() {
+      if (this.isPodcast) return `term=${this.searchTitle}`
       var searchQuery = `provider=${this.provider}&fallbackTitleOnly=1&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
       return searchQuery
@@ -214,14 +257,27 @@ export default {
       this.searchResults = []
       this.isProcessing = true
       this.lastSearch = searchQuery
-      var results = await this.$axios.$get(`/api/search/books?${searchQuery}`).catch((error) => {
+      var searchEntity = this.isPodcast ? 'podcast' : 'books'
+      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`).catch((error) => {
         console.error('Failed', error)
         return []
       })
-      results = results.filter((res) => {
+      // console.log('Got search results', results)
+      results = (results || []).filter((res) => {
         return !!res.title
       })
-      this.searchResults = results
+
+      if (this.isPodcast) {
+        // Map to match PodcastMetadata keys
+        results = results.map((res) => {
+          res.itunesPageUrl = res.pageUrl || null
+          res.itunesId = res.id || null
+          res.author = res.artistName || null
+          return res
+        })
+      }
+
+      this.searchResults = results || []
       this.isProcessing = false
       this.hasSearched = true
     },
@@ -239,7 +295,12 @@ export default {
         series: true,
         volumeNumber: true,
         asin: true,
-        isbn: true
+        isbn: true,
+        // Podcast specific
+        itunesPageUrl: true,
+        itunesId: true,
+        feedUrl: true,
+        releaseDate: true
       }
 
       if (this.libraryItem.id !== this.libraryItemId) {
@@ -255,7 +316,8 @@ export default {
       }
       this.searchTitle = this.libraryItem.media.metadata.title
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
-      this.provider = localStorage.getItem('book-provider') || 'google'
+      if (this.isPodcast) this.provider = 'itunes'
+      else this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
       this.selectedMatch = match
@@ -273,7 +335,7 @@ export default {
               sequence: volumeNumber
             }
             updatePayload.series = [seriesItem]
-          } else if (key === 'author') {
+          } else if (key === 'author' && !this.isPodcast) {
             var authorItem = {
               id: `new-${Math.floor(Math.random() * 10000)}`,
               name: this.selectedMatch[key]
@@ -281,6 +343,8 @@ export default {
             updatePayload.authors = [authorItem]
           } else if (key === 'narrator') {
             updatePayload.narrators = [this.selectedMatch[key]]
+          } else if (key === 'itunesId') {
+            updatePayload.itunesId = Number(this.selectedMatch[key])
           } else if (key !== 'volumeNumber') {
             updatePayload[key] = this.selectedMatch[key]
           }

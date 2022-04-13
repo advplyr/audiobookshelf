@@ -7,14 +7,14 @@
         <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check for new episodes</ui-btn>
       </div> -->
 
-      <div class="w-full p-4 bg-primary">
+      <div v-if="episodes.length" class="w-full p-4 bg-primary">
         <p>Podcast Episodes</p>
       </div>
       <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">No Episodes</div>
       <table v-else class="text-sm tracksTable">
         <tr class="font-book">
           <th class="text-left">Sort #</th>
-          <th class="text-left">Episode #</th>
+          <th class="text-left whitespace-nowrap">Episode #</th>
           <th class="text-left">Title</th>
           <th class="text-center w-28">Duration</th>
           <th class="text-center w-28">Size</th>

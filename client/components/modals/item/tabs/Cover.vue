@@ -121,6 +121,7 @@ export default {
       }
     },
     providers() {
+      if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
@@ -136,6 +137,12 @@ export default {
     },
     libraryItemId() {
       return this.libraryItem ? this.libraryItem.id : null
+    },
+    mediaType() {
+      return this.libraryItem ? this.libraryItem.mediaType : null
+    },
+    isPodcast() {
+      return this.mediaType == 'podcast'
     },
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
@@ -212,7 +219,8 @@ export default {
       this.imageUrl = this.media.coverPath || ''
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
-      this.provider = localStorage.getItem('book-provider') || 'openlibrary'
+      if (this.isPodcast) this.provider = 'itunes'
+      else this.provider = localStorage.getItem('book-provider') || 'google'
     },
     removeCover() {
       if (!this.media.coverPath) {
@@ -278,6 +286,7 @@ export default {
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
       if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
+      if (this.isPodcast) searchQuery += '&podcast=1'
       return searchQuery
     },
     persistProvider() {

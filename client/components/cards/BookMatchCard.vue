@@ -4,7 +4,7 @@
       <div class="h-24 bg-primary" :style="{ minWidth: 96 / bookCoverAspectRatio + 'px' }">
         <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
       </div>
-      <div class="px-4 flex-grow">
+      <div v-if="!isPodcast" class="px-4 flex-grow">
         <div class="flex items-center">
           <h1>{{ book.title }}</h1>
           <div class="flex-grow" />
@@ -14,6 +14,12 @@
         <div class="w-full max-h-12 overflow-hidden">
           <p class="text-gray-500 text-xs">{{ book.description }}</p>
         </div>
+      </div>
+      <div v-else class="px-4 flex-grow">
+        <h1>{{ book.title }}</h1>
+        <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ book.author }}</p>
+        <p class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
+        <p class="text-xs text-gray-400 leading-5">{{ book.trackCount }} Episodes</p>
       </div>
     </div>
     <div v-if="bookCovers.length > 1" class="flex">
@@ -33,6 +39,7 @@ export default {
       type: Object,
       default: () => {}
     },
+    isPodcast: Boolean,
     bookCoverAspectRatio: Number
   },
   data() {

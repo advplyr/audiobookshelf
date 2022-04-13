@@ -80,7 +80,7 @@ class iTunes {
   cleanPodcast(data) {
     return {
       id: data.collectionId,
-      artistId: data.artistId,
+      artistId: data.artistId || null,
       title: data.collectionName,
       artistName: data.artistName,
       description: stripHtml(data.description || '').result,

@@ -147,7 +147,11 @@ class MiscController {
 
   async findCovers(req, res) {
     var query = req.query
-    var result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
+    var podcast = query.podcast == 1
+
+    var result = null
+    if (podcast) result = await this.podcastFinder.findCovers(query.title)
+    else result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
     res.json(result)
   }
 

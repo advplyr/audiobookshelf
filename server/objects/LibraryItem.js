@@ -144,6 +144,8 @@ class LibraryItem {
     }
   }
 
+  get isPodcast() { return this.mediaType === 'podcast' }
+  get isBook() { return this.mediaType === 'book' }
   get size() {
     var total = 0
     this.libraryFiles.forEach((lf) => total += lf.metadata.size)
