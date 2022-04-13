@@ -5,7 +5,7 @@
         <span class="block truncate">{{ label }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <span class="material-icons text-gray-100">person</span>
+        <span class="material-icons text-gray-100" aria-label="User Account" role="button">person</span>
       </span>
     </button>
 
