@@ -243,8 +243,6 @@ class LibraryItem {
     this.scanVersion = version
   }
 
-  saveMetadata() { }
-
   // Returns null if file not found, true if file was updated, false if up to date
   //  updates existing LibraryFile, AudioFile, EBookFile's
   checkFileFound(fileFound) {

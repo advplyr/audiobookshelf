@@ -9,10 +9,6 @@
 
         <div class="flex-grow" />
 
-        <ui-tooltip v-if="!isMissing && mediaType == 'book'" text="(Root User Only) Save a NFO metadata file in your audiobooks directory" direction="bottom" class="mr-4 hidden sm:block">
-          <ui-btn v-if="isRootUser" :loading="savingMetadata" color="bg" type="button" class="h-full" small @click.stop.prevent="saveMetadata">Save Metadata</ui-btn>
-        </ui-tooltip>
-
         <ui-tooltip v-if="mediaType == 'book'" :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
           <ui-btn v-if="isRootUser" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
         </ui-tooltip>
@@ -40,7 +36,6 @@ export default {
     return {
       resettingProgress: false,
       isScrollable: false,
-      savingMetadata: false,
       rescanning: false,
       quickMatching: false
     }
@@ -143,24 +138,6 @@ export default {
           this.$toast.error('Failed to scan library item')
           this.rescanning = false
         })
-    },
-    saveMetadataComplete(result) {
-      this.savingMetadata = false
-      if (result.error) {
-        this.$toast.error(result.error)
-      } else if (result.audiobookId) {
-        var { savedPath } = result
-        if (!savedPath) {
-          this.$toast.error(`Failed to save metadata file (${result.audiobookId})`)
-        } else {
-          this.$toast.success(`Metadata file saved "${result.audiobookTitle}"`)
-        }
-      }
-    },
-    saveMetadata() {
-      this.savingMetadata = true
-      this.$root.socket.once('save_metadata_complete', this.saveMetadataComplete)
-      this.$root.socket.emit('save_metadata', this.libraryItemId)
     },
     submitForm() {
       if (this.isProcessing) {

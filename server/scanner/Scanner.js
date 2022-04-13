@@ -616,40 +616,6 @@ class Scanner {
     return false
   }
 
-  // TODO: Redo metadata
-  async saveMetadata(audiobookId) {
-    // if (audiobookId) {
-    //   var audiobook = this.db.audiobooks.find(ab => ab.id === audiobookId)
-    //   if (!audiobook) {
-    //     return {
-    //       error: 'Audiobook not found'
-    //     }
-    //   }
-    //   var savedPath = await audiobook.writeNfoFile()
-    //   return {
-    //     audiobookId,
-    //     audiobookTitle: audiobook.title,
-    //     savedPath
-    //   }
-    // } else {
-    //   var response = {
-    //     success: 0,
-    //     failed: 0
-    //   }
-    //   for (let i = 0; i < this.db.audiobooks.length; i++) {
-    //     var audiobook = this.db.audiobooks[i]
-    //     var savedPath = await audiobook.writeNfoFile()
-    //     if (savedPath) {
-    //       Logger.info(`[Scanner] Saved metadata nfo ${savedPath}`)
-    //       response.success++
-    //     } else {
-    //       response.failed++
-    //     }
-    //   }
-    //   return response
-    // }
-  }
-
   async quickMatchBook(libraryItem, options = {}) {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title

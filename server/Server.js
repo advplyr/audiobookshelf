@@ -225,11 +225,6 @@ class Server {
 
       // Scanning
       socket.on('cancel_scan', this.cancelScan.bind(this))
-      socket.on('save_metadata', (libraryItemId) => this.saveMetadata(socket, libraryItemId))
-
-      // Downloading
-      socket.on('download', (payload) => this.downloadManager.downloadSocketRequest(socket, payload))
-      socket.on('remove_download', (downloadId) => this.downloadManager.removeSocketRequest(socket, downloadId))
 
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
@@ -271,14 +266,6 @@ class Server {
   cancelScan(id) {
     Logger.debug('[Server] Cancel scan', id)
     this.scanner.setCancelLibraryScan(id)
-  }
-
-  // Generates an NFO metadata file, if no audiobookId is passed then all audiobooks are done
-  async saveMetadata(socket, audiobookId = null) {
-    Logger.info('[Server] Starting save metadata files')
-    var response = await this.scanner.saveMetadata(audiobookId)
-    Logger.info(`[Server] Finished saving metadata files Successful: ${response.success}, Failed: ${response.failed}`)
-    socket.emit('save_metadata_complete', response)
   }
 
   // Remove unused /metadata/items/{id} folders
