@@ -190,11 +190,11 @@ class PodcastManager {
         Logger.error('Invalid podcast feed request response')
         return false
       }
-      var podcast = await parsePodcastRssFeedXml(data.data)
-      if (!podcast) {
+      var payload = await parsePodcastRssFeedXml(data.data)
+      if (!payload) {
         return false
       }
-      return podcast
+      return payload.podcast
     }).catch((error) => {
       console.error('Failed', error)
       return false

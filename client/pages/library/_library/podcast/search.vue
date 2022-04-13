@@ -6,9 +6,9 @@
         <app-book-shelf-toolbar page="podcast-search" />
         <div class="w-full h-full overflow-y-auto p-12 relative">
           <div class="w-full max-w-3xl mx-auto">
-            <form @submit.prevent="submitSearch" class="flex">
-              <ui-text-input v-model="searchTerm" :disabled="processing" placeholder="Search term" class="flex-grow mr-2" />
-              <ui-btn type="submit" :disabled="processing">Search Podcasts</ui-btn>
+            <form @submit.prevent="submit" class="flex">
+              <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
+              <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
             </form>
           </div>
 
@@ -54,11 +54,10 @@ export default {
   },
   data() {
     return {
-      searchTerm: '',
+      searchInput: '',
       results: [],
       termSearched: '',
       processing: false,
-
       showNewPodcastModal: false,
       selectedPodcast: null,
       selectedPodcastFeed: null
@@ -70,13 +69,35 @@ export default {
     }
   },
   methods: {
-    async submitSearch() {
-      if (!this.searchTerm) return
-      console.log('Searching', this.searchTerm)
-      var term = this.searchTerm
+    submit() {
+      if (!this.searchInput) return
+
+      if (this.searchInput.startsWith('http:') || this.searchInput.startsWith('https:')) {
+        this.termSearched = ''
+        this.results = []
+        this.checkRSSFeed(this.searchInput)
+      } else {
+        this.submitSearch(this.searchInput)
+      }
+    },
+    async checkRSSFeed(rssFeed) {
+      this.processing = true
+      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed }).catch((error) => {
+        console.error('Failed to get feed', error)
+        this.$toast.error('Failed to get podcast feed')
+        return null
+      })
+      this.processing = false
+      if (!payload) return
+
+      this.selectedPodcastFeed = payload.podcast
+      this.selectedPodcast = null
+      this.showNewPodcastModal = true
+    },
+    async submitSearch(term) {
       this.processing = true
       this.termSearched = ''
-      var results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(this.searchTerm)}`).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(term)}`).catch((error) => {
         console.error('Search request failed', error)
         return []
       })
@@ -92,17 +113,18 @@ export default {
         return
       }
       this.processing = true
-      var podcastfeed = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
+      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error('Failed to get podcast feed')
         return null
       })
       this.processing = false
-      if (!podcastfeed) return
-      this.selectedPodcastFeed = podcastfeed
+      if (!payload) return
+
+      this.selectedPodcastFeed = payload.podcast
       this.selectedPodcast = podcast
       this.showNewPodcastModal = true
-      console.log('Got podcast feed', podcastfeed)
+      console.log('Got podcast feed', payload.podcast)
     }
   },
   mounted() {}

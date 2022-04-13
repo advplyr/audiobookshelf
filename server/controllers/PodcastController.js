@@ -94,17 +94,18 @@ class PodcastController {
     if (!url) {
       return res.status(400).send('Bad request')
     }
+    var includeRaw = req.query.raw == 1 // Include raw json
 
     axios.get(url).then(async (data) => {
       if (!data || !data.data) {
         Logger.error('Invalid podcast feed request response')
         return res.status(500).send('Bad response from feed request')
       }
-      var podcast = await parsePodcastRssFeedXml(data.data)
-      if (!podcast) {
+      var payload = await parsePodcastRssFeedXml(data.data, includeRaw)
+      if (!payload) {
         return res.status(500).send('Invalid podcast RSS feed')
       }
-      res.json(podcast)
+      res.json(payload)
     }).catch((error) => {
       console.error('Failed', error)
       res.status(500).send(error)

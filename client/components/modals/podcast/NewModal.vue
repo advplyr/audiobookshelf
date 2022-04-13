@@ -56,7 +56,6 @@
                 <p class="break-words mb-1">{{ episode.title }}</p>
                 <p v-if="episode.subtitle" class="break-words mb-1 text-sm text-gray-300 episode-subtitle">{{ episode.subtitle }}</p>
                 <p class="text-xs text-gray-300">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
-                <!-- <span class="material-icons cursor-pointer text-lg hover:text-success" @click="saveEpisode(episode)">save</span> -->
               </div>
             </div>
           </div>
@@ -246,17 +245,15 @@ export default {
           this.$toast.error(errorMsg)
         })
     },
-    saveEpisode(episode) {
-      console.log('Save episode', episode)
-    },
     init() {
-      this.podcast.title = this._podcastData.title
-      this.podcast.author = this._podcastData.artistName || ''
-      this.podcast.description = this._podcastData.description || this.feedMetadata.description || ''
+      // Prefer using itunes podcast data but not always passed in if manually entering rss feed
+      this.podcast.title = this._podcastData.title || this.feedMetadata.title || ''
+      this.podcast.author = this._podcastData.artistName || this.feedMetadata.author || ''
+      this.podcast.description = this._podcastData.description || this.feedMetadata.descriptionPlain || ''
       this.podcast.releaseDate = this._podcastData.releaseDate || ''
-      this.podcast.genres = this._podcastData.genres || []
-      this.podcast.feedUrl = this._podcastData.feedUrl
-      this.podcast.imageUrl = this._podcastData.cover || ''
+      this.podcast.genres = this._podcastData.genres || this.feedMetadata.categories || []
+      this.podcast.feedUrl = this._podcastData.feedUrl || this.feedMetadata.feedUrl || ''
+      this.podcast.imageUrl = this._podcastData.cover || this.feedMetadata.image || ''
       this.podcast.itunesPageUrl = this._podcastData.pageUrl || ''
       this.podcast.itunesId = this._podcastData.id || ''
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
