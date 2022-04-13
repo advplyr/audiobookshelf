@@ -92,6 +92,12 @@ class BackupManager {
     var details = data.toString('utf8').split('\n')
 
     var backup = new Backup({ details, fullPath: tempPath })
+
+    if (!backup.serverVersion) {
+      Logger.error(`[BackupManager] Invalid backup with no server version - might be a backup created before version 2.0.0`)
+      return res.status(500).send('Invalid backup. Might be a backup created before version 2.0.0.')
+    }
+
     backup.fileSize = await getFileSize(backup.fullPath)
 
     var existingBackupIndex = this.backups.findIndex(b => b.id === backup.id)
@@ -133,6 +139,11 @@ class BackupManager {
           var details = data.toString('utf8').split('\n')
 
           var backup = new Backup({ details, fullPath: fullFilePath })
+
+          if (!backup.serverVersion) {
+            Logger.error(`[BackupManager] Old unsupported backup was found "${backup.fullPath}"`)
+          }
+
           backup.fileSize = await getFileSize(backup.fullPath)
           var existingBackupWithId = this.backups.find(b => b.id === backup.id)
           if (existingBackupWithId) {

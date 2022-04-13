@@ -1,5 +1,6 @@
 const Path = require('path')
 const date = require('date-and-time')
+const version = require('../../package.json').version
 
 class Backup {
   constructor(data = null) {
@@ -11,6 +12,7 @@ class Backup {
     this.filename = null
     this.path = null
     this.fullPath = null
+    this.serverVersion = null
 
     this.fileSize = null
     this.createdAt = null
@@ -25,6 +27,7 @@ class Backup {
     details.push(this.id)
     details.push(this.backupMetadataCovers ? '1' : '0')
     details.push(this.createdAt)
+    details.push(this.serverVersion)
     return details.join('\n')
   }
 
@@ -32,6 +35,7 @@ class Backup {
     this.id = data.details[0]
     this.backupMetadataCovers = data.details[1] === '1'
     this.createdAt = Number(data.details[2])
+    this.serverVersion = data.details[3] || null
 
     this.datePretty = date.format(new Date(this.createdAt), 'ddd, MMM D YYYY HH:mm')
 
@@ -51,7 +55,8 @@ class Backup {
       path: this.path,
       filename: this.filename,
       fileSize: this.fileSize,
-      createdAt: this.createdAt
+      createdAt: this.createdAt,
+      serverVersion: this.serverVersion
     }
   }
 
@@ -66,6 +71,8 @@ class Backup {
     this.filename = this.id + '.audiobookshelf'
     this.path = Path.join('backups', this.filename)
     this.fullPath = Path.join(this.backupDirPath, this.filename)
+
+    this.serverVersion = version
 
     this.createdAt = Date.now()
   }

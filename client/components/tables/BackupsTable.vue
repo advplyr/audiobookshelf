@@ -13,17 +13,20 @@
           <th class="hidden sm:table-cell w-20 md:w-28">Size</th>
           <th class="w-36"></th>
         </tr>
-        <tr v-for="backup in backups" :key="backup.id">
+        <tr v-for="backup in backups" :key="backup.id" :class="!backup.serverVersion ? 'bg-error bg-opacity-10' : ''">
           <td>
             <p class="truncate text-xs sm:text-sm md:text-base">/{{ backup.path.replace(/\\/g, '/') }}</p>
           </td>
-          <td class="hidden sm:table-cell font-sans text-base">{{ backup.datePretty }}</td>
-          <td class="hidden sm:table-cell font-mono md:text-base text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
+          <td class="hidden sm:table-cell font-sans text-sm">{{ backup.datePretty }}</td>
+          <td class="hidden sm:table-cell font-mono md:text-sm text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
             <div class="w-full flex flex-row items-center justify-center">
-              <ui-btn small color="primary" @click="applyBackup(backup)">Apply</ui-btn>
+              <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">Apply</ui-btn>
 
-              <a :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
+              <a v-if="backup.serverVersion" :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
+              <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
+                <span class="material-icons-outlined text-error">error_outline</span>
+              </ui-tooltip>
 
               <span class="material-icons text-xl hover:text-error hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="deleteBackupClick(backup)">delete</span>
             </div>
@@ -176,11 +179,11 @@ export default {
   text-align: center;
 }
 
-#backups tr:nth-child(even) {
+#backups tr:nth-child(even):not(.bg-error) {
   background-color: #3a3a3a;
 }
 
-#backups tr:not(.staticrow):hover {
+#backups tr:not(.staticrow):not(.bg-error):hover {
   background-color: #444;
 }
 
