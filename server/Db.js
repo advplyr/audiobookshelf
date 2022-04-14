@@ -9,7 +9,7 @@ const UserCollection = require('./objects/UserCollection')
 const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
-const ServerSettings = require('./objects/ServerSettings')
+const ServerSettings = require('./objects/settings/ServerSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
 
 class Db {

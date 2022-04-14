@@ -1,10 +1,14 @@
 <template>
-  <div class="w-full h-full">
+  <div class="w-full h-full bg-bg absolute top-0 left-0 px-4 py-4 z-10">
+    <div class="flex items-center py-1 mb-2">
+      <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
+      <p class="px-4 text-xl">Choose a Folder</p>
+    </div>
     <div v-if="allFolders.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
       <p class="font-mono truncate">{{ selectedPath || '\\' }}</p>
     </div>
-    <div v-if="allFolders.length" class="flex bg-primary bg-opacity-50 p-4">
-      <div class="w-1/2 border-r border-bg">
+    <div v-if="allFolders.length" class="flex bg-primary bg-opacity-50 p-4 folder-container">
+      <div class="w-1/2 border-r border-bg h-full overflow-y-auto">
         <div v-if="level > 0" class="w-full p-1 cursor-pointer flex items-center" @click="goBack">
           <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2">..</p>
@@ -15,7 +19,7 @@
           <span v-if="dir.dirs && dir.dirs.length && dir.path === selectedPath" class="material-icons" style="font-size: 1.1rem">arrow_right</span>
         </div>
       </div>
-      <div class="w-1/2">
+      <div class="w-1/2 h-full overflow-y-auto">
         <div v-for="dir in _subdirs" :key="dir.path" :class="dir.className" class="dir-item w-full p-1 cursor-pointer flex items-center hover:text-white text-gray-200" @click="selectSubDir(dir)">
           <span class="material-icons bg-opacity-50 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <p class="text-base font-mono px-2 truncate">{{ dir.dirname }}</p>
@@ -30,12 +34,8 @@
       <p class="text-gray-300">Note: folders already mapped will not be shown</p>
     </div>
 
-    <div class="absolute bottom-0 left-0 w-full py-4 px-8">
+    <div class="w-full py-2">
       <ui-btn :disabled="!selectedPath" color="primary" class="w-full mt-2" @click="selectFolder">Select Folder Path</ui-btn>
-      <!-- <div class="flex items-center">
-        <div class="flex-grow" />
-        <ui-btn color="success" @click="selectFolder">Select</ui-btn>
-      </div> -->
     </div>
   </div>
 </template>
@@ -160,5 +160,10 @@ export default {
 }
 .dir-item.dir-used {
   background-color: rgba(255, 25, 0, 0.1);
+}
+.folder-container {
+  max-height: calc(100% - 130px);
+  height: calc(100% - 130px);
+  min-height: calc(100% - 130px);
 }
 </style>

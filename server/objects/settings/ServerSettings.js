@@ -1,5 +1,5 @@
-const { BookCoverAspectRatio, BookshelfView } = require('../utils/constants')
-const Logger = require('../Logger')
+const { BookCoverAspectRatio, BookshelfView } = require('../../utils/constants')
+const Logger = require('../../Logger')
 
 class ServerSettings {
   constructor(settings) {
