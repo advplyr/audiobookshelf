@@ -4,8 +4,8 @@ export default {
   data() {
     return {
       uploadHelpers: {
-        getBooksFromDrop: this.getBooksFromDataTransferItems,
-        getBooksFromPicker: this.getBooksFromFileList
+        getItemsFromDrop: this.getItemsFromDataTransferItems,
+        getItemsFromPicker: this.getItemsFromFilelist
       }
     }
   },
@@ -23,8 +23,8 @@ export default {
       }
       return false
     },
-    filterAudiobookFiles(files) {
-      var validBookFiles = []
+    filterItemFiles(files, mediaType) {
+      var validItemFiles = []
       var validOtherFiles = []
       var ignoredFiles = []
       files.forEach((file) => {
@@ -32,60 +32,60 @@ export default {
         if (!filetype) ignoredFiles.push(file)
         else {
           file.filetype = filetype
-          if (filetype === 'audio' || filetype === 'ebook') validBookFiles.push(file)
+          if (filetype === 'audio' || (filetype === 'ebook' && mediaType === 'book')) validItemFiles.push(file)
           else validOtherFiles.push(file)
         }
       })
 
       return {
-        bookFiles: validBookFiles,
+        itemFiles: validItemFiles,
         otherFiles: validOtherFiles,
         ignoredFiles
       }
     },
-    audiobookFromItems(items) {
-      var { bookFiles, otherFiles, ignoredFiles } = this.filterAudiobookFiles(items)
-      if (!bookFiles.length) {
+    itemFromTreeItems(items, mediaType) {
+      var { itemFiles, otherFiles, ignoredFiles } = this.filterItemFiles(items, mediaType)
+      if (!itemFiles.length) {
         ignoredFiles = ignoredFiles.concat(otherFiles)
         otherFiles = []
       }
       return [
         {
-          bookFiles,
+          itemFiles,
           otherFiles,
           ignoredFiles
         }
       ]
     },
-    traverseForAudiobook(folder, depth = 1) {
+    traverseForItem(folder, mediaType, depth = 1) {
       if (folder.items.some((f) => f.isDirectory)) {
-        var audiobooks = []
+        var items = []
         folder.items.forEach((file) => {
           if (file.isDirectory) {
-            var audiobookResults = this.traverseForAudiobook(file, ++depth)
-            audiobooks = audiobooks.concat(audiobookResults)
+            var itemResults = this.traverseForItem(file, mediaType, ++depth)
+            items = items.concat(itemResults)
           }
         })
-        return audiobooks
+        return items
       } else {
-        return this.audiobookFromItems(folder.items)
+        return this.itemFromTreeItems(folder.items, mediaType)
       }
     },
-    fileTreeToAudiobooks(filetree) {
+    fileTreeToItems(filetree, mediaType) {
       // Has directores - Is Multi Book Drop
       if (filetree.some((f) => f.isDirectory)) {
         var ignoredFilesInRoot = filetree.filter((f) => !f.isDirectory)
         if (ignoredFilesInRoot.length) filetree = filetree.filter((f) => f.isDirectory)
 
-        var audiobookResults = this.traverseForAudiobook({ items: filetree })
+        var itemResults = this.traverseForItem({ items: filetree }, mediaType)
         return {
-          audiobooks: audiobookResults,
+          items: itemResults,
           ignoredFiles: ignoredFilesInRoot
         }
       } else {
         // Single Book drop
         return {
-          audiobooks: this.audiobookFromItems(filetree),
+          items: this.itemFromTreeItems(filetree, mediaType),
           ignoredFiles: []
         }
       }
@@ -140,7 +140,7 @@ export default {
         series: '',
         ...book
       }
-      var firstBookFile = book.bookFiles[0]
+      var firstBookFile = book.itemFiles[0]
       if (!firstBookFile.filepath) return audiobook // No path
 
       var firstBookPath = Path.dirname(firstBookFile.filepath)
@@ -157,32 +157,49 @@ export default {
       }
       return audiobook
     },
-    async getBooksFromDataTransferItems(items) {
+    cleanPodcast(item, index) {
+      var podcast = {
+        index,
+        title: '',
+        ...item
+      }
+      var firstAudioFile = podcast.itemFiles[0]
+      if (!firstAudioFile.filepath) return podcast // No path
+      var firstPath = Path.dirname(firstAudioFile.filepath)
+      var dirs = firstPath.split('/').filter(d => !!d && d !== '.')
+      podcast.title = dirs.length > 1 ? dirs[1] : dirs[0]
+      return podcast
+    },
+    cleanItem(item, mediaType, index) {
+      if (mediaType === 'podcast') return this.cleanPodcast(item, index)
+      return this.cleanBook(item, index)
+    },
+    async getItemsFromDataTransferItems(items, mediaType) {
       var files = await this.getFilesDropped(items)
       if (!files || !files.length) return { error: 'No files found ' }
-      var audiobooksData = this.fileTreeToAudiobooks(files)
-      if (!audiobooksData.audiobooks.length && !audiobooksData.ignoredFiles.length) {
+      var itemData = this.fileTreeToItems(files, mediaType)
+      if (!itemData.items.length && !itemData.ignoredFiles.length) {
         return { error: 'Invalid file drop' }
       }
-      var ignoredFiles = audiobooksData.ignoredFiles
+      var ignoredFiles = itemData.ignoredFiles
       var index = 1
-      var books = audiobooksData.audiobooks.filter((ab) => {
-        if (!ab.bookFiles.length) {
+      var items = itemData.items.filter((ab) => {
+        if (!ab.itemFiles.length) {
           if (ab.otherFiles.length) ignoredFiles = ignoredFiles.concat(ab.otherFiles)
           if (ab.ignoredFiles.length) ignoredFiles = ignoredFiles.concat(ab.ignoredFiles)
         }
-        return ab.bookFiles.length
-      }).map(ab => this.cleanBook(ab, index++))
+        return ab.itemFiles.length
+      }).map(ab => this.cleanItem(ab, index++))
       return {
-        books,
+        items,
         ignoredFiles
       }
     },
-    getBooksFromFileList(filelist) {
+    getItemsFromFilelist(filelist, mediaType) {
       var ignoredFiles = []
       var otherFiles = []
 
-      var bookMap = {}
+      var itemMap = {}
 
       filelist.forEach((file) => {
         var filetype = this.checkFileType(file.name)
@@ -191,17 +208,17 @@ export default {
           file.filetype = filetype
           if (file.webkitRelativePath) file.filepath = file.webkitRelativePath
 
-          if (filetype === 'audio' || filetype === 'ebook') {
+          if (filetype === 'audio' || (filetype === 'ebook' && mediaType === 'book')) {
             var dir = file.filepath ? Path.dirname(file.filepath) : ''
-            if (!bookMap[dir]) {
-              bookMap[dir] = {
+            if (!itemMap[dir]) {
+              itemMap[dir] = {
                 path: dir,
                 ignoredFiles: [],
-                bookFiles: [],
+                itemFiles: [],
                 otherFiles: []
               }
             }
-            bookMap[dir].bookFiles.push(file)
+            itemMap[dir].itemFiles.push(file)
           } else {
             otherFiles.push(file)
           }
@@ -210,18 +227,18 @@ export default {
 
       otherFiles.forEach((file) => {
         var dir = Path.dirname(file.filepath)
-        var findBook = Object.values(bookMap).find(b => dir.startsWith(b.path))
-        if (findBook) {
-          bookMap[dir].otherFiles.push(file)
+        var findItem = Object.values(itemMap).find(b => dir.startsWith(b.path))
+        if (findItem) {
+          findItem.otherFiles.push(file)
         } else {
           ignoredFiles.push(file)
         }
       })
 
       var index = 1
-      var books = Object.values(bookMap).map(ab => this.cleanBook(ab, index++))
+      var items = Object.values(itemMap).map(i => this.cleanItem(i, mediaType, index++))
       return {
-        books,
+        items,
         ignoredFiles: ignoredFiles
       }
     },

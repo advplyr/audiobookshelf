@@ -14,8 +14,8 @@
 export default {
   async asyncData({ params, query, store, app, redirect }) {
     var libraryId = params.library
-    var library = await store.dispatch('libraries/fetch', libraryId)
-    if (!library) {
+    var libraryData = await store.dispatch('libraries/fetch', libraryId)
+    if (!libraryData) {
       return redirect('/oops?message=Library not found')
     }
 
@@ -23,6 +23,13 @@ export default {
     if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
+
+    // Redirect podcast libraries
+    const library = libraryData.library
+    if (library.mediaType === 'podcast' && (params.id === 'collections' || params.id === 'series')) {
+      return redirect(`/library/${libraryId}`)
+    }
+
     return {
       id: params.id || '',
       libraryId
