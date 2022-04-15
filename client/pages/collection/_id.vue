@@ -51,6 +51,7 @@ export default {
     if (!collection) {
       return redirect('/')
     }
+
     store.commit('user/addUpdateCollection', collection)
     return {
       collectionId: collection.id

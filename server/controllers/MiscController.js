@@ -1,6 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('../Logger')
+const filePerms = require('../utils/filePerms')
 
 const { isObject } = require('../utils/index')
 
@@ -37,15 +38,21 @@ class MiscController {
     }
 
     // For setting permissions recursively
-    var firstDirPath = Path.join(folder.fullPath, author)
-
     var outputDirectory = ''
-    if (series && author) {
-      outputDirectory = Path.join(folder.fullPath, author, series, title)
-    } else if (author) {
-      outputDirectory = Path.join(folder.fullPath, author, title)
-    } else {
+    var firstDirPath = ''
+
+    if (library.isPodcast) { // Podcasts only in 1 folder
       outputDirectory = Path.join(folder.fullPath, title)
+      firstDirPath = outputDirectory
+    } else {
+      firstDirPath = Path.join(folder.fullPath, author)
+      if (series && author) {
+        outputDirectory = Path.join(folder.fullPath, author, series, title)
+      } else if (author) {
+        outputDirectory = Path.join(folder.fullPath, author, title)
+      } else {
+        outputDirectory = Path.join(folder.fullPath, title)
+      }
     }
 
     var exists = await fs.pathExists(outputDirectory)

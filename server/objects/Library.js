@@ -1,4 +1,5 @@
 const Folder = require('./Folder')
+const LibrarySettings = require('./settings/LibrarySettings')
 const { getId } = require('../utils/index')
 
 class Library {
@@ -10,9 +11,9 @@ class Library {
     this.icon = 'database' // database, podcast, book, audiobook, comic
     this.mediaType = 'book' // book, podcast
     this.provider = 'google'
-    this.disableWatcher = false
 
     this.lastScan = 0
+    this.settings = null
 
     this.createdAt = null
     this.lastUpdate = null
@@ -25,6 +26,9 @@ class Library {
   get folderPaths() {
     return this.folders.map(f => f.fullPath)
   }
+  get isPodcast() {
+    return this.mediaType === 'podcast'
+  }
 
   construct(library) {
     this.id = library.id
@@ -34,7 +38,11 @@ class Library {
     this.icon = library.icon || 'database'
     this.mediaType = library.mediaType
     this.provider = library.provider || 'google'
-    this.disableWatcher = !!library.disableWatcher
+
+    this.settings = new LibrarySettings(library.settings)
+    if (library.settings === undefined) { // LibrarySettings added in v2, migrate settings
+      this.settings.disableWatcher = !!library.disableWatcher
+    }
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
@@ -62,7 +70,7 @@ class Library {
       icon: this.icon,
       mediaType: this.mediaType,
       provider: this.provider,
-      disableWatcher: this.disableWatcher,
+      settings: this.settings.toJSON(),
       createdAt: this.createdAt,
       lastUpdate: this.lastUpdate
     }
@@ -89,7 +97,7 @@ class Library {
     this.icon = data.icon || 'database'
     this.mediaType = data.mediaType || 'book'
     this.provider = data.provider || 'google'
-    this.disableWatcher = !!data.disableWatcher
+    this.settings = new LibrarySettings(data.settings)
     this.createdAt = Date.now()
     this.lastUpdate = Date.now()
   }
@@ -105,10 +113,10 @@ class Library {
       }
     })
 
-    if (payload.disableWatcher !== this.disableWatcher) {
-      this.disableWatcher = !!payload.disableWatcher
+    if (payload.settings && this.settings.update(payload.settings)) {
       hasUpdates = true
     }
+
     if (!isNaN(payload.displayOrder) && payload.displayOrder !== this.displayOrder) {
       this.displayOrder = Number(payload.displayOrder)
       hasUpdates = true

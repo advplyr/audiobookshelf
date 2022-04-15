@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full py-4 px-6 border border-white border-opacity-10 shadow-lg rounded-md my-6">
     <div class="absolute -top-3 -left-3 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full">
-      <p class="text-base text-white text-opacity-80 font-mono">#{{ book.index }}</p>
+      <p class="text-base text-white text-opacity-80 font-mono">#{{ item.index }}</p>
     </div>
 
     <div v-if="!processing && !uploadFailed && !uploadSuccess" class="absolute -top-3 -right-3 w-8 h-8 bg-bg border border-white border-opacity-10 flex items-center justify-center rounded-full hover:bg-error cursor-pointer" @click="$emit('remove')">
@@ -15,15 +15,19 @@
 
       <div class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="bookData.title" :disabled="processing" label="Title" @input="titleUpdated" />
+          <ui-text-input-with-label v-model="itemData.title" :disabled="processing" label="Title" @input="titleUpdated" />
         </div>
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="bookData.author" :disabled="processing" label="Author" />
+          <ui-text-input-with-label v-if="!isPodcast" v-model="itemData.author" :disabled="processing" label="Author" />
+          <div v-else class="w-full">
+            <p class="px-1 text-sm font-semibold">Directory <em class="font-normal text-xs pl-2">(auto)</em></p>
+            <ui-text-input :value="directory" disabled class="w-full font-mono text-xs" style="height: 38px" />
+          </div>
         </div>
       </div>
-      <div class="flex my-2 -mx-2">
+      <div v-if="!isPodcast" class="flex my-2 -mx-2">
         <div class="w-1/2 px-2">
-          <ui-text-input-with-label v-model="bookData.series" :disabled="processing" label="Series" note="(optional)" />
+          <ui-text-input-with-label v-model="itemData.series" :disabled="processing" label="Series" note="(optional)" />
         </div>
         <div class="w-1/2 px-2">
           <div class="w-full">
@@ -33,9 +37,9 @@
         </div>
       </div>
 
-      <tables-uploaded-files-table :files="book.bookFiles" title="Book Files" class="mt-8" />
-      <tables-uploaded-files-table v-if="book.otherFiles.length" title="Other Files" :files="book.otherFiles" />
-      <tables-uploaded-files-table v-if="book.ignoredFiles.length" title="Ignored Files" :files="book.ignoredFiles" />
+      <tables-uploaded-files-table :files="item.itemFiles" title="Item Files" class="mt-8" />
+      <tables-uploaded-files-table v-if="item.otherFiles.length" title="Other Files" :files="item.otherFiles" />
+      <tables-uploaded-files-table v-if="item.ignoredFiles.length" title="Ignored Files" :files="item.ignoredFiles" />
     </template>
     <widgets-alert v-if="uploadSuccess" type="success">
       <p class="text-base">Successfully Uploaded!</p>
@@ -55,15 +59,16 @@ import Path from 'path'
 
 export default {
   props: {
-    book: {
+    item: {
       type: Object,
       default: () => {}
     },
+    mediaType: String,
     processing: Boolean
   },
   data() {
     return {
-      bookData: {
+      itemData: {
         title: '',
         author: '',
         series: ''
@@ -75,14 +80,19 @@ export default {
     }
   },
   computed: {
+    isPodcast() {
+      return this.mediaType === 'podcast'
+    },
     directory() {
-      if (!this.bookData.title) return ''
-      if (this.bookData.series && this.bookData.author) {
-        return Path.join(this.bookData.author, this.bookData.series, this.bookData.title)
-      } else if (this.bookData.author) {
-        return Path.join(this.bookData.author, this.bookData.title)
+      if (!this.itemData.title) return ''
+      if (this.isPodcast) return this.itemData.title
+
+      if (this.itemData.series && this.itemData.author) {
+        return Path.join(this.itemData.author, this.itemData.series, this.itemData.title)
+      } else if (this.itemData.author) {
+        return Path.join(this.itemData.author, this.itemData.title)
       } else {
-        return this.bookData.title
+        return this.itemData.title
       }
     }
   },
@@ -96,24 +106,24 @@ export default {
       this.error = ''
     },
     getData() {
-      if (!this.bookData.title) {
+      if (!this.itemData.title) {
         this.error = 'Must have a title'
         return null
       }
       this.error = ''
-      var files = this.book.bookFiles.concat(this.book.otherFiles)
+      var files = this.item.itemFiles.concat(this.item.otherFiles)
       return {
-        index: this.book.index,
-        ...this.bookData,
+        index: this.item.index,
+        ...this.itemData,
         files
       }
     }
   },
   mounted() {
-    if (this.book) {
-      this.bookData.title = this.book.title
-      this.bookData.author = this.book.author
-      this.bookData.series = this.book.series
+    if (this.item) {
+      this.itemData.title = this.item.title
+      this.itemData.author = this.item.author
+      this.itemData.series = this.item.series
     }
   }
 }

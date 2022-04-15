@@ -139,31 +139,30 @@ class PodcastManager {
   }
 
   async checkForNewEpisodes() {
-    var podcastsWithAutoDownload = this.db.libraryItems.find(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
+    var podcastsWithAutoDownload = this.db.libraryItems.filter(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
     if (!podcastsWithAutoDownload.length) {
       this.cancelCron()
       return
     }
 
     for (const libraryItem of podcastsWithAutoDownload) {
-      Logger.info(`[PodcastManager] checkForNewEpisodes Cron for "${libraryItem.media.metadata.title}"`)
+      const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
+      Logger.info(`[PodcastManager] checkForNewEpisodes Cron for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
       var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
-      var hasUpdates = false
+
       if (!newEpisodes) { // Failed
         libraryItem.media.autoDownloadEpisodes = false
-        hasUpdates = true
       } else if (newEpisodes.length) {
         Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
         this.downloadPodcastEpisodes(libraryItem, newEpisodes)
-        hasUpdates = true
+      } else {
+        Logger.debug(`[PodcastManager] No new episodes for "${libraryItem.media.metadata.title}"`)
       }
 
-      if (hasUpdates) {
-        libraryItem.media.lastEpisodeCheck = Date.now()
-        libraryItem.updatedAt = Date.now()
-        await this.db.updateLibraryItem(libraryItem)
-        this.emitter('item_updated', libraryItem.toJSONExpanded())
-      }
+      libraryItem.media.lastEpisodeCheck = Date.now()
+      libraryItem.updatedAt = Date.now()
+      await this.db.updateLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
     }
   }
 

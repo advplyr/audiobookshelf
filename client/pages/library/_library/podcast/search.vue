@@ -44,10 +44,17 @@
 export default {
   async asyncData({ params, query, store, app, redirect }) {
     var libraryId = params.library
-    var library = await store.dispatch('libraries/fetch', libraryId)
-    if (!library) {
+    var libraryData = await store.dispatch('libraries/fetch', libraryId)
+    if (!libraryData) {
       return redirect('/oops?message=Library not found')
     }
+
+    // Redirect book libraries
+    const library = libraryData.library
+    if (library.mediaType === 'book') {
+      return redirect(`/library/${libraryId}`)
+    }
+
     return {
       libraryId
     }

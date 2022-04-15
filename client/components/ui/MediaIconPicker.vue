@@ -40,8 +40,8 @@ export default {
       showMenu: false,
       types: [
         {
-          id: 'default',
-          name: 'Default'
+          id: 'database',
+          name: 'Database'
         },
         {
           id: 'audiobook',
@@ -65,7 +65,7 @@ export default {
   computed: {
     selected: {
       get() {
-        return this.value || 'default'
+        return this.value || 'database'
       },
       set(val) {
         this.$emit('input', val)
@@ -75,7 +75,7 @@ export default {
       return this.types.find((t) => t.id === this.selected)
     },
     selectedName() {
-      return this.selectedItem ? this.selectedItem.name : 'Default'
+      return this.selectedItem ? this.selectedItem.name : 'Database'
     }
   },
   methods: {

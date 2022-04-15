@@ -3,7 +3,7 @@
     <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">
       {{ label }}<em v-if="note" class="font-normal text-xs pl-2">{{ note }}</em>
     </p>
-    <ui-text-input ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" />
+    <ui-text-input ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" @blur="inputBlurred" />
   </div>
 </template>
 
@@ -38,6 +38,9 @@ export default {
       if (this.$refs.input && this.$refs.input.blur) {
         this.$refs.input.blur()
       }
+    },
+    inputBlurred() {
+      this.$emit('blur')
     }
   },
   mounted() {}
