@@ -82,7 +82,7 @@ class PlaybackSessionManager {
 
     const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
     var userStartTime = 0
-    if (userProgress) userStartTime = userProgress.currentTime || 0
+    if (userProgress) userStartTime = Number.parseFloat(userProgress.currentTime) || 0
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user, mediaPlayer, episodeId)
 
