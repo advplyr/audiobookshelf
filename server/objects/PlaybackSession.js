@@ -158,7 +158,7 @@ class PlaybackSession {
       this.dayOfWeek = date.format(new Date(), 'dddd')
     }
 
-    this.timeListening += timeListened
+    this.timeListening += Number.parseInt(timeListened)
     this.updatedAt = Date.now()
   }
 
