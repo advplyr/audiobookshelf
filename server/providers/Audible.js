@@ -37,7 +37,7 @@ class Audible {
     }
 
     isProbablyAsin(title) {
-        return /[0-9A-Z]{10}/.test(title)
+        return /^[0-9A-Z]{10}$/.test(title)
     }
 
     asinSearch(asin) {
