@@ -17,7 +17,7 @@ class Audible {
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
             publisher: publisher_name,
             publishedYear: release_date ? release_date.split('-')[0] : null,
-            description: stripHtml(publisher_summary).result,
+            description: publisher_summary ? stripHtml(publisher_summary).result : null,
             cover: this.getBestImageLink(product_images),
             asin,
             series: primarySeries ? primarySeries.title : null,
