@@ -41,6 +41,8 @@ class PodcastEpisode {
     this.publishedAt = episode.publishedAt
     this.addedAt = episode.addedAt
     this.updatedAt = episode.updatedAt
+
+    this.audioFile.index = 1 // Only 1 audio file per episode
   }
 
   toJSON() {

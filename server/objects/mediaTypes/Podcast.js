@@ -210,6 +210,7 @@ class Podcast {
   addNewEpisodeFromAudioFile(audioFile, index) {
     var pe = new PodcastEpisode()
     pe.libraryItemId = this.libraryItemId
+    audioFile.index = 1 // Only 1 audio file per episode
     pe.setDataFromAudioFile(audioFile, index)
     this.episodes.push(pe)
   }
