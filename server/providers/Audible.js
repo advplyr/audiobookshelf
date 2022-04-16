@@ -50,7 +50,7 @@ class Audible {
         var url = `https://api.audible.com/1.0/catalog/products/${asin}?${queryString}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
         return axios.get(url).then((res) => {
-            if (!res || !res.data || !res.data.product) return []
+            if (!res || !res.data || !res.data.product || !res.data.product.authors) return []
             return [res.data.product]
         }).catch(error => {
             Logger.error('[Audible] search error', error)
