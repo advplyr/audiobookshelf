@@ -32,3 +32,16 @@ module.exports.PlayMethod = {
   TRANSCODE: 2,
   LOCAL: 3
 }
+
+module.exports.AudioMimeType = {
+  MP3: 'audio/mpeg',
+  M4B: 'audio/mpeg',
+  M4A: 'audio/mpeg',
+  MP4: 'audio/mp4',
+  OGG: 'audio/ogg',
+  OPUS: 'audio/ogg',
+  AAC: 'audio/aac',
+  FLAC: 'audio/flac',
+  WMA: 'audio/x-ms-wma',
+  AIFF: 'audio/x-aiff'
+}

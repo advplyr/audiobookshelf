@@ -1,4 +1,5 @@
 const { isNullOrNaN } = require('../../utils/index')
+const { AudioMimeType } = require('../../utils/constants')
 const AudioMetaTags = require('../metadata/AudioMetaTags')
 const FileMetadata = require('../metadata/FileMetadata')
 
@@ -102,19 +103,12 @@ class AudioFile {
   }
 
   get mimeType() {
-    var ext = this.metadata.ext
-    if (ext === '.mp3' || ext === '.m4b' || ext === '.m4a') {
-      return 'audio/mpeg'
-    } else if (ext === '.mp4') {
-      return 'audio/mp4'
-    } else if (ext === '.ogg') {
-      return 'audio/ogg'
-    } else if (ext === '.aac' || ext === '.m4p') {
-      return 'audio/aac'
-    } else if (ext === '.flac') {
-      return 'audio/flac'
+    var format = this.metadata.format.toUpperCase()
+    if (AudioMimeType[format]) {
+      return AudioMimeType[format]
+    } else {
+      return AudioMimeType.MP3
     }
-    return 'audio/mpeg'
   }
 
   // New scanner creates AudioFile from AudioFileScanner

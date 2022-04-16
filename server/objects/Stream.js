@@ -3,8 +3,9 @@ const EventEmitter = require('events')
 const Path = require('path')
 const fs = require('fs-extra')
 const Logger = require('../Logger')
-const { getId, secondsToTimestamp } = require('../utils/index')
+const { secondsToTimestamp } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
+const { AudioMimeType } = require('../utils/constants')
 const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
 const AudioTrack = require('./files/AudioTrack')
 
@@ -63,6 +64,18 @@ class Stream extends EventEmitter {
     if (!this.tracks.length) return null
     return this.tracks[0].metadata.format
   }
+  get tracksMimeType() {
+    if (!this.tracks.length) return null
+    return this.tracks[0].mimeType
+  }
+  get mimeTypesToForceAAC() {
+    return [
+      AudioMimeType.FLAC,
+      AudioMimeType.OPUS,
+      AudioMimeType.WMA,
+      AudioMimeType.AIFF
+    ]
+  }
   get userToken() {
     return this.user.token
   }
@@ -89,11 +102,6 @@ class Stream extends EventEmitter {
   get clientPlaylistUri() {
     return `/hls/${this.id}/output.m3u8`
   }
-  // get clientProgress() {
-  //   if (!this.clientCurrentTime) return 0
-  //   var prog = Math.min(1, this.clientCurrentTime / this.totalDuration)
-  //   return Number(prog.toFixed(3))
-  // }
   get isAACEncodable() {
     return ['mp4', 'm4a', 'm4b'].includes(this.tracksAudioFileType)
   }
@@ -137,7 +145,7 @@ class Stream extends EventEmitter {
   }
 
   async generatePlaylist() {
-    fs.ensureDirSync(this.streamPath)
+    await fs.ensureDir(this.streamPath)
     await hlsPlaylistGenerator(this.playlistPath, 'output', this.totalDuration, this.segmentLength, this.hlsSegmentType, this.userToken)
     return this.clientPlaylistUri
   }
@@ -251,7 +259,7 @@ class Stream extends EventEmitter {
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
 
-    const audioCodec = (this.tracksAudioFileType === 'flac' || this.tracksAudioFileType === 'opus' || this.transcodeForceAAC) ? 'aac' : 'copy'
+    const audioCodec = (this.mimeTypesToForceAAC.includes(this.tracksMimeType) || this.transcodeForceAAC) ? 'aac' : 'copy'
 
     this.ffmpeg.addOption([
       `-loglevel ${logLevel}`,

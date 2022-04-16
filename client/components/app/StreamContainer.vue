@@ -255,6 +255,9 @@ export default {
       })
       this.playerHandler.prepareOpenSession(session)
     },
+    streamOpen(session) {
+      console.log(`[StreamContainer] Stream session open`, session)
+    },
     streamClosed(streamId) {
       // Stream was closed from the server
       if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === streamId) {

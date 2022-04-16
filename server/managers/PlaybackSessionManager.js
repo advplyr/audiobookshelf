@@ -3,6 +3,7 @@ const { PlayMethod } = require('../utils/constants')
 const PlaybackSession = require('../objects/PlaybackSession')
 const Stream = require('../objects/Stream')
 const Logger = require('../Logger')
+const fs = require('fs-extra')
 
 class PlaybackSessionManager {
   constructor(db, emitter, clientEmitter) {
@@ -95,9 +96,12 @@ class PlaybackSessionManager {
       Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
       var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime, this.clientEmitter.bind(this))
       await stream.generatePlaylist()
+      stream.start() // Start transcode
+
       audioTracks = [stream.getAudioTrack()]
       newPlaybackSession.stream = stream
       newPlaybackSession.playMethod = PlayMethod.TRANSCODE
+
       stream.on('closed', () => {
         Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}"`)
         newPlaybackSession.stream = null
@@ -178,6 +182,27 @@ class PlaybackSessionManager {
     }
     this.sessions = this.sessions.filter(s => s.id !== sessionId)
     Logger.debug(`[PlaybackSessionManager] Removed session "${sessionId}"`)
+  }
+
+  // Check for streams that are not in memory and remove
+  async removeOrphanStreams() {
+    await fs.ensureDir(this.StreamsPath)
+    try {
+      var streamsInPath = await fs.readdir(this.StreamsPath)
+      for (let i = 0; i < streamsInPath.length; i++) {
+        var streamId = streamsInPath[i]
+        if (streamId.startsWith('play_')) { // Make sure to only remove folders that are a stream
+          var session = this.sessions.find(se => se.id === streamId)
+          if (!session) {
+            var streamPath = Path.join(this.StreamsPath, streamId)
+            Logger.debug(`[PlaybackSessionManager] Removing orphan stream "${streamPath}"`)
+            await fs.remove(streamPath)
+          }
+        }
+      }
+    } catch (error) {
+      Logger.error(`[PlaybackSessionManager] cleanOrphanStreams failed`, error)
+    }
   }
 }
 module.exports = PlaybackSessionManager

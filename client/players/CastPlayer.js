@@ -18,7 +18,7 @@ export default class CastPlayer extends EventEmitter {
     this.defaultPlaybackRate = 1
 
     // TODO: Use canDisplayType on receiver to check mime types
-    this.playableMimeTypes = {}
+    this.playableMimeTypes = []
 
     this.coverUrl = ''
     this.castPlayerState = 'IDLE'

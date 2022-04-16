@@ -138,7 +138,7 @@ export default class PlayerHandler {
 
   async prepare(forceTranscode = false) {
     var payload = {
-      supportedMimeTypes: Object.keys(this.player.playableMimeTypes),
+      supportedMimeTypes: this.player.playableMimeTypes,
       mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
       forceTranscode,
       forceDirectPlay: this.isCasting // TODO: add transcode support for chromecast

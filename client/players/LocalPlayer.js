@@ -19,7 +19,7 @@ export default class LocalPlayer extends EventEmitter {
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
 
-    this.playableMimeTypes = {}
+    this.playableMimeTypes = []
 
     this.initialize()
   }
@@ -46,11 +46,14 @@ export default class LocalPlayer extends EventEmitter {
     this.player.addEventListener('loadedmetadata', this.evtLoadedMetadata.bind(this))
     this.player.addEventListener('timeupdate', this.evtTimeupdate.bind(this))
 
-    var mimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac']
+    var mimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff']
+    var mimeTypeCanPlayMap = {}
     mimeTypes.forEach((mt) => {
-      this.playableMimeTypes[mt] = this.player.canPlayType(mt)
+      var canPlay = this.player.canPlayType(mt)
+      mimeTypeCanPlayMap[mt] = canPlay
+      if (canPlay) this.playableMimeTypes.push(mt)
     })
-    console.log(`[LocalPlayer] Supported mime types`, this.playableMimeTypes)
+    console.log(`[LocalPlayer] Supported mime types`, mimeTypeCanPlayMap, this.playableMimeTypes)
   }
 
   evtPlay() {
