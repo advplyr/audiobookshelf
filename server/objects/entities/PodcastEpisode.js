@@ -1,3 +1,4 @@
+const { stripHtml } = require('string-strip-html')
 const { getId } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -73,7 +74,8 @@ class PodcastEpisode {
       episodeType: this.episodeType,
       title: this.title,
       subtitle: this.subtitle,
-      description: this.description,
+      // description: this.description,
+      description: this.descriptionPlain, // Temporary stripping HTML until proper cleaning is implemented
       enclosure: this.enclosure ? { ...this.enclosure } : null,
       pubDate: this.pubDate,
       audioFile: this.audioFile.toJSON(),
@@ -101,6 +103,10 @@ class PodcastEpisode {
   get bestFilename() {
     if (this.episode) return `${this.episode} - ${this.title}`
     return this.title
+  }
+  get descriptionPlain() {
+    if (!this.description) return ''
+    return stripHtml(this.description).result
   }
 
   setData(data, index = 1) {

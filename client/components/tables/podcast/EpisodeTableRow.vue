@@ -10,9 +10,7 @@
         <p class="text-sm font-semibold">
           {{ title }}
         </p>
-        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">
-          {{ description }}
-        </p>
+        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ description }}</p>
         <div class="flex items-center pt-2">
           <div class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click="playClick">
             <span class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>

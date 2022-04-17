@@ -251,5 +251,11 @@ class Podcast {
   getPlaybackAuthor() {
     return this.metadata.author
   }
+
+  getEpisodeDuration(episodeId) {
+    var episode = this.episodes.find(ep => ep.id == episodeId)
+    if (!episode) return 0
+    return episode.duration
+  }
 }
 module.exports = Podcast

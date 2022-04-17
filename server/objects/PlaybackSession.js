@@ -136,9 +136,14 @@ class PlaybackSession {
     this.mediaMetadata = libraryItem.media.metadata.clone()
     this.chapters = (libraryItem.media.chapters || []).map(c => ({ ...c })) // Only book mediaType has chapters
     this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
-    this.displayAuthor = libraryItem.media.getPlaybackAuthor(episodeId)
+    this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath
-    this.duration = libraryItem.media.duration
+
+    if (episodeId) {
+      this.duration = libraryItem.media.getEpisodeDuration(episodeId)
+    } else {
+      this.duration = libraryItem.media.duration
+    }
 
     this.mediaPlayer = mediaPlayer
 
