@@ -11,7 +11,7 @@ module.exports = {
   getFilteredLibraryItems(libraryItems, filterBy, user) {
     var filtered = libraryItems
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'languages']
+    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages']
     var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
       var filterVal = filterBy.replace(`${group}.`, '')
@@ -33,6 +33,22 @@ module.exports = {
           if (filter === 'Not Started' && !itemProgress) return true
           if (filter === 'In Progress' && (itemProgress && itemProgress.inProgress)) return true
           return false
+        })
+      } else if (group == 'missing') {
+        filtered = filtered.filter(li => {
+          if (filter === 'ASIN' && li.media.metadata.asin === null) return true;
+          if (filter === 'ISBN' && li.media.metadata.isbn === null) return true;
+          if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true;
+          if (filter === 'Author' && li.media.metadata.authors.length === 0) return true;
+          if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true;
+          if (filter === 'Series' && li.media.metadata.series.length === 0) return true;
+          if (filter === 'Volume Number' && (li.media.metadata.series.length === 0 || li.media.metadata.series[0].sequence === null)) return true;
+          if (filter === 'Description' && li.media.metadata.description === null) return true;
+          if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true;
+          if (filter === 'Tags' && li.media.tags.length === 0) return true;
+          if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true;
+          if (filter === 'Publisher' && li.media.metadata.publisher === null) return true;
+          if (filter === 'Language' && li.media.metadata.language === null) return true;
         })
       } else if (group === 'languages') {
         filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
