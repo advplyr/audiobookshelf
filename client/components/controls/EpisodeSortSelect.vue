@@ -46,7 +46,7 @@ export default {
         },
         {
           text: 'Pub Date',
-          value: 'pubDate'
+          value: 'publishedAt'
         }
       ]
     }
