@@ -17,7 +17,7 @@ class Audible {
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
             publisher: publisher_name,
             publishedYear: release_date ? release_date.split('-')[0] : null,
-            description: stripHtml(publisher_summary).result,
+            description: publisher_summary ? stripHtml(publisher_summary).result : null,
             cover: this.getBestImageLink(product_images),
             asin,
             series: primarySeries ? primarySeries.title : null,
@@ -37,7 +37,7 @@ class Audible {
     }
 
     isProbablyAsin(title) {
-        return /[0-9A-Z]{10}/.test(title)
+        return /^[0-9A-Z]{10}$/.test(title)
     }
 
     asinSearch(asin) {
@@ -50,7 +50,7 @@ class Audible {
         var url = `https://api.audible.com/1.0/catalog/products/${asin}?${queryString}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
         return axios.get(url).then((res) => {
-            if (!res || !res.data || !res.data.product) return []
+            if (!res || !res.data || !res.data.product || !res.data.product.authors) return []
             return [res.data.product]
         }).catch(error => {
             Logger.error('[Audible] search error', error)
