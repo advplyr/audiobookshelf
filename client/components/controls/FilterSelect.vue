@@ -108,6 +108,11 @@ export default {
           sublist: true
         },
         {
+          text: 'Missing',
+          value: 'missing',
+          sublist: true
+        },
+        {
           text: 'Issues',
           value: 'issues',
           sublist: false
@@ -205,6 +210,9 @@ export default {
     },
     progress() {
       return ['Finished', 'In Progress', 'Not Started']
+    },
+    missing() {
+      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Volume Number', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language', ]
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {
