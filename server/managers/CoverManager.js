@@ -51,11 +51,12 @@ class CoverManager {
   async removeOldCovers(dirpath, newCoverExt) {
     var filesInDir = await this.getFilesInDirectory(dirpath)
 
+    const imageExtensions = ['.jpeg', '.jpg', '.png', '.webp', '.jiff']
     for (let i = 0; i < filesInDir.length; i++) {
       var file = filesInDir[i]
-      var _extname = Path.extname(file)
+      var _extname = Path.extname(file).toLowerCase()
       var _filename = Path.basename(file, _extname)
-      if (_filename === 'cover' && _extname !== newCoverExt) {
+      if (_filename === 'cover' && _extname !== newCoverExt && imageExtensions.includes(_extname)) {
         var filepath = Path.join(dirpath, file)
         Logger.debug(`[CoverManager] Removing old cover from metadata "${filepath}"`)
         await this.removeFile(filepath)
