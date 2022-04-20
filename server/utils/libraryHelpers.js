@@ -247,7 +247,8 @@ module.exports = {
         if (authorsMap[author.id]) authorsMap[author.id].count++
         else
           authorsMap[author.id] = {
-            author: author.name,
+            id: author.id,
+            name: author.name,
             count: 1
           }
       })
@@ -257,7 +258,7 @@ module.exports = {
 
   getItemDurationStats(libraryItems) {
     var sorted = sort(libraryItems).desc(li => li.media.duration)
-    var top10 = sorted.slice(0, 10).map(li => ({ title: li.media.metadata.title, duration: li.media.duration })).filter(i => i.duration > 0)
+    var top10 = sorted.slice(0, 10).map(li => ({ id: li.id, title: li.media.metadata.title, duration: li.media.duration })).filter(i => i.duration > 0)
     var totalDuration = 0
     var numAudioTracks = 0
     libraryItems.forEach((li) => {

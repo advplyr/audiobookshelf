@@ -13,7 +13,9 @@
             <div class="flex items-end mb-1">
               <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalItems) }}&nbsp;%</p>
               <div class="flex-grow" />
-              <p class="text-base font-book text-white text-opacity-70">{{ genre.genre }}</p>
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=genres.${$encode(genre.genre)}`" class="text-base font-book text-white text-opacity-70 hover:underline">
+                {{ genre.genre }}
+              </nuxt-link>
             </div>
             <div class="w-full rounded-full h-3 bg-primary bg-opacity-50 overflow-hidden">
               <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * genre.count) / totalItems) + '%' }" />
@@ -25,9 +27,11 @@
         <h1 class="text-2xl mb-4 font-book">Top 10 Authors</h1>
         <p v-if="!top10Authors.length">No Authors</p>
         <template v-for="(author, index) in top10Authors">
-          <div :key="author.author" class="w-full py-2">
+          <div :key="author.id" class="w-full py-2">
             <div class="flex items-center mb-1">
-              <p class="text-sm font-book text-white text-opacity-70 w-36 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ author.author }}</p>
+              <p class="text-sm font-book text-white text-opacity-70 w-36 pr-2 truncate">
+                {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}</nuxt-link>
+              </p>
               <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
                 <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * author.count) / mostUsedAuthorCount) + '%' }" />
               </div>
@@ -44,7 +48,9 @@
         <template v-for="(ab, index) in top10LongestItems">
           <div :key="index" class="w-full py-2">
             <div class="flex items-center mb-1">
-              <p class="text-sm font-book text-white text-opacity-70 w-44 pr-2 truncate">{{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;{{ ab.title }}</p>
+              <p class="text-sm font-book text-white text-opacity-70 w-44 pr-2 truncate">
+                {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
+              </p>
               <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
                 <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.duration) / longestItemDuration) + '%' }" />
               </div>
