@@ -105,7 +105,7 @@ const bookMetadataMapper = {
         var sequence = null
         var name = series
         var matchResults = series.match(/ #((?:\d*\.?\d+)|(?:\.?\d*))$/) // Pull out sequence #
-        if (matchResults.length && matchResults.length > 1) {
+        if (matchResults && matchResults.length && matchResults.length > 1) {
           sequence = matchResults[1] // Group 1
           name = series.replace(matchResults[0], '')
         }
@@ -340,14 +340,14 @@ function checkUpdatedBookSeries(abmetadataSeries, series) {
     var findSeries = series.find(se => se.name.toLowerCase() == seriesObj.name.toLowerCase())
     if (!findSeries) {
       hasUpdates = true
-      newUpdatedSeries.push({
+      finalSeries.push({
         id: getId('new'), // New series gets created in Scanner.js after library scan
         name: seriesObj.name,
         sequence: seriesObj.sequence
       })
     } else if (findSeries.sequence != seriesObj.sequence) { // Sequence was updated
       hasUpdates = true
-      newUpdatedSeries.push({
+      finalSeries.push({
         id: findSeries.id,
         name: findSeries.name,
         sequence: seriesObj.sequence
