@@ -616,7 +616,7 @@ class Scanner {
     return false
   }
 
-  async quickMatchBook(libraryItem, options = {}) {
+  async quickMatchLibraryItem(libraryItem, options = {}) {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
@@ -698,49 +698,55 @@ class Scanner {
     }
   }
 
-  // TODO: Redo quick match full library
-  async matchLibraryBooks(library) {
-    // if (this.isLibraryScanning(library.id)) {
-    //   Logger.error(`[Scanner] Already scanning ${library.id}`)
-    //   return
-    // }
+  async matchLibraryItems(library) {
+    if (library.mediaType === 'podcast') {
+      Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
+      return
+    }
 
-    // const provider = library.provider || 'google'
-    // var audiobooksInLibrary = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    // if (!audiobooksInLibrary.length) {
-    //   return
-    // }
+    if (this.isLibraryScanning(library.id)) {
+      Logger.error(`[Scanner] matchLibraryItems: Already scanning ${library.id}`)
+      return
+    }
 
-    // var libraryScan = new LibraryScan()
-    // libraryScan.setData(library, null, 'match')
-    // this.librariesScanning.push(libraryScan.getScanEmitData)
-    // this.emitter('scan_start', libraryScan.getScanEmitData)
+    var itemsInLibrary = this.db.getLibraryItemsInLibrary(library.id)
+    if (!itemsInLibrary.length) {
+      Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
+      return
+    }
 
-    // Logger.info(`[Scanner] Starting library match books scan ${libraryScan.id} for ${libraryScan.libraryName}`)
+    const provider = library.provider
 
-    // for (let i = 0; i < audiobooksInLibrary.length; i++) {
-    //   var audiobook = audiobooksInLibrary[i]
-    //   Logger.debug(`[Scanner] Quick matching "${audiobook.title}" (${i + 1} of ${audiobooksInLibrary.length})`)
-    //   var result = await this.quickMatchBook(audiobook, { provider })
-    //   if (result.warning) {
-    //     Logger.warn(`[Scanner] Match warning ${result.warning} for audiobook "${audiobook.title}"`)
-    //   } else if (result.updated) {
-    //     libraryScan.resultsUpdated++
-    //   }
+    var libraryScan = new LibraryScan()
+    libraryScan.setData(library, null, 'match')
+    this.librariesScanning.push(libraryScan.getScanEmitData)
+    this.emitter('scan_start', libraryScan.getScanEmitData)
 
-    //   if (this.cancelLibraryScan[libraryScan.libraryId]) {
-    //     Logger.info(`[Scanner] Library match scan canceled for "${libraryScan.libraryName}"`)
-    //     delete this.cancelLibraryScan[libraryScan.libraryId]
-    //     var scanData = libraryScan.getScanEmitData
-    //     scanData.results = false
-    //     this.emitter('scan_complete', scanData)
-    //     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-    //     return
-    //   }
-    // }
+    Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
-    // this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-    // this.emitter('scan_complete', libraryScan.getScanEmitData)
+    for (let i = 0; i < itemsInLibrary.length; i++) {
+      var libraryItem = itemsInLibrary[i]
+      Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.metadata.title}" (${i + 1} of ${itemsInLibrary.length})`)
+      var result = await this.quickMatchLibraryItem(libraryItem, { provider })
+      if (result.warning) {
+        Logger.warn(`[Scanner] matchLibraryItems: Match warning ${result.warning} for library item "${libraryItem.media.metadata.title}"`)
+      } else if (result.updated) {
+        libraryScan.resultsUpdated++
+      }
+
+      if (this.cancelLibraryScan[libraryScan.libraryId]) {
+        Logger.info(`[Scanner] matchLibraryItems: Library match scan canceled for "${libraryScan.libraryName}"`)
+        delete this.cancelLibraryScan[libraryScan.libraryId]
+        var scanData = libraryScan.getScanEmitData
+        scanData.results = false
+        this.emitter('scan_complete', scanData)
+        this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+        return
+      }
+    }
+
+    this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
+    this.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 }
 module.exports = Scanner

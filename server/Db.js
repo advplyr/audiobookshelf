@@ -200,6 +200,9 @@ class Db {
   getLibraryItem(id) {
     return this.libraryItems.find(li => li.id === id)
   }
+  getLibraryItemsInLibrary(libraryId) {
+    return this.libraryItems.filter(li => li.libraryId === libraryId)
+  }
   getPlaybackSession(id) {
     return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
       if (results.data.length) {

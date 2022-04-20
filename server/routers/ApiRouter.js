@@ -65,7 +65,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
-    this.router.post('/libraries/:id/matchbooks', LibraryController.middleware.bind(this), LibraryController.matchBooks.bind(this))
+    this.router.post('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.get('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this)) // Root only
 
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))

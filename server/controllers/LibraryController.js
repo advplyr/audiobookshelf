@@ -546,12 +546,12 @@ class LibraryController {
     res.json(Object.values(authors))
   }
 
-  async matchBooks(req, res) {
+  async matchAll(req, res) {
     if (!req.user.isRoot) {
-      Logger.error(`[LibraryController] Non-root user attempted to match library books`, req.user)
+      Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)
       return res.sendStatus(403)
     }
-    this.scanner.matchLibraryBooks(req.library)
+    this.scanner.matchLibraryItems(req.library)
     res.sendStatus(200)
   }
 

@@ -247,7 +247,7 @@ class LibraryItemController {
     var libraryItem = req.libraryItem
 
     var options = req.body || {}
-    var matchResult = await this.scanner.quickMatchBook(libraryItem, options)
+    var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
     res.json(matchResult)
   }
 
