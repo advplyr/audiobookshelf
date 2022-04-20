@@ -112,8 +112,6 @@ class Server {
 
   async init() {
     Logger.info('[Server] Init v' + version)
-    // TODO: Remove orphan streams from playback session manager
-    // await this.streamManager.ensureStreamsDir()
     await this.playbackSessionManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 

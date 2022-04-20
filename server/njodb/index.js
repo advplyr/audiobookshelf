@@ -119,9 +119,6 @@ class Database {
         }
 
         if (!existsSync(this.properties.root)) mkdirSync(this.properties.root);
-        else {
-            console.log('Db already exists', root)
-        }
 
         const propertiesFile = join(this.properties.root, "njodb.properties");
 
