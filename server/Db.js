@@ -109,6 +109,20 @@ class Db {
     return this.init()
   }
 
+  // Get previous server version before loading DB to check whether a db migration is required
+  //   returns null if server was not upgraded
+  checkPreviousVersion() {
+    return this.settingsDb.select(() => true).then((results) => {
+      if (results.data && results.data.length) {
+        var serverSettings = results.data.find(s => s.id === 'server-settings')
+        if (serverSettings && serverSettings.version && serverSettings.version !== version) {
+          return serverSettings.version
+        }
+      }
+      return null
+    })
+  }
+
   async init() {
     await this.load()
 

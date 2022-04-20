@@ -117,7 +117,12 @@ class Server {
     await this.playbackSessionManager.removeOrphanStreams()
     await this.downloadManager.removeOrphanDownloads()
 
-    if (version.localeCompare('2.0.0') <= 0) { // Old version data model migration
+    var previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
+    if (previousVersion) {
+      Logger.debug(`[Server] Upgraded from previous version ${previousVersion}`)
+    }
+    if (previousVersion && previousVersion.localeCompare('2.0.0') < 0) { // Old version data model migration
+      Logger.debug(`[Server] Previous version was < 2.0.0 - migration required`)
       await dbMigration.migrate(this.db)
     } else {
       await this.db.init()
