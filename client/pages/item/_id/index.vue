@@ -37,7 +37,7 @@
               </p>
               <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
 
-              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
+              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
@@ -265,7 +265,7 @@ export default {
       return this.mediaMetadata.narrators || []
     },
     series() {
-      return this.media.series || []
+      return this.mediaMetadata.series || []
     },
     seriesList() {
       return this.series.map((se) => {
