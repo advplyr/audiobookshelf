@@ -26,14 +26,15 @@ class LibraryController {
       return f
     })
     for (var folder of newLibraryPayload.folders) {
-      var success = await fs.ensureDir(folder.fullPath).then(() => true).catch((error) => {
+      try {
+        var direxists = await fs.pathExists(folder.fullPath)
+        if (!direxists) { // If folder does not exist try to make it and set file permissions/owner
+          await fs.mkdir(folder.fullPath)
+          await filePerms.setDefault(folder.fullPath)
+        }
+      } catch (error) {
         Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.fullPath}"`, error)
-        return false
-      })
-      if (!success) {
         return res.status(400).send(`Invalid folder directory "${folder.fullPath}"`)
-      } else {
-        await filePerms.setDefault(folder.fullPath)
       }
     }
 

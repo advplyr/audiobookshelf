@@ -142,7 +142,7 @@ export default {
       var updatePayload = {}
       for (const key in this.libraryCopy) {
         if (key === 'folders') {
-          if (this.libraryCopy.folders.join(',') !== this.library.folders.join(',')) {
+          if (this.libraryCopy.folders.map((f) => f.fullPath).join(',') !== this.library.folders.map((f) => f.fullPath).join(',')) {
             updatePayload.folders = [...this.libraryCopy.folders]
           }
         } else if (key === 'settings') {
