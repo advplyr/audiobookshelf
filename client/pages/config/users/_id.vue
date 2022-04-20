@@ -19,9 +19,9 @@
           ><span class="material-icons pl-2 text-base">content_copy</span>
         </p>
       </div>
-      <div v-if="showExperimentalFeatures" class="w-full h-px bg-white bg-opacity-10 my-2" />
-      <div v-if="showExperimentalFeatures" class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats <span class="pl-2 text-xs text-error">(experimental)</span></h1>
+      <div class="w-full h-px bg-white bg-opacity-10 my-2" />
+      <div class="py-2">
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats</h1>
         <p class="text-sm text-gray-300">
           Total Time Listened:&nbsp;
           <span class="font-mono text-base">{{ listeningTimePretty }}</span>
@@ -55,7 +55,9 @@
               <p>{{ item.media && item.media.metadata ? item.media.metadata.title : 'Unknown' }}</p>
               <p v-if="item.media && item.media.metadata && item.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ item.media.metadata.authorName }}</p>
             </td>
-            <td class="text-center">{{ Math.floor(item.progress * 100) }}%</td>
+            <td class="text-center">
+              <p class="text-sm">{{ Math.floor(item.progress * 100) }}%</p>
+            </td>
             <td class="text-center hidden sm:table-cell">
               <ui-tooltip v-if="item.startedAt" direction="top" :text="$formatDate(item.startedAt, 'MMMM do, yyyy HH:mm')">
                 <p class="text-sm">{{ $dateDistanceFromNow(item.startedAt) }}</p>

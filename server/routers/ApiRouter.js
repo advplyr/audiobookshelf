@@ -305,30 +305,35 @@ class ApiRouter {
       recentSessions: listeningSessions.slice(0, 10)
     }
     listeningSessions.forEach((s) => {
+      var sessionTimeListening = s.timeListening
+      if (typeof sessionTimeListening == 'string') {
+        sessionTimeListening = Number(sessionTimeListening)
+      }
+
       if (s.dayOfWeek) {
         if (!listeningStats.dayOfWeek[s.dayOfWeek]) listeningStats.dayOfWeek[s.dayOfWeek] = 0
-        listeningStats.dayOfWeek[s.dayOfWeek] += s.timeListening
+        listeningStats.dayOfWeek[s.dayOfWeek] += sessionTimeListening
       }
-      if (s.date && s.timeListening > 0) {
+      if (s.date && sessionTimeListening > 0) {
         if (!listeningStats.days[s.date]) listeningStats.days[s.date] = 0
-        listeningStats.days[s.date] += s.timeListening
+        listeningStats.days[s.date] += sessionTimeListening
 
         if (s.date === today) {
-          listeningStats.today += s.timeListening
+          listeningStats.today += sessionTimeListening
         }
       }
       if (!listeningStats.items[s.libraryItemId]) {
         listeningStats.items[s.libraryItemId] = {
           id: s.libraryItemId,
-          timeListening: s.timeListening,
+          timeListening: sessionTimeListening,
           mediaMetadata: s.mediaMetadata,
           lastUpdate: s.lastUpdate
         }
       } else {
-        listeningStats.items[s.libraryItemId].timeListening += s.timeListening
+        listeningStats.items[s.libraryItemId].timeListening += sessionTimeListening
       }
 
-      listeningStats.totalTime += s.timeListening
+      listeningStats.totalTime += sessionTimeListening
     })
     return listeningStats
   }
