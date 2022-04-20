@@ -168,12 +168,12 @@ class PodcastManager {
 
   async checkPodcastForNewEpisodes(podcastLibraryItem) {
     if (!podcastLibraryItem.media.metadata.feedUrl) {
-      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for item ${podcastLibraryItem.id} - disabling auto download`)
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id}) - disabling auto download`)
       return false
     }
     var feed = await this.getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
     if (!feed || !feed.episodes) {
-      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload ${podcastLibraryItem.id} - disabling auto download`)
+      Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id}) - disabling auto download`)
       return false
     }
     // Filter new and not already has
