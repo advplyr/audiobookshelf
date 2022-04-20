@@ -10,7 +10,7 @@
     <ui-btn v-show="isHovering && !libraryScan" small color="success" @click.stop="scan">Scan</ui-btn>
     <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="forceScan">Force Re-Scan</ui-btn>
 
-    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="matchAll">Match Books</ui-btn>
+    <!-- <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="matchAll">Match Books</ui-btn> -->
 
     <span v-show="isHovering && !libraryScan && showEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
     <span v-show="!libraryScan && isHovering && showEdit && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50 cursor-pointer'" @click.stop="deleteClick">delete</span>
