@@ -386,12 +386,12 @@ class Scanner {
       await AudioFileScanner.scanAudioFiles(audioFiles, libraryItemData, libraryItem, preferAudioMetadata, libraryScan)
     }
 
+    await libraryItem.syncFiles(preferOpfMetadata)
+
     if (!libraryItem.hasMediaEntities) {
       Logger.warn(`[Scanner] Library item has no media files "${libraryItemData.path}"`)
       return null
     }
-
-    await libraryItem.syncFiles(preferOpfMetadata)
 
     // Extract embedded cover art if cover is not already in directory
     if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
