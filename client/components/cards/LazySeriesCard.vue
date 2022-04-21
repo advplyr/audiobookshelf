@@ -7,11 +7,12 @@
 
     <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ books.length }}</div>
 
+    <div v-if="isSeriesFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success w-full" />
+
     <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
       <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ title }}</p>
     </div>
-    <!-- <div v-if="isHovering || isSelectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-40">
-    </div> -->
+
     <div v-if="!isCategorized" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
@@ -59,6 +60,19 @@ export default {
     },
     books() {
       return this.series ? this.series.books || [] : []
+    },
+    seriesBookProgress() {
+      return this.books
+        .map((libraryItem) => {
+          return this.store.getters['user/getUserMediaProgress'](libraryItem.id)
+        })
+        .filter((p) => !!p)
+    },
+    seriesBooksFinished() {
+      return this.seriesBookProgress.filter((p) => p.isFinished)
+    },
+    isSeriesFinished() {
+      return this.books.length === this.seriesBooksFinished.length
     },
     store() {
       return this.$store || this.$nuxt.$store

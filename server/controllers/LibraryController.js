@@ -224,12 +224,7 @@ class LibraryController {
     }
 
     var series = libraryHelpers.getSeriesFromBooks(libraryItems, payload.minified)
-
-    var sortingIgnorePrefix = this.db.serverSettings.sortingIgnorePrefix
     series = sort(series).asc(s => {
-      if (sortingIgnorePrefix && s.name.toLowerCase().startsWith('the ')) {
-        return s.name.substr(4)
-      }
       return s.name
     })
     payload.total = series.length
