@@ -271,29 +271,24 @@ export default {
       }
       this.$store.commit('user/removeCollection', collection)
     },
-    downloadToastClick(download) {
-      if (!download || !download.audiobookId) {
-        return console.error('Invalid download object', download)
-      }
-    },
-    downloadStarted(download) {
+    abmergeStarted(download) {
       download.status = this.$constants.DownloadStatus.PENDING
-      download.toastId = this.$toast(`Preparing download "${download.filename}"`, { timeout: false, draggable: false, closeOnClick: false, onClick: () => this.downloadToastClick(download) })
+      download.toastId = this.$toast(`Preparing download "${download.filename}"`, { timeout: false, draggable: false, closeOnClick: false })
       this.$store.commit('downloads/addUpdateDownload', download)
     },
-    downloadReady(download) {
+    abmergeReady(download) {
       download.status = this.$constants.DownloadStatus.READY
       var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
 
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" is ready!`, options: { timeout: 5000, type: 'success', onClick: () => this.downloadToastClick(download) } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" is ready!`, options: { timeout: 5000, type: 'success' } }, true)
       } else {
         this.$toast.success(`Download "${download.filename}" is ready!`)
       }
       this.$store.commit('downloads/addUpdateDownload', download)
     },
-    downloadFailed(download) {
+    abmergeFailed(download) {
       download.status = this.$constants.DownloadStatus.FAILED
       var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
 
@@ -301,25 +296,25 @@ export default {
 
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" ${failedMsg}`, options: { timeout: 5000, type: 'error', onClick: () => this.downloadToastClick(download) } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" ${failedMsg}`, options: { timeout: 5000, type: 'error' } }, true)
       } else {
         console.warn('Download failed no existing download', existingDownload)
         this.$toast.error(`Download "${download.filename}" ${failedMsg}`)
       }
       this.$store.commit('downloads/addUpdateDownload', download)
     },
-    downloadKilled(download) {
+    abmergeKilled(download) {
       var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
       if (existingDownload && existingDownload.toastId !== undefined) {
         download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" was terminated`, options: { timeout: 5000, type: 'error', onClick: () => this.downloadToastClick(download) } }, true)
+        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" was terminated`, options: { timeout: 5000, type: 'error' } }, true)
       } else {
         console.warn('Download killed no existing download found', existingDownload)
         this.$toast.error(`Download "${download.filename}" was terminated`)
       }
       this.$store.commit('downloads/removeDownload', download)
     },
-    downloadExpired(download) {
+    abmergeExpired(download) {
       download.status = this.$constants.DownloadStatus.EXPIRED
       this.$store.commit('downloads/addUpdateDownload', download)
     },
@@ -393,11 +388,11 @@ export default {
       this.socket.on('scan_progress', this.scanProgress)
 
       // Download Listeners
-      this.socket.on('download_started', this.downloadStarted)
-      this.socket.on('download_ready', this.downloadReady)
-      this.socket.on('download_failed', this.downloadFailed)
-      this.socket.on('download_killed', this.downloadKilled)
-      this.socket.on('download_expired', this.downloadExpired)
+      this.socket.on('abmerge_started', this.abmergeStarted)
+      this.socket.on('abmerge_ready', this.abmergeReady)
+      this.socket.on('abmerge_failed', this.abmergeFailed)
+      this.socket.on('abmerge_killed', this.abmergeKilled)
+      this.socket.on('abmerge_expired', this.abmergeExpired)
 
       // Toast Listeners
       this.socket.on('show_error_toast', this.showErrorToast)

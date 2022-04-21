@@ -1,20 +1,18 @@
 const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
-const DEFAULT_TIMEOUT = 1000 * 60 * 15 // 15 minutes
+const DEFAULT_TIMEOUT = 1000 * 60 * 20 // 20 minutes
 class Download {
   constructor(download) {
     this.id = null
-    this.audiobookId = null
+    this.libraryItemId = null
     this.type = null
-    this.options = {}
 
     this.dirpath = null
-    this.fullPath = null
+    this.path = null
     this.ext = null
     this.filename = null
     this.size = 0
 
     this.userId = null
-    this.socket = null // Socket to notify when complete
     this.isReady = false
     this.isTimedOut = false
 
@@ -33,14 +31,6 @@ class Download {
     }
   }
 
-  get includeMetadata() {
-    return !!this.options.includeMetadata
-  }
-
-  get includeCover() {
-    return !!this.options.includeCover
-  }
-
   get mimeType() {
     if (this.ext === '.mp3' || this.ext === '.m4b' || this.ext === '.m4a') {
       return 'audio/mpeg'
@@ -57,11 +47,10 @@ class Download {
   toJSON() {
     return {
       id: this.id,
-      audiobookId: this.audiobookId,
+      libraryItemId: this.libraryItemId,
       type: this.type,
-      options: this.options,
       dirpath: this.dirpath,
-      fullPath: this.fullPath,
+      path: this.path,
       ext: this.ext,
       filename: this.filename,
       size: this.size,
@@ -75,18 +64,16 @@ class Download {
 
   construct(download) {
     this.id = download.id
-    this.audiobookId = download.audiobookId
+    this.libraryItemId = download.libraryItemId
     this.type = download.type
-    this.options = { ...download.options }
 
     this.dirpath = download.dirpath
-    this.fullPath = download.fullPath
+    this.path = download.path
     this.ext = download.ext
     this.filename = download.filename
     this.size = download.size || 0
 
     this.userId = download.userId
-    this.socket = download.socket || null
     this.isReady = !!download.isReady
 
     this.startedAt = download.startedAt

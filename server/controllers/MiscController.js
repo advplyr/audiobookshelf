@@ -82,15 +82,43 @@ class MiscController {
     res.sendStatus(200)
   }
 
+  // GET: api/audiobook-merge/:id
+  async mergeAudiobook(req, res) {
+    if (!req.user.canDownload) {
+      Logger.error('User attempting to download without permission', req.user)
+      return res.sendStatus(403)
+    }
+
+    var libraryItem = this.db.getLibraryItem(req.params.id)
+    if (!libraryItem || libraryItem.isMissing || libraryItem.isInvalid) {
+      Logger.error(`[MiscController] mergeAudiboook: library item not found or invalid ${req.params.id}`)
+      return res.status(404).send('Audiobook not found')
+    }
+
+    if (libraryItem.mediaType !== 'book') {
+      Logger.error(`[MiscController] mergeAudiboook: Invalid library item ${req.params.id}: not a book`)
+      return res.status(500).send('Invalid library item: not a book')
+    }
+
+    if (libraryItem.media.tracks.length <= 0) {
+      Logger.error(`[MiscController] mergeAudiboook: Invalid audiobook ${req.params.id}: no audio tracks`)
+      return res.status(500).send('Invalid audiobook: no audio tracks')
+    }
+
+    this.abMergeManager.startAudiobookMerge(req.user, libraryItem)
+
+    res.sendStatus(200)
+  }
+
   // GET: api/download/:id
-  async download(req, res) {
+  async getDownload(req, res) {
     if (!req.user.canDownload) {
       Logger.error('User attempting to download without permission', req.user)
       return res.sendStatus(403)
     }
     var downloadId = req.params.id
     Logger.info('Download Request', downloadId)
-    var download = this.downloadManager.getDownload(downloadId)
+    var download = this.abMergeManager.getDownload(downloadId)
     if (!download) {
       Logger.error('Download request not found', downloadId)
       return res.sendStatus(404)
@@ -101,11 +129,34 @@ class MiscController {
         'Content-Type': download.mimeType
       }
     }
-    res.download(download.fullPath, download.filename, options, (err) => {
+    res.download(download.path, download.filename, options, (err) => {
       if (err) {
         Logger.error('Download Error', err)
       }
     })
+  }
+
+  // DELETE: api/download/:id
+  async removeDownload(req, res) {
+    if (!req.user.canDownload || !req.user.canDelete) {
+      Logger.error('User attempting to remove download without permission', req.user.username)
+      return res.sendStatus(403)
+    }
+    this.abMergeManager.removeDownloadById(req.params.id)
+    res.sendStatus(200)
+  }
+
+  // GET: api/downloads
+  async getDownloads(req, res) {
+    if (!req.user.canDownload) {
+      Logger.error('User attempting to get downloads without permission', req.user.username)
+      return res.sendStatus(403)
+    }
+    var downloads = {
+      downloads: this.abMergeManager.downloads,
+      pendingDownloads: this.abMergeManager.pendingDownloads
+    }
+    res.json(downloads)
   }
 
   // PATCH: api/settings (Root)

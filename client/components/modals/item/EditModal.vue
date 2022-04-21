@@ -30,7 +30,6 @@ export default {
     return {
       processing: false,
       libraryItem: null,
-
       tabs: [
         {
           id: 'details',
@@ -57,15 +56,16 @@ export default {
           title: 'Files',
           component: 'modals-item-tabs-files'
         },
-        // {
-        //   id: 'download',
-        //   title: 'Download',
-        //   component: 'modals-item-tabs-download'
-        // },
         {
           id: 'match',
           title: 'Match',
           component: 'modals-item-tabs-match'
+        },
+        {
+          id: 'merge',
+          title: 'Merge',
+          component: 'modals-item-tabs-merge',
+          experimental: true
         }
       ]
     }
@@ -110,6 +110,9 @@ export default {
         this.$store.commit('setEditModalTab', val)
       }
     },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
@@ -119,12 +122,13 @@ export default {
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
-        if (tab.id === 'download' && this.isMissing) return false
+        if (tab.experimental && !this.showExperimentalFeatures) return false
+        if (tab.id === 'merge' && (this.isMissing || this.mediaType !== 'book')) return false
         if (this.mediaType == 'podcast' && tab.id == 'chapters') return false
         if (this.mediaType == 'book' && tab.id == 'episodes') return false
 
-        if ((tab.id === 'download' || tab.id === 'files') && this.userCanDownload) return true
-        if (tab.id !== 'download' && tab.id !== 'files' && this.userCanUpdate) return true
+        if ((tab.id === 'merge' || tab.id === 'files') && this.userCanDownload) return true
+        if (tab.id !== 'merge' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })

@@ -25,12 +25,12 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, downloadManager, coverManager, backupManager, watcher, cacheManager, podcastManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
     this.playbackSessionManager = playbackSessionManager
-    this.downloadManager = downloadManager
+    this.abMergeManager = abMergeManager
     this.backupManager = backupManager
     this.coverManager = coverManager
     this.watcher = watcher
@@ -185,7 +185,10 @@ class ApiRouter {
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
-    this.router.get('/download/:id', MiscController.download.bind(this))
+    this.router.get('/audiobook-merge/:id', MiscController.mergeAudiobook.bind(this))
+    this.router.get('/download/:id', MiscController.getDownload.bind(this))
+    this.router.delete('/download/:id', MiscController.removeDownload.bind(this))
+    this.router.get('/downloads', MiscController.getDownloads.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
     this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
     this.router.post('/authorize', MiscController.authorize.bind(this))
