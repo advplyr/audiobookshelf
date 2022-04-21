@@ -15,7 +15,8 @@
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
-      <div class="flex justify-center mt-2">
+      <!-- Clear filter only available on Library bookshelf -->
+      <div v-if="entityName === 'books'" class="flex justify-center mt-2">
         <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">Clear Filter</ui-btn>
       </div>
     </div>
@@ -467,6 +468,33 @@ export default {
         this.libraryItemUpdated(ab)
       })
     },
+    collectionAdded(collection) {
+      if (this.entityName !== 'collections') return
+      console.log(`[LazyBookshelf] collectionAdded ${collection.id}`, collection)
+      this.resetEntities()
+    },
+    collectionUpdated(collection) {
+      if (this.entityName !== 'collections') return
+      console.log(`[LazyBookshelf] collectionUpdated ${collection.id}`, collection)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === collection.id)
+      if (indexOf >= 0) {
+        this.entities[indexOf] = collection
+        if (this.entityComponentRefs[indexOf]) {
+          this.entityComponentRefs[indexOf].setEntity(collection)
+        }
+      }
+    },
+    collectionRemoved(collection) {
+      if (this.entityName !== 'collections') return
+      console.log(`[LazyBookshelf] collectionRemoved ${collection.id}`, collection)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === collection.id)
+      if (indexOf >= 0) {
+        this.entities = this.entities.filter((ent) => ent.id !== collection.id)
+        this.totalEntities = this.entities.length
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.executeRebuild()
+      }
+    },
     initSizeData(_bookshelf) {
       var bookshelf = _bookshelf || document.getElementById('bookshelf')
       if (!bookshelf) {
@@ -534,6 +562,9 @@ export default {
         this.$root.socket.on('item_removed', this.libraryItemRemoved)
         this.$root.socket.on('items_updated', this.libraryItemsUpdated)
         this.$root.socket.on('items_added', this.libraryItemsAdded)
+        this.$root.socket.on('collection_added', this.collectionAdded)
+        this.$root.socket.on('collection_updated', this.collectionUpdated)
+        this.$root.socket.on('collection_removed', this.collectionRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -555,6 +586,9 @@ export default {
         this.$root.socket.off('item_removed', this.libraryItemRemoved)
         this.$root.socket.off('items_updated', this.libraryItemsUpdated)
         this.$root.socket.off('items_added', this.libraryItemsAdded)
+        this.$root.socket.off('collection_added', this.collectionAdded)
+        this.$root.socket.off('collection_updated', this.collectionUpdated)
+        this.$root.socket.off('collection_removed', this.collectionRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
