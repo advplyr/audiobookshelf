@@ -19,7 +19,6 @@
             <ui-checkbox v-else v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">
-            <p class="text-gray-400 text-xs mb-0.5">Published {{ $dateDistanceFromNow(episode.publishedAt) }}</p>
             <p v-if="episode.episode" class="font-semibold text-gray-200">#{{ episode.episode }}</p>
             <p class="break-words mb-1">{{ episode.title }}</p>
             <p v-if="episode.subtitle" class="break-words mb-1 text-sm text-gray-300 episode-subtitle">{{ episode.subtitle }}</p>
