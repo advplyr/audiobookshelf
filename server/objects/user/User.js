@@ -308,8 +308,8 @@ class User {
   }
 
   checkCanAccessLibraryItemWithTags(tags) {
-    if (!tags || !tags.length) return false
     if (this.permissions.accessAllTags) return true
+    if (!tags || !tags.length) return false
     return this.itemTagsAccessible.some(tag => tags.includes(tag))
   }
 
