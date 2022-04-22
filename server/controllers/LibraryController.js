@@ -176,12 +176,29 @@ class LibraryController {
         sortKey += 'IgnorePrefix'
       }
 
+      // Start sort
       var direction = payload.sortDesc ? 'desc' : 'asc'
-      libraryItems = naturalSort(libraryItems)[direction]((li) => {
+      var sortArray = [
+        {
+          [direction]: (li) => {
+            // Supports dot notation strings i.e. "media.metadata.title"
+            return sortKey.split('.').reduce((a, b) => a[b], li)
+          }
+        }
+      ]
 
-        // Supports dot notation strings i.e. "media.metadata.title"
-        return sortKey.split('.').reduce((a, b) => a[b], li)
-      })
+      // Secondary sort when sorting by book author use series sort title
+      if (payload.mediaType === 'book' && payload.sortBy.includes('author')) {
+        sortArray.push({
+          asc: (li) => {
+            if (li.media.metadata.series && li.media.metadata.series.length) {
+              return li.media.metadata.getSeriesSortTitle(li.media.metadata.series[0])
+            }
+            return null
+          }
+        })
+      }
+      libraryItems = naturalSort(libraryItems).by(sortArray)
     }
 
     // TODO: Potentially implement collapse series again

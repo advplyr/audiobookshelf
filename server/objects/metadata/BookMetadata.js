@@ -162,6 +162,11 @@ class BookMetadata {
     if (!series) return null
     return series.sequence || ''
   }
+  getSeriesSortTitle(series) {
+    if (!series) return ''
+    if (!series.sequence) return series.name
+    return `${series.name} #${series.sequence}`
+  }
 
   update(payload) {
     var json = this.toJSON()
