@@ -181,15 +181,18 @@ export default {
       if (this.currentBookshelfIndex - 1 < 0) return
       var prevBookId = this.bookshelfBookIds[this.currentBookshelfIndex - 1]
       this.processing = true
-      var prevBook = await this.$axios.$get(`/api/items/${prevBookId}`).catch((error) => {
+      var prevBook = await this.$axios.$get(`/api/items/${prevBookId}?expanded=1`).catch((error) => {
         var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)
         return null
       })
       this.processing = false
       if (prevBook) {
-        this.$store.commit('showEditModalOnTab', { libraryItem: prevBook, tab: this.selectedTab })
-        this.$nextTick(this.init)
+        this.unregisterListeners()
+        this.libraryItem = prevBook
+        this.selectedTab = 'details'
+        this.$store.commit('setSelectedLibraryItem', prevBook)
+        this.$nextTick(this.registerListeners)
       } else {
         console.error('Book not found', prevBookId)
       }
@@ -198,15 +201,18 @@ export default {
       if (this.currentBookshelfIndex >= this.bookshelfBookIds.length - 1) return
       this.processing = true
       var nextBookId = this.bookshelfBookIds[this.currentBookshelfIndex + 1]
-      var nextBook = await this.$axios.$get(`/api/items/${nextBookId}`).catch((error) => {
+      var nextBook = await this.$axios.$get(`/api/items/${nextBookId}?expanded=1`).catch((error) => {
         var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)
         return null
       })
       this.processing = false
       if (nextBook) {
-        this.$store.commit('showEditModalOnTab', { libraryItem: nextBook, tab: this.selectedTab })
-        this.$nextTick(this.init)
+        this.unregisterListeners()
+        this.libraryItem = nextBook
+        this.selectedTab = 'details'
+        this.$store.commit('setSelectedLibraryItem', nextBook)
+        this.$nextTick(this.registerListeners)
       } else {
         console.error('Book not found', nextBookId)
       }
