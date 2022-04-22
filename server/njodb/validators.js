@@ -53,10 +53,11 @@ const validateObject = (o) => {
 const validateFunction = (f) => {
     if (typeof f !== "function") {
         throw new TypeError("Not a function")
-    } else {
-        const fString = f.toString();
-        if (/\s*function/.test(fString) && !/\W+return\W+/.test(fString)) throw new Error("Function must return a value");
     }
+    // } else {
+    //     const fString = f.toString();
+    //     if (/\s*function/.test(fString) && !/\W+return\W+/.test(fString)) throw new Error("Function must return a value");
+    // }
 
     return f;
 }
