@@ -22,7 +22,7 @@
           <p v-if="bookResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
           <template v-for="item in bookResults">
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/item/${item.id}`">
+              <nuxt-link :to="`/item/${item.libraryItem.id}`">
                 <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
             </li>
@@ -31,7 +31,7 @@
           <p v-if="podcastResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Podcasts</p>
           <template v-for="item in podcastResults">
             <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
-              <nuxt-link :to="`/item/${item.id}`">
+              <nuxt-link :to="`/item/${item.libraryItem.id}`">
                 <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
             </li>
