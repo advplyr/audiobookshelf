@@ -62,7 +62,7 @@ export default {
     },
     selectedItems() {
       return (this.value || []).map((v) => {
-        return this.items.find((i) => i.value === v) || {}
+        return this.items.find((i) => i.value === v) || { text: v, value: v }
       })
     }
   },
@@ -113,6 +113,7 @@ export default {
     removeItem(itemValue) {
       var remaining = this.selected.filter((i) => i !== itemValue)
       this.$emit('input', remaining)
+
       this.$nextTick(() => {
         this.recalcMenuPos()
       })

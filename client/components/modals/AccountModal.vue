@@ -88,7 +88,7 @@
             </div>
 
             <div v-if="!newUser.permissions.accessAllTags" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.itemsTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
+              <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
             </div>
           </div>
 
@@ -162,9 +162,6 @@ export default {
   },
   methods: {
     accessAllTagsToggled(val) {
-      if (!val) {
-        this.fetchAllTags()
-      }
       if (!val && !this.newUser.itemTagsAccessible.length) {
         this.newUser.itemTagsAccessible = this.libraries.map((l) => l.id)
       } else if (val && this.newUser.itemTagsAccessible.length) {
@@ -275,8 +272,11 @@ export default {
       }
     },
     init() {
+      this.fetchAllTags()
+
       this.isNew = !this.account
       if (this.account) {
+        console.log(this.account)
         this.newUser = {
           username: this.account.username,
           password: this.account.password,

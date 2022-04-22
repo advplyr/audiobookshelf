@@ -253,7 +253,13 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => c.toJSONExpanded(libraryItems, payload.minified))
+    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => {
+      var expanded = c.toJSONExpanded(libraryItems, payload.minified)
+      // If all books restricted to user in this collection then hide this collection
+      if (!expanded.books.length && c.books.length) return null
+      return expanded
+    }).filter(c => !!c)
+
     payload.total = collections.length
 
     if (payload.limit) {
