@@ -127,10 +127,6 @@
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="userCanDownload && !isPodcast" :disabled="isMissing" text="Download" direction="top">
-              <ui-icon-btn icon="download" :disabled="isMissing" class="mx-0.5" @click="downloadClick" />
-            </ui-tooltip>
-
             <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
@@ -425,9 +421,6 @@ export default {
             this.resettingProgress = false
           })
       }
-    },
-    downloadClick() {
-      this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'download' })
     },
     collectionsClick() {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
