@@ -23,7 +23,9 @@
       <div class="flex items-center py-2">
         <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
-        <p class="pl-4 text-lg">Maximum backup size (in GB)</p>
+        <ui-tooltip :text="maxBackupSizeTooltip">
+          <p class="pl-4 text-lg">Maximum backup size (in GB) <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
       </div>
 
       <tables-backups-table />
@@ -53,6 +55,9 @@ export default {
   computed: {
     dailyBackupsTooltip() {
       return 'Runs at 1am every day (your server time). Saved in /metadata/backups.'
+    },
+    maxBackupSizeTooltip() {
+      return 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
     },
     serverSettings() {
       return this.$store.state.serverSettings
