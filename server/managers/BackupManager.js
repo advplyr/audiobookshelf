@@ -23,9 +23,6 @@ class BackupManager {
     this.scheduleTask = null
 
     this.backups = []
-
-    // If backup exceeds this value it will be aborted
-    this.MaxBytesBeforeAbort = 1000000000 // ~ 1GB
   }
 
   get serverSettings() {
@@ -263,7 +260,8 @@ class BackupManager {
         reject(err)
       })
       archive.on('progress', ({ fs: fsobj }) => {
-        if (fsobj.processedBytes > this.MaxBytesBeforeAbort) {
+        const maxBackupSizeInBytes = this.serverSettings.maxBackupSize * 1000 * 1000 * 1000 
+        if (fsobj.processedBytes > maxBackupSizeInBytes) {
           Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
           archive.abort()
           setTimeout(() => {
