@@ -61,7 +61,6 @@ export default {
       totalShelves: 0,
       bookshelfMarginLeft: 0,
       isSelectionMode: false,
-      isSelectAll: false,
       currentSFQueryString: null,
       pendingReset: false,
       keywordFilter: null,
@@ -217,7 +216,6 @@ export default {
     clearSelectedEntities() {
       this.updateBookSelectionMode(false)
       this.isSelectionMode = false
-      this.isSelectAll = false
     },
     selectEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
@@ -339,7 +337,6 @@ export default {
       this.totalEntities = 0
       this.currentPage = 0
       this.isSelectionMode = false
-      this.isSelectAll = false
       this.initialized = false
 
       this.initSizeData()

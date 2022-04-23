@@ -166,6 +166,7 @@ export default {
           isFinished: newIsFinished
         }
       })
+      console.log('Progress payloads', updateProgressPayloads)
       this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {

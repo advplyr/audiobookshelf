@@ -94,6 +94,9 @@ export default {
     }
   },
   methods: {
+    clearSelectedEntities() {
+      this.updateSelectionMode(false)
+    },
     editAuthor(author) {
       this.selectedAuthor = author
       this.showAuthorModal = true
@@ -181,9 +184,11 @@ export default {
     }
   },
   mounted() {
+    this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
     this.$eventBus.$on('item-selected', this.itemSelectedEvt)
   },
   beforeDestroy() {
+    this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
     this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }
