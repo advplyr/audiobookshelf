@@ -260,7 +260,8 @@ class BackupManager {
         reject(err)
       })
       archive.on('progress', ({ fs: fsobj }) => {
-        if (fsobj.processedBytes > this.serverSettings.maxBackupSize * 1000 * 1000 * 1000) {
+        const maxBackupSizeInBytes = this.serverSettings.maxBackupSize * 1000 * 1000 * 1000 
+        if (fsobj.processedBytes > maxBackupSizeInBytes) {
           Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
           archive.abort()
           setTimeout(() => {
