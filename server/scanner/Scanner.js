@@ -518,7 +518,7 @@ class Scanner {
       var altDir = `${itemDir}/${firstNest}`
 
       var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
-      var childLibraryItem = this.db.libraryItems.find(li => li.path !== fullPath && li.fullPath.startsWith(fullPath))
+      var childLibraryItem = this.db.libraryItems.find(li => li.path !== fullPath && li.path.startsWith(fullPath))
       if (!childLibraryItem) {
         continue;
       }
