@@ -29,6 +29,7 @@ class ServerSettings {
     // this.backupSchedule = '0 1 * * *' // If false then auto-backups are disabled (default every day at 1am)
     this.backupSchedule = false
     this.backupsToKeep = 2
+    this.maxBackupSize = 1
     this.backupMetadataCovers = true
 
     // Logger
@@ -78,6 +79,7 @@ class ServerSettings {
 
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
+    this.maxBackupSize  = settings.maxBackupSize || 1
     this.backupMetadataCovers = settings.backupMetadataCovers !== false
 
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
@@ -114,6 +116,7 @@ class ServerSettings {
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
+      maxBackupSize: this.maxBackupSize,
       backupMetadataCovers: this.backupMetadataCovers,
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,

@@ -20,6 +20,12 @@
         <p class="pl-4 text-lg">Number of backups to keep</p>
       </div>
 
+      <div class="flex items-center py-2">
+        <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
+
+        <p class="pl-4 text-lg">Maximum backup size (in GB)</p>
+      </div>
+
       <tables-backups-table />
     </div>
   </div>
@@ -32,6 +38,7 @@ export default {
       updatingServerSettings: false,
       dailyBackups: true,
       backupsToKeep: 2,
+      maxBackupSize: 1,
       newServerSettings: {}
     }
   },
@@ -53,13 +60,18 @@ export default {
   },
   methods: {
     updateBackupsSettings() {
+      if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
+        this.$toast.error('Invalid maximum backup size')
+        return
+      }
       if (isNaN(this.backupsToKeep) || this.backupsToKeep <= 0 || this.backupsToKeep > 99) {
         this.$toast.error('Invalid number of backups to keep')
         return
       }
       var updatePayload = {
         backupSchedule: this.dailyBackups ? '0 1 * * *' : false,
-        backupsToKeep: Number(this.backupsToKeep)
+        backupsToKeep: Number(this.backupsToKeep),
+        maxBackupSize: Number(this.maxBackupSize)
       }
       this.updateServerSettings(updatePayload)
     },
@@ -81,6 +93,7 @@ export default {
 
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.dailyBackups = !!this.newServerSettings.backupSchedule
+      this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
     }
   },
   mounted() {
