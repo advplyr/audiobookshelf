@@ -78,6 +78,13 @@ class PlaybackSessionManager {
   }
 
   async startSession(user, libraryItem, episodeId, options) {
+    // Close any sessions already open for user
+    var userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
+    for (const session of userSessions) {
+      Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}"`)
+      await this.closeSession(user, session, null)
+    }
+
     var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
     var mediaPlayer = options.mediaPlayer || 'unknown'
 
