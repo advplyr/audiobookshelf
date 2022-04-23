@@ -1,4 +1,5 @@
 const { sort, createNewSortInstance } = require('fast-sort')
+const Logger = require('../Logger')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -172,14 +173,28 @@ module.exports = {
     })
   },
 
-  getItemsWithUserProgress(user, libraryItems) {
-    return libraryItems.map(li => {
-      var itemProgress = user.getMediaProgress(li.id)
-      return {
-        userProgress: itemProgress ? itemProgress.toJSON() : null,
-        libraryItem: li
-      }
-    }).filter(b => !!b.userProgress)
+  getMediaProgressWithItems(user, libraryItems) {
+    var mediaProgress = []
+    libraryItems.forEach(li => {
+      var itemProgress = user.getAllMediaProgressForLibraryItem(li.id).map(mp => {
+        var episode = null
+        if (mp.episodeId) {
+          episode = li.media.getEpisode(mp.episodeId)
+          if (!episode) {
+            // Episode not found for library item
+            return null
+          }
+        }
+        return {
+          userProgress: mp.toJSON(),
+          libraryItem: li,
+          episode
+        }
+      }).filter(mp => !!mp)
+
+      mediaProgress = mediaProgress.concat(itemProgress)
+    })
+    return mediaProgress
   },
 
   getItemsMostRecentlyListened(itemsWithUserProgress, limit, minified = false) {
@@ -187,7 +202,13 @@ module.exports = {
     itemsInProgress.sort((a, b) => {
       return b.userProgress.lastUpdate - a.userProgress.lastUpdate
     })
-    return itemsInProgress.map(b => minified ? b.libraryItem.toJSONMinified() : b.libraryItem.toJSONExpanded()).slice(0, limit)
+    return itemsInProgress.map(b => {
+      var libjson = minified ? b.libraryItem.toJSONMinified() : b.libraryItem.toJSONExpanded()
+      if (b.episode) {
+        libjson.recentEpisode = b.episode
+      }
+      return libjson
+    }).slice(0, limit)
   },
 
   getBooksNextInSeries(seriesWithUserAb, limit, minified = false) {
@@ -202,17 +223,39 @@ module.exports = {
     return booksNextInSeries.sort((a, b) => { return b.DateLastReadSeries - a.DateLastReadSeries }).map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
   },
 
-  getItemsMostRecentlyAdded(libraryItems, limit, minified = false) {
-    var itemsSortedByAddedAt = sort(libraryItems).desc(li => li.addedAt)
-    return itemsSortedByAddedAt.map(b => minified ? b.toJSONMinified() : b.toJSONExpanded()).slice(0, limit)
-  },
-
   getItemsMostRecentlyFinished(itemsWithUserProgress, limit, minified = false) {
     var itemsFinished = itemsWithUserProgress.filter((data) => data.userProgress && data.userProgress.isFinished)
     itemsFinished.sort((a, b) => {
       return b.userProgress.finishedAt - a.userProgress.finishedAt
     })
-    return itemsFinished.map(i => minified ? i.libraryItem.toJSONMinified() : i.libraryItem.toJSONExpanded()).slice(0, limit)
+    return itemsFinished.map(i => {
+      var libjson = minified ? i.libraryItem.toJSONMinified() : i.libraryItem.toJSONExpanded()
+      if (i.episode) {
+        libjson.recentEpisode = i.episode
+      }
+      return libjson
+    }).slice(0, limit)
+  },
+
+  getItemsMostRecentlyAdded(libraryItems, limit, minified = false) {
+    var itemsSortedByAddedAt = sort(libraryItems).desc(li => li.addedAt)
+    return itemsSortedByAddedAt.map(b => minified ? b.toJSONMinified() : b.toJSONExpanded()).slice(0, limit)
+  },
+
+  getEpisodesRecentlyAdded(libraryItems, limit, minified = false) {
+    var libraryItemsWithEpisode = []
+    libraryItems.forEach((li) => {
+      if (li.mediaType !== 'podcast' || !li.media.hasMediaEntities) return
+      var libjson = minified ? li.toJSONMinified() : li.toJSONExpanded()
+      var episodes = sort(li.media.episodes || []).desc(ep => ep.addedAt)
+      episodes.forEach((ep) => {
+        var lie = { ...libjson }
+        lie.recentEpisode = ep
+        libraryItemsWithEpisode.push(lie)
+      })
+    })
+    libraryItemsWithEpisode = sort(libraryItemsWithEpisode).desc(lie => lie.recentEpisode.addedAt)
+    return libraryItemsWithEpisode.slice(0, limit)
   },
 
   getSeriesMostRecentlyAdded(series, limit) {

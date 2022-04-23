@@ -7,6 +7,11 @@
             <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editBook" />
           </template>
         </div>
+        <div v-if="shelf.type === 'episode'" class="flex items-center">
+          <template v-for="(entity, index) in shelf.entities">
+            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editEpisode" />
+          </template>
+        </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
           <template v-for="entity in shelf.entities">
             <cards-lazy-series-card :key="entity.name" :series-mount="entity" :height="bookCoverHeight" :width="bookCoverWidth * 2" :book-cover-aspect-ratio="bookCoverAspectRatio" class="relative mx-2" @hook:updated="updatedBookCard" />
@@ -70,11 +75,6 @@ export default {
       selectedAuthor: null
     }
   },
-  watch: {
-    isSelectionMode(newVal) {
-      this.updateSelectionMode(newVal)
-    }
-  },
   computed: {
     bookCoverHeight() {
       return this.bookCoverWidth * this.bookCoverAspectRatio
@@ -103,11 +103,24 @@ export default {
       this.$store.commit('setBookshelfBookIds', bookIds)
       this.$store.commit('showEditModal', audiobook)
     },
+    editEpisode({ libraryItem, episode }) {
+      this.$store.commit('setSelectedLibraryItem', libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
+    },
     updateSelectionMode(val) {
       var selectedLibraryItems = this.$store.state.selectedLibraryItems
-      if (this.shelf.type === 'book') {
+      if (this.shelf.type === 'book' || this.shelf.type === 'podcast') {
         this.shelf.entities.forEach((ent) => {
           var component = this.$refs[`shelf-book-${ent.id}`]
+          if (!component || !component.length) return
+          component = component[0]
+          component.setSelectionMode(val)
+          component.selected = selectedLibraryItems.includes(ent.id)
+        })
+      } else if (this.shelf.type === 'episode') {
+        this.shelf.entities.forEach((ent) => {
+          var component = this.$refs[`shelf-episode-${ent.recentEpisode.id}`]
           if (!component || !component.length) return
           component = component[0]
           component.setSelectionMode(val)
@@ -117,6 +130,12 @@ export default {
     },
     selectItem(libraryItem) {
       this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
+      this.$nextTick(() => {
+        this.$eventBus.$emit('item-selected', libraryItem)
+      })
+    },
+    itemSelectedEvt() {
+      this.updateSelectionMode(this.isSelectionMode)
     },
     scrolled() {
       clearTimeout(this.scrollTimer)
@@ -160,6 +179,12 @@ export default {
         this.canScrollLeft = false
       }
     }
+  },
+  mounted() {
+    this.$eventBus.$on('item-selected', this.itemSelectedEvt)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }
 </script>

@@ -35,17 +35,6 @@
 
 <script>
 export default {
-  props: {
-    value: Boolean,
-    libraryItem: {
-      type: Object,
-      default: () => {}
-    },
-    episode: {
-      type: Object,
-      default: () => {}
-    }
-  },
   data() {
     return {
       processing: false,
@@ -72,11 +61,17 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.globals.showEditPodcastEpisode
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('globals/setShowEditPodcastEpisodeModal', val)
       }
+    },
+    libraryItem() {
+      return this.$store.state.selectedLibraryItem
+    },
+    episode() {
+      return this.$store.state.globals.selectedEpisode
     },
     episodeId() {
       return this.episode ? this.episode.id : null

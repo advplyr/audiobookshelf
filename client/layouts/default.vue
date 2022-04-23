@@ -10,6 +10,7 @@
     <modals-user-collections-modal />
     <modals-edit-collection-modal />
     <modals-bookshelf-texture-modal />
+    <modals-podcast-edit-episode />
     <readers-reader />
   </div>
 </template>

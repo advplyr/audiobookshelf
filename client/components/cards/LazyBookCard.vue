@@ -35,8 +35,8 @@
       </div>
     </div>
 
-    <!-- No progress shown for collapsed series in library and podcasts -->
-    <div v-if="!booksInSeries && !isPodcast" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <!-- No progress shown for collapsed series in library and podcasts (unless showing podcast episode) -->
+    <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -60,7 +60,7 @@
         <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
       </div>
 
-      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+      <div ref="moreIcon" v-show="!isSelectionMode && !recentEpisode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
@@ -77,13 +77,18 @@
       </div>
     </ui-tooltip>
 
-    <!-- Volume number -->
+    <!-- Series sequence -->
     <div v-if="seriesSequence && showSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
     </div>
 
+    <!-- Podcast Episode # -->
+    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
+    </div>
+
     <!-- Podcast Num Episodes -->
-    <div v-if="numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
+    <div v-else-if="numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodes }}</p>
     </div>
   </div>
@@ -190,6 +195,17 @@ export default {
     processingBatch() {
       return this.store.state.processingBatch
     },
+    recentEpisode() {
+      // Only added to item when getting currently listening podcasts
+      return this._libraryItem.recentEpisode
+    },
+    recentEpisodeNumber() {
+      if (!this.recentEpisode) return null
+      if (this.recentEpisode.episode) {
+        return this.recentEpisode.episode.replace(/^#/, '')
+      }
+      return this.recentEpisode.index
+    },
     collapsedSeries() {
       // Only added to item object when collapseSeries is enabled
       return this._libraryItem.collapsedSeries
@@ -240,7 +256,13 @@ export default {
       if (this.orderBy === 'size') return 'Size: ' + this.$bytesPretty(this._libraryItem.size)
       return null
     },
+    episodeProgress() {
+      // Only used on home page currently listening podcast shelf
+      if (!this.recentEpisode) return null
+      return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.recentEpisode.id)
+    },
     userProgress() {
+      if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userProgressPercent() {
@@ -259,7 +281,7 @@ export default {
       return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && this.numTracks && !this.isStreaming
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
@@ -406,6 +428,9 @@ export default {
       }
     },
     editClick() {
+      if (this.recentEpisode) {
+        return this.$emit('edit', { libraryItem: this.libraryItem, episode: this.recentEpisode })
+      }
       this.$emit('edit', this.libraryItem)
     },
     toggleFinished() {
@@ -529,7 +554,8 @@ export default {
     play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
       eventBus.$emit('play-item', {
-        libraryItemId: this.libraryItemId
+        libraryItemId: this.libraryItemId,
+        episodeId: this.recentEpisode ? this.recentEpisode.id : null
       })
     },
     mouseover() {

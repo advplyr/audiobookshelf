@@ -5,6 +5,8 @@ export const state = () => ({
   showBatchUserCollectionModal: false,
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
+  showEditPodcastEpisode: false,
+  selectedEpisode: null,
   selectedCollection: null,
   showBookshelfTextureModal: false,
   isCasting: false, // Actively casting
@@ -46,9 +48,15 @@ export const mutations = {
   setShowEditCollectionModal(state, val) {
     state.showEditCollectionModal = val
   },
+  setShowEditPodcastEpisodeModal(state, val) {
+    state.showEditPodcastEpisode = val
+  },
   setEditCollection(state, collection) {
     state.selectedCollection = collection
     state.showEditCollectionModal = true
+  },
+  setSelectedEpisode(state, episode) {
+    state.selectedEpisode = episode
   },
   setShowBookshelfTextureModal(state, val) {
     state.showBookshelfTextureModal = val

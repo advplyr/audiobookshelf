@@ -16,8 +16,6 @@
         </template>
       </transition-group>
     </draggable>
-
-    <modals-podcast-edit-episode v-model="showEditEpisodeModal" :library-item="libraryItem" :episode="selectedEpisode" />
   </div>
 </template>
 
@@ -40,8 +38,6 @@ export default {
       sortDesc: true,
       drag: false,
       episodesCopy: [],
-      selectedEpisode: null,
-      showEditEpisodeModal: false,
       orderChanged: false,
       savingOrder: false
     }
@@ -97,8 +93,9 @@ export default {
       return false
     },
     editEpisode(episode) {
-      this.selectedEpisode = episode
-      this.showEditEpisodeModal = true
+      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
     },
     draggableUpdate() {
       this.orderChanged = this.checkHasOrderChanged()

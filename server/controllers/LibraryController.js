@@ -300,12 +300,12 @@ class LibraryController {
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
     var minified = req.query.minified === '1'
 
-    var itemsWithUserProgress = libraryHelpers.getItemsWithUserProgress(req.user, libraryItems)
+    var itemsWithUserProgress = libraryHelpers.getMediaProgressWithItems(req.user, libraryItems)
     var categories = [
       {
         id: 'continue-listening',
         label: 'Continue Listening',
-        type: req.library.mediaType,
+        type: isPodcastLibrary ? 'episode' : req.library.mediaType,
         entities: libraryHelpers.getItemsMostRecentlyListened(itemsWithUserProgress, limitPerShelf, minified)
       },
       {
@@ -317,7 +317,7 @@ class LibraryController {
       {
         id: 'listen-again',
         label: 'Listen Again',
-        type: req.library.mediaType,
+        type: isPodcastLibrary ? 'episode' : req.library.mediaType,
         entities: libraryHelpers.getItemsMostRecentlyFinished(itemsWithUserProgress, limitPerShelf, minified)
       }
     ].filter(cats => { // Remove categories with no items
@@ -372,57 +372,17 @@ class LibraryController {
           entities: authors
         })
       }
-    }
-
-    res.json(categories)
-  }
-
-  // LEGACY
-  // api/libraries/:id/books/categories
-  async getLibraryCategories(req, res) {
-    var library = req.library
-    var books = this.db.audiobooks.filter(ab => ab.libraryId === library.id)
-    var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    var minified = req.query.minified === '1'
-
-    var booksWithUserAb = libraryHelpers.getItemsWithUserProgress(req.user, books)
-    var series = libraryHelpers.getSeriesFromBooks(books, minified)
-    var seriesWithUserAb = libraryHelpers.getSeriesWithProgressFromBooks(req.user, books)
-
-    var categories = [
-      {
-        id: 'continue-reading',
-        label: 'Continue Reading',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyRead(booksWithUserAb, limitPerShelf, minified)
-      },
-      {
-        id: 'continue-series',
-        label: 'Continue Series',
-        type: 'books',
-        entities: libraryHelpers.getBooksNextInSeries(seriesWithUserAb, limitPerShelf, minified)
-      },
-      {
-        id: 'recently-added',
-        label: 'Recently Added',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyAdded(books, limitPerShelf, minified)
-      },
-      {
-        id: 'read-again',
-        label: 'Read Again',
-        type: 'books',
-        entities: libraryHelpers.getBooksMostRecentlyFinished(booksWithUserAb, limitPerShelf, minified)
-      },
-      {
-        id: 'recent-series',
-        label: 'Recent Series',
-        type: 'series',
-        entities: libraryHelpers.getSeriesMostRecentlyAdded(series, limitPerShelf)
+    } else {
+      var episodesRecentlyAdded = libraryHelpers.getEpisodesRecentlyAdded(libraryItems, limitPerShelf, minified)
+      if (episodesRecentlyAdded.length) {
+        categories.splice(1, 0, {
+          id: 'episodes-recently-added',
+          label: 'Newest Episodes',
+          type: 'episode',
+          entities: episodesRecentlyAdded
+        })
       }
-    ].filter(cats => { // Remove categories with no items
-      return cats.entities.length
-    })
+    }
 
     res.json(categories)
   }

@@ -251,6 +251,11 @@ class User {
     })
   }
 
+  getAllMediaProgressForLibraryItem(libraryItemId) {
+    if (!this.mediaProgress) return []
+    return this.mediaProgress.filter(li => li.libraryItemId === libraryItemId)
+  }
+
   createUpdateMediaProgress(libraryItem, updatePayload, episodeId = null) {
     var itemProgress = this.mediaProgress.find(li => {
       if (episodeId && li.episodeId !== episodeId) return false

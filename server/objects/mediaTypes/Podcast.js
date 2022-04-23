@@ -257,5 +257,9 @@ class Podcast {
     if (!episode) return 0
     return episode.duration
   }
+
+  getEpisode(episodeId) {
+    return this.episodes.find(ep => ep.id == episodeId)
+  }
 }
 module.exports = Podcast
