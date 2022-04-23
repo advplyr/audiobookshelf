@@ -316,6 +316,39 @@ class Db {
     })
   }
 
+  async bulkInsertEntities(entityName, entities, batchSize = 500) {
+    // Group entities in batches of size batchSize
+    var entityBatches = []
+    var batch = []
+    var index = 0
+    entities.forEach((ent) => {
+      batch.push(ent)
+      index++
+      if (index >= batchSize) {
+        entityBatches.push(batch)
+        index = 0
+        batch = []
+      }
+    })
+    if (batch.length) entityBatches.push(batch)
+
+    Logger.info(`[Db] bulkInsertEntities: ${entities.length} ${entityName} to ${entityBatches.length} batches of max size ${batchSize}`)
+
+    // Start inserting batches
+    var batchIndex = 1
+    for (const entityBatch of entityBatches) {
+      Logger.info(`[Db] bulkInsertEntities: Start inserting batch ${batchIndex} of ${entityBatch.length} for ${entityName}`)
+      var success = await this.insertEntities(entityName, entityBatch)
+      if (success) {
+        Logger.info(`[Db] bulkInsertEntities: Success inserting batch ${batchIndex} for ${entityName}`)
+      } else {
+        Logger.info(`[Db] bulkInsertEntities: Failed inserting batch ${batchIndex} for ${entityName}`)
+      }
+      batchIndex++
+    }
+    return true
+  }
+
   updateEntities(entityName, entities) {
     var entityDb = this.getEntityDb(entityName)
 

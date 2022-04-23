@@ -242,10 +242,10 @@ async function migrateLibraryItems(db) {
   var libraryItems = audiobooks.map((ab) => makeLibraryItemFromOldAb(ab))
 
   Logger.info(`>>> ${libraryItems.length} Library Items made`)
-  await db.insertEntities('libraryItem', libraryItems)
+  await db.bulkInsertEntities('libraryItem', libraryItems)
   if (authorsToAdd.length) {
     Logger.info(`>>> ${authorsToAdd.length} Authors made`)
-    await db.insertEntities('author', authorsToAdd)
+    await db.bulkInsertEntities('author', authorsToAdd)
   }
   if (seriesToAdd.length) {
     Logger.info(`>>> ${seriesToAdd.length} Series made`)
