@@ -69,7 +69,8 @@ export default {
       sleepTimerTime: 0,
       sleepTimerRemaining: 0,
       sleepTimer: null,
-      displayTitle: null
+      displayTitle: null,
+      initialPlaybackRate: 1
     }
   },
   computed: {
@@ -204,6 +205,7 @@ export default {
       this.playerHandler.setVolume(volume)
     },
     setPlaybackRate(playbackRate) {
+      this.initialPlaybackRate = playbackRate
       this.playerHandler.setPlaybackRate(playbackRate)
     },
     seek(time) {
@@ -253,7 +255,7 @@ export default {
         libraryItem: session.libraryItem,
         episodeId: session.episodeId
       })
-      this.playerHandler.prepareOpenSession(session)
+      this.playerHandler.prepareOpenSession(session, this.initialPlaybackRate)
     },
     streamOpen(session) {
       console.log(`[StreamContainer] Stream session open`, session)
@@ -311,7 +313,7 @@ export default {
         episodeId
       })
 
-      this.playerHandler.load(libraryItem, episodeId, true)
+      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate)
     },
     pauseItem() {
       this.playerHandler.pause()

@@ -10,6 +10,7 @@ export default class PlayerHandler {
     this.displayTitle = null
     this.displayAuthor = null
     this.playWhenReady = false
+    this.initialPlaybackRate = 1
     this.player = null
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
@@ -46,12 +47,13 @@ export default class PlayerHandler {
     return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
   }
 
-  load(libraryItem, episodeId, playWhenReady) {
+  load(libraryItem, episodeId, playWhenReady, playbackRate) {
     if (!this.player) this.switchPlayer()
 
     this.libraryItem = libraryItem
     this.episodeId = episodeId
     this.playWhenReady = playWhenReady
+    this.initialPlaybackRate = playbackRate
     this.prepare()
   }
 
@@ -113,6 +115,7 @@ export default class PlayerHandler {
     console.log('[PlayerHandler] Player state change', state)
     this.playerState = state
     if (this.playerState === 'PLAYING') {
+      this.setPlaybackRate(this.initialPlaybackRate)
       this.startPlayInterval()
     } else {
       this.stopPlayInterval()
@@ -151,11 +154,12 @@ export default class PlayerHandler {
     this.prepareSession(session)
   }
 
-  prepareOpenSession(session) { // Session opened on init socket
+  prepareOpenSession(session, playbackRate) { // Session opened on init socket
     if (!this.player) this.switchPlayer()
 
     this.libraryItem = session.libraryItem
     this.playWhenReady = false
+    this.initialPlaybackRate = playbackRate
     this.prepareSession(session)
   }
 
@@ -292,6 +296,7 @@ export default class PlayerHandler {
   }
 
   setPlaybackRate(playbackRate) {
+    this.initialPlaybackRate = playbackRate // Might be loaded from settings before player is started
     if (!this.player) return
     this.player.setPlaybackRate(playbackRate)
   }
