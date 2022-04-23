@@ -642,7 +642,7 @@ class Scanner {
     }
 
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'narrator', 'publisher', 'publishedYear', 'asin', 'isbn']
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'asin', 'isbn']
     const updatePayload = {}
     for (const key in matchData) {
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
