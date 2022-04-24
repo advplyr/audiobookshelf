@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full my-4" @mousedown.prevent @mouseup.prevent>
+  <div class="w-full my-4">
     <div class="w-full bg-primary px-6 py-1 flex items-center cursor-pointer" @click.stop="clickBar">
       <p class="pr-4">{{ title }}</p>
       <span class="bg-black-400 rounded-xl py-0.5 px-2 text-sm font-mono">{{ files.length }}</span>
