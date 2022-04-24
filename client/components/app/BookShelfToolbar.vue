@@ -50,6 +50,8 @@
             <span class="material-icons" style="font-size: 1.4rem">view_list</span>
           </div>
         </div> -->
+
+        <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
       <template v-else-if="page === 'search'">
         <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
@@ -82,10 +84,14 @@ export default {
       totalEntities: 0,
       keywordFilter: null,
       keywordTimeout: null,
-      processingSeries: false
+      processingSeries: false,
+      processingIssues: false
     }
   },
   computed: {
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
     },
@@ -132,9 +138,32 @@ export default {
     },
     isSeriesFinished() {
       return this.seriesProgress && !!this.seriesProgress.isFinished
+    },
+    filterBy() {
+      return this.$store.getters['user/getUserSetting']('filterBy')
+    },
+    isIssuesFilter() {
+      return this.filterBy === 'issues'
     }
   },
   methods: {
+    removeAllIssues() {
+      if (confirm(`Are you sure you want to remove all library items with issues?\n\nNote: This will not delete any files`)) {
+        this.processingIssues = true
+        this.$axios
+          .$delete(`/api/libraries/${this.currentLibraryId}/issues`)
+          .then(() => {
+            this.$toast.success('Removed library items with issues')
+            this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
+            this.processingIssues = false
+          })
+          .catch((error) => {
+            console.error('Failed to remove library items with issues', error)
+            this.$toast.error('Failed to remove library items with issues')
+            this.processingIssues = false
+          })
+      }
+    },
     markSeriesFinished() {
       var newIsFinished = !this.isSeriesFinished
       this.processingSeries = true

@@ -226,6 +226,22 @@ class LibraryController {
     res.json(payload)
   }
 
+  async removeLibraryItemsWithIssues(req, res) {
+    var libraryItemsWithIssues = req.libraryItems.filter(li => li.hasIssues)
+    if (!libraryItemsWithIssues.length) {
+      Logger.warn(`[LibraryController] No library items have issues`)
+      return res.sendStatus(200)
+    }
+
+    Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
+    for (const libraryItem of libraryItemsWithIssues) {
+      Logger.info(`[LibraryController] Removing library item "${libraryItem.media.metadata.title}"`)
+      await this.handleDeleteLibraryItem(libraryItem)
+    }
+
+    res.sendStatus(200)
+  }
+
   // api/libraries/:id/series
   async getAllSeriesForLibrary(req, res) {
     var libraryItems = req.libraryItems

@@ -112,6 +112,9 @@ export default {
     showLibrary() {
       return this.libraryBookshelfPage && this.paramId === '' && !this.showingIssues
     },
+    filterBy() {
+      return this.$store.getters['user/getUserSetting']('filterBy')
+    },
     showingIssues() {
       if (!this.$route.query) return false
       return this.libraryBookshelfPage && this.$route.query.filter === 'issues'
