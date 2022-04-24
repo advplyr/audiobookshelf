@@ -95,6 +95,21 @@
             <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
           </div>
 
+          <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
+            <div class="flex items-center">
+              <p class="text-sm py-1">{{ episodeDownloadsQueued.length }} Episode{{ episodeDownloadsQueued.length === 1 ? '' : 's' }} queued for download</p>
+
+              <span class="material-icons hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
+            </div>
+          </div>
+
+          <div v-if="episodesDownloading.length" class="px-4 py-2 mt-4 bg-success bg-opacity-20 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
+            <div v-for="episode in episodesDownloading" :key="episode.id" class="flex items-center">
+              <widgets-loading-spinner />
+              <p class="text-sm py-1 pl-4">Downloading episode "{{ episode.episodeDisplayTitle }}"</p>
+            </div>
+          </div>
+
           <!-- Progress -->
           <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p v-if="progressPercent < 1" class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
@@ -163,7 +178,9 @@ export default {
     if (!store.state.user.user) {
       return redirect(`/login?redirect=${route.path}`)
     }
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors`).catch((error) => {
+
+    // Include episode downloads for podcasts
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors,downloads`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -181,7 +198,9 @@ export default {
       isProcessingReadUpdate: false,
       fetchingRSSFeed: false,
       showPodcastEpisodeFeed: false,
-      podcastFeedEpisodes: []
+      podcastFeedEpisodes: [],
+      episodesDownloading: [],
+      episodeDownloadsQueued: []
     }
   },
   computed: {
@@ -333,6 +352,20 @@ export default {
     }
   },
   methods: {
+    clearDownloadQueue() {
+      if (confirm('Are you sure you want to clear episode download queue?')) {
+        this.$axios
+          .$get(`/api/podcasts/${this.libraryItemId}/clear-queue`)
+          .then(() => {
+            this.$toast.success('Episode download queue cleared')
+            this.episodeDownloadQueued = []
+          })
+          .catch((error) => {
+            console.error('Failed to clear queue', error)
+            this.$toast.error('Failed to clear queue')
+          })
+      }
+    },
     async findEpisodesClick() {
       if (!this.mediaMetadata.feedUrl) {
         return this.$toast.error('Podcast does not have an RSS Feed')
@@ -425,17 +458,44 @@ export default {
     collectionsClick() {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
+    },
+    episodeDownloadQueued(episodeDownload) {
+      if (episodeDownload.libraryItemId === this.libraryItemId) {
+        this.episodeDownloadsQueued.push(episodeDownload)
+      }
+    },
+    episodeDownloadStarted(episodeDownload) {
+      if (episodeDownload.libraryItemId === this.libraryItemId) {
+        this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
+        this.episodesDownloading.push(episodeDownload)
+      }
+    },
+    episodeDownloadFinished(episodeDownload) {
+      if (episodeDownload.libraryItemId === this.libraryItemId) {
+        this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
+        this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
+      }
     }
   },
   mounted() {
+    if (this.libraryItem.episodesDownloading) {
+      this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
+    }
+
     // use this items library id as the current
     if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
+    this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
+    this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
+    this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
   },
   beforeDestroy() {
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
+    this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
+    this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
+    this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
   }
 }
 </script>

@@ -272,7 +272,7 @@ export default {
       return this.userProgress ? !!this.userProgress.isFinished : false
     },
     showError() {
-      return this.hasMissingParts || this.hasInvalidParts || this.isMissing || this.isInvalid
+      return this.numMissingParts || this.isMissing || this.isInvalid
     },
     isStreaming() {
       return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
@@ -292,22 +292,19 @@ export default {
     isInvalid() {
       return this._libraryItem.isInvalid
     },
-    hasMissingParts() {
-      return this._libraryItem.hasMissingParts
-    },
-    hasInvalidParts() {
-      return this._libraryItem.hasInvalidParts
+    numMissingParts() {
+      if (this.isPodcast) return 0
+      return this.media.numMissingParts
     },
     errorText() {
       if (this.isMissing) return 'Item directory is missing!'
-      else if (this.isInvalid) return 'Item has no audio tracks & ebook'
-      var txt = ''
-      if (this.hasMissingParts) {
-        txt = `${this.hasMissingParts} missing parts.`
+      else if (this.isInvalid) {
+        if (this.isPodcast) return 'Podcast has no episodes'
+        return 'Item has no audio tracks & ebook'
       }
-      if (this.hasInvalidParts) {
-        if (this.hasMissingParts) txt += ' '
-        txt += `${this.hasInvalidParts} invalid parts.`
+      var txt = ''
+      if (this.numMissingParts) {
+        txt = `${this.numMissingParts} missing parts.`
       }
       return txt || 'Unknown Error'
     },

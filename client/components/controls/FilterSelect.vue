@@ -132,6 +132,11 @@ export default {
           text: 'Tag',
           value: 'tags',
           sublist: true
+        },
+        {
+          text: 'Issues',
+          value: 'issues',
+          sublist: false
         }
       ]
     }
@@ -166,26 +171,26 @@ export default {
     selectedText() {
       if (!this.selected) return ''
       var parts = this.selected.split('.')
-      var filterName = this.selectItems.find((i) => i.value === parts[0]);
-      var filterValue = null;
+      var filterName = this.selectItems.find((i) => i.value === parts[0])
+      var filterValue = null
       if (parts.length > 1) {
         var decoded = this.$decode(parts[1])
         if (decoded.startsWith('aut_')) {
           var author = this.authors.find((au) => au.id == decoded)
-          if (author) filterValue = author.name;
+          if (author) filterValue = author.name
         } else if (decoded.startsWith('ser_')) {
           var series = this.series.find((se) => se.id == decoded)
           if (series) filterValue = series.name
         } else {
-          filterValue = decoded;
+          filterValue = decoded
         }
       }
       if (filterName && filterValue) {
-        return `${filterName.text}: ${filterValue}`;
+        return `${filterName.text}: ${filterValue}`
       } else if (filterName) {
-        return filterName.text;
+        return filterName.text
       } else if (filterValue) {
-        return filterValue;
+        return filterValue
       } else {
         return ''
       }
@@ -212,7 +217,7 @@ export default {
       return ['Finished', 'In Progress', 'Not Started']
     },
     missing() {
-      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Volume Number', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language', ]
+      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Volume Number', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {

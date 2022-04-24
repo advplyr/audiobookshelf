@@ -10,21 +10,41 @@ class PodcastEpisodeDownload {
     this.libraryItem = null
 
     this.isDownloading = false
+    this.isFinished = false
+    this.failed = false
+
     this.startedAt = null
     this.createdAt = null
     this.finishedAt = null
   }
 
+  toJSONForClient() {
+    return {
+      id: this.id,
+      // podcastEpisode: this.podcastEpisode ? this.podcastEpisode.toJSON() : null,
+      episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.bestFilename : null,
+      url: this.url,
+      libraryItemId: this.libraryItem ? this.libraryItem.id : null,
+      isDownloading: this.isDownloading,
+      isFinished: this.isFinished,
+      failed: this.failed,
+      startedAt: this.startedAt,
+      createdAt: this.createdAt,
+      finishedAt: this.finishedAt
+    }
+  }
+
   get targetFilename() {
     return sanitizeFilename(`${this.podcastEpisode.bestFilename}.mp3`)
   }
-
   get targetPath() {
     return Path.join(this.libraryItem.path, this.targetFilename)
   }
-
   get targetRelPath() {
     return this.targetFilename
+  }
+  get libraryItemId() {
+    return this.libraryItem ? this.libraryItem.id : null
   }
 
   setData(podcastEpisode, libraryItem) {
@@ -33,6 +53,12 @@ class PodcastEpisodeDownload {
     this.url = podcastEpisode.enclosure.url
     this.libraryItem = libraryItem
     this.createdAt = Date.now()
+  }
+
+  setFinished(success) {
+    this.finishedAt = Date.now()
+    this.isFinished = true
+    this.failed = !success
   }
 }
 module.exports = PodcastEpisodeDownload

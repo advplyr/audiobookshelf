@@ -119,9 +119,10 @@ class CoverManager {
     }
   }
 
-  async downloadCoverFromUrl(libraryItem, url) {
+  async downloadCoverFromUrl(libraryItem, url, forceLibraryItemFolder = false) {
     try {
-      var coverDirPath = this.getCoverDirectory(libraryItem)
+      // Force save cover with library item is used for adding new podcasts
+      var coverDirPath = forceLibraryItemFolder ? libraryItem.path : this.getCoverDirectory(libraryItem)
       await fs.ensureDir(coverDirPath)
 
       var temppath = Path.posix.join(coverDirPath, 'cover')

@@ -57,7 +57,7 @@ module.exports = {
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(ab => {
         // TODO: Update filter for issues
-        return ab.isMissing
+        return ab.isMissing || ab.isInvalid
         // return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
       })
     }

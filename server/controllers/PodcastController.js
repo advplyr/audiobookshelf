@@ -29,8 +29,8 @@ class PodcastController {
 
     var podcastPath = payload.path.replace(/\\/g, '/')
     if (await fs.pathExists(podcastPath)) {
-      Logger.error(`[PodcastController] Attempt to create podcast when folder path already exists "${podcastPath}"`)
-      return res.status(400).send('Path already exists')
+      Logger.error(`[PodcastController] Podcast folder already exists "${podcastPath}"`)
+      return res.status(400).send('Podcast already exists')
     }
 
     var success = await fs.ensureDir(podcastPath).then(() => true).catch((error) => {
@@ -63,7 +63,8 @@ class PodcastController {
     // Download and save cover image
     if (payload.media.metadata.imageUrl) {
       // TODO: Scan cover image to library files
-      var coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl)
+      // Podcast cover will always go into library item folder
+      var coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
       if (coverResponse) {
         if (coverResponse.error) {
           Logger.error(`[PodcastController] Download cover error from "${payload.media.metadata.imageUrl}": ${coverResponse.error}`)
@@ -101,6 +102,7 @@ class PodcastController {
         Logger.error('Invalid podcast feed request response')
         return res.status(500).send('Bad response from feed request')
       }
+      Logger.debug(`[PdocastController] Podcast feed size ${(data.data.length / 1024 / 1024).toFixed(2)}MB`)
       var payload = await parsePodcastRssFeedXml(data.data, includeRaw)
       if (!payload) {
         return res.status(500).send('Invalid podcast RSS feed')
@@ -125,6 +127,26 @@ class PodcastController {
     var newEpisodes = await this.podcastManager.checkPodcastForNewEpisodes(libraryItem)
     res.json({
       episodes: newEpisodes || []
+    })
+  }
+
+  clearEpisodeDownloadQueue(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[PodcastController] User attempting to clear download queue without permission "${req.user.username}"`)
+      return res.sendStatus(500)
+    }
+    this.podcastManager.clearDownloadQueue(req.params.id)
+    res.sendStatus(200)
+  }
+
+  getEpisodeDownloads(req, res) {
+    var libraryItem = this.db.getLibraryItem(req.params.id)
+    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
+      return res.sendStatus(404)
+    }
+    var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
+    res.json({
+      downloads: downloadsInQueue.map(d => d.toJSONForClient())
     })
   }
 

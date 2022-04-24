@@ -89,9 +89,12 @@ export default {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
     },
     emptyMessage() {
-      if (this.page === 'series') return `You have no series`
+      if (this.page === 'series') return 'You have no series'
       if (this.page === 'collections') return "You haven't made any collections yet"
-      if (this.hasFilter) return `No Results for filter "${this.filterName}: ${this.filterValue}"`
+      if (this.hasFilter) {
+        if (this.filterName === 'Issues') return 'No Issues'
+        return `No Results for filter "${this.filterName}: ${this.filterValue}"`
+      }
       return 'No results'
     },
     entityName() {

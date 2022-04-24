@@ -21,6 +21,9 @@ class LibraryItemController {
             }
           }).filter(au => au)
         }
+      } else if (includeEntities.includes('downloads')) {
+        var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
+        item.episodesDownloading = downloadsInQueue.map(d => d.toJSONForClient())
       }
 
       return res.json(item)

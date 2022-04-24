@@ -124,7 +124,13 @@ export default {
         episodesToDownload = this.episodesSelected.map((episodeIndex) => this.episodes[Number(episodeIndex)])
       }
 
-      console.log('Podcast payload', episodesToDownload)
+      var payloadSize = JSON.stringify(episodesToDownload).length
+      var sizeInMb = payloadSize / 1024 / 1024
+      var sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
+      console.log('Request size', sizeInMb)
+      if (sizeInMb > 4.99) {
+        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 5Mb`)
+      }
 
       this.processing = true
       this.$axios
@@ -144,7 +150,8 @@ export default {
     init() {
       for (let i = 0; i < this.episodes.length; i++) {
         var episode = this.episodes[i]
-        if (episode.enclosure && !this.itemEpisodeMap[episode.enclosure.url]) { // Do not include episodes already downloaded
+        if (episode.enclosure && !this.itemEpisodeMap[episode.enclosure.url]) {
+          // Do not include episodes already downloaded
           this.$set(this.selectedEpisodes, String(i), false)
         }
       }
