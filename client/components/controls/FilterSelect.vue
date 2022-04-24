@@ -217,7 +217,7 @@ export default {
       return ['Finished', 'In Progress', 'Not Started']
     },
     missing() {
-      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Volume Number', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
+      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {

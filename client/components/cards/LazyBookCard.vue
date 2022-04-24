@@ -273,7 +273,7 @@ export default {
     },
     showError() {
       if (this.recentEpisode) return false // Dont show podcast error on episode card
-      return this.numMissingParts || this.isMissing || this.isInvalid
+      return this.numInvalidAudioFiles || this.numMissingParts || this.isMissing || this.isInvalid
     },
     isStreaming() {
       return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
@@ -297,6 +297,10 @@ export default {
       if (this.isPodcast) return 0
       return this.media.numMissingParts
     },
+    numInvalidAudioFiles() {
+      if (this.isPodcast) return 0
+      return this.media.numInvalidAudioFiles
+    },
     errorText() {
       if (this.isMissing) return 'Item directory is missing!'
       else if (this.isInvalid) {
@@ -305,7 +309,11 @@ export default {
       }
       var txt = ''
       if (this.numMissingParts) {
-        txt = `${this.numMissingParts} missing parts.`
+        txt += `${this.numMissingParts} missing parts.`
+      }
+      if (this.numInvalidAudioFiles) {
+        if (txt) txt += ' '
+        txt += `${this.numInvalidAudioFiles} invalid audio files.`
       }
       return txt || 'Unknown Error'
     },

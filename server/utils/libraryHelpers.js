@@ -43,7 +43,6 @@ module.exports = {
           if (filter === 'Author' && li.media.metadata.authors.length === 0) return true;
           if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true;
           if (filter === 'Series' && li.media.metadata.series.length === 0) return true;
-          if (filter === 'Volume Number' && (li.media.metadata.series.length === 0 || li.media.metadata.series[0].sequence === null)) return true;
           if (filter === 'Description' && li.media.metadata.description === null) return true;
           if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true;
           if (filter === 'Tags' && li.media.tags.length === 0) return true;
@@ -55,11 +54,7 @@ module.exports = {
         filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
       }
     } else if (filterBy === 'issues') {
-      filtered = filtered.filter(ab => {
-        // TODO: Update filter for issues
-        return ab.isMissing || ab.isInvalid
-        // return ab.numMissingParts || ab.numInvalidParts || ab.isMissing || ab.isInvalid
-      })
+      filtered = filtered.filter(li => li.hasIssues)
     }
 
     return filtered

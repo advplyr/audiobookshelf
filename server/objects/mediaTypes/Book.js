@@ -65,6 +65,7 @@ class Book {
       numAudioFiles: this.audioFiles.length,
       numChapters: this.chapters.length,
       numMissingParts: this.missingParts.length,
+      numInvalidAudioFiles: this.invalidAudioFiles.length,
       duration: this.duration,
       size: this.size,
       ebookFormat: this.ebookFile ? this.ebookFile.ebookFormat : null
@@ -106,8 +107,11 @@ class Book {
   get hasEmbeddedCoverArt() {
     return this.audioFiles.some(af => af.embeddedCoverArt)
   }
+  get invalidAudioFiles() {
+    return this.audioFiles.filter(af => af.invalid)
+  }
   get hasIssues() {
-    return this.missingParts.length || this.audioFiles.some(af => af.invalid)
+    return this.missingParts.length || this.invalidAudioFiles.length
   }
   get tracks() {
     var startOffset = 0

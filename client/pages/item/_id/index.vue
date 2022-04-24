@@ -159,6 +159,12 @@
             <p class="text-base text-gray-100 whitespace-pre-line">{{ description }}</p>
           </div>
 
+          <div v-if="invalidAudioFiles.length" class="bg-error border-red-800 shadow-md p-4">
+            <p class="text-sm mb-2">Invalid audio files</p>
+
+            <p v-for="audioFile in invalidAudioFiles" :key="audioFile.id" class="text-xs pl-2">- {{ audioFile.metadata.filename }} ({{ audioFile.error }})</p>
+          </div>
+
           <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :media="media" />
 
           <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
@@ -227,6 +233,10 @@ export default {
     },
     isInvalid() {
       return this.libraryItem.isInvalid
+    },
+    invalidAudioFiles() {
+      if (this.isPodcast) return []
+      return this.libraryItem.media.audioFiles.filter((af) => af.invalid)
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
