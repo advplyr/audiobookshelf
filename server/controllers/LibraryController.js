@@ -533,7 +533,8 @@ class LibraryController {
         })
       }
     })
-    res.json(Object.values(authors))
+
+    res.json(naturalSort(Object.values(authors)).asc(au => au.name))
   }
 
   async matchAll(req, res) {

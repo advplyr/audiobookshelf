@@ -103,10 +103,10 @@ module.exports = {
       }
       if (mediaMetadata.language && !data.languages.includes(mediaMetadata.language)) data.languages.push(mediaMetadata.language)
     })
-    data.authors = naturalSort(data.authors).asc()
+    data.authors = naturalSort(data.authors).asc(au => au.name)
     data.genres = naturalSort(data.genres).asc()
     data.tags = naturalSort(data.tags).asc()
-    data.series = naturalSort(data.series).asc()
+    data.series = naturalSort(data.series).asc(se => se.name)
     data.narrators = naturalSort(data.narrators).asc()
     data.languages = naturalSort(data.languages).asc()
     return data
