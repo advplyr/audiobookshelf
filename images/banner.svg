@@ -1,1 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 6702.73 1277.37"><defs><style>.cls-1{fill:#fff;}.cls-2{fill:url(#linear-gradient);}.cls-3{font-size:800px;fill:#c9c9c9;font-family:GentiumBookBasic, Gentium Book Basic;}.cls-4{font-size:420px;fill:#474747;font-family:GentiumBasic, Gentium Basic;}</style><linearGradient id="linear-gradient" x1="617.37" y1="20.7" x2="617.37" y2="1216.56" gradientUnits="userSpaceOnUse"><stop offset="0.32" stop-color="#cd9d49"/><stop offset="0.99" stop-color="#875d27"/></linearGradient></defs><title>bgAsset 6</title><g id="Layer_2" data-name="Layer 2"><g id="Layer_2-2" data-name="Layer 2"><g id="Layer_4" data-name="Layer 4"><g id="Layer_5" data-name="Layer 5"><circle class="cls-1" cx="618.63" cy="618.63" r="618.63"/></g><circle class="cls-2" cx="617.37" cy="618.63" r="597.93"/></g><path class="cls-1" d="M1005.57,574.08c-4.84-4-12.37-10-22.58-17v-79.2c0-201.93-163.69-365.63-365.62-365.63h0c-201.93,0-365.63,163.7-365.63,365.63v79.2c-10.21,7-17.74,13-22.58,17A18.15,18.15,0,0,0,222.63,588v94.89a18.15,18.15,0,0,0,6.53,14c11.29,9.4,37.19,29.1,77.52,49.31v9.22c0,24.88,16,45,35.84,45h0c19.79,0,35.84-20.16,35.84-45V527.83c0-24.87-16.05-45-35.84-45h0c-19,0-34.48,18.51-35.75,41.94l-.09,0v-46.9c0-171.59,139.1-310.69,310.69-310.69h0c171.58,0,310.68,139.1,310.68,310.69v46.9l-.08,0c-1.27-23.43-16.79-41.94-35.76-41.94h0c-19.79,0-35.83,20.17-35.83,45V755.4c0,24.88,16,45,35.83,45h0c19.8,0,35.84-20.16,35.84-45v-9.22c40.33-20.21,66.24-39.91,77.52-49.31a18.15,18.15,0,0,0,6.53-14V588A18.15,18.15,0,0,0,1005.57,574.08Z"/><path class="cls-1" d="M489.87,969.71a43.31,43.31,0,0,0,43.3-43.3V441.64a43.3,43.3,0,0,0-43.3-43.29H445.15a43.3,43.3,0,0,0-43.3,43.29V926.41a43.31,43.31,0,0,0,43.3,43.3Zm-71.69-455.1h98.67v10.31H418.18Z"/><path class="cls-1" d="M639.73,969.71A43.3,43.3,0,0,0,683,926.41V441.64a43.29,43.29,0,0,0-43.29-43.29H595a43.29,43.29,0,0,0-43.29,43.29V926.41A43.3,43.3,0,0,0,595,969.71ZM568,514.61H666.7v10.31H568Z"/><path class="cls-1" d="M789.59,969.71a43.3,43.3,0,0,0,43.29-43.3V441.64a43.29,43.29,0,0,0-43.29-43.29H744.86a43.3,43.3,0,0,0-43.3,43.29V926.41a43.31,43.31,0,0,0,43.3,43.3Zm-71.7-455.1h98.67v10.31H717.89Z"/><rect class="cls-1" x="294.5" y="984.69" width="645.74" height="65.25" rx="32.63"/></g><g id="Layer_6" data-name="Layer 6"><text class="cls-3" transform="translate(1492.27 670.42)">audiobookshelf</text><text class="cls-4" transform="translate(1492.27 1128.69)">self-hosted audiobook server</text></g></g></svg>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 24.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 6702.7 1277.4" style="enable-background:new 0 0 6702.7 1277.4;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+	.st1{fill:url(#SVGID_1_);}
+	.st2{fill:#C9C9C9;}
+	.st3{font-family:'GentiumBookBasic';}
+	.st4{font-size:800px;}
+	.st5{fill:#474747;}
+	.st6{font-family:'GentiumBasic';}
+	.st7{font-size:305px;}
+</style>
+<title>bgAsset 6</title>
+<g id="Layer_2_1_">
+	<g id="Layer_2-2">
+		<g id="Layer_4">
+			<g id="Layer_5">
+				<circle class="st0" cx="618.6" cy="618.6" r="618.6"/>
+			</g>
+			
+				<linearGradient id="SVGID_1_" gradientUnits="userSpaceOnUse" x1="617.37" y1="1257.3" x2="617.37" y2="61.4399" gradientTransform="matrix(1 0 0 -1 0 1278)">
+				<stop  offset="0.32" style="stop-color:#CD9D49"/>
+				<stop  offset="0.99" style="stop-color:#875D27"/>
+			</linearGradient>
+			<circle class="st1" cx="617.4" cy="618.6" r="597.9"/>
+		</g>
+		<path class="st0" d="M1005.6,574.1c-4.8-4-12.4-10-22.6-17v-79.2c0-201.9-163.7-365.6-365.6-365.6l0,0
+			c-201.9,0-365.6,163.7-365.6,365.6v79.2c-10.2,7-17.7,13-22.6,17c-4.1,3.4-6.5,8.5-6.5,13.9v94.9c0,5.4,2.4,10.5,6.5,14
+			c11.3,9.4,37.2,29.1,77.5,49.3v9.2c0,24.9,16,45,35.8,45l0,0c19.8,0,35.8-20.2,35.8-45V527.8c0-24.9-16-45-35.8-45l0,0
+			c-19,0-34.5,18.5-35.8,41.9h-0.1v-46.9c0-171.6,139.1-310.7,310.7-310.7l0,0C789,167.2,928,306.3,928,477.9v46.9H928
+			c-1.3-23.4-16.8-41.9-35.8-41.9l0,0c-19.8,0-35.8,20.2-35.8,45v227.6c0,24.9,16,45,35.8,45l0,0c19.8,0,35.8-20.2,35.8-45v-9.2
+			c40.3-20.2,66.2-39.9,77.5-49.3c4.2-3.5,6.5-8.6,6.5-14V588C1012.1,582.6,1009.7,577.5,1005.6,574.1z"/>
+		<path class="st0" d="M489.9,969.7c23.9,0,43.3-19.4,43.3-43.3V441.6c0-23.9-19.4-43.3-43.3-43.3h-44.7
+			c-23.9,0-43.3,19.4-43.3,43.3v484.8c0,23.9,19.4,43.3,43.3,43.3L489.9,969.7z M418.2,514.6h98.7v10.3h-98.7V514.6z"/>
+		<path class="st0" d="M639.7,969.7c23.9,0,43.3-19.4,43.3-43.3V441.6c0-23.9-19.4-43.3-43.3-43.3H595c-23.9,0-43.3,19.4-43.3,43.3
+			v484.8c0,23.9,19.4,43.3,43.3,43.3H639.7z M568,514.6h98.7v10.3H568V514.6z"/>
+		<path class="st0" d="M789.6,969.7c23.9,0,43.3-19.4,43.3-43.3V441.6c0-23.9-19.4-43.3-43.3-43.3h-44.7
+			c-23.9,0-43.3,19.4-43.3,43.3v484.8c0,23.9,19.4,43.3,43.3,43.3L789.6,969.7z M717.9,514.6h98.7v10.3h-98.7V514.6z"/>
+		<path class="st0" d="M327.1,984.7h580.5c18,0,32.6,14.6,32.6,32.6v0c0,18-14.6,32.6-32.6,32.6H327.1c-18,0-32.6-14.6-32.6-32.6v0
+			C294.5,999.3,309.1,984.7,327.1,984.7z"/>
+	</g>
+	<g id="Layer_6">
+		<text transform="matrix(1 0 0 1 1492.27 735.42)" class="st2 st3 st4">audiobookshelf</text>
+		<text id="self-hosted_audiobook_and_podcast_server" transform="matrix(1 0 0 1 1492.27 1103.6899)" class="st5 st6 st7">self-hosted audiobook and podcast server</text>
+	</g>
+</g>
+</svg>
