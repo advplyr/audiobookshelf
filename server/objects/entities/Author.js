@@ -1,3 +1,4 @@
+const Logger = require('../../Logger')
 const { getId } = require('../../utils/index')
 
 class Author {
@@ -19,7 +20,7 @@ class Author {
   construct(author) {
     this.id = author.id
     this.asin = author.asin
-    this.name = author.name
+    this.name = author.name || ''
     this.description = author.description || null
     this.imagePath = author.imagePath
     this.relImagePath = author.relImagePath
@@ -81,6 +82,10 @@ class Author {
 
   checkNameEquals(name) {
     if (!name) return false
+    if (this.name === null) {
+      Logger.error(`[Author] Author name is null (${this.id})`)
+      return false
+    }
     return this.name.toLowerCase() == name.toLowerCase().trim()
   }
 }

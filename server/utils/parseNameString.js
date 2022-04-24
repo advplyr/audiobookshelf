@@ -79,6 +79,9 @@ module.exports.parse = (nameString) => {
     }
   }
 
+  // Filter out names that have no first and last
+  names = names.filter(n => n.first_name || n.last_name)
+
   var namesArray = names.map(a => a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)
   var firstLast = names.length ? namesArray.join(', ') : ''
   var lastFirst = names.length ? names.map(a => a.first_name ? `${a.last_name}, ${a.first_name}` : a.last_name).join(', ') : ''
