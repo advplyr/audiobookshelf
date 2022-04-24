@@ -14,12 +14,12 @@
           </div>
         </div>
       </div>
-      <div class="w-80 h-full px-2 flex items-center">
-        <div>
+      <div class="flex-grow max-w-md h-full px-2 flex items-center">
+        <div class="truncate px-1">
           <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
         </div>
       </div>
-      <div class="flex-grow flex items-center">
+      <div class="w-20 flex items-center">
         <p class="font-mono text-sm">{{ bookDuration }}</p>
       </div>
 
