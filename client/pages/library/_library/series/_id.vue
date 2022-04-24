@@ -24,7 +24,7 @@ export default {
       return redirect(`/library/${libraryId}`)
     }
 
-    var series = await app.$axios.$get(`/api/series/${params.id}`).catch((error) => {
+    var series = await app.$axios.$get(`/api/series/${params.id}?include=progress`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -33,7 +33,7 @@ export default {
     }
 
     return {
-      series: series.name,
+      series,
       seriesId: params.id
     }
   },

@@ -4,7 +4,25 @@ class SeriesController {
   constructor() { }
 
   async findOne(req, res) {
-    return res.json(req.series)
+    var include = (req.query.include || '').split(',')
+
+    var seriesJson = req.series.toJSON()
+
+    // Add progress map with isFinished flag
+    if (include.includes('progress')) {
+      var libraryItemsInSeries = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(seriesJson.id))
+      var libraryItemsFinished = libraryItemsInSeries.filter(li => {
+        var mediaProgress = req.user.getMediaProgress(li.id)
+        return mediaProgress && mediaProgress.isFinished
+      })
+      seriesJson.progress = {
+        libraryItemIds: libraryItemsInSeries.map(li => li.id),
+        libraryItemIdsFinished: libraryItemsFinished.map(li => li.id),
+        isFinished: libraryItemsFinished.length === libraryItemsInSeries.length
+      }
+    }
+
+    return res.json(seriesJson)
   }
 
   async search(req, res) {

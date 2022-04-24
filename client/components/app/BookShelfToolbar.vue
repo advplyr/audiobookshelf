@@ -14,16 +14,28 @@
     <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-30 flex items-center justify-end md:justify-start px-2 md:px-8">
       <template v-if="page !== 'search' && page !== 'podcast-search' && !isHome">
         <p v-if="!selectedSeries" class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
-        <div v-else class="items-center hidden md:flex">
+        <div v-else class="items-center hidden md:flex w-full">
           <div @click="seriesBackArrow" class="rounded-full h-9 w-9 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
             <span class="material-icons text-2xl text-white">west</span>
           </div>
           <p class="pl-4 font-book text-lg">
-            {{ selectedSeries }}
+            {{ seriesName }}
           </p>
           <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
             <span class="font-mono">{{ numShowing }}</span>
           </div>
+          <div class="flex-grow" />
+          <ui-btn color="primary" small :loading="processingSeries" class="flex items-center" @click="markSeriesFinished">
+            <div class="h-5 w-5">
+              <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
+                <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-7 19.6l-7-4.66V3h14v12.93l-7 4.67zm-2.01-7.42l-2.58-2.59L6 12l4 4 8-8-1.42-1.42z" />
+              </svg>
+            </div>
+            <span class="pl-2"> Mark Series {{ isSeriesFinished ? 'Not Finished' : 'Finished' }}</span></ui-btn
+          >
         </div>
         <div class="flex-grow hidden sm:inline-block" />
 
@@ -56,7 +68,10 @@ export default {
   props: {
     page: String,
     isHome: Boolean,
-    selectedSeries: String,
+    selectedSeries: {
+      type: Object,
+      default: () => null
+    },
     searchQuery: String,
     viewMode: String
   },
@@ -66,7 +81,8 @@ export default {
       hasInit: false,
       totalEntities: 0,
       keywordFilter: null,
-      keywordTimeout: null
+      keywordTimeout: null,
+      processingSeries: false
     }
   },
   computed: {
@@ -103,9 +119,45 @@ export default {
     },
     showLibrary() {
       return this.libraryBookshelfPage && this.paramId === '' && !this.showingIssues
+    },
+    seriesName() {
+      return this.selectedSeries ? this.selectedSeries.name : null
+    },
+    seriesProgress() {
+      return this.selectedSeries ? this.selectedSeries.progress : null
+    },
+    seriesLibraryItemIds() {
+      if (!this.seriesProgress) return []
+      return this.seriesProgress.libraryItemIds || []
+    },
+    isSeriesFinished() {
+      return this.seriesProgress && !!this.seriesProgress.isFinished
     }
   },
   methods: {
+    markSeriesFinished() {
+      var newIsFinished = !this.isSeriesFinished
+      this.processingSeries = true
+      var updateProgressPayloads = this.seriesLibraryItemIds.map((lid) => {
+        return {
+          id: lid,
+          isFinished: newIsFinished
+        }
+      })
+      console.log('Progress payloads', updateProgressPayloads)
+      this.$axios
+        .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
+        .then(() => {
+          this.$toast.success('Series update success')
+          this.selectedSeries.progress.isFinished = newIsFinished
+          this.processingSeries = false
+        })
+        .catch((error) => {
+          this.$toast.error('Series update failed')
+          console.error('Failed to batch update read/not read', error)
+          this.processingSeries = false
+        })
+    },
     searchBackArrow() {
       this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
     },
