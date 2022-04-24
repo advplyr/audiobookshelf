@@ -61,6 +61,9 @@ export default {
     books() {
       return this.series ? this.series.books || [] : []
     },
+    addedAt() {
+      return this.series ? this.series.addedAt : 0
+    },
     seriesBookProgress() {
       return this.books
         .map((libraryItem) => {

@@ -91,7 +91,7 @@ export default {
     },
     async fetchCategories() {
       var categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?minified=1`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized`)
         .then((data) => {
           return data
         })

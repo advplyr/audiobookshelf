@@ -293,12 +293,25 @@ class LibraryController {
   }
 
   // api/libraries/:id/personalized
+  // New and improved personalized call only loops through library items once
+  async getLibraryUserPersonalizedOptimal(req, res) {
+    const mediaType = req.library.mediaType
+    const libraryItems = req.libraryItems
+    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 10
+
+    const categories = libraryHelpers.buildPersonalizedShelves(req.user, libraryItems, mediaType, this.db.series, this.db.authors, limitPerShelf)
+    res.json(categories)
+  }
+
+  // TODO: Remove old personalized function with all its helper functions
+  //          old personalized function looped through the library items many times
+  // api/libraries/:id/personalized-old
   async getLibraryUserPersonalized(req, res) {
     var mediaType = req.library.mediaType
     var isPodcastLibrary = mediaType == 'podcast'
     var libraryItems = req.libraryItems
     var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    var minified = req.query.minified === '1'
+    var minified = req.query.minified == '1'
 
     var itemsWithUserProgress = libraryHelpers.getMediaProgressWithItems(req.user, libraryItems)
     var categories = [
@@ -323,7 +336,6 @@ class LibraryController {
     ].filter(cats => { // Remove categories with no items
       return cats.entities.length
     })
-
 
     // New Series section
     //  TODO: optimize and move to libraryHelpers

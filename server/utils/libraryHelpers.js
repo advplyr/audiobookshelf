@@ -350,5 +350,313 @@ module.exports = {
       }
       return libraryItemJson
     }).filter(li => li)
+  },
+
+  buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
+    const isPodcastLibrary = mediaType === 'podcast'
+
+
+    const shelves = [
+      {
+        id: 'continue-listening',
+        label: 'Continue Listening',
+        type: isPodcastLibrary ? 'episode' : mediaType,
+        entities: [],
+        category: 'recentlyListened'
+      },
+      {
+        id: 'recently-added',
+        label: 'Recently Added',
+        type: mediaType,
+        entities: [],
+        category: 'newestItems'
+      },
+      {
+        id: 'listen-again',
+        label: 'Listen Again',
+        type: isPodcastLibrary ? 'episode' : mediaType,
+        entities: [],
+        category: 'recentlyFinished'
+      },
+      {
+        id: 'recent-series',
+        label: 'Recent Series',
+        type: 'series',
+        entities: [],
+        category: 'newestSeries'
+      },
+      {
+        id: 'newest-authors',
+        label: 'Newest Authors',
+        type: 'authors',
+        entities: [],
+        category: 'newestAuthors'
+      },
+      {
+        id: 'episodes-recently-added',
+        label: 'Newest Episodes',
+        type: 'episode',
+        entities: [],
+        category: 'newestEpisodes'
+      }
+    ]
+
+    const categories = ['recentlyListened', 'newestEpisodes', 'newestItems', 'newestSeries', 'recentlyFinished', 'newestAuthors']
+    const categoryMap = {}
+    categories.forEach((cat) => {
+      categoryMap[cat] = {
+        category: cat,
+        biggest: 0,
+        smallest: 0,
+        items: []
+      }
+    })
+
+    const seriesMap = {}
+    const authorMap = {}
+
+    for (const libraryItem of libraryItems) {
+      if (libraryItem.addedAt > categoryMap.newestItems.smallest) {
+
+        var indexToPut = categoryMap.newestItems.items.findIndex(i => libraryItem.addedAt > i.addedAt)
+        if (indexToPut >= 0) {
+          categoryMap.newestItems.items.splice(indexToPut, 0, libraryItem.toJSONMinified())
+        } else {
+          categoryMap.newestItems.items.push(libraryItem.toJSONMinified())
+        }
+
+        if (categoryMap.newestItems.items.length > maxEntitiesPerShelf) {
+          // Remove last item
+          categoryMap.newestItems.items.pop()
+          categoryMap.newestItems.smallest = categoryMap.newestItems.items[categoryMap.newestItems.items.length - 1].addedAt
+        }
+        categoryMap.newestItems.biggest = categoryMap.newestItems.items[0].addedAt
+      }
+
+      var allItemProgress = user.getAllMediaProgressForLibraryItem(libraryItem.id)
+      if (libraryItem.isPodcast) {
+        // Podcast categories
+        const podcastEpisodes = libraryItem.media.episodes || []
+        for (const episode of podcastEpisodes) {
+          // Newest episodes
+          if (episode.addedAt > categoryMap.newestEpisodes.smallest) {
+            const libraryItemWithEpisode = {
+              ...libraryItem.toJSONMinified(),
+              recentEpisode: episode.toJSON()
+            }
+
+            var indexToPut = categoryMap.newestEpisodes.items.findIndex(i => episode.addedAt > i.recentEpisode.addedAt)
+            if (indexToPut >= 0) {
+              categoryMap.newestEpisodes.items.splice(indexToPut, 0, libraryItemWithEpisode)
+            } else {
+              categoryMap.newestEpisodes.items.push(libraryItemWithEpisode)
+            }
+
+            if (categoryMap.newestEpisodes.items.length > maxEntitiesPerShelf) {
+              // Remove last item
+              categoryMap.newestEpisodes.items.pop()
+              categoryMap.newestEpisodes.smallest = categoryMap.newestEpisodes.items[categoryMap.newestEpisodes.items.length - 1].recentEpisode.addedAt
+            }
+            categoryMap.newestEpisodes.biggest = categoryMap.newestEpisodes.items[0].recentEpisode.addedAt
+          }
+
+          // Episode recently listened and finished
+          var mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
+          if (mediaProgress) {
+            if (mediaProgress.isFinished) {
+              if (mediaProgress.finishedAt > categoryMap.recentlyFinished.smallest) { // Item belongs on shelf
+                const libraryItemWithEpisode = {
+                  ...libraryItem.toJSONMinified(),
+                  recentEpisode: episode.toJSON(),
+                  finishedAt: mediaProgress.finishedAt
+                }
+
+                var indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+                if (indexToPut >= 0) {
+                  categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemWithEpisode)
+                } else {
+                  categoryMap.recentlyFinished.items.push(libraryItemWithEpisode)
+                }
+
+                if (categoryMap.recentlyFinished.items.length > maxEntitiesPerShelf) {
+                  // Remove last item
+                  categoryMap.recentlyFinished.items.pop()
+                  categoryMap.recentlyFinished.smallest = categoryMap.recentlyFinished.items[categoryMap.recentlyFinished.items.length - 1].finishedAt
+                }
+                categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
+              }
+            } else if (mediaProgress.progress > 0) { // Handle most recently listened
+              if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
+                const libraryItemWithEpisode = {
+                  ...libraryItem.toJSONMinified(),
+                  recentEpisode: episode.toJSON(),
+                  progressLastUpdate: mediaProgress.lastUpdate
+                }
+
+                var indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+                if (indexToPut >= 0) {
+                  categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemWithEpisode)
+                } else {
+                  categoryMap.recentlyListened.items.push(libraryItemWithEpisode)
+                }
+
+                if (categoryMap.recentlyListened.items.length > maxEntitiesPerShelf) {
+                  // Remove last item
+                  categoryMap.recentlyListened.items.pop()
+                  categoryMap.recentlyListened.smallest = categoryMap.recentlyListened.items[categoryMap.recentlyListened.items.length - 1].progressLastUpdate
+                }
+
+                categoryMap.recentlyListened.biggest = categoryMap.recentlyListened.items[0].progressLastUpdate
+              }
+            }
+          }
+        }
+      } else {
+        // Book categories
+
+        // Newest series
+        if (libraryItem.media.metadata.series.length) {
+          for (const librarySeries of libraryItem.media.metadata.series) {
+
+            if (!seriesMap[librarySeries.id]) {
+              const seriesObj = allSeries.find(se => se.id === librarySeries.id)
+              if (seriesObj) {
+                var series = {
+                  ...seriesObj.toJSON(),
+                  books: []
+                }
+
+                if (series.addedAt > categoryMap.newestSeries.smallest) {
+                  const libraryItemJson = libraryItem.toJSONMinified()
+                  libraryItemJson.seriesSequence = librarySeries.sequence
+                  series.books.push(libraryItemJson)
+
+                  var indexToPut = categoryMap.newestSeries.items.findIndex(i => series.addedAt > i.addedAt)
+                  if (indexToPut >= 0) {
+                    categoryMap.newestSeries.items.splice(indexToPut, 0, series)
+                  } else {
+                    categoryMap.newestSeries.items.push(series)
+                  }
+
+                  // Max series is 5
+                  if (categoryMap.newestSeries.items.length > 5) {
+                    categoryMap.newestSeries.items.pop()
+                    categoryMap.newestSeries.smallest = categoryMap.newestSeries.items[categoryMap.newestSeries.items.length - 1].addedAt
+                  }
+
+                  categoryMap.newestSeries.biggest = categoryMap.newestSeries.items[0].addedAt
+
+                  seriesMap[librarySeries.id] = series
+                }
+              }
+            } else {
+              // series already in map - add book
+              const libraryItemJson = libraryItem.toJSONMinified()
+              libraryItemJson.seriesSequence = librarySeries.sequence
+              seriesMap[librarySeries.id].books.push(libraryItemJson)
+            }
+          }
+        }
+
+        // Newest authors
+        if (libraryItem.media.metadata.authors.length) {
+          for (const libraryAuthor of libraryItem.media.metadata.authors) {
+            if (!authorMap[libraryAuthor.id]) {
+              const authorObj = allAuthors.find(au => au.id === libraryAuthor.id)
+              if (authorObj) {
+                var author = {
+                  ...authorObj.toJSON(),
+                  numBooks: 1
+                }
+
+                if (author.addedAt > categoryMap.newestAuthors.smallest) {
+
+                  var indexToPut = categoryMap.newestAuthors.items.findIndex(i => author.addedAt > i.addedAt)
+                  if (indexToPut >= 0) {
+                    categoryMap.newestAuthors.items.splice(indexToPut, 0, author)
+                  } else {
+                    categoryMap.newestAuthors.items.push(author)
+                  }
+
+                  // Max authors is 10
+                  if (categoryMap.newestAuthors.items.length > 10) {
+                    categoryMap.newestAuthors.items.pop()
+                    categoryMap.newestAuthors.smallest = categoryMap.newestAuthors.items[categoryMap.newestAuthors.items.length - 1].addedAt
+                  }
+
+                  categoryMap.newestAuthors.biggest = categoryMap.newestAuthors.items[0].addedAt
+                }
+
+                authorMap[libraryAuthor.id] = author
+              }
+            } else {
+              authorMap[libraryAuthor.id].numBooks++
+            }
+          }
+        }
+
+        // Book listening and finished
+        var mediaProgress = allItemProgress.length ? allItemProgress[0] : null
+        if (mediaProgress) {
+          // Handle most recently finished
+          if (mediaProgress.isFinished) {
+            if (mediaProgress.finishedAt > categoryMap.recentlyFinished.smallest) { // Item belongs on shelf
+              const libraryItemObj = {
+                ...libraryItem.toJSONMinified(),
+                finishedAt: mediaProgress.finishedAt
+              }
+
+              var indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+              if (indexToPut >= 0) {
+                categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemObj)
+              } else {
+                categoryMap.recentlyFinished.items.push(libraryItemObj)
+              }
+              if (categoryMap.recentlyFinished.items.length > maxEntitiesPerShelf) {
+                // Remove last item
+                categoryMap.recentlyFinished.items.pop()
+                categoryMap.recentlyFinished.smallest = categoryMap.recentlyFinished.items[categoryMap.recentlyFinished.items.length - 1].finishedAt
+              }
+              categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
+            }
+          } else if (mediaProgress.inProgress) { // Handle most recently listened
+            if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
+              const libraryItemObj = {
+                ...libraryItem.toJSONMinified(),
+                progressLastUpdate: mediaProgress.lastUpdate
+              }
+
+              var indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+              if (indexToPut >= 0) {
+                categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemObj)
+              } else { // Should only happen when array is < max
+                categoryMap.recentlyListened.items.push(libraryItemObj)
+              }
+              if (categoryMap.recentlyListened.items.length > maxEntitiesPerShelf) {
+                // Remove last item
+                categoryMap.recentlyListened.items.pop()
+                categoryMap.recentlyListened.smallest = categoryMap.recentlyListened.items[categoryMap.recentlyListened.items.length - 1].progressLastUpdate
+              }
+              categoryMap.recentlyListened.biggest = categoryMap.recentlyListened.items[0].progressLastUpdate
+            }
+          }
+        }
+      }
+    }
+
+    // Sort series books by sequence
+    if (categoryMap.newestSeries.items.length) {
+      for (const seriesItem of categoryMap.newestSeries.items) {
+        seriesItem.books = naturalSort(seriesItem.books).asc(li => li.seriesSequence)
+      }
+    }
+
+    var categoriesWithItems = Object.values(categoryMap).filter(cat => cat.items.length)
+
+    return categoriesWithItems.map(cat => {
+      var shelf = shelves.find(s => s.category === cat.category)
+      shelf.entities = cat.items
+      return shelf
+    })
   }
 }
