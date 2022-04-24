@@ -29,8 +29,8 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 * Progressive Web App (PWA)
 * Chromecast support on the web app and android app
 * Fetch metadata and cover art from several sources
-* Basic ebook support and e-reader (experimental)
-* Merge your audio files into a single m4b w/ metadata and embedded cover (experimental)
+* Basic ebook support and e-reader *(experimental)*
+* Merge your audio files into a single m4b w/ metadata and embedded cover *(experimental)*
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
