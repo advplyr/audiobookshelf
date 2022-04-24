@@ -272,6 +272,7 @@ export default {
       return this.userProgress ? !!this.userProgress.isFinished : false
     },
     showError() {
+      if (this.recentEpisode) return false // Dont show podcast error on episode card
       return this.numMissingParts || this.isMissing || this.isInvalid
     },
     isStreaming() {

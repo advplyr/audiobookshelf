@@ -122,6 +122,10 @@ class PodcastManager {
     var podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
     libraryItem.media.addPodcastEpisode(podcastEpisode)
+    if (libraryItem.isInvalid) {
+      // First episode added to an empty podcast
+      libraryItem.isInvalid = false
+    }
     libraryItem.libraryFiles.push(libraryFile)
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
