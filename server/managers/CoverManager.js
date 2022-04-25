@@ -113,6 +113,7 @@ class CoverManager {
 
     Logger.info(`[CoverManager] Uploaded libraryItem cover "${coverFullPath}" for "${libraryItem.media.metadata.title}"`)
 
+    await filePerms.setDefault(coverFullPath)
     libraryItem.updateMediaCover(coverFullPath)
     return {
       cover: coverFullPath
@@ -151,6 +152,7 @@ class CoverManager {
 
       Logger.info(`[CoverManager] Downloaded libraryItem cover "${coverFullPath}" from url "${url}" for "${libraryItem.media.metadata.title}"`)
 
+      await filePerms.setDefault(coverFullPath)
       libraryItem.updateMediaCover(coverFullPath)
       return {
         cover: coverFullPath
@@ -250,6 +252,8 @@ class CoverManager {
 
     var success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
     if (success) {
+      await filePerms.setDefault(coverFilePath)
+
       libraryItem.updateMediaCover(coverFilePath)
       return coverFilePath
     }

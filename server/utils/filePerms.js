@@ -95,3 +95,20 @@ module.exports.setDefault = (path, silent = false) => {
     chmodr(path, mode, uid, gid, resolve)
   })
 }
+
+// Default permissions 0o744 and global Uid/Gid
+//  Used for setting default permission to initial config/metadata directories
+module.exports.setDefaultDirSync = (path, silent = false) => {
+  const mode = 0o744
+  const uid = global.Uid
+  const gid = global.Gid
+  if (!silent) Logger.debug(`[FilePerms] Setting dir permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
+  try {
+    fs.chmodSync(path, mode)
+    fs.chownSync(path, uid, gid)
+    return true
+  } catch (error) {
+    Logger.error(`[FilePerms] Error setting dir permissions for path "${path}"`, error)
+    return false
+  }
+}

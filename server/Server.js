@@ -10,6 +10,7 @@ const { version } = require('../package.json')
 
 // Utils
 const dbMigration = require('./utils/dbMigration')
+const filePerms = require('./utils/filePerms')
 const Logger = require('./Logger')
 
 // Classes
@@ -46,9 +47,18 @@ class Server {
       global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
     }
 
-    fs.ensureDirSync(global.ConfigPath, 0o774)
-    fs.ensureDirSync(global.MetadataPath, 0o774)
-    fs.ensureDirSync(global.AudiobookPath, 0o774)
+    if (!fs.pathExistsSync(global.ConfigPath)) {
+      fs.mkdirSync(global.ConfigPath)
+      filePerms.setDefaultDirSync(global.ConfigPath, false)
+    }
+    if (!fs.pathExistsSync(global.MetadataPath)) {
+      fs.mkdirSync(global.MetadataPath)
+      filePerms.setDefaultDirSync(global.MetadataPath, false)
+    }
+    if (!fs.pathExistsSync(global.AudiobookPath)) {
+      fs.mkdirSync(global.AudiobookPath)
+      filePerms.setDefaultDirSync(global.AudiobookPath, false)
+    }
 
     this.db = new Db()
     this.watcher = new Watcher()
