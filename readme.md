@@ -74,7 +74,7 @@ docker run -d \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
-  --rm advplyr/audiobookshelf
+  --rm ghcr.io/advplyr/audiobookshelf
 ```
 
 ### Running with Docker Compose
@@ -83,7 +83,7 @@ docker run -d \
 ### docker-compose.yml ###
 services:
   audiobookshelf:
-    image: advplyr/audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf
     ports:
       - 13378:80
     volumes:
