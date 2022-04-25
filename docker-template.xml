@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>audiobookshelf</Name>
-  <Repository>advplyr/audiobookshelf</Repository>
+  <Repository>ghcr.io/advplyr/audiobookshelf</Repository>
   <Registry>https://hub.docker.com/r/advplyr/audiobookshelf/</Registry>
   <Network>bridge</Network>
   <MyIP/>
@@ -9,8 +9,8 @@
   <Privileged>false</Privileged>
   <Support>https://forums.unraid.net/topic/112698-support-audiobookshelf/</Support>
   <Project>https://github.com/advplyr/audiobookshelf</Project>
-  <Overview>**(Android app is live)** Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free &amp; open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
-  <Category>MediaApp:Books MediaServer:Books</Category>
+  <Overview>Self-hosted audiobook and podcast server and web app. Supports multi-user w/ permissions and keeps progress in sync across devices. Free &amp; open source mobile apps. Consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Overview>
+  <Category>MediaApp:Books MediaServer:Books MediaApp:Other MediaServer:Other</Category>
   <WebUI>http://[IP]:[PORT:80]</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/advplyr/docker-templates/master/audiobookshelf.xml</TemplateURL>
   <Icon>https://github.com/advplyr/audiobookshelf/raw/master/client/static/Logo.png</Icon>
@@ -20,7 +20,7 @@
   <DateInstalled>1629238508</DateInstalled>
   <DonateText/>
   <DonateLink/>
-  <Description>Audiobook manager and player. Saves your progress, supports multiple accounts, stream all audio formats on the fly. No more switching between dozens of audio files for a single audiobook, Audiobookshelf shows you one audio track with skipping, seeking and adjustable playback speed. Free &amp; open source mobile apps under construction, consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Description>
+  <Description>Self-hosted audiobook and podcast server and web app. Supports multi-user w/ permissions and keeps progress in sync across devices. Free &amp; open source mobile apps. Consider contributing by posting feedback, suggestions, feature requests on github or the forums.</Description>
   <Networking>
     <Mode>bridge</Mode>
     <Publish>
