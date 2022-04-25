@@ -20,13 +20,13 @@ module.exports = {
       if (group === 'genres') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.genres.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
       else if (group === 'series') {
-        if (filter === 'No Series') filtered = filtered.filter(li => li.media.metadata && !li.media.metadata.series.length)
+        if (filter === 'No Series') filtered = filtered.filter(li => li.mediaType === 'book' && !li.media.metadata.series.length)
         else {
-          filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasSeries(filter))
+          filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(filter))
         }
       }
-      else if (group === 'authors') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasAuthor(filter))
-      else if (group === 'narrators') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.hasNarrator(filter))
+      else if (group === 'authors') filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(filter))
+      else if (group === 'narrators') filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasNarrator(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
           var itemProgress = user.getMediaProgress(li.id)
@@ -37,18 +37,22 @@ module.exports = {
         })
       } else if (group == 'missing') {
         filtered = filtered.filter(li => {
-          if (filter === 'ASIN' && li.media.metadata.asin === null) return true;
-          if (filter === 'ISBN' && li.media.metadata.isbn === null) return true;
-          if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true;
-          if (filter === 'Author' && li.media.metadata.authors.length === 0) return true;
-          if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true;
-          if (filter === 'Series' && li.media.metadata.series.length === 0) return true;
-          if (filter === 'Description' && li.media.metadata.description === null) return true;
-          if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true;
-          if (filter === 'Tags' && li.media.tags.length === 0) return true;
-          if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true;
-          if (filter === 'Publisher' && li.media.metadata.publisher === null) return true;
-          if (filter === 'Language' && li.media.metadata.language === null) return true;
+          if (li.mediaType === 'book') {
+            if (filter === 'ASIN' && li.media.metadata.asin === null) return true;
+            if (filter === 'ISBN' && li.media.metadata.isbn === null) return true;
+            if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true;
+            if (filter === 'Author' && li.media.metadata.authors.length === 0) return true;
+            if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true;
+            if (filter === 'Series' && li.media.metadata.series.length === 0) return true;
+            if (filter === 'Description' && li.media.metadata.description === null) return true;
+            if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true;
+            if (filter === 'Tags' && li.media.tags.length === 0) return true;
+            if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true;
+            if (filter === 'Publisher' && li.media.metadata.publisher === null) return true;
+            if (filter === 'Language' && li.media.metadata.language === null) return true;
+          } else {
+            return false
+          }
         })
       } else if (group === 'languages') {
         filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
