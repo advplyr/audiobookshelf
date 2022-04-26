@@ -11,6 +11,12 @@ class LibraryItemController {
     if (req.query.expanded == 1) {
       var item = req.libraryItem.toJSONExpanded()
 
+      // Include users media progress
+      if (includeEntities.includes('progress')) {
+        var episodeId = req.query.episode || null
+        item.userMediaProgress = req.user.getMediaProgress(item.id, episodeId)
+      }
+
       if (item.mediaType == 'book') {
         if (includeEntities.includes('authors')) {
           item.media.metadata.authors = item.media.metadata.authors.map(au => {

@@ -2,7 +2,7 @@ const Logger = require('../../Logger')
 
 class MediaProgress {
   constructor(progress) {
-    this.id = null // Same as library item id
+    this.id = null
     this.libraryItemId = null
     this.episodeId = null // For podcasts
 
