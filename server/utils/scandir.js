@@ -144,7 +144,7 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
   var libraryItemGrouping = groupFileItemsIntoLibraryItemDirs(libraryMediaType, fileItems)
 
   if (!Object.keys(libraryItemGrouping).length) {
-    Logger.error('Root path has no media folders', fileItems.length)
+    Logger.error(`Root path has no media folders: ${folderPath}`)
     return []
   }
 
