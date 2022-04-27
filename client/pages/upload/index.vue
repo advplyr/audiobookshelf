@@ -195,7 +195,8 @@ export default {
       e.preventDefault()
       this.isDragging = false
       var items = e.dataTransfer.items || []
-      var itemResults = await this.uploadHelpers.getItemsFromDrop(items)
+
+      var itemResults = await this.uploadHelpers.getItemsFromDrop(items, this.selectedLibraryMediaType)
       this.setResults(itemResults)
     },
     inputChanged(e) {

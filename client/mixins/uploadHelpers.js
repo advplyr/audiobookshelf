@@ -174,8 +174,8 @@ export default {
       if (mediaType === 'podcast') return this.cleanPodcast(item, index)
       return this.cleanBook(item, index)
     },
-    async getItemsFromDataTransferItems(items, mediaType) {
-      var files = await this.getFilesDropped(items)
+    async getItemsFromDataTransferItems(dataTransferItems, mediaType) {
+      var files = await this.getFilesDropped(dataTransferItems)
       if (!files || !files.length) return { error: 'No files found ' }
       var itemData = this.fileTreeToItems(files, mediaType)
       if (!itemData.items.length && !itemData.ignoredFiles.length) {
