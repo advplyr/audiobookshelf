@@ -8,6 +8,18 @@
       </div>
       <p v-if="globalWatcherDisabled" class="text-xs text-warning">*Watcher is disabled globally in server settings</p>
     </div>
+    <div class="py-3">
+      <div class="flex items-center">
+        <ui-toggle-switch v-model="skipMatchingMediaWithAsin" @input="formUpdated" />
+        <p class="pl-4 text-lg">Skip matching books that already have an ASIN</p>
+      </div>
+    </div>
+    <div class="py-3">
+      <div class="flex items-center">
+        <ui-toggle-switch v-model="skipMatchingMediaWithIsbn" @input="formUpdated" />
+        <p class="pl-4 text-lg">Skip matching books that already have an ISBN</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -23,7 +35,9 @@ export default {
   data() {
     return {
       provider: null,
-      disableWatcher: false
+      disableWatcher: false,
+      skipMatchingMediaWithAsin: false,
+      skipMatchingMediaWithIsbn: false,
     }
   },
   computed: {
@@ -45,7 +59,9 @@ export default {
     getLibraryData() {
       return {
         settings: {
-          disableWatcher: !!this.disableWatcher
+          disableWatcher: !!this.disableWatcher,
+          skipMatchingMediaWithAsin: !!this.skipMatchingMediaWithAsin,
+          skipMatchingMediaWithIsbn: !!this.skipMatchingMediaWithIsbn
         }
       }
     },
@@ -54,6 +70,8 @@ export default {
     },
     init() {
       this.disableWatcher = !!this.librarySettings.disableWatcher
+      this.skipMatchingMediaWithAsin = !!this.librarySettings.skipMatchingMediaWithAsin
+      this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
     }
   },
   mounted() {

@@ -726,6 +726,21 @@ class Scanner {
 
     for (let i = 0; i < itemsInLibrary.length; i++) {
       var libraryItem = itemsInLibrary[i]
+
+      if (libraryItem.media.metadata.asin && library.settings.skipMatchingMediaWithAsin) {
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${
+          libraryItem.media.metadata.title
+        }" because it already has an ASIN (${i + 1} of ${itemsInLibrary.length})`)
+        continue;
+      }
+
+      if (libraryItem.media.metadata.isbn && library.settings.skipMatchingMediaWithIsbn) {
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${
+          libraryItem.media.metadata.title
+        }" because it already has an ISBN (${i + 1} of ${itemsInLibrary.length})`)
+        continue;
+      }
+
       Logger.debug(`[Scanner] matchLibraryItems: Quick matching "${libraryItem.media.metadata.title}" (${i + 1} of ${itemsInLibrary.length})`)
       var result = await this.quickMatchLibraryItem(libraryItem, { provider })
       if (result.warning) {
