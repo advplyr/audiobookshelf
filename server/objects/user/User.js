@@ -57,7 +57,7 @@ class User {
       mobileOrderBy: 'recent',
       mobileOrderDesc: true,
       mobileFilterBy: 'all',
-      orderBy: 'book.title',
+      orderBy: 'media.metadata.title',
       orderDesc: false,
       filterBy: 'all',
       playbackRate: 1,

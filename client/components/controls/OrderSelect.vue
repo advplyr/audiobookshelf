@@ -131,6 +131,9 @@ export default {
         this.selectedDesc = !this.selectedDesc
       } else {
         this.selected = val
+        if (val == 'media.metadata.title' || val == 'media.metadata.author' || val == 'media.metadata.authorName' || val == 'media.metadata.authorNameLF') {
+          this.selectedDesc = false
+        }
       }
       this.showMenu = false
       this.$nextTick(() => this.$emit('change', val))
