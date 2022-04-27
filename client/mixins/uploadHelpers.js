@@ -189,7 +189,7 @@ export default {
           if (ab.ignoredFiles.length) ignoredFiles = ignoredFiles.concat(ab.ignoredFiles)
         }
         return ab.itemFiles.length
-      }).map(ab => this.cleanItem(ab, index++))
+      }).map(ab => this.cleanItem(ab, mediaType, index++))
       return {
         items,
         ignoredFiles
