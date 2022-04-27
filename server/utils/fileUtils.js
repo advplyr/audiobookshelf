@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const rra = require('recursive-readdir-async')
 const axios = require('axios')
+const Path = require('path')
 const Logger = require('../Logger')
 
 async function getFileStat(path) {
@@ -104,20 +105,39 @@ async function recurseFiles(path, relPathToReplace = null) {
     return []
   }
 
+  const directoriesToIgnore = []
+
   list = list.filter((item) => {
     if (item.error) {
-      Logger.error(`[fileUtils] Recurse files file "${item.fullName}" has error`, item.error)
+      Logger.error(`[fileUtils] Recurse files file "${item.fullname}" has error`, item.error)
+      return false
+    }
+
+    var relpath = item.fullname.replace(relPathToReplace, '')
+    var reldirname = Path.dirname(relpath)
+    var dirname = Path.dirname(item.fullname)
+
+    // Directory has a file named ".ignore" flag directory and ignore
+    if (item.name === '.ignore' && reldirname && reldirname !== '.' && !directoriesToIgnore.includes(dirname)) {
+      Logger.debug(`[fileUtils] .ignore found - ignoring directory "${reldirname}"`)
+      directoriesToIgnore.push(dirname)
       return false
     }
 
     // Ignore any file if a directory or the filename starts with "."
-    var relpath = item.fullname.replace(relPathToReplace, '')
     var pathStartsWithPeriod = relpath.split('/').find(p => p.startsWith('.'))
     if (pathStartsWithPeriod) {
       Logger.debug(`[fileUtils] Ignoring path has . "${relpath}"`)
       return false
     }
 
+    return true
+  }).filter(item => {
+    // Filter out items in ignore directories
+    if (directoriesToIgnore.includes(Path.dirname(item.fullname))) {
+      Logger.debug(`[fileUtils] Ignoring path in dir with .ignore "${item.fullname}"`)
+      return false
+    }
     return true
   }).map((item) => ({
     name: item.name,
