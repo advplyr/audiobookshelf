@@ -411,7 +411,9 @@ class Db {
 
   removeEntity(entityName, entityId) {
     var entityDb = this.getEntityDb(entityName)
-    return entityDb.delete((record) => record.id === entityId).then((results) => {
+    return entityDb.delete((record) => {
+      return record.id === entityId
+    }).then((results) => {
       Logger.debug(`[DB] Deleted entity ${entityName}: ${results.deleted}`)
       var arrayKey = this.getEntityArrayKey(entityName)
       if (this[arrayKey]) {

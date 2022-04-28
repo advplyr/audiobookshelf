@@ -115,6 +115,7 @@ async function recurseFiles(path, relPathToReplace = null) {
 
     var relpath = item.fullname.replace(relPathToReplace, '')
     var reldirname = Path.dirname(relpath)
+    if (reldirname === '.') reldirname = ''
     var dirname = Path.dirname(item.fullname)
 
     // Directory has a file named ".ignore" flag directory and ignore
@@ -139,15 +140,18 @@ async function recurseFiles(path, relPathToReplace = null) {
       return false
     }
     return true
-  }).map((item) => ({
-    name: item.name,
-    path: item.fullname.replace(relPathToReplace, ''),
-    dirpath: item.path,
-    reldirpath: item.path.replace(relPathToReplace, ''),
-    fullpath: item.fullname,
-    extension: item.extension,
-    deep: item.deep
-  }))
+  }).map((item) => {
+    var isInRoot = (item.path + '/' === relPathToReplace)
+    return {
+      name: item.name,
+      path: item.fullname.replace(relPathToReplace, ''),
+      dirpath: item.path,
+      reldirpath: isInRoot ? '' : item.path.replace(relPathToReplace, ''),
+      fullpath: item.fullname,
+      extension: item.extension,
+      deep: item.deep
+    }
+  })
 
   // Sort from least deep to most
   list.sort((a, b) => a.deep - b.deep)

@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <tables-tracks-table :title="`Audiobook Tracks`" :tracks="media.tracks" :library-item-id="libraryItemId" class="mt-6" />
+    <tables-tracks-table :title="`Audiobook Tracks`" :tracks="media.tracks" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
   </div>
 </template>
 
@@ -27,7 +27,8 @@ export default {
     media: {
       type: Object,
       default: () => {}
-    }
+    },
+    isFile: Boolean
   },
   data() {
     return {}

@@ -14,7 +14,7 @@
         </ui-tooltip>
 
         <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
-          <ui-btn v-if="isRootUser" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
+          <ui-btn v-if="isRootUser && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
         </ui-tooltip>
 
         <ui-btn @click="submitForm">Submit</ui-btn>
@@ -48,6 +48,9 @@ export default {
       set(val) {
         this.$emit('update:processing', val)
       }
+    },
+    isFile() {
+      return !!this.libraryItem && this.libraryItem.isFile
     },
     isRootUser() {
       return this.$store.getters['user/getIsRoot']

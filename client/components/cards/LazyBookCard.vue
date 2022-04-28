@@ -150,6 +150,10 @@ export default {
     _libraryItem() {
       return this.libraryItem || {}
     },
+    isFile() {
+      // Library item is not in a folder
+      return this._libraryItem.isFile
+    },
     media() {
       return this._libraryItem.media || {}
     },
@@ -365,7 +369,7 @@ export default {
           text: 'Match'
         })
       }
-      if (this.userIsRoot) {
+      if (this.userIsRoot && !this.isFile) {
         items.push({
           func: 'rescan',
           text: 'Re-Scan'

@@ -165,7 +165,7 @@
             <p v-for="audioFile in invalidAudioFiles" :key="audioFile.id" class="text-xs pl-2">- {{ audioFile.metadata.filename }} ({{ audioFile.error }})</p>
           </div>
 
-          <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :media="media" />
+          <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :is-file="isFile" :media="media" />
 
           <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
 
@@ -210,6 +210,9 @@ export default {
     }
   },
   computed: {
+    isFile() {
+      return this.libraryItem.isFile
+    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },

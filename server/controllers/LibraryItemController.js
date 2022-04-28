@@ -342,6 +342,12 @@ class LibraryItemController {
       Logger.error(`[LibraryItemController] Non-root user attempted to scan library item`, req.user)
       return res.sendStatus(403)
     }
+
+    if (req.libraryItem.isFile) {
+      Logger.error(`[LibraryItemController] Re-scanning file library items not yet supported`)
+      return res.sendStatus(500)
+    }
+
     var result = await this.scanner.scanLibraryItemById(req.libraryItem.id)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)

@@ -235,7 +235,7 @@ class Scanner {
 
       var hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
       if (!hasMediaFile) {
-        libraryScan.addLog(LogLevel.WARN, `Directory found "${libraryItemDataFound.path}" has no media files`)
+        libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
       } else {
         var audioFileSize = 0
         dataFound.libraryFiles.filter(lf => lf.fileType == 'audio').forEach(lf => audioFileSize += lf.metadata.size)

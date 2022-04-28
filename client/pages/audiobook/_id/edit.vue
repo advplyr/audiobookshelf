@@ -107,6 +107,10 @@ export default {
       console.error('Invalid media type')
       return redirect('/')
     }
+    if (libraryItem.isFile) {
+      console.error('No need to edit library item that is 1 file...')
+      return redirect('/')
+    }
     return {
       libraryItem,
       files: libraryItem.media.audioFiles ? libraryItem.media.audioFiles.map((af) => ({ ...af, include: !af.exclude })) : []

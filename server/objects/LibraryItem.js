@@ -18,6 +18,7 @@ class LibraryItem {
 
     this.path = null
     this.relPath = null
+    this.isFile = false
     this.mtimeMs = null
     this.ctimeMs = null
     this.birthtimeMs = null
@@ -51,6 +52,7 @@ class LibraryItem {
     this.folderId = libraryItem.folderId
     this.path = libraryItem.path
     this.relPath = libraryItem.relPath
+    this.isFile = !!libraryItem.isFile
     this.mtimeMs = libraryItem.mtimeMs || 0
     this.ctimeMs = libraryItem.ctimeMs || 0
     this.birthtimeMs = libraryItem.birthtimeMs || 0
@@ -82,6 +84,7 @@ class LibraryItem {
       folderId: this.folderId,
       path: this.path,
       relPath: this.relPath,
+      isFile: this.isFile,
       mtimeMs: this.mtimeMs,
       ctimeMs: this.ctimeMs,
       birthtimeMs: this.birthtimeMs,
@@ -105,6 +108,7 @@ class LibraryItem {
       folderId: this.folderId,
       path: this.path,
       relPath: this.relPath,
+      isFile: this.isFile,
       mtimeMs: this.mtimeMs,
       ctimeMs: this.ctimeMs,
       birthtimeMs: this.birthtimeMs,
@@ -128,6 +132,7 @@ class LibraryItem {
       folderId: this.folderId,
       path: this.path,
       relPath: this.relPath,
+      isFile: this.isFile,
       mtimeMs: this.mtimeMs,
       ctimeMs: this.ctimeMs,
       birthtimeMs: this.birthtimeMs,
@@ -460,7 +465,7 @@ class LibraryItem {
     this.isSavingMetadata = true
 
     var metadataPath = Path.join(global.MetadataPath, 'items', this.id)
-    if (global.ServerSettings.storeMetadataWithItem) {
+    if (global.ServerSettings.storeMetadataWithItem && !this.isFile) {
       metadataPath = this.path
     } else {
       // Make sure metadata book dir exists
