@@ -81,7 +81,7 @@ docker run -d \
 
 ```bash
 docker stop audiobookshelf
-docker pull advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf
 docker start audiobookshelf
 ```
 
