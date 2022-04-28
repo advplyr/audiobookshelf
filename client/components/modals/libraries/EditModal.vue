@@ -93,7 +93,9 @@ export default {
         icon: 'database',
         mediaType: 'book',
         settings: {
-          disableWatcher: false
+          disableWatcher: false,
+          skipMatchingMediaWithAsin: false,
+          skipMatchingMediaWithIsbn: false,
         }
       }
     },

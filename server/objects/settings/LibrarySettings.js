@@ -4,6 +4,8 @@ const Logger = require('../../Logger')
 class LibrarySettings {
   constructor(settings) {
     this.disableWatcher = false
+    this.skipMatchingMediaWithAsin = false
+    this.skipMatchingMediaWithIsbn = false
 
     if (settings) {
       this.construct(settings)
@@ -12,11 +14,15 @@ class LibrarySettings {
 
   construct(settings) {
     this.disableWatcher = !!settings.disableWatcher
+    this.skipMatchingMediaWithAsin = !!settings.skipMatchingMediaWithAsin
+    this.skipMatchingMediaWithIsbn = !!settings.skipMatchingMediaWithIsbn
   }
 
   toJSON() {
     return {
-      disableWatcher: this.disableWatcher
+      disableWatcher: this.disableWatcher,
+      skipMatchingMediaWithAsin: this.skipMatchingMediaWithAsin,
+      skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn
     }
   }
 
