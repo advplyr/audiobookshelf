@@ -74,7 +74,15 @@ docker run -d \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
-  --rm ghcr.io/advplyr/audiobookshelf
+  ghcr.io/advplyr/audiobookshelf
+```
+
+### Docker Update
+
+```bash
+docker stop audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf
+docker start audiobookshelf
 ```
 
 ### Running with Docker Compose
