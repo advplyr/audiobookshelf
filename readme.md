@@ -100,6 +100,11 @@ services:
       - <path/to/config>:/config
 ```
 
+### Updating Docker Compose
+```bash
+docker  docker-compose -f <path/to/config>/docker-compose.yml pull 
+docker docker-compose -f <path/to/config>/docker-compose.yml up -d 
+```
 
 ### Linux (amd64) Install
 
