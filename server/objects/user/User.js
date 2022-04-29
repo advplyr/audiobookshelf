@@ -189,6 +189,7 @@ class User {
         }
       }
     })
+
     // And update permissions
     if (payload.permissions) {
       for (const key in payload.permissions) {
@@ -198,8 +199,15 @@ class User {
         }
       }
     }
+
     // Update accessible libraries
-    if (payload.librariesAccessible !== undefined) {
+    if (this.permissions.accessAllLibraries) {
+      // Access all libraries
+      if (this.librariesAccessible.length) {
+        this.librariesAccessible = []
+        hasUpdates = true
+      }
+    } else if (payload.librariesAccessible !== undefined) {
       if (payload.librariesAccessible.length) {
         if (payload.librariesAccessible.join(',') !== this.librariesAccessible.join(',')) {
           hasUpdates = true
@@ -211,8 +219,14 @@ class User {
       }
     }
 
-    // Update accessible libraries
-    if (payload.itemTagsAccessible !== undefined) {
+    // Update accessible tags
+    if (this.permissions.accessAllTags) {
+      // Access all tags
+      if (this.itemTagsAccessible.length) {
+        this.itemTagsAccessible = []
+        hasUpdates = true
+      }
+    } else if (payload.itemTagsAccessible !== undefined) {
       if (payload.itemTagsAccessible.length) {
         if (payload.itemTagsAccessible.join(',') !== this.itemTagsAccessible.join(',')) {
           hasUpdates = true
