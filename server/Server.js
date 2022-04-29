@@ -409,6 +409,7 @@ class Server {
     await this.db.updateEntity('user', user)
 
     const initialPayload = {
+      // TODO: this is sent with user auth now, update mobile app to use that then remove this
       serverSettings: this.db.serverSettings.toJSON(),
       audiobookPath: global.AudiobookPath,
       metadataPath: global.MetadataPath,

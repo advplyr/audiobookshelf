@@ -44,6 +44,14 @@ export default {
           this.$nextTick(this.init)
         }
       }
+    },
+    width: {
+      handler(newVal) {
+        if (newVal) {
+          this.isInit = false
+          this.$nextTick(this.init)
+        }
+      }
     }
   },
   computed: {

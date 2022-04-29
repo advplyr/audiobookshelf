@@ -106,12 +106,6 @@ export default {
         }
       }
       if (payload.serverSettings) {
-        this.$store.commit('setServerSettings', payload.serverSettings)
-
-        if (payload.serverSettings.chromecastEnabled) {
-          console.log('Chromecast enabled import script')
-          require('@/plugins/chromecast.js').default(this)
-        }
       }
 
       // Start scans currently running

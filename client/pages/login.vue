@@ -48,8 +48,15 @@ export default {
     }
   },
   methods: {
-    setUser(user, defaultLibraryId) {
-      this.$store.commit('libraries/setCurrentLibrary', defaultLibraryId)
+    setUser({ user, userDefaultLibraryId, serverSettings }) {
+      this.$store.commit('setServerSettings', serverSettings)
+
+      if (serverSettings.chromecastEnabled) {
+        console.log('Chromecast enabled import script')
+        require('@/plugins/chromecast.js').default(this)
+      }
+
+      this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
       this.$store.commit('user/setUser', user)
     },
     async submitForm() {
@@ -69,7 +76,7 @@ export default {
       if (authRes && authRes.error) {
         this.error = authRes.error
       } else if (authRes) {
-        this.setUser(authRes.user, authRes.userDefaultLibraryId)
+        this.setUser(authRes)
       }
       this.processing = false
     },
@@ -87,7 +94,7 @@ export default {
               }
             })
             .then((res) => {
-              this.setUser(res.user, res.userDefaultLibraryId)
+              this.setUser(res)
               this.processing = false
             })
             .catch((error) => {
