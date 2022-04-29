@@ -9,8 +9,8 @@ const filePerms = require('../utils/filePerms')
 class PodcastController {
 
   async create(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[PodcastController] Non-root user attempted to create podcast`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to create podcast`, req.user)
       return res.sendStatus(500)
     }
     const payload = req.body
@@ -115,9 +115,18 @@ class PodcastController {
   }
 
   async checkNewEpisodes(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to check/download episodes`, req.user)
+      return res.sendStatus(500)
+    }
+
     var libraryItem = this.db.getLibraryItem(req.params.id)
     if (!libraryItem || libraryItem.mediaType !== 'podcast') {
       return res.sendStatus(404)
+    }
+    if (!req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
+      Logger.error(`[PodcastController] User attempted to check/download episodes for a library without permission`, req.user)
+      return res.sendStatus(500)
     }
     if (!libraryItem.media.metadata.feedUrl) {
       Logger.error(`[PodcastController] checkNewEpisodes no feed url for item ${libraryItem.id}`)
@@ -131,8 +140,8 @@ class PodcastController {
   }
 
   clearEpisodeDownloadQueue(req, res) {
-    if (!req.user.canUpdate) {
-      Logger.error(`[PodcastController] User attempting to clear download queue without permission "${req.user.username}"`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempting to clear download queue "${req.user.username}"`)
       return res.sendStatus(500)
     }
     this.podcastManager.clearDownloadQueue(req.params.id)
@@ -151,11 +160,17 @@ class PodcastController {
   }
 
   async downloadEpisodes(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
+      return res.sendStatus(500)
+    }
+
     var libraryItem = this.db.getLibraryItem(req.params.id)
     if (!libraryItem || libraryItem.mediaType !== 'podcast') {
       return res.sendStatus(404)
     }
-    if (!req.user.canUpload || !req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
+    if (!req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
+      Logger.error(`[PodcastController] User attempted to download episodes for library without permission`, req.user)
       return res.sendStatus(404)
     }
 
