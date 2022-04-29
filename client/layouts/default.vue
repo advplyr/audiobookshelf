@@ -161,8 +161,28 @@ export default {
     libraryUpdated(library) {
       this.$store.commit('libraries/addUpdate', library)
     },
-    libraryRemoved(library) {
+    async libraryRemoved(library) {
       this.$store.commit('libraries/remove', library)
+
+      // When removed currently selected library then set next accessible library
+      const currLibraryId = this.$store.state.libraries.currentLibraryId
+      if (currLibraryId === library.id) {
+        var nextLibrary = this.$store.getters['libraries/getNextAccessibleLibrary']
+        if (nextLibrary) {
+          await this.$store.dispatch('libraries/fetch', nextLibrary.id)
+
+          if (this.$route.name.startsWith('config')) {
+            // No need to refresh
+          } else if (this.$route.name.startsWith('library')) {
+            var newRoute = this.$route.path.replace(currLibraryId, nextLibrary.id)
+            this.$router.push(newRoute)
+          } else {
+            this.$router.push(`/library/${nextLibrary.id}`)
+          }
+        } else {
+          console.error('User has no accessible libraries')
+        }
+      }
     },
     libraryItemAdded(libraryItem) {
       // this.$store.commit('libraries/updateFilterDataWithAudiobook', libraryItem)
