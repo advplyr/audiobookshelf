@@ -52,7 +52,7 @@
       <div v-show="isAuthorsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
-    <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+    <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <icons-podcast-svg class="w-6 h-6" />
 
       <p class="font-book pt-1.5" style="font-size: 0.9rem">Search</p>
@@ -81,6 +81,9 @@ export default {
   computed: {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
+    },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     paramId() {
       return this.$route.params ? this.$route.params.id || '' : ''

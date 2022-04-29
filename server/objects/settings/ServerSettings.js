@@ -79,7 +79,7 @@ class ServerSettings {
 
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
-    this.maxBackupSize  = settings.maxBackupSize || 1
+    this.maxBackupSize = settings.maxBackupSize || 1
     this.backupMetadataCovers = settings.backupMetadataCovers !== false
 
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7

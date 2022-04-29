@@ -150,7 +150,8 @@
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="isPodcast" text="Find Episodes" direction="top">
+            <!-- Only admin or root user can download new episodes -->
+            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" text="Find Episodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
           </div>
@@ -210,6 +211,9 @@ export default {
     }
   },
   computed: {
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     isFile() {
       return this.libraryItem.isFile
     },

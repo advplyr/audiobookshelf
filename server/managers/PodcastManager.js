@@ -208,8 +208,27 @@ class PodcastManager {
     }
     // Filter new and not already has
     var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > podcastLibraryItem.media.lastEpisodeCheck && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
-    // Max new episodes for safety = 2
-    newEpisodes = newEpisodes.slice(0, 2)
+    // Max new episodes for safety = 3
+    newEpisodes = newEpisodes.slice(0, 3)
+    return newEpisodes
+  }
+
+  async checkAndDownloadNewEpisodes(libraryItem) {
+    const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
+    Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
+    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
+    if (newEpisodes.length) {
+      Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
+      this.downloadPodcastEpisodes(libraryItem, newEpisodes)
+    } else {
+      Logger.info(`[PodcastManager] No new episodes found for podcast "${libraryItem.media.metadata.title}"`)
+    }
+
+    libraryItem.media.lastEpisodeCheck = Date.now()
+    libraryItem.updatedAt = Date.now()
+    await this.db.updateLibraryItem(libraryItem)
+    this.emitter('item_updated', libraryItem.toJSONExpanded())
+
     return newEpisodes
   }
 

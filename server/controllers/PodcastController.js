@@ -124,7 +124,7 @@ class PodcastController {
       return res.status(500).send('Podcast has no rss feed url')
     }
 
-    var newEpisodes = await this.podcastManager.checkPodcastForNewEpisodes(libraryItem)
+    var newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(libraryItem)
     res.json({
       episodes: newEpisodes || []
     })

@@ -30,6 +30,9 @@ class User {
   get isRoot() {
     return this.type === 'root'
   }
+  get isAdmin() {
+    return this.type === 'admin'
+  }
   get canDelete() {
     return !!this.permissions.delete && this.isActive
   }
