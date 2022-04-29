@@ -33,6 +33,9 @@ class User {
   get isAdmin() {
     return this.type === 'admin'
   }
+  get isGuest() {
+    return this.type === 'guest'
+  }
   get isAdminOrUp() {
     return this.isAdmin || this.isRoot
   }
