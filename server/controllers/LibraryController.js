@@ -201,7 +201,6 @@ class LibraryController {
       libraryItems = naturalSort(libraryItems).by(sortArray)
     }
 
-    // TODO: Potentially implement collapse series again
     if (payload.collapseseries) {
       libraryItems = libraryHelpers.collapseBookSeries(libraryItems)
       payload.total = libraryItems.length
@@ -316,102 +315,6 @@ class LibraryController {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 10
 
     const categories = libraryHelpers.buildPersonalizedShelves(req.user, libraryItems, mediaType, this.db.series, this.db.authors, limitPerShelf)
-    res.json(categories)
-  }
-
-  // TODO: Remove old personalized function with all its helper functions
-  //          old personalized function looped through the library items many times
-  // api/libraries/:id/personalized-old
-  async getLibraryUserPersonalized(req, res) {
-    var mediaType = req.library.mediaType
-    var isPodcastLibrary = mediaType == 'podcast'
-    var libraryItems = req.libraryItems
-    var limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
-    var minified = req.query.minified == '1'
-
-    var itemsWithUserProgress = libraryHelpers.getMediaProgressWithItems(req.user, libraryItems)
-    var categories = [
-      {
-        id: 'continue-listening',
-        label: 'Continue Listening',
-        type: isPodcastLibrary ? 'episode' : req.library.mediaType,
-        entities: libraryHelpers.getItemsMostRecentlyListened(itemsWithUserProgress, limitPerShelf, minified)
-      },
-      {
-        id: 'recently-added',
-        label: 'Recently Added',
-        type: req.library.mediaType,
-        entities: libraryHelpers.getItemsMostRecentlyAdded(libraryItems, limitPerShelf, minified)
-      },
-      {
-        id: 'listen-again',
-        label: 'Listen Again',
-        type: isPodcastLibrary ? 'episode' : req.library.mediaType,
-        entities: libraryHelpers.getItemsMostRecentlyFinished(itemsWithUserProgress, limitPerShelf, minified)
-      }
-    ].filter(cats => { // Remove categories with no items
-      return cats.entities.length
-    })
-
-    // New Series section
-    //  TODO: optimize and move to libraryHelpers
-    if (!isPodcastLibrary) {
-      var series = this.db.series.map(se => {
-        var books = libraryItems.filter(li => li.media.metadata.hasSeries(se.id))
-        if (!books.length) return null
-        books = books.map(b => {
-          var json = b.toJSONMinified()
-          json.sequence = b.media.metadata.getSeriesSequence(se.id)
-          return json
-        })
-        books = naturalSort(books).asc(b => b.sequence)
-        return {
-          id: se.id,
-          name: se.name,
-          type: 'series',
-          addedAt: se.addedAt,
-          books
-        }
-      }).filter(se => se).sort((a, b) => a.addedAt - b.addedAt).slice(0, 5)
-
-      if (series.length) {
-        categories.push({
-          id: 'recent-series',
-          label: 'Recent Series',
-          type: 'series',
-          entities: series
-        })
-      }
-
-      var authors = this.db.authors.map(author => {
-        var books = libraryItems.filter(li => li.media.metadata.hasAuthor(author.id))
-        if (!books.length) return null
-        // books = books.map(b => b.toJSONMinified())
-        return {
-          ...author.toJSON(),
-          numBooks: books.length
-        }
-      }).filter(au => au).sort((a, b) => a.addedAt - b.addedAt).slice(0, 10)
-      if (authors.length) {
-        categories.push({
-          id: 'newest-authors',
-          label: 'Newest Authors',
-          type: 'authors',
-          entities: authors
-        })
-      }
-    } else {
-      var episodesRecentlyAdded = libraryHelpers.getEpisodesRecentlyAdded(libraryItems, limitPerShelf, minified)
-      if (episodesRecentlyAdded.length) {
-        categories.splice(1, 0, {
-          id: 'episodes-recently-added',
-          label: 'Newest Episodes',
-          type: 'episode',
-          entities: episodesRecentlyAdded
-        })
-      }
-    }
-
     res.json(categories)
   }
 

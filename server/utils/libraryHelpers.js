@@ -136,80 +136,6 @@ module.exports = {
     })
   },
 
-  getSeriesWithProgressFromBooks(user, books) {
-    return []
-    // var _series = {}
-    // books.forEach((audiobook) => {
-    //   if (audiobook.book.series) {
-    //     var bookWithUserAb = { userAudiobook: user.getMediaProgress(audiobook.id), book: audiobook }
-    //     if (!_series[audiobook.book.series]) {
-    //       _series[audiobook.book.series] = {
-    //         id: audiobook.book.series,
-    //         name: audiobook.book.series,
-    //         type: 'series',
-    //         books: [bookWithUserAb]
-    //       }
-    //     } else {
-    //       _series[audiobook.book.series].books.push(bookWithUserAb)
-    //     }
-    //   }
-    // })
-    // return Object.values(_series).map((series) => {
-    //   series.books = naturalSort(series.books).asc(ab => ab.book.book.volumeNumber)
-    //   return series
-    // }).filter((series) => series.books.some((book) => book.userAudiobook && book.userAudiobook.isRead))
-  },
-
-  sortSeriesBooks(books, seriesId, minified = false) {
-    return naturalSort(books).asc(li => {
-      if (!li.media.metadata.series) return null
-      var series = li.media.metadata.series.find(se => se.id === seriesId)
-      if (!series) return null
-      return series.sequence
-    }).map(li => {
-      if (minified) return li.toJSONMinified()
-      return li.toJSONExpanded()
-    })
-  },
-
-  getMediaProgressWithItems(user, libraryItems) {
-    var mediaProgress = []
-    libraryItems.forEach(li => {
-      var itemProgress = user.getAllMediaProgressForLibraryItem(li.id).map(mp => {
-        var episode = null
-        if (mp.episodeId) {
-          episode = li.media.getEpisode(mp.episodeId)
-          if (!episode) {
-            // Episode not found for library item
-            return null
-          }
-        }
-        return {
-          userProgress: mp.toJSON(),
-          libraryItem: li,
-          episode
-        }
-      }).filter(mp => !!mp)
-
-      mediaProgress = mediaProgress.concat(itemProgress)
-    })
-    return mediaProgress
-  },
-
-  getItemsMostRecentlyListened(itemsWithUserProgress, limit, minified = false) {
-    var itemsInProgress = itemsWithUserProgress.filter((data) => data.userProgress && data.userProgress.progress > 0 && !data.userProgress.isFinished)
-    itemsInProgress.sort((a, b) => {
-      return b.userProgress.lastUpdate - a.userProgress.lastUpdate
-    })
-    return itemsInProgress.map(b => {
-      var libjson = minified ? b.libraryItem.toJSONMinified() : b.libraryItem.toJSONExpanded()
-      if (b.episode) {
-        libjson.recentEpisode = b.episode
-      }
-      return libjson
-    }).slice(0, limit)
-  },
-
   getBooksNextInSeries(seriesWithUserAb, limit, minified = false) {
     var incompleteSeires = seriesWithUserAb.filter((series) => series.books.some((book) => !book.userAudiobook || (!book.userAudiobook.isRead && book.userAudiobook.progress == 0)))
     var booksNextInSeries = []
@@ -220,49 +146,6 @@ module.exports = {
       booksNextInSeries.push(nextUnreadBook)
     })
     return booksNextInSeries.sort((a, b) => { return b.DateLastReadSeries - a.DateLastReadSeries }).map(b => minified ? b.book.toJSONMinified() : b.book.toJSONExpanded()).slice(0, limit)
-  },
-
-  getItemsMostRecentlyFinished(itemsWithUserProgress, limit, minified = false) {
-    var itemsFinished = itemsWithUserProgress.filter((data) => data.userProgress && data.userProgress.isFinished)
-    itemsFinished.sort((a, b) => {
-      return b.userProgress.finishedAt - a.userProgress.finishedAt
-    })
-    return itemsFinished.map(i => {
-      var libjson = minified ? i.libraryItem.toJSONMinified() : i.libraryItem.toJSONExpanded()
-      if (i.episode) {
-        libjson.recentEpisode = i.episode
-      }
-      return libjson
-    }).slice(0, limit)
-  },
-
-  getItemsMostRecentlyAdded(libraryItems, limit, minified = false) {
-    var itemsSortedByAddedAt = sort(libraryItems).desc(li => li.addedAt)
-    return itemsSortedByAddedAt.map(b => minified ? b.toJSONMinified() : b.toJSONExpanded()).slice(0, limit)
-  },
-
-  getEpisodesRecentlyAdded(libraryItems, limit, minified = false) {
-    var libraryItemsWithEpisode = []
-    libraryItems.forEach((li) => {
-      if (li.mediaType !== 'podcast' || !li.media.hasMediaEntities) return
-      var libjson = minified ? li.toJSONMinified() : li.toJSONExpanded()
-      var episodes = sort(li.media.episodes || []).desc(ep => ep.addedAt)
-      episodes.forEach((ep) => {
-        var lie = { ...libjson }
-        lie.recentEpisode = ep
-        libraryItemsWithEpisode.push(lie)
-      })
-    })
-    libraryItemsWithEpisode = sort(libraryItemsWithEpisode).desc(lie => lie.recentEpisode.addedAt)
-    return libraryItemsWithEpisode.slice(0, limit)
-  },
-
-  getSeriesMostRecentlyAdded(series, limit) {
-    var seriesSortedByAddedAt = sort(series).desc(_series => {
-      var booksSortedByMostRecent = sort(_series.books).desc(b => b.addedAt)
-      return booksSortedByMostRecent[0].addedAt
-    })
-    return seriesSortedByAddedAt.slice(0, limit)
   },
 
   getGenresWithCount(libraryItems) {
@@ -353,7 +236,6 @@ module.exports = {
 
   buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
     const isPodcastLibrary = mediaType === 'podcast'
-
 
     const shelves = [
       {
