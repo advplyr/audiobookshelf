@@ -246,6 +246,13 @@ module.exports = {
         category: 'recentlyListened'
       },
       {
+        id: 'continue-series',
+        label: 'Continue Series',
+        type: mediaType,
+        entities: [],
+        category: 'continueSeries'
+      },
+      {
         id: 'recently-added',
         label: 'Recently Added',
         type: mediaType,
@@ -282,7 +289,7 @@ module.exports = {
       }
     ]
 
-    const categories = ['recentlyListened', 'newestEpisodes', 'newestItems', 'newestSeries', 'recentlyFinished', 'newestAuthors']
+    const categories = ['recentlyListened', 'continueSeries', 'newestEpisodes', 'newestItems', 'newestSeries', 'recentlyFinished', 'newestAuthors']
     const categoryMap = {}
     categories.forEach((cat) => {
       categoryMap[cat] = {
@@ -398,20 +405,24 @@ module.exports = {
         // Newest series
         if (libraryItem.media.metadata.series.length) {
           for (const librarySeries of libraryItem.media.metadata.series) {
+            const mediaProgress = allItemProgress.length ? allItemProgress[0] : null
+            const bookInProgress = mediaProgress && mediaProgress.inProgress
+            const libraryItemJson = libraryItem.toJSONMinified()
+            libraryItemJson.seriesSequence = librarySeries.sequence
 
             if (!seriesMap[librarySeries.id]) {
               const seriesObj = allSeries.find(se => se.id === librarySeries.id)
               if (seriesObj) {
                 var series = {
                   ...seriesObj.toJSON(),
-                  books: []
+                  books: [libraryItemJson],
+                  inProgress: bookInProgress,
+                  bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
+                  sequenceInProgress: bookInProgress ? libraryItemJson.seriesSequence : null
                 }
+                seriesMap[librarySeries.id] = series
 
                 if (series.addedAt > categoryMap.newestSeries.smallest) {
-                  const libraryItemJson = libraryItem.toJSONMinified()
-                  libraryItemJson.seriesSequence = librarySeries.sequence
-                  series.books.push(libraryItemJson)
-
                   var indexToPut = categoryMap.newestSeries.items.findIndex(i => series.addedAt > i.addedAt)
                   if (indexToPut >= 0) {
                     categoryMap.newestSeries.items.splice(indexToPut, 0, series)
@@ -426,15 +437,19 @@ module.exports = {
                   }
 
                   categoryMap.newestSeries.biggest = categoryMap.newestSeries.items[0].addedAt
-
-                  seriesMap[librarySeries.id] = series
                 }
               }
             } else {
               // series already in map - add book
-              const libraryItemJson = libraryItem.toJSONMinified()
-              libraryItemJson.seriesSequence = librarySeries.sequence
               seriesMap[librarySeries.id].books.push(libraryItemJson)
+
+              if (bookInProgress) { // Update if this series is in progress
+                seriesMap[librarySeries.id].inProgress = true
+                if (!seriesMap[librarySeries.id].sequenceInProgress) {
+                  seriesMap[librarySeries.id].sequenceInProgress = librarySeries.sequence
+                  seriesMap[librarySeries.id].bookInProgressLastUpdate = mediaProgress.lastUpdate
+                }
+              }
             }
           }
         }
@@ -520,6 +535,38 @@ module.exports = {
               }
               categoryMap.recentlyListened.biggest = categoryMap.recentlyListened.items[0].progressLastUpdate
             }
+          }
+        }
+      }
+    }
+
+    // For Continue Series - Find next book in series for series that are in progress
+    for (const seriesId in seriesMap) {
+      if (seriesMap[seriesId].inProgress) {
+        seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
+
+        const nextBookInSeries = seriesMap[seriesId].books.find(li => {
+          if (!seriesMap[seriesId].sequenceInProgress) return true
+          // True if book series sequence is greater than the current book sequence in progress
+          return String(li.seriesSequence).localeCompare(String(seriesMap[seriesId].sequenceInProgress), undefined, { sensitivity: 'base', numeric: true }) > 0
+        })
+
+        if (nextBookInSeries) {
+          const bookForContinueSeries = {
+            ...nextBookInSeries,
+            prevBookInProgressLastUpdate: seriesMap[seriesId].bookInProgressLastUpdate
+          }
+          bookForContinueSeries.media.metadata.series = {
+            id: seriesId,
+            name: seriesMap[seriesId].name,
+            sequence: nextBookInSeries.seriesSequence
+          }
+
+          const indexToPut = categoryMap.continueSeries.items.findIndex(i => i.prevBookInProgressLastUpdate < bookForContinueSeries.prevBookInProgressLastUpdate)
+          if (indexToPut >= 0) {
+            categoryMap.continueSeries.items.splice(indexToPut, 0, bookForContinueSeries)
+          } else if (categoryMap.continueSeries.items.length < 10) { // Max 10 books
+            categoryMap.continueSeries.items.push(bookForContinueSeries)
           }
         }
       }

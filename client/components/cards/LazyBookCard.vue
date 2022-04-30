@@ -78,7 +78,7 @@
     </ui-tooltip>
 
     <!-- Series sequence -->
-    <div v-if="seriesSequence && showSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+    <div v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
     </div>
 
@@ -110,7 +110,6 @@ export default {
       default: 192
     },
     bookCoverAspectRatio: Number,
-    showSequence: Boolean,
     bookshelfView: Number,
     bookMount: {
       // Book can be passed as prop or set with setEntity()
@@ -176,7 +175,7 @@ export default {
       return this._libraryItem.id
     },
     series() {
-      // Only included when filtering by series or collapse series
+      // Only included when filtering by series or collapse series or Continue Series shelf on home page
       return this.mediaMetadata.series
     },
     seriesSequence() {
