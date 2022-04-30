@@ -54,10 +54,16 @@
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
-          <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
+          <ui-tooltip text="Edit" direction="bottom">
+            <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
+          </ui-tooltip>
         </template>
-        <ui-icon-btn v-show="userCanDelete" :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
-        <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+        <ui-tooltip v-if="userCanDelete" text="Delete" direction="bottom">
+          <ui-icon-btn :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
+        </ui-tooltip>
+        <ui-tooltip text="Deselect All" direction="bottom">
+          <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+        </ui-tooltip>
       </div>
     </div>
   </div>
