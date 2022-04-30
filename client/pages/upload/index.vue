@@ -53,8 +53,8 @@
       </widgets-alert>
 
       <!-- Item Upload cards -->
-      <template v-for="(item, index) in items">
-        <cards-item-upload-card :ref="`itemCard-${item.index}`" :key="index" :media-type="selectedLibraryMediaType" :item="item" :processing="processing" @remove="removeItem(item)" />
+      <template v-for="item in items">
+        <cards-item-upload-card :ref="`itemCard-${item.index}`" :key="item.index" :media-type="selectedLibraryMediaType" :item="item" :processing="processing" @remove="removeItem(item)" />
       </template>
 
       <!-- Upload/Reset btns -->
