@@ -128,8 +128,7 @@ export default {
           type: 'series',
           entities: this.results.series.map((seriesObj) => {
             return {
-              name: seriesObj.series.name,
-              series: seriesObj.series,
+              ...seriesObj.series,
               books: seriesObj.books,
               type: 'series'
             }

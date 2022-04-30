@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
-      <!-- <div class="flex items-center mb-4">
-        <p v-if="autoDownloadEpisodes">Last new episode check {{ $formatDate(lastEpisodeCheck) }}</p>
-        <div class="flex-grow" />
-        <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check for new episodes</ui-btn>
-      </div> -->
+      <div v-if="userIsAdminOrUp" class="flex items-end justify-end mb-4">
+        <!-- <p v-if="autoDownloadEpisodes">Last new episode check {{ $formatDate(lastEpisodeCheck) }}</p> -->
+        <ui-text-input-with-label ref="lastCheckInput" v-model="lastEpisodeCheckInput" :disabled="checkingNewEpisodes" type="datetime-local" label="Look for new episodes after this date" class="max-w-xs mr-2" />
+        <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check & Download New Episodes</ui-btn>
+      </div>
 
       <div v-if="episodes.length" class="w-full p-4 bg-primary">
         <p>Podcast Episodes</p>
@@ -51,10 +51,23 @@ export default {
   },
   data() {
     return {
-      checkingNewEpisodes: false
+      checkingNewEpisodes: false,
+      lastEpisodeCheckInput: null
+    }
+  },
+  watch: {
+    lastEpisodeCheck: {
+      handler(newVal) {
+        if (newVal) {
+          this.setLastEpisodeCheckInput()
+        }
+      }
     }
   },
   computed: {
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     autoDownloadEpisodes() {
       return !!this.media.autoDownloadEpisodes
     },
@@ -72,8 +85,22 @@ export default {
     }
   },
   methods: {
-    checkForNewEpisodes() {
+    async checkForNewEpisodes() {
+      if (this.$refs.lastCheckInput) {
+        this.$refs.lastCheckInput.blur()
+      }
       this.checkingNewEpisodes = true
+      const lastEpisodeCheck = new Date(this.lastEpisodeCheckInput).valueOf()
+
+      // If last episode check changed then update it first
+      if (lastEpisodeCheck && lastEpisodeCheck !== this.lastEpisodeCheck) {
+        var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, { lastEpisodeCheck }).catch((error) => {
+          console.error('Failed to update', error)
+          return false
+        })
+        console.log('updateResult', updateResult)
+      }
+
       this.$axios
         .$get(`/api/podcasts/${this.libraryItemId}/checknew`)
         .then((response) => {
@@ -91,7 +118,13 @@ export default {
           this.$toast.error(errorMsg)
           this.checkingNewEpisodes = false
         })
+    },
+    setLastEpisodeCheckInput() {
+      this.lastEpisodeCheckInput = this.lastEpisodeCheck ? this.$formatDate(this.lastEpisodeCheck, "yyyy-MM-dd'T'HH:mm") : null
     }
+  },
+  mounted() {
+    this.setLastEpisodeCheckInput()
   }
 }
 </script>

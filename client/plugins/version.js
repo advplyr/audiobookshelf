@@ -33,11 +33,12 @@ export async function checkForUpdate() {
     return
   }
   var largestVer = null
-  await axios.get(`https://api.github.com/repos/advplyr/audiobookshelf/tags`).then((res) => {
-    var tags = res.data
-    if (tags && tags.length) {
-      tags.forEach((tag) => {
-        var verObj = parseSemver(tag.name)
+  await axios.get(`https://api.github.com/repos/advplyr/audiobookshelf/releases`).then((res) => {
+    var releases = res.data
+    if (releases && releases.length) {
+      releases.forEach((release) => {
+        var tagName = release.tag_name
+        var verObj = parseSemver(tagName)
         if (verObj) {
           if (!largestVer || largestVer.total < verObj.total) {
             largestVer = verObj
@@ -50,6 +51,7 @@ export async function checkForUpdate() {
     console.error('No valid version tags to compare with')
     return
   }
+
   return {
     hasUpdate: largestVer.total > currVerObj.total,
     latestVersion: largestVer.version,

@@ -15,8 +15,8 @@
 
         <div class="w-full h-px bg-primary my-4" />
 
-        <p class="mb-4 text-lg">Change Password</p>
-        <form @submit.prevent="submitChangePassword">
+        <p v-if="!isGuest" class="mb-4 text-lg">Change Password</p>
+        <form v-if="!isGuest" @submit.prevent="submitChangePassword">
           <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" label="Password" class="my-2" />
           <ui-text-input-with-label v-model="newPassword" :disabled="changingPassword" type="password" label="New Password" class="my-2" />
           <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" label="Confirm Password" class="my-2" />
@@ -60,6 +60,9 @@ export default {
     },
     isRoot() {
       return this.usertype === 'root'
+    },
+    isGuest() {
+      return this.usertype === 'guest'
     }
   },
   methods: {

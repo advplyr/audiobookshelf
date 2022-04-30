@@ -133,6 +133,10 @@ class MeController {
 
   // PATCH: api/me/password
   updatePassword(req, res) {
+    if (req.user.isGuest) {
+      Logger.error(`[MeController] Guest user attempted to change password`, req.user.username)
+      return res.sendStatus(500)
+    }
     this.auth.userChangePassword(req, res)
   }
 

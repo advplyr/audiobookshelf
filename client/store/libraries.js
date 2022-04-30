@@ -29,6 +29,19 @@ export const getters = {
     var library = state.libraries.find(l => l.id === libraryId)
     if (!library) return null
     return library.provider
+  },
+  getNextAccessibleLibrary: (state, getters, rootState, rootGetters) => {
+    var librariesSorted = getters['getSortedLibraries']()
+    if (!librariesSorted.length) return null
+
+    var canAccessAllLibraries = rootGetters['user/getUserCanAccessAllLibraries']
+    var userAccessibleLibraries = rootGetters['user/getLibrariesAccessible']
+    if (canAccessAllLibraries) return librariesSorted[0]
+    librariesSorted = librariesSorted.filter((lib) => {
+      return userAccessibleLibraries.includes(lib.id)
+    })
+    if (!librariesSorted.length) return null
+    return librariesSorted[0]
   }
 }
 

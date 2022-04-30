@@ -95,14 +95,16 @@
             <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
           </div>
 
+          <!-- Podcast episode downloads queue -->
           <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
               <p class="text-sm py-1">{{ episodeDownloadsQueued.length }} Episode{{ episodeDownloadsQueued.length === 1 ? '' : 's' }} queued for download</p>
 
-              <span class="material-icons hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
+              <span v-if="userIsAdminOrUp" class="material-icons hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
             </div>
           </div>
 
+          <!-- Podcast episodes currently downloading -->
           <div v-if="episodesDownloading.length" class="px-4 py-2 mt-4 bg-success bg-opacity-20 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div v-for="episode in episodesDownloading" :key="episode.id" class="flex items-center">
               <widgets-loading-spinner />
@@ -150,7 +152,8 @@
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="isPodcast" text="Find Episodes" direction="top">
+            <!-- Only admin or root user can download new episodes -->
+            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" text="Find Episodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
           </div>
@@ -210,6 +213,9 @@ export default {
     }
   },
   computed: {
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     isFile() {
       return this.libraryItem.isFile
     },

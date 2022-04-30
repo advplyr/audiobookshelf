@@ -58,7 +58,7 @@
       </table>
     </div>
 
-    <modals-account-modal v-model="showAccountModal" :account="selectedAccount" />
+    <modals-account-modal ref="accountModal" v-model="showAccountModal" :account="selectedAccount" />
   </div>
 </template>
 
@@ -156,6 +156,10 @@ export default {
     this.init()
   },
   beforeDestroy() {
+    if (this.$refs.accountModal) {
+      this.$refs.accountModal.close()
+    }
+
     if (this.$root.socket) {
       this.$root.socket.off('user_added', this.newUserAdded)
       this.$root.socket.off('user_updated', this.userUpdated)
