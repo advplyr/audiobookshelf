@@ -107,15 +107,29 @@ Debian package will use this config file `/etc/default/audiobookshelf` if exists
 
 ### Ubuntu Install via PPA
 
-A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa)
+A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa), add and install:
 
-See [install docs](https://www.audiobookshelf.org/install/#ubuntu)
+```bash
+curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - 
+
+sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" 
+
+sudo apt update 
+
+sudo apt install audiobookshelf
+```
+
+or use a single command
+
+```bash
+curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - && sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" && sudo apt update && sudo apt install audiobookshelf
+```
 
 ### Install via debian package
 
 Get the `deb` file from the [github repo](https://github.com/advplyr/audiobookshelf-ppa).
 
-See [install docs](https://www.audiobookshelf.org/install#debian)
+See [instructions](https://www.audiobookshelf.org/install#debian)
 
 
 #### Linux file locations
@@ -221,6 +235,17 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 [from @silentArtifact](https://github.com/advplyr/audiobookshelf/issues/241#issuecomment-1036732329)
 
+### [Traefik Reverse Proxy](https://doc.traefik.io/traefik/)
+
+Middleware relating to CORS will cause the app to report Unknown Error when logging in. To prevent this don't apply any of the following headers to the router for this site:
+
+<ul>
+   <li>accessControlAllowMethods</li>
+   <li>accessControlAllowOriginList</li>
+   <li>accessControlMaxAge</li>
+</ul>
+
+From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/94507459037431817) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
 <br />
 
 # Run from source
