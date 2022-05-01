@@ -100,6 +100,28 @@ services:
       - <path/to/config>:/config
 ```
 
+### Docker Compose Update
+
+Depending on the version of Docker Compose please run one of the two commands. If not sure on which version you are running you can run the following command and check.
+
+#### Version Check
+
+docker-compose --version or docker compose version
+
+#### v2 Update
+
+```bash
+docker compose --file <path/to/config>/docker-compose.yml pull
+docker compose --file <path/to/config>/docker-compose.yml up -d
+```
+
+#### V1 Update
+```bash
+docker-compose --file <path/to/config>/docker-compose.yml pull
+docker-compose --file <path/to/config>/docker-compose.yml up -d
+```
+
+** We recommend updating the the latest version of Docker Compose
 
 ### Linux (amd64) Install
 
