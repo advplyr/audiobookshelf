@@ -243,6 +243,17 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 [from @silentArtifact](https://github.com/advplyr/audiobookshelf/issues/241#issuecomment-1036732329)
 
+### [Traefik Reverse Proxy](https://doc.traefik.io/traefik/)
+
+Middleware relating to CORS will cause the app to report Unknown Error when logging in. To prevent this don't apply any of the following headers to the router for this site:
+
+<ul>
+   <li>accessControlAllowMethods</li>
+   <li>accessControlAllowOriginList</li>
+   <li>accessControlMaxAge</li>
+</ul>
+
+From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/945074590374318170) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
 <br />
 
 # Run from source

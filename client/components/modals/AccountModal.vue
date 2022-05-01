@@ -86,7 +86,6 @@
                 <ui-toggle-switch v-model="newUser.permissions.accessAllTags" @input="accessAllTagsToggled" />
               </div>
             </div>
-
             <div v-if="!newUser.permissions.accessAllTags" class="my-4">
               <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
             </div>
@@ -181,9 +180,7 @@ export default {
       if (this.$refs.modal) this.$refs.modal.setHide()
     },
     accessAllTagsToggled(val) {
-      if (!val && !this.newUser.itemTagsAccessible.length) {
-        this.newUser.itemTagsAccessible = this.libraries.map((l) => l.id)
-      } else if (val && this.newUser.itemTagsAccessible.length) {
+      if (val && this.newUser.itemTagsAccessible.length) {
         this.newUser.itemTagsAccessible = []
       }
     },
@@ -214,6 +211,10 @@ export default {
       }
       if (!this.newUser.permissions.accessAllLibraries && !this.newUser.librariesAccessible.length) {
         this.$toast.error('Must select at least one library')
+        return
+      }
+      if (!this.newUser.permissions.accessAllTags && !this.newUser.itemTagsAccessible.length) {
+        this.$toast.error('Must select at least one tag')
         return
       }
 
