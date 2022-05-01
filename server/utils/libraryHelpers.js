@@ -406,7 +406,7 @@ module.exports = {
         if (libraryItem.media.metadata.series.length) {
           for (const librarySeries of libraryItem.media.metadata.series) {
             const mediaProgress = allItemProgress.length ? allItemProgress[0] : null
-            const bookInProgress = mediaProgress && mediaProgress.inProgress
+            const bookInProgress = mediaProgress && (mediaProgress.inProgress || mediaProgress.isFinished)
             const libraryItemJson = libraryItem.toJSONMinified()
             libraryItemJson.seriesSequence = librarySeries.sequence
 
@@ -445,7 +445,7 @@ module.exports = {
 
               if (bookInProgress) { // Update if this series is in progress
                 seriesMap[librarySeries.id].inProgress = true
-                if (!seriesMap[librarySeries.id].sequenceInProgress) {
+                if (!seriesMap[librarySeries.id].sequenceInProgress || (librarySeries.sequence && String(librarySeries.sequence).localeCompare(String(seriesMap[librarySeries.id].sequenceInProgress), undefined, { sensitivity: 'base', numeric: true }) > 0)) {
                   seriesMap[librarySeries.id].sequenceInProgress = librarySeries.sequence
                   seriesMap[librarySeries.id].bookInProgressLastUpdate = mediaProgress.lastUpdate
                 }
