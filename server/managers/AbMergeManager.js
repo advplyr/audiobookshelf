@@ -121,7 +121,7 @@ class AbMergeManager {
         '-acodec aac',
         '-ac 2',
         '-b:a 64k',
-        '-id3v2_version 3'
+        '-movflags use_metadata_tags'
       ])
     } else {
       ffmpegOptions.push('-max_muxing_queue_size 1000')

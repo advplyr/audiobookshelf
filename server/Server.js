@@ -30,6 +30,7 @@ const LogManager = require('./managers/LogManager')
 const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
+const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 
 class Server {
   constructor(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -72,11 +73,12 @@ class Server {
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.coverManager = new CoverManager(this.db, this.cacheManager)
     this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
+    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 

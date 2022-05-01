@@ -204,12 +204,12 @@ function parseTags(format, verbose) {
     }
   }
 
-  var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime', 'file_tag_isbn']
-  keysToLookOutFor.forEach((key) => {
-    if (tags[key]) {
-      Logger.debug(`Notable! ${key} => ${tags[key]}`)
-    }
-  })
+  // var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime', 'file_tag_isbn']
+  // keysToLookOutFor.forEach((key) => {
+  //   if (tags[key]) {
+  //     Logger.debug(`Notable! ${key} => ${tags[key]}`)
+  //   }
+  // })
   return tags
 }
 

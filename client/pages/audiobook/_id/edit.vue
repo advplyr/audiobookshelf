@@ -38,7 +38,9 @@
       </div>
       <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
         <transition-group type="transition" :name="!drag ? 'flip-list' : null">
-          <li v-for="(audio, index) in files" :key="audio.ino" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center">
+          <li v-for="(audio, index) in files" :key="audio.ino" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center relative">
+            <div v-if="audiofilesEncoding[audio.ino]" class="absolute top-0 left-0 w-full h-full bg-success bg-opacity-25" />
+
             <div class="font-book text-center px-4 py-1 w-12">
               {{ audio.include ? index - numExcluded + 1 : -1 }}
             </div>
@@ -71,12 +73,18 @@
             <div class="font-sans text-xs font-normal w-56">
               {{ audio.error }}
             </div>
-            <div class="font-sans text-xs font-normal w-40 flex justify-center">
-              <ui-toggle-switch v-model="audio.include" :off-color="'error'" @input="includeToggled(audio)" />
+            <div class="font-sans text-xs font-normal w-40 flex items-center justify-center">
+              <widgets-loading-spinner v-if="audiofilesEncoding[audio.ino]" />
+              <p v-if="audiofilesEncoding[audio.ino]" class="text-warning pl-4 text-base">Encoding</p>
+              <ui-toggle-switch v-else v-model="audio.include" :off-color="'error'" @input="includeToggled(audio)" />
             </div>
           </li>
         </transition-group>
       </draggable>
+
+      <div v-if="showExperimentalFeatures && isRootUser" class="w-full flex justify-end items-center py-6">
+        <ui-btn color="primary" small :loading="updatingMetadata" @click="updateAudioFileMetadata">Encode metadata in audio files <span class="text-warning font-bold text-xs">(experimental)</span></ui-btn>
+      </div>
     </div>
   </div>
 </template>
@@ -125,10 +133,18 @@ export default {
         ghostClass: 'ghost'
       },
       saving: false,
-      currentSort: 'current'
+      currentSort: 'current',
+      updatingMetadata: false,
+      audiofilesEncoding: {}
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
+    isRootUser() {
+      return this.$store.getters['user/getIsRoot']
+    },
     media() {
       return this.libraryItem.media || {}
     },
@@ -162,12 +178,23 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
-    },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
+    updateAudioFileMetadata() {
+      if (confirm(`Warning!\n\nThis will modify the audio files for this audiobook.\nMake sure your audio files are backed up before using this feature.`)) {
+        this.updatingMetadata = true
+        this.$axios
+          .$get(`/api/items/${this.libraryItemId}/audio-metadata`)
+          .then(() => {
+            console.log('Audio metadata encode started')
+          })
+          .catch((error) => {
+            console.error('Audio metadata encode failed', error)
+            this.updatingMetadata = false
+          })
+      }
+    },
     draggableUpdate(e) {
       this.currentSort = ''
     },
@@ -242,7 +269,33 @@ export default {
       } else {
         return 'check_circle'
       }
+    },
+    audioMetadataStarted(data) {
+      console.log('audio metadata started', data)
+      if (data.libraryItemId !== this.libraryItemId) return
+      this.updatingMetadata = true
+    },
+    audioMetadataFinished(data) {
+      console.log('audio metadata finished', data)
+      if (data.libraryItemId !== this.libraryItemId) return
+      this.updatingMetadata = false
+      this.audiofilesEncoding = {}
+      this.$toast.success('Audio file metadata updated')
+    },
+    audiofileMetadataStarted(data) {
+      if (data.libraryItemId !== this.libraryItemId) return
+      this.$set(this.audiofilesEncoding, data.ino, true)
+    },
+    audiofileMetadataFinished(data) {
+      if (data.libraryItemId !== this.libraryItemId) return
+      this.$set(this.audiofilesEncoding, data.ino, false)
     }
+  },
+  mounted() {
+    this.$root.socket.on('audio_metadata_started', this.audioMetadataStarted)
+    this.$root.socket.on('audio_metadata_finished', this.audioMetadataFinished)
+    this.$root.socket.on('audiofile_metadata_started', this.audiofileMetadataStarted)
+    this.$root.socket.on('audiofile_metadata_finished', this.audiofileMetadataFinished)
   }
 }
 </script>

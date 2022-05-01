@@ -354,6 +354,22 @@ class LibraryItemController {
     })
   }
 
+  // POST: api/items/:id/audio-metadata
+  async updateAudioFileMetadata(req, res) {
+    if (!req.user.isRoot) {
+      Logger.error(`[LibraryItemController] Non-root user attempted to update audio metadata`, req.user)
+      return res.sendStatus(403)
+    }
+
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
+      Logger.error(`[LibraryItemController] Invalid library item`)
+      return res.sendStatus(500)
+    }
+
+    this.audioMetadataManager.updateAudioFileMetadataForItem(req.user, req.libraryItem)
+    res.sendStatus(200)
+  }
+
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)

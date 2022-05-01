@@ -39,7 +39,7 @@ async function runFfmpeg() {
     ffmpegCommand.on('stderr', (stdErrline) => {
       parentPort.postMessage({
         type: 'FFMPEG',
-        level: 'error',
+        level: 'debug',
         log: '[DownloadWorker] Ffmpeg Stderr: ' + stdErrline
       })
     })
