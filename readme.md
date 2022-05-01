@@ -107,29 +107,15 @@ Debian package will use this config file `/etc/default/audiobookshelf` if exists
 
 ### Ubuntu Install via PPA
 
-A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa), add and install:
+A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa)
 
-```bash
-curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - 
-
-sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" 
-
-sudo apt update 
-
-sudo apt install audiobookshelf
-```
-
-or use a single command
-
-```bash
-curl -s --compressed "https://advplyr.github.io/audiobookshelf-ppa/KEY.gpg" | sudo apt-key add - && sudo curl -s --compressed -o /etc/apt/sources.list.d/audiobookshelf.list "https://advplyr.github.io/audiobookshelf-ppa/audiobookshelf.list" && sudo apt update && sudo apt install audiobookshelf
-```
+See [install docs](https://www.audiobookshelf.org/install/#ubuntu)
 
 ### Install via debian package
 
 Get the `deb` file from the [github repo](https://github.com/advplyr/audiobookshelf-ppa).
 
-See [instructions](https://www.audiobookshelf.org/install#debian)
+See [install docs](https://www.audiobookshelf.org/install#debian)
 
 
 #### Linux file locations
