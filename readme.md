@@ -245,7 +245,7 @@ Middleware relating to CORS will cause the app to report Unknown Error when logg
    <li>accessControlMaxAge</li>
 </ul>
 
-From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/94507459037431817) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
+From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/945074590374318170) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
 <br />
 
 # Run from source
