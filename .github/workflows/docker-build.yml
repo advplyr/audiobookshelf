@@ -13,8 +13,6 @@ on:
       - server/**
       - index.js
       - package.json
-  release:
-    types: [published, edited]
   # Allows you to run workflow manually from Actions tab
   workflow_dispatch:
 
