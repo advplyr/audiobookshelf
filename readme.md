@@ -71,6 +71,7 @@ docker run -d \
   -e AUDIOBOOKSHELF_GID=100 \
   -p 13378:80 \
   -v </path/to/audiobooks>:/audiobooks \
+  -v </path/to/your/podcasts>:/podcasts \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
@@ -87,17 +88,21 @@ docker start audiobookshelf
 
 ### Running with Docker Compose
 
-```bash
+```yaml
 ### docker-compose.yml ###
 services:
   audiobookshelf:
     image: ghcr.io/advplyr/audiobookshelf
+    environment:
+      - AUDIOBOOKSHELF_UID=99
+      - AUDIOBOOKSHELF_GID=100
     ports:
       - 13378:80
     volumes:
-      - <path/to/your/audiobooks>:/audiobooks
-      - <path/to/metadata>:/metadata
-      - <path/to/config>:/config
+      - </path/to/your/audiobooks>:/audiobooks
+      - </path/to/your/podcasts>:/podcasts
+      - </path/to/config>:/config
+      - </path/to/metadata>:/metadata
 ```
 
 ### Docker Compose Update
