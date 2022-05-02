@@ -168,7 +168,7 @@ class PodcastController {
 
   async openPodcastFeed(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user attempted to open podcast feed`, req.user)
+      Logger.error(`[PodcastController] Non-admin user attempted to open podcast feed`, req.user.username)
       return res.sendStatus(500)
     }
 
@@ -178,6 +178,17 @@ class PodcastController {
       success: true,
       feedUrl: feedData.feedUrl
     })
+  }
+
+  async closePodcastFeed(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to close podcast feed`, req.user.username)
+      return res.sendStatus(500)
+    }
+
+    this.rssFeedManager.closePodcastFeedForItem(req.params.id)
+
+    res.sendStatus(200)
   }
 
   async updateEpisode(req, res) {

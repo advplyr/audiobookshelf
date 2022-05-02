@@ -17,6 +17,11 @@ class LibraryItemController {
         item.userMediaProgress = req.user.getMediaProgress(item.id, episodeId)
       }
 
+      if (includeEntities.includes('rssfeed')) {
+        var feedData = this.rssFeedManager.findFeedForItem(item.id)
+        item.rssFeedUrl = feedData ? feedData.feedUrl : null
+      }
+
       if (item.mediaType == 'book') {
         if (includeEntities.includes('authors')) {
           item.media.metadata.authors = item.media.metadata.authors.map(au => {

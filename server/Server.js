@@ -75,7 +75,7 @@ class Server {
     this.coverManager = new CoverManager(this.db, this.cacheManager)
     this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.rssFeedManager = new RssFeedManager(this.db)
+    this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
 
@@ -204,6 +204,9 @@ class Server {
     app.get('/feed/:id', (req, res) => {
       Logger.info(`[Server] requesting rss feed ${req.params.id}`)
       this.rssFeedManager.getFeed(req, res)
+    })
+    app.get('/feed/:id/cover', (req, res) => {
+      this.rssFeedManager.getFeedCover(req, res)
     })
     app.get('/feed/:id/item/*', (req, res) => {
       Logger.info(`[Server] requesting rss feed ${req.params.id}`)

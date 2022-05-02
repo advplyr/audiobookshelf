@@ -186,6 +186,7 @@ class ApiRouter {
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
     this.router.post('/podcasts/:id/open-feed', PodcastController.middleware.bind(this), PodcastController.openPodcastFeed.bind(this))
+    this.router.post('/podcasts/:id/close-feed', PodcastController.middleware.bind(this), PodcastController.closePodcastFeed.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
 
     //

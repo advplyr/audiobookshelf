@@ -158,8 +158,8 @@
             </ui-tooltip>
 
             <!-- Experimental RSS feed open -->
-            <ui-tooltip v-if="isPodcast && showExperimentalFeatures" text="Open RSS Feed" direction="top">
-              <ui-icon-btn icon="rss_feed" class="mx-0.5" outlined @click="openRSSFeed" />
+            <ui-tooltip v-if="showRssFeedBtn" text="Open RSS Feed" direction="top">
+              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeedUrl ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
           </div>
 
@@ -183,6 +183,7 @@
     </div>
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
+    <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed-url="rssFeedUrl" />
   </div>
 </template>
 
@@ -194,7 +195,7 @@ export default {
     }
 
     // Include episode downloads for podcasts
-    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors,downloads`).catch((error) => {
+    var item = await app.$axios.$get(`/api/items/${params.id}?expanded=1&include=authors,downloads,rssfeed`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -203,7 +204,8 @@ export default {
       return redirect('/')
     }
     return {
-      libraryItem: item
+      libraryItem: item,
+      rssFeedUrl: item.rssFeedUrl || null
     }
   },
   data() {
@@ -214,7 +216,8 @@ export default {
       showPodcastEpisodeFeed: false,
       podcastFeedEpisodes: [],
       episodesDownloading: [],
-      episodeDownloadsQueued: []
+      episodeDownloadsQueued: [],
+      showRssFeedModal: false
     }
   },
   computed: {
@@ -373,6 +376,11 @@ export default {
     },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
+    },
+    showRssFeedBtn() {
+      if (!this.showExperimentalFeatures) return false
+      // If rss feed is open then show feed url to users otherwise just show to admins
+      return this.isPodcast && (this.userIsAdminOrUp || this.rssFeedUrl)
     }
   },
   methods: {
@@ -483,6 +491,15 @@ export default {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
     },
+    clickRSSFeed() {
+      if (!this.rssFeedUrl) {
+        if (confirm(`Are you sure you want to open an RSS Feed for this podcast?`)) {
+          this.openRSSFeed()
+        }
+      } else {
+        this.showRssFeedModal = true
+      }
+    },
     openRSSFeed() {
       const payload = {
         serverAddress: window.origin
@@ -493,7 +510,11 @@ export default {
       this.$axios
         .$post(`/api/podcasts/${this.libraryItemId}/open-feed`, payload)
         .then((data) => {
-          console.log('Opened RSS Feed', data)
+          if (data.success) {
+            console.log('Opened RSS Feed', data)
+            this.rssFeedUrl = data.feedUrl
+            this.showRssFeedModal = true
+          }
         })
         .catch((error) => {
           console.error('Failed to open RSS Feed', error)
@@ -515,6 +536,18 @@ export default {
         this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
       }
+    },
+    rssFeedOpen(data) {
+      if (data.libraryItemId === this.libraryItemId) {
+        console.log('RSS Feed Opened', data)
+        this.rssFeedUrl = data.feedUrl
+      }
+    },
+    rssFeedClosed(data) {
+      if (data.libraryItemId === this.libraryItemId) {
+        console.log('RSS Feed Closed', data)
+        this.rssFeedUrl = null
+      }
     }
   },
   mounted() {
@@ -527,12 +560,16 @@ export default {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
     this.$root.socket.on('item_updated', this.libraryItemUpdated)
+    this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
   },
   beforeDestroy() {
     this.$root.socket.off('item_updated', this.libraryItemUpdated)
+    this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
