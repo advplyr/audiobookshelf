@@ -1,4 +1,5 @@
 const Path = require('path')
+const fs = require('fs-extra')
 const { Podcast } = require('podcast')
 const { getId } = require('../utils/index')
 const Logger = require('../Logger')
