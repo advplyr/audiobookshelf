@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <!-- Split to mp3 -->
+    <!-- Embed Metadata -->
     <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
@@ -59,18 +59,10 @@
         </div>
         <div class="flex-grow" />
         <div>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
-
-          <ui-btn v-if="abmergeStatus !== $constants.DownloadStatus.READY" :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="true" @click="startAudiobookMerge">Not yet implemented</ui-btn>
-          <div v-else>
-            <div class="flex">
-              <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
-              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" />
-            </div>
-            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(abmergeDownload.size) }}</p>
-          </div>
+          <ui-btn :to="`/item/${libraryItemId}/manage`" class="flex items-center"
+            >Open Manager
+            <span class="material-icons text-lg ml-2">launch</span>
+          </ui-btn>
         </div>
       </div>
     </div>

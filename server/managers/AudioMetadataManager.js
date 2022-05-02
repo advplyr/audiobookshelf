@@ -32,13 +32,14 @@ class AudioMetadataMangaer {
     var metadataFilePath = Path.join(outputDir, 'metadata.txt')
     await writeMetadataFile(libraryItem, metadataFilePath)
 
+    // TODO: Split into batches
     const proms = audioFiles.map(af => {
       return this.updateAudioFileMetadata(libraryItem.id, af, outputDir, metadataFilePath)
     })
 
     const results = await Promise.all(proms)
 
-    Logger.debug(`[AudioMetadataManager] Finished`, results)
+    Logger.debug(`[AudioMetadataManager] Finished`)
 
     await fs.remove(outputDir)
 
@@ -123,7 +124,9 @@ class AudioMetadataMangaer {
               resolve(resultPayload)
             }
           } else if (message.type === 'FFMPEG') {
-            if (Logger[message.level]) {
+            if (message.level === 'debug' && process.env.NODE_ENV === 'production') {
+              // stderr is not necessary in production
+            } else if (Logger[message.level]) {
               Logger[message.level](message.log)
             }
           }
