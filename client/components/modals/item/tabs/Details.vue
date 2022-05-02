@@ -166,7 +166,7 @@ export default {
       if (updateResult) {
         if (updateResult.updated) {
           this.$toast.success('Item details updated')
-          // this.$emit('close')
+          this.$emit('close')
         } else {
           this.$toast.info('No updates were necessary')
         }
