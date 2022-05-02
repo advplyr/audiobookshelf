@@ -156,6 +156,11 @@
             <ui-tooltip v-if="isPodcast && userIsAdminOrUp" text="Find Episodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
+
+            <!-- Experimental RSS feed open -->
+            <ui-tooltip v-if="isPodcast && showExperimentalFeatures" text="Open RSS Feed" direction="top">
+              <ui-icon-btn icon="rss_feed" class="mx-0.5" outlined @click="openRSSFeed" />
+            </ui-tooltip>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -477,6 +482,22 @@ export default {
     collectionsClick() {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setShowUserCollectionsModal', true)
+    },
+    openRSSFeed() {
+      const payload = {
+        serverAddress: window.origin
+      }
+      if (this.$isDev) payload.serverAddress = 'http://localhost:3333'
+
+      console.log('Payload', payload)
+      this.$axios
+        .$post(`/api/podcasts/${this.libraryItemId}/open-feed`, payload)
+        .then((data) => {
+          console.log('Opened RSS Feed', data)
+        })
+        .catch((error) => {
+          console.error('Failed to open RSS Feed', error)
+        })
     },
     episodeDownloadQueued(episodeDownload) {
       if (episodeDownload.libraryItemId === this.libraryItemId) {

@@ -120,14 +120,7 @@ class PodcastController {
       return res.sendStatus(500)
     }
 
-    var libraryItem = this.db.getLibraryItem(req.params.id)
-    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
-      return res.sendStatus(404)
-    }
-    if (!req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
-      Logger.error(`[PodcastController] User attempted to check/download episodes for a library without permission`, req.user)
-      return res.sendStatus(500)
-    }
+    var libraryItem = req.libraryItem
     if (!libraryItem.media.metadata.feedUrl) {
       Logger.error(`[PodcastController] checkNewEpisodes no feed url for item ${libraryItem.id}`)
       return res.status(500).send('Podcast has no rss feed url')
@@ -149,10 +142,8 @@ class PodcastController {
   }
 
   getEpisodeDownloads(req, res) {
-    var libraryItem = this.db.getLibraryItem(req.params.id)
-    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
-      return res.sendStatus(404)
-    }
+    var libraryItem = req.libraryItem
+
     var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(libraryItem.id)
     res.json({
       downloads: downloadsInQueue.map(d => d.toJSONForClient())
@@ -164,15 +155,7 @@ class PodcastController {
       Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
       return res.sendStatus(500)
     }
-
-    var libraryItem = this.db.getLibraryItem(req.params.id)
-    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
-      return res.sendStatus(404)
-    }
-    if (!req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
-      Logger.error(`[PodcastController] User attempted to download episodes for library without permission`, req.user)
-      return res.sendStatus(404)
-    }
+    var libraryItem = req.libraryItem
 
     var episodes = req.body
     if (!episodes || !episodes.length) {
@@ -183,14 +166,22 @@ class PodcastController {
     res.sendStatus(200)
   }
 
+  async openPodcastFeed(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to open podcast feed`, req.user)
+      return res.sendStatus(500)
+    }
+
+    const feedData = this.rssFeedManager.openPodcastFeed(req.user, req.libraryItem, req.body)
+
+    res.json({
+      success: true,
+      feedUrl: feedData.feedUrl
+    })
+  }
+
   async updateEpisode(req, res) {
-    var libraryItem = this.db.getLibraryItem(req.params.id)
-    if (!libraryItem || libraryItem.mediaType !== 'podcast') {
-      return res.sendStatus(404)
-    }
-    if (!req.user.canUpload || !req.user.checkCanAccessLibrary(libraryItem.libraryId)) {
-      return res.sendStatus(404)
-    }
+    var libraryItem = req.libraryItem
 
     var episodeId = req.params.episodeId
     if (!libraryItem.media.checkHasEpisode(episodeId)) {
@@ -204,6 +195,36 @@ class PodcastController {
     }
 
     res.json(libraryItem.toJSONExpanded())
+  }
+
+  middleware(req, res, next) {
+    var item = this.db.libraryItems.find(li => li.id === req.params.id)
+    if (!item || !item.media) return res.sendStatus(404)
+
+    if (!item.isPodcast) {
+      return res.sendStatus(500)
+    }
+
+    // Check user can access this library
+    if (!req.user.checkCanAccessLibrary(item.libraryId)) {
+      return res.sendStatus(403)
+    }
+
+    // Check user can access this library item
+    if (!req.user.checkCanAccessLibraryItemWithTags(item.media.tags)) {
+      return res.sendStatus(403)
+    }
+
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[PodcastController] User attempted to delete without permission`, req.user.username)
+      return res.sendStatus(403)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn('[PodcastController] User attempted to update without permission', req.user.username)
+      return res.sendStatus(403)
+    }
+
+    req.libraryItem = item
+    next()
   }
 }
 module.exports = new PodcastController()

@@ -25,7 +25,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -37,6 +37,7 @@ class ApiRouter {
     this.cacheManager = cacheManager
     this.podcastManager = podcastManager
     this.audioMetadataManager = audioMetadataManager
+    this.rssFeedManager = rssFeedManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -180,11 +181,12 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.get('/podcasts/:id/checknew', PodcastController.checkNewEpisodes.bind(this))
-    this.router.get('/podcasts/:id/downloads', PodcastController.getEpisodeDownloads.bind(this))
-    this.router.get('/podcasts/:id/clear-queue', PodcastController.clearEpisodeDownloadQueue.bind(this))
-    this.router.post('/podcasts/:id/download-episodes', PodcastController.downloadEpisodes.bind(this))
-    this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.updateEpisode.bind(this))
+    this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
+    this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
+    this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
+    this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
+    this.router.post('/podcasts/:id/open-feed', PodcastController.middleware.bind(this), PodcastController.openPodcastFeed.bind(this))
+    this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
 
     //
     // Misc Routes

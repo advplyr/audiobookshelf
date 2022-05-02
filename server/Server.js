@@ -31,6 +31,7 @@ const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
+const RssFeedManager = require('./managers/RssFeedManager')
 
 class Server {
   constructor(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
@@ -74,11 +75,12 @@ class Server {
     this.coverManager = new CoverManager(this.db, this.cacheManager)
     this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.rssFeedManager = new RssFeedManager(this.db)
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 
@@ -196,6 +198,16 @@ class Server {
       var remainingPath = req.params['0']
       var fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
+    })
+
+    // RSS Feed temp route
+    app.get('/feed/:id', (req, res) => {
+      Logger.info(`[Server] requesting rss feed ${req.params.id}`)
+      this.rssFeedManager.getFeed(req, res)
+    })
+    app.get('/feed/:id/item/*', (req, res) => {
+      Logger.info(`[Server] requesting rss feed ${req.params.id}`)
+      this.rssFeedManager.getFeedItem(req, res)
     })
 
     // Client dynamic routes
