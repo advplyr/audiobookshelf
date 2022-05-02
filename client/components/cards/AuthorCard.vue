@@ -11,10 +11,10 @@
       </div>
 
       <!-- Search icon btn -->
-      <div v-show="!searching && isHovering" class="absolute top-0 left-0 p-2 cursor-pointer hover:text-white text-gray-200 transform transition-transform hover:scale-125" @click.prevent.stop="searchAuthor">
+      <div v-show="!searching && isHovering && userCanUpdate" class="absolute top-0 left-0 p-2 cursor-pointer hover:text-white text-gray-200 transform transition-transform hover:scale-125" @click.prevent.stop="searchAuthor">
         <span class="material-icons text-lg">search</span>
       </div>
-      <div v-show="isHovering && !searching" class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200 transform transition-transform hover:scale-125" @click.prevent.stop="$emit('edit', author)">
+      <div v-show="isHovering && !searching && userCanUpdate" class="absolute top-0 right-0 p-2 cursor-pointer hover:text-white text-gray-200 transform transition-transform hover:scale-125" @click.prevent.stop="$emit('edit', author)">
         <span class="material-icons text-lg">edit</span>
       </div>
 
@@ -65,6 +65,9 @@ export default {
     },
     numBooks() {
       return this._author.numBooks || 0
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
     }
   },
   methods: {
