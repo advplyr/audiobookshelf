@@ -75,7 +75,7 @@ docker run -d \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
-  ghcr.io/advplyr/audiobookshelf
+  ghcr.io/advplyr/audiobookshelf:2.0.8
 ```
 
 ### Docker Update
@@ -92,7 +92,7 @@ docker start audiobookshelf
 ### docker-compose.yml ###
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:2.0.8
     environment:
       - AUDIOBOOKSHELF_UID=99
       - AUDIOBOOKSHELF_GID=100
