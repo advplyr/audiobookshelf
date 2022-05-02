@@ -62,9 +62,9 @@ export default {
           component: 'modals-item-tabs-match'
         },
         {
-          id: 'merge',
-          title: 'Merge',
-          component: 'modals-item-tabs-merge',
+          id: 'manage',
+          title: 'Manage',
+          component: 'modals-item-tabs-manage',
           experimental: true
         }
       ]
@@ -123,12 +123,12 @@ export default {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.experimental && !this.showExperimentalFeatures) return false
-        if (tab.id === 'merge' && (this.isMissing || this.mediaType !== 'book')) return false
+        if (tab.id === 'manage' && (this.isMissing || this.mediaType !== 'book')) return false
         if (this.mediaType == 'podcast' && tab.id == 'chapters') return false
         if (this.mediaType == 'book' && tab.id == 'episodes') return false
 
-        if ((tab.id === 'merge' || tab.id === 'files') && this.userCanDownload) return true
-        if (tab.id !== 'merge' && tab.id !== 'files' && this.userCanUpdate) return true
+        if ((tab.id === 'manage' || tab.id === 'files') && this.userCanDownload) return true
+        if (tab.id !== 'manage' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })

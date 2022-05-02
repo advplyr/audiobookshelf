@@ -1,10 +1,11 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
+    <!-- Merge to m4b -->
     <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
-          <p class="text-lg">M4B Audiobook File <span class="text-error">*</span></p>
-          <p class="max-w-xs text-sm pt-2 text-gray-300">Generate a .M4B audiobook file with embedded cover image and chapters.</p>
+          <p class="text-lg">Make M4B Audiobook File <span class="text-error">*</span></p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Generate a .M4B audiobook file with embedded metadata, cover image, and chapters. <br /><span class="text-warning">*</span> Does not delete existing audio files.</p>
         </div>
         <div class="flex-grow" />
         <div>
@@ -24,13 +25,63 @@
       </div>
     </div>
 
-    <p class="text-left text-base mb-4 py-4">
+    <!-- Split to mp3 -->
+    <div v-if="showMp3Split" class="w-full border border-black-200 p-4 my-8">
+      <div class="flex items-center">
+        <div>
+          <p class="text-lg">Split M4B to MP3's</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Generate multiple MP3's split by chapters with embedded metadata, cover image, and chapters. <br /><span class="text-warning">*</span> Does not delete existing audio files.</p>
+        </div>
+        <div class="flex-grow" />
+        <div>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
+
+          <ui-btn v-if="abmergeStatus !== $constants.DownloadStatus.READY" :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="true" @click="startAudiobookMerge">Not yet implemented</ui-btn>
+          <div v-else>
+            <div class="flex">
+              <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
+              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" />
+            </div>
+            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(abmergeDownload.size) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Split to mp3 -->
+    <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
+      <div class="flex items-center">
+        <div>
+          <p class="text-lg">Embed Metadata</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">Embed metadata into audio files including cover image and chapters. <br /><span class="text-warning">*</span> Modifies audio files.</p>
+        </div>
+        <div class="flex-grow" />
+        <div>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
+          <p v-if="abmergeStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
+
+          <ui-btn v-if="abmergeStatus !== $constants.DownloadStatus.READY" :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="true" @click="startAudiobookMerge">Not yet implemented</ui-btn>
+          <div v-else>
+            <div class="flex">
+              <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
+              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" />
+            </div>
+            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(abmergeDownload.size) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p v-if="showM4bDownload" class="text-left text-base mb-4 py-4">
       <span class="text-error">* <strong>Experimental</strong></span
       >&nbsp;-&nbsp;M4b merge can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be deleted. Download will timeout after 20 minutes.
     </p>
 
-    <p v-if="isSingleM4b" class="text-lg text-center my-8">Audiobook is already a single m4b!</p>
-    <p v-else-if="!mediaTracks.length" class="text-lg text-center my-8">No audio tracks to merge</p>
+    <!-- <p v-if="isSingleM4b" class="text-lg text-center my-8">Audiobook is already a single m4b!</p> -->
+    <p v-if="!mediaTracks.length" class="text-lg text-center my-8">No audio tracks to merge</p>
 
     <div v-if="isDownloading" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div class="w-80 border border-black-400 bg-bg rounded-xl h-20">
@@ -97,9 +148,16 @@ export default {
     isSingleM4b() {
       return this.mediaTracks.length === 1 && this.mediaTracks[0].metadata.ext.toLowerCase() === '.m4b'
     },
+    chapters() {
+      return this.media.chapters || []
+    },
     showM4bDownload() {
-      if (this.libraryItem.isMissing || !this.mediaTracks.length) return false
-      return !this.isSingleM4b && this.mediaTracks.length > 0
+      if (!this.mediaTracks.length) return false
+      return !this.isSingleM4b
+    },
+    showMp3Split() {
+      if (!this.mediaTracks.length) return false
+      return this.isSingleM4b && this.chapters.length
     }
   },
   methods: {
