@@ -155,7 +155,10 @@ class PodcastManager {
   schedulePodcastEpisodeCron() {
     try {
       Logger.debug(`[PodcastManager] Scheduled podcast episode check cron "${this.serverSettings.podcastEpisodeSchedule}"`)
-      this.episodeScheduleTask = cron.schedule(this.serverSettings.podcastEpisodeSchedule, this.checkForNewEpisodes.bind(this))
+      this.episodeScheduleTask = cron.schedule(this.serverSettings.podcastEpisodeSchedule, () => {
+        Logger.debug(`[PodcastManager] Running cron`)
+        this.checkForNewEpisodes()
+      })
     } catch (error) {
       Logger.error(`[PodcastManager] Failed to schedule podcast cron ${this.serverSettings.podcastEpisodeSchedule}`, error)
     }
@@ -172,14 +175,17 @@ class PodcastManager {
   async checkForNewEpisodes() {
     var podcastsWithAutoDownload = this.db.libraryItems.filter(li => li.mediaType === 'podcast' && li.media.autoDownloadEpisodes)
     if (!podcastsWithAutoDownload.length) {
+      Logger.info(`[PodcastManager] checkForNewEpisodes - No podcasts with auto download set`)
       this.cancelCron()
       return
     }
+    Logger.debug(`[PodcastManager] checkForNewEpisodes - Checking ${podcastsWithAutoDownload.length} Podcasts`)
 
     for (const libraryItem of podcastsWithAutoDownload) {
       const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
       Logger.info(`[PodcastManager] checkForNewEpisodes Cron for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
       var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
+      Logger.debug(`[PodcastManager] checkForNewEpisodes checked result ${newEpisodes ? newEpisodes.length : 'N/A'}`)
 
       if (!newEpisodes) { // Failed
         // Allow up to 3 failed attempts before disabling auto download
@@ -253,11 +259,13 @@ class PodcastManager {
   }
 
   getPodcastFeed(feedUrl) {
-    return axios.get(feedUrl).then(async (data) => {
+    Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}"`)
+    return axios.get(feedUrl, { timeout: 5000 }).then(async (data) => {
       if (!data || !data.data) {
         Logger.error('Invalid podcast feed request response')
         return false
       }
+      Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}" success - parsing xml`)
       var payload = await parsePodcastRssFeedXml(data.data)
       if (!payload) {
         return false
