@@ -60,7 +60,8 @@
         <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
       </div>
 
-      <div ref="moreIcon" v-show="!isSelectionMode && !recentEpisode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+      <!-- More Menu Icon -->
+      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-100" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
@@ -345,6 +346,19 @@ export default {
       return this.store.getters['user/getIsRoot']
     },
     moreMenuItems() {
+      if (this.recentEpisode) {
+        return [
+          {
+            func: 'editPodcast',
+            text: 'Edit Podcast'
+          },
+          {
+            func: 'toggleFinished',
+            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+          }
+        ]
+      }
+
       var items = []
       if (!this.isPodcast) {
         items = [
@@ -447,10 +461,14 @@ export default {
         isFinished: !this.itemIsFinished
       }
       this.isProcessingReadUpdate = true
+
+      var apiEndpoint = `/api/me/progress/${this.libraryItemId}`
+      if (this.recentEpisode) apiEndpoint += `/${this.recentEpisode.id}`
+
       var toast = this.$toast || this.$nuxt.$toast
       var axios = this.$axios || this.$nuxt.$axios
       axios
-        .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
+        .$patch(apiEndpoint, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
           toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
@@ -460,6 +478,9 @@ export default {
           this.isProcessingReadUpdate = false
           toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
+    },
+    editPodcast() {
+      this.$emit('editPodcast', this.libraryItem)
     },
     rescan() {
       this.rescanning = true

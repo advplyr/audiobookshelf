@@ -4,12 +4,12 @@
       <div class="w-full h-full pt-6">
         <div v-if="shelf.type === 'book' || shelf.type === 'podcast'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editBook" />
+            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editItem" />
           </template>
         </div>
         <div v-if="shelf.type === 'episode'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editEpisode" />
+            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @editPodcast="editItem" @edit="editEpisode" />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
@@ -101,10 +101,10 @@ export default {
       this.selectedAuthor = author
       this.showAuthorModal = true
     },
-    editBook(audiobook) {
-      var bookIds = this.shelf.entities.map((e) => e.id)
-      this.$store.commit('setBookshelfBookIds', bookIds)
-      this.$store.commit('showEditModal', audiobook)
+    editItem(libraryItem) {
+      var itemIds = this.shelf.entities.map((e) => e.id)
+      this.$store.commit('setBookshelfBookIds', itemIds)
+      this.$store.commit('showEditModal', libraryItem)
     },
     editEpisode({ libraryItem, episode }) {
       this.$store.commit('setSelectedLibraryItem', libraryItem)
