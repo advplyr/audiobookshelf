@@ -112,11 +112,22 @@ export default {
               items: []
             })
             var newtreemap = currtreemap.items[currtreemap.items.length - 1]
-            dirReader.readEntries((entries) => {
-              let entriesPromises = []
-              for (let entr of entries) entriesPromises.push(traverseFileTreePromise(entr, newtreemap))
-              resolve(Promise.all(entriesPromises))
-            })
+
+            let entriesPromises = []
+            // readEntries returns 100 items max, continue calling readEntries until empty
+            function readEntries() {
+              dirReader.readEntries((entries) => {
+                if (entries.length > 0) {
+                  for (let entr of entries) {
+                    entriesPromises.push(traverseFileTreePromise(entr, newtreemap))
+                  }
+                  readEntries()
+                } else {
+                  resolve(Promise.all(entriesPromises))
+                }
+              })
+            }
+            readEntries()
           }
         })
       }
