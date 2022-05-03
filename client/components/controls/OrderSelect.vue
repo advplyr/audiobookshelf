@@ -53,6 +53,10 @@ export default {
           value: 'size'
         },
         {
+          text: 'Duration',
+          value: 'media.duration'
+        },
+        {
           text: 'File Birthtime',
           value: 'birthtimeMs'
         },
@@ -77,6 +81,10 @@ export default {
         {
           text: 'Size',
           value: 'size'
+        },
+        {
+          text: '# of Episodes',
+          value: 'media.numTracks'
         },
         {
           text: 'File Birthtime',

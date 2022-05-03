@@ -72,6 +72,9 @@ export const actions = {
       if (state.settings.orderBy == 'media.metadata.authorName' || state.settings.orderBy == 'media.metadata.authorNameLF') {
         settingsUpdate.orderBy = 'media.metadata.author'
       }
+      if (state.settings.orderBy == 'media.duration') {
+        settingsUpdate.orderBy = 'media.numTracks'
+      }
       var invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
       var filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
       if (invalidFilters.includes(filterByFirstPart)) {
@@ -80,6 +83,9 @@ export const actions = {
     } else {
       if (state.settings.orderBy == 'media.metadata.author') {
         settingsUpdate.orderBy = 'media.metadata.authorName'
+      }
+      if (state.settings.orderBy == 'media.numTracks') {
+        settingsUpdate.orderBy = 'media.duration'
       }
     }
     if (Object.keys(settingsUpdate).length) {
