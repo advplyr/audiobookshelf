@@ -131,8 +131,21 @@ class BackupManager {
         var filename = filesInDir[i]
         if (filename.endsWith('.audiobookshelf')) {
           var fullFilePath = Path.join(this.BackupPath, filename)
-          const zip = new StreamZip.async({ file: fullFilePath })
-          const data = await zip.entryData('details')
+
+          let zip = null
+          let data = null
+          try {
+            zip = new StreamZip.async({ file: fullFilePath })
+            data = await zip.entryData('details')
+          } catch (error) {
+            if (error.message === "Bad archive") {
+              Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
+              continue;
+            } else {
+              throw error
+            }
+          }
+
           var details = data.toString('utf8').split('\n')
 
           var backup = new Backup({ details, fullPath: fullFilePath })
