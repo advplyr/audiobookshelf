@@ -173,6 +173,12 @@ class PodcastController {
     }
 
     const feedData = this.rssFeedManager.openPodcastFeed(req.user, req.libraryItem, req.body)
+    if (feedData.error) {
+      return res.json({
+        success: false,
+        error: feedData.error
+      })
+    }
 
     res.json({
       success: true,

@@ -125,6 +125,31 @@ Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
   return sanitized
 }
 
+// SOURCE: https://gist.github.com/spyesx/561b1d65d4afb595f295
+//   modified: allowed underscores
+Vue.prototype.$sanitizeSlug = (str) => {
+  if (!str) return ''
+
+  str = str.replace(/^\s+|\s+$/g, '') // trim
+  str = str.toLowerCase()
+
+  // remove accents, swap ñ for n, etc
+  var from = "àáäâèéëêìíïîòóöôùúüûñçěščřžýúůďťň·/,:;"
+  var to = "aaaaeeeeiiiioooouuuuncescrzyuudtn-----"
+
+  for (var i = 0, l = from.length; i < l; i++) {
+    str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i))
+  }
+
+  str = str.replace('.', '-') // replace a dot by a dash 
+    .replace(/[^a-z0-9 -_]/g, '') // remove invalid chars
+    .replace(/\s+/g, '-') // collapse whitespace and replace by a dash
+    .replace(/-+/g, '-') // collapse dashes
+    .replace(/\//g, '') // collapse all forward-slashes
+
+  return str
+}
+
 Vue.prototype.$copyToClipboard = (str, ctx) => {
   return new Promise((resolve) => {
     if (!navigator.clipboard) {

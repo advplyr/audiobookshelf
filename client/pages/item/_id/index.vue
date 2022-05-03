@@ -492,33 +492,7 @@ export default {
       this.$store.commit('globals/setShowUserCollectionsModal', true)
     },
     clickRSSFeed() {
-      if (!this.rssFeedUrl) {
-        if (confirm(`Are you sure you want to open an RSS Feed for this podcast?`)) {
-          this.openRSSFeed()
-        }
-      } else {
-        this.showRssFeedModal = true
-      }
-    },
-    openRSSFeed() {
-      const payload = {
-        serverAddress: window.origin
-      }
-      if (this.$isDev) payload.serverAddress = 'http://localhost:3333'
-
-      console.log('Payload', payload)
-      this.$axios
-        .$post(`/api/podcasts/${this.libraryItemId}/open-feed`, payload)
-        .then((data) => {
-          if (data.success) {
-            console.log('Opened RSS Feed', data)
-            this.rssFeedUrl = data.feedUrl
-            this.showRssFeedModal = true
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to open RSS Feed', error)
-        })
+      this.showRssFeedModal = true
     },
     episodeDownloadQueued(episodeDownload) {
       if (episodeDownload.libraryItemId === this.libraryItemId) {

@@ -59,23 +59,23 @@ class RssFeedManager {
     readStream.pipe(res)
   }
 
-  openFeed(userId, feedId, libraryItem, serverAddress) {
+  openFeed(userId, slug, libraryItem, serverAddress) {
     const podcast = libraryItem.media
 
-    const feedUrl = `${serverAddress}/feed/${feedId}`
+    const feedUrl = `${serverAddress}/feed/${slug}`
     // Removed Podcast npm package and ip package
     const feed = new Podcast({
       title: podcast.metadata.title,
       description: podcast.metadata.description,
       feedUrl,
       siteUrl: serverAddress,
-      imageUrl: podcast.coverPath ? `${serverAddress}/feed/${feedId}/cover` : `${serverAddress}/Logo.png`,
+      imageUrl: podcast.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`,
       author: podcast.metadata.author || 'advplyr',
       language: 'en'
     })
     podcast.episodes.forEach((episode) => {
       var contentUrl = episode.audioTrack.contentUrl.replace(/\\/g, '/')
-      contentUrl = contentUrl.replace(`/s/item/${libraryItem.id}`, `/feed/${feedId}/item`)
+      contentUrl = contentUrl.replace(`/s/item/${libraryItem.id}`, `/feed/${slug}/item`)
 
       feed.addItem({
         title: episode.title,
@@ -92,7 +92,8 @@ class RssFeedManager {
     })
 
     const feedData = {
-      id: feedId,
+      id: slug,
+      slug,
       userId,
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
@@ -101,14 +102,22 @@ class RssFeedManager {
       feedUrl,
       feed
     }
-    this.feeds[feedId] = feedData
+    this.feeds[slug] = feedData
     return feedData
   }
 
   openPodcastFeed(user, libraryItem, options) {
     const serverAddress = options.serverAddress
-    const feedId = getId('feed')
-    const feedData = this.openFeed(user.id, feedId, libraryItem, serverAddress)
+    const slug = options.slug
+
+    if (this.feeds[slug]) {
+      Logger.error(`[RssFeedManager] Slug already in use`)
+      return {
+        error: `Slug "${slug}" already in use`
+      }
+    }
+
+    const feedData = this.openFeed(user.id, slug, libraryItem, serverAddress)
     Logger.debug(`[RssFeedManager] Opened podcast feed ${feedData.feedUrl}`)
     this.emitter('rss_feed_open', { libraryItemId: libraryItem.id, feedUrl: feedData.feedUrl })
     return feedData
