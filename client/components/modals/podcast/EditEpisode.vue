@@ -8,6 +8,9 @@
     <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div class="flex flex-wrap">
         <div class="w-1/3 p-1">
+          <ui-text-input-with-label v-model="newEpisode.season" label="Season" />
+        </div>
+        <div class="w-1/3 p-1">
           <ui-text-input-with-label v-model="newEpisode.episode" label="Episode" />
         </div>
         <div class="w-1/3 p-1">
@@ -39,6 +42,7 @@ export default {
     return {
       processing: false,
       newEpisode: {
+        season: null,
         episode: null,
         episodeType: null,
         title: null,
@@ -92,6 +96,7 @@ export default {
       }
     },
     init() {
+      this.newEpisode.season = this.episode.season || ''
       this.newEpisode.episode = this.episode.episode || ''
       this.newEpisode.episodeType = this.episode.episodeType || ''
       this.newEpisode.title = this.episode.title || ''

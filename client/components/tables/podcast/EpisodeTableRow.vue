@@ -20,6 +20,7 @@
           <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
+          <p v-if="episode.season" class="px-4 text-sm text-gray-300">Season #{{ episode.season }}</p>
           <p v-if="episode.episode" class="px-4 text-sm text-gray-300">Episode #{{ episode.episode }}</p>
           <p v-if="publishedAt" class="px-4 text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
         </div>
