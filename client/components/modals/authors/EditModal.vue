@@ -112,8 +112,10 @@ export default {
         return null
       })
       if (result) {
-        if (result.updated) this.$toast.success('Author updated')
-        else this.$toast.info('No updates were needed')
+        if (result.updated) {
+          this.$toast.success('Author updated')
+          this.show = false
+        } else this.$toast.info('No updates were needed')
       }
       this.processing = false
     },
