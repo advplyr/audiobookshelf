@@ -343,8 +343,8 @@ export default {
     userCanDownload() {
       return this.store.getters['user/getUserCanDownload']
     },
-    userIsRoot() {
-      return this.store.getters['user/getIsRoot']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
       if (this.recentEpisode) {
@@ -383,7 +383,7 @@ export default {
           text: 'Match'
         })
       }
-      if (this.userIsRoot && !this.isFile) {
+      if (this.userIsAdminOrUp && !this.isFile) {
         items.push({
           func: 'rescan',
           text: 'Re-Scan'

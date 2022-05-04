@@ -331,8 +331,8 @@ class LibraryItemController {
 
   // DELETE: api/items/all
   async deleteAll(req, res) {
-    if (!req.user.isRoot) {
-      Logger.warn('User other than root attempted to delete all library items', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.warn('User other than admin attempted to delete all library items', req.user)
       return res.sendStatus(403)
     }
     Logger.info('Removing all Library Items')
@@ -341,10 +341,10 @@ class LibraryItemController {
     else res.sendStatus(500)
   }
 
-  // GET: api/items/:id/scan (Root)
+  // GET: api/items/:id/scan (admin)
   async scan(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to scan library item`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user attempted to scan library item`, req.user)
       return res.sendStatus(403)
     }
 
@@ -361,7 +361,7 @@ class LibraryItemController {
 
   // POST: api/items/:id/audio-metadata
   async updateAudioFileMetadata(req, res) {
-    if (!req.user.isRoot) {
+    if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-root user attempted to update audio metadata`, req.user)
       return res.sendStatus(403)
     }

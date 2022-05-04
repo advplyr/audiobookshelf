@@ -159,10 +159,10 @@ class MiscController {
     res.json(downloads)
   }
 
-  // PATCH: api/settings (Root)
+  // PATCH: api/settings (admin)
   async updateServerSettings(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to update server settings', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error('User other than admin attempting to update server settings', req.user)
       return res.sendStatus(403)
     }
     var settingsUpdate = req.body
@@ -185,9 +185,9 @@ class MiscController {
     })
   }
 
-  // POST: api/purgecache (Root)
+  // POST: api/purgecache (admin)
   async purgeCache(req, res) {
-    if (!req.user.isRoot) {
+    if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
     Logger.info(`[ApiRouter] Purging all cache`)
@@ -239,8 +239,8 @@ class MiscController {
   }
 
   getAllTags(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[MiscController] Non-root user attempted to getAllTags`)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[MiscController] Non-admin user attempted to getAllTags`)
       return res.sendStatus(404)
     }
     var tags = []

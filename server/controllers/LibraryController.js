@@ -320,7 +320,7 @@ class LibraryController {
 
   // PATCH: Change the order of libraries
   async reorder(req, res) {
-    if (!req.user.isRoot) {
+    if (!req.user.isAdminOrUp) {
       Logger.error('[LibraryController] ReorderLibraries invalid user', req.user)
       return res.sendStatus(403)
     }
@@ -457,7 +457,7 @@ class LibraryController {
   }
 
   async matchAll(req, res) {
-    if (!req.user.isRoot) {
+    if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to match library items`, req.user)
       return res.sendStatus(403)
     }
@@ -467,7 +467,7 @@ class LibraryController {
 
   // GET: api/scan (Root)
   async scan(req, res) {
-    if (!req.user.isRoot) {
+    if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
       return res.sendStatus(403)
     }

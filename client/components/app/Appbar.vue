@@ -30,7 +30,7 @@
           <span class="material-icons" aria-label="Upload Media" role="button">upload</span>
         </nuxt-link>
 
-        <nuxt-link v-if="isRootUser" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="userIsAdminOrUp" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <span class="material-icons" aria-label="System Settings" role="button">settings</span>
         </nuxt-link>
 
@@ -100,8 +100,8 @@ export default {
     user() {
       return this.$store.state.user.user
     },
-    isRootUser() {
-      return this.$store.getters['user/getIsRoot']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     username() {
       return this.user ? this.user.username : 'err'

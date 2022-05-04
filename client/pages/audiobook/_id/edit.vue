@@ -134,9 +134,6 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
-    isRootUser() {
-      return this.$store.getters['user/getIsRoot']
-    },
     media() {
       return this.libraryItem.media || {}
     },

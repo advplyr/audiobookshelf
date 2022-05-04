@@ -25,11 +25,11 @@ export default {
     return {}
   },
   computed: {
-    userIsRoot() {
-      return this.$store.getters['user/getIsRoot']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     configRoutes() {
-      if (!this.userIsRoot) {
+      if (!this.userIsAdminOrUp) {
         return [
           {
             id: 'config-stats',

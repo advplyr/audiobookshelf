@@ -15,7 +15,7 @@
 <script>
 export default {
   asyncData({ store, redirect, route }) {
-    if (!store.getters['user/getIsRoot']) {
+    if (!store.getters['user/getIsAdminOrUp']) {
       // Non-Root user only has access to the listening stats page
       if (route.name !== 'config-stats') {
         redirect('/config/stats')

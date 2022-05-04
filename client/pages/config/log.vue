@@ -34,11 +34,6 @@
 
 <script>
 export default {
-  asyncData({ store, redirect }) {
-    if (!store.getters['user/getIsRoot']) {
-      redirect('/?error=unauthorized')
-    }
-  },
   data() {
     return {
       search: null,

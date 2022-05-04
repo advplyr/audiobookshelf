@@ -4,16 +4,16 @@ class BackupController {
   constructor() { }
 
   async create(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[BackupController] Non-Root user attempting to craete backup`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user attempting to craete backup`, req.user)
       return res.sendStatus(403)
     }
     this.backupManager.requestCreateBackup(res)
   }
 
   async delete(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[BackupController] Non-Root user attempting to delete backup`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user attempting to delete backup`, req.user)
       return res.sendStatus(403)
     }
     var backup = this.backupManager.backups.find(b => b.id === req.params.id)
@@ -25,8 +25,8 @@ class BackupController {
   }
 
   async upload(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[BackupController] Non-Root user attempting to upload backup`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user attempting to upload backup`, req.user)
       return res.sendStatus(403)
     }
     if (!req.files.file) {
@@ -37,8 +37,8 @@ class BackupController {
   }
 
   async apply(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error(`[BackupController] Non-Root user attempting to apply backup`, req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user attempting to apply backup`, req.user)
       return res.sendStatus(403)
     }
     var backup = this.backupManager.backups.find(b => b.id === req.params.id)

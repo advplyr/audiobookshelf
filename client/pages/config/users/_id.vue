@@ -14,7 +14,7 @@
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
       <div class="cursor-pointer text-gray-400 hover:text-white" @click="copyToClipboard(userToken)">
-        <p class="py-2 text-xs">
+        <p v-if="userToken" class="py-2 text-xs">
           <strong class="text-white">API Token: </strong><br /><span class="text-white">{{ userToken }}</span
           ><span class="material-icons pl-2 text-base">content_copy</span>
         </p>

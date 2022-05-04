@@ -7,9 +7,9 @@
       <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
     </div>
 
-    <div v-if="loaded && !shelves.length && isRootUser && !search" class="w-full flex flex-col items-center justify-center py-12">
+    <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
-      <div class="flex">
+      <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
       </div>
@@ -44,8 +44,8 @@ export default {
     }
   },
   computed: {
-    isRootUser() {
-      return this.$store.getters['user/getIsRoot']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures

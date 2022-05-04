@@ -6,9 +6,9 @@
       </div>
     </template>
 
-    <div v-if="initialized && !totalShelves && !hasFilter && isRootUser && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
+    <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
-      <div class="flex">
+      <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
       </div>
@@ -79,8 +79,8 @@ export default {
     }
   },
   computed: {
-    isRootUser() {
-      return this.$store.getters['user/getIsRoot']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures

@@ -7,14 +7,15 @@ class UserController {
   constructor() { }
 
   findAll(req, res) {
-    if (!req.user.isRoot) return res.sendStatus(403)
-    var users = this.db.users.map(u => this.userJsonWithItemProgressDetails(u))
+    if (!req.user.isAdminOrUp) return res.sendStatus(403)
+    const hideRootToken = !req.user.isRoot
+    var users = this.db.users.map(u => this.userJsonWithItemProgressDetails(u, hideRootToken))
     res.json(users)
   }
 
   findOne(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to get user', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error('User other than admin attempting to get user', req.user)
       return res.sendStatus(403)
     }
 
@@ -23,12 +24,12 @@ class UserController {
       return res.sendStatus(404)
     }
 
-    res.json(this.userJsonWithItemProgressDetails(user))
+    res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
   }
 
   async create(req, res) {
-    if (!req.user.isRoot) {
-      Logger.warn('Non-root user attempted to create user', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.warn('Non-admin user attempted to create user', req.user)
       return res.sendStatus(403)
     }
     var account = req.body
@@ -57,14 +58,19 @@ class UserController {
   }
 
   async update(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to update user', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[UserController] User other than admin attempting to update user', req.user)
       return res.sendStatus(403)
     }
 
     var user = this.db.users.find(u => u.id === req.params.id)
     if (!user) {
       return res.sendStatus(404)
+    }
+
+    if (user.type === 'root' && !req.user.isRoot) {
+      Logger.error(`[UserController] Admin user attempted to update root user`, req.user.username)
+      return res.sendStatus(403)
     }
 
     var account = req.body
@@ -95,8 +101,8 @@ class UserController {
   }
 
   async delete(req, res) {
-    if (!req.user.isRoot) {
-      Logger.error('User other than root attempting to delete user', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error('User other than admin attempting to delete user', req.user)
       return res.sendStatus(403)
     }
     if (req.params.id === 'root') {
@@ -133,7 +139,7 @@ class UserController {
 
   // GET: api/users/:id/listening-sessions
   async getListeningSessions(req, res) {
-    if (!req.user.isRoot && req.user.id !== req.params.id) {
+    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     }
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
@@ -142,7 +148,7 @@ class UserController {
 
   // GET: api/users/:id/listening-stats
   async getListeningStats(req, res) {
-    if (!req.user.isRoot && req.user.id !== req.params.id) {
+    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     }
     var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)

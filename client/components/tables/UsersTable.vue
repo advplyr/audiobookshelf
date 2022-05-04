@@ -45,8 +45,8 @@
           </td>
           <td class="py-0">
             <div class="w-full flex justify-center">
-              <!-- <span class="material-icons hover:text-gray-400 cursor-pointer text-base pr-2" @click.stop="editUser(user)">edit</span> -->
-              <div class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-opacity-100 cursor-pointer" @click.stop="editUser(user)">
+              <!-- Dont show edit for non-root users -->
+              <div v-if="user.type !== 'root' || userIsRoot" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-opacity-100 cursor-pointer" @click.stop="editUser(user)">
                 <span class="material-icons text-base">edit</span>
               </div>
               <div v-show="user.type !== 'root'" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="deleteUserClick(user)">
@@ -75,6 +75,9 @@ export default {
   computed: {
     currentUserId() {
       return this.$store.state.user.user.id
+    },
+    userIsRoot() {
+      return this.$store.getters['user/getIsRoot']
     },
     usersOnline() {
       var usermap = {}
