@@ -3,12 +3,13 @@
     <div class="flex items-center mb-4">
       <p class="text-lg mb-0 font-semibold">Episodes</p>
       <div class="flex-grow" />
+      <controls-episode-filter-select v-model="filterKey" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="changeFilter" />
       <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="changeSort" />
       <div v-if="userCanUpdate" class="w-12">
         <ui-icon-btn v-if="orderChanged" :loading="savingOrder" icon="save" bg-color="primary" class="ml-auto" @click="saveOrder" />
       </div>
     </div>
-    <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
+    <p v-if="!episodes.length || !episodesCopy.length" class="py-4 text-center text-lg">No Episodes</p>
     <draggable v-model="episodesCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'episode' : null">
         <template v-for="episode in episodesCopy">
@@ -35,9 +36,11 @@ export default {
   data() {
     return {
       sortKey: 'index',
+      filterKey: 'all',
       sortDesc: true,
       drag: false,
       episodesCopy: [],
+      episodesTmp: null,
       orderChanged: false,
       savingOrder: false
     }
@@ -59,7 +62,7 @@ export default {
       }
     },
     userCanUpdate() {
-      return this.$store.getters['user/getUserCanUpdate']
+      return this.$store.getters['user/getUserCanUpdate'] && this.filterKey == "all"
     },
     media() {
       return this.libraryItem.media || {}
@@ -81,6 +84,18 @@ export default {
       })
 
       this.orderChanged = this.checkHasOrderChanged()
+    },
+    changeFilter() {
+      if(this.episodesTmp == null || this.episodesTmp.length == this.episodesCopy.length) this.episodesTmp = this.episodesCopy
+      if(this.filterKey == "all") return this.episodesCopy = this.episodesTmp
+
+      this.episodesCopy = [...this.episodesTmp].filter(episode => {
+        const userState = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+
+        if(this.filterKey == "played" && userState && userState.isFinished) return true
+        else if(this.filterKey == "unplayed" && userState == null || (userState != null && !userState.isFinished)) return true
+        else return false
+      })
     },
     checkHasOrderChanged() {
       for (let i = 0; i < this.episodesCopy.length; i++) {
