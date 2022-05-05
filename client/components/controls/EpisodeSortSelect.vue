@@ -41,6 +41,10 @@ export default {
           value: 'title'
         },
         {
+          text: 'Season',
+          value: 'season'
+        },
+        {
           text: 'Episode',
           value: 'episode'
         },
