@@ -39,8 +39,6 @@
       <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
         <transition-group type="transition" :name="!drag ? 'flip-list' : null">
           <li v-for="(audio, index) in files" :key="audio.ino" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center relative">
-            <div v-if="audiofilesEncoding[audio.ino]" class="absolute top-0 left-0 w-full h-full bg-success bg-opacity-25" />
-
             <div class="font-book text-center px-4 py-1 w-12">
               {{ audio.include ? index - numExcluded + 1 : -1 }}
             </div>
