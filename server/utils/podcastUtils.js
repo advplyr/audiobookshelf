@@ -85,7 +85,7 @@ function extractEpisodeData(item) {
     episode.descriptionPlain = stripHtml(episode.description || '').result
   }
 
-  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     var cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)

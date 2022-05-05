@@ -7,16 +7,16 @@
     </template>
     <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div class="flex flex-wrap">
-        <div class="w-1/3 p-1">
+        <div class="w-1/5 p-1">
           <ui-text-input-with-label v-model="newEpisode.season" label="Season" />
         </div>
-        <div class="w-1/3 p-1">
+        <div class="w-1/5 p-1">
           <ui-text-input-with-label v-model="newEpisode.episode" label="Episode" />
         </div>
-        <div class="w-1/3 p-1">
+        <div class="w-1/5 p-1">
           <ui-text-input-with-label v-model="newEpisode.episodeType" label="Episode Type" />
         </div>
-        <div class="w-1/3 p-1">
+        <div class="w-2/5 p-1">
           <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" label="Pub Date" />
         </div>
         <div class="w-full p-1">
