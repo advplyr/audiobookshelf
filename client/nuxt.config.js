@@ -9,7 +9,6 @@ module.exports = {
     serverUrl: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333',
     chromecastReceiver: 'FD1F76C5'
   },
-  // rootDir: process.env.NODE_ENV !== 'production' ? 'client/' : '',
   telemetry: false,
 
   publicRuntimeConfig: {
@@ -33,8 +32,7 @@ module.exports = {
       }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Ubuntu+Mono&family=Source+Sans+Pro:wght@300;400;600' },
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
     ]
   },
 
