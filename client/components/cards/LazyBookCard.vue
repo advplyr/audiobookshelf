@@ -344,7 +344,7 @@ export default {
       return this.store.getters['user/getUserCanDownload']
     },
     userIsAdminOrUp() {
-      return this.$store.getters['user/getIsAdminOrUp']
+      return this.store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
       if (this.recentEpisode) {
