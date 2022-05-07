@@ -64,7 +64,7 @@ Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join 
 Available in Unraid Community Apps
 
 ```bash
-docker pull advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf
 
 docker run -d \
   -e AUDIOBOOKSHELF_UID=99 \
