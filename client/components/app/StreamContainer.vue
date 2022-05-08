@@ -12,7 +12,7 @@
           <span class="material-icons text-sm">person</span>
           <p v-if="podcastAuthor">{{ podcastAuthor }}</p>
           <p v-else-if="authors.length" class="pl-1.5 text-sm sm:text-base">
-            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
           <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
         </div>
