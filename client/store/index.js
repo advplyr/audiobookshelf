@@ -33,7 +33,7 @@ export const getters = {
     return state.serverSettings[key]
   },
   getBookCoverAspectRatio: state => {
-    if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1
+    if (!state.serverSettings || isNaN(state.serverSettings.coverAspectRatio)) return 1
     return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
   },
   getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
