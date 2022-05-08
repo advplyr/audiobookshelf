@@ -8,13 +8,13 @@
       </div>
       <p v-if="globalWatcherDisabled" class="text-xs text-warning">*Watcher is disabled globally in server settings</p>
     </div>
-    <div class="py-3">
+    <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithAsin" @input="formUpdated" />
         <p class="pl-4 text-lg">Skip matching books that already have an ASIN</p>
       </div>
     </div>
-    <div class="py-3">
+    <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithIsbn" @input="formUpdated" />
         <p class="pl-4 text-lg">Skip matching books that already have an ISBN</p>
@@ -37,7 +37,7 @@ export default {
       provider: null,
       disableWatcher: false,
       skipMatchingMediaWithAsin: false,
-      skipMatchingMediaWithIsbn: false,
+      skipMatchingMediaWithIsbn: false
     }
   },
   computed: {
