@@ -199,10 +199,7 @@ export default {
   scroll-behavior: smooth;
   width: calc(100vw - 80px);
 
-  /* background-color: rgb(214, 116, 36); */
   background-image: var(--bookshelf-texture-img);
-  /* background-position: center; */
-  /* background-size: contain; */
   background-repeat: repeat-x;
 }
 @media (max-width: 768px) {
@@ -213,9 +210,7 @@ export default {
 
 .bookshelfDividerCategorized {
   background: rgb(149, 119, 90);
-  /* background: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%); */
   background: linear-gradient(180deg, rgb(122, 94, 68) 0%, rgb(92, 62, 31) 17%, rgb(82, 54, 26) 88%, rgba(71, 48, 25, 1) 100%);
-  /* background: linear-gradient(180deg, rgb(114, 85, 59) 0%, rgb(73, 48, 22) 17%, rgb(71, 43, 15) 88%, rgb(61, 41, 20) 100%); */
   box-shadow: 2px 14px 8px #111111aa;
 }
 

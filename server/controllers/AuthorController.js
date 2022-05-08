@@ -1,11 +1,59 @@
 const Logger = require('../Logger')
 const { reqSupportsWebp } = require('../utils/index')
+const { createNewSortInstance } = require('fast-sort')
 
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 class AuthorController {
   constructor() { }
 
   async findOne(req, res) {
-    return res.json(req.author)
+    const include = (req.query.include || '').split(',')
+
+    const authorJson = req.author.toJSON()
+
+    // Used on author landing page to include library items and items grouped in series
+    if (include.includes('items')) {
+      authorJson.libraryItems = this.db.libraryItems.filter(li => {
+        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
+      })
+
+      if (include.includes('series')) {
+        const seriesMap = {}
+        // Group items into series
+        authorJson.libraryItems.forEach((li) => {
+          if (li.media.metadata.series) {
+            li.media.metadata.series.forEach((series) => {
+
+              const itemWithSeries = li.toJSONMinified()
+              itemWithSeries.media.metadata.series = series
+
+              if (seriesMap[series.id]) {
+                seriesMap[series.id].items.push(itemWithSeries)
+              } else {
+                seriesMap[series.id] = {
+                  id: series.id,
+                  name: series.name,
+                  items: [itemWithSeries]
+                }
+              }
+            })
+          }
+        })
+        // Sort series items
+        for (const key in seriesMap) {
+          seriesMap[key].items = naturalSort(seriesMap[key].items).asc(li => li.media.metadata.series.sequence)
+        }
+
+        authorJson.series = Object.values(seriesMap)
+      }
+
+      // Minify library items
+      authorJson.libraryItems = authorJson.libraryItems.map(li => li.toJSONMinified())
+    }
+
+    return res.json(authorJson)
   }
 
   async update(req, res) {
@@ -41,6 +89,7 @@ class AuthorController {
       }).length
       this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
+
     res.json({
       author: req.author.toJSON(),
       updated: hasUpdated

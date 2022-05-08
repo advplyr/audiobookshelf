@@ -43,13 +43,13 @@
 
 <script>
 export default {
-  props: {
-    value: Boolean,
-    author: {
-      type: Object,
-      default: () => {}
-    }
-  },
+  // props: {
+  //   value: Boolean,
+  //   author: {
+  //     type: Object,
+  //     default: () => {}
+  //   }
+  // },
   data() {
     return {
       authorCopy: {
@@ -73,11 +73,14 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.globals.showEditAuthorModal
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('globals/setShowEditAuthorModal', val)
       }
+    },
+    author() {
+      return this.$store.state.globals.selectedAuthor
     },
     authorId() {
       if (!this.author) return ''

@@ -7,7 +7,8 @@
         <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
           <div class="flex flex-wrap justify-center">
             <template v-for="author in authors">
-              <nuxt-link :key="author.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`">
+              <!-- <nuxt-link :key="author.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`"> -->
+              <nuxt-link :key="author.id" :to="`/author/${author.id}`">
                 <cards-author-card :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
               </nuxt-link>
             </template>
@@ -15,7 +16,6 @@
         </div>
       </div>
     </div>
-    <modals-authors-edit-modal v-model="showAuthorModal" :author="selectedAuthor" />
   </div>
 </template>
 
@@ -40,9 +40,7 @@ export default {
   data() {
     return {
       loading: true,
-      authors: [],
-      showAuthorModal: false,
-      selectedAuthor: null
+      authors: []
     }
   },
   computed: {
@@ -51,6 +49,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    selectedAuthor() {
+      return this.$store.state.globals.selectedAuthor
     }
   },
   methods: {
@@ -68,7 +69,7 @@ export default {
     },
     authorUpdated(author) {
       if (this.selectedAuthor && this.selectedAuthor.id === author.id) {
-        this.selectedAuthor = author
+        this.$store.commit('globals/setSelectedAuthor', author)
       }
       this.authors = this.authors.map((au) => {
         if (au.id === author.id) {
@@ -81,8 +82,7 @@ export default {
       this.authors = this.authors.filter((au) => au.id !== author.id)
     },
     editAuthor(author) {
-      this.selectedAuthor = author
-      this.showAuthorModal = true
+      this.$store.commit('globals/showEditAuthorModal', author)
     }
   },
   mounted() {
