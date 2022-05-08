@@ -21,7 +21,7 @@ class AuthorFinder {
 
   async findAuthorByName(name, options = {}) {
     if (!name) return null
-    const maxLevenshtein = !isNaN(options.maxLevenshtein) ? Number(options.maxLevenshtein) : 2
+    const maxLevenshtein = !isNaN(options.maxLevenshtein) ? Number(options.maxLevenshtein) : 3
 
     var author = await this.audnexus.findAuthorByName(name, maxLevenshtein)
     if (!author || !author.name) {

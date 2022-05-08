@@ -27,7 +27,7 @@ class Audnexus {
     })
   }
 
-  async findAuthorByName(name, maxLevenshtein = 2) {
+  async findAuthorByName(name, maxLevenshtein = 3) {
     Logger.debug(`[Audnexus] Looking up author by name ${name}`)
     var asins = await this.authorASINsRequest(name)
     var matchingAsin = asins.find(obj => levenshteinDistance(obj.name, name) <= maxLevenshtein)
