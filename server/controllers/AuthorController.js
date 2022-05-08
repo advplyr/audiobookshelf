@@ -16,6 +16,7 @@ class AuthorController {
     // Used on author landing page to include library items and items grouped in series
     if (include.includes('items')) {
       authorJson.libraryItems = this.db.libraryItems.filter(li => {
+        if (!req.user.checkCanAccessLibraryItem(li)) return false // filter out library items user cannot access
         return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
       })
 

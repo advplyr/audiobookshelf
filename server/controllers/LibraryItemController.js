@@ -379,13 +379,8 @@ class LibraryItemController {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)
 
-    // Check user can access this library
-    if (!req.user.checkCanAccessLibrary(item.libraryId)) {
-      return res.sendStatus(403)
-    }
-
     // Check user can access this library item
-    if (!req.user.checkCanAccessLibraryItemWithTags(item.media.tags)) {
+    if (!req.user.checkCanAccessLibraryItem(item)) {
       return res.sendStatus(403)
     }
 

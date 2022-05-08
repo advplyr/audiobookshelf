@@ -11,7 +11,7 @@
           <div class="flex items-center mb-8">
             <h1 class="text-2xl">{{ author.name }}</h1>
 
-            <button class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="editAuthor">
+            <button v-if="userCanUpdate" class="w-8 h-8 rounded-full flex items-center justify-center mx-4 cursor-pointer text-gray-300 hover:text-warning transform hover:scale-125 duration-100" @click="editAuthor">
               <span class="material-icons text-base">edit</span>
             </button>
           </div>
@@ -68,6 +68,9 @@ export default {
     },
     authorSeries() {
       return this.author.series || []
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
     }
   },
   methods: {

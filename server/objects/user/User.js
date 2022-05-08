@@ -341,6 +341,11 @@ class User {
     return this.itemTagsAccessible.some(tag => tags.includes(tag))
   }
 
+  checkCanAccessLibraryItem(libraryItem) {
+    if (!this.checkCanAccessLibrary(libraryItem.libraryId)) return false
+    return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
+  }
+
   findBookmark(libraryItemId, time) {
     return this.bookmarks.find(bm => bm.libraryItemId === libraryItemId && bm.time == time)
   }
