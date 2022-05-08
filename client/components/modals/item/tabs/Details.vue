@@ -1,9 +1,11 @@
 <template>
   <div class="w-full h-full relative">
-    <widgets-book-details-edit v-if="mediaType == 'book'" ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
-    <widgets-podcast-details-edit v-else ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
+    <div id="formWrapper" class="w-full overflow-y-auto">
+      <widgets-book-details-edit v-if="mediaType == 'book'" ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
+      <widgets-podcast-details-edit v-else ref="itemDetailsEdit" :library-item="libraryItem" @submit="submitForm" />
+    </div>
 
-    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'box-shadow-sm-up border-t border-primary border-opacity-50'">
+    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
       <div class="flex items-center px-4">
         <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
 
@@ -224,8 +226,8 @@ export default {
 </script>
 
 <style scoped>
-.details-form-wrapper {
-  height: calc(100% - 70px);
-  max-height: calc(100% - 70px);
+#formWrapper {
+  height: calc(100% - 80px);
+  max-height: calc(100% - 80px);
 }
 </style>

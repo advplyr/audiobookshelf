@@ -18,7 +18,7 @@
       <div class="material-icons text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" @click.stop.prevent="goNextBook" @mousedown.prevent>arrow_forward_ios</div>
     </div>
 
-    <div class="w-full h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative">
+    <div class="w-full h-full max-h-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative">
       <component v-if="libraryItem && show" :is="tabName" :library-item="libraryItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
