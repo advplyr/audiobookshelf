@@ -288,7 +288,6 @@ class LibraryItem {
     // FileMetadata keys
     ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size'].forEach((key) => {
       if (existingFile.metadata[key] !== fileFound.metadata[key]) {
-
         // Add modified flag on file data object if exists and was changed
         if (key === 'mtimeMs' && existingFile.metadata[key]) {
           fileFound.metadata.wasModified = true
@@ -348,7 +347,7 @@ class LibraryItem {
       var fileFoundCheck = this.checkFileFound(lf, true)
       if (fileFoundCheck === null) {
         newLibraryFiles.push(lf)
-      } else if (fileFoundCheck) {
+      } else if (fileFoundCheck && lf.metadata.format !== 'abs') { // Ignore abs file updates
         hasUpdated = true
         existingLibraryFiles.push(lf)
       } else {
