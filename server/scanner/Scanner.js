@@ -291,12 +291,13 @@ class Scanner {
       return this.rescanLibraryItem(lid, libraryScan)
     }))
 
+    itemsUpdated = itemsUpdated.filter(li => li) // Filter out nulls
+
     for (const libraryItem of itemsUpdated) {
       // Temp authors & series are inserted - create them if found
       await this.createNewAuthorsAndSeries(libraryItem)
     }
 
-    itemsUpdated = itemsUpdated.filter(li => li) // Filter out nulls
     if (itemsUpdated.length) {
       libraryScan.resultsUpdated += itemsUpdated.length
       await this.db.updateLibraryItems(itemsUpdated)
@@ -728,16 +729,14 @@ class Scanner {
       var libraryItem = itemsInLibrary[i]
 
       if (libraryItem.media.metadata.asin && library.settings.skipMatchingMediaWithAsin) {
-        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${
-          libraryItem.media.metadata.title
-        }" because it already has an ASIN (${i + 1} of ${itemsInLibrary.length})`)
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
+          }" because it already has an ASIN (${i + 1} of ${itemsInLibrary.length})`)
         continue;
       }
 
       if (libraryItem.media.metadata.isbn && library.settings.skipMatchingMediaWithIsbn) {
-        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${
-          libraryItem.media.metadata.title
-        }" because it already has an ISBN (${i + 1} of ${itemsInLibrary.length})`)
+        Logger.debug(`[Scanner] matchLibraryItems: Skipping "${libraryItem.media.metadata.title
+          }" because it already has an ISBN (${i + 1} of ${itemsInLibrary.length})`)
         continue;
       }
 
