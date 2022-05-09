@@ -7,10 +7,7 @@
         <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
           <div class="flex flex-wrap justify-center">
             <template v-for="author in authors">
-              <!-- <nuxt-link :key="author.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`"> -->
-              <nuxt-link :key="author.id" :to="`/author/${author.id}`">
-                <cards-author-card :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
-              </nuxt-link>
+              <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
             </template>
           </div>
         </div>

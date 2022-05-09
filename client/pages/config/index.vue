@@ -41,7 +41,7 @@
         <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
         <ui-tooltip :text="tooltips.bookshelfView">
           <p class="pl-4 text-lg">
-            Use alternative library bookshelf view
+            Use alternative bookshelf view
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -213,7 +213,7 @@ export default {
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
-        bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
+        bookshelfView: 'Alternative view without wooden bookshelf',
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'

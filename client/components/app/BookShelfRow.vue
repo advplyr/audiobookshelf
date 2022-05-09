@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <div ref="shelf" class="w-full max-w-full categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem', height: shelfHeight + 'px' }" @scroll="scrolled">
+    <div ref="shelf" class="w-full max-w-full bookshelf-row categorizedBookshelfRow relative overflow-x-scroll overflow-y-hidden z-10" :style="{ paddingLeft: paddingLeft * sizeMultiplier + 'rem', height: shelfHeight + 'px' }" @scroll="scrolled">
       <div class="w-full h-full pt-6">
         <div v-if="shelf.type === 'book' || shelf.type === 'podcast'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
@@ -17,18 +17,9 @@
             <cards-lazy-series-card :key="entity.name" :series-mount="entity" :height="bookCoverHeight" :width="bookCoverWidth * 2" :book-cover-aspect-ratio="bookCoverAspectRatio" class="relative mx-2" @hook:updated="updatedBookCard" />
           </template>
         </div>
-        <div v-if="shelf.type === 'tags'" class="flex items-center">
-          <template v-for="entity in shelf.entities">
-            <nuxt-link :key="entity.name" :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(entity.name)}`">
-              <cards-group-card is-categorized :width="bookCoverWidth" :group="entity" :book-cover-aspect-ratio="bookCoverAspectRatio" @hook:updated="updatedBookCard" />
-            </nuxt-link>
-          </template>
-        </div>
         <div v-if="shelf.type === 'authors'" class="flex items-center">
           <template v-for="entity in shelf.entities">
-            <nuxt-link :key="entity.id" :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(entity.id)}`">
-              <cards-author-card :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" @edit="editAuthor" />
-            </nuxt-link>
+            <cards-author-card :key="entity.id" :width="bookCoverWidth / 1.25" :height="bookCoverWidth" :author="entity" :size-multiplier="sizeMultiplier" @hook:updated="updatedBookCard" class="pb-6 mx-2" @edit="editAuthor" />
           </template>
         </div>
       </div>
@@ -48,7 +39,6 @@
     <div v-show="canScrollRight && !isScrolling" class="hidden sm:flex absolute top-0 right-0 w-32 pl-8 bg-black book-shelf-arrow-right items-center justify-center cursor-pointer opacity-0 hover:opacity-100 z-30" @click="scrollRight">
       <span class="material-icons text-6xl text-white">chevron_right</span>
     </div>
-    <modals-authors-edit-modal v-model="showAuthorModal" :author="selectedAuthor" />
   </div>
 </template>
 
@@ -70,9 +60,7 @@ export default {
       canScrollLeft: false,
       isScrolling: false,
       scrollTimer: null,
-      updateTimer: null,
-      showAuthorModal: false,
-      selectedAuthor: null
+      updateTimer: null
     }
   },
   computed: {
@@ -98,8 +86,7 @@ export default {
       this.updateSelectionMode(false)
     },
     editAuthor(author) {
-      this.selectedAuthor = author
-      this.showAuthorModal = true
+      this.$store.commit('globals/showEditAuthorModal', author)
     },
     editItem(libraryItem) {
       var itemIds = this.shelf.entities.map((e) => e.id)
@@ -197,15 +184,8 @@ export default {
 <style>
 .categorizedBookshelfRow {
   scroll-behavior: smooth;
-  width: calc(100vw - 80px);
-
   background-image: var(--bookshelf-texture-img);
   background-repeat: repeat-x;
-}
-@media (max-width: 768px) {
-  .categorizedBookshelfRow {
-    width: 100vw;
-  }
 }
 
 .bookshelfDividerCategorized {

@@ -22,8 +22,9 @@
     </div>
 
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
+
     <!-- Experimental Bookshelf Texture -->
-    <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
+    <div v-show="showExperimentalFeatures && !isAlternativeBookshelfView" class="fixed bottom-4 right-28 z-40">
       <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal">
         <p class="text-sm py-0.5">Texture</p>
       </div>
@@ -126,7 +127,7 @@ export default {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
     },
     isAlternativeBookshelfView() {
-      if (!this.isEntityBook) return false // Only used for bookshelf showing books
+      // if (!this.isEntityBook) return false // Only used for bookshelf showing books
       return this.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     bookCoverAspectRatio() {
@@ -185,7 +186,10 @@ export default {
       return 6
     },
     shelfHeight() {
-      if (this.isAlternativeBookshelfView) return this.entityHeight + 80 * this.sizeMultiplier
+      if (this.isAlternativeBookshelfView) {
+        var extraTitleSpace = this.isEntityBook ? 80 : 40
+        return this.entityHeight + extraTitleSpace * this.sizeMultiplier
+      }
       return this.entityHeight + 40
     },
     totalEntityCardWidth() {

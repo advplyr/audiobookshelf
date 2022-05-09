@@ -13,7 +13,7 @@
     <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
       <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <cards-lazy-book-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" class="relative mx-2" @edit="editItem" @select="selectItem" @hook:updated="setScrollVars" />
+          <cards-lazy-series-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :series-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="$constants.BookshelfView.TITLES" class="relative mx-2" @hook:updated="setScrollVars" />
         </template>
       </div>
     </div>
@@ -55,7 +55,7 @@ export default {
       return this.height - 40 * this.cardScaleMulitiplier
     },
     cardWidth() {
-      return this.cardHeight / this.bookCoverAspectRatio
+      return 2 * (this.cardHeight / this.bookCoverAspectRatio)
     },
     booksPerPage() {
       return Math.floor(this.clientWidth / (this.cardWidth + 16))
@@ -65,34 +65,6 @@ export default {
     }
   },
   methods: {
-    clearSelectedEntities() {
-      this.updateSelectionMode(false)
-    },
-    editItem(libraryItem) {
-      var itemIds = this.items.map((e) => e.id)
-      this.$store.commit('setBookshelfBookIds', itemIds)
-      this.$store.commit('showEditModal', libraryItem)
-    },
-    selectItem(libraryItem) {
-      this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
-      this.$nextTick(() => {
-        this.$eventBus.$emit('item-selected', libraryItem)
-      })
-    },
-    itemSelectedEvt() {
-      this.updateSelectionMode(this.isSelectionMode)
-    },
-    updateSelectionMode(val) {
-      var selectedLibraryItems = this.$store.state.selectedLibraryItems
-
-      this.items.forEach((item) => {
-        var component = this.$refs[`slider-item-${item.id}`]
-        if (!component || !component.length) return
-        component = component[0]
-        component.setSelectionMode(val)
-        component.selected = selectedLibraryItems.includes(item.id)
-      })
-    },
     scrolled() {
       this.setScrollVars()
     },
@@ -131,13 +103,7 @@ export default {
   updated() {
     this.setScrollVars()
   },
-  mounted() {
-    this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
-    this.$eventBus.$on('item-selected', this.itemSelectedEvt)
-  },
-  beforeDestroy() {
-    this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
-    this.$eventBus.$off('item-selected', this.itemSelectedEvt)
-  }
+  mounted() {},
+  beforeDestroy() {}
 }
 </script>

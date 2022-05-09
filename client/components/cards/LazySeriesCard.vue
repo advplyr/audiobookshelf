@@ -13,10 +13,13 @@
       <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ title }}</p>
     </div>
 
-    <div v-if="!isCategorized" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
+    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
       </div>
+    </div>
+    <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
+      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
     </div>
   </div>
 </template>
@@ -28,6 +31,10 @@ export default {
     width: Number,
     height: Number,
     bookCoverAspectRatio: Number,
+    bookshelfView: {
+      type: Number,
+      default: 0
+    },
     isCategorized: Boolean,
     seriesMount: {
       type: Object,
@@ -89,6 +96,10 @@ export default {
     hasValidCovers() {
       var validCovers = this.books.map((bookItem) => bookItem.media.coverPath)
       return !!validCovers.length
+    },
+    isAlternativeBookshelfView() {
+      const constants = this.$constants || this.$nuxt.$constants
+      return this.bookshelfView == constants.BookshelfView.TITLES
     }
   },
   methods: {

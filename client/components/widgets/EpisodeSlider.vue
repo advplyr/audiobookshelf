@@ -13,7 +13,7 @@
     <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
       <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <cards-lazy-book-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" class="relative mx-2" @edit="editItem" @select="selectItem" @hook:updated="setScrollVars" />
+          <cards-lazy-book-card :key="item.id" :ref="`slider-episode-${item.recentEpisode.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" class="relative mx-2" @edit="editEpisode" @editPodcast="editPodcast" @select="selectItem" @hook:updated="setScrollVars" />
         </template>
       </div>
     </div>
@@ -68,7 +68,12 @@ export default {
     clearSelectedEntities() {
       this.updateSelectionMode(false)
     },
-    editItem(libraryItem) {
+    editEpisode({ libraryItem, episode }) {
+      this.$store.commit('setSelectedLibraryItem', libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
+    },
+    editPodcast(libraryItem) {
       var itemIds = this.items.map((e) => e.id)
       this.$store.commit('setBookshelfBookIds', itemIds)
       this.$store.commit('showEditModal', libraryItem)
@@ -85,12 +90,12 @@ export default {
     updateSelectionMode(val) {
       var selectedLibraryItems = this.$store.state.selectedLibraryItems
 
-      this.items.forEach((item) => {
-        var component = this.$refs[`slider-item-${item.id}`]
+      this.items.forEach((ent) => {
+        var component = this.$refs[`slider-episode-${ent.recentEpisode.id}`]
         if (!component || !component.length) return
         component = component[0]
         component.setSelectionMode(val)
-        component.selected = selectedLibraryItems.includes(item.id)
+        component.selected = selectedLibraryItems.includes(ent.id)
       })
     },
     scrolled() {
