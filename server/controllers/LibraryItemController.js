@@ -359,7 +359,7 @@ class LibraryItemController {
     })
   }
 
-  // POST: api/items/:id/audio-metadata
+  // GET: api/items/:id/audio-metadata
   async updateAudioFileMetadata(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-root user attempted to update audio metadata`, req.user)
@@ -373,6 +373,36 @@ class LibraryItemController {
 
     this.audioMetadataManager.updateAudioFileMetadataForItem(req.user, req.libraryItem)
     res.sendStatus(200)
+  }
+
+  // POST: api/items/:id/chapters
+  async updateMediaChapters(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryItemController] User attempted to update chapters with invalid permissions`, req.user.username)
+      return res.sendStatus(403)
+    }
+
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
+      Logger.error(`[LibraryItemController] Invalid library item`)
+      return res.sendStatus(500)
+    }
+
+    const chapters = req.body.chapters || []
+    if (!chapters.length) {
+      Logger.error(`[LibraryItemController] Invalid payload`)
+      return res.sendStatus(400)
+    }
+
+    const wasUpdated = req.libraryItem.media.updateChapters(chapters)
+    if (wasUpdated) {
+      await this.db.updateLibraryItem(req.libraryItem)
+      this.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    }
+
+    res.json({
+      success: true,
+      updated: wasUpdated
+    })
   }
 
   middleware(req, res, next) {

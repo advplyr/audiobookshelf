@@ -89,9 +89,6 @@ export default {
     draggable
   },
   async asyncData({ store, params, app, redirect, route }) {
-    if (!store.state.user.user) {
-      return redirect(`/login?redirect=${route.path}`)
-    }
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }

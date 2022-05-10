@@ -45,5 +45,15 @@ class Audnexus {
       name: author.name
     }
   }
+
+  async getChaptersByASIN(asin) {
+    Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}`)
+    return axios.get(`${this.baseUrl}/books/${asin}/chapters`).then((res) => {
+      return res.data
+    }).catch((error) => {
+      Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}`, error)
+      return null
+    })
+  }
 }
 module.exports = Audnexus

@@ -92,8 +92,9 @@ class ApiRouter {
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
     this.router.patch('/items/:id/episodes', LibraryItemController.middleware.bind(this), LibraryItemController.updateEpisodes.bind(this))
     this.router.delete('/items/:id/episode/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.removeEpisode.bind(this))
-    this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this)) // Root only
-    this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this)) // Root only
+    this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
+    this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this))
+    this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
@@ -204,6 +205,7 @@ class ApiRouter {
     this.router.get('/search/books', MiscController.findBooks.bind(this))
     this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
+    this.router.get('/search/chapters', MiscController.findChapters.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
   }
 

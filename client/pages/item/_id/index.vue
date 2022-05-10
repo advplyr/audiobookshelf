@@ -177,6 +177,8 @@
 
           <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
 
+          <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
+
           <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
         </div>
       </div>
@@ -274,6 +276,9 @@ export default {
     },
     mediaMetadata() {
       return this.media.metadata || {}
+    },
+    chapters() {
+      return this.media.chapters || []
     },
     tracks() {
       return this.media.tracks || []

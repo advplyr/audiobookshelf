@@ -3,6 +3,7 @@ const LibGen = require('../providers/LibGen')
 const GoogleBooks = require('../providers/GoogleBooks')
 const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
+const Audnexus = require('../providers/Audnexus')
 const Logger = require('../Logger')
 const { levenshteinDistance } = require('../utils/index')
 
@@ -13,6 +14,7 @@ class BookFinder {
     this.googleBooks = new GoogleBooks()
     this.audible = new Audible()
     this.iTunesApi = new iTunes()
+    this.audnexus = new Audnexus()
 
     this.verbose = false
   }
@@ -225,6 +227,10 @@ class BookFinder {
       }
     })
     return covers
+  }
+
+  findChapters(asin) {
+    return this.audnexus.getChaptersByASIN(asin)
   }
 }
 module.exports = BookFinder

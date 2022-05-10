@@ -150,12 +150,6 @@ export default {
     toggleBookshelfTexture() {
       this.$store.dispatch('setBookshelfTexture', 'wood2.png')
     },
-    async back() {
-      var popped = await this.$store.dispatch('popRoute')
-      if (popped) this.$store.commit('setIsRoutingBack', true)
-      var backTo = popped || '/'
-      this.$router.push(backTo)
-    },
     cancelSelectionMode() {
       if (this.processingBatchDelete) return
       this.$store.commit('setSelectedLibraryItems', [])

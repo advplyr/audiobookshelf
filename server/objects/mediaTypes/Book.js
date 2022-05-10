@@ -153,6 +153,30 @@ class Book {
     return hasUpdates
   }
 
+  updateChapters(chapters) {
+    var hasUpdates = this.chapters.length !== chapters.length
+    if (hasUpdates) {
+      this.chapters = chapters.map(ch => ({
+        id: ch.id,
+        start: ch.start,
+        end: ch.end,
+        title: ch.title
+      }))
+    } else {
+      for (let i = 0; i < this.chapters.length; i++) {
+        const currChapter = this.chapters[i]
+        const newChapter = chapters[i]
+        if (!hasUpdates && (currChapter.title !== newChapter.title || currChapter.start !== newChapter.start || currChapter.end !== newChapter.end)) {
+          hasUpdates = true
+        }
+        this.chapters[i].title = newChapter.title
+        this.chapters[i].start = newChapter.start
+        this.chapters[i].end = newChapter.end
+      }
+    }
+    return hasUpdates
+  }
+
   updateCover(coverPath) {
     coverPath = coverPath.replace(/\\/g, '/')
     if (this.coverPath === coverPath) return false
@@ -381,19 +405,27 @@ class Book {
         // If audio file has chapters use chapters
         if (file.chapters && file.chapters.length) {
           file.chapters.forEach((chapter) => {
-            var chapterDuration = chapter.end - chapter.start
-            if (chapterDuration > 0) {
-              var title = `Chapter ${currChapterId}`
-              if (chapter.title) {
-                title += ` (${chapter.title})`
+            if (chapter.start > this.duration) {
+              Logger.warn(`[Book] Invalid chapter start time > duration`)
+            } else {
+              var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
+              if (!chapterAlreadyExists) {
+                var chapterDuration = chapter.end - chapter.start
+                if (chapterDuration > 0) {
+                  var title = `Chapter ${currChapterId}`
+                  if (chapter.title) {
+                    title += ` (${chapter.title})`
+                  }
+                  var endTime = Math.min(this.duration, currStartTime + chapterDuration)
+                  this.chapters.push({
+                    id: currChapterId++,
+                    start: currStartTime,
+                    end: endTime,
+                    title
+                  })
+                  currStartTime += chapterDuration
+                }
               }
-              this.chapters.push({
-                id: currChapterId++,
-                start: currStartTime,
-                end: currStartTime + chapterDuration,
-                title
-              })
-              currStartTime += chapterDuration
             }
           })
         } else if (file.duration) {

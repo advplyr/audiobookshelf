@@ -15,8 +15,6 @@ export const state = () => ({
   selectedLibraryItems: [],
   processingBatch: false,
   previousPath: '/',
-  routeHistory: [],
-  isRoutingBack: false,
   showExperimentalFeatures: false,
   backups: [],
   bookshelfBookIds: [],
@@ -74,15 +72,6 @@ export const actions = {
         return false
       })
   },
-  popRoute({ commit, state }) {
-    if (!state.routeHistory.length) {
-      return null
-    }
-    var _history = [...state.routeHistory]
-    var last = _history.pop()
-    commit('setRouteHistory', _history)
-    return last
-  },
   setBookshelfTexture({ commit, state }, img) {
     let root = document.documentElement;
     commit('setBookshelfTexture', img)
@@ -93,12 +82,6 @@ export const actions = {
 export const mutations = {
   setBookshelfBookIds(state, val) {
     state.bookshelfBookIds = val || []
-  },
-  setRouteHistory(state, val) {
-    state.routeHistory = val
-  },
-  setIsRoutingBack(state, val) {
-    state.isRoutingBack = val
   },
   setPreviousPath(state, val) {
     state.previousPath = val
