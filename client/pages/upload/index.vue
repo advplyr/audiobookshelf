@@ -86,6 +86,13 @@ export default {
       uploadFinished: false
     }
   },
+  watch: {
+    selectedLibrary(newVal) {
+      if (newVal && !this.selectedFolderId) {
+        this.setDefaultFolder()
+      }
+    }
+  },
   computed: {
     inputAccept() {
       var extensions = []
