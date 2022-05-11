@@ -1,4 +1,5 @@
 const Path = require('path')
+const date = require('date-and-time')
 const { PlayMethod } = require('../utils/constants')
 const PlaybackSession = require('../objects/PlaybackSession')
 const Stream = require('../objects/Stream')
@@ -53,6 +54,8 @@ class PlaybackSessionManager {
     } else {
       session.timeListening = sessionJson.timeListening
       session.updatedAt = sessionJson.updatedAt
+      session.date = date.format(new Date(), 'YYYY-MM-DD')
+      session.dayOfWeek = date.format(new Date(), 'dddd')
       await this.db.updateEntity('session', session)
     }
 

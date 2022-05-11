@@ -154,7 +154,7 @@ export default {
 
       this.showingTooltipIndex = index
       this.tooltipEl.style.display = 'block'
-      this.tooltipTextEl.innerHTML = block.value ? `<strong>${block.value} minutes listening</strong> on ${block.datePretty}` : `No listening sessions on ${block.datePretty}`
+      this.tooltipTextEl.innerHTML = block.value ? `<strong>${this.$elapsedPretty(block.value, true)} listening</strong> on ${block.datePretty}` : `No listening sessions on ${block.datePretty}`
 
       const calculateRect = this.tooltipEl.getBoundingClientRect()
 
