@@ -41,6 +41,9 @@ Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
 }
 
 Vue.prototype.$elapsedPretty = (seconds) => {
+  if (seconds < 60) {
+    return `${Math.floor(seconds)} sec`
+  }
   var minutes = Math.floor(seconds / 60)
   if (minutes < 70) {
     return `${minutes} min`
