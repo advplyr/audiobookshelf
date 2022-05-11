@@ -40,6 +40,10 @@ class PlaybackSessionManager {
 
   async syncLocalSessionRequest(user, sessionJson, res) {
     var libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
+    if (!libraryItem) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Library item not found for session "${sessionJson.libraryItemId}"`)
+      return res.sendStatus(200)
+    }
 
     var session = await this.db.getPlaybackSession(sessionJson.id)
     if (!session) {
