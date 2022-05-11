@@ -5,6 +5,7 @@ const Path = require('path')
 const Logger = require('../Logger')
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
 const { comparePaths } = require('../utils/index')
+const { getIno } = require('../utils/fileUtils')
 const { ScanResult, LogLevel } = require('../utils/constants')
 
 const AudioFileScanner = require('./AudioFileScanner')
@@ -538,9 +539,19 @@ class Scanner {
     var itemGroupingResults = {}
     for (const itemDir in fileUpdateGroup) {
       var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
+      const dirIno = await getIno(fullPath)
 
       // Check if book dir group is already an item
       var existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
+      if (!existingLibraryItem) {
+        existingLibraryItem = this.db.libraryItems.find(li => li.ino === dirIno)
+        if (existingLibraryItem) {
+          Logger.debug(`[Scanner] scanFolderUpdates: Library item found by inode value "${existingLibraryItem.relPath} => ${itemDir}"`)
+          // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
+          existingLibraryItem.path = fullPath
+          existingLibraryItem.relPath = itemDir
+        }
+      }
       if (existingLibraryItem) {
         // Is the item exactly - check if was deleted
         if (existingLibraryItem.path === fullPath) {

@@ -140,7 +140,6 @@ class FolderWatcher extends EventEmitter {
       return
     }
     Logger.debug(`[Watcher] Rename ${pathFrom} => ${pathTo}`)
-    this.addFileUpdate(libraryId, pathFrom, 'renamed')
     this.addFileUpdate(libraryId, pathTo, 'renamed')
   }
 
