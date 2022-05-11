@@ -127,6 +127,14 @@ input[type=number] {
   border-top: 6px solid white;
 }
 
+.arrow-down-small {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+}
+
 .triangle-right {
   width: 0;
   height: 0;

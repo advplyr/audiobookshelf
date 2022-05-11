@@ -23,6 +23,11 @@ Vue.prototype.$addDaysToToday = (daysToAdd) => {
   if (!date || !isDate(date)) return null
   return date
 }
+Vue.prototype.$addDaysToDate = (jsdate, daysToAdd) => {
+  var date = addDays(jsdate, daysToAdd)
+  if (!date || !isDate(date)) return null
+  return date
+}
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
