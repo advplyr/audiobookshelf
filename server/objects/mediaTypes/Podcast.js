@@ -104,6 +104,15 @@ class Podcast {
   get numTracks() {
     return this.episodes.length
   }
+  get latestEpisodePublished() {
+    var largestPublishedAt = 0
+    this.episodes.forEach((ep) => {
+      if (ep.publishedAt && ep.publishedAt > largestPublishedAt) {
+        largestPublishedAt = ep.publishedAt
+      }
+    })
+    return largestPublishedAt
+  }
 
   update(payload) {
     var json = this.toJSON()
