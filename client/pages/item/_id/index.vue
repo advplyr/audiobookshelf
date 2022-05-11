@@ -383,7 +383,8 @@ export default {
       return this.$store.getters['user/getUserCanDownload']
     },
     showRssFeedBtn() {
-      if (!this.showExperimentalFeatures) return false
+      if (!this.rssFeedUrl && !this.podcastEpisodes.length) return false // Cannot open RSS feed with no episodes
+
       // If rss feed is open then show feed url to users otherwise just show to admins
       return this.isPodcast && (this.userIsAdminOrUp || this.rssFeedUrl)
     }
