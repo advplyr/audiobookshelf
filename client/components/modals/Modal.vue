@@ -93,12 +93,13 @@ export default {
       this.show = false
     },
     clickBg(ev) {
+      if (!this.show) return
       if (this.preventClickoutside) {
         this.preventClickoutside = false
         return
       }
       if (this.processing && this.persistent) return
-      if (ev.srcElement.classList.contains('modal-bg')) {
+      if (ev.srcElement && ev.srcElement.classList.contains('modal-bg')) {
         this.show = false
       }
     },
