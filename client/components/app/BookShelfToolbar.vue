@@ -143,7 +143,7 @@ export default {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
     isIssuesFilter() {
-      return this.filterBy === 'issues'
+      return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
     }
   },
   methods: {
