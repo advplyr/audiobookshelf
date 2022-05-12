@@ -148,6 +148,7 @@ export default {
         })
     },
     init() {
+      this.episodes.sort((a, b) => (a.publishedAt < b.publishedAt) ? 1 : -1)
       for (let i = 0; i < this.episodes.length; i++) {
         var episode = this.episodes[i]
         if (episode.enclosure && !this.itemEpisodeMap[episode.enclosure.url]) {
