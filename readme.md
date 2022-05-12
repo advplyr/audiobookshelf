@@ -64,7 +64,7 @@ Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join 
 Available in Unraid Community Apps
 
 ```bash
-docker pull ghcr.io/advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf:latest
 
 docker run -d \
   -e AUDIOBOOKSHELF_UID=99 \
@@ -75,14 +75,14 @@ docker run -d \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
-  ghcr.io/advplyr/audiobookshelf
+  ghcr.io/advplyr/audiobookshelf:latest
 ```
 
 ### Docker Update
 
 ```bash
 docker stop audiobookshelf
-docker pull ghcr.io/advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf:latest
 docker start audiobookshelf
 ```
 
@@ -92,7 +92,7 @@ docker start audiobookshelf
 ### docker-compose.yml ###
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
     environment:
       - AUDIOBOOKSHELF_UID=99
       - AUDIOBOOKSHELF_GID=100
