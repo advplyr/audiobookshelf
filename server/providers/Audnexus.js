@@ -27,6 +27,19 @@ class Audnexus {
     })
   }
 
+  async findAuthorByASIN(asin) {
+    var author = await this.authorRequest(asin)
+    if (!author) {
+      return null
+    }
+    return {
+      asin: author.asin,
+      description: author.description,
+      image: author.image,
+      name: author.name
+    }
+  }
+
   async findAuthorByName(name, maxLevenshtein = 3) {
     Logger.debug(`[Audnexus] Looking up author by name ${name}`)
     var asins = await this.authorASINsRequest(name)

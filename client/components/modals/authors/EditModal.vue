@@ -139,12 +139,17 @@ export default {
       this.processing = false
     },
     async searchAuthor() {
-      if (!this.authorCopy.name) {
+      if (!this.authorCopy.name && !this.authorCopy.asin) {
         this.$toast.error('Must enter an author name')
         return
       }
       this.processing = true
-      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, { q: this.authorCopy.name }).catch((error) => {
+
+      const payload = {}
+      if (this.authorCopy.asin) payload.asin = this.authorCopy.asin
+      else payload.q = this.authorCopy.name
+
+      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, payload).catch((error) => {
         console.error('Failed', error)
         return null
       })

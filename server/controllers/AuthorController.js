@@ -107,11 +107,16 @@ class AuthorController {
   }
 
   async match(req, res) {
-    var authorData = await this.authorFinder.findAuthorByName(req.body.q)
+    var authorData = null
+    if (req.body.asin) {
+      authorData = await this.authorFinder.findAuthorByASIN(req.body.asin)
+    } else {
+      authorData = await this.authorFinder.findAuthorByName(req.body.q)
+    }
     if (!authorData) {
       return res.status(404).send('Author not found')
     }
-    Logger.debug(`[AuthorController] match author with "${req.body.q}"`, authorData)
+    Logger.debug(`[AuthorController] match author with "${req.body.q || req.body.asin}"`, authorData)
 
     var hasUpdates = false
     if (authorData.asin && req.author.asin !== authorData.asin) {
@@ -121,6 +126,8 @@ class AuthorController {
 
     // Only updates image if there was no image before or the author ASIN was updated
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
+      this.cacheManager.purgeImageCache(req.author.id)
+
       var imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path

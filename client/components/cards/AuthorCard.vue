@@ -65,6 +65,9 @@ export default {
     name() {
       return this._author.name || ''
     },
+    asin() {
+      return this._author.asin || ''
+    },
     numBooks() {
       return this._author.numBooks || 0
     },
@@ -81,7 +84,11 @@ export default {
     },
     async searchAuthor() {
       this.searching = true
-      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, { q: this.name }).catch((error) => {
+      const payload = {}
+      if (this.asin) payload.asin = this.asin
+      else payload.q = this.name
+
+      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, payload).catch((error) => {
         console.error('Failed', error)
         return null
       })
