@@ -442,7 +442,34 @@ export default {
       this.isSelectionMode = val
       if (!val) this.selected = false
     },
-    setEntity(libraryItem) {
+    setEntity(_libraryItem) {
+      var libraryItem = _libraryItem
+
+      // this code block is only necessary when showing a selected series with sequence #
+      //   it will update the selected series so we get realtime updates for series sequence changes
+      if (this.series) {
+        // i know.. but the libraryItem passed to this func cannot be modified so we need to create a copy
+        libraryItem = {
+          ..._libraryItem,
+          media: {
+            ..._libraryItem.media,
+            metadata: {
+              ..._libraryItem.media.metadata
+            }
+          }
+        }
+        var mediaMetadata = libraryItem.media.metadata
+        if (mediaMetadata.series) {
+          var newSeries = mediaMetadata.series.find((se) => se.id === this.series.id)
+          if (newSeries) {
+            // update selected series
+            libraryItem.media.metadata.series = newSeries
+            this.libraryItem = libraryItem
+            return
+          }
+        }
+      }
+
       this.libraryItem = libraryItem
     },
     clickCard(e) {
