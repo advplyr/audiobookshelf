@@ -1,6 +1,9 @@
 <template>
-  <div class="w-20 bg-bg h-full relative box-shadow-side z-40" style="min-width: 80px">
-    <div class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
+  <!-- <div class="w-20 bg-bg h-full relative box-shadow-side z-40" style="min-width: 80px"> -->
+  <div class="w-20 bg-bg h-full fixed left-0 box-shadow-side z-40" style="min-width: 80px" :style="{ top: offsetTop + 'px' }">
+    <!-- ugly little workaround to cover up the shadow overlapping the bookshelf toolbar -->
+    <div v-if="isShowingBookshelfToolbar" class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
+
     <nuxt-link :to="`/library/${currentLibraryId}`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -79,6 +82,13 @@ export default {
     return {}
   },
   computed: {
+    isShowingBookshelfToolbar() {
+      if (!this.$route.name) return false
+      return this.$route.name.startsWith('library')
+    },
+    offsetTop() {
+      return 64
+    },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },

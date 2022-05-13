@@ -2,7 +2,10 @@
   <div class="text-white max-h-screen h-screen overflow-hidden bg-bg">
     <app-appbar />
 
-    <Nuxt />
+    <app-side-rail v-if="isShowingSideRail" class="hidden md:block" />
+    <div id="app-content" class="h-full" :class="{ 'has-siderail': isShowingSideRail }">
+      <Nuxt />
+    </div>
 
     <app-stream-container ref="streamContainer" />
 
@@ -45,6 +48,13 @@ export default {
     },
     isCasting() {
       return this.$store.state.globals.isCasting
+    },
+    isShowingSideRail() {
+      if (!this.$route.name) return false
+      return !this.$route.name.startsWith('config')
+    },
+    appContentMarginLeft() {
+      return this.isShowingSideRail ? 80 : 0
     }
   },
   methods: {
@@ -550,5 +560,14 @@ export default {
 <style>
 .Vue-Toastification__toast-body.custom-class-1 {
   font-size: 14px;
+}
+
+#app-content {
+  width: 100%;
+}
+#app-content.has-siderail {
+  width: calc(100% - 80px);
+  max-width: calc(100% - 80px);
+  margin-left: 80px;
 }
 </style>

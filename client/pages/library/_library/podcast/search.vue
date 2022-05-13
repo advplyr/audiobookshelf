@@ -1,38 +1,33 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail class="hidden md:block" />
-      <div class="flex-grow">
-        <app-book-shelf-toolbar page="podcast-search" />
-        <div class="w-full h-full overflow-y-auto p-12 relative">
-          <div class="w-full max-w-3xl mx-auto">
-            <form @submit.prevent="submit" class="flex">
-              <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
-              <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
-            </form>
-          </div>
+    <app-book-shelf-toolbar page="podcast-search" />
+    <div class="w-full h-full overflow-y-auto p-12 relative">
+      <div class="w-full max-w-3xl mx-auto">
+        <form @submit.prevent="submit" class="flex">
+          <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
+          <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
+        </form>
+      </div>
 
-          <div class="w-full max-w-3xl mx-auto py-4">
-            <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">No podcasts found</p>
-            <template v-for="podcast in results">
-              <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
-                <div class="w-24 min-w-24 h-24 bg-primary">
-                  <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
-                </div>
-                <div class="flex-grow pl-4 max-w-2xl">
-                  <a :href="podcast.pageUrl" class="text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
-                  <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
-                  <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
-                  <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} Episodes</p>
-                </div>
-              </div>
-            </template>
+      <div class="w-full max-w-3xl mx-auto py-4">
+        <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">No podcasts found</p>
+        <template v-for="podcast in results">
+          <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
+            <div class="w-24 min-w-24 h-24 bg-primary">
+              <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
+            </div>
+            <div class="flex-grow pl-4 max-w-2xl">
+              <a :href="podcast.pageUrl" class="text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
+              <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
+              <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
+              <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} Episodes</p>
+            </div>
           </div>
+        </template>
+      </div>
 
-          <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-25 z-40">
-            <ui-loading-indicator />
-          </div>
-        </div>
+      <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-25 z-40">
+        <ui-loading-indicator />
       </div>
     </div>
 

@@ -1,16 +1,11 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail class="hidden md:block" />
-      <div class="flex-grow">
-        <app-book-shelf-toolbar is-home />
-        <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
-          <div class="flex flex-wrap justify-center">
-            <template v-for="author in authors">
-              <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
-            </template>
-          </div>
-        </div>
+    <app-book-shelf-toolbar is-home />
+    <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
+      <div class="flex flex-wrap justify-center">
+        <template v-for="author in authors">
+          <cards-author-card :key="author.id" :author="author" :width="160" :height="200" class="p-3" @edit="editAuthor" />
+        </template>
       </div>
     </div>
   </div>
