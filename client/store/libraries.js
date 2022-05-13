@@ -206,11 +206,11 @@ export const mutations = {
   setLibraryFilterData(state, filterData) {
     state.filterData = filterData
   },
-  updateFilterDataWithAudiobook(state, audiobook) {
-    if (!audiobook || !audiobook.book || !state.filterData) return
-    if (state.currentLibraryId !== audiobook.libraryId) return
+  updateFilterDataWithItem(state, libraryItem) {
+    if (!libraryItem || !state.filterData) return
+    if (state.currentLibraryId !== libraryItem.libraryId) return
     /*
-    var filterdata = {
+    var data = {
       authors: [],
       genres: [],
       tags: [],
@@ -219,36 +219,70 @@ export const mutations = {
       languages: []
     }
     */
+    var mediaMetadata = libraryItem.media.metadata
 
-    if (audiobook.book.authorFL) {
-      audiobook.book.authorFL.split(', ').forEach((author) => {
-        if (author && !state.filterData.authors.includes(author)) {
+    // Add/update book authors
+    if (mediaMetadata.authors && mediaMetadata.authors.length) {
+      mediaMetadata.authors.forEach((author) => {
+        var indexOf = state.filterData.authors.findIndex(au => au.id === author.id)
+        if (indexOf >= 0) {
+          state.filterData.authors.splice(indexOf, 1, author)
+        } else {
           state.filterData.authors.push(author)
+          state.filterData.authors.sort((a, b) => (a.name || '').localeCompare((b.name || '')))
         }
       })
     }
-    if (audiobook.book.narratorFL) {
-      audiobook.book.narratorFL.split(', ').forEach((narrator) => {
-        if (narrator && !state.filterData.narrators.includes(narrator)) {
+
+    // Add/update series
+    if (mediaMetadata.series && mediaMetadata.series.length) {
+      mediaMetadata.series.forEach((series) => {
+        var indexOf = state.filterData.series.findIndex(se => se.id === series.id)
+        if (indexOf >= 0) {
+          state.filterData.series.splice(indexOf, 1, { id: series.id, name: series.name })
+        } else {
+          state.filterData.series.push({ id: series.id, name: series.name })
+          state.filterData.series.sort((a, b) => (a.name || '').localeCompare((b.name || '')))
+        }
+      })
+    }
+
+    // Add genres
+    if (mediaMetadata.genres && mediaMetadata.genres.length) {
+      mediaMetadata.genres.forEach((genre) => {
+        if (!state.filterData.genres.includes(genre)) {
+          state.filterData.genres.push(genre)
+          state.filterData.genres.sort((a, b) => a.localeCompare(b))
+        }
+      })
+    }
+
+    // Add tags
+    if (libraryItem.media.tags && libraryItem.media.tags.length) {
+      libraryItem.media.tags.forEach((tag) => {
+        if (!state.filterData.tags.includes(tag)) {
+          state.filterData.tags.push(tag)
+          state.filterData.tags.sort((a, b) => a.localeCompare(b))
+        }
+      })
+    }
+
+    // Add narrators
+    if (mediaMetadata.narrators && mediaMetadata.narrators.length) {
+      mediaMetadata.narrators.forEach((narrator) => {
+        if (!state.filterData.narrators.includes(narrator)) {
           state.filterData.narrators.push(narrator)
+          state.filterData.narrators.sort((a, b) => a.localeCompare(b))
         }
       })
     }
-    if (audiobook.book.series && !state.filterData.series.includes(audiobook.book.series)) {
-      state.filterData.series.push(audiobook.book.series)
-    }
-    if (audiobook.tags && audiobook.tags.length) {
-      audiobook.tags.forEach((tag) => {
-        if (tag && !state.filterData.tags.includes(tag)) state.filterData.tags.push(tag)
-      })
-    }
-    if (audiobook.book.genres && audiobook.book.genres.length) {
-      audiobook.book.genres.forEach((genre) => {
-        if (genre && !state.filterData.genres.includes(genre)) state.filterData.genres.push(genre)
-      })
-    }
-    if (audiobook.book.language && !state.filterData.languages.includes(audiobook.book.language)) {
-      state.filterData.languages.push(audiobook.book.language)
+
+    // Add language
+    if (mediaMetadata.language) {
+      if (!state.filterData.languages.includes(mediaMetadata.language)) {
+        state.filterData.languages.push(mediaMetadata.language)
+        state.filterData.languages.sort((a, b) => a.localeCompare(b))
+      }
     }
   }
 }

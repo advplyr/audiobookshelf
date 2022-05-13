@@ -186,13 +186,14 @@ export default {
       }
     },
     libraryItemAdded(libraryItem) {
-      // this.$store.commit('libraries/updateFilterDataWithAudiobook', libraryItem)
+      this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)
     },
     libraryItemUpdated(libraryItem) {
       if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
         this.$store.commit('setSelectedLibraryItem', libraryItem)
       }
       this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
+      this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)
     },
     libraryItemRemoved(item) {
       if (this.$route.name.startsWith('item')) {
