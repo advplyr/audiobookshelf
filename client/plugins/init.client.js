@@ -114,10 +114,11 @@ Vue.prototype.$calculateTextSize = (text, styles = {}) => {
   }
 }
 
-Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
+Vue.prototype.$sanitizeFilename = (input, colonReplacement = ' - ') => {
   if (typeof input !== 'string') {
     return false
   }
+  var replacement = ''
   var illegalRe = /[\/\?<>\\:\*\|"]/g;
   var controlRe = /[\x00-\x1f\x80-\x9f]/g;
   var reservedRe = /^\.+$/;
@@ -125,6 +126,7 @@ Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
   var windowsTrailingRe = /[\. ]+$/;
 
   var sanitized = input
+    .replace(':', colonReplacement) // Replace first occurrence of a colon
     .replace(illegalRe, replacement)
     .replace(controlRe, replacement)
     .replace(reservedRe, replacement)

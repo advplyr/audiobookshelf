@@ -1,9 +1,10 @@
 const axios = require('axios')
 const fs = require('fs-extra')
+const Path = require('path')
 const Logger = require('../Logger')
 const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 const LibraryItem = require('../objects/LibraryItem')
-const { getFileTimestampsWithIno } = require('../utils/fileUtils')
+const { getFileTimestampsWithIno, sanitizeFilename } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 
 class PodcastController {
@@ -107,6 +108,12 @@ class PodcastController {
       if (!payload) {
         return res.status(500).send('Invalid podcast RSS feed')
       }
+
+      if (!payload.podcast.metadata.feedUrl) {
+        // Not every RSS feed will put the feed url in their metadata
+        payload.podcast.metadata.feedUrl = url
+      }
+
       res.json(payload)
     }).catch((error) => {
       console.error('Failed', error)
