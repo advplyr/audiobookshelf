@@ -34,18 +34,18 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 
 class Server {
-  constructor(PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, AUDIOBOOK_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH) {
+    this.Source = SOURCE
     this.Port = PORT
     this.Host = HOST
     global.Uid = isNaN(UID) ? 0 : Number(UID)
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
-    global.AudiobookPath = Path.normalize(AUDIOBOOK_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
+
     // Fix backslash if not on Windows
     if (process.platform !== 'win32') {
       global.ConfigPath = global.ConfigPath.replace(/\\/g, '/')
-      global.AudiobookPath = global.AudiobookPath.replace(/\\/g, '/')
       global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
     }
 
@@ -56,10 +56,6 @@ class Server {
     if (!fs.pathExistsSync(global.MetadataPath)) {
       fs.mkdirSync(global.MetadataPath)
       filePerms.setDefaultDirSync(global.MetadataPath, false)
-    }
-    if (!fs.pathExistsSync(global.AudiobookPath)) {
-      fs.mkdirSync(global.AudiobookPath)
-      filePerms.setDefaultDirSync(global.AudiobookPath, false)
     }
 
     this.db = new Db()
@@ -139,8 +135,6 @@ class Server {
     } else {
       await this.db.init()
     }
-
-    this.auth.init()
 
     await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
@@ -231,6 +225,25 @@ class Server {
 
     app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    app.post('/init', (req, res) => {
+      if (this.db.hasRootUser) {
+        Logger.error(`[Server] attempt to init server when server already has a root user`)
+        return res.sendStatus(500)
+      }
+      this.initializeServer(req, res)
+    })
+    app.get('/status', (req, res) => {
+      // status check for client to see if server has been initialized
+      // server has been initialized if a root user exists
+      const payload = {
+        isInit: this.db.hasRootUser
+      }
+      if (!payload.isInit) {
+        payload.ConfigPath = global.ConfigPath
+        payload.MetadataPath = global.MetadataPath
+      }
+      res.json(payload)
+    })
     app.get('/ping', (req, res) => {
       Logger.info('Recieved ping')
       res.json({ success: true })
@@ -291,6 +304,17 @@ class Server {
         }
       })
     })
+  }
+
+  async initializeServer(req, res) {
+    Logger.info(`[Server] Initializing new server`)
+    const newRoot = req.body.newRoot
+    let rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
+    if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
+    let rootToken = await this.auth.generateAccessToken({ userId: 'root' })
+    await this.db.createRootUser(newRoot.username, rootPash, rootToken)
+
+    res.sendStatus(200)
   }
 
   async filesChanged(fileUpdates) {
@@ -433,7 +457,6 @@ class Server {
     const initialPayload = {
       // TODO: this is sent with user auth now, update mobile app to use that then remove this
       serverSettings: this.db.serverSettings.toJSON(),
-      audiobookPath: global.AudiobookPath,
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),

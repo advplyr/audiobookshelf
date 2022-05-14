@@ -12,7 +12,7 @@
 
         <ui-libraries-dropdown />
 
-        <controls-global-search class="hidden md:block" />
+        <controls-global-search v-if="currentLibrary" class="hidden md:block" />
         <div class="flex-grow" />
 
         <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
@@ -24,11 +24,11 @@
           <google-cast-launcher></google-cast-launcher>
         </div>
 
-        <nuxt-link to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="currentLibrary" to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <span class="material-icons" aria-label="User Stats" role="button">equalizer</span>
         </nuxt-link>
 
-        <nuxt-link v-if="userCanUpload" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
           <span class="material-icons" aria-label="Upload Media" role="button">upload</span>
         </nuxt-link>
 

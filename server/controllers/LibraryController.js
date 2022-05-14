@@ -42,6 +42,7 @@ class LibraryController {
     newLibraryPayload.displayOrder = this.db.libraries.length + 1
     library.setData(newLibraryPayload)
     await this.db.insertEntity('library', library)
+    // TODO: Only emit to users that have access
     this.emitter('library_added', library.toJSON())
 
     // Add library watcher

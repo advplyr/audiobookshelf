@@ -2,7 +2,7 @@ export const state = () => ({
   libraries: [],
   lastLoad: 0,
   listeners: [],
-  currentLibraryId: 'main',
+  currentLibraryId: null,
   folders: [],
   issues: 0,
   folderLastUpdate: 0,

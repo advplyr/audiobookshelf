@@ -51,7 +51,7 @@ export default {
     },
     isShowingSideRail() {
       if (!this.$route.name) return false
-      return !this.$route.name.startsWith('config')
+      return !this.$route.name.startsWith('config') && this.$store.state.libraries.currentLibraryId
     },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
@@ -173,6 +173,7 @@ export default {
       this.$store.commit('libraries/addUpdate', library)
     },
     async libraryRemoved(library) {
+      console.log('Library removed', library)
       this.$store.commit('libraries/remove', library)
 
       // When removed currently selected library then set next accessible library
@@ -191,7 +192,8 @@ export default {
             this.$router.push(`/library/${nextLibrary.id}`)
           }
         } else {
-          console.error('User has no accessible libraries')
+          console.error('User has no more accessible libraries')
+          this.$store.commit('libraries/setCurrentLibrary', null)
         }
       }
     },

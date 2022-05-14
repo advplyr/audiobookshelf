@@ -5,6 +5,9 @@
 <script>
 export default {
   asyncData({ redirect, store }) {
+    if (!store.state.libraries.currentLibraryId) {
+      return redirect('/oops?message=No libraries')
+    }
     redirect(`/library/${store.state.libraries.currentLibraryId}`)
   },
   data() {

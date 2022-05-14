@@ -3,7 +3,6 @@ set -e
 set -o pipefail
 
 FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
-DEFAULT_AUDIOBOOK_PATH="/usr/share/audiobookshelf/audiobooks"
 DEFAULT_DATA_PATH="/usr/share/audiobookshelf"
 DEFAULT_PORT=7331
 DEFAULT_HOST="0.0.0.0"
@@ -54,14 +53,6 @@ setup_config_interactive() {
   if should_build_config; then
     echo "Okay, let's setup a new config."
 
-    AUDIOBOOK_PATH=""
-    read -p "
-    Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]:" AUDIOBOOK_PATH
-
-    if [[ -z "$AUDIOBOOK_PATH" ]]; then
-      AUDIOBOOK_PATH="$DEFAULT_AUDIOBOOK_PATH"
-    fi
-
     DATA_PATH=""
     read -p "
     Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]:" DATA_PATH
@@ -78,8 +69,7 @@ setup_config_interactive() {
       PORT="$DEFAULT_PORT"
     fi
 
-    config_text="AUDIOBOOK_PATH=$AUDIOBOOK_PATH
-  METADATA_PATH=$DATA_PATH/metadata
+    config_text="METADATA_PATH=$DATA_PATH/metadata
   CONFIG_PATH=$DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
@@ -102,8 +92,7 @@ setup_config() {
   else
     echo "Creating default config."
 
-    config_text="AUDIOBOOK_PATH=$DEFAULT_AUDIOBOOK_PATH
-  METADATA_PATH=$DEFAULT_DATA_PATH/metadata
+    config_text="METADATA_PATH=$DEFAULT_DATA_PATH/metadata
   CONFIG_PATH=$DEFAULT_DATA_PATH/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe

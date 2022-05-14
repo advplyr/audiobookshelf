@@ -67,6 +67,12 @@
 
 <script>
 export default {
+  asyncData({ redirect, store }) {
+    if (!store.state.libraries.currentLibraryId) {
+      return redirect('/config')
+    }
+    return {}
+  },
   data() {
     return {
       libraryStats: null

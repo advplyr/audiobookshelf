@@ -95,7 +95,7 @@ export default {
         settings: {
           disableWatcher: false,
           skipMatchingMediaWithAsin: false,
-          skipMatchingMediaWithIsbn: false,
+          skipMatchingMediaWithIsbn: false
         }
       }
     },
@@ -193,6 +193,11 @@ export default {
           this.processing = false
           this.show = false
           this.$toast.success(`Library "${res.name}" created successfully`)
+          if (!this.$store.state.libraries.currentLibraryId) {
+            console.log('Setting initially library id', res.id)
+            // First library added
+            this.$store.dispatch('libraries/fetch', res.id)
+          }
         })
         .catch((error) => {
           console.error(error)

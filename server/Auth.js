@@ -17,14 +17,6 @@ class Auth {
     return this.db.users
   }
 
-  init() {
-    var root = this.users.find(u => u.type === 'root')
-    if (!root) {
-      Logger.fatal('No Root User', this.users)
-      throw new Error('No Root User')
-    }
-  }
-
   cors(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
     res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')

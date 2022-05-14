@@ -25,6 +25,9 @@ export default {
     return {}
   },
   computed: {
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -38,7 +41,7 @@ export default {
           }
         ]
       }
-      return [
+      const configRoutes = [
         {
           id: 'config',
           title: 'Settings',
@@ -63,18 +66,23 @@ export default {
           id: 'config-log',
           title: 'Log',
           path: '/config/log'
-        },
-        {
+        }
+      ]
+
+      if (this.currentLibraryId) {
+        configRoutes.push({
           id: 'config-library-stats',
           title: 'Library Stats',
           path: '/config/library-stats'
-        },
-        {
+        })
+        configRoutes.push({
           id: 'config-stats',
           title: 'Your Stats',
           path: '/config/stats'
-        }
-      ]
+        })
+      }
+
+      return configRoutes
     },
     wrapperClass() {
       var classes = []

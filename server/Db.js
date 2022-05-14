@@ -46,6 +46,10 @@ class Db {
     this.previousVersion = null
   }
 
+  get hasRootUser() {
+    return this.users.some(u => u.id === 'root')
+  }
+
   getEntityDb(entityName) {
     if (entityName === 'user') return this.usersDb
     else if (entityName === 'session') return this.sessionsDb
@@ -68,33 +72,6 @@ class Db {
     else if (entityName === 'author') return 'authors'
     else if (entityName === 'series') return 'series'
     return null
-  }
-
-  getDefaultUser(token) {
-    return new User({
-      id: 'root',
-      type: 'root',
-      username: 'root',
-      pash: '',
-      stream: null,
-      token,
-      isActive: true,
-      createdAt: Date.now()
-    })
-  }
-
-  getDefaultLibrary() {
-    var defaultLibrary = new Library()
-    defaultLibrary.setData({
-      id: 'main',
-      name: 'Main',
-      folder: { // Generates default folder
-        id: 'audiobooks',
-        fullPath: global.AudiobookPath,
-        libraryId: 'main'
-      }
-    })
-    return defaultLibrary
   }
 
   reinit() {
@@ -123,23 +100,36 @@ class Db {
     })
   }
 
+  createRootUser(username, pash, token) {
+    const newRoot = new User({
+      id: 'root',
+      type: 'root',
+      username,
+      pash,
+      token,
+      isActive: true,
+      createdAt: Date.now()
+    })
+    return this.insertEntity('user', newRoot)
+  }
+
   async init() {
     await this.load()
 
     // Insert Defaults
-    var rootUser = this.users.find(u => u.type === 'root')
-    if (!rootUser) {
-      var token = await jwt.sign({ userId: 'root' }, process.env.TOKEN_SECRET)
-      Logger.debug('Generated default token', token)
-      Logger.info('[Db] Root user created')
-      await this.insertEntity('user', this.getDefaultUser(token))
-    } else {
-      Logger.info(`[Db] Root user exists, pw: ${rootUser.hasPw}`)
-    }
+    // var rootUser = this.users.find(u => u.type === 'root')
+    // if (!rootUser) {
+    //   var token = await jwt.sign({ userId: 'root' }, process.env.TOKEN_SECRET)
+    //   Logger.debug('Generated default token', token)
+    //   Logger.info('[Db] Root user created')
+    //   await this.insertEntity('user', this.getDefaultUser(token))
+    // } else {
+    //   Logger.info(`[Db] Root user exists, pw: ${rootUser.hasPw}`)
+    // }
 
-    if (!this.libraries.length) {
-      await this.insertEntity('library', this.getDefaultLibrary())
-    }
+    // if (!this.libraries.length) {
+    //   await this.insertEntity('library', this.getDefaultLibrary())
+    // }
 
     if (!this.serverSettings) {
       this.serverSettings = new ServerSettings()

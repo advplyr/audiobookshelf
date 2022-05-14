@@ -1,8 +1,11 @@
 <template>
-  <div class="relative">
-    <input ref="input" v-model="inputValue" :type="type" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="rounded bg-primary text-gray-200 focus:border-gray-300 focus:bg-bg focus:outline-none border border-gray-600 h-full w-full" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
+  <div ref="wrapper" class="relative">
+    <input ref="input" v-model="inputValue" :type="actualType" :readonly="readonly" :disabled="disabled" :placeholder="placeholder" class="rounded bg-primary text-gray-200 focus:border-gray-300 focus:bg-bg focus:outline-none border border-gray-600 h-full w-full" :class="classList" @keyup="keyup" @change="change" @focus="focused" @blur="blurred" />
     <div v-if="clearable && inputValue" class="absolute top-0 right-0 h-full px-2 flex items-center justify-center">
       <span class="material-icons text-gray-300 cursor-pointer" style="font-size: 1.1rem" @click.stop.prevent="clear">close</span>
+    </div>
+    <div v-if="type === 'password' && isHovering" class="absolute top-0 right-0 h-full px-4 flex items-center justify-center">
+      <span class="material-icons-outlined text-gray-400 cursor-pointer text-lg" @click.stop.prevent="showPassword = !showPassword">{{ !showPassword ? 'visibility' : 'visibility_off' }}</span>
     </div>
   </div>
 </template>
@@ -31,7 +34,10 @@ export default {
     clearable: Boolean
   },
   data() {
-    return {}
+    return {
+      showPassword: false,
+      isHovering: false
+    }
   },
   computed: {
     inputValue: {
@@ -49,6 +55,10 @@ export default {
       if (this.noSpinner) _list.push('no-spinner')
       if (this.textCenter) _list.push('text-center')
       return _list.join(' ')
+    },
+    actualType() {
+      if (this.type === 'password' && this.showPassword) return 'text'
+      return this.type
     }
   },
   methods: {
@@ -69,9 +79,20 @@ export default {
     },
     blur() {
       if (this.$refs.input) this.$refs.input.blur()
+    },
+    mouseover() {
+      this.isHovering = true
+    },
+    mouseleave() {
+      this.isHovering = false
     }
   },
-  mounted() {}
+  mounted() {
+    if (this.type === 'password' && this.$refs.wrapper) {
+      this.$refs.wrapper.addEventListener('mouseover', this.mouseover)
+      this.$refs.wrapper.addEventListener('mouseleave', this.mouseleave)
+    }
+  }
 }
 </script>
 

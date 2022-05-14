@@ -6,18 +6,20 @@
         <span class="material-icons" style="font-size: 1.4rem">add</span>
       </div>
     </div>
-    <draggable :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
+    <draggable v-if="libraryCopies.length" :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
           <tables-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
         </div>
       </template>
     </draggable>
-    <modals-libraries-edit-modal v-model="showLibraryModal" :library="selectedLibrary" />
+    <div v-if="!libraries.length" class="pb-4">
+      <ui-btn @click="clickAddLibrary">Add your first library</ui-btn>
+    </div>
 
-    <p class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
+    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
 
-    <p class="text-xs mt-4 text-gray-200">**<strong>Match Books</strong> will attempt to match books in library with a book from the selected search provider and fill in empty details and cover art. Does not overwrite details.</p>
+    <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">**<strong>Match Books</strong> will attempt to match books in library with a book from the selected search provider and fill in empty details and cover art. Does not overwrite details.</p>
   </div>
 </template>
 
@@ -32,8 +34,6 @@ export default {
     return {
       libraryCopies: [],
       currentOrder: [],
-      showLibraryModal: false,
-      selectedLibrary: null,
       drag: false,
       dragOptions: {
         animation: 200,
@@ -97,12 +97,10 @@ export default {
       this.$router.push(`/library/${library.id}`)
     },
     clickAddLibrary() {
-      this.selectedLibrary = null
-      this.showLibraryModal = true
+      this.$emit('showLibraryModal', null)
     },
     editLibrary(library) {
-      this.selectedLibrary = library
-      this.showLibraryModal = true
+      this.$emit('showLibraryModal', library)
     },
     init() {
       this.libraryCopies = this.libraries.map((lib) => {
