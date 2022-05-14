@@ -214,15 +214,20 @@ class Server {
     })
 
     // Client dynamic routes
-    app.get('/item/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/audiobook/:id/edit', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:library', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:library/search', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:library/bookshelf/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:library/authors', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/library/:library/series/:id?', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/config/users/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
-    app.get('/collection/:id', (req, res) => res.sendFile(Path.join(distPath, 'index.html')))
+    const dyanimicRoutes = [
+      '/item/:id',
+      '/item/:id/manage',
+      '/item/:id/chapters',
+      '/audiobook/:id/edit',
+      '/library/:library',
+      '/library/:library/search',
+      '/library/:library/bookshelf/:id?',
+      '/library/:library/authors',
+      '/library/:library/series/:id?',
+      '/config/users/:id',
+      '/collection/:id'
+    ]
+    dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
     app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
