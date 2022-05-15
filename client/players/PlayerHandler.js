@@ -179,6 +179,9 @@ export default class PlayerHandler {
     }
 
     this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
+
+    // browser media session api
+    this.ctx.setMediaSession()
   }
 
   closePlayer() {
