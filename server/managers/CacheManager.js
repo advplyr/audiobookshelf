@@ -62,9 +62,6 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    // Write cache
-    await this.ensureCachePaths()
-
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
       return res.sendStatus(404)
     }
@@ -88,9 +85,6 @@ class CacheManager {
   }
 
   async purgeEntityCache(entityId, cachePath) {
-    // If purgeAll has been called... The cover cache directory no longer exists
-    await this.ensureCachePaths()
-
     return Promise.all((await fs.readdir(cachePath)).reduce((promises, file) => {
       if (file.startsWith(entityId)) {
         Logger.debug(`[CacheManager] Going to purge ${file}`);
@@ -117,6 +111,7 @@ class CacheManager {
         Logger.error(`[CacheManager] Failed to remove cache dir "${this.CachePath}"`, error)
       })
     }
+    await this.ensureCachePaths()
   }
 
   async handleAuthorCache(res, author, options = {}) {
@@ -140,9 +135,6 @@ class CacheManager {
       })
       return ps.pipe(res)
     }
-
-    // Write cache
-    await this.ensureCachePaths()
 
     let writtenFile = await resizeImage(author.imagePath, path, width, height)
     if (!writtenFile) return res.sendStatus(400)

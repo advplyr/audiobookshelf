@@ -138,6 +138,7 @@ class Server {
 
     await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
+    await this.cacheManager.ensureCachePaths()
 
     await this.backupManager.init()
     await this.logManager.init()
