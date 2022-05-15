@@ -480,7 +480,6 @@ const updateStoreData = async (store, match, update, tempstore, lockoptions) => 
 
     release = await lock(store, lockoptions);
 
-    // console.log('Start updateStoreData for tempstore', tempstore, 'real store', store)
     const handlerResults = await new Promise((resolve, reject) => {
 
         const writer = createWriteStream(tempstore);
@@ -490,14 +489,11 @@ const updateStoreData = async (store, match, update, tempstore, lockoptions) => 
             // Reader was opening and closing before writer ever opened
             const reader = createInterface({ input: createReadStream(store), crlfDelay: Infinity });
 
-            // console.log('Writer opened for tempstore', tempstore)
             reader.on("line", record => {
                 handler.next(record, writer)
             });
 
-
             reader.on("close", () => {
-                // console.log('Closing reader for store', store)
                 writer.end();
                 resolve(handler.return());
             });
@@ -505,12 +501,7 @@ const updateStoreData = async (store, match, update, tempstore, lockoptions) => 
             reader.on("error", error => reject(error));
         });
 
-        // writer.on('close', () => {
-        // console.log('Writer closed for tempstore', tempstore)
-        // })
-
         writer.on("error", error => reject(error));
-
     });
 
     results = Object.assign({ store: store, tempstore: tempstore }, handlerResults);
@@ -579,26 +570,27 @@ const updateStoreDataSync = (store, match, update, tempstore) => {
 
 const deleteStoreData = async (store, match, tempstore, lockoptions) => {
     let release, results;
-
     release = await lock(store, lockoptions);
 
     const handlerResults = await new Promise((resolve, reject) => {
-        const reader = createInterface({ input: createReadStream(store), crlfDelay: Infinity });
         const writer = createWriteStream(tempstore);
         const handler = Handler("delete", match);
 
         writer.on("open", () => {
+            // Create reader after writer opens otherwise the reader can sometimes close before the writer opens
+            const reader = createInterface({ input: createReadStream(store), crlfDelay: Infinity });
+
             reader.on("line", record => handler.next(record, writer));
+
+            reader.on("close", () => {
+                writer.end();
+                resolve(handler.return());
+            });
+
+            reader.on("error", error => reject(error));
         });
 
         writer.on("error", error => reject(error));
-
-        reader.on("close", () => {
-            writer.end();
-            resolve(handler.return());
-        });
-
-        reader.on("error", error => reject(error));
     });
 
     results = Object.assign({ store: store, tempstore: tempstore }, handlerResults);
