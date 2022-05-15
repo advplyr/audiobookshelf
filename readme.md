@@ -58,8 +58,6 @@ Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join 
 
 # Installation
 
-** Default username is "root" with no password
-
 ### Docker Install
 Available in Unraid Community Apps
 
