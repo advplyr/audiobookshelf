@@ -14,7 +14,7 @@ class StaticRouter {
     // Library Item static file routes
     this.router.get('/item/:id/*', (req, res) => {
       var item = this.db.libraryItems.find(ab => ab.id === req.params.id)
-      if (!item) return res.status(404).send('Item not found with id ' + req.params.id)
+      if (!item) return res.status(404).send('Item not found with id ' + escapeHtml(req.params.id))
 
       var remainingPath = req.params['0']
       var fullPath = Path.join(item.path, remainingPath)

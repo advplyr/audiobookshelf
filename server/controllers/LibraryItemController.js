@@ -117,7 +117,7 @@ class LibraryItemController {
     }
 
     if (result && result.error) {
-      return res.status(400).send(result.error)
+      return res.status(400).send(escapeHtml(result.error))
     } else if (!result || !result.cover) {
       return res.status(500).send('Unknown error occurred')
     }
@@ -139,7 +139,7 @@ class LibraryItemController {
 
     var validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
-      return res.status(500).send(validationResult.error)
+      return res.status(500).send(escapeHtml(validationResult.error))
     }
     if (validationResult.updated) {
       await this.db.updateLibraryItem(libraryItem)

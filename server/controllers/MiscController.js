@@ -21,8 +21,8 @@ class MiscController {
     var title = req.body.title
     var author = req.body.author
     var series = req.body.series
-    var libraryId = req.body.library
-    var folderId = req.body.folder
+    var libraryId = escapeHtml(req.body.library)
+    var folderId = escapeHtml(req.body.folder)
 
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
@@ -58,7 +58,7 @@ class MiscController {
     var exists = await fs.pathExists(outputDirectory)
     if (exists) {
       Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
-      return res.status(500).send(`Directory "${outputDirectory}" already exists`)
+      return res.status(500).send('Directory ' + escapeHtml(outputDirectory) + ' already exists')
     }
 
     await fs.ensureDir(outputDirectory)
