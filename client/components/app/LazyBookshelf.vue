@@ -605,7 +605,15 @@ export default {
       }
     },
     scan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     }
   },
   mounted() {

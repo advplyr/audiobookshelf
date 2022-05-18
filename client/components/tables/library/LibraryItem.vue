@@ -73,10 +73,26 @@ export default {
       this.$emit('edit', this.library)
     },
     scan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     },
     forceScan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     },
     deleteClick() {
       if (this.isMain) return

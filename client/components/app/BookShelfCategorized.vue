@@ -190,7 +190,15 @@ export default {
     },
     settingsUpdated(settings) {},
     scan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.$store.state.libraries.currentLibraryId })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.$store.state.libraries.currentLibraryId })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)
