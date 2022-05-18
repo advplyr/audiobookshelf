@@ -19,7 +19,8 @@ export const state = () => ({
   backups: [],
   bookshelfBookIds: [],
   openModal: null,
-  selectedBookshelfTexture: '/textures/wood_default.jpg'
+  selectedBookshelfTexture: '/textures/wood_default.jpg',
+  lastBookshelfScrollData: {}
 })
 
 export const getters = {
@@ -80,6 +81,9 @@ export const actions = {
 }
 
 export const mutations = {
+  setLastBookshelfScrollData(state, { scrollTop, path, name }) {
+    state.lastBookshelfScrollData[name] = { scrollTop, path }
+  },
   setBookshelfBookIds(state, val) {
     state.bookshelfBookIds = val || []
   },

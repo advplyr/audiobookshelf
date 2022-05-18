@@ -43,6 +43,8 @@ export default {
   mixins: [bookshelfCardsHelpers],
   data() {
     return {
+      routeName: null,
+      routeFullPath: null,
       initialized: false,
       bookshelfHeight: 0,
       bookshelfWidth: 0,
@@ -413,6 +415,8 @@ export default {
       if (newSearchParams !== this.currentSFQueryString || newSearchParams !== currentQueryString) {
         let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + newSearchParams
         window.history.replaceState({ path: newurl }, '', newurl)
+
+        this.routeFullPath = window.location.pathname + (window.location.search || '') // Update for saving scroll position
         return true
       }
 
@@ -530,6 +534,15 @@ export default {
       await this.fetchEntites(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntites(0, lastBookIndex)
+
+      // Set last scroll position for this bookshelf page
+      if (this.$store.state.lastBookshelfScrollData[this.page] && window.bookshelf) {
+        const { path, scrollTop } = this.$store.state.lastBookshelfScrollData[this.page]
+        if (path === this.routeFullPath) {
+          // Exact path match with query so use scroll position
+          window.bookshelf.scrollTop = scrollTop
+        }
+      }
     },
     executeRebuild() {
       clearTimeout(this.resizeTimeout)
@@ -618,8 +631,13 @@ export default {
   },
   mounted() {
     this.initListeners()
+
+    this.routeName = this.$route.name // beforeDestroy will have the new route name already, so need to store this
+    this.routeFullPath = window.location.pathname + (window.location.search || '')
   },
   updated() {
+    this.routeFullPath = window.location.pathname + (window.location.search || '')
+
     setTimeout(() => {
       if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
         console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
@@ -630,6 +648,11 @@ export default {
   beforeDestroy() {
     this.destroyEntityComponents()
     this.removeListeners()
+
+    // Set bookshelf scroll position for specific bookshelf page and query
+    if (window.bookshelf) {
+      this.$store.commit('setLastBookshelfScrollData', { scrollTop: window.bookshelf.scrollTop || 0, path: this.routeFullPath, name: this.page })
+    }
   }
 }
 </script>
