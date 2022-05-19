@@ -173,37 +173,6 @@ class PodcastController {
     res.sendStatus(200)
   }
 
-  async openPodcastFeed(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user attempted to open podcast feed`, req.user.username)
-      return res.sendStatus(500)
-    }
-
-    const feedData = this.rssFeedManager.openPodcastFeed(req.user, req.libraryItem, req.body)
-    if (feedData.error) {
-      return res.json({
-        success: false,
-        error: feedData.error
-      })
-    }
-
-    res.json({
-      success: true,
-      feedUrl: feedData.feedUrl
-    })
-  }
-
-  async closePodcastFeed(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[PodcastController] Non-admin user attempted to close podcast feed`, req.user.username)
-      return res.sendStatus(500)
-    }
-
-    this.rssFeedManager.closePodcastFeedForItem(req.params.id)
-
-    res.sendStatus(200)
-  }
-
   async updateEpisode(req, res) {
     var libraryItem = req.libraryItem
 
