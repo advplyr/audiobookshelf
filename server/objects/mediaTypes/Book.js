@@ -225,6 +225,7 @@ class Book {
   // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
     var metadataUpdatePayload = {}
+    var tagsUpdated = false
 
     var descTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'desc.txt')
     if (descTxt) {
@@ -264,8 +265,13 @@ class Book {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
         if (opfMetadata) {
           for (const key in opfMetadata) {
-            // Add genres only if genres are empty
-            if (key === 'genres') {
+
+            if (key === 'tags') { // Add tags only if tags are empty
+              if (opfMetadata.tags.length && (!this.tags.length || opfMetadataOverrideDetails)) {
+                this.tags = opfMetadata.tags
+                tagsUpdated = true
+              }
+            } else if (key === 'genres') { // Add genres only if genres are empty
               if (opfMetadata.genres.length && (!this.metadata.genres.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload[key] = opfMetadata.genres
               }
@@ -290,9 +296,9 @@ class Book {
     }
 
     if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload)
+      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
     }
-    return false
+    return tagsUpdated
   }
 
   searchQuery(query) {
