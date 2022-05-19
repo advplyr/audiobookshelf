@@ -23,13 +23,17 @@
 
       <div class="py-4">
         <widgets-item-slider :items="libraryItems" :bookshelf-view="$constants.BookshelfView.AUTHOR">
-          <h2 class="text-lg">{{ libraryItems.length }} Books</h2>
+          <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">
+            <h2 class="text-lg">{{ libraryItems.length }} Books</h2>
+          </nuxt-link>
         </widgets-item-slider>
       </div>
 
       <div v-for="series in authorSeries" :key="series.id" class="py-4">
         <widgets-item-slider :items="series.items" :bookshelf-view="$constants.BookshelfView.AUTHOR">
-          <h2 class="text-lg">{{ series.name }}</h2>
+          <nuxt-link :to="`/library/${currentLibraryId}/series/${series.id}`" class="hover:underline">
+            <h2 class="text-lg">{{ series.name }}</h2>
+          </nuxt-link>
           <p class="text-white text-opacity-40 text-base px-2">Series</p>
         </widgets-item-slider>
       </div>
