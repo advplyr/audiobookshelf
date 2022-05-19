@@ -418,7 +418,7 @@ module.exports = {
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
                   bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
-                  sequenceInProgress: bookInProgress ? libraryItemJson.seriesSequence : null
+                  firstBookUnread: bookInProgress ? libraryItemJson : null
                 }
                 seriesMap[librarySeries.id] = series
 
@@ -445,9 +445,17 @@ module.exports = {
 
               if (bookInProgress) { // Update if this series is in progress
                 seriesMap[librarySeries.id].inProgress = true
-                if (!seriesMap[librarySeries.id].sequenceInProgress || (librarySeries.sequence && String(librarySeries.sequence).localeCompare(String(seriesMap[librarySeries.id].sequenceInProgress), undefined, { sensitivity: 'base', numeric: true }) > 0)) {
-                  seriesMap[librarySeries.id].sequenceInProgress = librarySeries.sequence
+
+                if (seriesMap[librarySeries.id].bookInProgressLastUpdate > mediaProgress.lastUpdate) {
                   seriesMap[librarySeries.id].bookInProgressLastUpdate = mediaProgress.lastUpdate
+                }
+              } else if (!seriesMap[librarySeries.id].firstBookUnread) {
+                seriesMap[librarySeries.id].firstBookUnread = libraryItemJson
+              } else if (libraryItemJson.seriesSequence) {
+                // If current firstBookUnread has a series sequence greater than this series sequence, then update firstBookUnread
+                const firstBookUnreadSequence = seriesMap[librarySeries.id].firstBookUnread.seriesSequence
+                if (!firstBookUnreadSequence || String(firstBookUnreadSequence).localeCompare(String(librarySeries.sequence), undefined, { sensitivity: 'base', numeric: true }) > 0) {
+                  seriesMap[librarySeries.id].firstBookUnread = libraryItemJson
                 }
               }
             }
@@ -545,11 +553,8 @@ module.exports = {
       if (seriesMap[seriesId].inProgress) {
         seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
 
-        const nextBookInSeries = seriesMap[seriesId].books.find(li => {
-          if (!seriesMap[seriesId].sequenceInProgress) return true
-          // True if book series sequence is greater than the current book sequence in progress
-          return String(li.seriesSequence).localeCompare(String(seriesMap[seriesId].sequenceInProgress), undefined, { sensitivity: 'base', numeric: true }) > 0
-        })
+        // NEW implementation takes the first book unread with the smallest series sequence
+        const nextBookInSeries = seriesMap[seriesId].firstBookUnread
 
         if (nextBookInSeries) {
           const bookForContinueSeries = {
