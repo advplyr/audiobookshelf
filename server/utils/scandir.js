@@ -215,9 +215,6 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   // Audio files will always be in the directory named for the title
   var [title, narrators] = getTitleAndNarrator(splitDir.pop())
 
-  const parseNameString = require('./parseNameString')
-  console.log(`\n\n\n${JSON.stringify(parseNameString.parse(narrators), 0, 2)}\n\n\n`)
-
   var series = null
   var author = null
   // If there are at least 2 more directories, next furthest will be the series
@@ -305,7 +302,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
 }
 
 function getTitleAndNarrator(folder) {
-  let pattern = /^(?<title>.*)\[(?<narrators>.*)\] *$/
+  let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
   let match = folder.match(pattern)
   return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
 }
