@@ -418,7 +418,7 @@ module.exports = {
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
                   bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
-                  firstBookUnread: bookInProgress ? libraryItemJson : null
+                  firstBookUnread: bookInProgress ? null : libraryItemJson
                 }
                 seriesMap[librarySeries.id] = series
 
