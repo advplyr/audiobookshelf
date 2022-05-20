@@ -3,7 +3,11 @@
   "version": "2.0.15",
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
+  "watch": {
+    "dev": "server/{*,*/*}/*.js"
+  },
   "scripts": {
+    "watch": "npm-watch",
     "dev": "node index.js",
     "start": "node index.js",
     "client": "cd client && npm install && npm run generate",
@@ -53,5 +57,7 @@
     "watcher": "^1.2.0",
     "xml2js": "^0.4.23"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "npm-watch": "^0.11.0"
+  }
 }
