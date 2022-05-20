@@ -64,8 +64,7 @@ export default {
         {
           id: 'manage',
           title: 'Manage',
-          component: 'modals-item-tabs-manage',
-          experimental: true
+          component: 'modals-item-tabs-manage'
         }
       ]
     }

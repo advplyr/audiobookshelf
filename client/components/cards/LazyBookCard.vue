@@ -147,6 +147,9 @@ export default {
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
     },
+    enableEReader() {
+      return this.store.getters['getServerSetting']('enableEReader')
+    },
     _libraryItem() {
       return this.libraryItem || {}
     },
@@ -287,13 +290,13 @@ export default {
       return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
     },
     showReadButton() {
-      return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
+      return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
+      return !this.isSelectionMode && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
     },
     isMissing() {
       return this._libraryItem.isMissing

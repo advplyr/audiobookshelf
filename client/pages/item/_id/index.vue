@@ -135,7 +135,7 @@
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
-            <ui-btn v-if="showExperimentalFeatures && ebookFile" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
+            <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               Read
             </ui-btn>
@@ -223,6 +223,12 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
+    enableEReader() {
+      return this.store.getters['getServerSetting']('enableEReader')
+    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -241,9 +247,6 @@ export default {
     isDeveloperMode() {
       return this.$store.state.developerMode
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
@@ -261,6 +264,9 @@ export default {
       if (this.isMissing || this.isInvalid) return false
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
+    },
+    showReadButton() {
+      return this.ebookFile && (this.showExperimentalFeatures || this.enableEReader)
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -342,7 +348,7 @@ export default {
       return this.media.ebookFile
     },
     showExperimentalReadAlert() {
-      return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures
+      return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures && !this.enableEReader
     },
     description() {
       return this.mediaMetadata.description || ''

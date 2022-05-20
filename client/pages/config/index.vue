@@ -122,6 +122,20 @@
           </p>
         </ui-tooltip>
       </div>
+
+      <div class="flex items-center mb-2 mt-8">
+        <h1 class="text-xl">Experimental Feature Settings</h1>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
+        <ui-tooltip :text="tooltips.enableEReader">
+          <p class="pl-4 text-lg">
+            Enable e-reader for all users
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
     </div>
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
@@ -172,7 +186,9 @@
             <ui-tooltip :text="experimentalFeaturesTooltip">
               <p class="pl-4 text-lg">
                 Experimental Features
-                <span class="material-icons icon-text">info_outlined</span>
+                <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
+                  <span class="material-icons icon-text">info_outlined</span>
+                </a>
               </p>
             </ui-tooltip>
           </div>
@@ -207,6 +223,7 @@ export default {
       isPurgingCache: false,
       newServerSettings: {},
       tooltips: {
+        experimentalFeatures: 'Features in development that could use your feedback and help testing. Click to open github discussion.',
         scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
@@ -216,7 +233,8 @@ export default {
         bookshelfView: 'Alternative view without wooden bookshelf',
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
-        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
+        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
+        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle below just for you)'
       },
       showConfirmPurgeCache: false
     }
@@ -229,9 +247,6 @@ export default {
     }
   },
   computed: {
-    experimentalFeaturesTooltip() {
-      return 'Features in development that could use your feedback and help testing.'
-    },
     serverSettings() {
       return this.$store.state.serverSettings
     },
