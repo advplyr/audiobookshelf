@@ -212,17 +212,38 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   relPath = relPath.replace(/\\/g, '/')
   var splitDir = relPath.split('/')
 
-  // Audio files will always be in the directory named for the title
-  var [title, narrators] = getTitleAndNarrator(splitDir.pop())
+  var title = splitDir.pop() // Audio files will always be in the directory named for the title
+  series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
+  author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
 
-  var series = null
-  var author = null
-  // If there are at least 2 more directories, next furthest will be the series
-  if (splitDir.length > 1) series = splitDir.pop()
-  if (splitDir.length > 0) author = splitDir.pop()
-  // There could be many more directories, but only the top 3 are used for naming /author/series/title/
+  // The title directory may contain various other pieces of metadata, these functions extract it.
+  var [title, narrators] = getNarrator(title)
+  if (series) { var [series, title, sequence] = getSeries(series, title) }
+  var [title, publishedYear] = getPublishedYear(title)
+  if (parseSubtitle) { var [title, subtitle] = getSubtitle(title) }
 
+  return {
+    mediaMetadata: {
+      author,
+      title,
+      subtitle,
+      series,
+      sequence,
+      publishedYear,
+      narrators,
+    },
+    relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
+    path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
+  }
+}
 
+function getNarrator(folder) {
+  let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
+  let match = folder.match(pattern)
+  return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
+}
+
+function getSeries(series, title) {
   // If in a series directory check for volume number match
   /* ACCEPTS
     Book 2 - Title Here - Subtitle Here
@@ -236,33 +257,47 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
     0.5 - Book Title
   */
   var volumeNumber = null
-  if (series) {
-    // Added 1.7.1: If title starts with a # that is 3 digits or less (or w/ 2 decimal), then use as volume number
-    var volumeMatch = title.match(/^(\d{1,3}(?:\.\d{1,2})?) - ./)
-    if (volumeMatch && volumeMatch.length > 1) {
-      volumeNumber = volumeMatch[1]
-      title = title.replace(`${volumeNumber} - `, '')
-    } else {
-      // Match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
-      var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
-      if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
-        volumeNumber = volumeMatch[3]
-        var replaceChunk = volumeMatch[2]
 
-        // "1980 - Book 2-Title Here"
-        // Group 1 would be "- "
-        // Group 3 would be "-"
-        // Only remove the first group
-        if (volumeMatch[1]) {
-          replaceChunk = volumeMatch[1] + replaceChunk
-        } else if (volumeMatch[4]) {
-          replaceChunk += volumeMatch[4]
-        }
-        title = title.replace(replaceChunk, '').trim()
+  // Added 1.7.1: If title starts with a # that is 3 digits or less (or w/ 2 decimal), then use as volume number
+  var volumeMatch = title.match(/^(\d{1,3}(?:\.\d{1,2})?) - ./)
+  if (volumeMatch && volumeMatch.length > 1) {
+    volumeNumber = volumeMatch[1]
+    title = title.replace(`${volumeNumber} - `, '')
+  } else {
+    // Match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
+    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
+    if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
+      volumeNumber = volumeMatch[3]
+      var replaceChunk = volumeMatch[2]
+
+      // "1980 - Book 2-Title Here"
+      // Group 1 would be "- "
+      // Group 3 would be "-"
+      // Only remove the first group
+      if (volumeMatch[1]) {
+        replaceChunk = volumeMatch[1] + replaceChunk
+      } else if (volumeMatch[4]) {
+        replaceChunk += volumeMatch[4]
       }
+      title = title.replace(replaceChunk, '').trim()
     }
   }
+  return [series, title, volumeNumber]
+}
 
+function getSubtitle(title) {
+  // Subtitle can be parsed from the title if user enabled
+  // Subtitle is everything after " - "
+  var subtitle = null
+  if (title.includes(' - ')) {
+    var splitOnSubtitle = title.split(' - ')
+    title = splitOnSubtitle.shift()
+    subtitle = splitOnSubtitle.join(' - ')
+  }
+  return [title, subtitle]
+}
+
+function getPublishedYear(title) {
   var publishedYear = null
   // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
   var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
@@ -276,35 +311,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
       title = publishYearMatch[2]
     }
   }
-
-  // Subtitle can be parsed from the title if user enabled
-  // Subtitle is everything after " - "
-  var subtitle = null
-  if (parseSubtitle && title.includes(' - ')) {
-    var splitOnSubtitle = title.split(' - ')
-    title = splitOnSubtitle.shift()
-    subtitle = splitOnSubtitle.join(' - ')
-  }
-
-  return {
-    mediaMetadata: {
-      author,
-      title,
-      subtitle,
-      series,
-      sequence: volumeNumber,
-      publishedYear,
-      narrators,
-    },
-    relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
-    path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
-  }
-}
-
-function getTitleAndNarrator(folder) {
-  let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
-  let match = folder.match(pattern)
-  return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
+  return [title, publishedYear]
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {
