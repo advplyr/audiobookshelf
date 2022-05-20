@@ -1,7 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
+const date = require('date-and-time')
 const { Podcast } = require('podcast')
-const { getId } = require('../utils/index')
 const Logger = require('../Logger')
 
 // Not functional at the moment
@@ -60,36 +60,72 @@ class RssFeedManager {
   }
 
   openFeed(userId, slug, libraryItem, serverAddress) {
-    const podcast = libraryItem.media
+    const media = libraryItem.media
+    const mediaMetadata = media.metadata
+    const isPodcast = libraryItem.mediaType === 'podcast'
 
     const feedUrl = `${serverAddress}/feed/${slug}`
-    // Removed Podcast npm package and ip package
+    const author = isPodcast ? mediaMetadata.author : mediaMetadata.authorName
+
     const feed = new Podcast({
-      title: podcast.metadata.title,
-      description: podcast.metadata.description,
+      title: mediaMetadata.title,
+      description: mediaMetadata.description,
       feedUrl,
-      siteUrl: serverAddress,
-      imageUrl: podcast.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`,
-      author: podcast.metadata.author || 'advplyr',
+      siteUrl: `${serverAddress}/items/${libraryItem.id}`,
+      imageUrl: media.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`,
+      author: author || 'advplyr',
       language: 'en'
     })
-    podcast.episodes.forEach((episode) => {
-      var contentUrl = episode.audioTrack.contentUrl.replace(/\\/g, '/')
-      contentUrl = contentUrl.replace(`/s/item/${libraryItem.id}`, `/feed/${slug}/item`)
 
-      feed.addItem({
-        title: episode.title,
-        description: episode.description || '',
-        enclosure: {
+    if (isPodcast) { // PODCAST EPISODES
+      media.episodes.forEach((episode) => {
+        var contentUrl = episode.audioTrack.contentUrl.replace(/\\/g, '/')
+        contentUrl = contentUrl.replace(`/s/item/${libraryItem.id}`, `/feed/${slug}/item`)
+
+        feed.addItem({
+          title: episode.title,
+          description: episode.description || '',
+          enclosure: {
+            url: `${serverAddress}${contentUrl}`,
+            type: episode.audioTrack.mimeType,
+            size: episode.size
+          },
+          date: episode.pubDate || '',
           url: `${serverAddress}${contentUrl}`,
-          type: episode.audioTrack.mimeType,
-          size: episode.size
-        },
-        date: episode.pubDate || '',
-        url: `${serverAddress}${contentUrl}`,
-        author: podcast.metadata.author || 'advplyr'
+          author: author || 'advplyr'
+        })
       })
-    })
+    } else { // AUDIOBOOK EPISODES
+
+      // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
+      const audiobookPubDate = date.format(new Date(libraryItem.addedAt), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+
+      media.tracks.forEach((audioTrack) => {
+        var contentUrl = audioTrack.contentUrl.replace(/\\/g, '/')
+        contentUrl = contentUrl.replace(`/s/item/${libraryItem.id}`, `/feed/${slug}/item`)
+
+        var title = audioTrack.title
+        if (media.chapters.length) {
+          // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
+          var matchingChapter = media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+          if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+        }
+
+        feed.addItem({
+          title,
+          description: '',
+          enclosure: {
+            url: `${serverAddress}${contentUrl}`,
+            type: audioTrack.mimeType,
+            size: audioTrack.metadata.size
+          },
+          date: audiobookPubDate,
+          url: `${serverAddress}${contentUrl}`,
+          author: author || 'advplyr'
+        })
+      })
+    }
+
 
     const feedData = {
       id: slug,
@@ -97,7 +133,7 @@ class RssFeedManager {
       userId,
       libraryItemId: libraryItem.id,
       libraryItemPath: libraryItem.path,
-      mediaCoverPath: podcast.coverPath,
+      mediaCoverPath: media.coverPath,
       serverAddress: serverAddress,
       feedUrl,
       feed
@@ -106,7 +142,7 @@ class RssFeedManager {
     return feedData
   }
 
-  openPodcastFeed(user, libraryItem, options) {
+  openFeedForItem(user, libraryItem, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
 
@@ -118,12 +154,12 @@ class RssFeedManager {
     }
 
     const feedData = this.openFeed(user.id, slug, libraryItem, serverAddress)
-    Logger.debug(`[RssFeedManager] Opened podcast feed ${feedData.feedUrl}`)
+    Logger.debug(`[RssFeedManager] Opened RSS feed ${feedData.feedUrl}`)
     this.emitter('rss_feed_open', { libraryItemId: libraryItem.id, feedUrl: feedData.feedUrl })
     return feedData
   }
 
-  closePodcastFeedForItem(libraryItemId) {
+  closeFeedForItem(libraryItemId) {
     var feed = this.findFeedForItem(libraryItemId)
     if (!feed) return
     this.closeRssFeed(feed.id)

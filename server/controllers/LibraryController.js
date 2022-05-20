@@ -86,13 +86,17 @@ class LibraryController {
         return f
       })
       for (var path of newFolderPaths) {
-        var success = await fs.ensureDir(path).then(() => true).catch((error) => {
-          Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
-          return false
-        })
-        if (!success) {
-          return res.status(400).send(`Invalid folder directory "${path}"`)
-        } else {
+        var pathExists = await fs.pathExists(path)
+        if (!pathExists) {
+          // Ensure dir will recursively create directories which might be preferred over mkdir
+          var success = await fs.ensureDir(path).then(() => true).catch((error) => {
+            Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
+            return false
+          })
+          if (!success) {
+            return res.status(400).send(`Invalid folder directory "${path}"`)
+          }
+          // Set permissions on newly created path
           await filePerms.setDefault(path)
         }
       }

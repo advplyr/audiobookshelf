@@ -405,6 +405,38 @@ class LibraryItemController {
     })
   }
 
+  // POST: api/items/:id/open-feed
+  async openRSSFeed(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user attempted to open RSS feed`, req.user.username)
+      return res.sendStatus(500)
+    }
+
+    const feedData = this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
+    if (feedData.error) {
+      return res.json({
+        success: false,
+        error: feedData.error
+      })
+    }
+
+    res.json({
+      success: true,
+      feedUrl: feedData.feedUrl
+    })
+  }
+
+  async closeRSSFeed(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user attempted to close RSS feed`, req.user.username)
+      return res.sendStatus(500)
+    }
+
+    this.rssFeedManager.closeFeedForItem(req.params.id)
+
+    res.sendStatus(200)
+  }
+
   middleware(req, res, next) {
     var item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)

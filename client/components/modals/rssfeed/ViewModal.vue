@@ -122,7 +122,7 @@ export default {
 
       console.log('Payload', payload)
       this.$axios
-        .$post(`/api/podcasts/${this.libraryItemId}/open-feed`, payload)
+        .$post(`/api/items/${this.libraryItemId}/open-feed`, payload)
         .then((data) => {
           if (data.success) {
             console.log('Opened RSS Feed', data)
@@ -143,7 +143,7 @@ export default {
     closeFeed() {
       this.processing = true
       this.$axios
-        .$post(`/api/podcasts/${this.libraryItem.id}/close-feed`)
+        .$post(`/api/items/${this.libraryItem.id}/close-feed`)
         .then(() => {
           this.$toast.success('RSS Feed Closed')
           this.show = false
