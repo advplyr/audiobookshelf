@@ -220,7 +220,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   var [title, narrators] = getNarrator(title)
   if (series) { var [series, title, sequence] = getSeries(series, title) }
   var [title, publishedYear] = getPublishedYear(title)
-  if (parseSubtitle) { var [title, subtitle] = getSubtitle(title) }
+  if (parseSubtitle) { var [title, subtitle] = getSubtitle(title) } // Subtitle can be parsed from the title if user enabled
 
   return {
     mediaMetadata: {
@@ -286,15 +286,9 @@ function getSeries(series, title) {
 }
 
 function getSubtitle(title) {
-  // Subtitle can be parsed from the title if user enabled
   // Subtitle is everything after " - "
-  var subtitle = null
-  if (title.includes(' - ')) {
-    var splitOnSubtitle = title.split(' - ')
-    title = splitOnSubtitle.shift()
-    subtitle = splitOnSubtitle.join(' - ')
-  }
-  return [title, subtitle]
+  var splitTitle = title.split(' - ')
+  return [splitTitle.shift(), splitTitle.join(' - ')]
 }
 
 function getPublishedYear(title) {
