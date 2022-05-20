@@ -92,7 +92,8 @@
           <!-- Alerts -->
           <div v-show="showExperimentalReadAlert" class="bg-error p-4 rounded-xl flex items-center">
             <span class="material-icons text-2xl">warning_amber</span>
-            <p class="ml-4">Book has no audio tracks but has valid ebook files. The e-reader is experimental and can be turned on in config.</p>
+            <p v-if="userIsAdminOrUp" class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader can be enabled in config.</p>
+            <p v-else class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader must be enabled by a server admin.</p>
           </div>
 
           <!-- Podcast episode downloads queue -->
@@ -227,7 +228,7 @@ export default {
       return this.$store.state.showExperimentalFeatures
     },
     enableEReader() {
-      return this.store.getters['getServerSetting']('enableEReader')
+      return this.$store.getters['getServerSetting']('enableEReader')
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']

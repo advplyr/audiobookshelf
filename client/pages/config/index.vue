@@ -183,7 +183,7 @@
         <div>
           <div class="flex items-center">
             <ui-toggle-switch v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="experimentalFeaturesTooltip">
+            <ui-tooltip :text="tooltips.experimentalFeatures">
               <p class="pl-4 text-lg">
                 Experimental Features
                 <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">

@@ -26,7 +26,7 @@
     </div>
 
     <!-- Split to mp3 -->
-    <div v-if="showMp3Split" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="showMp3Split && showExperimentalFeatures" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">Split M4B to MP3's</p>
@@ -51,7 +51,7 @@
     </div>
 
     <!-- Embed Metadata -->
-    <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
+    <div v-if="mediaTracks.length && showExperimentalFeatures" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">Embed Metadata</p>
@@ -113,6 +113,9 @@ export default {
     }
   },
   computed: {
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
+    },
     libraryItemId() {
       return this.libraryItem ? this.libraryItem.id : null
     },
