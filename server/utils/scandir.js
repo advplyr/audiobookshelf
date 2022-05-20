@@ -5,6 +5,7 @@ const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
 const { response } = require('express')
+const e = require('express')
 
 function isMediaFile(mediaType, ext) {
   // if (!path) return false
@@ -218,7 +219,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
 
   // The title directory may contain various other pieces of metadata, these functions extract it.
   var [title, narrators] = getNarrator(title)
-  if (series) { var [series, title, sequence] = getSeries(series, title) }
+  if (series) { var [title, sequence] = getSequence(title) }
   var [title, publishedYear] = getPublishedYear(title)
   if (parseSubtitle) { var [title, subtitle] = getSubtitle(title) } // Subtitle can be parsed from the title if user enabled
 
@@ -243,58 +244,41 @@ function getNarrator(folder) {
   return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
 }
 
-function getSeries(series, title) {
-  // If in a series directory check for volume number match
-  /* ACCEPTS
-    Book 2 - Title Here - Subtitle Here
-    Title Here - Subtitle Here - Vol 12
-    Title Here - volume 9 - Subtitle Here
-    Vol. 3 Title Here - Subtitle Here
-    1980 - Book 2-Title Here
-    Title Here-Volume 999-Subtitle Here
-    2 - Book Title
-    100 - Book Title
-    0.5 - Book Title
-  */
-  var volumeNumber = null
+function getSequence(title) {
+  // Valid ways of including a volume number:
+  // Book 2 - Title Here - Subtitle Here
+  // Title Here - Subtitle Here - Vol 12
+  // Title Here - volume 9 - Subtitle Here
+  // Vol. 3 Title Here - Subtitle Here
+  // 1980 - Book 2-Title Here
+  // Title Here-Volume 999-Subtitle Here
+  // 2 - Book Title
+  // 100 - Book Title
+  // 0.5 - Book Title
 
-  // Added 1.7.1: If title starts with a # that is 3 digits or less (or w/ 2 decimal), then use as volume number
-  var volumeMatch = title.match(/^(\d{1,3}(?:\.\d{1,2})?) - ./)
-  if (volumeMatch && volumeMatch.length > 1) {
-    volumeNumber = volumeMatch[1]
-    title = title.replace(`${volumeNumber} - `, '')
-  } else {
-    // Match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
-    var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
-    if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
-      volumeNumber = volumeMatch[3]
-      var replaceChunk = volumeMatch[2]
+  // Matches a valid volume string, capturing each section for later processing.
+  let pattern = /^(vol\.? |volume |book )?(\d{1,3}(?:\.\d{1,2})?)(.*)/i
 
-      // "1980 - Book 2-Title Here"
-      // Group 1 would be "- "
-      // Group 3 would be "-"
-      // Only remove the first group
-      if (volumeMatch[1]) {
-        replaceChunk = volumeMatch[1] + replaceChunk
-      } else if (volumeMatch[4]) {
-        replaceChunk += volumeMatch[4]
-      }
-      title = title.replace(replaceChunk, '').trim()
+  let volumeNumber = null
+  let parts = title.split('-')
+  for (let i = 0; i < parts.length; i++) {
+    let match = parts[i].trim().match(pattern)
+    if (match && !(match[3].trim() && !match[1])) { // "101 Dalmations" shouldn't match
+      volumeNumber = match[2]
+      parts[i] = match[3]
+      if (!parts[i].trim()) { parts.splice(i, 1) }
+      break
     }
   }
-  return [series, title, volumeNumber]
-}
+  title = parts.join(' - ')
 
-function getSubtitle(title) {
-  // Subtitle is everything after " - "
-  var splitTitle = title.split(' - ')
-  return [splitTitle.shift(), splitTitle.join(' - ')]
+  return [title, volumeNumber]
 }
 
 function getPublishedYear(title) {
   var publishedYear = null
 
-  pattern = /^\(?([0-9]{4})\)? - (.+)/ //Matches #### - title or (####) - title
+  pattern = /^ *\(?([0-9]{4})\)? *- *(.+)/ //Matches #### - title or (####) - title
   var match = title.match(pattern)
   if (match) {
     publishedYear = match[1]
@@ -302,6 +286,12 @@ function getPublishedYear(title) {
   }
 
   return [title, publishedYear]
+}
+
+function getSubtitle(title) {
+  // Subtitle is everything after " - "
+  var splitTitle = title.split(' - ')
+  return [splitTitle.shift().trim(), splitTitle.join(' - ').trim()]
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {
