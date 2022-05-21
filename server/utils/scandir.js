@@ -4,7 +4,6 @@ const Logger = require('../Logger')
 const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
-const { response } = require('express')
 
 function isMediaFile(mediaType, ext) {
   // if (!path) return false
