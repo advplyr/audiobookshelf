@@ -212,7 +212,8 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   var splitDir = relPath.split('/')
 
   // Audio files will always be in the directory named for the title
-  var title = splitDir.pop()
+  var [title, narrators] = getTitleAndNarrator(splitDir.pop())
+
   var series = null
   var author = null
   // If there are at least 2 more directories, next furthest will be the series
@@ -265,7 +266,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
   var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
   if (publishYearMatch && publishYearMatch.length > 2 && publishYearMatch[1]) {
-    // Strip parentheses 
+    // Strip parentheses
     if (publishYearMatch[1].startsWith('(') && publishYearMatch[1].endsWith(')')) {
       publishYearMatch[1] = publishYearMatch[1].slice(1, -1)
     }
@@ -292,10 +293,17 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
       series,
       sequence: volumeNumber,
       publishedYear,
+      narrators,
     },
     relPath: relPath, // relative audiobook path i.e. /Author Name/Book Name/..
     path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
   }
+}
+
+function getTitleAndNarrator(folder) {
+  let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
+  let match = folder.match(pattern)
+  return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {

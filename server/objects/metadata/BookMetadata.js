@@ -194,7 +194,7 @@ class BookMetadata {
   setData(scanMediaData = {}) {
     this.title = scanMediaData.title || null
     this.subtitle = scanMediaData.subtitle || null
-    this.narrators = []
+    this.narrators = this.parseNarratorsTag(scanMediaData.narrators)
     this.publishedYear = scanMediaData.publishedYear || null
     this.description = scanMediaData.description || null
     this.isbn = scanMediaData.isbn || null
