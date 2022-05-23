@@ -61,9 +61,7 @@ class Audible {
 
         if(!items) {
             var queryObj = {
-                response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
-                image_sizes: '500,1024,2000',
-                num_results: '25',
+                num_results: '10',
                 products_sort_by: 'Relevance',
                 title: title
             };
