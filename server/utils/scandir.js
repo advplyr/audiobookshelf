@@ -260,6 +260,10 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
         title = title.replace(replaceChunk, '').trim()
       }
     }
+
+    if (volumeNumber != null && !isNaN(volumeNumber)) {
+      volumeNumber = String(Number(volumeNumber)) // Strips leading zeros
+    }
   }
 
   var publishedYear = null

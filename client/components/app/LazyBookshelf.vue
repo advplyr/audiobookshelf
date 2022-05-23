@@ -43,7 +43,6 @@ export default {
   mixins: [bookshelfCardsHelpers],
   data() {
     return {
-      routeName: null,
       routeFullPath: null,
       initialized: false,
       bookshelfHeight: 0,
@@ -632,7 +631,6 @@ export default {
   mounted() {
     this.initListeners()
 
-    this.routeName = this.$route.name // beforeDestroy will have the new route name already, so need to store this
     this.routeFullPath = window.location.pathname + (window.location.search || '')
   },
   updated() {
