@@ -114,6 +114,16 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferMatchedMetadata">
+          <p class="pl-4 text-lg">
+            Scanner prefer matched metadata
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
         <ui-tooltip :text="tooltips.scannerDisableWatcher">
           <p class="pl-4 text-lg">
@@ -226,6 +236,7 @@ export default {
         experimentalFeatures: 'Features in development that could use your feedback and help testing. Click to open github discussion.',
         scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
+        scannerPreferMatchedMetadata: 'Matched data will overide book details when using Quick Match',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',

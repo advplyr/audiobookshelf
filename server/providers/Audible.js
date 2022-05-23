@@ -6,34 +6,30 @@ class Audible {
     constructor() { }
 
     cleanResult(item) {
-        var { title, subtitle, asin, authors, narrators, publisher_name, publisher_summary, release_date, series, product_images, publication_name } = item;
+        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language } = item;
 
-        var primarySeries = this.getPrimarySeries(series, publication_name);
+        var series = []
+        if(seriesPrimary) series.push(seriesPrimary)
+        if(seriesSecondary) series.push(seriesSecondary)
+
+        var genresFiltered = genres ? genres.filter(g => g.type == "genre") : []
+        var tagsFiltered = genres ? genres.filter(g => g.type == "tag") : []
 
         return {
             title,
             subtitle: subtitle || null,
             author: authors ? authors.map(({ name }) => name).join(', ') : null,
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
-            publisher: publisher_name,
-            publishedYear: release_date ? release_date.split('-')[0] : null,
-            description: publisher_summary ? stripHtml(publisher_summary).result : null,
-            cover: this.getBestImageLink(product_images),
+            publisher: publisherName,
+            publishedYear: releaseDate ? releaseDate.split('-')[0] : null,
+            description: summary ? stripHtml(summary).result : null,
+            cover: image,
             asin,
-            series: primarySeries ? primarySeries.title : null,
-            volumeNumber: primarySeries ? primarySeries.sequence : null
+            genres: genresFiltered.length > 0 ? genresFiltered.map(({ name }) => name).join(', ') : null,
+            tags: tagsFiltered.length > 0 ? tagsFiltered.map(({ name }) => name).join(', ') : null,
+            series: series != [] ? series.map(({name, position}) => ({ series: name, volumeNumber: position })) : null,
+            language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null
         }
-    }
-
-    getBestImageLink(images) {
-        if (!images) return null
-        var keys = Object.keys(images)
-        if (!keys.length) return null
-        return images[keys[keys.length - 1]]
-    }
-
-    getPrimarySeries(series, publication_name) {
-        return (series && series.length > 0) ? series.find((s) => s.title == publication_name) || series[0] : null
     }
 
     isProbablyAsin(title) {
@@ -41,48 +37,50 @@ class Audible {
     }
 
     asinSearch(asin) {
-        var queryObj = {
-            response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
-            image_sizes: '500,1024,2000'
-        };
-        var queryString = (new URLSearchParams(queryObj)).toString();
         asin = encodeURIComponent(asin);
-        var url = `https://api.audible.com/1.0/catalog/products/${asin}?${queryString}`
+        var url = `https://api.audnex.us/books/${asin}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
         return axios.get(url).then((res) => {
-            if (!res || !res.data || !res.data.product || !res.data.product.authors) return []
-            return [res.data.product]
+            if (!res || !res.data || !res.data.asin) return null
+            return res.data
         }).catch(error => {
-            Logger.error('[Audible] search error', error)
+            Logger.error('[Audible] ASIN search error', error)
             return []
         })
     }
 
-    async search(title, author) {
-        if (this.isProbablyAsin(title)) {
-            var items = await this.asinSearch(title)
-            if (items.length > 0) return items.map(item => this.cleanResult(item))
+    async search(title, author, asin) {        
+        var items
+        if(asin) {
+            items = [await this.asinSearch(asin)]
+        }
+        
+        if (!items && this.isProbablyAsin(title)) {
+            items = [await this.asinSearch(title)]
         }
 
-        var queryObj = {
-            response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
-            image_sizes: '500,1024,2000',
-            num_results: '25',
-            products_sort_by: 'Relevance',
-            title: title
-        };
-        if (author) queryObj.author = author
-        var queryString = (new URLSearchParams(queryObj)).toString();
-        var url = `https://api.audible.com/1.0/catalog/products?${queryString}`
-        Logger.debug(`[Audible] Search url: ${url}`)
-        var items = await axios.get(url).then((res) => {
-            if (!res || !res.data || !res.data.products) return []
-            return res.data.products
-        }).catch(error => {
-            Logger.error('[Audible] search error', error)
-            return []
-        })
-        return items.map(item => this.cleanResult(item))
+        if(!items) {
+            var queryObj = {
+                response_groups: 'rating,series,contributors,product_desc,media,product_extended_attrs',
+                image_sizes: '500,1024,2000',
+                num_results: '25',
+                products_sort_by: 'Relevance',
+                title: title
+            };
+            if (author) queryObj.author = author
+            var queryString = (new URLSearchParams(queryObj)).toString();
+            var url = `https://api.audible.com/1.0/catalog/products?${queryString}`
+            Logger.debug(`[Audible] Search url: ${url}`)
+            items = await axios.get(url).then((res) => {
+                if (!res || !res.data || !res.data.products) return null
+                return Promise.all(res.data.products.map(result => this.asinSearch(result.asin)))
+            }).catch(error => {
+                Logger.error('[Audible] query search error', error)
+                return []
+            })
+        }
+
+        return items ? items.map(item => this.cleanResult(item)) : []
     }
 }
 

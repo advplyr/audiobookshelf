@@ -11,7 +11,8 @@ class ServerSettings {
     this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
-    this.scannerDisableWatcher = false
+    this.scannerPreferMatchedMetadata = false
+    this.scannerDisableWatcher = false 
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -62,6 +63,7 @@ class ServerSettings {
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
+    this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
@@ -107,6 +109,7 @@ class ServerSettings {
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
+      scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,

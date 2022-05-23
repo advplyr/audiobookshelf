@@ -632,14 +632,22 @@ class Scanner {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
+    var searchISBN = options.isbn || libraryItem.media.metadata.isbn
+    var searchASIN = options.asin || libraryItem.media.metadata.asin
 
-    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor)
+    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
     if (!results.length) {
       return {
         warning: `No ${provider} match found`
       }
     }
     var matchData = results[0]
+
+    // Set to override existing metadata if scannerPreferMatchedMetadata setting is true
+    if(this.db.serverSettings.scannerPreferMatchedMetadata) {
+      options.overrideCover = true
+      options.overrideDetails = true
+    }
 
     // Update cover if not set OR overrideCover flag
     var hasUpdated = false
@@ -654,47 +662,68 @@ class Scanner {
     }
 
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'asin', 'isbn']
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'asin', 'isbn']
     const updatePayload = {}
+    updatePayload.metadata = {}
     for (const key in matchData) {
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
           if ((!libraryItem.media.metadata.narratorName || options.overrideDetails)) {
-            updatePayload.narrators = [matchData[key]]
+            updatePayload.metadata.narrators = matchData[key].split(',')
+          }
+        } else if (key === 'genres') {
+          if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
+            updatePayload.metadata[key] = matchData[key].split(',')
+          }
+        } else if (key === 'tags') {
+          if ((!libraryItem.media.tags || options.overrideDetails)) {
+            updatePayload[key] = matchData[key].split(',')
           }
         } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
-          updatePayload[key] = matchData[key]
+          updatePayload.metadata[key] = matchData[key]
         }
       }
     }
 
     // Add or set author if not set
-    if (matchData.author && !libraryItem.media.metadata.authorName) {
-      var author = this.db.authors.find(au => au.checkNameEquals(matchData.author))
-      if (!author) {
-        author = new Author()
-        author.setData({ name: matchData.author })
-        await this.db.insertEntity('author', author)
-        this.emitter('author_added', author)
+    if (matchData.author && !libraryItem.media.metadata.authorName || options.overrideDetails) {
+      if(!Array.isArray(matchData.author)) matchData.author = [matchData.author]
+      const authorPayload = []
+      for (let index = 0; index < matchData.author.length; index++) {
+        const authorName = matchData.author[index]
+        var author = this.db.authors.find(au => au.checkNameEquals(authorName))
+        if (!author) {
+          author = new Author()
+          author.setData({ name: authorName })
+          await this.db.insertEntity('author', author)
+          this.emitter('author_added', author)
+        }
+        authorPayload.push(author.toJSONMinimal())
       }
-      updatePayload.authors = [author.toJSONMinimal()]
+      updatePayload.metadata.authors = authorPayload
     }
 
     // Add or set series if not set
-    if (matchData.series && !libraryItem.media.metadata.seriesName) {
-      var seriesItem = this.db.series.find(au => au.checkNameEquals(matchData.series))
-      if (!seriesItem) {
-        seriesItem = new Series()
-        seriesItem.setData({ name: matchData.series })
-        await this.db.insertEntity('series', seriesItem)
-        this.emitter('series_added', seriesItem)
+    if (matchData.series && !libraryItem.media.metadata.seriesName || options.overrideDetails) {
+      if(!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, volumeNumber: matchData.volumeNumber }]
+      const seriesPayload = []
+      for (let index = 0; index < matchData.series.length; index++) {
+        const seriesMatchItem = matchData.series[index]
+        var seriesItem = this.db.series.find(au => au.checkNameEquals(seriesMatchItem.series))
+        if (!seriesItem) {
+          seriesItem = new Series()
+          seriesItem.setData({ name: seriesMatchItem.series })
+          await this.db.insertEntity('series', seriesItem)
+          this.emitter('series_added', seriesItem)
+        }
+        seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.volumeNumber))
       }
-      updatePayload.series = [seriesItem.toJSONMinimal(matchData.volumeNumber)]
+      updatePayload.metadata.series = seriesPayload
     }
 
     if (Object.keys(updatePayload).length) {
       Logger.debug('[Scanner] Updating details', updatePayload)
-      if (libraryItem.media.update({ metadata: updatePayload })) {
+      if (libraryItem.media.update(updatePayload)) {
         hasUpdated = true
       }
     }
