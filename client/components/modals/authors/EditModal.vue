@@ -6,7 +6,7 @@
       </div>
     </template>
     <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
-      <form @submit.prevent="submitForm">
+      <form v-if="author" @submit.prevent="submitForm">
         <div class="flex">
           <div class="w-40 p-2">
             <div class="w-full h-45 relative">
