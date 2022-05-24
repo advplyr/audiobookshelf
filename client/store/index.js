@@ -2,6 +2,7 @@ import { checkForUpdate } from '@/plugins/version'
 import Vue from 'vue'
 
 export const state = () => ({
+  Source: null,
   versionData: null,
   serverSettings: null,
   streamLibraryItem: null,
@@ -81,6 +82,9 @@ export const actions = {
 }
 
 export const mutations = {
+  setSource(state, source) {
+    state.Source = source
+  },
   setLastBookshelfScrollData(state, { scrollTop, path, name }) {
     state.lastBookshelfScrollData[name] = { scrollTop, path }
   },

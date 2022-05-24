@@ -224,20 +224,6 @@ class LibraryItemController {
     res.json(libraryItem.toJSON())
   }
 
-  // PATCH: api/items/:id/episodes
-  async updateEpisodes(req, res) { // For updating podcast episode order
-    var libraryItem = req.libraryItem
-    var orderedFileData = req.body.episodes
-    if (!libraryItem.media.setEpisodeOrder) {
-      Logger.error(`[LibraryItemController] updateEpisodes invalid media type ${libraryItem.id}`)
-      return res.sendStatus(500)
-    }
-    libraryItem.media.setEpisodeOrder(orderedFileData)
-    await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
-  }
-
   // DELETE: api/items/:id/episode/:episodeId
   async removeEpisode(req, res) {
     var episodeId = req.params.episodeId

@@ -62,7 +62,8 @@ class Scanner {
   }
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
-    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, this.db.serverSettings)
+    // TODO: Support for single media item
+    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
     if (!libraryItemData) {
       return ScanResult.NOTHING
     }
@@ -499,7 +500,11 @@ class Scanner {
         continue;
       }
       var relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
-      var fileUpdateGroup = groupFilesIntoLibraryItemPaths(relFilePaths, true)
+      var fileUpdateGroup = groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths)
+      if (!Object.keys(fileUpdateGroup).length) {
+        Logger.info(`[Scanner] No important changes to scan for in folder "${folderId}"`)
+        continue;
+      }
       var folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[Scanner] Folder scan results`, folderScanResults)
     }
@@ -513,6 +518,8 @@ class Scanner {
     //    Test Case: Moving audio files from library item folder to author folder should trigger a re-scan of the item
     var updateGroup = { ...fileUpdateGroup }
     for (const itemDir in updateGroup) {
+      if (itemDir == fileUpdateGroup[itemDir]) continue; // Media in root path
+
       var itemDirNestedFiles = fileUpdateGroup[itemDir].filter(b => b.includes('/'))
       if (!itemDirNestedFiles.length) continue;
 
@@ -582,7 +589,8 @@ class Scanner {
       }
 
       Logger.debug(`[Scanner] Folder update group must be a new item "${itemDir}" in library "${library.name}"`)
-      var newLibraryItem = await this.scanPotentialNewLibraryItem(library.mediaType, folder, fullPath)
+      var isSingleMediaItem = itemDir === fileUpdateGroup[itemDir]
+      var newLibraryItem = await this.scanPotentialNewLibraryItem(library.mediaType, folder, fullPath, isSingleMediaItem)
       if (newLibraryItem) {
         await this.createNewAuthorsAndSeries(newLibraryItem)
         await this.db.insertLibraryItem(newLibraryItem)
@@ -594,8 +602,8 @@ class Scanner {
     return itemGroupingResults
   }
 
-  async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath) {
-    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, this.db.serverSettings)
+  async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath, isSingleMediaItem = false) {
+    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
     if (!libraryItemData) return null
     var serverSettings = this.db.serverSettings
     return this.scanNewLibraryItem(libraryItemData, libraryMediaType, serverSettings.scannerPreferAudioMetadata, serverSettings.scannerPreferOpfMetadata, serverSettings.scannerFindCovers)

@@ -89,9 +89,6 @@ export default {
     offsetTop() {
       return 64
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },

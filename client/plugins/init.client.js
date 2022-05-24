@@ -163,17 +163,26 @@ Vue.prototype.$sanitizeSlug = (str) => {
 Vue.prototype.$copyToClipboard = (str, ctx) => {
   return new Promise((resolve) => {
     if (!navigator.clipboard) {
-      console.warn('Clipboard not supported')
-      return resolve(false)
+      navigator.clipboard.writeText(str).then(() => {
+        if (ctx) ctx.$toast.success('Copied to clipboard')
+        resolve(true)
+      }, (err) => {
+        console.error('Clipboard copy failed', str, err)
+        resolve(false)
+      })
+    } else {
+      const el = document.createElement('textarea')
+      el.value = str
+      el.setAttribute('readonly', '')
+      el.style.position = 'absolute'
+      el.style.left = '-9999px'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+
+      if (ctx) ctx.$toast.success('Copied to clipboard')
     }
-    navigator.clipboard.writeText(str).then(() => {
-      console.log('Clipboard copy success', str)
-      ctx.$toast.success('Copied to clipboard')
-      resolve(true)
-    }, (err) => {
-      console.error('Clipboard copy failed', str, err)
-      resolve(false)
-    })
   })
 }
 

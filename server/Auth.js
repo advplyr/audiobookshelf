@@ -96,7 +96,8 @@ class Auth {
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON()
+      serverSettings: this.db.serverSettings.toJSON(),
+      Source: global.Source
     }
   }
 

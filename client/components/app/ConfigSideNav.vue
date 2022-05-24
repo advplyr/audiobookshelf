@@ -9,9 +9,13 @@
       <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
-    <div class="w-full h-10 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamLibraryItem && isMobileLandscape ? '300px' : '65px' }">
-      <p class="font-mono text-sm">v{{ $config.version }}</p>
-      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-sm">Update available: {{ latestVersion }}</a>
+    <div class="w-full h-12 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamLibraryItem && isMobileLandscape ? '300px' : '65px' }">
+      <div class="flex justify-between">
+        <p class="font-mono text-sm">v{{ $config.version }}</p>
+
+        <p class="font-mono text-xs text-gray-300 italic">{{ Source }}</p>
+      </div>
+      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
     </div>
   </div>
 </template>
@@ -25,6 +29,9 @@ export default {
     return {}
   },
   computed: {
+    Source() {
+      return this.$store.state.Source
+    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },

@@ -1,11 +1,6 @@
 <template>
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="episode" class="flex items-center h-24">
-      <div v-show="userCanUpdate" class="w-12 min-w-12 max-w-16 h-full">
-        <div class="flex h-full items-center justify-center">
-          <span class="material-icons drag-handle text-lg text-white text-opacity-50 hover:text-opacity-100">menu</span>
-        </div>
-      </div>
       <div class="flex-grow px-2">
         <p class="text-sm font-semibold">
           {{ title }}
@@ -49,8 +44,8 @@ export default {
     episode: {
       type: Object,
       default: () => {}
-    },
-    isDragging: Boolean
+    }
+    // isDragging: Boolean
   },
   data() {
     return {
@@ -59,15 +54,15 @@ export default {
       isHovering: false
     }
   },
-  watch: {
-    isDragging: {
-      handler(newVal) {
-        if (newVal) {
-          this.isHovering = false
-        }
-      }
-    }
-  },
+  // watch: {
+  //   isDragging: {
+  //     handler(newVal) {
+  //       if (newVal) {
+  //         this.isHovering = false
+  //       }
+  //     }
+  //   }
+  // },
   computed: {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
@@ -117,7 +112,7 @@ export default {
   },
   methods: {
     mouseover() {
-      if (this.isDragging) return
+      // if (this.isDragging) return
       this.isHovering = true
     },
     mouseleave() {

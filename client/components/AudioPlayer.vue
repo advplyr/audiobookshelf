@@ -153,9 +153,6 @@ export default {
     },
     currentChapterName() {
       return this.currentChapter ? this.currentChapter.title : ''
-    },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {

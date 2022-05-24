@@ -35,9 +35,9 @@ const RssFeedManager = require('./managers/RssFeedManager')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH) {
-    this.Source = SOURCE
     this.Port = PORT
     this.Host = HOST
+    global.Source = SOURCE
     global.Uid = isNaN(UID) ? 0 : Number(UID)
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
