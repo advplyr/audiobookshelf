@@ -209,15 +209,15 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
     relPath = relPath.replace(/\\/g, '/')
     var splitDir = relPath.split('/')
 
-    var title = splitDir.pop() // Audio files will always be in the directory named for the title
+    var folder = splitDir.pop() // Audio files will always be in the directory named for the title
     series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
     author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
 
-    // The title directory may contain various other pieces of metadata, these functions extract it.
-    var [title, narrators] = getNarrator(title)
-    if (series) { var [title, sequence] = getSequence(title) }
-    var [title, publishedYear] = getPublishedYear(title)
-    if (parseSubtitle) { var [title, subtitle] = getSubtitle(title) } // Subtitle can be parsed from the title if user enabled
+    // The  may contain various other pieces of metadata, these functions extract it.
+    var [folder, narrators] = getNarrator(folder)
+    if (series) { var [folder, sequence] = getSequence(folder) }
+    var [folder, publishedYear] = getPublishedYear(folder)
+    if (parseSubtitle) { var [title, subtitle] = getSubtitle(folder) } // Subtitle can be parsed from the title if user enabled
 
     return {
         mediaMetadata: {
@@ -235,59 +235,64 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
 }
 
 function getNarrator(folder) {
-    let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
+    let pattern = /^(?<title>.*) \{(?<narrators>.*)\}$/
     let match = folder.match(pattern)
-    return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
+    return match ? [match.groups.title, match.groups.narrators] : [folder, null]
 }
 
-function getSequence(title) {
+function getSequence(folder) {
     // Valid ways of including a volume number:
-    // Book 2 - Title Here - Subtitle Here
-    // Title Here - Subtitle Here - Vol 12
-    // Title Here - volume 9 - Subtitle Here
-    // Vol. 3 Title Here - Subtitle Here
-    // 1980 - Book 2-Title Here
-    // Title Here-Volume 999-Subtitle Here
-    // 2 - Book Title
-    // 100 - Book Title
-    // 0.5 - Book Title
+    // [
+    //     'Book 2 - Title - Subtitle',
+    //     'Title - Subtitle - Vol 12',
+    //     'Title - volume 9 - Subtitle',
+    //     'Vol. 3 Title Here - Subtitle',
+    //     '1980 - Book 2 - Title',
+    //     'Volume 12. Title - Subtitle',
+    //     '100 - Book Title',
+    //     '2 - Book Title',
+    //     '6. Title',
+    //     '0.5 - Book Title'
+    // ]
 
-    // Matches a valid volume string, capturing each section for later processing.
-    let pattern = /^(vol\.? |volume |book )?(\d{1,3}(?:\.\d{1,2})?)(.*)/i
+    // Matches a valid volume string. Also matches a book whose title starts with a 1 to 3 digit number. Will handle that later.
+    let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{1,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?/i
 
     let volumeNumber = null
-    let parts = title.split('-')
+    let parts = folder.split(' - ')
     for (let i = 0; i < parts.length; i++) {
-        let match = parts[i].trim().match(pattern)
-        if (match && !(match[3].trim() && !match[1])) { // "101 Dalmations" shouldn't match
-            volumeNumber = match[2]
-            parts[i] = match[3]
-            if (!parts[i].trim()) { parts.splice(i, 1) }
+        let match = parts[i].match(pattern)
+
+        // This excludes '101 Dalmations' but includes '101. Dalmations'
+        if (match && !(match.groups.suffix && !(match.groups.volumeLabel || match.groups.trailingDot))) {
+            volumeNumber = match.groups.sequence
+            parts[i] = match.groups.suffix
+            if (!parts[i]) { parts.splice(i, 1) }
             break
         }
     }
-    title = parts.join(' - ')
 
-    return [title, volumeNumber]
+    folder = parts.join(' - ')
+    return [folder, volumeNumber]
 }
 
-function getPublishedYear(title) {
+function getPublishedYear(folder) {
     var publishedYear = null
 
-    pattern = /^ *\(?([0-9]{4})\)? *- *(.+)/ //Matches #### - title or (####) - title
-    var match = title.match(pattern)
+    pattern = /^ *\(?([0-9]{4})\)? * - *(.+)/ //Matches #### - title or (####) - title
+    var match = folder.match(pattern)
     if (match) {
         publishedYear = match[1]
-        title = match[2]
+        folder = match[2]
     }
 
-    return [title, publishedYear]
+    return [folder, publishedYear]
 }
 
-function getSubtitle(title) {
+function getSubtitle(folder) {
     // Subtitle is everything after " - "
-    var splitTitle = title.split(' - ')
-    return [splitTitle.shift().trim(), splitTitle.join(' - ').trim()]
+    var splitTitle = folder.split(' - ')
+    return [splitTitle.shift(), splitTitle.join(' - ')]
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {
