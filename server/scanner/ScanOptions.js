@@ -34,7 +34,7 @@ class ScanOptions {
       storeCoverWithItem: this.storeCoverWithItem,
       preferAudioMetadata: this.preferAudioMetadata,
       preferOpfMetadata: this.preferOpfMetadata,
-      preferOpfMetadata: this.preferMatchedMetadata
+      preferMatchedMetadata: this.preferMatchedMetadata
     }
   }
 
@@ -46,7 +46,7 @@ class ScanOptions {
     this.storeCoverWithItem = serverSettings.storeCoverWithItem
     this.preferAudioMetadata = serverSettings.scannerPreferAudioMetadata
     this.preferOpfMetadata = serverSettings.scannerPreferOpfMetadata
-    this.preferOpfMetadata = serverSettings.scannerPreferMatchedMetadata
+    this.scannerPreferMatchedMetadata = serverSettings.scannerPreferMatchedMetadata
   }
 }
 module.exports = ScanOptions
