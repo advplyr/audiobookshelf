@@ -216,8 +216,9 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   // The  may contain various other pieces of metadata, these functions extract it.
   var [folder, narrators] = getNarrator(folder)
   if (series) { var [folder, sequence] = getSequence(folder) }
+  var [folder, sequence] = series ? getSequence(folder) : [folder, null]
   var [folder, publishedYear] = getPublishedYear(folder)
-  if (parseSubtitle) { var [title, subtitle] = getSubtitle(folder) } // Subtitle can be parsed from the title if user enabled
+  var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
 
   return {
     mediaMetadata: {
