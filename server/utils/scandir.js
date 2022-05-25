@@ -330,10 +330,12 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
   var fileItems = []
 
   if (isSingleMediaItem) { // Single media item in root of folder
-    fileItems = [{
+    fileItems = [
+      {
       fullpath: libraryItemPath,
       path: libraryItemDir // actually the relPath (only filename here)
-    }]
+    }
+  ]
     libraryItemData = {
       path: libraryItemPath, // full path
       relPath: libraryItemDir, // only filename
@@ -366,7 +368,7 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
   for (let i = 0; i < fileItems.length; i++) {
     var fileItem = fileItems[i]
     var newLibraryFile = new LibraryFile()
-      // fileItem.path is the relative path
+    // fileItem.path is the relative path
     await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
     libraryItem.libraryFiles.push(newLibraryFile)
   }
