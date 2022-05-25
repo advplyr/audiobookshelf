@@ -45,7 +45,6 @@ export default {
       type: Object,
       default: () => {}
     }
-    // isDragging: Boolean
   },
   data() {
     return {
@@ -54,15 +53,6 @@ export default {
       isHovering: false
     }
   },
-  // watch: {
-  //   isDragging: {
-  //     handler(newVal) {
-  //       if (newVal) {
-  //         this.isHovering = false
-  //       }
-  //     }
-  //   }
-  // },
   computed: {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
@@ -149,22 +139,7 @@ export default {
         })
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove episode ${this.title}?\nNote: Does not delete from file system`)) {
-        this.processingRemove = true
-
-        this.$axios
-          .$delete(`/api/items/${this.libraryItemId}/episode/${this.episode.id}`)
-          .then((updatedPodcast) => {
-            console.log(`Episode removed from podcast`, updatedPodcast)
-            this.$toast.success('Episode removed from podcast')
-            this.processingRemove = false
-          })
-          .catch((error) => {
-            console.error('Failed to remove episode from podcast', error)
-            this.$toast.error('Failed to remove episode from podcast')
-            this.processingRemove = false
-          })
-      }
+      this.$emit('remove', this.episode)
     }
   }
 }

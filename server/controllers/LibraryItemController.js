@@ -224,24 +224,6 @@ class LibraryItemController {
     res.json(libraryItem.toJSON())
   }
 
-  // DELETE: api/items/:id/episode/:episodeId
-  async removeEpisode(req, res) {
-    var episodeId = req.params.episodeId
-    var libraryItem = req.libraryItem
-    if (libraryItem.mediaType !== 'podcast') {
-      Logger.error(`[LibraryItemController] removeEpisode invalid media type ${libraryItem.id}`)
-      return res.sendStatus(500)
-    }
-    if (!libraryItem.media.episodes.find(ep => ep.id === episodeId)) {
-      Logger.error(`[LibraryItemController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
-      return res.sendStatus(404)
-    }
-    libraryItem.media.removeEpisode(episodeId)
-    await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
-  }
-
   // POST api/items/:id/match
   async match(req, res) {
     var libraryItem = req.libraryItem

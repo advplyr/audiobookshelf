@@ -3,15 +3,14 @@
     <div class="flex items-center mb-4">
       <p class="text-lg mb-0 font-semibold">Episodes</p>
       <div class="flex-grow" />
-      <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" @change="changeSort" />
-      <div v-if="userCanUpdate" class="w-12">
-        <ui-icon-btn v-if="orderChanged" :loading="savingOrder" icon="save" bg-color="primary" class="ml-auto" @click="saveOrder" />
-      </div>
+      <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
-    <template v-for="episode in episodes">
-      <tables-podcast-episode-table-row :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" class="item" @edit="editEpisode" />
+    <template v-for="episode in episodesSorted">
+      <tables-podcast-episode-table-row :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" class="item" @remove="removeEpisode" @edit="editEpisode" />
     </template>
+
+    <modals-podcast-remove-episode v-model="showPodcastRemoveModal" :library-item="libraryItem" :episode="selectedEpisode" />
   </div>
 </template>
 
@@ -25,8 +24,16 @@ export default {
   },
   data() {
     return {
+      episodesCopy: [],
       sortKey: 'publishedAt',
-      sortDesc: true
+      sortDesc: true,
+      selectedEpisode: null,
+      showPodcastRemoveModal: false
+    }
+  },
+  watch: {
+    libraryItem() {
+      this.init()
     }
   },
   computed: {
@@ -41,16 +48,33 @@ export default {
     },
     episodes() {
       return this.media.episodes || []
+    },
+    episodesSorted() {
+      return this.episodesCopy.sort((a, b) => {
+        if (this.sortDesc) {
+          return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+        }
+        return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+      })
     }
   },
   methods: {
+    removeEpisode(episode) {
+      this.selectedEpisode = episode
+      this.showPodcastRemoveModal = true
+    },
     editEpisode(episode) {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
+    },
+    init() {
+      this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))
     }
   },
-  mounted() {}
+  mounted() {
+    this.init()
+  }
 }
 </script>
 
