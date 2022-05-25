@@ -136,7 +136,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems) {
 }
 
 function cleanFileObjects(libraryItemPath, files) {
-  return Promise.all(files.map(async (file) => {
+  return Promise.all(files.map(async(file) => {
     var filePath = Path.posix.join(libraryItemPath, file)
     var newLibraryFile = new LibraryFile()
     await newLibraryFile.setDataFromPath(filePath, file)
@@ -209,83 +209,15 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   relPath = relPath.replace(/\\/g, '/')
   var splitDir = relPath.split('/')
 
-  // Audio files will always be in the directory named for the title
-  var [title, narrators] = getTitleAndNarrator(splitDir.pop())
+  var folder = splitDir.pop() // Audio files will always be in the directory named for the title
+  series = (splitDir.length > 1) ? splitDir.pop() : null // If there are at least 2 more directories, next furthest will be the series
+  author = (splitDir.length > 0) ? splitDir.pop() : null // There could be many more directories, but only the top 3 are used for naming /author/series/title/
 
-  var series = null
-  var author = null
-  // If there are at least 2 more directories, next furthest will be the series
-  if (splitDir.length > 1) series = splitDir.pop()
-  if (splitDir.length > 0) author = splitDir.pop()
-  // There could be many more directories, but only the top 3 are used for naming /author/series/title/
-
-
-  // If in a series directory check for volume number match
-  /* ACCEPTS
-    Book 2 - Title Here - Subtitle Here
-    Title Here - Subtitle Here - Vol 12
-    Title Here - volume 9 - Subtitle Here
-    Vol. 3 Title Here - Subtitle Here
-    1980 - Book 2-Title Here
-    Title Here-Volume 999-Subtitle Here
-    2 - Book Title
-    100 - Book Title
-    0.5 - Book Title
-  */
-  var volumeNumber = null
-  if (series) {
-    // Added 1.7.1: If title starts with a # that is 3 digits or less (or w/ 2 decimal), then use as volume number
-    var volumeMatch = title.match(/^(\d{1,3}(?:\.\d{1,2})?) - ./)
-    if (volumeMatch && volumeMatch.length > 1) {
-      volumeNumber = volumeMatch[1]
-      title = title.replace(`${volumeNumber} - `, '')
-    } else {
-      // Match volumes with decimal (OLD: /(-? ?)\b((?:Book|Vol.?|Volume) (\d{1,3}))\b( ?-?)/i)
-      var volumeMatch = title.match(/(-? ?)\b((?:Book|Vol.?|Volume) (\d{0,3}(?:\.\d{1,2})?))\b( ?-?)/i)
-      if (volumeMatch && volumeMatch.length > 3 && volumeMatch[2] && volumeMatch[3]) {
-        volumeNumber = volumeMatch[3]
-        var replaceChunk = volumeMatch[2]
-
-        // "1980 - Book 2-Title Here"
-        // Group 1 would be "- "
-        // Group 3 would be "-"
-        // Only remove the first group
-        if (volumeMatch[1]) {
-          replaceChunk = volumeMatch[1] + replaceChunk
-        } else if (volumeMatch[4]) {
-          replaceChunk += volumeMatch[4]
-        }
-        title = title.replace(replaceChunk, '').trim()
-      }
-    }
-
-    if (volumeNumber != null && !isNaN(volumeNumber)) {
-      volumeNumber = String(Number(volumeNumber)) // Strips leading zeros
-    }
-  }
-
-  var publishedYear = null
-  // If Title is of format 1999 OR (1999) - Title, then use 1999 as publish year
-  var publishYearMatch = title.match(/^(\(?[0-9]{4}\)?) - (.+)/)
-  if (publishYearMatch && publishYearMatch.length > 2 && publishYearMatch[1]) {
-    // Strip parentheses
-    if (publishYearMatch[1].startsWith('(') && publishYearMatch[1].endsWith(')')) {
-      publishYearMatch[1] = publishYearMatch[1].slice(1, -1)
-    }
-    if (!isNaN(publishYearMatch[1])) {
-      publishedYear = publishYearMatch[1]
-      title = publishYearMatch[2]
-    }
-  }
-
-  // Subtitle can be parsed from the title if user enabled
-  // Subtitle is everything after " - "
-  var subtitle = null
-  if (parseSubtitle && title.includes(' - ')) {
-    var splitOnSubtitle = title.split(' - ')
-    title = splitOnSubtitle.shift()
-    subtitle = splitOnSubtitle.join(' - ')
-  }
+  // The  may contain various other pieces of metadata, these functions extract it.
+  var [folder, narrators] = getNarrator(folder)
+  if (series) { var [folder, sequence] = getSequence(folder) }
+  var [folder, publishedYear] = getPublishedYear(folder)
+  if (parseSubtitle) { var [title, subtitle] = getSubtitle(folder) } // Subtitle can be parsed from the title if user enabled
 
   return {
     mediaMetadata: {
@@ -293,7 +225,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
       title,
       subtitle,
       series,
-      sequence: volumeNumber,
+      sequence,
       publishedYear,
       narrators,
     },
@@ -302,10 +234,65 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
   }
 }
 
-function getTitleAndNarrator(folder) {
-  let pattern = /^(?<title>.*)\{(?<narrators>.*)\} *$/
+function getNarrator(folder) {
+  let pattern = /^(?<title>.*) \{(?<narrators>.*)\}$/
   let match = folder.match(pattern)
-  return match ? [match.groups.title.trimEnd(), match.groups.narrators] : [folder, null]
+  return match ? [match.groups.title, match.groups.narrators] : [folder, null]
+}
+
+function getSequence(folder) {
+  // Valid ways of including a volume number:
+  // [
+  //     'Book 2 - Title - Subtitle',
+  //     'Title - Subtitle - Vol 12',
+  //     'Title - volume 9 - Subtitle',
+  //     'Vol. 3 Title Here - Subtitle',
+  //     '1980 - Book 2 - Title',
+  //     'Volume 12. Title - Subtitle',
+  //     '100 - Book Title',
+  //     '2 - Book Title',
+  //     '6. Title',
+  //     '0.5 - Book Title'
+  // ]
+
+  // Matches a valid volume string. Also matches a book whose title starts with a 1 to 3 digit number. Will handle that later.
+  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{1,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?/i
+
+  let volumeNumber = null
+  let parts = folder.split(' - ')
+  for (let i = 0; i < parts.length; i++) {
+    let match = parts[i].match(pattern)
+
+    // This excludes '101 Dalmations' but includes '101. Dalmations'
+    if (match && !(match.groups.suffix && !(match.groups.volumeLabel || match.groups.trailingDot))) {
+      volumeNumber = match.groups.sequence
+      parts[i] = match.groups.suffix
+      if (!parts[i]) { parts.splice(i, 1) }
+      break
+    }
+  }
+
+  folder = parts.join(' - ')
+  return [folder, volumeNumber]
+}
+
+function getPublishedYear(folder) {
+  var publishedYear = null
+
+  pattern = /^ *\(?([0-9]{4})\)? * - *(.+)/ //Matches #### - title or (####) - title
+  var match = folder.match(pattern)
+  if (match) {
+    publishedYear = match[1]
+    folder = match[2]
+  }
+
+  return [folder, publishedYear]
+}
+
+function getSubtitle(folder) {
+  // Subtitle is everything after " - "
+  var splitTitle = folder.split(' - ')
+  return [splitTitle.shift(), splitTitle.join(' - ')]
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {
@@ -343,12 +330,10 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
   var fileItems = []
 
   if (isSingleMediaItem) { // Single media item in root of folder
-    fileItems = [
-      {
-        fullpath: libraryItemPath,
-        path: libraryItemDir // actually the relPath (only filename here)
-      }
-    ]
+    fileItems = [{
+      fullpath: libraryItemPath,
+      path: libraryItemDir // actually the relPath (only filename here)
+    }]
     libraryItemData = {
       path: libraryItemPath, // full path
       relPath: libraryItemDir, // only filename
@@ -381,7 +366,7 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
   for (let i = 0; i < fileItems.length; i++) {
     var fileItem = fileItems[i]
     var newLibraryFile = new LibraryFile()
-    // fileItem.path is the relative path
+      // fileItem.path is the relative path
     await newLibraryFile.setDataFromPath(fileItem.fullpath, fileItem.path)
     libraryItem.libraryFiles.push(newLibraryFile)
   }
