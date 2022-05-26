@@ -22,6 +22,7 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Stats</h1>
+        <p class="text-sm text-gray-300">{{ listeningSessions.length }} Listening Sessions</p>
         <p class="text-sm text-gray-300">
           Total Time Listened:&nbsp;
           <span class="font-mono text-base">{{ listeningTimePretty }}</span>
@@ -33,7 +34,9 @@
 
         <div v-if="latestSession" class="mt-4">
           <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Last Listening Session</h1>
-          <p class="text-sm text-gray-300">{{ latestSession.audiobookTitle }} {{ $dateDistanceFromNow(latestSession.lastUpdate) }} for {{ $elapsedPrettyExtended(this.latestSession.timeListening) }}</p>
+          <p class="text-sm text-gray-300">
+            <strong>{{ latestSession.displayTitle }}</strong> {{ $dateDistanceFromNow(latestSession.updatedAt) }} for  <span class="font-mono text-base">{{ $elapsedPrettyExtended(this.latestSession.timeListening) }}</span>
+          </p>
         </div>
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />

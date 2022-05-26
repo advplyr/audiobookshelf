@@ -109,7 +109,7 @@ class ApiRouter {
     this.router.patch('/users/:id', UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.delete.bind(this))
 
-    this.router.get('/users/:id/listening-sessions', UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/listening-sessions', UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
 
     //
