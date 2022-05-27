@@ -189,8 +189,8 @@ class LibraryItemController {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
-    const options = req.body || {}
-    this.playbackSessionManager.startSessionRequest(req.user, req.libraryItem, null, options, res)
+
+    this.playbackSessionManager.startSessionRequest(req, res, null)
   }
 
   // POST: api/items/:id/play/:episodeId
@@ -206,8 +206,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
-    const options = req.body || {}
-    this.playbackSessionManager.startSessionRequest(req.user, libraryItem, episodeId, options, res)
+    this.playbackSessionManager.startSessionRequest(req, res, episodeId)
   }
 
   // PATCH: api/items/:id/tracks

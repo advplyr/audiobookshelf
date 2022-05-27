@@ -57,6 +57,7 @@ Vue.prototype.$elapsedPretty = (seconds, useFullNames = false) => {
 }
 
 Vue.prototype.$secondsToTimestamp = (seconds) => {
+  if (!seconds) return '0:00'
   var _seconds = seconds
   var _minutes = Math.floor(seconds / 60)
   _seconds -= _minutes * 60

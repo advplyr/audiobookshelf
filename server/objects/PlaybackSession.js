@@ -3,6 +3,7 @@ const { getId } = require('../utils/index')
 const { PlayMethod } = require('../utils/constants')
 const BookMetadata = require('./metadata/BookMetadata')
 const PodcastMetadata = require('./metadata/PodcastMetadata')
+const DeviceInfo = require('./DeviceInfo')
 
 class PlaybackSession {
   constructor(session) {
@@ -21,18 +22,21 @@ class PlaybackSession {
 
     this.playMethod = null
     this.mediaPlayer = null
+    this.deviceInfo = null
 
     this.date = null
     this.dayOfWeek = null
 
     this.timeListening = null
+    this.startTime = null // media current time at start of playback
+    this.currentTime = 0 // Last current time set
+
     this.startedAt = null
     this.updatedAt = null
 
     // Not saved in DB
     this.lastSave = 0
     this.audioTracks = []
-    this.currentTime = 0
     this.stream = null
 
     if (session) {
@@ -56,10 +60,13 @@ class PlaybackSession {
       duration: this.duration,
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
+      deviceInfo: this.deviceInfo ? this.deviceInfo.toJSON() : null,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
-      lastUpdate: this.lastUpdate,
+      startTime: this.startTime,
+      currentTime: this.currentTime,
+      startedAt: this.startedAt,
       updatedAt: this.updatedAt
     }
   }
@@ -80,13 +87,15 @@ class PlaybackSession {
       duration: this.duration,
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
+      deviceInfo: this.deviceInfo ? this.deviceInfo.toJSON() : null,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
-      lastUpdate: this.lastUpdate,
+      startTime: this.startTime,
+      currentTime: this.currentTime,
+      startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map(at => at.toJSON()),
-      currentTime: this.currentTime,
       libraryItem: libraryItem.toJSONExpanded()
     }
   }
@@ -101,6 +110,7 @@ class PlaybackSession {
     this.duration = session.duration
     this.playMethod = session.playMethod
     this.mediaPlayer = session.mediaPlayer || null
+    this.deviceInfo = new DeviceInfo(session.deviceInfo)
     this.chapters = session.chapters || []
 
     this.mediaMetadata = null
@@ -118,6 +128,9 @@ class PlaybackSession {
     this.dayOfWeek = session.dayOfWeek
 
     this.timeListening = session.timeListening || null
+    this.startTime = session.startTime || 0
+    this.currentTime = session.currentTime || 0
+
     this.startedAt = session.startedAt
     this.updatedAt = session.updatedAt || null
   }
@@ -127,7 +140,7 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
-  setData(libraryItem, user, mediaPlayer, episodeId = null) {
+  setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id
     this.libraryItemId = libraryItem.id
@@ -146,8 +159,13 @@ class PlaybackSession {
     }
 
     this.mediaPlayer = mediaPlayer
+    this.deviceInfo = deviceInfo || new DeviceInfo()
+
 
     this.timeListening = 0
+    this.startTime = startTime
+    this.currentTime = startTime
+
     this.date = date.format(new Date(), 'YYYY-MM-DD')
     this.dayOfWeek = date.format(new Date(), 'dddd')
     this.startedAt = Date.now()
