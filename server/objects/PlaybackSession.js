@@ -9,6 +9,7 @@ class PlaybackSession {
   constructor(session) {
     this.id = null
     this.userId = null
+    this.libraryId = null
     this.libraryItemId = null
     this.episodeId = null
 
@@ -47,8 +48,8 @@ class PlaybackSession {
   toJSON() {
     return {
       id: this.id,
-      sessionType: this.sessionType,
       userId: this.userId,
+      libraryId: this.libraryId,
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
@@ -74,8 +75,8 @@ class PlaybackSession {
   toJSONForClient(libraryItem) {
     return {
       id: this.id,
-      sessionType: this.sessionType,
       userId: this.userId,
+      libraryId: this.libraryId,
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
@@ -102,8 +103,8 @@ class PlaybackSession {
 
   construct(session) {
     this.id = session.id
-    this.sessionType = session.sessionType
     this.userId = session.userId
+    this.libraryId = session.libraryId || null
     this.libraryItemId = session.libraryItemId
     this.episodeId = session.episodeId
     this.mediaType = session.mediaType
@@ -143,6 +144,7 @@ class PlaybackSession {
   setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id
+    this.libraryId = libraryItem.libraryId
     this.libraryItemId = libraryItem.id
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
@@ -160,7 +162,6 @@ class PlaybackSession {
 
     this.mediaPlayer = mediaPlayer
     this.deviceInfo = deviceInfo || new DeviceInfo()
-
 
     this.timeListening = 0
     this.startTime = startTime

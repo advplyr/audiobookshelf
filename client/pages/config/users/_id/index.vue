@@ -44,7 +44,7 @@
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Item Progress</h1>
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Saved Media Progress</h1>
         <table v-if="mediaProgress.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="w-16 text-left">Item</th>

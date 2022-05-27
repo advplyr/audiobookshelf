@@ -17,24 +17,23 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
 
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions</h1>
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions ({{ listeningSessions.length }})</h1>
         <table v-if="listeningSessions.length" class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="flex-grow text-left">Item</th>
-            <th class="w-40 text-left hidden md:table-cell">Play Method</th>
+            <th class="w-32 text-left hidden md:table-cell">Play Method</th>
             <th class="w-40 text-left hidden sm:table-cell">Device Info</th>
-            <th class="w-20">Listening Time</th>
+            <th class="w-20">Listened</th>
             <th class="w-20">Last Time</th>
-            <!-- <th class="w-40 hidden sm:table-cell">Started At</th> -->
             <th class="w-40 hidden sm:table-cell">Last Update</th>
           </tr>
-          <tr v-for="session in listeningSessions" :key="session.id">
+          <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
             <td class="py-1">
               <p class="text-sm text-gray-200">{{ session.displayTitle }}</p>
               <p class="text-xs text-gray-400">{{ session.displayAuthor }}</p>
             </td>
             <td class="hidden md:table-cell">
-              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }} with {{ session.mediaPlayer }}</p>
+              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
             </td>
             <td class="hidden sm:table-cell">
               <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
@@ -45,11 +44,6 @@
             <td class="text-center">
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
             </td>
-            <!-- <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="session.startedAt" direction="top" :text="$formatDate(session.startedAt, 'MMMM do, yyyy HH:mm')">
-                <p class="text-xs">{{ $dateDistanceFromNow(session.startedAt) }}</p>
-              </ui-tooltip>
-            </td> -->
             <td class="text-center hidden sm:table-cell">
               <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
                 <p class="text-xs">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
@@ -60,6 +54,8 @@
         <p v-else class="text-white text-opacity-50">No sessions yet...</p>
       </div>
     </div>
+
+    <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" />
   </div>
 </template>
 
@@ -77,6 +73,8 @@ export default {
   },
   data() {
     return {
+      showSessionModal: false,
+      selectedSession: null,
       listeningSessions: []
     }
   },
@@ -89,6 +87,10 @@ export default {
     }
   },
   methods: {
+    showSession(session) {
+      this.selectedSession = session
+      this.showSessionModal = true
+    },
     getDeviceInfoString(deviceInfo) {
       if (!deviceInfo) return ''
       var lines = []
@@ -127,11 +129,14 @@ export default {
   width: 100%;
   border: 1px solid #474747;
 }
-.userSessionsTable tr:nth-child(even) {
-  background-color: #2e2e2e;
+.userSessionsTable tr:first-child {
+  background-color: #272727;
 }
 .userSessionsTable tr:not(:first-child) {
   background-color: #373838;
+}
+.userSessionsTable tr:not(:first-child):nth-child(odd) {
+  background-color: #2f2f2f;
 }
 .userSessionsTable tr:hover:not(:first-child) {
   background-color: #474747;
