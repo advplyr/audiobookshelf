@@ -109,10 +109,8 @@ class PodcastController {
         return res.status(500).send('Invalid podcast RSS feed')
       }
 
-      if (!payload.podcast.metadata.feedUrl) {
-        // Not every RSS feed will put the feed url in their metadata
-        payload.podcast.metadata.feedUrl = url
-      }
+      // RSS feed may be a private RSS feed
+      payload.podcast.metadata.feedUrl = url
 
       res.json(payload)
     }).catch((error) => {
