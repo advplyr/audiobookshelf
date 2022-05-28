@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden px-4 py-6 relative">
+  <div id="match-wrapper" class="w-full h-full overflow-hidden px-4 py-6 relative">
     <form @submit.prevent="submitSearch">
       <div class="flex items-center justify-start -mx-1 h-20">
         <div class="w-40 px-1">
@@ -87,7 +87,7 @@
         <div v-if="selectedMatch.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" />
           <div class="flex-grow ml-4">
-            <ui-multi-select-query-input v-if="selectedMatch.series" ref="seriesSelect" v-model="seriesItems" text-key="displayName" label="Series" readonly />
+            <widgets-series-input-widget v-model="selectedMatch.series" />
             <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
@@ -198,9 +198,9 @@ export default {
         publishedYear: true,
         series: true,
         volumeNumber: true,
-        genres: true, 
-        tags: true, 
-        language: true, 
+        genres: true,
+        tags: true,
+        language: true,
         explicit: true,
         asin: true,
         isbn: true,
@@ -233,12 +233,15 @@ export default {
       get() {
         return this.selectedMatch.series.map((se) => {
           return {
+            id: `new-${Math.floor(Math.random() * 10000)}`,
             displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
-            ...se
+            name: se.series,
+            sequence: se.volumeNumber || ''
           }
         })
       },
       set(val) {
+        console.log('set series items', val)
         this.selectedMatch.series = val
       }
     },
@@ -332,9 +335,9 @@ export default {
         publishedYear: true,
         series: true,
         volumeNumber: true,
-        genres: true, 
-        tags: true, 
-        language: true, 
+        genres: true,
+        tags: true,
+        language: true,
         explicit: true,
         asin: true,
         isbn: true,
@@ -362,6 +365,17 @@ export default {
       else this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
+      if (match && match.series) {
+        match.series = match.series.map((se) => {
+          return {
+            id: `new-${Math.floor(Math.random() * 10000)}`,
+            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+            name: se.series,
+            sequence: se.volumeNumber || ''
+          }
+        })
+      }
+
       this.selectedMatch = match
     },
     buildMatchUpdatePayload() {
@@ -372,21 +386,33 @@ export default {
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
           if (key === 'series') {
-            if(!Array.isArray(this.selectedMatch[key])) this.selectedMatch[key] = [{ series: this.selectedMatch[key], volumeNumber: volumeNumber }]
             var seriesPayload = []
-            this.selectedMatch[key].forEach(seriesItem => seriesPayload.push({
-              id: `new-${Math.floor(Math.random() * 10000)}`,
-              name: seriesItem.series,
-              sequence: seriesItem.volumeNumber
-            }))
+            if (!Array.isArray(this.selectedMatch[key])) {
+              seriesPayload.push({
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: this.selectedMatch[key],
+                sequence: volumeNumber
+              })
+            } else {
+              this.selectedMatch[key].forEach((seriesItem) =>
+                seriesPayload.push({
+                  id: seriesItem.id,
+                  name: seriesItem.name,
+                  sequence: seriesItem.sequence
+                })
+              )
+            }
+
             updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
-            if(!Array.isArray(this.selectedMatch[key])) this.selectedMatch[key] = [this.selectedMatch[key]]
+            if (!Array.isArray(this.selectedMatch[key])) this.selectedMatch[key] = [this.selectedMatch[key]]
             var authorPayload = []
-            this.selectedMatch[key].forEach(authorName => authorPayload.push({
-              id: `new-${Math.floor(Math.random() * 10000)}`,
-              name: authorName
-            }))
+            this.selectedMatch[key].forEach((authorName) =>
+              authorPayload.push({
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: authorName
+              })
+            )
             updatePayload.metadata.authors = authorPayload
           } else if (key === 'narrator') {
             updatePayload.metadata.narrators = [this.selectedMatch[key]]
@@ -401,7 +427,7 @@ export default {
           }
         }
       }
-      console.log(updatePayload)
+
       return updatePayload
     },
     async submitMatchUpdate() {

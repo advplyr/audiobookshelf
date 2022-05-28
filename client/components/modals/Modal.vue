@@ -104,6 +104,7 @@ export default {
       }
     },
     hotkey(action) {
+      if (this.$store.state.innerModalOpen) return
       if (action === this.$hotkeys.Modal.CLOSE) {
         this.show = false
       }
