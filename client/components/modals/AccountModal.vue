@@ -67,6 +67,15 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
+                <p>Can Access Explicit Content</p>
+              </div>
+              <div class="w-1/2">
+                <ui-toggle-switch v-model="newUser.permissions.accessExplicitContent" />
+              </div>
+            </div>
+
+            <div class="flex items-center my-2 max-w-md">
+              <div class="w-1/2">
                 <p>Can Access All Libraries</p>
               </div>
               <div class="w-1/2">

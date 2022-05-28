@@ -104,7 +104,6 @@ class Auth {
   async login(req, res) {
     var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
-    Logger.debug('Check Auth', username, !!password)
 
     var user = this.users.find(u => u.username.toLowerCase() === username)
 

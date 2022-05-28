@@ -51,11 +51,8 @@ class User {
   get canUpload() {
     return !!this.permissions.upload && this.isActive
   }
-  get canAccessAllLibraries() {
-    return !!this.permissions.accessAllLibraries && this.isActive
-  }
-  get canAccessAllTags() {
-    return !!this.permissions.accessAllTags && this.isActive
+  get canAccessExplicitContent() {
+    return !!this.permissions.accessExplicitContent && this.isActive
   }
   get hasPw() {
     return !!this.pash && !!this.pash.length
@@ -82,7 +79,8 @@ class User {
       delete: this.type === 'root',
       upload: this.type === 'root' || this.type === 'admin',
       accessAllLibraries: true,
-      accessAllTags: true
+      accessAllTags: true,
+      accessExplicitContent: true
     }
   }
 
@@ -176,6 +174,8 @@ class User {
     if (this.permissions.accessAllLibraries === undefined) this.permissions.accessAllLibraries = true
     // Library restriction permissions added v2.0, defaults to all libraries
     if (this.permissions.accessAllTags === undefined) this.permissions.accessAllTags = true
+    // Explicit content restriction permission added v2.0.18
+    if (this.permissions.accessExplicitContent === undefined) this.permissions.accessExplicitContent = true
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
     this.itemTagsAccessible = [...(user.itemTagsAccessible || [])]
@@ -343,6 +343,7 @@ class User {
 
   checkCanAccessLibraryItem(libraryItem) {
     if (!this.checkCanAccessLibrary(libraryItem.libraryId)) return false
+    if (libraryItem.media.metadata.explicit && !this.canAccessExplicitContent) return false
     return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
   }
 

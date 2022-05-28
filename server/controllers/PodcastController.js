@@ -225,13 +225,8 @@ class PodcastController {
       return res.sendStatus(500)
     }
 
-    // Check user can access this library
-    if (!req.user.checkCanAccessLibrary(item.libraryId)) {
-      return res.sendStatus(403)
-    }
-
     // Check user can access this library item
-    if (!req.user.checkCanAccessLibraryItemWithTags(item.media.tags)) {
+    if (!req.user.checkCanAccessLibraryItem(item)) {
       return res.sendStatus(403)
     }
 

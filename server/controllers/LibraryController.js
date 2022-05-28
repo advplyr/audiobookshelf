@@ -485,8 +485,7 @@ class LibraryController {
   }
 
   middleware(req, res, next) {
-    var librariesAccessible = req.user.librariesAccessible || []
-    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.params.id)) {
+    if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(404)
     }
@@ -497,7 +496,7 @@ class LibraryController {
     }
     req.library = library
     req.libraryItems = this.db.libraryItems.filter(li => {
-      return li.libraryId === library.id && req.user.checkCanAccessLibraryItemWithTags(li.media.tags)
+      return li.libraryId === library.id && req.user.checkCanAccessLibraryItem(li)
     })
     next()
   }
