@@ -22,7 +22,7 @@
 
       <div class="flex mt-2 -mx-1">
         <div class="flex-grow px-1">
-          <ui-multi-select-query-input ref="seriesSelect" v-model="seriesItems" text-key="displayName" label="Series" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
+          <widgets-series-input-widget v-model="details.series" />
         </div>
       </div>
 
@@ -63,27 +63,6 @@
         </div>
       </div>
     </form>
-
-    <div v-if="showSeriesForm" class="absolute top-0 left-0 z-20 w-full h-full bg-black bg-opacity-50 rounded-lg flex items-center justify-center" @click="cancelSeriesForm">
-      <div class="absolute top-0 right-0 p-4">
-        <span class="material-icons text-gray-200 hover:text-white text-4xl cursor-pointer">close</span>
-      </div>
-      <form @submit.prevent="submitSeriesForm">
-        <div class="bg-bg rounded-lg p-8" @click.stop>
-          <div class="flex">
-            <div class="flex-grow p-1 min-w-80">
-              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!selectedSeries.id.startsWith('new')" label="Series Name" />
-            </div>
-            <div class="w-40 p-1">
-              <ui-text-input-with-label v-model="selectedSeries.sequence" label="Sequence" />
-            </div>
-          </div>
-          <div class="flex justify-end mt-2 p-1">
-            <ui-btn type="submit">Save</ui-btn>
-          </div>
-        </div>
-      </form>
-    </div>
   </div>
 </template>
 
@@ -97,8 +76,6 @@ export default {
   },
   data() {
     return {
-      selectedSeries: {},
-      showSeriesForm: false,
       details: {
         title: null,
         subtitle: null,
@@ -146,24 +123,6 @@ export default {
     },
     filterData() {
       return this.$store.state.libraries.filterData || {}
-    },
-    existingSeriesNames() {
-      // Only show series names not already selected
-      var alreadySelectedSeriesIds = this.details.series.map((se) => se.id)
-      return this.series.filter((se) => !alreadySelectedSeriesIds.includes(se.id)).map((se) => se.name)
-    },
-    seriesItems: {
-      get() {
-        return this.details.series.map((se) => {
-          return {
-            displayName: se.sequence ? `${se.name} #${se.sequence}` : se.name,
-            ...se
-          }
-        })
-      },
-      set(val) {
-        this.details.series = val
-      }
     }
   },
   methods: {
@@ -213,50 +172,6 @@ export default {
       if (this.$refs.tagsSelect && this.$refs.tagsSelect.isFocused) {
         this.$refs.tagsSelect.forceBlur()
       }
-    },
-    cancelSeriesForm() {
-      this.showSeriesForm = false
-    },
-    editSeriesItem(series) {
-      var _series = this.details.series.find((se) => se.id === series.id)
-      if (!_series) return
-      this.selectedSeries = {
-        ..._series
-      }
-      this.showSeriesForm = true
-    },
-    addNewSeries() {
-      this.selectedSeries = {
-        id: `new-${Date.now()}`,
-        name: '',
-        sequence: ''
-      }
-      this.showSeriesForm = true
-    },
-    submitSeriesForm() {
-      if (!this.selectedSeries.name) {
-        this.$toast.error('Must enter a series')
-        return
-      }
-      if (this.$refs.newSeriesSelect) {
-        this.$refs.newSeriesSelect.blur()
-      }
-      var existingSeriesIndex = this.details.series.findIndex((se) => se.id === this.selectedSeries.id)
-
-      var seriesSameName = this.series.find((se) => se.name.toLowerCase() === this.selectedSeries.name.toLowerCase())
-      if (existingSeriesIndex < 0 && seriesSameName) {
-        this.selectedSeries.id = seriesSameName.id
-      }
-
-      if (existingSeriesIndex >= 0) {
-        this.details.series.splice(existingSeriesIndex, 1, { ...this.selectedSeries })
-      } else {
-        this.details.series.push({
-          ...this.selectedSeries
-        })
-      }
-
-      this.showSeriesForm = false
     },
     stringArrayEqual(array1, array2) {
       // return false if different

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full overflow-hidden px-4 py-6 relative">
+  <div id="match-wrapper" class="w-full h-full overflow-hidden px-4 py-6 relative">
     <form @submit.prevent="submitSearch">
       <div class="flex items-center justify-start -mx-1 h-20">
         <div class="w-40 px-1">
@@ -87,13 +87,34 @@
         <div v-if="selectedMatch.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" label="Series" />
+            <widgets-series-input-widget v-model="selectedMatch.series" />
             <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.volumeNumber" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.volumeNumber" />
           <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
+        </div>
+        <div v-if="selectedMatch.genres" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.genres" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" />
+            <p v-if="mediaMetadata.genresList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genresList || '' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatch.tags" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.tags" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" label="Tags" />
+            <p v-if="mediaMetadata.tagsList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.tagsList || '' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatch.language" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.language" />
+          <div class="flex-grow ml-4">
+            <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" label="Language" />
+            <p v-if="mediaMetadata.language" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.language || '' }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.isbn" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.isbn" />
@@ -177,6 +198,10 @@ export default {
         publishedYear: true,
         series: true,
         volumeNumber: true,
+        genres: true,
+        tags: true,
+        language: true,
+        explicit: true,
         asin: true,
         isbn: true,
         // Podcast specific
@@ -202,6 +227,22 @@ export default {
       },
       set(val) {
         this.$emit('update:processing', val)
+      }
+    },
+    seriesItems: {
+      get() {
+        return this.selectedMatch.series.map((se) => {
+          return {
+            id: `new-${Math.floor(Math.random() * 10000)}`,
+            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+            name: se.series,
+            sequence: se.volumeNumber || ''
+          }
+        })
+      },
+      set(val) {
+        console.log('set series items', val)
+        this.selectedMatch.series = val
       }
     },
     bookCoverAspectRatio() {
@@ -294,6 +335,10 @@ export default {
         publishedYear: true,
         series: true,
         volumeNumber: true,
+        genres: true,
+        tags: true,
+        language: true,
+        explicit: true,
         asin: true,
         isbn: true,
         // Podcast specific
@@ -320,36 +365,69 @@ export default {
       else this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
+      if (match && match.series) {
+        match.series = match.series.map((se) => {
+          return {
+            id: `new-${Math.floor(Math.random() * 10000)}`,
+            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+            name: se.series,
+            sequence: se.volumeNumber || ''
+          }
+        })
+      }
+
       this.selectedMatch = match
     },
     buildMatchUpdatePayload() {
       var updatePayload = {}
+      updatePayload.metadata = {}
 
       var volumeNumber = this.selectedMatchUsage.volumeNumber ? this.selectedMatch.volumeNumber || null : null
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
           if (key === 'series') {
-            var seriesItem = {
-              id: `new-${Math.floor(Math.random() * 10000)}`,
-              name: this.selectedMatch[key],
-              sequence: volumeNumber
+            var seriesPayload = []
+            if (!Array.isArray(this.selectedMatch[key])) {
+              seriesPayload.push({
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: this.selectedMatch[key],
+                sequence: volumeNumber
+              })
+            } else {
+              this.selectedMatch[key].forEach((seriesItem) =>
+                seriesPayload.push({
+                  id: seriesItem.id,
+                  name: seriesItem.name,
+                  sequence: seriesItem.sequence
+                })
+              )
             }
-            updatePayload.series = [seriesItem]
+
+            updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
-            var authorItem = {
-              id: `new-${Math.floor(Math.random() * 10000)}`,
-              name: this.selectedMatch[key]
-            }
-            updatePayload.authors = [authorItem]
+            if (!Array.isArray(this.selectedMatch[key])) this.selectedMatch[key] = [this.selectedMatch[key]]
+            var authorPayload = []
+            this.selectedMatch[key].forEach((authorName) =>
+              authorPayload.push({
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: authorName
+              })
+            )
+            updatePayload.metadata.authors = authorPayload
           } else if (key === 'narrator') {
-            updatePayload.narrators = [this.selectedMatch[key]]
+            updatePayload.metadata.narrators = [this.selectedMatch[key]]
+          } else if (key === 'genres') {
+            updatePayload.metadata.genres = this.selectedMatch[key].split(',')
+          } else if (key === 'tags') {
+            updatePayload.tags = this.selectedMatch[key].split(',')
           } else if (key === 'itunesId') {
-            updatePayload.itunesId = Number(this.selectedMatch[key])
-          } else if (key !== 'volumeNumber') {
-            updatePayload[key] = this.selectedMatch[key]
+            updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
+          } else {
+            updatePayload.metadata[key] = this.selectedMatch[key]
           }
         }
       }
+
       return updatePayload
     },
     async submitMatchUpdate() {
@@ -361,7 +439,7 @@ export default {
 
       if (updatePayload.cover) {
         var coverPayload = {
-          url: updatePayload.cover
+          url: updatePayload.metadata.cover
         }
         var success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
           console.error('Failed to update', error)
@@ -373,13 +451,11 @@ export default {
           this.$toast.error('Item Cover Failed to Update')
         }
         console.log('Updated cover')
-        delete updatePayload.cover
+        delete updatePayload.metadata.cover
       }
 
       if (Object.keys(updatePayload).length) {
-        var mediaUpdatePayload = {
-          metadata: updatePayload
-        }
+        var mediaUpdatePayload = updatePayload
         var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false

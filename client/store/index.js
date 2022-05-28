@@ -20,6 +20,7 @@ export const state = () => ({
   backups: [],
   bookshelfBookIds: [],
   openModal: null,
+  innerModalOpen: false,
   selectedBookshelfTexture: '/textures/wood_default.jpg',
   lastBookshelfScrollData: {}
 })
@@ -176,6 +177,9 @@ export const mutations = {
   },
   setOpenModal(state, val) {
     state.openModal = val
+  },
+  setInnerModalOpen(state, val) {
+    state.innerModalOpen = val
   },
   setBookshelfTexture(state, val) {
     state.selectedBookshelfTexture = val
