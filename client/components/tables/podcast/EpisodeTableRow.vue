@@ -1,21 +1,18 @@
 <template>
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
-    <div v-if="episode" class="flex items-center h-24">
-      <div v-show="userCanUpdate" class="w-12 min-w-12 max-w-16 h-full">
-        <div class="flex h-full items-center justify-center">
-          <span class="material-icons drag-handle text-lg text-white text-opacity-50 hover:text-opacity-100">menu</span>
-        </div>
-      </div>
+    <div v-if="episode" class="flex items-center h-24 cursor-pointer" @click="$emit('view', episode)">
       <div class="flex-grow px-2">
         <p class="text-sm font-semibold">
           {{ title }}
         </p>
-        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ description }}</p>
+
+        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ subtitle }}</p>
+
         <div class="flex items-center pt-2">
-          <div class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click="playClick">
+          <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
             <span class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
-          </div>
+          </button>
 
           <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
@@ -49,23 +46,13 @@ export default {
     episode: {
       type: Object,
       default: () => {}
-    },
-    isDragging: Boolean
+    }
   },
   data() {
     return {
       isProcessingReadUpdate: false,
       processingRemove: false,
       isHovering: false
-    }
-  },
-  watch: {
-    isDragging: {
-      handler(newVal) {
-        if (newVal) {
-          this.isHovering = false
-        }
-      }
     }
   },
   computed: {
@@ -81,10 +68,11 @@ export default {
     title() {
       return this.episode.title || ''
     },
+    subtitle() {
+      return this.episode.subtitle || ''
+    },
     description() {
-      if (this.episode.subtitle) return this.episode.subtitle
-      var desc = this.episode.description || ''
-      return desc
+      return this.episode.description || ''
     },
     duration() {
       return this.$secondsToTimestamp(this.episode.duration)
@@ -117,7 +105,7 @@ export default {
   },
   methods: {
     mouseover() {
-      if (this.isDragging) return
+      // if (this.isDragging) return
       this.isHovering = true
     },
     mouseleave() {
@@ -154,22 +142,7 @@ export default {
         })
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove episode ${this.title}?\nNote: Does not delete from file system`)) {
-        this.processingRemove = true
-
-        this.$axios
-          .$delete(`/api/items/${this.libraryItemId}/episode/${this.episode.id}`)
-          .then((updatedPodcast) => {
-            console.log(`Episode removed from podcast`, updatedPodcast)
-            this.$toast.success('Episode removed from podcast')
-            this.processingRemove = false
-          })
-          .catch((error) => {
-            console.error('Failed to remove episode from podcast', error)
-            this.$toast.error('Failed to remove episode from podcast')
-            this.processingRemove = false
-          })
-      }
+      this.$emit('remove', this.episode)
     }
   }
 }

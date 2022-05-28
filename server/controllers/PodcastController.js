@@ -109,10 +109,8 @@ class PodcastController {
         return res.status(500).send('Invalid podcast RSS feed')
       }
 
-      if (!payload.podcast.metadata.feedUrl) {
-        // Not every RSS feed will put the feed url in their metadata
-        payload.podcast.metadata.feedUrl = url
-      }
+      // RSS feed may be a private RSS feed
+      payload.podcast.metadata.feedUrl = url
 
       res.json(payload)
     }).catch((error) => {
@@ -188,6 +186,35 @@ class PodcastController {
     }
 
     res.json(libraryItem.toJSONExpanded())
+  }
+
+  // DELETE: api/podcasts/:id/episode/:episodeId
+  async removeEpisode(req, res) {
+    var episodeId = req.params.episodeId
+    var libraryItem = req.libraryItem
+    var hardDelete = req.query.hard === '1'
+
+    var episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      Logger.error(`[PodcastController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      return res.sendStatus(404)
+    }
+
+    if (hardDelete) {
+      var audioFile = episode.audioFile
+      // TODO: this will trigger the watcher. should maybe handle this gracefully
+      await fs.remove(audioFile.metadata.path).then(() => {
+        Logger.info(`[PodcastController] Hard deleted episode file at "${audioFile.metadata.path}"`)
+      }).catch((error) => {
+        Logger.error(`[PodcastController] Failed to hard delete episode file at "${audioFile.metadata.path}"`, error)
+      })
+    }
+
+    libraryItem.media.removeEpisode(episodeId)
+
+    await this.db.updateLibraryItem(libraryItem)
+    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    res.json(libraryItem.toJSON())
   }
 
   middleware(req, res, next) {

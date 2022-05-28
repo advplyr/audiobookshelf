@@ -162,13 +162,6 @@ class FolderWatcher extends EventEmitter {
     }
     var folderFullPath = folder.fullPath.replace(/\\/g, '/')
 
-    // Check if file was added to root directory
-    var dir = Path.dirname(path)
-    if (dir === folderFullPath) {
-      Logger.warn(`[Watcher] New file "${Path.basename(path)}" added to folder root - ignoring it`)
-      return
-    }
-
     var relPath = path.replace(folderFullPath, '')
 
     var hasDotPath = relPath.split('/').find(p => p.startsWith('.'))

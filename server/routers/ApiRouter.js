@@ -90,8 +90,6 @@ class ApiRouter {
     this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
     this.router.post('/items/:id/play/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.startEpisodePlaybackSession.bind(this))
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
-    this.router.patch('/items/:id/episodes', LibraryItemController.middleware.bind(this), LibraryItemController.updateEpisodes.bind(this))
-    this.router.delete('/items/:id/episode/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.removeEpisode.bind(this))
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
     this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
@@ -111,7 +109,7 @@ class ApiRouter {
     this.router.patch('/users/:id', UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.delete.bind(this))
 
-    this.router.get('/users/:id/listening-sessions', UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/listening-sessions', UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
 
     //
@@ -189,6 +187,7 @@ class ApiRouter {
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
+    this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
 
     //
     // Misc Routes

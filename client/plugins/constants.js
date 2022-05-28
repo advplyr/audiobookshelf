@@ -28,7 +28,8 @@ const BookshelfView = {
 const PlayMethod = {
   DIRECTPLAY: 0,
   DIRECTSTREAM: 1,
-  TRANSCODE: 2
+  TRANSCODE: 2,
+  LOCAL: 3
 }
 
 const Constants = {

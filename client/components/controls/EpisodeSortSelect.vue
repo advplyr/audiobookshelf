@@ -33,8 +33,8 @@ export default {
       showMenu: false,
       items: [
         {
-          text: 'Current',
-          value: 'index'
+          text: 'Pub Date',
+          value: 'publishedAt'
         },
         {
           text: 'Title',
@@ -47,10 +47,6 @@ export default {
         {
           text: 'Episode',
           value: 'episode'
-        },
-        {
-          text: 'Pub Date',
-          value: 'publishedAt'
         }
       ]
     }

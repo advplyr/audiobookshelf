@@ -1,16 +1,16 @@
 const axios = require('axios')
-const { stripHtml } = require('string-strip-html')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
 
 class Audible {
     constructor() { }
 
     cleanResult(item) {
-        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language } = item;
+        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language } = item
 
         var series = []
-        if(seriesPrimary) series.push(seriesPrimary)
-        if(seriesSecondary) series.push(seriesSecondary)
+        if (seriesPrimary) series.push(seriesPrimary)
+        if (seriesSecondary) series.push(seriesSecondary)
 
         var genresFiltered = genres ? genres.filter(g => g.type == "genre") : []
         var tagsFiltered = genres ? genres.filter(g => g.type == "tag") : []
@@ -22,12 +22,12 @@ class Audible {
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
             publisher: publisherName,
             publishedYear: releaseDate ? releaseDate.split('-')[0] : null,
-            description: summary ? stripHtml(summary).result : null,
+            description: summary ? htmlSanitizer.stripAllTags(summary) : null,
             cover: image,
             asin,
             genres: genresFiltered.length > 0 ? genresFiltered.map(({ name }) => name).join(', ') : null,
             tags: tagsFiltered.length > 0 ? tagsFiltered.map(({ name }) => name).join(', ') : null,
-            series: series != [] ? series.map(({name, position}) => ({ series: name, volumeNumber: position })) : null,
+            series: series != [] ? series.map(({ name, position }) => ({ series: name, volumeNumber: position })) : null,
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null
         }
     }
@@ -49,17 +49,17 @@ class Audible {
         })
     }
 
-    async search(title, author, asin) {        
+    async search(title, author, asin) {
         var items
-        if(asin) {
+        if (asin) {
             items = [await this.asinSearch(asin)]
         }
-        
+
         if (!items && this.isProbablyAsin(title)) {
             items = [await this.asinSearch(title)]
         }
 
-        if(!items) {
+        if (!items) {
             var queryObj = {
                 num_results: '10',
                 products_sort_by: 'Relevance',

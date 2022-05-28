@@ -32,6 +32,7 @@ export default {
       default: ''
     },
     paddingX: Number,
+    paddingY: Number,
     small: Boolean,
     loading: Boolean,
     disabled: Boolean
@@ -48,13 +49,16 @@ export default {
       if (this.small) {
         list.push('text-sm')
         if (this.paddingX === undefined) list.push('px-4')
-        list.push('py-1')
+        if (this.paddingY === undefined) list.push('py-1')
       } else {
         if (this.paddingX === undefined) list.push('px-8')
-        list.push('py-2')
+        if (this.paddingY === undefined) list.push('py-2')
       }
       if (this.paddingX !== undefined) {
         list.push(`px-${this.paddingX}`)
+      }
+      if (this.paddingY !== undefined) {
+        list.push(`py-${this.paddingY}`)
       }
       if (this.disabled) {
         list.push('cursor-not-allowed')

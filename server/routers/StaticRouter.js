@@ -17,7 +17,9 @@ class StaticRouter {
       if (!item) return res.status(404).send('Item not found with id ' + req.params.id)
 
       var remainingPath = req.params['0']
-      var fullPath = Path.join(item.path, remainingPath)
+      var fullPath = null
+      if (item.isFile) fullPath = item.path
+      else fullPath = Path.join(item.path, remainingPath)
       res.sendFile(fullPath)
     })
   }

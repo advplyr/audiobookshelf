@@ -189,8 +189,8 @@ class LibraryItemController {
       Logger.error(`[LibraryItemController] startPlaybackSession cannot playback ${req.libraryItem.id}`)
       return res.sendStatus(404)
     }
-    const options = req.body || {}
-    this.playbackSessionManager.startSessionRequest(req.user, req.libraryItem, null, options, res)
+
+    this.playbackSessionManager.startSessionRequest(req, res, null)
   }
 
   // POST: api/items/:id/play/:episodeId
@@ -206,8 +206,7 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
-    const options = req.body || {}
-    this.playbackSessionManager.startSessionRequest(req.user, libraryItem, episodeId, options, res)
+    this.playbackSessionManager.startSessionRequest(req, res, episodeId)
   }
 
   // PATCH: api/items/:id/tracks
@@ -219,38 +218,6 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
     libraryItem.media.updateAudioTracks(orderedFileData)
-    await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
-  }
-
-  // PATCH: api/items/:id/episodes
-  async updateEpisodes(req, res) { // For updating podcast episode order
-    var libraryItem = req.libraryItem
-    var orderedFileData = req.body.episodes
-    if (!libraryItem.media.setEpisodeOrder) {
-      Logger.error(`[LibraryItemController] updateEpisodes invalid media type ${libraryItem.id}`)
-      return res.sendStatus(500)
-    }
-    libraryItem.media.setEpisodeOrder(orderedFileData)
-    await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
-    res.json(libraryItem.toJSON())
-  }
-
-  // DELETE: api/items/:id/episode/:episodeId
-  async removeEpisode(req, res) {
-    var episodeId = req.params.episodeId
-    var libraryItem = req.libraryItem
-    if (libraryItem.mediaType !== 'podcast') {
-      Logger.error(`[LibraryItemController] removeEpisode invalid media type ${libraryItem.id}`)
-      return res.sendStatus(500)
-    }
-    if (!libraryItem.media.episodes.find(ep => ep.id === episodeId)) {
-      Logger.error(`[LibraryItemController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
-      return res.sendStatus(404)
-    }
-    libraryItem.media.removeEpisode(episodeId)
     await this.db.updateLibraryItem(libraryItem)
     this.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())

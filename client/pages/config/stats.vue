@@ -37,7 +37,11 @@
     <div class="flex flex-col md:flex-row overflow-hidden max-w-full">
       <stats-daily-listening-chart :listening-stats="listeningStats" class="origin-top-left transform scale-75 lg:scale-100" />
       <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Recent Listening Sessions</h1>
+        <div class="flex mb-4 items-center">
+          <h1 class="text-2xl font-book">Recent Sessions</h1>
+          <div class="flex-grow" />
+          <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">View All</ui-btn>
+        </div>
         <p v-if="!mostRecentListeningSessions.length">No Listening Sessions</p>
         <template v-for="(item, index) in mostRecentListeningSessions">
           <div :key="item.id" class="w-full py-0.5">
