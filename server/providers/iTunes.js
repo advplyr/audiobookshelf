@@ -1,6 +1,7 @@
 const axios = require('axios')
 const Logger = require('../Logger')
-const { stripHtml } = require('string-strip-html')
+const htmlSanitizer = require('../utils/htmlSanitizer')
+
 class iTunes {
   constructor() { }
 
@@ -64,7 +65,7 @@ class iTunes {
       artistId: data.artistId,
       title: data.collectionName,
       author: data.artistName,
-      description: stripHtml(data.description || '').result,
+      description: htmlSanitizer.stripAllTags(data.description || ''),
       publishedYear: data.releaseDate ? data.releaseDate.split('-')[0] : null,
       genres: data.primaryGenreName ? [data.primaryGenreName] : [],
       cover: this.getCoverArtwork(data)
@@ -83,7 +84,8 @@ class iTunes {
       artistId: data.artistId || null,
       title: data.collectionName,
       artistName: data.artistName,
-      description: stripHtml(data.description || '').result,
+      description: htmlSanitizer.sanitize(data.description || ''),
+      descriptionPlain: htmlSanitizer.stripAllTags(data.description || ''),
       releaseDate: data.releaseDate,
       genres: data.genres || [],
       cover: this.getCoverArtwork(data),

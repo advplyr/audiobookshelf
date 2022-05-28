@@ -1,6 +1,6 @@
 const Logger = require('../Logger')
 const { xmlToJSON } = require('./index')
-const { stripHtml } = require('string-strip-html')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 function extractFirstArrayItem(json, key) {
   if (!json[key] || !json[key].length) return null
@@ -55,8 +55,9 @@ function extractPodcastMetadata(channel) {
   }
 
   if (channel['description']) {
-    metadata.description = extractFirstArrayItem(channel, 'description')
-    metadata.descriptionPlain = stripHtml(metadata.description || '').result
+    const rawDescription = extractFirstArrayItem(channel, 'description') || ''
+    metadata.description = htmlSanitizer.sanitize(rawDescription)
+    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
   var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link']
@@ -81,8 +82,9 @@ function extractEpisodeData(item) {
   }
 
   if (item['description']) {
-    episode.description = extractFirstArrayItem(item, 'description')
-    episode.descriptionPlain = stripHtml(episode.description || '').result
+    const rawDescription = extractFirstArrayItem(item, 'description') || ''
+    episode.description = htmlSanitizer.sanitize(rawDescription)
+    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
   var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']

@@ -38,6 +38,7 @@
     "fast-sort": "^3.1.1",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^10.0.0",
+    "htmlparser2": "^8.0.1",
     "image-type": "^4.1.0",
     "jsonwebtoken": "^8.5.1",
     "libgen": "^2.1.0",
@@ -49,7 +50,6 @@
     "read-chunk": "^3.1.0",
     "recursive-readdir-async": "^1.1.8",
     "socket.io": "^4.4.1",
-    "string-strip-html": "^8.3.0",
     "watcher": "^1.2.0",
     "xml2js": "^0.4.23"
   }

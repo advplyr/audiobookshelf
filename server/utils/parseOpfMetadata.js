@@ -1,5 +1,5 @@
 const { xmlToJSON } = require('./index')
-const { stripHtml } = require("string-strip-html")
+const htmlSanitizer = require('./htmlSanitizer')
 
 function parseCreators(metadata) {
   if (!metadata['dc:creator']) return null
@@ -57,8 +57,7 @@ function fetchDescription(metadata) {
   // check if description is HTML or plain text. only plain text allowed
   // calibre stores < and > as &lt; and &gt;
   description = description.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-  if (description.match(/<!DOCTYPE html>|<\/?\s*[a-z-][^>]*\s*>|(\&(?:[\w\d]+|#\d+|#x[a-f\d]+);)/)) return stripHtml(description).result
-  return description
+  return htmlSanitizer.stripAllTags(description)
 }
 
 function fetchGenres(metadata) {

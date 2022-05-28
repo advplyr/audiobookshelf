@@ -1,5 +1,5 @@
 const axios = require('axios')
-const { stripHtml } = require('string-strip-html')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
 
 class Audible {
@@ -17,7 +17,7 @@ class Audible {
             narrator: narrators ? narrators.map(({ name }) => name).join(', ') : null,
             publisher: publisher_name,
             publishedYear: release_date ? release_date.split('-')[0] : null,
-            description: publisher_summary ? stripHtml(publisher_summary).result : null,
+            description: publisher_summary ? htmlSanitizer.stripAllTags(publisher_summary) : null,
             cover: this.getBestImageLink(product_images),
             asin,
             series: primarySeries ? primarySeries.title : null,
