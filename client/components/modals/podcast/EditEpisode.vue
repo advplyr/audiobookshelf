@@ -5,7 +5,7 @@
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+    <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
       <div class="flex flex-wrap">
         <div class="w-1/5 p-1">
           <ui-text-input-with-label v-model="newEpisode.season" label="Season" />
@@ -25,8 +25,8 @@
         <div class="w-full p-1">
           <ui-textarea-with-label v-model="newEpisode.subtitle" label="Subtitle" :rows="3" />
         </div>
-        <div class="w-full p-1">
-          <ui-textarea-with-label v-model="newEpisode.description" label="Description" :rows="8" />
+        <div class="w-full p-1 default-style">
+          <ui-rich-text-editor v-if="show" label="Description" v-model="newEpisode.description" />
         </div>
       </div>
       <div class="flex justify-end pt-4">
