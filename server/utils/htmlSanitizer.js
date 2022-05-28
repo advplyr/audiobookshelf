@@ -3,7 +3,7 @@ const sanitizeHtml = require('../libs/sanitizeHtml')
 function sanitize(html) {
   const sanitizerOptions = {
     allowedTags: [
-      'p', 'ol', 'ul', 'a', 'strong', 'em'
+      'p', 'ol', 'ul', 'li', 'a', 'strong', 'em'
     ],
     disallowedTagsMode: 'discard',
     allowedAttributes: {

@@ -6,6 +6,7 @@ export const state = () => ({
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
   showEditPodcastEpisode: false,
+  showViewPodcastEpisodeModal: false,
   showEditAuthorModal: false,
   selectedEpisode: null,
   selectedCollection: null,
@@ -52,6 +53,9 @@ export const mutations = {
   },
   setShowEditPodcastEpisodeModal(state, val) {
     state.showEditPodcastEpisode = val
+  },
+  setShowViewPodcastEpisodeModal(state, val) {
+    state.showViewPodcastEpisodeModal = val
   },
   setEditCollection(state, collection) {
     state.selectedCollection = collection

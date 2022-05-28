@@ -1,6 +1,7 @@
 @import './fonts.css';
 @import './transitions.css';
 @import './draggable.css';
+@import './defaultStyles.css';
 
 :root {
   --bookshelf-texture-img: url(/textures/wood_default.jpg);

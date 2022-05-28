@@ -7,7 +7,7 @@
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" class="item" @remove="removeEpisode" @edit="editEpisode" />
+      <tables-podcast-episode-table-row :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" class="item" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" :library-item="libraryItem" :episode="selectedEpisode" />
@@ -67,6 +67,11 @@ export default {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
+    },
+    viewEpisode(episode) {
+      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+      this.$store.commit('globals/setSelectedEpisode', episode)
+      this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
     },
     init() {
       this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))

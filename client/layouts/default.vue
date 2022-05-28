@@ -14,6 +14,7 @@
     <modals-edit-collection-modal />
     <modals-bookshelf-texture-modal />
     <modals-podcast-edit-episode />
+    <modals-podcast-view-episode />
     <modals-authors-edit-modal />
     <readers-reader />
   </div>

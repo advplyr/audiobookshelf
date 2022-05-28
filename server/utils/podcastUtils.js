@@ -81,9 +81,16 @@ function extractEpisodeData(item) {
     }
   }
 
+  // Full description with html
+  if (item['content:encoded']) {
+    const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()
+    episode.description = htmlSanitizer.sanitize(rawDescription)
+  }
+
+  // Supposed to be the plaintext description but not always followed
   if (item['description']) {
     const rawDescription = extractFirstArrayItem(item, 'description') || ''
-    episode.description = htmlSanitizer.sanitize(rawDescription)
+    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
