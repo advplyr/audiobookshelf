@@ -8,7 +8,7 @@
           <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
           <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
         </form>
-        <ui-file-input :accept="'.opml, .txt'" class="mx-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
+        <ui-file-input ref="fileInput" :accept="'.opml, .txt'" class="mx-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
       </div>
 
       <div class="w-full max-w-3xl mx-auto py-4">
@@ -85,6 +85,10 @@ export default {
         }
         reader.readAsText(file)
       })
+
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.reset()
+      }
 
       if (!txt || !txt.includes('<opml') || !txt.includes('<outline ')) {
         // Quick lazy check for valid OPML
