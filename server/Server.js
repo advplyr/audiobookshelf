@@ -173,9 +173,6 @@ class Server {
     // Metadata folder static path
     app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
-    // TODO: Are these necessary?
-    // Downloads folder static path
-    // app.use('/downloads', this.authMiddleware.bind(this), express.static(this.downloadManager.downloadDirPath))
     // Static folder
     app.use(express.static(Path.join(global.appRoot, 'static')))
 
@@ -212,7 +209,7 @@ class Server {
     const dyanimicRoutes = [
       '/item/:id',
       '/item/:id/manage',
-      '/item/:id/chapters',
+      '/audiobook/:id/chapters',
       '/audiobook/:id/edit',
       '/library/:library',
       '/library/:library/search',
@@ -220,6 +217,7 @@ class Server {
       '/library/:library/authors',
       '/library/:library/series/:id?',
       '/config/users/:id',
+      '/config/users/:id/sessions',
       '/collection/:id'
     ]
     dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))

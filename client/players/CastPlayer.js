@@ -52,12 +52,12 @@ export default class CastPlayer extends EventEmitter {
       return
     }
 
-    // var currentItemId = media.currentItemId
     var currentItemId = media.media.itemId
     if (currentItemId && this.currentTrackIndex !== currentItemId - 1) {
       this.currentTrackIndex = currentItemId - 1
     }
 
+    // TODO: Emit finished event
     if (media.playerState !== this.castPlayerState) {
       this.emit('stateChange', media.playerState)
       this.castPlayerState = media.playerState

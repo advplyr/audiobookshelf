@@ -101,6 +101,7 @@ export default class PlayerHandler {
     this.player.on('timeupdate', this.playerTimeupdate.bind(this))
     this.player.on('buffertimeUpdate', this.playerBufferTimeUpdate.bind(this))
     this.player.on('error', this.playerError.bind(this))
+    this.player.on('finished', this.playerFinished.bind(this))
   }
 
   playerError() {
@@ -109,6 +110,16 @@ export default class PlayerHandler {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
+  }
+
+  playerFinished() {
+    this.stopPlayInterval()
+
+    var currentTime = this.player.getCurrentTime()
+    this.ctx.setCurrentTime(currentTime)
+
+    // TODO: Add listening time between last sync and now?
+    this.sendProgressSync(currentTime)
   }
 
   playerStateChange(state) {

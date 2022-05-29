@@ -76,6 +76,7 @@ export default class LocalPlayer extends EventEmitter {
       this.loadCurrentTrack()
     } else {
       console.log(`[LocalPlayer] Ended`)
+      this.emit('finished')
     }
   }
   evtError(error) {
