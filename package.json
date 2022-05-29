@@ -50,7 +50,6 @@
     "read-chunk": "^3.1.0",
     "recursive-readdir-async": "^1.1.8",
     "socket.io": "^4.4.1",
-    "watcher": "^1.2.0",
     "xml2js": "^0.4.23"
   }
 }

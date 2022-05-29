@@ -1,6 +1,5 @@
-const Path = require('path')
 const EventEmitter = require('events')
-const Watcher = require('watcher')
+const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
 
 class FolderWatcher extends EventEmitter {
