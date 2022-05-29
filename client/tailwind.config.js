@@ -8,7 +8,8 @@ module.exports = {
         'bg-red-600',
         'text-green-500',
         'py-1.5',
-        'bg-info'
+        'bg-info',
+        'px-1.5'
       ]
     }
   },
