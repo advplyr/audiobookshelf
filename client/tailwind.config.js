@@ -37,6 +37,7 @@ module.exports = {
       minWidth: {
         '6': '1.5rem',
         '12': '3rem',
+        '16': '4rem',
         '24': '6rem',
         '32': '8rem',
         '48': '12rem',
@@ -74,6 +75,9 @@ module.exports = {
         sans: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],
         mono: ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
         book: ['Gentium Book Basic', 'serif']
+      },
+      fontSize: {
+        xxs: '0.625rem'
       },
       zIndex: {
         '50': 50

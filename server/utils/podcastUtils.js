@@ -131,7 +131,7 @@ function extractPodcastEpisodes(items) {
   return episodes
 }
 
-function cleanPodcastJson(rssJson) {
+function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
   if (!rssJson.channel || !rssJson.channel.length) {
     Logger.error(`[podcastUtil] Invalid podcast no channel object`)
     return null
@@ -142,13 +142,17 @@ function cleanPodcastJson(rssJson) {
     return null
   }
   var podcast = {
-    metadata: extractPodcastMetadata(channel),
-    episodes: extractPodcastEpisodes(channel.item)
+    metadata: extractPodcastMetadata(channel)
+  }
+  if (!excludeEpisodeMetadata) {
+    podcast.episodes = extractPodcastEpisodes(channel.item)
+  } else {
+    podcast.numEpisodes = channel.item.length
   }
   return podcast
 }
 
-module.exports.parsePodcastRssFeedXml = async (xml, includeRaw = false) => {
+module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = false, includeRaw = false) => {
   if (!xml) return null
   var json = await xmlToJSON(xml)
   if (!json || !json.rss) {
@@ -156,7 +160,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, includeRaw = false) => {
     return null
   }
 
-  const podcast = cleanPodcastJson(json.rss)
+  const podcast = cleanPodcastJson(json.rss, excludeEpisodeMetadata)
   if (!podcast) return null
 
   if (includeRaw) {

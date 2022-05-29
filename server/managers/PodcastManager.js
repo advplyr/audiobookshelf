@@ -6,6 +6,7 @@ const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile } = require('../utils/fileUtils')
+const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
@@ -258,7 +259,7 @@ class PodcastManager {
     return newEpisodes
   }
 
-  getPodcastFeed(feedUrl) {
+  getPodcastFeed(feedUrl, excludeEpisodeMetadata = false) {
     Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}"`)
     return axios.get(feedUrl, { timeout: 5000 }).then(async (data) => {
       if (!data || !data.data) {
@@ -266,7 +267,7 @@ class PodcastManager {
         return false
       }
       Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-      var payload = await parsePodcastRssFeedXml(data.data)
+      var payload = await parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
       if (!payload) {
         return false
       }
@@ -275,6 +276,30 @@ class PodcastManager {
       console.error('Failed', error)
       return false
     })
+  }
+
+  async getOPMLFeeds(opmlText) {
+    var extractedFeeds = opmlParser.parse(opmlText)
+    if (!extractedFeeds || !extractedFeeds.length) {
+      Logger.error('[PodcastManager] getOPMLFeeds: No RSS feeds found in OPML')
+      return {
+        error: 'No RSS feeds found in OPML'
+      }
+    }
+
+    var rssFeedData = []
+
+    for (let feed of extractedFeeds) {
+      var feedData = await this.getPodcastFeed(feed.feedUrl, true)
+      if (feedData) {
+        feedData.metadata.feedUrl = feed.feedUrl
+        rssFeedData.push(feedData)
+      }
+    }
+
+    return {
+      feeds: rssFeedData
+    }
   }
 }
 module.exports = PodcastManager

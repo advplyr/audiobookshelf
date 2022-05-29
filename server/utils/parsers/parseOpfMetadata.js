@@ -1,5 +1,5 @@
-const { xmlToJSON } = require('./index')
-const htmlSanitizer = require('./htmlSanitizer')
+const { xmlToJSON } = require('../index')
+const htmlSanitizer = require('../htmlSanitizer')
 
 function parseCreators(metadata) {
   if (!metadata['dc:creator']) return null

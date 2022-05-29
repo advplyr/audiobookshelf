@@ -1,12 +1,14 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="podcast-search" />
+
     <div class="w-full h-full overflow-y-auto p-12 relative">
-      <div class="w-full max-w-3xl mx-auto">
-        <form @submit.prevent="submit" class="flex">
+      <div class="w-full max-w-4xl mx-auto flex">
+        <form @submit.prevent="submit" class="flex flex-grow">
           <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
           <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
         </form>
+        <ui-file-input :accept="'.opml, .txt'" class="mx-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
       </div>
 
       <div class="w-full max-w-3xl mx-auto py-4">
@@ -32,6 +34,7 @@
     </div>
 
     <modals-podcast-new-modal v-model="showNewPodcastModal" :podcast-data="selectedPodcast" :podcast-feed-data="selectedPodcastFeed" />
+    <modals-podcast-opml-feeds-modal v-model="showOPMLFeedsModal" :feeds="opmlFeeds" />
   </div>
 </template>
 
@@ -62,7 +65,9 @@ export default {
       processing: false,
       showNewPodcastModal: false,
       selectedPodcast: null,
-      selectedPodcastFeed: null
+      selectedPodcastFeed: null,
+      showOPMLFeedsModal: false,
+      opmlFeeds: []
     }
   },
   computed: {
@@ -71,6 +76,36 @@ export default {
     }
   },
   methods: {
+    async opmlFileUpload(file) {
+      this.processing = true
+      var txt = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          resolve(reader.result)
+        }
+        reader.readAsText(file)
+      })
+
+      if (!txt || !txt.includes('<opml') || !txt.includes('<outline ')) {
+        // Quick lazy check for valid OPML
+        this.$toast.error('Invalid OPML file <opml> tag not found OR an <outline> tag was not found')
+        this.processing = false
+        return
+      }
+
+      await this.$axios
+        .$post(`/api/podcasts/opml`, { opmlText: txt })
+        .then((data) => {
+          console.log(data)
+          this.opmlFeeds = data.feeds || []
+          this.showOPMLFeedsModal = true
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Failed to parse OPML file')
+        })
+      this.processing = false
+    },
     submit() {
       if (!this.searchInput) return
 

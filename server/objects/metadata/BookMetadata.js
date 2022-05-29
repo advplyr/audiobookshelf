@@ -1,6 +1,6 @@
 const Logger = require('../../Logger')
 const { areEquivalent, copyValue } = require('../../utils/index')
-const parseNameString = require('../../utils/parseNameString')
+const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
     this.title = null

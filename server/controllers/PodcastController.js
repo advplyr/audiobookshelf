@@ -104,7 +104,7 @@ class PodcastController {
         return res.status(500).send('Bad response from feed request')
       }
       Logger.debug(`[PdocastController] Podcast feed size ${(data.data.length / 1024 / 1024).toFixed(2)}MB`)
-      var payload = await parsePodcastRssFeedXml(data.data, includeRaw)
+      var payload = await parsePodcastRssFeedXml(data.data, false, includeRaw)
       if (!payload) {
         return res.status(500).send('Invalid podcast RSS feed')
       }
@@ -117,6 +117,15 @@ class PodcastController {
       console.error('Failed', error)
       res.status(500).send(error)
     })
+  }
+
+  async getOPMLFeeds(req, res) {
+    if (!req.body.opmlText) {
+      return res.sendStatus(400)
+    }
+
+    const rssFeedsData = await this.podcastManager.getOPMLFeeds(req.body.opmlText)
+    res.json(rssFeedsData)
   }
 
   async checkNewEpisodes(req, res) {
