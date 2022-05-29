@@ -96,7 +96,8 @@ class Scanner {
 
     await this.createNewAuthorsAndSeries(libraryItem)
 
-    if (!libraryItem.hasMediaEntities) { // Library Item is invalid
+    // Library Item is invalid - (a book has no audio files or ebook files)
+    if (!libraryItem.hasMediaEntities && libraryItem.mediaType !== 'podcast') {
       libraryItem.setInvalid()
       hasUpdated = true
     } else if (libraryItem.isInvalid) {
@@ -359,7 +360,8 @@ class Scanner {
       }
     }
 
-    if (!libraryItem.hasMediaEntities) { // Library item is invalid
+    // Library Item is invalid - (a book has no audio files or ebook files)
+    if (!libraryItem.hasMediaEntities && libraryItem.mediaType !== 'podcast') {
       libraryItem.setInvalid()
       hasUpdated = true
     } else if (libraryItem.isInvalid) {
@@ -652,7 +654,7 @@ class Scanner {
     var matchData = results[0]
 
     // Set to override existing metadata if scannerPreferMatchedMetadata setting is true
-    if(this.db.serverSettings.scannerPreferMatchedMetadata) {
+    if (this.db.serverSettings.scannerPreferMatchedMetadata) {
       options.overrideCover = true
       options.overrideDetails = true
     }
@@ -695,7 +697,7 @@ class Scanner {
 
     // Add or set author if not set
     if (matchData.author && !libraryItem.media.metadata.authorName || options.overrideDetails) {
-      if(!Array.isArray(matchData.author)) matchData.author = [matchData.author]
+      if (!Array.isArray(matchData.author)) matchData.author = [matchData.author]
       const authorPayload = []
       for (let index = 0; index < matchData.author.length; index++) {
         const authorName = matchData.author[index]
@@ -713,7 +715,7 @@ class Scanner {
 
     // Add or set series if not set
     if (matchData.series && !libraryItem.media.metadata.seriesName || options.overrideDetails) {
-      if(!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, volumeNumber: matchData.volumeNumber }]
+      if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, volumeNumber: matchData.volumeNumber }]
       const seriesPayload = []
       for (let index = 0; index < matchData.series.length; index++) {
         const seriesMatchItem = matchData.series[index]
