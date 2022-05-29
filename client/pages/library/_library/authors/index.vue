@@ -1,6 +1,6 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar is-home />
+    <app-book-shelf-toolbar page="authors" is-home :authors="authors" />
     <div id="bookshelf" class="w-full h-full p-8 overflow-y-auto">
       <div class="flex flex-wrap justify-center">
         <template v-for="author in authors">

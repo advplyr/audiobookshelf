@@ -101,8 +101,16 @@ export default {
         this.$toast.info('No updates were made for Author')
       }
       this.searching = false
+    },
+    setSearching(isSearching) {
+      this.searching = isSearching
     }
   },
-  mounted() {}
+  mounted() {
+    this.$eventBus.$on(`searching-author-${this.authorId}`, this.setSearching)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off(`searching-author-${this.authorId}`, this.setSearching)
+  }
 }
 </script>

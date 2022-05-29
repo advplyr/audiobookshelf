@@ -61,6 +61,10 @@
         <p>Search results for "{{ searchQuery }}"</p>
         <div class="flex-grow" />
       </template>
+      <template v-else-if="page === 'authors'">
+        <div class="flex-grow" />
+        <ui-btn v-if="userCanUpdate && authors && authors.length" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">Match All Authors</ui-btn>
+      </template>
     </div>
   </div>
 </template>
@@ -75,7 +79,11 @@ export default {
       default: () => null
     },
     searchQuery: String,
-    viewMode: String
+    viewMode: String,
+    authors: {
+      type: Array,
+      default: () => []
+    }
   },
   data() {
     return {
@@ -85,12 +93,16 @@ export default {
       keywordFilter: null,
       keywordTimeout: null,
       processingSeries: false,
-      processingIssues: false
+      processingIssues: false,
+      processingAuthors: false
     }
   },
   computed: {
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
     },
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
@@ -147,6 +159,35 @@ export default {
     }
   },
   methods: {
+    async matchAllAuthors() {
+      this.processingAuthors = true
+
+      for (const author of this.authors) {
+        const payload = {}
+        if (author.asin) payload.asin = author.asin
+        else payload.q = author.name
+        console.log('Payload', payload, 'author', author)
+
+        this.$eventBus.$emit(`searching-author-${author.id}`, true)
+
+        var response = await this.$axios.$post(`/api/authors/${author.id}/match`, payload).catch((error) => {
+          console.error('Failed', error)
+          return null
+        })
+        if (!response) {
+          console.error(`Author ${author.name} not found`)
+          this.$toast.error(`Author ${author.name} not found`)
+        } else if (response.updated) {
+          if (response.author.imagePath) console.log(`Author ${response.author.name} was updated`)
+          else console.log(`Author ${response.author.name} was updated (no image found)`)
+        } else {
+          console.log(`No updates were made for Author ${response.author.name}`)
+        }
+
+        this.$eventBus.$emit(`searching-author-${author.id}`, false)
+      }
+      this.processingAuthors = false
+    },
     removeAllIssues() {
       if (confirm(`Are you sure you want to remove all library items with issues?\n\nNote: This will not delete any files`)) {
         this.processingIssues = true
