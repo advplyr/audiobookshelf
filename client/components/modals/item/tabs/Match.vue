@@ -437,7 +437,7 @@ export default {
       }
       this.isProcessing = true
 
-      if (updatePayload.cover) {
+      if (updatePayload.metadata.cover) {
         var coverPayload = {
           url: updatePayload.metadata.cover
         }
