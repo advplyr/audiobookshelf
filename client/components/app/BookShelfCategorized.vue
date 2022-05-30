@@ -2,10 +2,6 @@
   <div id="bookshelf" ref="wrapper" class="w-full max-w-full h-full overflow-y-scroll relative">
     <!-- Cover size widget -->
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
-    <!-- Experimental Bookshelf Texture -->
-    <div v-show="showExperimentalFeatures && !isAlternativeBookshelfView" class="fixed bottom-4 right-28 z-40">
-      <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal"><p class="text-sm py-0.5">Texture</p></div>
-    </div>
 
     <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
@@ -100,9 +96,6 @@ export default {
     }
   },
   methods: {
-    showBookshelfTextureModal() {
-      this.$store.commit('globals/setShowBookshelfTextureModal', true)
-    },
     async init() {
       this.wrapperClientWidth = this.$refs.wrapper ? this.$refs.wrapper.clientWidth : 0
 

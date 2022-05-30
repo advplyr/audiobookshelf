@@ -21,7 +21,6 @@ export const state = () => ({
   bookshelfBookIds: [],
   openModal: null,
   innerModalOpen: false,
-  selectedBookshelfTexture: '/textures/wood_default.jpg',
   lastBookshelfScrollData: {}
 })
 
@@ -74,11 +73,6 @@ export const actions = {
         console.error('Update check failed', error)
         return false
       })
-  },
-  setBookshelfTexture({ commit, state }, img) {
-    let root = document.documentElement;
-    commit('setBookshelfTexture', img)
-    root.style.setProperty('--bookshelf-texture-img', `url(${img})`);
   }
 }
 
@@ -180,8 +174,5 @@ export const mutations = {
   },
   setInnerModalOpen(state, val) {
     state.innerModalOpen = val
-  },
-  setBookshelfTexture(state, val) {
-    state.selectedBookshelfTexture = val
   }
 }

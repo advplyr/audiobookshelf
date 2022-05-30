@@ -147,9 +147,6 @@ export default {
     }
   },
   methods: {
-    toggleBookshelfTexture() {
-      this.$store.dispatch('setBookshelfTexture', 'wood2.png')
-    },
     cancelSelectionMode() {
       if (this.processingBatchDelete) return
       this.$store.commit('setSelectedLibraryItems', [])

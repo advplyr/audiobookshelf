@@ -12,7 +12,6 @@
     <modals-item-edit-modal />
     <modals-user-collections-modal />
     <modals-edit-collection-modal />
-    <modals-bookshelf-texture-modal />
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
