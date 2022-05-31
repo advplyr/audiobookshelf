@@ -8,7 +8,7 @@ const { comparePaths } = require('../utils/index')
 const { getIno } = require('../utils/fileUtils')
 const { ScanResult, LogLevel } = require('../utils/constants')
 
-const AudioFileScanner = require('./AudioFileScanner')
+const MediaFileScanner = require('./MediaFileScanner')
 const BookFinder = require('../finders/BookFinder')
 const LibraryItem = require('../objects/LibraryItem')
 const LibraryScan = require('./LibraryScan')
@@ -80,7 +80,7 @@ class Scanner {
     // Scan all audio files
     if (libraryItem.hasAudioFiles) {
       var libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
-      if (await AudioFileScanner.scanAudioFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata)) {
+      if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata)) {
         hasUpdated = true
       }
 
@@ -240,18 +240,18 @@ class Scanner {
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
       } else {
-        var audioFileSize = 0
-        dataFound.libraryFiles.filter(lf => lf.fileType == 'audio').forEach(lf => audioFileSize += lf.metadata.size)
+        var mediaFileSize = 0
+        dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
 
         // If this item will go over max size then push current chunk
-        if (audioFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
+        if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
           newItemDataToScanChunks.push(newItemDataToScan)
           newItemDataToScanSize = 0
           newItemDataToScan = []
         }
 
         newItemDataToScan.push(dataFound)
-        newItemDataToScanSize += audioFileSize
+        newItemDataToScanSize += mediaFileSize
         if (newItemDataToScanSize >= MaxSizePerChunk) {
           newItemDataToScanChunks.push(newItemDataToScan)
           newItemDataToScanSize = 0
@@ -337,7 +337,7 @@ class Scanner {
     // forceRescan all existing audio files - will probe and update ID3 tag metadata
     var existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
     if (libraryScan.scanOptions.forceRescan && existingAudioFiles.length) {
-      if (await AudioFileScanner.scanAudioFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
+      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
         hasUpdated = true
       }
     }
@@ -345,7 +345,7 @@ class Scanner {
     var newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
     var removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
     if (newAudioFiles.length || removedAudioFiles.length) {
-      if (await AudioFileScanner.scanAudioFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
+      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan)) {
         hasUpdated = true
       }
     }
@@ -386,9 +386,9 @@ class Scanner {
     var libraryItem = new LibraryItem()
     libraryItem.setData(libraryMediaType, libraryItemData)
 
-    var audioFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio')
-    if (audioFiles.length) {
-      await AudioFileScanner.scanAudioFiles(audioFiles, libraryItemData, libraryItem, preferAudioMetadata, libraryScan)
+    var mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
+    if (mediaFiles.length) {
+      await MediaFileScanner.scanMediaFiles(mediaFiles, libraryItemData, libraryItem, preferAudioMetadata, libraryScan)
     }
 
     await libraryItem.syncFiles(preferOpfMetadata)
@@ -408,7 +408,7 @@ class Scanner {
     }
 
     // Scan for cover if enabled and has no cover
-    if (libraryMediaType !== 'podcast') {
+    if (libraryMediaType === 'book') {
       if (libraryItem && findCovers && !libraryItem.media.coverPath && libraryItem.media.shouldSearchForCover) {
         var updatedCover = await this.searchForCover(libraryItem, libraryScan)
         libraryItem.media.updateLastCoverSearch(updatedCover)

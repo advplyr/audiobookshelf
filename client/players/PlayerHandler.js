@@ -1,6 +1,8 @@
-import LocalPlayer from './LocalPlayer'
+import LocalAudioPlayer from './LocalAudioPlayer'
+import LocalVideoPlayer from './LocalVideoPlayer'
 import CastPlayer from './CastPlayer'
 import AudioTrack from './AudioTrack'
+import VideoTrack from './VideoTrack'
 
 export default class PlayerHandler {
   constructor(ctx) {
@@ -14,6 +16,7 @@ export default class PlayerHandler {
     this.player = null
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
+    this.isVideo = false
     this.currentSessionId = null
     this.startTime = 0
 
@@ -34,7 +37,7 @@ export default class PlayerHandler {
     return this.libraryItem && (this.player instanceof CastPlayer)
   }
   get isPlayingLocalItem() {
-    return this.libraryItem && (this.player instanceof LocalPlayer)
+    return this.libraryItem && (this.player instanceof LocalAudioPlayer)
   }
   get userToken() {
     return this.ctx.$store.getters['user/getToken']
@@ -48,16 +51,17 @@ export default class PlayerHandler {
   }
 
   load(libraryItem, episodeId, playWhenReady, playbackRate) {
-    if (!this.player) this.switchPlayer()
-
     this.libraryItem = libraryItem
     this.episodeId = episodeId
     this.playWhenReady = playWhenReady
     this.initialPlaybackRate = playbackRate
-    this.prepare()
+    this.isVideo = libraryItem.mediaType === 'video'
+
+    if (!this.player) this.switchPlayer(playWhenReady)
+    else this.prepare()
   }
 
-  switchPlayer() {
+  switchPlayer(playWhenReady) {
     if (this.isCasting && !(this.player instanceof CastPlayer)) {
       console.log('[PlayerHandler] Switching to cast player')
 
@@ -73,10 +77,10 @@ export default class PlayerHandler {
 
       if (this.libraryItem) {
         // libraryItem was already loaded - prepare for cast
-        this.playWhenReady = false
+        this.playWhenReady = playWhenReady
         this.prepare()
       }
-    } else if (!this.isCasting && !(this.player instanceof LocalPlayer)) {
+    } else if (!this.isCasting && !(this.player instanceof LocalAudioPlayer) && !(this.player instanceof LocalVideoPlayer)) {
       console.log('[PlayerHandler] Switching to local player')
 
       this.stopPlayInterval()
@@ -85,12 +89,18 @@ export default class PlayerHandler {
       if (this.player) {
         this.player.destroy()
       }
-      this.player = new LocalPlayer(this.ctx)
+
+      if (this.isVideo) {
+        this.player = new LocalVideoPlayer(this.ctx)
+      } else {
+        this.player = new LocalAudioPlayer(this.ctx)
+      }
+
       this.setPlayerListeners()
 
       if (this.libraryItem) {
         // libraryItem was already loaded - prepare for local play
-        this.playWhenReady = false
+        this.playWhenReady = playWhenReady
         this.prepare()
       }
     }
@@ -106,7 +116,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalPlayer)) {
+    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalAudioPlayer)) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -155,7 +165,7 @@ export default class PlayerHandler {
       supportedMimeTypes: this.player.playableMimeTypes,
       mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
       forceTranscode,
-      forceDirectPlay: this.isCasting // TODO: add transcode support for chromecast
+      forceDirectPlay: this.isCasting || this.isVideo // TODO: add transcode support for chromecast
     }
 
     var path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
@@ -166,11 +176,12 @@ export default class PlayerHandler {
   }
 
   prepareOpenSession(session, playbackRate) { // Session opened on init socket
-    if (!this.player) this.switchPlayer()
-
     this.libraryItem = session.libraryItem
+    this.isVideo = session.libraryItem.mediaType === 'video'
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
+
+    if (!this.player) this.switchPlayer()
     this.prepareSession(session)
   }
 
@@ -181,15 +192,28 @@ export default class PlayerHandler {
     this.displayAuthor = session.displayAuthor
 
     console.log('[PlayerHandler] Preparing Session', session)
-    var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
 
-    this.ctx.playerLoading = true
-    this.isHlsTranscode = true
-    if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
-      this.isHlsTranscode = false
+    if (session.videoTrack) {
+      var videoTrack = new VideoTrack(session.videoTrack, this.userToken)
+
+      this.ctx.playerLoading = true
+      this.isHlsTranscode = true
+      if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
+        this.isHlsTranscode = false
+      }
+
+      this.player.set(this.libraryItem, videoTrack, this.isHlsTranscode, this.startTime, this.playWhenReady)
+    } else {
+      var audioTracks = session.audioTracks.map(at => new AudioTrack(at, this.userToken))
+
+      this.ctx.playerLoading = true
+      this.isHlsTranscode = true
+      if (session.playMethod === this.ctx.$constants.PlayMethod.DIRECTPLAY) {
+        this.isHlsTranscode = false
+      }
+
+      this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
     }
-
-    this.player.set(this.libraryItem, audioTracks, this.isHlsTranscode, this.startTime, this.playWhenReady)
 
     // browser media session api
     this.ctx.setMediaSession()

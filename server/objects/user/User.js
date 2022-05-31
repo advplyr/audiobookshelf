@@ -343,6 +343,7 @@ class User {
 
   checkCanAccessLibraryItem(libraryItem) {
     if (!this.checkCanAccessLibrary(libraryItem.libraryId)) return false
+
     if (libraryItem.media.metadata.explicit && !this.canAccessExplicitContent) return false
     return this.checkCanAccessLibraryItemWithTags(libraryItem.media.tags)
   }

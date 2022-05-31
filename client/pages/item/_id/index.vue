@@ -31,11 +31,13 @@
                 <p v-if="bookSubtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ bookSubtitle }}</p>
               </div>
 
-              <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
-              <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
-                by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-              </p>
-              <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
+              <template v-if="!isVideo">
+                <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
+                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
+                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+                </p>
+                <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
+              </template>
 
               <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
@@ -251,6 +253,9 @@ export default {
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
+    isVideo() {
+      return this.libraryItem.mediaType === 'video'
+    },
     isMissing() {
       return this.libraryItem.isMissing
     },
@@ -258,11 +263,12 @@ export default {
       return this.libraryItem.isInvalid
     },
     invalidAudioFiles() {
-      if (this.isPodcast) return []
+      if (this.isPodcast || this.isVideo) return []
       return this.libraryItem.media.audioFiles.filter((af) => af.invalid)
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
+      if (this.isVideo) return !!this.videoFile
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
     },
@@ -347,6 +353,9 @@ export default {
     },
     ebookFile() {
       return this.media.ebookFile
+    },
+    videoFile() {
+      return this.media.videoFile
     },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures && !this.enableEReader

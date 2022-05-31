@@ -143,13 +143,13 @@ class PodcastManager {
 
   async probeAudioFile(libraryFile) {
     var path = libraryFile.metadata.path
-    var audioProbeData = await prober.probe(path)
-    if (audioProbeData.error) {
-      Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, audioProbeData.error)
+    var mediaProbeData = await prober.probe(path)
+    if (mediaProbeData.error) {
+      Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return false
     }
     var newAudioFile = new AudioFile()
-    newAudioFile.setDataFromProbe(libraryFile, audioProbeData)
+    newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
     return newAudioFile
   }
 

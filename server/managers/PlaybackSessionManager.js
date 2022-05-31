@@ -119,28 +119,37 @@ class PlaybackSessionManager {
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, episodeId)
 
-    var audioTracks = []
-    if (shouldDirectPlay) {
-      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
-      audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
-      newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
+    if (libraryItem.mediaType === 'video') {
+      if (shouldDirectPlay) {
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
+        newPlaybackSession.videoTrack = libraryItem.media.getVideoTrack()
+        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
+      } else {
+        // HLS not supported for video yet
+      }
     } else {
-      Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
-      var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime, this.clientEmitter.bind(this))
-      await stream.generatePlaylist()
-      stream.start() // Start transcode
+      var audioTracks = []
+      if (shouldDirectPlay) {
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
+        audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
+        newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
+      } else {
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
+        var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime, this.clientEmitter.bind(this))
+        await stream.generatePlaylist()
+        stream.start() // Start transcode
 
-      audioTracks = [stream.getAudioTrack()]
-      newPlaybackSession.stream = stream
-      newPlaybackSession.playMethod = PlayMethod.TRANSCODE
+        audioTracks = [stream.getAudioTrack()]
+        newPlaybackSession.stream = stream
+        newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 
-      stream.on('closed', () => {
-        Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}"`)
-        newPlaybackSession.stream = null
-      })
+        stream.on('closed', () => {
+          Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}"`)
+          newPlaybackSession.stream = null
+        })
+      }
+      newPlaybackSession.audioTracks = audioTracks
     }
-
-    newPlaybackSession.audioTracks = audioTracks
 
     // Will save on the first sync
     user.currentSessionId = newPlaybackSession.id

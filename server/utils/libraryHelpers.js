@@ -85,7 +85,7 @@ module.exports = {
           if (series && !data.series.find(se => se.id === series.id)) data.series.push({ id: series.id, name: series.name })
         })
       }
-      if (mediaMetadata.genres.length) {
+      if (mediaMetadata.genres && mediaMetadata.genres.length) {
         mediaMetadata.genres.forEach((genre) => {
           if (genre && !data.genres.includes(genre)) data.genres.push(genre)
         })
@@ -399,7 +399,7 @@ module.exports = {
             }
           }
         }
-      } else {
+      } else if (libraryItem.isBook) {
         // Book categories
 
         // Newest series

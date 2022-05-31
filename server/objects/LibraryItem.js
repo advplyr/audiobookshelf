@@ -6,6 +6,7 @@ const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
+const Video = require('./mediatypes/Video')
 const { areEquivalent, copyValue, getId } = require('../utils/index')
 
 class LibraryItem {
@@ -67,11 +68,12 @@ class LibraryItem {
     this.mediaType = libraryItem.mediaType
     if (this.mediaType === 'book') {
       this.media = new Book(libraryItem.media)
-      this.media.libraryItemId = this.id
     } else if (this.mediaType === 'podcast') {
       this.media = new Podcast(libraryItem.media)
-      this.media.libraryItemId = this.id
+    } else if (this.mediaType === 'video') {
+      this.media = new Video(libraryItem.media)
     }
+    this.media.libraryItemId = this.id
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
   }
@@ -175,16 +177,15 @@ class LibraryItem {
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {
     this.id = getId('li')
-    if (libraryMediaType === 'podcast') {
-      this.mediaType = 'podcast'
+    this.mediaType = libraryMediaType
+    if (libraryMediaType === 'video') {
+      this.media = new Video()
+    } else if (libraryMediaType === 'podcast') {
       this.media = new Podcast()
-      this.media.libraryItemId = this.id
     } else {
-      this.mediaType = 'book'
       this.media = new Book()
-      this.media.libraryItemId = this.id
     }
-
+    this.media.libraryItemId = this.id
 
     for (const key in payload) {
       if (key === 'libraryFiles') {
@@ -460,6 +461,8 @@ class LibraryItem {
 
   // Saves metadata.abs file
   async saveMetadata() {
+    if (this.mediaType === 'video') return
+
     if (this.isSavingMetadata) return
     this.isSavingMetadata = true
 

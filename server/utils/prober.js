@@ -1,5 +1,5 @@
 const ffprobe = require('node-ffprobe')
-const AudioProbeData = require('../scanner/AudioProbeData')
+const MediaProbeData = require('../scanner/MediaProbeData')
 
 const Logger = require('../Logger')
 
@@ -274,7 +274,7 @@ function parseProbeData(data, verbose = false) {
   }
 }
 
-// Updated probe returns AudioProbeData object
+// Updated probe returns MediaProbeData object
 function probe(filepath, verbose = false) {
   if (process.env.FFPROBE_PATH) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
@@ -283,12 +283,12 @@ function probe(filepath, verbose = false) {
   return ffprobe(filepath)
     .then(raw => {
       var rawProbeData = parseProbeData(raw, verbose)
-      if (!rawProbeData || !rawProbeData.audio_stream) {
+      if (!rawProbeData || (!rawProbeData.audio_stream && !rawProbeData.video_stream)) {
         return {
-          error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
+          error: rawProbeData ? 'Invalid media file: no audio or video streams found' : 'Probe Failed'
         }
       } else {
-        var probeData = new AudioProbeData()
+        var probeData = new MediaProbeData()
         probeData.setData(rawProbeData)
         return probeData
       }

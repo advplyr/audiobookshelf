@@ -62,6 +62,10 @@ export default {
         {
           value: 'podcast',
           text: 'Podcasts'
+        },
+        {
+          value: 'video',
+          text: 'Videos'
         }
       ]
     }

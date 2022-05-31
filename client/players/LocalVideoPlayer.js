@@ -1,7 +1,7 @@
 import Hls from 'hls.js'
 import EventEmitter from 'events'
 
-export default class LocalPlayer extends EventEmitter {
+export default class LocalVideoPlayer extends EventEmitter {
   constructor(ctx) {
     super()
 
@@ -9,13 +9,11 @@ export default class LocalPlayer extends EventEmitter {
     this.player = null
 
     this.libraryItem = null
-    this.audioTracks = []
-    this.currentTrackIndex = 0
+    this.videoTrack = null
     this.isHlsTranscode = null
     this.hlsInstance = null
     this.usingNativeplayer = false
     this.startTime = 0
-    this.trackStartTime = 0
     this.playWhenReady = false
     this.defaultPlaybackRate = 1
 
@@ -24,19 +22,17 @@ export default class LocalPlayer extends EventEmitter {
     this.initialize()
   }
 
-  get currentTrack() {
-    return this.audioTracks[this.currentTrackIndex] || {}
-  }
-
   initialize() {
-    if (document.getElementById('audio-player')) {
-      document.getElementById('audio-player').remove()
+    if (document.getElementById('video-player')) {
+      document.getElementById('video-player').remove()
     }
-    var audioEl = document.createElement('audio')
-    audioEl.id = 'audio-player'
-    audioEl.style.display = 'none'
-    document.body.appendChild(audioEl)
-    this.player = audioEl
+    var videoEl = document.createElement('video')
+    videoEl.id = 'video-player'
+    // videoEl.style.display = 'none'
+    videoEl.className = 'absolute bottom-20 left-4 w-96 bg-black z-50'
+    videoEl.style.height = '216px'
+    document.body.appendChild(videoEl)
+    this.player = videoEl
 
     this.player.addEventListener('play', this.evtPlay.bind(this))
     this.player.addEventListener('pause', this.evtPause.bind(this))
@@ -46,14 +42,14 @@ export default class LocalPlayer extends EventEmitter {
     this.player.addEventListener('loadedmetadata', this.evtLoadedMetadata.bind(this))
     this.player.addEventListener('timeupdate', this.evtTimeupdate.bind(this))
 
-    var mimeTypes = ['audio/flac', 'audio/mpeg', 'audio/mp4', 'audio/ogg', 'audio/aac', 'audio/x-ms-wma', 'audio/x-aiff']
+    var mimeTypes = ['video/mp4']
     var mimeTypeCanPlayMap = {}
     mimeTypes.forEach((mt) => {
       var canPlay = this.player.canPlayType(mt)
       mimeTypeCanPlayMap[mt] = canPlay
       if (canPlay) this.playableMimeTypes.push(mt)
     })
-    console.log(`[LocalPlayer] Supported mime types`, mimeTypeCanPlayMap, this.playableMimeTypes)
+    console.log(`[LocalVideoPlayer] Supported mime types`, mimeTypeCanPlayMap, this.playableMimeTypes)
   }
 
   evtPlay() {
@@ -67,17 +63,8 @@ export default class LocalPlayer extends EventEmitter {
     this.emit('buffertimeUpdate', lastBufferTime)
   }
   evtEnded() {
-    if (this.currentTrackIndex < this.audioTracks.length - 1) {
-      console.log(`[LocalPlayer] Track ended - loading next track ${this.currentTrackIndex + 1}`)
-      // Has next track
-      this.currentTrackIndex++
-      this.playWhenReady = true
-      this.startTime = this.currentTrack.startOffset
-      this.loadCurrentTrack()
-    } else {
-      console.log(`[LocalPlayer] Ended`)
-      this.emit('finished')
-    }
+    console.log(`[LocalVideoPlayer] Ended`)
+    this.emit('finished')
   }
   evtError(error) {
     console.error('Player error', error)
@@ -85,7 +72,7 @@ export default class LocalPlayer extends EventEmitter {
   }
   evtLoadedMetadata(data) {
     if (!this.isHlsTranscode) {
-      this.player.currentTime = this.trackStartTime
+      this.player.currentTime = this.startTime
     }
 
     this.emit('stateChange', 'LOADED')
@@ -107,9 +94,9 @@ export default class LocalPlayer extends EventEmitter {
     }
   }
 
-  set(libraryItem, tracks, isHlsTranscode, startTime, playWhenReady = false) {
+  set(libraryItem, videoTrack, isHlsTranscode, startTime, playWhenReady = false) {
     this.libraryItem = libraryItem
-    this.audioTracks = tracks
+    this.videoTrack = videoTrack
     this.isHlsTranscode = isHlsTranscode
     this.playWhenReady = playWhenReady
     this.startTime = startTime
@@ -126,13 +113,11 @@ export default class LocalPlayer extends EventEmitter {
   }
 
   setHlsStream() {
-    this.trackStartTime = 0
-
-    // iOS does not support Media Elements but allows for HLS in the native audio player
+    // iOS does not support Media Elements but allows for HLS in the native video player
     if (!Hls.isSupported()) {
-      console.warn('HLS is not supported - fallback to using audio element')
+      console.warn('HLS is not supported - fallback to using video element')
       this.usingNativeplayer = true
-      this.player.src = this.currentTrack.relativeContentUrl
+      this.player.src = this.videoTrack.relativeContentUrl
       this.player.currentTime = this.startTime
       return
     }
@@ -148,7 +133,7 @@ export default class LocalPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-      this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
+      this.hlsInstance.loadSource(this.videoTrack.relativeContentUrl)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')
@@ -167,19 +152,8 @@ export default class LocalPlayer extends EventEmitter {
   }
 
   setDirectPlay() {
-    // Set initial track and track time offset
-    var trackIndex = this.audioTracks.findIndex(t => this.startTime >= t.startOffset && this.startTime < (t.startOffset + t.duration))
-    this.currentTrackIndex = trackIndex >= 0 ? trackIndex : 0
-
-    this.loadCurrentTrack()
-  }
-
-  loadCurrentTrack() {
-    if (!this.currentTrack) return
-    // When direct play track is loaded current time needs to be set
-    this.trackStartTime = Math.max(0, this.startTime - (this.currentTrack.startOffset || 0))
-    this.player.src = this.currentTrack.relativeContentUrl
-    console.log(`[LocalPlayer] Loading track src ${this.currentTrack.relativeContentUrl}`)
+    this.player.src = this.videoTrack.relativeContentUrl
+    console.log(`[LocalVideoPlayer] Loading track src ${this.videoTrack.relativeContentUrl}`)
     this.player.load()
   }
 
@@ -195,7 +169,7 @@ export default class LocalPlayer extends EventEmitter {
   async resetStream(startTime) {
     this.destroyHlsInstance()
     await new Promise((resolve) => setTimeout(resolve, 1000))
-    this.set(this.libraryItem, this.audioTracks, this.isHlsTranscode, startTime, true)
+    this.set(this.libraryItem, this.videoTrack, this.isHlsTranscode, startTime, true)
   }
 
   playPause() {
@@ -213,14 +187,11 @@ export default class LocalPlayer extends EventEmitter {
   }
 
   getCurrentTime() {
-    var currentTrackOffset = this.currentTrack.startOffset || 0
-    return this.player ? currentTrackOffset + this.player.currentTime : 0
+    return this.player ? this.player.currentTime : 0
   }
 
   getDuration() {
-    if (!this.audioTracks.length) return 0
-    var lastTrack = this.audioTracks[this.audioTracks.length - 1]
-    return lastTrack.startOffset + lastTrack.duration
+    return this.videoTrack.duration
   }
 
   setPlaybackRate(playbackRate) {
@@ -231,38 +202,13 @@ export default class LocalPlayer extends EventEmitter {
 
   seek(time) {
     if (!this.player) return
-    if (this.isHlsTranscode) {
-      // Seeking HLS stream
-      var offsetTime = time - (this.currentTrack.startOffset || 0)
-      this.player.currentTime = Math.max(0, offsetTime)
-    } else {
-      // Seeking Direct play
-      if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
-        // Change Track
-        var trackIndex = this.audioTracks.findIndex(t => time >= t.startOffset && time < (t.startOffset + t.duration))
-        if (trackIndex >= 0) {
-          this.startTime = time
-          this.currentTrackIndex = trackIndex
-
-          if (!this.player.paused) {
-            // audio player playing so play when track loads
-            this.playWhenReady = true
-          }
-          this.loadCurrentTrack()
-        }
-      } else {
-        var offsetTime = time - (this.currentTrack.startOffset || 0)
-        this.player.currentTime = Math.max(0, offsetTime)
-      }
-    }
-
+    this.player.currentTime = Math.max(0, time)
   }
 
   setVolume(volume) {
     if (!this.player) return
     this.player.volume = volume
   }
-
 
   // Utils
   isValidDuration(duration) {

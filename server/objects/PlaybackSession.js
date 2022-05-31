@@ -4,6 +4,7 @@ const { PlayMethod } = require('../utils/constants')
 const BookMetadata = require('./metadata/BookMetadata')
 const PodcastMetadata = require('./metadata/PodcastMetadata')
 const DeviceInfo = require('./DeviceInfo')
+const VideoMetadata = require('./metadata/VideoMetadata')
 
 class PlaybackSession {
   constructor(session) {
@@ -38,6 +39,7 @@ class PlaybackSession {
     // Not saved in DB
     this.lastSave = 0
     this.audioTracks = []
+    this.videoTrack = null
     this.stream = null
 
     if (session) {
@@ -97,6 +99,7 @@ class PlaybackSession {
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map(at => at.toJSON()),
+      videoTrack: this.videoTrack ? this.videoTrack.toJSON() : null,
       libraryItem: libraryItem.toJSONExpanded()
     }
   }
@@ -120,6 +123,8 @@ class PlaybackSession {
         this.mediaMetadata = new BookMetadata(session.mediaMetadata)
       } else if (this.mediaType === 'podcast') {
         this.mediaMetadata = new PodcastMetadata(session.mediaMetadata)
+      } else if (this.mediaType === 'video') {
+        this.mediaMetadata = new VideoMetadata(session.mediaMetadata)
       }
     }
     this.displayTitle = session.displayTitle || ''

@@ -11,6 +11,7 @@ function isMediaFile(mediaType, ext) {
   if (!ext) return false
   var extclean = ext.slice(1).toLowerCase()
   if (mediaType === 'podcast') return globals.SupportedAudioTypes.includes(extclean)
+  else if (mediaType === 'video') return globals.SupportedVideoTypes.includes(extclean)
   return globals.SupportedAudioTypes.includes(extclean) || globals.SupportedEbookTypes.includes(extclean)
 }
 
@@ -72,7 +73,7 @@ module.exports.groupFilesIntoLibraryItemPaths = groupFilesIntoLibraryItemPaths
 function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems) {
   // Step 1: Filter out non-book-media files in root dir (with depth of 0)
   var itemsFiltered = fileItems.filter(i => {
-    return i.deep > 0 || (mediaType === 'book' && isMediaFile(mediaType, i.extension))
+    return i.deep > 0 || ((mediaType === 'book' || mediaType === 'video') && isMediaFile(mediaType, i.extension))
   })
 
   // Step 2: Seperate media files and other files
@@ -136,7 +137,7 @@ function groupFileItemsIntoLibraryItemDirs(mediaType, fileItems) {
 }
 
 function cleanFileObjects(libraryItemPath, files) {
-  return Promise.all(files.map(async(file) => {
+  return Promise.all(files.map(async (file) => {
     var filePath = Path.posix.join(libraryItemPath, file)
     var newLibraryFile = new LibraryFile()
     await newLibraryFile.setDataFromPath(filePath, file)
@@ -314,9 +315,11 @@ function getPodcastDataFromDir(folderPath, relPath) {
 function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettings) {
   if (libraryMediaType === 'podcast') {
     return getPodcastDataFromDir(folderPath, relPath)
-  } else {
+  } else if (libraryMediaType === 'book') {
     var parseSubtitle = !!serverSettings.scannerParseSubtitle
     return getBookDataFromDir(folderPath, relPath, parseSubtitle)
+  } else {
+    return this.getPodcastDataFromDir(folderPath, relPath)
   }
 }
 
@@ -333,10 +336,10 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
   if (isSingleMediaItem) { // Single media item in root of folder
     fileItems = [
       {
-      fullpath: libraryItemPath,
-      path: libraryItemDir // actually the relPath (only filename here)
-    }
-  ]
+        fullpath: libraryItemPath,
+        path: libraryItemDir // actually the relPath (only filename here)
+      }
+    ]
     libraryItemData = {
       path: libraryItemPath, // full path
       relPath: libraryItemDir, // only filename

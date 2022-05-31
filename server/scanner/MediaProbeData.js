@@ -1,11 +1,15 @@
 const AudioFileMetadata = require('../objects/metadata/AudioMetaTags')
 
-class AudioProbeData {
+class MediaProbeData {
   constructor() {
     this.embeddedCoverArt = null
     this.format = null
     this.duration = null
     this.size = null
+
+    this.audioStream = null
+    this.videoStream = null
+
     this.bitRate = null
     this.codec = null
     this.timeBase = null
@@ -35,6 +39,10 @@ class AudioProbeData {
     this.format = data.format
     this.duration = data.duration
     this.size = data.size
+
+    this.audioStream = audioStream
+    this.videoStream = this.embeddedCoverArt ? null : data.video_stream || null
+
     this.bitRate = audioStream.bit_rate || data.bit_rate
     this.codec = audioStream.codec
     this.timeBase = audioStream.time_base
@@ -78,4 +86,4 @@ class AudioProbeData {
     }
   }
 }
-module.exports = AudioProbeData
+module.exports = MediaProbeData
