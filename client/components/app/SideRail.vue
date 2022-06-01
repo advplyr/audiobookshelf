@@ -73,6 +73,12 @@
         <p class="text-xs font-mono pb-0.5">{{ numIssues }}</p>
       </div>
     </nuxt-link>
+
+    <div class="w-full h-12 px-1 py-2 border-t border-black border-opacity-20 absolute left-0" :style="{ bottom: streamLibraryItem ? '240px' : '65px' }">
+      <p class="font-mono text-xs text-center text-gray-300 leading-3 mb-1">v{{ $config.version }}</p>
+      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xxs text-center block leading-3">Update</a>
+      <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
+    </div>
   </div>
 </template>
 
@@ -82,6 +88,12 @@ export default {
     return {}
   },
   computed: {
+    Source() {
+      return this.$store.state.Source
+    },
+    isMobileLandscape() {
+      return this.$store.state.globals.isMobileLandscape
+    },
     isShowingBookshelfToolbar() {
       if (!this.$route.name) return false
       return this.$route.name.startsWith('library')
@@ -131,6 +143,21 @@ export default {
     },
     numIssues() {
       return this.$store.state.libraries.issues || 0
+    },
+    versionData() {
+      return this.$store.state.versionData || {}
+    },
+    hasUpdate() {
+      return !!this.versionData.hasUpdate
+    },
+    latestVersion() {
+      return this.versionData.latestVersion
+    },
+    githubTagUrl() {
+      return this.versionData.githubTagUrl
+    },
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     }
   },
   methods: {},

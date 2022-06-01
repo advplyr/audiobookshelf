@@ -515,23 +515,12 @@ export default {
       this.$store.commit('globals/updateWindowSize', { width: window.innerWidth, height: window.innerHeight })
     },
     checkVersionUpdate() {
-      // Version check is only run if time since last check was 5 minutes
-      const VERSION_CHECK_BUFF = 1000 * 60 * 5 // 5 minutes
-      var lastVerCheck = localStorage.getItem('lastVerCheck') || 0
-      if (Date.now() - Number(lastVerCheck) > VERSION_CHECK_BUFF) {
-        this.$store
-          .dispatch('checkForUpdate')
-          .then((res) => {
-            localStorage.setItem('lastVerCheck', Date.now())
-            if (res && res.hasUpdate) this.showUpdateToast(res)
-          })
-          .catch((err) => console.error(err))
-
-        if (this.$route.query.error) {
-          this.$toast.error(this.$route.query.error)
-          this.$router.replace(this.$route.path)
-        }
-      }
+      this.$store
+        .dispatch('checkForUpdate')
+        .then((res) => {
+          if (res && res.hasUpdate) this.showUpdateToast(res)
+        })
+        .catch((err) => console.error(err))
     }
   },
   beforeMount() {
@@ -551,6 +540,11 @@ export default {
     }
 
     this.checkVersionUpdate()
+
+    if (this.$route.query.error) {
+      this.$toast.error(this.$route.query.error)
+      this.$router.replace(this.$route.path)
+    }
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
