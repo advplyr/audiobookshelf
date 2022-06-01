@@ -1,5 +1,5 @@
 <template>
-  <div class="text-white max-h-screen h-screen overflow-hidden bg-bg">
+    <div class="text-white max-h-screen h-screen overflow-hidden bg-bg">
     <app-appbar />
 
     <app-side-rail v-if="isShowingSideRail" class="hidden md:block" />
@@ -368,6 +368,7 @@ export default {
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
+        channel: this.$config.routerBasePath,
         persist: 'main',
         teardown: false,
         transports: ['websocket'],

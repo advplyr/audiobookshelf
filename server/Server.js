@@ -1,6 +1,7 @@
 const Path = require('path')
 const express = require('express')
 const http = require('http')
+const { glob } = require('glob')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
@@ -123,6 +124,9 @@ class Server {
     await this.apiRouter.checkRemoveEmptySeries(this.db.series) // Remove empty series
     await this.rssFeedManager.init()
     this.cronManager.init()
+
+    // Apply the current RouterBasePath to the client
+    await this.applyClientBasePath()
 
     if (this.db.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -321,6 +325,62 @@ class Server {
         await this.db.updateEntity('user', _user)
       }
     }
+  }
+
+  // Apply the current RouterBasePath to all `<base>` tags in the client html files
+  async applyClientBasePath () {
+    const basePath = `/${global.RouterBasePath}/`
+      .replace('///', '') // convert base path `"/""` to `""`
+      .replace('//', '/') // Ensure there are single `/` at the front and end
+      .slice(0, -1) // Remove trailing `/`
+    const basePathSlash = `${basePath}/`
+    const distPath = Path.join(global.appRoot, '/client/dist')
+
+    // Check if the client base path is already set to the current base path
+    const indexHtml = await fs.readFile(Path.join(distPath, 'index.html'), 'utf8')
+    const currentBasePath = indexHtml.match(/routerBasePath:"([^"]*)"/)[1]
+    if (currentBasePath === basePath) {
+      Logger.info(`[Server] Client base path already set to ${basePath}`)
+      return;
+    }
+
+    // Matches e.g `href="/_nuxt/..."` or `src='/...'` or `"url":"http://localhost:3333/...`
+    const replaceUrls = new RegExp(`((?:href|src|url|scope)"?(?:=|:)\\s*["'](?:http://localhost:3333)?)${currentBasePath || "/"}([^"']*["'])`, "g")
+    const replaceNuxtConfig = new RegExp(`<script>window.__NUXT__=.*?</script>`, "g")
+    const replaceAssetPaths = new RegExp(`${currentBasePath}/(_nuxt/[^"]*|sw.js)`, "g")
+
+    for (const htmlFile of await glob('**/*.html', { cwd: distPath })) {
+      const htmlPath = Path.join(distPath, htmlFile)
+      let html = await fs.readFile(htmlPath, 'utf8')
+
+      // Replace all urls with the new base path
+      html = html.replace(replaceUrls, `$1${basePathSlash}$2`)
+
+      // Replace paths in nuxt config (inline script in html files)
+      html = html.replace(replaceNuxtConfig, (config) => {
+        config = config.replace(/routerBasePath:"([^"]*)"/, `routerBasePath:"${basePath}"`)
+        config = config.replace(/basePath:"([^"]*)"/, `basePath:"${basePathSlash}"`)
+        config = config.replace(/assetsPath:"([^"]*)"/, `assetsPath:"${basePathSlash}_nuxt/"`)
+        return config
+      })
+
+      await fs.writeFile(htmlPath, html)
+    }
+
+    for (const jsFile of await glob('**/*.{js,json}', { cwd: distPath })) {
+      const jsPath = Path.join(distPath, jsFile)
+      let js = await fs.readFile(jsPath, 'utf8')
+
+      // Replace all urls with the new base path
+      js = js.replace(replaceUrls, `$1${basePathSlash}$2`)
+
+      // Replace asset paths in js files
+      js = js.replace(replaceAssetPaths, `${basePath}/$1`)
+
+      await fs.writeFile(jsPath, js)
+    }
+
+    Logger.info(`[Server] Client base path set to "${basePath}"`);
   }
 
   // First time login rate limit is hit
