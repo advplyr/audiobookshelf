@@ -209,6 +209,7 @@ class Server {
     const dyanimicRoutes = [
       '/item/:id',
       '/item/:id/manage',
+      '/author/:id',
       '/audiobook/:id/chapters',
       '/audiobook/:id/edit',
       '/library/:library',
