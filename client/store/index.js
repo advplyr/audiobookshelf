@@ -8,6 +8,7 @@ export const state = () => ({
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
+  playerIsFullscreen: false,
   editModalTab: 'details',
   showEditModal: false,
   showEReader: false,
@@ -79,6 +80,9 @@ export const actions = {
 export const mutations = {
   setSource(state, source) {
     state.Source = source
+  },
+  setPlayerIsFullscreen(state, val) {
+    state.playerIsFullscreen = val
   },
   setLastBookshelfScrollData(state, { scrollTop, path, name }) {
     state.lastBookshelfScrollData[name] = { scrollTop, path }

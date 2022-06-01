@@ -26,7 +26,7 @@
       <div class="flex-grow" />
       <span class="material-icons px-2 py-1 md:p-4 cursor-pointer" @click="closePlayer">close</span>
     </div>
-    <audio-player
+    <player-ui
       ref="audioPlayer"
       :chapters="chapters"
       :paused="!isPlaying"

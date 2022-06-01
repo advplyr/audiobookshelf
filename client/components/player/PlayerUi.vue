@@ -2,6 +2,8 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 md:top-0 right-0 md:right-2 flex items-center h-full">
+        <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span>
+
         <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
 
         <div class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
@@ -21,57 +23,11 @@
         </div>
       </div>
 
-      <div class="flex pt-4 pb-2 md:pt-0 md:pb-2">
-        <div class="flex-grow" />
-        <template v-if="!loading">
-          <div class="cursor-pointer flex items-center justify-center text-gray-300 mr-8" @mousedown.prevent @mouseup.prevent @click.stop="restart">
-            <span class="material-icons text-3xl">first_page</span>
-          </div>
-          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpBackward">
-            <span class="material-icons text-3xl">replay_10</span>
-          </div>
-          <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPause">
-            <span class="material-icons">{{ seekLoading ? 'autorenew' : paused ? 'play_arrow' : 'pause' }}</span>
-          </div>
-          <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpForward">
-            <span class="material-icons text-3xl">forward_10</span>
-          </div>
-          <controls-playback-speed-control v-model="playbackRate" @input="playbackRateUpdated" @change="playbackRateChanged" />
-        </template>
-        <template v-else>
-          <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-8 animate-spin">
-            <span class="material-icons">autorenew</span>
-          </div>
-        </template>
-
-        <div class="flex-grow" />
-      </div>
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate="playbackRate" :paused="paused" @restart="restart" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
-    <div class="relative">
-      <!-- Track -->
-      <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
-        <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
-        <div ref="bufferTrack" class="h-full bg-gray-400 absolute top-0 left-0 pointer-events-none" />
-        <div ref="playedTrack" class="h-full bg-gray-200 absolute top-0 left-0 pointer-events-none" />
-        <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
-        <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white bg-opacity-25" />
-      </div>
-      <div ref="track" class="w-full h-2 relative overflow-hidden">
-        <template v-for="(tick, index) in chapterTicks">
-          <div :key="index" :style="{ left: tick.left + 'px' }" class="absolute top-0 w-px bg-white bg-opacity-30 h-1 pointer-events-none" />
-        </template>
-      </div>
 
-      <!-- Hover timestamp -->
-      <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
-        <p ref="hoverTimestampText" class="text-xs font-mono text-center px-2 py-0.5 truncate whitespace-nowrap">00:00</p>
-      </div>
-      <div ref="hoverTimestampArrow" class="absolute -top-3 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
-        <div class="absolute -bottom-1.5 left-0 right-0 w-full flex justify-center">
-          <div class="arrow-down" />
-        </div>
-      </div>
-    </div>
+    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" @seek="seek" />
+
     <div class="flex">
       <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
       <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
@@ -106,17 +62,11 @@ export default {
     return {
       volume: 1,
       playbackRate: 1,
-      trackWidth: 0,
-      playedTrackWidth: 0,
-      bufferTrackWidth: 0,
-      readyTrackWidth: 0,
       audioEl: null,
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
-      trackOffsetLeft: 16, // Track is 16px from edge
-      duration: 0,
-      chapterTicks: []
+      duration: 0
     }
   },
   computed: {
@@ -153,24 +103,38 @@ export default {
     },
     currentChapterName() {
       return this.currentChapter ? this.currentChapter.title : ''
+    },
+    isFullscreen() {
+      return this.$store.state.playerIsFullscreen
     }
   },
   methods: {
+    toggleFullscreen(isFullscreen) {
+      this.$store.commit('setPlayerIsFullscreen', isFullscreen)
+
+      var videoPlayerEl = document.getElementById('video-player')
+      if (videoPlayerEl) {
+        if (isFullscreen) {
+          videoPlayerEl.style.width = '100vw'
+          videoPlayerEl.style.height = '100vh'
+          videoPlayerEl.style.top = '0px'
+          videoPlayerEl.style.left = '0px'
+        } else {
+          videoPlayerEl.style.width = '384px'
+          videoPlayerEl.style.height = '216px'
+          videoPlayerEl.style.top = 'unset'
+          videoPlayerEl.style.bottom = '80px'
+          videoPlayerEl.style.left = '16px'
+        }
+      }
+    },
     setDuration(duration) {
       this.duration = duration
-
-      this.chapterTicks = this.chapters.map((chap) => {
-        var perc = chap.start / this.duration
-        return {
-          title: chap.title,
-          left: perc * this.trackWidth
-        }
-      })
     },
     setCurrentTime(time) {
       this.currentTime = time
       this.updateTimestamp()
-      this.updatePlayedTrack()
+      if (this.$refs.trackbar) this.$refs.trackbar.setCurrentTime(time)
     },
     playPause() {
       this.$emit('playPause')
@@ -223,67 +187,11 @@ export default {
     seek(time) {
       this.$emit('seek', time)
     },
-    playbackRateUpdated(playbackRate) {
-      this.setPlaybackRate(playbackRate)
-    },
-    playbackRateChanged(playbackRate) {
-      this.setPlaybackRate(playbackRate)
-      this.$store.dispatch('user/updateUserSettings', { playbackRate }).catch((err) => {
-        console.error('Failed to update settings', err)
-      })
-    },
-    mousemoveTrack(e) {
-      var offsetX = e.offsetX
-      var time = (offsetX / this.trackWidth) * this.duration
-      if (this.$refs.hoverTimestamp) {
-        var width = this.$refs.hoverTimestamp.clientWidth
-        this.$refs.hoverTimestamp.style.opacity = 1
-        var posLeft = offsetX - width / 2
-        if (posLeft + width + this.trackOffsetLeft > window.innerWidth) {
-          posLeft = window.innerWidth - width - this.trackOffsetLeft
-        } else if (posLeft < -this.trackOffsetLeft) {
-          posLeft = -this.trackOffsetLeft
-        }
-        this.$refs.hoverTimestamp.style.left = posLeft + 'px'
-      }
-
-      if (this.$refs.hoverTimestampArrow) {
-        var width = this.$refs.hoverTimestampArrow.clientWidth
-        var posLeft = offsetX - width / 2
-        this.$refs.hoverTimestampArrow.style.opacity = 1
-        this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
-      }
-      if (this.$refs.hoverTimestampText) {
-        var hoverText = this.$secondsToTimestamp(time)
-
-        var chapter = this.chapters.find((chapter) => chapter.start <= time && time < chapter.end)
-        if (chapter && chapter.title) {
-          hoverText += ` - ${chapter.title}`
-        }
-        this.$refs.hoverTimestampText.innerText = hoverText
-      }
-      if (this.$refs.trackCursor) {
-        this.$refs.trackCursor.style.opacity = 1
-        this.$refs.trackCursor.style.left = offsetX - 1 + 'px'
-      }
-    },
-    mouseleaveTrack() {
-      if (this.$refs.hoverTimestamp) {
-        this.$refs.hoverTimestamp.style.opacity = 0
-      }
-      if (this.$refs.hoverTimestampArrow) {
-        this.$refs.hoverTimestampArrow.style.opacity = 0
-      }
-      if (this.$refs.trackCursor) {
-        this.$refs.trackCursor.style.opacity = 0
-      }
-    },
     restart() {
       this.seek(0)
     },
     setStreamReady() {
-      this.readyTrackWidth = this.trackWidth
-      this.$refs.readyTrack.style.width = this.trackWidth + 'px'
+      if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)
     },
     setChunksReady(chunks, numSegments) {
       var largestSeg = 0
@@ -298,10 +206,7 @@ export default {
         }
       }
       var percentageReady = largestSeg / numSegments
-      var widthReady = Math.round(this.trackWidth * percentageReady)
-      if (this.readyTrackWidth === widthReady) return
-      this.readyTrackWidth = widthReady
-      this.$refs.readyTrack.style.width = widthReady + 'px'
+      if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(percentageReady)
     },
     updateTimestamp() {
       var ts = this.$refs.currentTimestamp
@@ -312,36 +217,9 @@ export default {
       var currTimeClean = this.$secondsToTimestamp(this.currentTime)
       ts.innerText = currTimeClean
     },
-    updatePlayedTrack() {
-      var perc = this.currentTime / this.duration
-      var ptWidth = Math.round(perc * this.trackWidth)
-      if (this.playedTrackWidth === ptWidth) {
-        return
-      }
-      this.$refs.playedTrack.style.width = ptWidth + 'px'
-      this.playedTrackWidth = ptWidth
-    },
-    clickTrack(e) {
-      if (this.loading) return
 
-      var offsetX = e.offsetX
-      var perc = offsetX / this.trackWidth
-      var time = perc * this.duration
-      if (isNaN(time) || time === null) {
-        console.error('Invalid time', perc, time)
-        return
-      }
-      this.seek(time)
-    },
     setBufferTime(bufferTime) {
-      if (!this.audioEl) {
-        return
-      }
-      var bufferlen = (bufferTime / this.duration) * this.trackWidth
-      bufferlen = Math.round(bufferlen)
-      if (this.bufferTrackWidth === bufferlen || !this.$refs.bufferTrack) return
-      this.$refs.bufferTrack.style.width = bufferlen + 'px'
-      this.bufferTrackWidth = bufferlen
+      if (this.$refs.trackbar) this.$refs.trackbar.setBufferTime(bufferTime)
     },
     showChapters() {
       if (!this.chapters.length) return
@@ -350,14 +228,6 @@ export default {
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
       this.$emit('setPlaybackRate', this.playbackRate)
-      this.setTrackWidth()
-    },
-    setTrackWidth() {
-      if (this.$refs.track) {
-        this.trackWidth = this.$refs.track.clientWidth
-      } else {
-        console.error('Track not loaded', this.$refs)
-      }
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
@@ -365,6 +235,11 @@ export default {
       }
     },
     closePlayer() {
+      if (this.isFullscreen) {
+        this.toggleFullscreen(false)
+        return
+      }
+
       if (this.loading) return
       this.$emit('close')
     },
@@ -379,19 +254,14 @@ export default {
       else if (action === this.$hotkeys.AudioPlayer.INCREASE_PLAYBACK_RATE) this.increasePlaybackRate()
       else if (action === this.$hotkeys.AudioPlayer.DECREASE_PLAYBACK_RATE) this.decreasePlaybackRate()
       else if (action === this.$hotkeys.AudioPlayer.CLOSE) this.closePlayer()
-    },
-    windowResize() {
-      this.setTrackWidth()
     }
   },
   mounted() {
-    window.addEventListener('resize', this.windowResize)
     this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
     this.init()
     this.$eventBus.$on('player-hotkey', this.hotkey)
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.windowResize)
     this.$store.commit('user/removeSettingsListener', 'audioplayer')
     this.$eventBus.$off('player-hotkey', this.hotkey)
   }

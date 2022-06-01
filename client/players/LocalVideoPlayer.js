@@ -29,8 +29,11 @@ export default class LocalVideoPlayer extends EventEmitter {
     var videoEl = document.createElement('video')
     videoEl.id = 'video-player'
     // videoEl.style.display = 'none'
-    videoEl.className = 'absolute bottom-20 left-4 w-96 bg-black z-50'
+    videoEl.className = 'absolute bg-black z-50'
     videoEl.style.height = '216px'
+    videoEl.style.width = '384px'
+    videoEl.style.bottom = '80px'
+    videoEl.style.left = '16px'
     document.body.appendChild(videoEl)
     this.player = videoEl
 
