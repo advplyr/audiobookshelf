@@ -219,7 +219,11 @@ class PodcastController {
       })
     }
 
-    libraryItem.media.removeEpisode(episodeId)
+    // Remove episode from Podcast and library file
+    const episodeRemoved = libraryItem.media.removeEpisode(episodeId)
+    if (episodeRemoved && episodeRemoved.audioFile) {
+      libraryItem.removeLibraryFile(episodeRemoved.audioFile.ino)
+    }
 
     await this.db.updateLibraryItem(libraryItem)
     this.emitter('item_updated', libraryItem.toJSONExpanded())

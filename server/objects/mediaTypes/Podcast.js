@@ -240,7 +240,11 @@ class Podcast {
   }
 
   removeEpisode(episodeId) {
-    this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
+    const episode = this.episodes.find(ep => ep.id === episodeId)
+    if (episode) {
+      this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
+    }
+    return episode
   }
 
   getPlaybackTitle(episodeId) {
