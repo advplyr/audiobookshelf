@@ -2,7 +2,7 @@
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
       <div class="absolute -top-10 md:top-0 right-0 md:right-2 flex items-center h-full">
-        <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span>
+        <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
         <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
 
