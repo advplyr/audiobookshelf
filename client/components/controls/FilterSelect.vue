@@ -214,7 +214,7 @@ export default {
       return this.filterData.languages || []
     },
     progress() {
-      return ['Finished', 'In Progress', 'Not Started']
+      return ['Finished', 'In Progress', 'Not Started', 'Not Finished']
     },
     missing() {
       return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
