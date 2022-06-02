@@ -141,6 +141,9 @@ class BackupManager {
             if (error.message === "Bad archive") {
               Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
               continue;
+            } else if (error.message === "unexpected end of file") {
+              Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
+              continue;
             } else {
               throw error
             }
