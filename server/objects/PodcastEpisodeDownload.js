@@ -21,7 +21,6 @@ class PodcastEpisodeDownload {
   toJSONForClient() {
     return {
       id: this.id,
-      // podcastEpisode: this.podcastEpisode ? this.podcastEpisode.toJSON() : null,
       episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.bestFilename : null,
       url: this.url,
       libraryItemId: this.libraryItem ? this.libraryItem.id : null,
