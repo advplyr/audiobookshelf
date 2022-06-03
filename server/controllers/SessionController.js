@@ -7,6 +7,12 @@ class SessionController {
     return res.json(req.session)
   }
 
+  getSession(req, res) {
+    var libraryItem = this.db.getLibraryItem(req.session.libraryItemId)
+    var sessionForClient = req.session.toJSONForClient(libraryItem)
+    res.json(sessionForClient)
+  }
+
   // POST: api/session/:id/sync
   sync(req, res) {
     this.playbackSessionManager.syncSessionRequest(req.user, req.session, req.body, res)

@@ -131,6 +131,7 @@ class ApiRouter {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
+    this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
@@ -173,6 +174,7 @@ class ApiRouter {
     //
     // Playback Session Routes
     //
+    this.router.get('/session/:id', SessionController.middleware.bind(this), SessionController.getSession.bind(this))
     this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
     this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))

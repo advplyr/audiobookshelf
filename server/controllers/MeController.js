@@ -16,6 +16,15 @@ class MeController {
     res.json(listeningStats)
   }
 
+  // GET: api/me/progress/:id/:episodeId?
+  async getMediaProgress(req, res) {
+    const mediaProgress = req.user.getMediaProgress(req.id, req.episodeId || null)
+    if (!mediaProgress) {
+      return res.sendStatus(404)
+    }
+    res.json(mediaProgress)
+  }
+
   // DELETE: api/me/progress/:id
   async removeMediaProgress(req, res) {
     var wasRemoved = req.user.removeMediaProgress(req.params.id)
