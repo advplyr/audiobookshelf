@@ -71,7 +71,8 @@ export default {
       sleepTimerRemaining: 0,
       sleepTimer: null,
       displayTitle: null,
-      initialPlaybackRate: 1
+      initialPlaybackRate: 1,
+      syncFailedToast: null
     }
   },
   computed: {
@@ -380,6 +381,10 @@ export default {
     },
     pauseItem() {
       this.playerHandler.pause()
+    },
+    showFailedProgressSyncs() {
+      if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
+      this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
     }
   },
   mounted() {

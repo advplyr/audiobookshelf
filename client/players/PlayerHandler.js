@@ -20,6 +20,7 @@ export default class PlayerHandler {
     this.currentSessionId = null
     this.startTime = 0
 
+    this.failedProgressSyncs = 0
     this.lastSyncTime = 0
     this.lastSyncedAt = 0
     this.listeningTimeSinceSync = 0
@@ -186,6 +187,7 @@ export default class PlayerHandler {
   }
 
   prepareSession(session) {
+    this.failedProgressSyncs = 0
     this.startTime = session.currentTime
     this.currentSessionId = session.id
     this.displayTitle = session.displayTitle
@@ -286,8 +288,15 @@ export default class PlayerHandler {
       currentTime
     }
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 1000 }).catch((error) => {
+    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 1000 }).then(() => {
+      this.failedProgressSyncs = 0
+    }).catch((error) => {
       console.error('Failed to update session progress', error)
+      this.failedProgressSyncs++
+      if (this.failedProgressSyncs >= 2) {
+        this.ctx.showFailedProgressSyncs()
+        this.failedProgressSyncs = 0
+      }
     })
   }
 
