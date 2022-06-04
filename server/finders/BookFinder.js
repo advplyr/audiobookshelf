@@ -167,7 +167,9 @@ class BookFinder {
   }
 
   async getAudibleResults(title, author, asin) {
-    var books = await this.audible.search(title, author, asin);
+    // cleantitle for search in audible as (unabridged) doesn't find anything
+    var cleanedTitle = title.replace(/ *\([^)]*\) */g, "")
+    var books = await this.audible.search(cleanedTitle, author, asin);
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
     return books
