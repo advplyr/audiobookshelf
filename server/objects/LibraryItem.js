@@ -6,7 +6,7 @@ const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
-const Video = require('./mediatypes/Video')
+const Video = require('./mediaTypes/Video')
 const { areEquivalent, copyValue, getId } = require('../utils/index')
 
 class LibraryItem {
