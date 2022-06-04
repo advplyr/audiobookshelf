@@ -1,27 +1,18 @@
 <template>
   <div class="w-full h-full">
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-0 sm:p-4 mb-8">
-      <nuxt-link :to="`/config/users/${user.id}`" class="text-white text-opacity-70 hover:text-opacity-100 hover:bg-white hover:bg-opacity-5 cursor-pointer rounded-full px-2 sm:px-0">
-        <div class="flex items-center">
-          <div class="h-10 w-10 flex items-center justify-center">
-            <span class="material-icons text-2xl">arrow_back</span>
-          </div>
-          <p class="pl-1">Back to User</p>
-        </div>
-      </nuxt-link>
-      <div class="flex items-center mb-2 mt-4 px-2 sm:px-0">
-        <widgets-online-indicator :value="!!userOnline" />
-        <h1 class="text-xl pl-2">{{ username }}</h1>
-      </div>
-
-      <div class="w-full h-px bg-white bg-opacity-10 my-2" />
-
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions</h1>
+        <div class="flex items-center mb-1">
+          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions</h1>
+          <div class="flex-grow" />
+
+          <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
+        </div>
         <div v-if="listeningSessions.length">
           <table class="userSessionsTable">
             <tr class="bg-primary bg-opacity-40">
               <th class="flex-grow text-left">Item</th>
+              <th class="w-20 text-left">User</th>
               <th class="w-32 text-left hidden md:table-cell">Play Method</th>
               <th class="w-40 text-left hidden sm:table-cell">Device Info</th>
               <th class="w-20">Listened</th>
@@ -32,6 +23,10 @@
               <td class="py-1">
                 <p class="text-sm text-gray-200">{{ session.displayTitle }}</p>
                 <p class="text-xs text-gray-400">{{ session.displayAuthor }}</p>
+              </td>
+              <td class="hidden md:table-cell">
+                <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
+                <p v-else class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
               </td>
               <td class="hidden md:table-cell">
                 <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
@@ -69,13 +64,19 @@
 <script>
 export default {
   async asyncData({ params, redirect, app }) {
-    var user = await app.$axios.$get(`/api/users/${params.id}`).catch((error) => {
-      console.error('Failed to get user', error)
-      return null
-    })
-    if (!user) return redirect('/config/users')
+    var users = await app.$axios
+      .$get('/api/users')
+      .then((users) => {
+        return users.sort((a, b) => {
+          return a.createdAt - b.createdAt
+        })
+      })
+      .catch((error) => {
+        console.error('Failed', error)
+        return []
+      })
     return {
-      user
+      users
     }
   },
   data() {
@@ -85,7 +86,9 @@ export default {
       listeningSessions: [],
       numPages: 0,
       total: 0,
-      currentPage: 0
+      currentPage: 0,
+      userFilter: null,
+      selectedUser: ''
     }
   },
   computed: {
@@ -94,9 +97,21 @@ export default {
     },
     userOnline() {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
+    },
+    userItems() {
+      var userItems = [{ value: '', text: 'All Users' }]
+      return userItems.concat(this.users.map((u) => ({ value: u.id, text: u.username })))
+    },
+    filteredUserUsername() {
+      if (!this.userFilter) return null
+      var user = this.users.find((u) => u.id === this.userFilter)
+      return user ? user.username : null
     }
   },
   methods: {
+    updateUserFilter() {
+      this.loadSessions(0)
+    },
     prevPage() {
       this.loadSessions(this.currentPage - 1)
     },
@@ -125,7 +140,8 @@ export default {
       return 'Unknown'
     },
     async loadSessions(page) {
-      const data = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=${page}&itemsPerPage=10`).catch((err) => {
+      var userFilterQuery = this.selectedUser ? `&user=${this.selectedUser}` : ''
+      const data = await this.$axios.$get(`/api/sessions?page=${page}&itemsPerPage=10${userFilterQuery}`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return null
       })
@@ -138,6 +154,7 @@ export default {
       this.total = data.total
       this.currentPage = data.page
       this.listeningSessions = data.sessions
+      this.userFilter = data.userFilter
     },
     init() {
       this.loadSessions(0)

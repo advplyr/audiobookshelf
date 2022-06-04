@@ -174,6 +174,7 @@ class ApiRouter {
     //
     // Playback Session Routes
     //
+    this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
     this.router.get('/session/:id', SessionController.middleware.bind(this), SessionController.getSession.bind(this))
     this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
     this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
@@ -308,6 +309,19 @@ class ApiRouter {
   async getUserListeningSessionsHelper(userId) {
     var userSessions = await this.db.selectUserSessions(userId)
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
+  }
+
+  async getAllSessionsWithUserData() {
+    var sessions = await this.db.getAllSessions()
+    sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+    return sessions.map(se => {
+      var user = this.db.users.find(u => u.id === se.userId)
+      var _se = {
+        ...se,
+        user: user ? { id: user.id, username: user.username } : null
+      }
+      return _se
+    })
   }
 
   async getUserListeningStatsHelpers(userId) {

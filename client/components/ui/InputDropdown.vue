@@ -42,7 +42,8 @@ export default {
     editable: {
       type: Boolean,
       default: true
-    }
+    },
+    showAllWhenEmpty: Boolean
   },
   data() {
     return {
@@ -72,6 +73,7 @@ export default {
     itemsToShow() {
       if (!this.editable) return this.items
       if (!this.textInput || this.textInput === this.input) {
+        if (this.showAllWhenEmpty) return this.items
         return []
       }
       return this.items.filter((i) => {

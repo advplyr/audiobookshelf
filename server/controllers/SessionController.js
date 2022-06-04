@@ -1,10 +1,45 @@
 const Logger = require('../Logger')
+const { toNumber } = require('../utils/index')
 
 class SessionController {
   constructor() { }
 
   async findOne(req, res) {
     return res.json(req.session)
+  }
+
+  async getAllWithUserData(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[SessionController] getAllWithUserData: Non-admin user requested all session data ${req.user.id}/"${req.user.username}"`)
+      return res.sendStatus(404)
+    }
+
+    var listeningSessions = []
+    if (req.query.user) {
+      listeningSessions = await this.getUserListeningSessionsHelper(req.query.user)
+    } else {
+      listeningSessions = await this.getAllSessionsWithUserData()
+    }
+
+    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
+    const page = toNumber(req.query.page, 0)
+
+    const start = page * itemsPerPage
+    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+
+    const payload = {
+      total: listeningSessions.length,
+      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+
+    if (req.query.user) {
+      payload.userFilter = req.query.user
+    }
+
+    res.json(payload)
   }
 
   getSession(req, res) {

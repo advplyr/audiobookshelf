@@ -428,6 +428,15 @@ class Db {
     })
   }
 
+  getAllSessions() {
+    return this.sessionsDb.select(() => true).then((results) => {
+      return results.data || []
+    }).catch((error) => {
+      Logger.error('[Db] Failed to select sessions', error)
+      return []
+    })
+  }
+
   selectUserSessions(userId) {
     return this.sessionsDb.select((session) => session.userId === userId).then((results) => {
       return results.data || []
