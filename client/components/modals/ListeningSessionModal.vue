@@ -87,7 +87,7 @@
           <p class="mb-1">{{ playMethodName }}</p>
           <p class="mb-1">{{ _session.mediaPlayer }}</p>
 
-          <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">Device</p>
+          <p v-if="hasDeviceInfo" class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">Device</p>
           <p v-if="deviceInfo.ipAddress" class="mb-1">{{ deviceInfo.ipAddress }}</p>
           <p v-if="osDisplayName" class="mb-1">{{ osDisplayName }}</p>
           <p v-if="deviceInfo.browserName" class="mb-1">{{ deviceInfo.browserName }}</p>
@@ -126,6 +126,9 @@ export default {
     },
     deviceInfo() {
       return this._session.deviceInfo || {}
+    },
+    hasDeviceInfo() {
+      return Object.keys(this.deviceInfo).length
     },
     osDisplayName() {
       if (!this.deviceInfo.osName) return null

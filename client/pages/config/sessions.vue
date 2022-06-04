@@ -8,21 +8,22 @@
 
           <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
         </div>
-        <div v-if="listeningSessions.length">
+        <div v-if="listeningSessions.length" class="block max-w-full">
           <table class="userSessionsTable">
             <tr class="bg-primary bg-opacity-40">
-              <th class="flex-grow text-left">Item</th>
-              <th class="w-20 text-left">User</th>
-              <th class="w-32 text-left hidden md:table-cell">Play Method</th>
-              <th class="w-40 text-left hidden sm:table-cell">Device Info</th>
-              <th class="w-20">Listened</th>
-              <th class="w-20">Last Time</th>
-              <th class="w-40 hidden sm:table-cell">Last Update</th>
+              <th class="w-48 min-w-48 text-left">Item</th>
+              <th class="w-20 min-w-20 text-left hidden md:table-cell">User</th>
+              <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
+              <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
+              <th class="w-32 min-w-32">Listened</th>
+              <th class="w-16 min-w-16">Last Time</th>
+              <th class="flex-grow hidden sm:table-cell">Last Update</th>
             </tr>
+
             <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
-              <td class="py-1">
-                <p class="text-sm text-gray-200">{{ session.displayTitle }}</p>
-                <p class="text-xs text-gray-400">{{ session.displayAuthor }}</p>
+              <td class="py-1 max-w-48">
+                <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
+                <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
               </td>
               <td class="hidden md:table-cell">
                 <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
@@ -42,7 +43,7 @@
               </td>
               <td class="text-center hidden sm:table-cell">
                 <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
-                  <p class="text-xs">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+                  <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
                 </ui-tooltip>
               </td>
             </tr>
@@ -166,10 +167,11 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .userSessionsTable {
   border-collapse: collapse;
   width: 100%;
+  max-width: 100%;
   border: 1px solid #474747;
 }
 .userSessionsTable tr:first-child {
