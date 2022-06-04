@@ -71,7 +71,7 @@ export default class LocalAudioPlayer extends EventEmitter {
       console.log(`[LocalPlayer] Track ended - loading next track ${this.currentTrackIndex + 1}`)
       // Has next track
       this.currentTrackIndex++
-      this.playWhenReady = true
+      this.playWhenReady = !this.player.paused
       this.startTime = this.currentTrack.startOffset
       this.loadCurrentTrack()
     } else {
@@ -89,6 +89,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     }
 
     this.emit('stateChange', 'LOADED')
+
     if (this.playWhenReady) {
       this.playWhenReady = false
       this.play()
@@ -229,8 +230,11 @@ export default class LocalAudioPlayer extends EventEmitter {
     this.player.playbackRate = playbackRate
   }
 
-  seek(time) {
+  seek(time, playWhenReady) {
     if (!this.player) return
+
+    this.playWhenReady = playWhenReady
+
     if (this.isHlsTranscode) {
       // Seeking HLS stream
       var offsetTime = time - (this.currentTrack.startOffset || 0)
@@ -255,7 +259,6 @@ export default class LocalAudioPlayer extends EventEmitter {
         this.player.currentTime = Math.max(0, offsetTime)
       }
     }
-
   }
 
   setVolume(volume) {

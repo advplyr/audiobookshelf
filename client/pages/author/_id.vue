@@ -1,13 +1,13 @@
 <template>
-  <div id="page-wrapper" class="bg-bg page overflow-y-auto p-8" :class="streamLibraryItem ? 'streaming' : ''">
+  <div id="page-wrapper" class="bg-bg page overflow-y-auto p-4 md:p-8" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="max-w-6xl mx-auto">
-      <div class="flex mb-6">
+      <div class="flex flex-wrap sm:flex-nowrap justify-center mb-6">
         <div class="w-48 min-w-48">
           <div class="w-full h-52">
             <covers-author-image :author="author" rounded="0" />
           </div>
         </div>
-        <div class="flex-grow px-8">
+        <div class="flex-grow py-4 sm:py-0 px-4 md:px-8">
           <div class="flex items-center mb-8">
             <h1 class="text-2xl">{{ author.name }}</h1>
 

@@ -38,6 +38,12 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
+    user() {
+      return this.$store.state.user.user || {}
+    },
+    userId() {
+      return this.user.id
+    },
     configRoutes() {
       if (!this.userIsAdminOrUp) {
         return [
@@ -86,6 +92,11 @@ export default {
           id: 'config-stats',
           title: 'Your Stats',
           path: '/config/stats'
+        })
+        configRoutes.push({
+          id: 'config-users-id-sessions',
+          title: 'Your Sessions',
+          path: `/config/users/${this.userId}/sessions`
         })
       }
 

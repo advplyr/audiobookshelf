@@ -23,7 +23,7 @@
         </div>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate="playbackRate" :paused="paused" @restart="restart" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
     <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" @seek="seek" />
@@ -106,6 +106,14 @@ export default {
     },
     isFullscreen() {
       return this.$store.state.playerIsFullscreen
+    },
+    currentChapterIndex() {
+      if (!this.currentChapter) return 0
+      return this.chapters.findIndex((ch) => ch.id === this.currentChapter.id)
+    },
+    hasNextChapter() {
+      if (!this.chapters.length) return false
+      return this.currentChapterIndex < this.chapters.length - 1
     }
   },
   methods: {
@@ -189,6 +197,23 @@ export default {
     },
     restart() {
       this.seek(0)
+    },
+    prevChapter() {
+      if (!this.currentChapter || this.currentChapterIndex === 0) {
+        return this.restart()
+      }
+      var timeInCurrentChapter = this.currentTime - this.currentChapter.start
+      if (timeInCurrentChapter <= 3 && this.chapters[this.currentChapterIndex - 1]) {
+        var prevChapter = this.chapters[this.currentChapterIndex - 1]
+        this.seek(prevChapter.start)
+      } else {
+        this.seek(this.currentChapter.start)
+      }
+    },
+    nextChapter() {
+      if (!this.currentChapter || !this.hasNextChapter) return
+      var nextChapter = this.chapters[this.currentChapterIndex + 1]
+      this.seek(nextChapter.start)
     },
     setStreamReady() {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(1)
