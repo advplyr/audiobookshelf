@@ -366,14 +366,18 @@ export default {
     },
     selectMatch(match) {
       if (match && match.series) {
-        match.series = match.series.map((se) => {
-          return {
-            id: `new-${Math.floor(Math.random() * 10000)}`,
-            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
-            name: se.series,
-            sequence: se.volumeNumber || ''
-          }
-        })
+        if (!match.series.length) {
+          delete match.series
+        } else {
+          match.series = match.series.map((se) => {
+            return {
+              id: `new-${Math.floor(Math.random() * 10000)}`,
+              displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+              name: se.series,
+              sequence: se.volumeNumber || ''
+            }
+          })
+        }
       }
 
       this.selectedMatch = match
@@ -405,7 +409,9 @@ export default {
 
             updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
-            if (!Array.isArray(this.selectedMatch[key])) this.selectedMatch[key] = [this.selectedMatch[key]]
+            if (!Array.isArray(this.selectedMatch[key])) {
+              this.selectedMatch[key] = this.selectedMatch[key].split(',').map((au) => au.trim())
+            }
             var authorPayload = []
             this.selectedMatch[key].forEach((authorName) =>
               authorPayload.push({
