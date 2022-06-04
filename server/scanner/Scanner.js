@@ -696,7 +696,7 @@ class Scanner {
     }
 
     // Add or set author if not set
-    if (matchData.author && !libraryItem.media.metadata.authorName || options.overrideDetails) {
+    if (matchData.author && (!libraryItem.media.metadata.authorName || options.overrideDetails)) {
       if (!Array.isArray(matchData.author)) matchData.author = [matchData.author]
       const authorPayload = []
       for (let index = 0; index < matchData.author.length; index++) {
@@ -714,7 +714,7 @@ class Scanner {
     }
 
     // Add or set series if not set
-    if (matchData.series && !libraryItem.media.metadata.seriesName || options.overrideDetails) {
+    if (matchData.series && (!libraryItem.media.metadata.seriesName || options.overrideDetails)) {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, volumeNumber: matchData.volumeNumber }]
       const seriesPayload = []
       for (let index = 0; index < matchData.series.length; index++) {

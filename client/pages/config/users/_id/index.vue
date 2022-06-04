@@ -138,7 +138,9 @@ export default {
       this.$copyToClipboard(str, this)
     },
     async init() {
-      this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions`).catch((err) => {
+      this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=0&itemsPerPage=10`).then((data) => {
+        return data.sessions || []
+      }).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []
       })

@@ -18,39 +18,46 @@
 
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions ({{ listeningSessions.length }})</h1>
-        <table v-if="listeningSessions.length" class="userSessionsTable">
-          <tr class="bg-primary bg-opacity-40">
-            <th class="flex-grow text-left">Item</th>
-            <th class="w-32 text-left hidden md:table-cell">Play Method</th>
-            <th class="w-40 text-left hidden sm:table-cell">Device Info</th>
-            <th class="w-20">Listened</th>
-            <th class="w-20">Last Time</th>
-            <th class="w-40 hidden sm:table-cell">Last Update</th>
-          </tr>
-          <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
-            <td class="py-1">
-              <p class="text-sm text-gray-200">{{ session.displayTitle }}</p>
-              <p class="text-xs text-gray-400">{{ session.displayAuthor }}</p>
-            </td>
-            <td class="hidden md:table-cell">
-              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
-            </td>
-            <td class="hidden sm:table-cell">
-              <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
-            </td>
-            <td class="text-center">
-              <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
-            </td>
-            <td class="text-center">
-              <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
-            </td>
-            <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
-                <p class="text-xs">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
-              </ui-tooltip>
-            </td>
-          </tr>
-        </table>
+        <div v-if="listeningSessions.length">
+          <table class="userSessionsTable">
+            <tr class="bg-primary bg-opacity-40">
+              <th class="flex-grow text-left">Item</th>
+              <th class="w-32 text-left hidden md:table-cell">Play Method</th>
+              <th class="w-40 text-left hidden sm:table-cell">Device Info</th>
+              <th class="w-20">Listened</th>
+              <th class="w-20">Last Time</th>
+              <th class="w-40 hidden sm:table-cell">Last Update</th>
+            </tr>
+            <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
+              <td class="py-1">
+                <p class="text-sm text-gray-200">{{ session.displayTitle }}</p>
+                <p class="text-xs text-gray-400">{{ session.displayAuthor }}</p>
+              </td>
+              <td class="hidden md:table-cell">
+                <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
+              </td>
+              <td class="hidden sm:table-cell">
+                <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
+              </td>
+              <td class="text-center">
+                <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
+              </td>
+              <td class="text-center">
+                <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
+              </td>
+              <td class="text-center hidden sm:table-cell">
+                <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
+                  <p class="text-xs">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+                </ui-tooltip>
+              </td>
+            </tr>
+          </table>
+          <div class="flex items-center justify-end py-1">
+            <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
+            <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+            <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
+          </div>
+        </div>
         <p v-else class="text-white text-opacity-50">No sessions yet...</p>
       </div>
     </div>
@@ -75,7 +82,10 @@ export default {
     return {
       showSessionModal: false,
       selectedSession: null,
-      listeningSessions: []
+      listeningSessions: [],
+      numPages: 0,
+      total: 0,
+      currentPage: 0
     }
   },
   computed: {
@@ -87,6 +97,12 @@ export default {
     }
   },
   methods: {
+    prevPage() {
+      this.loadSessions(this.currentPage - 1)
+    },
+    nextPage() {
+      this.loadSessions(this.currentPage + 1)
+    },
     showSession(session) {
       this.selectedSession = session
       this.showSessionModal = true
@@ -108,13 +124,23 @@ export default {
       else if (playMethod === this.$constants.PlayMethod.LOCAL) return 'Local'
       return 'Unknown'
     },
-    async init() {
-      console.log(navigator)
-
-      this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions`).catch((err) => {
+    async loadSessions(page) {
+      const data = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=${page}&itemsPerPage=10`).catch((err) => {
         console.error('Failed to load listening sesions', err)
-        return []
+        return null
       })
+      if (!data) {
+        this.$toast.error('Failed to load listening sessions')
+        return
+      }
+
+      this.numPages = data.numPages
+      this.total = data.total
+      this.currentPage = data.page
+      this.listeningSessions = data.sessions
+    },
+    init() {
+      this.loadSessions(0)
     }
   },
   mounted() {

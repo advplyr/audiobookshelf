@@ -1,5 +1,5 @@
 <template>
-  <button class="icon-btn rounded-md flex items-center justify-center h-9 w-9 relative" @mousedown.prevent :disabled="disabled || loading" :class="className" @click="clickBtn">
+  <button class="icon-btn rounded-md flex items-center justify-center relative" @mousedown.prevent :disabled="disabled || loading" :class="className" @click="clickBtn">
     <div v-if="loading" class="text-white absolute top-0 left-0 w-full h-full flex items-center justify-center text-opacity-100">
       <svg class="animate-spin" style="width: 24px; height: 24px" viewBox="0 0 24 24">
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
@@ -20,20 +20,29 @@ export default {
     },
     outlined: Boolean,
     borderless: Boolean,
-    loading: Boolean
+    loading: Boolean,
+    iconFontSize: {
+      type: String,
+      default: ''
+    },
+    size: {
+      type: Number,
+      default: 9
+    }
   },
   data() {
     return {}
   },
   computed: {
     className() {
-      var classes = []
+      var classes = [`h-${this.size} w-${this.size}`]
       if (!this.borderless) {
         classes.push(`bg-${this.bgColor} border border-gray-600`)
       }
       return classes.join(' ')
     },
     fontSize() {
+      if (this.iconFontSize) return this.iconFontSize
       if (this.icon === 'edit') return '1.25rem'
       return '1.4rem'
     }
