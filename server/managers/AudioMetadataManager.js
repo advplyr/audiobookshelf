@@ -84,7 +84,7 @@ class AudioMetadataMangaer {
         Ffmpeg premapped id3 tags: https://wiki.multimedia.cx/index.php/FFmpeg_Metadata
       */
 
-      const ffmpegOptions = ['-c copy', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags']
+      const ffmpegOptions = ['-c copy', '-map_chapters 1', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags']
       var workerData = {
         inputs: ffmpegInputs,
         options: ffmpegOptions,
