@@ -151,7 +151,7 @@ class AbMergeManager {
         input: coverPath,
         options: ['-f image2pipe']
       })
-      ffmpegOptions.push('-vf [2:v]crop=trunc(iw/2)*2:trunc(ih/2)*2')
+      ffmpegOptions.push('-c:v copy')
       ffmpegOptions.push('-map 2:v')
     }
 
