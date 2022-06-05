@@ -32,7 +32,9 @@ class AudioMetadataMangaer {
     var metadataFilePath = Path.join(outputDir, 'metadata.txt')
     await writeMetadataFile(libraryItem, metadataFilePath)
 
-    var coverPath = libraryItem.media.coverPath.replace(/\\/g, '/')
+    if (libraryItem.media.coverPath != null) {
+      var coverPath = libraryItem.media.coverPath.replace(/\\/g, '/')
+    }
 
     // TODO: Split into batches
     const proms = audioFiles.map(af => {
@@ -53,7 +55,7 @@ class AudioMetadataMangaer {
     this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
-  updateAudioFileMetadata(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath) {
+  updateAudioFileMetadata(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath = '') {
     return new Promise((resolve) => {
       const resultPayload = {
         libraryItemId,
@@ -75,10 +77,6 @@ class AudioMetadataMangaer {
         },
         {
           input: metadataFilePath
-        },
-        {
-          input: coverPath,
-          options: ['-f image2pipe']
         }
       ]
 
@@ -90,7 +88,33 @@ class AudioMetadataMangaer {
         Ffmpeg premapped id3 tags: https://wiki.multimedia.cx/index.php/FFmpeg_Metadata
       */
 
-      const ffmpegOptions = ['-c copy', '-map_chapters 1', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags', '-c:v copy', '-map 2:v', '-map 0:a']
+      const ffmpegOptions = ['-c copy', '-map_chapters 1', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags']
+
+      if (coverPath != '') {
+        var ffmpegCoverPathInput = {
+          input: coverPath,
+          options: ['-f image2pipe']
+        }
+        var ffmpegCoverPathOptions = [
+          '-c:v copy',
+          '-map 2:v',
+          '-map 0:a'
+        ]
+
+        ffmpegInputs.push(ffmpegCoverPathInput)
+        Logger.debug(`[AudioFileMetaDataManager] Cover found for "${audioFile.metadata.filename}". Cover will be merged to metadata`)
+      } else {
+        // remove the video stream to account for the user getting rid an existing cover in abs
+        var ffmpegCoverPathOptions = [
+          '-map 0',
+          '-map -0:v'
+        ]
+
+        Logger.debug(`[AudioFileMetaDataManager] No cover found for "${audioFile.metadata.filename}". Cover will be skipped or removed from metadata`)
+      }
+      
+      ffmpegOptions.push(...ffmpegCoverPathOptions)
+
       var workerData = {
         inputs: ffmpegInputs,
         options: ffmpegOptions,
