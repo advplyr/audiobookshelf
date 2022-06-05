@@ -32,9 +32,11 @@ class AudioMetadataMangaer {
     var metadataFilePath = Path.join(outputDir, 'metadata.txt')
     await writeMetadataFile(libraryItem, metadataFilePath)
 
+    var coverPath = libraryItem.media.coverPath.replace(/\\/g, '/')
+
     // TODO: Split into batches
     const proms = audioFiles.map(af => {
-      return this.updateAudioFileMetadata(libraryItem.id, af, outputDir, metadataFilePath)
+      return this.updateAudioFileMetadata(libraryItem.id, af, outputDir, metadataFilePath, coverPath)
     })
 
     const results = await Promise.all(proms)
@@ -51,7 +53,7 @@ class AudioMetadataMangaer {
     this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
-  updateAudioFileMetadata(libraryItemId, audioFile, outputDir, metadataFilePath) {
+  updateAudioFileMetadata(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath) {
     return new Promise((resolve) => {
       const resultPayload = {
         libraryItemId,
@@ -73,6 +75,10 @@ class AudioMetadataMangaer {
         },
         {
           input: metadataFilePath
+        },
+        {
+          input: coverPath,
+          options: ['-f image2pipe']
         }
       ]
 
@@ -84,7 +90,7 @@ class AudioMetadataMangaer {
         Ffmpeg premapped id3 tags: https://wiki.multimedia.cx/index.php/FFmpeg_Metadata
       */
 
-      const ffmpegOptions = ['-c copy', '-map_chapters 1', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags']
+      const ffmpegOptions = ['-c copy', '-map_chapters 1', '-map_metadata 1', `-metadata track=${audioFile.index}`, '-write_id3v2 1', '-movflags use_metadata_tags', '-c:v copy', '-map 2:v', '-map 0:a']
       var workerData = {
         inputs: ffmpegInputs,
         options: ffmpegOptions,
