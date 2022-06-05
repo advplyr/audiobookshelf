@@ -71,7 +71,6 @@ export default class LocalAudioPlayer extends EventEmitter {
       console.log(`[LocalPlayer] Track ended - loading next track ${this.currentTrackIndex + 1}`)
       // Has next track
       this.currentTrackIndex++
-      this.playWhenReady = !this.player.paused
       this.startTime = this.currentTrack.startOffset
       this.loadCurrentTrack()
     } else {
@@ -206,10 +205,12 @@ export default class LocalAudioPlayer extends EventEmitter {
   }
 
   play() {
+    this.playWhenReady = true
     if (this.player) this.player.play()
   }
 
   pause() {
+    this.playWhenReady = false
     if (this.player) this.player.pause()
   }
 
