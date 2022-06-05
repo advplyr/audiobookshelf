@@ -32,7 +32,7 @@ module.exports = {
           var itemProgress = user.getMediaProgress(li.id)
           if (filter === 'Finished' && (itemProgress && itemProgress.isFinished)) return true
           if (filter === 'Not Started' && !itemProgress) return true
-          if (filter === 'Not Finished' && !itemProgress || !itemProgress.isFinished) return true
+          if (filter === 'Not Finished' && (!itemProgress || !itemProgress.isFinished)) return true
           if (filter === 'In Progress' && (itemProgress && itemProgress.inProgress)) return true
           return false
         })
