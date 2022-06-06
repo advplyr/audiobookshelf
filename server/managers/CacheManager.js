@@ -19,17 +19,17 @@ class CacheManager {
 
     var pathsCreated = false
     if (!(await fs.pathExists(this.CachePath))) {
-      await fs.mkdir(this.CachePath)
+      await fs.ensureDir(this.CachePath)
       pathsCreated = true
     }
 
     if (!(await fs.pathExists(this.CoverCachePath))) {
-      await fs.mkdir(this.CoverCachePath)
+      await fs.ensureDir(this.CoverCachePath)
       pathsCreated = true
     }
 
     if (!(await fs.pathExists(this.ImageCachePath))) {
-      await fs.mkdir(this.ImageCachePath)
+      await fs.ensureDir(this.ImageCachePath)
       pathsCreated = true
     }
 
