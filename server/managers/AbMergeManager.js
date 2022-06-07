@@ -91,7 +91,6 @@ class AbMergeManager {
 
     try {
       await fs.mkdir(download.dirpath)
-      Logger.error(`[AbMergeManager] Failed to make directory ${download.dirpath}`)
     } catch (error) {
       Logger.error(`[AbMergeManager] Failed to make directory ${download.dirpath}`)
       Logger.debug(`[AbMergeManager] Make directory error: ${error}`)
