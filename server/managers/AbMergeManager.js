@@ -16,9 +16,26 @@ class AbMergeManager {
     this.clientEmitter = clientEmitter
 
     this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
+    this.downloadDirPathExist = false
 
     this.pendingDownloads = []
     this.downloads = []
+  }
+
+  async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
+    if (this.downloadDirPathExist) return
+
+    var pathCreated = false
+    if (!(await fs.pathExists(this.downloadDirPath))) {
+      await fs.mkdir(this.downloadDirPath)
+      pathCreated = true
+    }
+
+    if (pathCreated) {
+      await filePerms.setDefault(this.downloadDirPath)
+    }
+
+    this.downloadDirPathExist = true
   }
 
   getDownload(downloadId) {
@@ -48,7 +65,7 @@ class AbMergeManager {
     } catch (error) {
       return false
     }
-  }
+  }z
 
   async startAudiobookMerge(user, libraryItem) {
     var downloadId = getId('abmerge')
@@ -73,7 +90,8 @@ class AbMergeManager {
 
 
     try {
-      await fs.ensureDir(download.dirpath)
+      await fs.mkdir(download.dirpath)
+      Logger.error(`[AbMergeManager] Failed to make directory ${download.dirpath}`)
     } catch (error) {
       Logger.error(`[AbMergeManager] Failed to make directory ${download.dirpath}`)
       Logger.debug(`[AbMergeManager] Make directory error: ${error}`)
