@@ -27,7 +27,6 @@
         <p v-if="hasEpisodesWithoutPubDate" class="w-full pt-2 text-warning text-xs">Warning: 1 or more of your episodes do not have a Pub Date. Some podcast apps require this.</p>
       </div>
       <div v-show="userIsAdminOrUp" class="flex items-center pt-6">
-        <p class="text-xs text-gray-300">Note: RSS feed URLs are not authenticated</p>
         <div class="flex-grow" />
         <ui-btn v-if="currentFeedUrl" color="error" small @click="closeFeed">Close RSS Feed</ui-btn>
         <ui-btn v-else color="success" small @click="openFeed">Open RSS Feed</ui-btn>

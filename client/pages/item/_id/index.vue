@@ -534,13 +534,13 @@ export default {
       }
     },
     rssFeedOpen(data) {
-      if (data.libraryItemId === this.libraryItemId) {
+      if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Opened', data)
         this.rssFeedUrl = data.feedUrl
       }
     },
     rssFeedClosed(data) {
-      if (data.libraryItemId === this.libraryItemId) {
+      if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Closed', data)
         this.rssFeedUrl = null
       }

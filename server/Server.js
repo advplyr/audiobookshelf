@@ -142,6 +142,7 @@ class Server {
 
     await this.backupManager.init()
     await this.logManager.init()
+    await this.rssFeedManager.init()
     this.podcastManager.init()
 
     if (this.db.serverSettings.scannerDisableWatcher) {
@@ -194,14 +195,14 @@ class Server {
 
     // RSS Feed temp route
     app.get('/feed/:id', (req, res) => {
-      Logger.info(`[Server] requesting rss feed ${req.params.id}`)
+      Logger.info(`[Server] Requesting rss feed ${req.params.id}`)
       this.rssFeedManager.getFeed(req, res)
     })
     app.get('/feed/:id/cover', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
-    app.get('/feed/:id/item/*', (req, res) => {
-      Logger.info(`[Server] requesting rss feed ${req.params.id}`)
+    app.get('/feed/:id/item/:episodeId/*', (req, res) => {
+      Logger.debug(`[Server] Requesting rss feed episode ${req.params.id}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
 

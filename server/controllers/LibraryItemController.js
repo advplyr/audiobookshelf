@@ -378,7 +378,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const feedData = this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
+    const feedData = await this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
     if (feedData.error) {
       return res.json({
         success: false,
@@ -398,7 +398,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    this.rssFeedManager.closeFeedForItem(req.params.id)
+    await this.rssFeedManager.closeFeedForItem(req.params.id)
 
     res.sendStatus(200)
   }

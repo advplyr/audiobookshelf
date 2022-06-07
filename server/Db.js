@@ -11,6 +11,7 @@ const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/settings/ServerSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
+const Feed = require('./objects/Feed')
 
 class Db {
   constructor() {
@@ -22,6 +23,7 @@ class Db {
     this.CollectionsPath = Path.join(global.ConfigPath, 'collections')
     this.AuthorsPath = Path.join(global.ConfigPath, 'authors')
     this.SeriesPath = Path.join(global.ConfigPath, 'series')
+    this.FeedsPath = Path.join(global.ConfigPath, 'feeds')
 
     this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
     this.usersDb = new njodb.Database(this.UsersPath)
@@ -31,6 +33,7 @@ class Db {
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
     this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
+    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2 })
 
     this.libraryItems = []
     this.users = []
@@ -59,6 +62,7 @@ class Db {
     else if (entityName === 'collection') return this.collectionsDb
     else if (entityName === 'author') return this.authorsDb
     else if (entityName === 'series') return this.seriesDb
+    else if (entityName === 'feed') return this.feedsDb
     return null
   }
 
@@ -71,6 +75,7 @@ class Db {
     else if (entityName === 'collection') return 'collections'
     else if (entityName === 'author') return 'authors'
     else if (entityName === 'series') return 'series'
+    else if (entityName === 'feed') return 'feeds'
     return null
   }
 
@@ -83,6 +88,7 @@ class Db {
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
     this.authorsDb = new njodb.Database(this.AuthorsPath)
     this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
+    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2 })
     return this.init()
   }
 
@@ -115,21 +121,6 @@ class Db {
 
   async init() {
     await this.load()
-
-    // Insert Defaults
-    // var rootUser = this.users.find(u => u.type === 'root')
-    // if (!rootUser) {
-    //   var token = await jwt.sign({ userId: 'root' }, process.env.TOKEN_SECRET)
-    //   Logger.debug('Generated default token', token)
-    //   Logger.info('[Db] Root user created')
-    //   await this.insertEntity('user', this.getDefaultUser(token))
-    // } else {
-    //   Logger.info(`[Db] Root user exists, pw: ${rootUser.hasPw}`)
-    // }
-
-    // if (!this.libraries.length) {
-    //   await this.insertEntity('library', this.getDefaultLibrary())
-    // }
 
     if (!this.serverSettings) {
       this.serverSettings = new ServerSettings()
@@ -276,6 +267,14 @@ class Db {
   updateServerSettings() {
     global.ServerSettings = this.serverSettings.toJSON()
     return this.updateEntity('settings', this.serverSettings)
+  }
+
+  getAllEntities(entityName) {
+    var entityDb = this.getEntityDb(entityName)
+    return entityDb.select(() => true).then((results) => results.data).catch((error) => {
+      Logger.error(`[DB] Failed to get all ${entityName}`, error)
+      return null
+    })
   }
 
   insertEntities(entityName, entities) {
