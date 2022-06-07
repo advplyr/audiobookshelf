@@ -20,6 +20,9 @@ class Feed {
     this.createdAt = null
     this.updatedAt = null
 
+    // Cached xml
+    this.xml = null
+
     if (feed) {
       this.construct(feed)
     }
@@ -108,11 +111,14 @@ class Feed {
   }
 
   buildXml() {
+    if (this.xml) return this.xml
+
     const pod = new Podcast(this.meta.getPodcastMeta())
     this.episodes.forEach((ep) => {
       pod.addItem(ep.getPodcastEpisode())
     })
-    return pod.buildXml()
+    this.xml = pod.buildXml()
+    return this.xml
   }
 }
 module.exports = Feed
