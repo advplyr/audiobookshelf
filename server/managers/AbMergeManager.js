@@ -65,7 +65,7 @@ class AbMergeManager {
     } catch (error) {
       return false
     }
-  }z
+  }
 
   async startAudiobookMerge(user, libraryItem) {
     var downloadId = getId('abmerge')
