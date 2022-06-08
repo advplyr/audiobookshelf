@@ -3,7 +3,7 @@ const Path = require('path')
 const axios = require('axios')
 const Logger = require('../Logger')
 const readChunk = require('../libs/readChunk')
-const imageType = require('image-type')
+const imageType = require('../libs/imageType')
 const filePerms = require('../utils/filePerms')
 
 const globals = require('../utils/globals')
