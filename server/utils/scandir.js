@@ -216,7 +216,6 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
 
   // The  may contain various other pieces of metadata, these functions extract it.
   var [folder, narrators] = getNarrator(folder)
-  if (series) { var [folder, sequence] = getSequence(folder) }
   var [folder, sequence] = series ? getSequence(folder) : [folder, null]
   var [folder, publishedYear] = getPublishedYear(folder)
   var [title, subtitle] = parseSubtitle ? getSubtitle(folder) : [folder, null]
@@ -258,7 +257,7 @@ function getSequence(folder) {
   // ]
 
   // Matches a valid volume string. Also matches a book whose title starts with a 1 to 3 digit number. Will handle that later.
-  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{1,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?/i
+  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{1,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?$/i
 
   let volumeNumber = null
   let parts = folder.split(' - ')
