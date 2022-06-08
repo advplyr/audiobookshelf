@@ -2,7 +2,7 @@ const fs = require('fs-extra')
 const Path = require('path')
 const axios = require('axios')
 const Logger = require('../Logger')
-const readChunk = require('read-chunk')
+const readChunk = require('../libs/readChunk')
 const imageType = require('image-type')
 const filePerms = require('../utils/filePerms')
 

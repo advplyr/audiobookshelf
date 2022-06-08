@@ -8,7 +8,7 @@ const Stream = require('../objects/Stream')
 const Logger = require('../Logger')
 const fs = require('fs-extra')
 
-const uaParserJs = require('../libs/uaParserJs')
+const uaParserJs = require('../libs/uaParser')
 const requestIp = require('../libs/requestIp')
 
 class PlaybackSessionManager {
