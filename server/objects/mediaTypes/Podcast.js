@@ -4,7 +4,7 @@ const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
-const { createNewSortInstance } = require('fast-sort')
+const { createNewSortInstance } = require('../../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })

@@ -4,7 +4,7 @@ const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
-const { sort, createNewSortInstance } = require('fast-sort')
+const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })

@@ -1,6 +1,6 @@
 const Logger = require('../Logger')
 const { reqSupportsWebp } = require('../utils/index')
-const { createNewSortInstance } = require('fast-sort')
+const { createNewSortInstance } = require('../libs/fastSort')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
