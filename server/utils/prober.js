@@ -70,11 +70,6 @@ function tryGrabChannelLayout(stream) {
   return String(layout).split('(').shift()
 }
 
-function tryGrabTag(stream, tag) {
-  if (!stream.tags) return null
-  return stream.tags[tag] || stream.tags[tag.toUpperCase()] || null
-}
-
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
@@ -182,14 +177,14 @@ function parseTags(format, verbose) {
     file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
-    file_tag_series: tryGrabTag(format, 'series'),
-    file_tag_seriespart: tryGrabTag(format, 'series-part'),
-    file_tag_isbn: tryGrabTag(format, 'isbn'),
+    file_tag_series: tryGrabTags(format, 'series', 'show'),
+    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id'),
+    file_tag_isbn: tryGrabTags(format, 'isbn'),
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
-    file_tag_asin: tryGrabTag(format, 'asin'),
+    file_tag_asin: tryGrabTags(format, 'asin'),
 
     // Not sure if these are actually used yet or not
-    file_tag_creation_time: tryGrabTag(format, 'creation_time'),
+    file_tag_creation_time: tryGrabTags(format, 'creation_time'),
     file_tag_wwwaudiofile: tryGrabTags(format, 'wwwaudiofile', 'woaf', 'waf'),
     file_tag_contentgroup: tryGrabTags(format, 'contentgroup', 'tit1', 'tt1'),
     file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
