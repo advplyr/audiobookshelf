@@ -1,6 +1,5 @@
 const Path = require('path')
-const njodb = require('./njodb')
-const jwt = require('jsonwebtoken')
+const njodb = require('./libs/njodb')
 const Logger = require('./Logger')
 const { version } = require('../package.json')
 const LibraryItem = require('./objects/LibraryItem')

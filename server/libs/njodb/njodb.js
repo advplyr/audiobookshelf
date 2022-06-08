@@ -27,7 +27,7 @@ const {
     checkSync,
     lock,
     lockSync
-} = require("proper-lockfile");
+} = require("../properLockfile");
 
 const {
     deleteFile,
