@@ -1,5 +1,5 @@
 const fs = require('fs-extra')
-const cron = require('node-cron')
+const cron = require('../libs/nodeCron')
 const axios = require('axios')
 
 const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
