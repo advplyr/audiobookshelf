@@ -1,7 +1,5 @@
 const Path = require('path')
 const fs = require('fs-extra')
-const date = require('date-and-time')
-const { Podcast } = require('podcast')
 const Feed = require('../objects/Feed')
 const Logger = require('../Logger')
 
@@ -35,7 +33,7 @@ class RssFeedManager {
       res.sendStatus(404)
       return
     }
-    // var xml = feedData.feed.buildXml()
+
     var xml = feed.buildXml()
     res.set('Content-Type', 'text/xml')
     res.send(xml)
@@ -55,9 +53,6 @@ class RssFeedManager {
       return
     }
     res.sendFile(episodePath)
-    // var remainingPath = req.params['0']
-    // var fullPath = Path.join(feedData.libraryItemPath, remainingPath)
-    // res.sendFile(fullPath)
   }
 
   getFeedCover(req, res) {

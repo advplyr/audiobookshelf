@@ -1,5 +1,6 @@
 const Path = require('path')
 const date = require('date-and-time')
+const { secondsToTimestamp } = require('../utils/index')
 
 class FeedEpisode {
   constructor(episode) {
@@ -116,14 +117,23 @@ class FeedEpisode {
     this.fullPath = audioTrack.metadata.path
   }
 
-  getPodcastEpisode() {
+  getRSSData() {
     return {
       title: this.title,
       description: this.description || '',
-      enclosure: this.enclosure,
-      date: this.pubDate || '',
       url: this.link,
-      author: this.author
+      guid: this.enclosure.url,
+      author: this.author,
+      date: this.pubDate,
+      enclosure: this.enclosure,
+      custom_elements: [
+        { 'itunes:author': this.author },
+        { 'itunes:duration': secondsToTimestamp(this.duration) },
+        { 'itunes:summary': this.description || '' },
+        {
+          "itunes:explicit": !!this.explicit
+        }
+      ]
     }
   }
 }

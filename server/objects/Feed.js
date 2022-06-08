@@ -1,6 +1,6 @@
 const FeedMeta = require('./FeedMeta')
 const FeedEpisode = require('./FeedEpisode')
-const { Podcast } = require('podcast')
+const RSS = require('../libs/rss')
 
 class Feed {
   constructor(feed) {
@@ -90,6 +90,7 @@ class Feed {
     this.meta.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/items/${libraryItem.id}`
+    this.meta.explicit = !!mediaMetadata.explicit
 
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES
@@ -113,11 +114,11 @@ class Feed {
   buildXml() {
     if (this.xml) return this.xml
 
-    const pod = new Podcast(this.meta.getPodcastMeta())
+    var rssfeed = new RSS(this.meta.getRSSData())
     this.episodes.forEach((ep) => {
-      pod.addItem(ep.getPodcastEpisode())
+      rssfeed.item(ep.getRSSData())
     })
-    this.xml = pod.buildXml()
+    this.xml = rssfeed.xml()
     return this.xml
   }
 }

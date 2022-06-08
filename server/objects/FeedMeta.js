@@ -6,6 +6,7 @@ class FeedMeta {
     this.imageUrl = null
     this.feedUrl = null
     this.link = null
+    this.explicit = null
 
     if (meta) {
       this.construct(meta)
@@ -19,6 +20,7 @@ class FeedMeta {
     this.imageUrl = meta.imageUrl
     this.feedUrl = meta.feedUrl
     this.link = meta.link
+    this.explicit = meta.explicit
   }
 
   toJSON() {
@@ -28,19 +30,46 @@ class FeedMeta {
       author: this.author,
       imageUrl: this.imageUrl,
       feedUrl: this.feedUrl,
-      link: this.link
+      link: this.link,
+      explicit: this.explicit
     }
   }
 
-  getPodcastMeta() {
+  getRSSData() {
     return {
       title: this.title,
-      description: this.description,
-      feedUrl: this.feedUrl,
-      siteUrl: this.link,
-      imageUrl: this.imageUrl,
-      author: this.author || 'advplyr',
-      language: 'en'
+      description: this.description || '',
+      generator: 'Audiobookshelf',
+      feed_url: this.feedUrl,
+      site_url: this.link,
+      image_url: this.imageUrl,
+      language: 'en',
+      custom_namespaces: {
+        'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd',
+        'psc': 'http://podlove.org/simple-chapters',
+        'podcast': 'https://podcastindex.org/namespace/1.0'
+      },
+      custom_elements: [
+        { 'author': this.author || 'advplyr' },
+        { 'itunes:author': this.author || 'advplyr' },
+        { 'itunes:summary': this.description || '' },
+        {
+          'itunes:image': {
+            _attr: {
+              href: this.imageUrl
+            }
+          }
+        },
+        {
+          'itunes:owner': [
+            { 'itunes:name': this.author || '' },
+            { 'itunes:email': '' }
+          ]
+        },
+        {
+          "itunes:explicit": !!this.explicit
+        }
+      ]
     }
   }
 }
