@@ -89,7 +89,7 @@ class Feed {
     this.meta.author = author
     this.meta.imageUrl = media.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
     this.meta.feedUrl = feedUrl
-    this.meta.link = `${serverAddress}/items/${libraryItem.id}`
+    this.meta.link = `${serverAddress}/item/${libraryItem.id}`
     this.meta.explicit = !!mediaMetadata.explicit
 
     this.episodes = []
