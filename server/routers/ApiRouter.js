@@ -202,7 +202,6 @@ class ApiRouter {
     this.router.delete('/download/:id', MiscController.removeDownload.bind(this))
     this.router.get('/downloads', MiscController.getDownloads.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
-    this.router.get('/version', MiscController.getServerVersion.bind(this))
     this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/search/covers', MiscController.findCovers.bind(this))

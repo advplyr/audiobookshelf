@@ -159,15 +159,6 @@ class MiscController {
     res.json(downloads)
   }
 
-  // GET: api/version
-  async getServerVersion(req, res) {
-    var version = {
-      serverVersion: this.db.serverSettings.version
-    }
-
-    return res.json(version)
-  }
-
   // PATCH: api/settings (admin)
   async updateServerSettings(req, res) {
     if (!req.user.isAdminOrUp) {
