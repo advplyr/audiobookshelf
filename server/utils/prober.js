@@ -88,8 +88,8 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     codec_time_base: stream.codec_time_base || null,
     time_base: stream.time_base || null,
     bit_rate: tryGrabBitRate(stream, all_streams, total_bit_rate),
-    language: tryGrabTag(stream, 'language'),
-    title: tryGrabTag(stream, 'title')
+    language: tryGrabTags(stream, 'language'),
+    title: tryGrabTags(stream, 'title')
   }
   if (stream.tags) info.tags = stream.tags
 
