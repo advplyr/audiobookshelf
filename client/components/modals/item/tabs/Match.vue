@@ -365,21 +365,27 @@ export default {
       else this.provider = localStorage.getItem('book-provider') || 'google'
     },
     selectMatch(match) {
-      if (match && match.series) {
-        if (!match.series.length) {
-          delete match.series
-        } else {
-          match.series = match.series.map((se) => {
-            return {
-              id: `new-${Math.floor(Math.random() * 10000)}`,
-              displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
-              name: se.series,
-              sequence: se.volumeNumber || ''
-            }
-          })
+      if (match) {
+        if (match.series) {
+          if (!match.series.length) {
+            delete match.series
+          } else {
+            match.series = match.series.map((se) => {
+              return {
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+                name: se.series,
+                sequence: se.volumeNumber || ''
+              }
+            })
+          }
+        }
+        if (match.genres && Array.isArray(match.genres)) {
+          match.genres = match.genres.join(',')
         }
       }
 
+      console.log('Select Match', match)
       this.selectedMatch = match
     },
     buildMatchUpdatePayload() {
@@ -409,11 +415,12 @@ export default {
 
             updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
-            if (!Array.isArray(this.selectedMatch[key])) {
-              this.selectedMatch[key] = this.selectedMatch[key].split(',').map((au) => au.trim())
+            var authors = this.selectedMatch[key]
+            if (!Array.isArray(authors)) {
+              authors = authors.split(',').map((au) => au.trim())
             }
             var authorPayload = []
-            this.selectedMatch[key].forEach((authorName) =>
+            authors.forEach((authorName) =>
               authorPayload.push({
                 id: `new-${Math.floor(Math.random() * 10000)}`,
                 name: authorName
@@ -423,9 +430,9 @@ export default {
           } else if (key === 'narrator') {
             updatePayload.metadata.narrators = [this.selectedMatch[key]]
           } else if (key === 'genres') {
-            updatePayload.metadata.genres = this.selectedMatch[key].split(',')
+            updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'tags') {
-            updatePayload.tags = this.selectedMatch[key].split(',')
+            updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'itunesId') {
             updatePayload.metadata.itunesId = Number(this.selectedMatch[key])
           } else {
@@ -441,6 +448,8 @@ export default {
       if (!Object.keys(updatePayload).length) {
         return
       }
+
+      console.log('Match payload', updatePayload)
       this.isProcessing = true
 
       if (updatePayload.metadata.cover) {
