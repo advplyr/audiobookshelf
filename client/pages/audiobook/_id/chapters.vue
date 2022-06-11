@@ -437,6 +437,7 @@ export default {
             title: chap.title
           }
         })
+      console.log(`newChapters - ${JSON.stringify(this.newChapters)}`)
       this.showFindChaptersModal = false
       this.chapterData = null
     },
@@ -469,33 +470,68 @@ export default {
     },
     // overdrive
     generateChaptersFromOverdriveMediaMarkers() {
-      var parseString = require('xml2js').parseString;
-      var xml = this.overdriveMediaMarkers[0]
-      var parsedXML = {}
-      parseString(xml, function (err, result) {
-          parsedXML = result
-      });
+      var parseString = require('xml2js').parseString; // function to convert xml to JSON
+      var overdriveMediaMarkers = this.overdriveMediaMarkers // an array of XML. 1 Part.mp3 to 1 array index. Each index holds 1 XML that holds multiple chapters
+      //console.log(overdriveMediaMarkers)
+      
+      var parsedOverdriveMediaMarkers = [] // an array of objects. each object being a chapter with a name and time key. the values are arrays of strings
 
-      var index = 0
-      var newOChapters = parsedXML.Markers.Marker.map((marker) => {
-        return {
-          id: index++,
-          start: marker.Time[0],
-          end: 0,
-          title: marker.Name[0]
-        }
+      overdriveMediaMarkers.forEach(function (item, index) {     
+        var parsed_result
+        var holder
+        parseString(item, function (err, result) {
+          // result.Markers.Marker is the result of parsing the XML for the MediaMarker tags for the MP3 file (Part##.mp3)
+          // it is shaped like this:
+          // [
+          //   {
+          //     "Name": [
+          //       "Chapter 1:  "
+          //     ],
+          //     "Time": [
+          //       "0:00.000"
+          //     ]
+          //   },
+          //   {
+          //     "Name": [
+          //       "Chapter 2: "
+          //     ],
+          //     "Time": [
+          //       "15:51.000"
+          //     ]
+          //   }
+          // ]
+
+          parsed_result = result.Markers.Marker
+          
+          // The values for Name and Time in parsed results are returned as Arrays
+          // update them to be strings
+          parsed_result.forEach((item, index) => {
+            Object.keys(item).forEach(key => {
+              item[key] = item[key].toString()
+            })
+          })
+        })
+
+        parsedOverdriveMediaMarkers.push(parsed_result)
       })
-      console.log(newOChapters)
-      //console.log(this.overdriveMediaMarkers[0])
-      // console.log(JSON.stringify(x))
-      //console.log(parseString(this.overdriveMediaMarkers[0]))
-      // {
-      //   id:,
-      //   start:
-      //   end:
-      //   title:
-      // }
-      this.overdriveMediaMarkers
+
+      console.log(parsedOverdriveMediaMarkers.flat())
+
+      // go from an array of arrays of objects to an array of objects
+      parsedOverdriveMediaMarkers = parsedOverdriveMediaMarkers.flat()
+
+      // var index = 0
+      // var newOChapters = parsedXML.Markers.Marker.map((marker) => {
+      //   return {
+      //     id: index++,
+      //     start: marker.Time[0],
+      //     end: 0,
+      //     title: marker.Name[0]
+      //   }
+      // })
+      // console.log(newOChapters)
+
+      // this.overdriveMediaMarkers
     }
   },
   mounted() {
