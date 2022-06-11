@@ -142,45 +142,6 @@
         </div>
       </div>
     </modals-modal>
-
-    <modals-modal v-model="showImportOverdriveMediaMarkersModal" name="edit-book2" :width="500" :processing="findingChapters">
-      <template #outer>
-        <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-          <p class="font-book text-3xl text-white truncate pointer-events-none">Find Chapters</p>
-        </div>
-      </template>
-      <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
-        <div v-if="!chapterData" class="flex p-20">
-          <ui-text-input-with-label v-model="asinInput" label="NOT ASIN" />
-          <ui-btn small color="primary" class="mt-5 ml-2" @click="findChapters">Find</ui-btn>
-        </div>
-        <div v-else class="w-full p-4">
-          <p class="mb-4">Duration found: {{ chapterData.runtimeLengthSec }}</p>
-          <div v-if="chapterData.runtimeLengthSec > mediaDuration" class="w-full bg-error bg-opacity-25 p-4 text-center mb-2 rounded border border-white border-opacity-10 text-gray-100 text-sm">
-            <p>Chapter data invalid duration<br />Your media duration is shorter than duration found</p>
-          </div>
-
-          <div class="flex py-0.5 text-xs font-semibold uppercase text-gray-300 mb-1">
-            <div class="w-24 px-2">Start</div>
-            <div class="flex-grow px-2">Title</div>
-          </div>
-          <div class="w-full max-h-80 overflow-y-auto my-2">
-            <div v-for="(chapter, index) in chapterData.chapters" :key="index" class="flex py-0.5 text-xs" :class="chapter.startOffsetSec > mediaDuration ? 'bg-error bg-opacity-20' : chapter.startOffsetSec + chapter.lengthMs / 1000 > mediaDuration ? 'bg-warning bg-opacity-20' : index % 2 === 0 ? 'bg-primary bg-opacity-30' : ''">
-              <div class="w-24 min-w-24 px-2">
-                <p class="font-mono">{{ $secondsToTimestamp(chapter.startOffsetSec) }}</p>
-              </div>
-              <div class="flex-grow px-2">
-                <p class="truncate max-w-sm">{{ chapter.title }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="flex pt-2">
-            <div class="flex-grow" />
-            <ui-btn small color="success" @click="applyChapterData">Apply Chapters</ui-btn>
-          </div>
-        </div>
-      </div>
-    </modals-modal>
   </div>
 </template>
 
