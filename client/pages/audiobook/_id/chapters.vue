@@ -472,13 +472,11 @@ export default {
     generateChaptersFromOverdriveMediaMarkers() {
       var parseString = require('xml2js').parseString; // function to convert xml to JSON
       var overdriveMediaMarkers = this.overdriveMediaMarkers // an array of XML. 1 Part.mp3 to 1 array index. Each index holds 1 XML that holds multiple chapters
-      //console.log(overdriveMediaMarkers)
       
       var parsedOverdriveMediaMarkers = [] // an array of objects. each object being a chapter with a name and time key. the values are arrays of strings
 
       overdriveMediaMarkers.forEach(function (item, index) {     
         var parsed_result
-        var holder
         parseString(item, function (err, result) {
           // result.Markers.Marker is the result of parsing the XML for the MediaMarker tags for the MP3 file (Part##.mp3)
           // it is shaped like this:
@@ -503,7 +501,7 @@ export default {
 
           parsed_result = result.Markers.Marker
           
-          // The values for Name and Time in parsed results are returned as Arrays
+          // The values for Name and Time in parsed_results are returned as Arrays from parseString
           // update them to be strings
           parsed_result.forEach((item, index) => {
             Object.keys(item).forEach(key => {
@@ -515,25 +513,51 @@ export default {
         parsedOverdriveMediaMarkers.push(parsed_result)
       })
 
-      console.log(parsedOverdriveMediaMarkers.flat())
-
       // go from an array of arrays of objects to an array of objects
-      parsedOverdriveMediaMarkers = parsedOverdriveMediaMarkers.flat()
+      // end result looks like:
+      // [
+      //   {
+      //     "Name": "Chapter 1:  The Worst Birthday",
+      //     "Time": "0:00.000"
+      //   },
+      //   {
+      //     "Name": "Chapter 2:  Dobby's Warning",
+      //     "Time": "15:51.000"
+      //   },
+      //   { redacted }
+      // ]
+      parsedOverdriveMediaMarkers = parsedOverdriveMediaMarkers
 
-      // var index = 0
-      // var newOChapters = parsedXML.Markers.Marker.map((marker) => {
-      //   return {
-      //     id: index++,
-      //     start: marker.Time[0],
-      //     end: 0,
-      //     title: marker.Name[0]
-      //   }
-      // })
-      // console.log(newOChapters)
+      var index = 0
+      
+      var time = 0.0
+      
 
-      // this.overdriveMediaMarkers
+      // actually generate the chapter object
+      // logic ported over from benonymity's OverdriveChapterizer:
+      //    https://github.com/benonymity/OverdriveChapterizer/blob/main/chapters.py
+      var length = 0.0
+      var newOChapters = []
+      this.audioTracks.forEach((track, track_index) => {
+        parsedOverdriveMediaMarkers[track_index].forEach((chapter) => {
+          time = chapter.Time.split(":")
+          time = length + parseFloat(time[0]) * 60 + parseFloat(time[1])
+          newOChapters.push(
+            {
+              id: index++,
+              start: time,
+              end: length,
+              title: chapter.Name
+            }
+          )
+        })
+        length += track.duration
+      })
+
+      this.newChapters = newOChapters
     }
   },
+
   mounted() {
     this.checkForOverdriveMediaMarkers()
     var dismissed = false
