@@ -398,7 +398,6 @@ export default {
             title: chap.title
           }
         })
-      console.log(`newChapters - ${JSON.stringify(this.newChapters)}`)
       this.showFindChaptersModal = false
       this.chapterData = null
     },
