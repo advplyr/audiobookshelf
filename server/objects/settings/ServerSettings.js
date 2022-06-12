@@ -13,6 +13,7 @@ class ServerSettings {
     this.scannerPreferOpfMetadata = false
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false 
+    this.scannerPreferOverdriveMediaMarker = false
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -65,6 +66,7 @@ class ServerSettings {
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
+    this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
@@ -111,6 +113,7 @@ class ServerSettings {
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
       scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
+      scannerPreferOverdriveMediaMarker: this.scannerPreferOverdriveMediaMarker,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       rateLimitLoginRequests: this.rateLimitLoginRequests,

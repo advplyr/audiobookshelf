@@ -103,7 +103,7 @@ class PodcastController {
         Logger.error('Invalid podcast feed request response')
         return res.status(500).send('Bad response from feed request')
       }
-      Logger.debug(`[PdocastController] Podcast feed size ${(data.data.length / 1024 / 1024).toFixed(2)}MB`)
+      Logger.debug(`[PodcastController] Podcast feed size ${(data.data.length / 1024 / 1024).toFixed(2)}MB`)
       var payload = await parsePodcastRssFeedXml(data.data, false, includeRaw)
       if (!payload) {
         return res.status(500).send('Invalid podcast RSS feed')

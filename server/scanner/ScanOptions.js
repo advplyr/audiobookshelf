@@ -9,6 +9,7 @@ class ScanOptions {
     this.preferAudioMetadata = false
     this.preferOpfMetadata = false
     this.preferMatchedMetadata = false
+    this.preferOverdriveMediaMarker = false
 
     if (options) {
       this.construct(options)
@@ -34,7 +35,8 @@ class ScanOptions {
       storeCoverWithItem: this.storeCoverWithItem,
       preferAudioMetadata: this.preferAudioMetadata,
       preferOpfMetadata: this.preferOpfMetadata,
-      preferMatchedMetadata: this.preferMatchedMetadata
+      preferMatchedMetadata: this.preferMatchedMetadata,
+      preferOverdriveMediaMarker: this.preferOverdriveMediaMarker
     }
   }
 
@@ -47,6 +49,7 @@ class ScanOptions {
     this.preferAudioMetadata = serverSettings.scannerPreferAudioMetadata
     this.preferOpfMetadata = serverSettings.scannerPreferOpfMetadata
     this.scannerPreferMatchedMetadata = serverSettings.scannerPreferMatchedMetadata
+    this.preferOverdriveMediaMarker = serverSettings.scannerPreferOverdriveMediaMarker
   }
 }
 module.exports = ScanOptions

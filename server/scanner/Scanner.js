@@ -62,6 +62,7 @@ class Scanner {
   }
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
+    Logger.debug(`[Scanner] SCANNING ITEMS JOE`)
     // TODO: Support for single media item
     var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
     if (!libraryItemData) {
@@ -114,6 +115,7 @@ class Scanner {
   }
 
   async scan(library, options = {}) {
+    Logger.debug('[scan] inside of scan')
     if (this.isLibraryScanning(library.id)) {
       Logger.error(`[Scanner] Already scanning ${library.id}`)
       return
@@ -126,6 +128,7 @@ class Scanner {
 
     var scanOptions = new ScanOptions()
     scanOptions.setData(options, this.db.serverSettings)
+    Logger.debug(`[Scanner] scanOptions: ${JSON.stringify(scanOptions)}`)
 
     var libraryScan = new LibraryScan()
     libraryScan.setData(library, scanOptions)
@@ -164,6 +167,8 @@ class Scanner {
 
   async scanLibrary(libraryScan) {
     var libraryItemDataFound = []
+
+    Logger.debug(`[scanLibrary] libraryScan: ${JSON.stringify(libraryScan)}`)
 
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
@@ -750,6 +755,7 @@ class Scanner {
   }
 
   async matchLibraryItems(library) {
+    Logger.debug("SCANNING!")
     if (library.mediaType === 'podcast') {
       Logger.error(`[Scanner] matchLibraryItems: Match all not supported for podcasts yet`)
       return
