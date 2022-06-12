@@ -195,7 +195,7 @@ class MediaFileScanner {
     }
   }
 
-  async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, libraryScan = null) {
+  async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan = null) {
     Logger.debug('[scanMediaFiles] inside scan media files!')
     Logger.debug(`[scanMediaFiles] libraryScan: ${JSON.stringify(libraryScan)}`)
 
@@ -257,8 +257,8 @@ class MediaFileScanner {
 
         if (hasUpdated) {
           Logger.debug('[MediaFileScanner] hasUpdated is true! Going to rebuild tracks now...')
-          Logger.debug(`[MediaFileScanner] libraryScan: ${JSON.stringify(libraryScan)}`)
-          libraryItem.media.rebuildTracks(libraryScan.scanOptions.preferOverdriveMediaMarker)
+          Logger.debug(`[MediaFileScanner] preferOverdriveMediaMarker: ${JSON.stringify(preferOverdriveMediaMarker)}`)
+          libraryItem.media.rebuildTracks(preferOverdriveMediaMarker)
         }
       } else { // Podcast Media Type
         var existingAudioFiles = mediaScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))

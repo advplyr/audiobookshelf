@@ -360,9 +360,9 @@ class Book {
     this.rebuildTracks()
   }
 
-  rebuildTracks(preferOverdriveMediaMarker = false) {
+  rebuildTracks(preferOverdriveMediaMarker) {
     Logger.debug(`[Book] we are rebuilding the tracks!`)
-    Logger.debug(`[Book] preferOverdriveMediaMarker: ${preferOverdriveMediaMarker}`)
+    Logger.debug(`[Book] preferOverdriveMediaMarker: ${JSON.stringify(preferOverdriveMediaMarker)}`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
     this.setChapters(preferOverdriveMediaMarker)
@@ -491,29 +491,33 @@ class Book {
     return newOChapters
   }
 
+  getOverdriveMediaMarkers(audioFiles) {
+    var markers = audioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(notUndefined => notUndefined !== undefined).filter(elem => { return elem !== null }) || [] 
+    return markers
+  }
+
 
   setChapters(preferOverdriveMediaMarker = false) {
-    Logger.debug('[Book] inside setChapters!')
     // If 1 audio file without chapters, then no chapters will be set
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
-    if (includedAudioFiles.length === 1) {
-      // 1 audio file with chapters
-      if (includedAudioFiles[0].chapters) {
-        this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
-      }
+
+    var overdriveMediaMarkers = this.getOverdriveMediaMarkers(includedAudioFiles)
+
+    // If preferOverdriveMediaMarker is set, try and use that first
+    //  fallback to non-overdrive chapters if there are no Overdrive Media Markers available
+    if (preferOverdriveMediaMarker && (overdriveMediaMarkers.length > 0)) {
+      Logger.debug(`[Book] preferring overdrive media markers! Lets generate em.`)
+      this.chapters = this.generateChaptersFromOverdriveMediaMarkers(overdriveMediaMarkers, includedAudioFiles)
     } else {
-      this.chapters = []
-      var currChapterId = 0
-      var currStartTime = 0
-      var overdriveMediaMarkers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(notUndefined => notUndefined !== undefined) || []
-      Logger.debug(`[setChapters] overdriveMediaMarkers: ${JSON.stringify(overdriveMediaMarkers)}`)
-
-      // If preferOverdriveMediaMarker is set, try and use that first
-      if (preferOverdriveMediaMarker) {
-        Logger.debug(`[Book] preferring overdrive media markers! Lets generate em.`)
-        this.chapters = this.generateChaptersFromOverdriveMediaMarkers(overdriveMediaMarkers, includedAudioFiles)
-
+      if (includedAudioFiles.length === 1) {
+        // 1 audio file with chapters
+        if (includedAudioFiles[0].chapters) {
+          this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
+        }
       } else {
+        this.chapters = []
+        var currChapterId = 0
+        var currStartTime = 0
         includedAudioFiles.forEach((file) => {
           //console.log(`audiofile MetaTags Overdrive: ${JSON.stringify(file.metaTags.tagOverdriveMediaMarker)}}`)
           // If audio file has chapters use chapters
