@@ -81,6 +81,7 @@ class Scanner {
     // Scan all audio files
     if (libraryItem.hasAudioFiles) {
       var libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
+      Logger.debug(`[Scanner] //scan all audio files -- This is this.db.serverSettings.scannerPreferOverdriveMediaMarker: ${this.db.serverSettings.scannerPreferOverdriveMediaMarker}`)
       if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata, this.db.serverSettings.scannerPreferOverdriveMediaMarker)) {
         hasUpdated = true
       }
@@ -342,7 +343,10 @@ class Scanner {
     // forceRescan all existing audio files - will probe and update ID3 tag metadata
     var existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
     if (libraryScan.scanOptions.forceRescan && existingAudioFiles.length) {
-      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
+      Logger.debug(`[Scanner] // forceRescan all existing audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.scanOptions.preferOverdriveMediaMarker}`)
+      Logger.debug(`[Scanner] // forceRescan all existing audio files -- this is libraryScan: ${JSON.stringify(libraryScan)}`)
+
+      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.scanOptions.preferOverdriveMediaMarker, libraryScan)) {
         hasUpdated = true
       }
     }
@@ -350,7 +354,8 @@ class Scanner {
     var newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
     var removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
     if (newAudioFiles.length || removedAudioFiles.length) {
-      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
+      Logger.debug(`[Scanner] // Scan new audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.scanOptions.preferOverdriveMediaMarker}`)
+      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.scanOptions.preferOverdriveMediaMarker, libraryScan)) {
         hasUpdated = true
       }
     }
@@ -393,6 +398,7 @@ class Scanner {
 
     var mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
     if (mediaFiles.length) {
+      Logger.debug(`[Scanner] // :399 -- this is preferOverdriveMediaMarker: ${preferOverdriveMediaMarker}`)
       await MediaFileScanner.scanMediaFiles(mediaFiles, libraryItemData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan)
     }
 

@@ -357,6 +357,7 @@ class Book {
       return audioFile
     })
 
+    Logger.debug(`[Book] WE ARE INSIDE UPDATE AUDIO TRACKS ========================`)
     this.rebuildTracks()
   }
 
@@ -495,7 +496,6 @@ class Book {
     var markers = audioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(notUndefined => notUndefined !== undefined).filter(elem => { return elem !== null }) || [] 
     return markers
   }
-
 
   setChapters(preferOverdriveMediaMarker = false) {
     // If 1 audio file without chapters, then no chapters will be set
