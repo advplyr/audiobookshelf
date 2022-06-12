@@ -363,7 +363,6 @@ class Book {
 
   rebuildTracks(preferOverdriveMediaMarker) {
     Logger.debug(`[Book] Tracks being rebuilt...!`)
-    Logger.debug(`[Book] preferOverdriveMediaMarker: ${JSON.stringify(preferOverdriveMediaMarker)}`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
     this.setChapters(preferOverdriveMediaMarker)
@@ -418,7 +417,6 @@ class Book {
       var currChapterId = 0
       var currStartTime = 0
       includedAudioFiles.forEach((file) => {
-        //console.log(`audiofile MetaTags Overdrive: ${JSON.stringify(file.metaTags.tagOverdriveMediaMarker)}}`)
         // If audio file has chapters use chapters
         if (file.chapters && file.chapters.length) {
           file.chapters.forEach((chapter) => {

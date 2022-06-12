@@ -248,7 +248,6 @@ class MediaFileScanner {
         }
 
         if (hasUpdated) {
-          Logger.debug('[MediaFileScanner] hasUpdated is true! Going to rebuild tracks now...')
           libraryItem.media.rebuildTracks(preferOverdriveMediaMarker)
         }
       } else { // Podcast Media Type
