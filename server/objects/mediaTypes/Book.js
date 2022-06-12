@@ -358,12 +358,11 @@ class Book {
       return audioFile
     })
 
-    Logger.debug(`[Book] WE ARE INSIDE UPDATE AUDIO TRACKS ========================`)
     this.rebuildTracks()
   }
 
   rebuildTracks(preferOverdriveMediaMarker) {
-    Logger.debug(`[Book] we are rebuilding the tracks!`)
+    Logger.debug(`[Book] Tracks being rebuilt...!`)
     Logger.debug(`[Book] preferOverdriveMediaMarker: ${JSON.stringify(preferOverdriveMediaMarker)}`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
