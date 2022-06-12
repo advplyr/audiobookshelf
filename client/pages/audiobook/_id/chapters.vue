@@ -22,16 +22,6 @@
           <div class="w-40" />
         </div>
 
-      <div class="w-full max-w-3xl py-4" v-if="overdriveMediaMarkersExist">
-          <div class="flex items-center">
-            <p class="text-sm mb-4">Overdrive Media Markers Found! Would you like to generate chapter data from them?</p>
-            <div class="flex-grow" />
-              <ui-btn color="primary" small class="mx-2" @click="this.generateChaptersFromOverdriveMediaMarkers">Yes</ui-btn>
-              <!-- <ui-btn color="error" small @click="saveChapters">No</ui-btn> -->
-            <div class="w-40" />
-          </div>
-        </div>
-
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="w-12"></div>
           <div class="w-32 px-2">Start</div>
@@ -95,7 +85,6 @@
               <span v-if="(track.chapters || []).length" class="material-icons text-success text-sm">check</span>
             </div>
           </div>
-          
         </template>
       </div>
     </div>
@@ -179,7 +168,6 @@ export default {
       asinInput: null,
       findingChapters: false,
       showFindChaptersModal: false,
-      showImportOverdriveMediaMarkersModal: false,
       chapterData: null
     }
   },
@@ -202,19 +190,13 @@ export default {
     mediaDuration() {
       return this.media.duration
     },
-    overdriveMediaMarkersExist() {
-      return (this.overdriveMediaMarkers?.length > 0 ? true : false ) || false
-    },
-    overdriveMediaMarkers() {
-      return this.audioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(notUndefined => notUndefined !== undefined) || []
-    },
     chapters() {
       return this.media.chapters || []
     },
     tracks() {
       return this.media.tracks || []
     },
-    audioFiles() {  
+    audioFiles() {
       return this.media.audioFiles || []
     },
     audioTracks() {
@@ -225,13 +207,6 @@ export default {
     }
   },
   methods: {
-    checkForOverdriveMediaMarkers() {
-      if (this.overdriveMediaMarkersExist) {
-        this.$toast.success('Your book has overdrive media markers!')
-      } else {
-        this.$toast.error('Your book DOES NOT have overdrive media markers!')
-      }
-    },
     editItem() {
       this.$store.commit('showEditModal', this.libraryItem)
     },
@@ -417,7 +392,7 @@ export default {
             this.$toast.error(data.error)
             this.showFindChaptersModal = false
           } else {
-            console.log('Chapter data', JSON.stringify(data))
+            console.log('Chapter data', data)
             this.chapterData = data
           }
         })
@@ -427,100 +402,9 @@ export default {
           this.$toast.error('Failed to find chapters')
           this.showFindChaptersModal = false
         })
-    },
-    // overdrive
-    generateChaptersFromOverdriveMediaMarkers() {
-      var parseString = require('xml2js').parseString; // function to convert xml to JSON
-      var overdriveMediaMarkers = this.overdriveMediaMarkers // an array of XML. 1 Part.mp3 to 1 array index. Each index holds 1 XML that holds multiple chapters
-      
-      var parsedOverdriveMediaMarkers = [] // an array of objects. each object being a chapter with a name and time key. the values are arrays of strings
-
-      overdriveMediaMarkers.forEach(function (item, index) {     
-        var parsed_result
-        parseString(item, function (err, result) {
-          // result.Markers.Marker is the result of parsing the XML for the MediaMarker tags for the MP3 file (Part##.mp3)
-          // it is shaped like this:
-          // [
-          //   {
-          //     "Name": [
-          //       "Chapter 1:  "
-          //     ],
-          //     "Time": [
-          //       "0:00.000"
-          //     ]
-          //   },
-          //   {
-          //     "Name": [
-          //       "Chapter 2: "
-          //     ],
-          //     "Time": [
-          //       "15:51.000"
-          //     ]
-          //   }
-          // ]
-
-          parsed_result = result.Markers.Marker
-          
-          // The values for Name and Time in parsed_results are returned as Arrays from parseString
-          // update them to be strings
-          parsed_result.forEach((item, index) => {
-            Object.keys(item).forEach(key => {
-              item[key] = item[key].toString()
-            })
-          })
-        })
-
-        parsedOverdriveMediaMarkers.push(parsed_result)
-      })
-
-      // go from an array of arrays of objects to an array of objects
-      // end result looks like:
-      // [
-      //   {
-      //     "Name": "Chapter 1:  The Worst Birthday",
-      //     "Time": "0:00.000"
-      //   },
-      //   {
-      //     "Name": "Chapter 2:  Dobby's Warning",
-      //     "Time": "15:51.000"
-      //   },
-      //   { redacted }
-      // ]
-      parsedOverdriveMediaMarkers = parsedOverdriveMediaMarkers
-
-      var index = 0
-      
-      var time = 0.0
-      
-
-      // actually generate the chapter object
-      // logic ported over from benonymity's OverdriveChapterizer:
-      //    https://github.com/benonymity/OverdriveChapterizer/blob/main/chapters.py
-      var length = 0.0
-      var newOChapters = []
-      this.audioTracks.forEach((track, track_index) => {
-        parsedOverdriveMediaMarkers[track_index].forEach((chapter) => {
-          time = chapter.Time.split(":")
-          time = length + parseFloat(time[0]) * 60 + parseFloat(time[1])
-          newOChapters.push(
-            {
-              id: index++,
-              start: time,
-              end: length,
-              title: chapter.Name
-            }
-          )
-        })
-        length += track.duration
-      })
-
-      this.newChapters = newOChapters
     }
   },
-
   mounted() {
-    this.checkForOverdriveMediaMarkers()
-    var dismissed = false
     this.asinInput = this.mediaMetadata.asin || null
     this.newChapters = this.chapters.map((c) => ({ ...c }))
     if (!this.newChapters.length) {
