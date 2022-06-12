@@ -69,7 +69,7 @@
 
     <p v-if="showM4bDownload" class="text-left text-base mb-4 py-4">
       <span class="text-error">* <strong>Experimental</strong></span
-      >&nbsp;-&nbsp;M4b merge can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be deleted. Download will timeout after 20 minutes.
+      >&nbsp;-&nbsp;M4b merge can take several minutes and will be stored in <span class="bg-primary bg-opacity-75 font-mono p-1 text-base">/metadata/downloads</span>. After the download is ready, it will remain available for 60 minutes, then be deleted. Download will timeout after 30 minutes.
     </p>
 
     <!-- <p v-if="isSingleM4b" class="text-lg text-center my-8">Audiobook is already a single m4b!</p> -->
