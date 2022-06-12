@@ -104,6 +104,16 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
+          <p class="pl-4 text-lg">
+            Scanner prefer Overdrive Media Markers for chapters
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
         <ui-tooltip :text="tooltips.scannerPreferOpfMetadata">
           <p class="pl-4 text-lg">
@@ -245,7 +255,8 @@ export default {
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
-        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle below just for you)'
+        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle below just for you)',
+        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically'
       },
       showConfirmPurgeCache: false
     }
