@@ -53,11 +53,11 @@ module.exports.parseOverdriveMediaMarkers = (overdriveMediaMarkers, includedAudi
     // end result looks like:
     // [
     //   {
-    //     "Name": "Chapter 1:  The Worst Birthday",
+    //     "Name": "Chapter 1",
     //     "Time": "0:00.000"
     //   },
     //   {
-    //     "Name": "Chapter 2:  Dobby's Warning",
+    //     "Name": "Chapter 2",
     //     "Time": "15:51.000"
     //   },
     //   { redacted }
