@@ -196,9 +196,6 @@ class MediaFileScanner {
   }
 
   async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan = null) {
-    Logger.debug('[scanMediaFiles] inside scan media files!')
-    Logger.debug(`[scanMediaFiles] libraryScan: ${JSON.stringify(libraryScan)}`)
-
     var hasUpdated = false
 
     var mediaScanResult = await this.executeMediaFileScans(libraryItem.mediaType, mediaLibraryFiles, scanData)
@@ -221,23 +218,18 @@ class MediaFileScanner {
 
       // Book: Adding audio files to book media
       if (libraryItem.mediaType === 'book') {
-        Logger.debug('Its a book!')
         if (newAudioFiles.length) {
-          Logger.debug('[MediaFileScanner] newAudioFiles.length was true?')
           // Single Track Audiobooks
           if (totalAudioFilesToInclude === 1) {
-            Logger.debug('[MediaFileScanner] totalAudioFilesToInclude === 1')
             var af = mediaScanResult.audioFiles[0]
             af.index = 1
             libraryItem.media.addAudioFile(af)
             hasUpdated = true
           } else {
-            Logger.debug('[MediaFileScanner] totalAudioFilesToInclude === 1 WAS FALSE')
             this.runSmartTrackOrder(libraryItem, mediaScanResult.audioFiles)
             hasUpdated = true
           }
         } else {
-          Logger.debug('[MediaFileScanner] Only updating metadata?')
           // Only update metadata not index
           mediaScanResult.audioFiles.forEach((af) => {
             var existingAF = libraryItem.media.findFileWithInode(af.ino)
@@ -257,7 +249,6 @@ class MediaFileScanner {
 
         if (hasUpdated) {
           Logger.debug('[MediaFileScanner] hasUpdated is true! Going to rebuild tracks now...')
-          Logger.debug(`[MediaFileScanner] preferOverdriveMediaMarker: ${JSON.stringify(preferOverdriveMediaMarker)}`)
           libraryItem.media.rebuildTracks(preferOverdriveMediaMarker)
         }
       } else { // Podcast Media Type
@@ -275,7 +266,6 @@ class MediaFileScanner {
         // Update audio file metadata for audio files already there
         existingAudioFiles.forEach((af) => {
           var peAudioFile = libraryItem.media.findFileWithInode(af.ino)
-          Logger.debug(`[MediaFileScanner] peAudioFile: ${JSON.stringify(peAudioFile)}`)
           if (peAudioFile.updateFromScan && peAudioFile.updateFromScan(af)) {
             hasUpdated = true
           }

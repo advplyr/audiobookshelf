@@ -62,7 +62,6 @@ class Scanner {
   }
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
-    Logger.debug(`[Scanner] SCANNING ITEMS JOE`)
     // TODO: Support for single media item
     var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
     if (!libraryItemData) {
@@ -81,7 +80,6 @@ class Scanner {
     // Scan all audio files
     if (libraryItem.hasAudioFiles) {
       var libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
-      Logger.debug(`[Scanner] //scan all audio files -- This is this.db.serverSettings.scannerPreferOverdriveMediaMarker: ${this.db.serverSettings.scannerPreferOverdriveMediaMarker}`)
       if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata, this.db.serverSettings.scannerPreferOverdriveMediaMarker)) {
         hasUpdated = true
       }
