@@ -34,6 +34,7 @@ class LibraryScan {
   get forceRescan() { return !!this._scanOptions.forceRescan }
   get preferAudioMetadata() { return !!this._scanOptions.preferAudioMetadata }
   get preferOpfMetadata() { return !!this._scanOptions.preferOpfMetadata }
+  get preferOverdriveMediaMarker() { return !!this._scanOptions.preferOverdriveMediaMarker }
   get findCovers() { return !!this._scanOptions.findCovers }
   get timestamp() {
     return (new Date()).toISOString()

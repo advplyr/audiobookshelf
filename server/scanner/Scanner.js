@@ -315,8 +315,9 @@ class Scanner {
   }
 
   async scanNewLibraryItemDataChunk(newLibraryItemsData, libraryScan) {
+    Logger.debug(`LIBRARYSCAN: ${JSON.stringify(libraryScan)}`)
     var newLibraryItems = await Promise.all(newLibraryItemsData.map((lid) => {
-      return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan.scanOptions.preferOverdriveMediaMarker, libraryScan)
+      return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan.preferOverdriveMediaMarker, libraryScan)
     }))
     newLibraryItems = newLibraryItems.filter(li => li) // Filter out nulls
 
@@ -343,10 +344,10 @@ class Scanner {
     // forceRescan all existing audio files - will probe and update ID3 tag metadata
     var existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
     if (libraryScan.scanOptions.forceRescan && existingAudioFiles.length) {
-      Logger.debug(`[Scanner] // forceRescan all existing audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.scanOptions.preferOverdriveMediaMarker}`)
+      Logger.debug(`[Scanner] // forceRescan all existing audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.preferOverdriveMediaMarker}`)
       Logger.debug(`[Scanner] // forceRescan all existing audio files -- this is libraryScan: ${JSON.stringify(libraryScan)}`)
 
-      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.scanOptions.preferOverdriveMediaMarker, libraryScan)) {
+      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
         hasUpdated = true
       }
     }
@@ -354,8 +355,8 @@ class Scanner {
     var newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
     var removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
     if (newAudioFiles.length || removedAudioFiles.length) {
-      Logger.debug(`[Scanner] // Scan new audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.scanOptions.preferOverdriveMediaMarker}`)
-      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.scanOptions.preferOverdriveMediaMarker, libraryScan)) {
+      Logger.debug(`[Scanner] // Scan new audio files -- this is libraryScan.preferOverdriveMediaMarker: ${libraryScan.preferOverdriveMediaMarker}`)
+      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
         hasUpdated = true
       }
     }
