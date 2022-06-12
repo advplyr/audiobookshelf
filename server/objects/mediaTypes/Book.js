@@ -3,7 +3,7 @@ const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
-const { getOverdriveMediaMarkersFromFiles, parseOverdriveMediaMarkers } = require('../../utils/parsers/parseOverdriveMediaMarkers')
+const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
@@ -403,63 +403,60 @@ class Book {
     // If 1 audio file without chapters, then no chapters will be set
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
 
-    var overdriveMediaMarkers = getOverdriveMediaMarkersFromFiles(includedAudioFiles)
+    // If overdrive media markers are present and preferred, use those instead
+    if (preferOverdriveMediaMarker && overdriveMediaMarkersExist(includedAudioFiles)) {
+      Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
+      return this.chapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+    }
 
-    // If preferOverdriveMediaMarker is set, try and use that first
-    //  fallback to non-overdrive chapters if there are no Overdrive Media Markers available
-    if (preferOverdriveMediaMarker && (overdriveMediaMarkers.length > 0)) {
-      Logger.debug(`[Book] preferring overdrive media markers! Lets generate em.`)
-      this.chapters = parseOverdriveMediaMarkers(overdriveMediaMarkers, includedAudioFiles)
-    } else {
-      if (includedAudioFiles.length === 1) {
-        // 1 audio file with chapters
-        if (includedAudioFiles[0].chapters) {
-          this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
-        }
-      } else {
-        this.chapters = []
-        var currChapterId = 0
-        var currStartTime = 0
-        includedAudioFiles.forEach((file) => {
-          //console.log(`audiofile MetaTags Overdrive: ${JSON.stringify(file.metaTags.tagOverdriveMediaMarker)}}`)
-          // If audio file has chapters use chapters
-            if (file.chapters && file.chapters.length) {
-              file.chapters.forEach((chapter) => {
-                if (chapter.start > this.duration) {
-                  Logger.warn(`[Book] Invalid chapter start time > duration`)
-                } else {
-                  var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
-                  if (!chapterAlreadyExists) {
-                    var chapterDuration = chapter.end - chapter.start
-                    if (chapterDuration > 0) {
-                      var title = `Chapter ${currChapterId}`
-                      if (chapter.title) {
-                        title += ` (${chapter.title})`
-                      }
-                      var endTime = Math.min(this.duration, currStartTime + chapterDuration)
-                      this.chapters.push({
-                        id: currChapterId++,
-                        start: currStartTime,
-                        end: endTime,
-                        title
-                      })
-                      currStartTime += chapterDuration
-                    }
-                  }
-                }
-              })
-            } else if (file.duration) {
-              // Otherwise just use track has chapter
-              this.chapters.push({
-                id: currChapterId++,
-                start: currStartTime,
-                end: currStartTime + file.duration,
-                title: file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
-              })
-              currStartTime += file.duration
-          }
-        })
+    if (includedAudioFiles.length === 1) {
+      // 1 audio file with chapters
+      if (includedAudioFiles[0].chapters) {
+        this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
       }
+    } else {
+      this.chapters = []
+      var currChapterId = 0
+      var currStartTime = 0
+      includedAudioFiles.forEach((file) => {
+        //console.log(`audiofile MetaTags Overdrive: ${JSON.stringify(file.metaTags.tagOverdriveMediaMarker)}}`)
+        // If audio file has chapters use chapters
+        if (file.chapters && file.chapters.length) {
+          file.chapters.forEach((chapter) => {
+            if (chapter.start > this.duration) {
+              Logger.warn(`[Book] Invalid chapter start time > duration`)
+            } else {
+              var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
+              if (!chapterAlreadyExists) {
+                var chapterDuration = chapter.end - chapter.start
+                if (chapterDuration > 0) {
+                  var title = `Chapter ${currChapterId}`
+                  if (chapter.title) {
+                    title += ` (${chapter.title})`
+                  }
+                  var endTime = Math.min(this.duration, currStartTime + chapterDuration)
+                  this.chapters.push({
+                    id: currChapterId++,
+                    start: currStartTime,
+                    end: endTime,
+                    title
+                  })
+                  currStartTime += chapterDuration
+                }
+              }
+            }
+          })
+        } else if (file.duration) {
+          // Otherwise just use track has chapter
+          this.chapters.push({
+            id: currChapterId++,
+            start: currStartTime,
+            end: currStartTime + file.duration,
+            title: file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+          })
+          currStartTime += file.duration
+        }
+      })
     }
   }
 
