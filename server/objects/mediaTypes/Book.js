@@ -3,6 +3,7 @@ const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
+const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
@@ -360,10 +361,11 @@ class Book {
     this.rebuildTracks()
   }
 
-  rebuildTracks() {
+  rebuildTracks(preferOverdriveMediaMarker) {
+    Logger.debug(`[Book] Tracks being rebuilt...!`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
-    this.setChapters()
+    this.setChapters(preferOverdriveMediaMarker)
     this.checkUpdateMissingTracks()
   }
 
@@ -395,9 +397,16 @@ class Book {
     return wasUpdated
   }
 
-  setChapters() {
+  setChapters(preferOverdriveMediaMarker = false) {
     // If 1 audio file without chapters, then no chapters will be set
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
+
+    // If overdrive media markers are present and preferred, use those instead
+    if (preferOverdriveMediaMarker && overdriveMediaMarkersExist(includedAudioFiles)) {
+      Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
+      return this.chapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+    }
+
     if (includedAudioFiles.length === 1) {
       // 1 audio file with chapters
       if (includedAudioFiles[0].chapters) {

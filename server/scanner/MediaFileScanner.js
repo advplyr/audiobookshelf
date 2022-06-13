@@ -195,7 +195,7 @@ class MediaFileScanner {
     }
   }
 
-  async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, libraryScan = null) {
+  async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan = null) {
     var hasUpdated = false
 
     var mediaScanResult = await this.executeMediaFileScans(libraryItem.mediaType, mediaLibraryFiles, scanData)
@@ -208,6 +208,7 @@ class MediaFileScanner {
     } else if (mediaScanResult.audioFiles.length) {
       if (libraryScan) {
         libraryScan.addLog(LogLevel.DEBUG, `Library Item "${scanData.path}" Audio file scan took ${mediaScanResult.elapsed}ms for ${mediaScanResult.audioFiles.length} with average time of ${mediaScanResult.averageScanDuration}ms`)
+        Logger.debug(`Library Item "${scanData.path}" Audio file scan took ${mediaScanResult.elapsed}ms for ${mediaScanResult.audioFiles.length} with average time of ${mediaScanResult.averageScanDuration}ms`)
       }
 
       var totalAudioFilesToInclude = mediaScanResult.audioFiles.length
@@ -247,7 +248,7 @@ class MediaFileScanner {
         }
 
         if (hasUpdated) {
-          libraryItem.media.rebuildTracks()
+          libraryItem.media.rebuildTracks(preferOverdriveMediaMarker)
         }
       } else { // Podcast Media Type
         var existingAudioFiles = mediaScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))

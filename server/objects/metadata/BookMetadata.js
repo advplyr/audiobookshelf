@@ -262,6 +262,10 @@ class BookMetadata {
       {
         tag: 'tagASIN',
         key: 'asin'
+      },
+      {
+        tag: 'tagOverdriveMediaMarker',
+        key: 'overdriveMediaMarker'
       }
     ]
 
