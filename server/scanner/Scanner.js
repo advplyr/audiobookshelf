@@ -309,7 +309,6 @@ class Scanner {
   }
 
   async scanNewLibraryItemDataChunk(newLibraryItemsData, libraryScan) {
-    Logger.debug(`LIBRARYSCAN: ${JSON.stringify(libraryScan)}`)
     var newLibraryItems = await Promise.all(newLibraryItemsData.map((lid) => {
       return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan.preferOverdriveMediaMarker, libraryScan)
     }))
