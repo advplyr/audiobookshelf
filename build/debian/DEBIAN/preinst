@@ -2,13 +2,51 @@
 set -e
 set -o pipefail
 
-FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg/"
-DEFAULT_AUDIOBOOK_PATH="/usr/share/audiobookshelf/audiobooks"
-DEFAULT_DATA_PATH="/usr/share/audiobookshelf"
+FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg"
+DEFAULT_DATA_DIR="/usr/share/audiobookshelf"
+CONFIG_PATH="/etc/default/audiobookshelf"
 DEFAULT_PORT=7331
 DEFAULT_HOST="0.0.0.0"
 
-CONFIG_PATH="/etc/default/audiobookshelf"
+
+
+add_user() {
+  : "${1:?'User was not defined'}"
+  declare -r user="$1"
+  declare -r uid="$2"
+
+  if [ -z "$uid" ]; then
+    declare -r uid_flags=""
+  else
+    declare -r uid_flags="--uid $uid"
+  fi
+
+  declare -r group="${3:-$user}"
+  declare -r descr="${4:-No description}"
+  declare -r shell="${5:-/bin/false}"
+
+  if ! getent passwd | grep -q "^$user:"; then
+    echo "Creating system user: $user in $group with $descr and shell $shell"
+    useradd $uid_flags --gid $group --no-create-home --system --shell $shell -c "$descr" $user
+  fi
+}
+
+add_group() {
+  : "${1:?'Group was not defined'}"
+  declare -r group="$1"
+  declare -r gid="$2"
+
+  if [ -z "$gid" ]; then
+    declare -r gid_flags=""
+  else
+    declare -r gid_flags="--gid $gid"
+  fi
+
+  if ! getent group | grep -q "^$group:" ; then
+    echo "Creating system group: $group"
+    groupadd $gid_flags --system $group
+  fi
+}
 
 install_ffmpeg() {
   echo "Starting FFMPEG Install"
@@ -16,8 +54,9 @@ install_ffmpeg() {
   WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
 
   if ! cd "$FFMPEG_INSTALL_DIR"; then
-    echo "WARNING: can't access working directory ($FFMPEG_INSTALL_DIR) creating it" >&2
+    echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
     mkdir "$FFMPEG_INSTALL_DIR"
+    chown -R 'audiobookshelf:audiobookshelf' "$FFMPEG_INSTALL_DIR"
     cd "$FFMPEG_INSTALL_DIR"
   fi
 
@@ -28,83 +67,23 @@ install_ffmpeg() {
   echo "Good to go on Ffmpeg... hopefully"
 }
 
-should_build_config() {
-  if [ -f "$CONFIG_PATH" ]; then
-    echo "You already have a config file. Do you want to use it?"
-
-    options=("Yes" "No")
-    select yn in "${options[@]}"
-    do
-      case $yn in
-          "Yes") 
-            false; return
-            ;;
-          "No")
-            true; return
-            ;;
-      esac
-    done
-  else 
-    echo "No existing config found in $CONFIG_PATH"
-    true; return
-  fi
-}
-
-setup_config_interactive() {
-  if should_build_config; then
-    echo "Okay, let's setup a new config."
-
-    AUDIOBOOK_PATH=""
-    read -p "
-    Enter path for your audiobooks [Default: $DEFAULT_AUDIOBOOK_PATH]:" AUDIOBOOK_PATH
-
-    if [[ -z "$AUDIOBOOK_PATH" ]]; then
-      AUDIOBOOK_PATH="$DEFAULT_AUDIOBOOK_PATH"
-    fi
-
-    DATA_PATH=""
-    read -p "
-    Enter path for data files, i.e. streams, downloads, database [Default: $DEFAULT_DATA_PATH]:" DATA_PATH
-
-    if [[ -z "$DATA_PATH" ]]; then
-      DATA_PATH="$DEFAULT_DATA_PATH"
-    fi
-
-    PORT=""
-    read -p "
-    Port for the web ui [Default: $DEFAULT_PORT]:" PORT
-
-    if [[ -z "$PORT" ]]; then
-      PORT="$DEFAULT_PORT"
-    fi
-
-    config_text="AUDIOBOOK_PATH=$AUDIOBOOK_PATH
-  METADATA_PATH=$DATA_PATH/metadata
-  CONFIG_PATH=$DATA_PATH/config
-  FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
-  FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
-  PORT=$PORT
-  HOST=$DEFAULT_HOST"
-
-    echo "$config_text"
-
-    echo "$config_text" > /etc/default/audiobookshelf;
-
-    echo "Config created"
-
-  fi
-}
-
 setup_config() {
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
     cat $CONFIG_PATH
   else
+
+    if [ ! -d "$DEFAULT_DATA_DIR" ]; then
+      # Create directory and set permissions
+      echo "Creating default data dir at $DEFAULT_DATA_DIR"
+      mkdir "$DEFAULT_DATA_DIR"
+      chown -R 'audiobookshelf:audiobookshelf' "$DEFAULT_DATA_DIR"
+    fi
+
     echo "Creating default config."
 
-    config_text="AUDIOBOOK_PATH=$DEFAULT_AUDIOBOOK_PATH
-  METADATA_PATH=$DEFAULT_DATA_PATH/metadata
-  CONFIG_PATH=$DEFAULT_DATA_PATH/config
+    config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata
+  CONFIG_PATH=$DEFAULT_DATA_DIR/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
   PORT=$DEFAULT_PORT
@@ -117,6 +96,10 @@ setup_config() {
     echo "Config created"
   fi
 }
+
+add_group 'audiobookshelf' ''
+
+add_user 'audiobookshelf' '' 'audiobookshelf' 'audiobookshelf user-daemon' '/bin/false'
 
 setup_config
 

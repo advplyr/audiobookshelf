@@ -23,14 +23,17 @@ function parseSemver(ver) {
   }
   return null
 }
+
+export const currentVersion = packagejson.version
+
 export async function checkForUpdate() {
   if (!packagejson.version) {
-    return
+    return null
   }
   var currVerObj = parseSemver('v' + packagejson.version)
   if (!currVerObj) {
     console.error('Invalid version', packagejson.version)
-    return
+    return null
   }
   var largestVer = null
   await axios.get(`https://api.github.com/repos/advplyr/audiobookshelf/releases`).then((res) => {
@@ -49,7 +52,7 @@ export async function checkForUpdate() {
   })
   if (!largestVer) {
     console.error('No valid version tags to compare with')
-    return
+    return null
   }
 
   return {

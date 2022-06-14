@@ -1,11 +1,60 @@
 const Logger = require('../Logger')
 const { reqSupportsWebp } = require('../utils/index')
+const { createNewSortInstance } = require('../libs/fastSort')
 
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 class AuthorController {
   constructor() { }
 
   async findOne(req, res) {
-    return res.json(req.author)
+    const include = (req.query.include || '').split(',')
+
+    const authorJson = req.author.toJSON()
+
+    // Used on author landing page to include library items and items grouped in series
+    if (include.includes('items')) {
+      authorJson.libraryItems = this.db.libraryItems.filter(li => {
+        if (!req.user.checkCanAccessLibraryItem(li)) return false // filter out library items user cannot access
+        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
+      })
+
+      if (include.includes('series')) {
+        const seriesMap = {}
+        // Group items into series
+        authorJson.libraryItems.forEach((li) => {
+          if (li.media.metadata.series) {
+            li.media.metadata.series.forEach((series) => {
+
+              const itemWithSeries = li.toJSONMinified()
+              itemWithSeries.media.metadata.series = series
+
+              if (seriesMap[series.id]) {
+                seriesMap[series.id].items.push(itemWithSeries)
+              } else {
+                seriesMap[series.id] = {
+                  id: series.id,
+                  name: series.name,
+                  items: [itemWithSeries]
+                }
+              }
+            })
+          }
+        })
+        // Sort series items
+        for (const key in seriesMap) {
+          seriesMap[key].items = naturalSort(seriesMap[key].items).asc(li => li.media.metadata.series.sequence)
+        }
+
+        authorJson.series = Object.values(seriesMap)
+      }
+
+      // Minify library items
+      authorJson.libraryItems = authorJson.libraryItems.map(li => li.toJSONMinified())
+    }
+
+    return res.json(authorJson)
   }
 
   async update(req, res) {
@@ -41,6 +90,7 @@ class AuthorController {
       }).length
       this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
+
     res.json({
       author: req.author.toJSON(),
       updated: hasUpdated
@@ -57,11 +107,16 @@ class AuthorController {
   }
 
   async match(req, res) {
-    var authorData = await this.authorFinder.findAuthorByName(req.body.q)
+    var authorData = null
+    if (req.body.asin) {
+      authorData = await this.authorFinder.findAuthorByASIN(req.body.asin)
+    } else {
+      authorData = await this.authorFinder.findAuthorByName(req.body.q)
+    }
     if (!authorData) {
       return res.status(404).send('Author not found')
     }
-    Logger.debug(`[AuthorController] match author with "${req.body.q}"`, authorData)
+    Logger.debug(`[AuthorController] match author with "${req.body.q || req.body.asin}"`, authorData)
 
     var hasUpdates = false
     if (authorData.asin && req.author.asin !== authorData.asin) {
@@ -71,6 +126,8 @@ class AuthorController {
 
     // Only updates image if there was no image before or the author ASIN was updated
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
+      this.cacheManager.purgeImageCache(req.author.id)
+
       var imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path

@@ -273,8 +273,8 @@ function parseAbMetadataText(text, mediaType) {
     } else if (!metadataMapper[keyValue[0].trim()]) {
       Logger.warn(`abmetadata key "${keyValue[0].trim()}" is not a valid ${mediaType} metadata key`)
     } else {
-      var key = keyValue[0].trim()
-      var value = keyValue[1].trim()
+      var key = keyValue.shift().trim()
+      var value = keyValue.join('=').trim()
       mediaMetadataDetails[key] = metadataMapper[key].from(value)
     }
   }

@@ -1,14 +1,14 @@
 {
   "name": "audiobookshelf",
-  "version": "2.0.10",
-  "description": "Self-hosted audiobook server for managing and playing audiobooks",
+  "version": "2.0.21",
+  "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
-    "client": "cd client && npm install && npm run generate",
-    "prod": "npm run client && npm install && node prod.js",
-    "build-win": "pkg -t node16-win-x64 -o ./dist/win/audiobookshelf .",
+    "client": "cd client && npm ci && npm run generate",
+    "prod": "npm run client && npm ci && node prod.js",
+    "build-win": "npm run client && pkg -t node16-win-x64 -o ./dist/win/audiobookshelf -C GZip .",
     "build-linux": "build/linuxpackager",
     "docker": "docker buildx build --platform linux/amd64,linux/arm64,linux/arm/v7 --push .  -t advplyr/audiobookshelf",
     "deploy": "node dist/autodeploy"
@@ -35,23 +35,15 @@
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",
     "express-rate-limit": "^5.3.0",
-    "fast-sort": "^3.1.1",
     "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^10.0.0",
-    "image-type": "^4.1.0",
+    "htmlparser2": "^8.0.1",
     "jsonwebtoken": "^8.5.1",
     "libgen": "^2.1.0",
-    "node-cron": "^3.0.0",
     "node-ffprobe": "^3.0.0",
     "node-stream-zip": "^1.15.0",
-    "podcast": "^2.0.0",
-    "proper-lockfile": "^4.1.2",
-    "read-chunk": "^3.1.0",
     "recursive-readdir-async": "^1.1.8",
     "socket.io": "^4.4.1",
-    "string-strip-html": "^8.3.0",
-    "watcher": "^1.2.0",
     "xml2js": "^0.4.23"
-  },
-  "devDependencies": {}
+  }
 }

@@ -56,7 +56,7 @@ class Library {
       else if (this.icon.endsWith('s') && availableIcons.includes(this.icon.slice(0, -1))) this.icon = this.icon.slice(0, -1)
       else this.icon = 'database'
     }
-    if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book')) {
+    if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book' && this.mediaType !== 'video')) {
       this.mediaType = 'book'
     }
   }

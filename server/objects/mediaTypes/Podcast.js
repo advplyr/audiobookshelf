@@ -4,7 +4,7 @@ const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
-const { createNewSortInstance } = require('fast-sort')
+const { createNewSortInstance } = require('../../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -103,6 +103,15 @@ class Podcast {
   }
   get numTracks() {
     return this.episodes.length
+  }
+  get latestEpisodePublished() {
+    var largestPublishedAt = 0
+    this.episodes.forEach((ep) => {
+      if (ep.publishedAt && ep.publishedAt > largestPublishedAt) {
+        largestPublishedAt = ep.publishedAt
+      }
+    })
+    return largestPublishedAt
   }
 
   update(payload) {
@@ -215,18 +224,10 @@ class Podcast {
     this.episodes.push(pe)
   }
 
-  setEpisodeOrder(episodeIds) {
-    episodeIds.reverse() // episode Ids will already be in descending order
-    this.episodes = this.episodes.map(ep => {
-      var indexOf = episodeIds.findIndex(id => id === ep.id)
-      ep.index = indexOf + 1
-      return ep
-    })
-    this.episodes.sort((a, b) => b.index - a.index)
-  }
-
   reorderEpisodes() {
     var hasUpdates = false
+
+    // TODO: Sort by published date
     this.episodes = naturalSort(this.episodes).asc((ep) => ep.bestFilename)
     for (let i = 0; i < this.episodes.length; i++) {
       if (this.episodes[i].index !== (i + 1)) {
@@ -239,7 +240,11 @@ class Podcast {
   }
 
   removeEpisode(episodeId) {
-    this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
+    const episode = this.episodes.find(ep => ep.id === episodeId)
+    if (episode) {
+      this.episodes = this.episodes.filter(ep => ep.id !== episodeId)
+    }
+    return episode
   }
 
   getPlaybackTitle(episodeId) {

@@ -6,12 +6,12 @@
       </div>
     </template>
     <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
-      <form @submit.prevent="submitForm">
+      <form v-if="author" @submit.prevent="submitForm">
         <div class="flex">
           <div class="w-40 p-2">
             <div class="w-full h-45 relative">
               <covers-author-image :author="author" />
-              <div v-show="!processing" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
+              <div v-show="!processing && author.imagePath" class="absolute top-0 left-0 w-full h-full opacity-0 hover:opacity-100">
                 <span class="absolute top-2 right-2 material-icons text-error transform hover:scale-125 transition-transform cursor-pointer text-lg" @click="removeCover">delete</span>
               </div>
             </div>
@@ -43,13 +43,13 @@
 
 <script>
 export default {
-  props: {
-    value: Boolean,
-    author: {
-      type: Object,
-      default: () => {}
-    }
-  },
+  // props: {
+  //   value: Boolean,
+  //   author: {
+  //     type: Object,
+  //     default: () => {}
+  //   }
+  // },
   data() {
     return {
       authorCopy: {
@@ -73,11 +73,14 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.globals.showEditAuthorModal
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('globals/setShowEditAuthorModal', val)
       }
+    },
+    author() {
+      return this.$store.state.globals.selectedAuthor
     },
     authorId() {
       if (!this.author) return ''
@@ -136,12 +139,17 @@ export default {
       this.processing = false
     },
     async searchAuthor() {
-      if (!this.authorCopy.name) {
+      if (!this.authorCopy.name && !this.authorCopy.asin) {
         this.$toast.error('Must enter an author name')
         return
       }
       this.processing = true
-      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, { q: this.authorCopy.name }).catch((error) => {
+
+      const payload = {}
+      if (this.authorCopy.asin) payload.asin = this.authorCopy.asin
+      else payload.q = this.authorCopy.name
+
+      var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, payload).catch((error) => {
         console.error('Failed', error)
         return null
       })

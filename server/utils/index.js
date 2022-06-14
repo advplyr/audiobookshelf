@@ -64,6 +64,9 @@ module.exports.getId = (prepend = '') => {
 }
 
 function elapsedPretty(seconds) {
+  if (seconds < 60) {
+    return `${Math.floor(seconds)} sec`
+  }
   var minutes = Math.floor(seconds / 60)
   if (minutes < 70) {
     return `${minutes} min`
@@ -121,4 +124,9 @@ module.exports.copyValue = (val) => {
 
 module.exports.encodeUriPath = (path) => {
   return path.replace(/\\/g, '/').replace(/%/g, '%25').replace(/#/g, '%23')
+}
+
+module.exports.toNumber = (val, fallback = 0) => {
+  if (isNaN(val) || val === null) return fallback
+  return Number(val)
 }

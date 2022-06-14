@@ -1,42 +1,40 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail class="hidden md:block" />
-      <div class="flex-grow">
-        <app-book-shelf-toolbar page="podcast-search" />
-        <div class="w-full h-full overflow-y-auto p-12 relative">
-          <div class="w-full max-w-3xl mx-auto">
-            <form @submit.prevent="submit" class="flex">
-              <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
-              <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
-            </form>
-          </div>
+    <app-book-shelf-toolbar page="podcast-search" />
 
-          <div class="w-full max-w-3xl mx-auto py-4">
-            <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">No podcasts found</p>
-            <template v-for="podcast in results">
-              <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
-                <div class="w-24 min-w-24 h-24 bg-primary">
-                  <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
-                </div>
-                <div class="flex-grow pl-4 max-w-2xl">
-                  <a :href="podcast.pageUrl" class="text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
-                  <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
-                  <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
-                  <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} Episodes</p>
-                </div>
-              </div>
-            </template>
-          </div>
+    <div class="w-full h-full overflow-y-auto p-12 relative">
+      <div class="w-full max-w-4xl mx-auto flex">
+        <form @submit.prevent="submit" class="flex flex-grow">
+          <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
+          <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
+        </form>
+        <ui-file-input ref="fileInput" :accept="'.opml, .txt'" class="mx-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
+      </div>
 
-          <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-25 z-40">
-            <ui-loading-indicator />
+      <div class="w-full max-w-3xl mx-auto py-4">
+        <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">No podcasts found</p>
+        <template v-for="podcast in results">
+          <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
+            <div class="w-24 min-w-24 h-24 bg-primary">
+              <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
+            </div>
+            <div class="flex-grow pl-4 max-w-2xl">
+              <a :href="podcast.pageUrl" class="text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
+              <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
+              <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
+              <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} Episodes</p>
+            </div>
           </div>
-        </div>
+        </template>
+      </div>
+
+      <div v-show="processing" class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black bg-opacity-25 z-40">
+        <ui-loading-indicator />
       </div>
     </div>
 
     <modals-podcast-new-modal v-model="showNewPodcastModal" :podcast-data="selectedPodcast" :podcast-feed-data="selectedPodcastFeed" />
+    <modals-podcast-opml-feeds-modal v-model="showOPMLFeedsModal" :feeds="opmlFeeds" />
   </div>
 </template>
 
@@ -67,7 +65,9 @@ export default {
       processing: false,
       showNewPodcastModal: false,
       selectedPodcast: null,
-      selectedPodcastFeed: null
+      selectedPodcastFeed: null,
+      showOPMLFeedsModal: false,
+      opmlFeeds: []
     }
   },
   computed: {
@@ -76,6 +76,40 @@ export default {
     }
   },
   methods: {
+    async opmlFileUpload(file) {
+      this.processing = true
+      var txt = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          resolve(reader.result)
+        }
+        reader.readAsText(file)
+      })
+
+      if (this.$refs.fileInput) {
+        this.$refs.fileInput.reset()
+      }
+
+      if (!txt || !txt.includes('<opml') || !txt.includes('<outline ')) {
+        // Quick lazy check for valid OPML
+        this.$toast.error('Invalid OPML file <opml> tag not found OR an <outline> tag was not found')
+        this.processing = false
+        return
+      }
+
+      await this.$axios
+        .$post(`/api/podcasts/opml`, { opmlText: txt })
+        .then((data) => {
+          console.log(data)
+          this.opmlFeeds = data.feeds || []
+          this.showOPMLFeedsModal = true
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Failed to parse OPML file')
+        })
+      this.processing = false
+    },
     submit() {
       if (!this.searchInput) return
 

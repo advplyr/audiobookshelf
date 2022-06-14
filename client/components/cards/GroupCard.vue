@@ -109,19 +109,14 @@ export default {
     hasValidCovers() {
       var validCovers = this.bookItems.map((bookItem) => bookItem.media.coverPath)
       return !!validCovers.length
-    },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
     mouseoverCard() {
       this.isHovering = true
-      // if (this.$refs.groupcover) this.$refs.groupcover.setHover(true)
     },
     mouseleaveCard() {
       this.isHovering = false
-      // if (this.$refs.groupcover) this.$refs.groupcover.setHover(false)
     },
     clickCard() {
       this.$emit('click', this.group)

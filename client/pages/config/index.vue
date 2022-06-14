@@ -41,7 +41,7 @@
         <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
         <ui-tooltip :text="tooltips.bookshelfView">
           <p class="pl-4 text-lg">
-            Use alternative library bookshelf view
+            Use alternative bookshelf view
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -104,6 +104,16 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
+          <p class="pl-4 text-lg">
+            Scanner prefer Overdrive Media Markers for chapters
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
         <ui-tooltip :text="tooltips.scannerPreferOpfMetadata">
           <p class="pl-4 text-lg">
@@ -114,10 +124,34 @@
       </div>
 
       <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
+        <ui-tooltip :text="tooltips.scannerPreferMatchedMetadata">
+          <p class="pl-4 text-lg">
+            Scanner prefer matched metadata
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
         <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
         <ui-tooltip :text="tooltips.scannerDisableWatcher">
           <p class="pl-4 text-lg">
             Disable Watcher
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center mb-2 mt-8">
+        <h1 class="text-xl">Experimental Feature Settings</h1>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
+        <ui-tooltip :text="tooltips.enableEReader">
+          <p class="pl-4 text-lg">
+            Enable e-reader for all users
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -169,10 +203,12 @@
         <div>
           <div class="flex items-center">
             <ui-toggle-switch v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="experimentalFeaturesTooltip">
+            <ui-tooltip :text="tooltips.experimentalFeatures">
               <p class="pl-4 text-lg">
                 Experimental Features
-                <span class="material-icons icon-text">info_outlined</span>
+                <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
+                  <span class="material-icons icon-text">info_outlined</span>
+                </a>
               </p>
             </ui-tooltip>
           </div>
@@ -207,16 +243,20 @@ export default {
       isPurgingCache: false,
       newServerSettings: {},
       tooltips: {
+        experimentalFeatures: 'Features in development that could use your feedback and help testing. Click to open github discussion.',
         scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
         scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
+        scannerPreferMatchedMetadata: 'Matched data will overide book details when using Quick Match',
         scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
-        bookshelfView: 'Alternative bookshelf view that shows title & author under book covers',
+        bookshelfView: 'Alternative view without wooden bookshelf',
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
-        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
+        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
+        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle below just for you)',
+        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically'
       },
       showConfirmPurgeCache: false
     }
@@ -229,9 +269,6 @@ export default {
     }
   },
   computed: {
-    experimentalFeaturesTooltip() {
-      return 'Features in development that could use your feedback and help testing.'
-    },
     serverSettings() {
       return this.$store.state.serverSettings
     },

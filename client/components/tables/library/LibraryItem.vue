@@ -73,10 +73,28 @@ export default {
       this.$emit('edit', this.library)
     },
     scan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     },
     forceScan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
+      if (confirm(`Force Re-Scan will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed to be used for the library item.\n\nAre you sure you want to force re-scan?`)) {
+        this.$store
+          .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
+          .then(() => {
+            this.$toast.success('Library scan started')
+          })
+          .catch((error) => {
+            console.error('Failed to start scan', error)
+            this.$toast.error('Failed to start scan')
+          })
+      }
     },
     deleteClick() {
       if (this.isMain) return

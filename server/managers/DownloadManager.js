@@ -242,13 +242,6 @@ class DownloadManager {
     if (shouldIncludeCover) {
       var _cover = audiobook.book.coverFullPath.replace(/\\/g, '/')
 
-      // Supporting old local file prefix
-      var bookCoverPath = audiobook.book.cover ? audiobook.book.cover.replace(/\\/g, '/') : null
-      if (!_cover && bookCoverPath && bookCoverPath.startsWith('/local')) {
-        _cover = Path.posix.join(global.AudiobookPath, _cover.replace('/local', ''))
-        Logger.debug('Local cover url', _cover)
-      }
-
       ffmpegInputs.push({
         input: _cover,
         options: ['-f image2pipe']

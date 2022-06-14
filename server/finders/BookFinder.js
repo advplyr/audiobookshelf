@@ -3,6 +3,7 @@ const LibGen = require('../providers/LibGen')
 const GoogleBooks = require('../providers/GoogleBooks')
 const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
+const Audnexus = require('../providers/Audnexus')
 const Logger = require('../Logger')
 const { levenshteinDistance } = require('../utils/index')
 
@@ -13,6 +14,7 @@ class BookFinder {
     this.googleBooks = new GoogleBooks()
     this.audible = new Audible()
     this.iTunesApi = new iTunes()
+    this.audnexus = new Audnexus()
 
     this.verbose = false
   }
@@ -164,14 +166,14 @@ class BookFinder {
     return this.iTunesApi.searchAudiobooks(title)
   }
 
-  async getAudibleResults(title, author) {
-    var books = await this.audible.search(title, author);
+  async getAudibleResults(title, author, asin) {
+    var books = await this.audible.search(title, author, asin);
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
     return books
   }
 
-  async search(provider, title, author, options = {}) {
+  async search(provider, title, author, isbn, asin, options = {}) {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
@@ -180,7 +182,7 @@ class BookFinder {
     if (provider === 'google') {
       return this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
-      return this.getAudibleResults(title, author)
+      return this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
       return this.getiTunesAudiobooksResults(title, author)
     } else if (provider === 'libgen') {
@@ -225,6 +227,10 @@ class BookFinder {
       }
     })
     return covers
+  }
+
+  findChapters(asin) {
+    return this.audnexus.getChaptersByASIN(asin)
   }
 }
 module.exports = BookFinder

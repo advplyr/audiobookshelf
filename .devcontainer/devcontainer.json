@@ -1,0 +1,12 @@
+{
+    "build": { "dockerfile": "Dockerfile" },
+    "mounts": [
+        "source=abs-node-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+    ],
+    "features": {
+        "fish": "latest"
+	},
+	"extensions": [
+		"eamodio.gitlens"
+	]
+}

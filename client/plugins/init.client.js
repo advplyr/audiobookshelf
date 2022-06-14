@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import Path from 'path'
 import vClickOutside from 'v-click-outside'
 import { formatDistance, format, addDays, isDate } from 'date-fns'
 
@@ -23,6 +24,11 @@ Vue.prototype.$addDaysToToday = (daysToAdd) => {
   if (!date || !isDate(date)) return null
   return date
 }
+Vue.prototype.$addDaysToDate = (jsdate, daysToAdd) => {
+  var date = addDays(jsdate, daysToAdd)
+  if (!date || !isDate(date)) return null
+  return date
+}
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
@@ -35,20 +41,24 @@ Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
-Vue.prototype.$elapsedPretty = (seconds) => {
+Vue.prototype.$elapsedPretty = (seconds, useFullNames = false) => {
+  if (seconds < 60) {
+    return `${Math.floor(seconds)} sec${useFullNames ? 'onds' : ''}`
+  }
   var minutes = Math.floor(seconds / 60)
   if (minutes < 70) {
-    return `${minutes} min`
+    return `${minutes} min${useFullNames ? `ute${minutes === 1 ? '' : 's'}` : ''}`
   }
   var hours = Math.floor(minutes / 60)
   minutes -= hours * 60
   if (!minutes) {
-    return `${hours} hr`
+    return `${hours} ${useFullNames ? 'hours' : 'hr'}`
   }
-  return `${hours} hr ${minutes} min`
+  return `${hours} ${useFullNames ? `hour${hours === 1 ? '' : 's'}` : 'hr'} ${minutes} ${useFullNames ? `minute${minutes === 1 ? '' : 's'}` : 'min'}`
 }
 
 Vue.prototype.$secondsToTimestamp = (seconds) => {
+  if (!seconds) return '0:00'
   var _seconds = seconds
   var _minutes = Math.floor(seconds / 60)
   _seconds -= _minutes * 60
@@ -106,22 +116,40 @@ Vue.prototype.$calculateTextSize = (text, styles = {}) => {
   }
 }
 
-Vue.prototype.$sanitizeFilename = (input, replacement = '') => {
+Vue.prototype.$sanitizeFilename = (input, colonReplacement = ' - ') => {
   if (typeof input !== 'string') {
     return false
   }
-  var illegalRe = /[\/\?<>\\:\*\|"]/g;
-  var controlRe = /[\x00-\x1f\x80-\x9f]/g;
-  var reservedRe = /^\.+$/;
-  var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
-  var windowsTrailingRe = /[\. ]+$/;
+
+  // Max is actually 255-260 for windows but this leaves padding incase ext wasnt put on yet
+  const MAX_FILENAME_LEN = 240
+
+  var replacement = ''
+  var illegalRe = /[\/\?<>\\:\*\|"]/g
+  var controlRe = /[\x00-\x1f\x80-\x9f]/g
+  var reservedRe = /^\.+$/
+  var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i
+  var windowsTrailingRe = /[\. ]+$/
+  var lineBreaks = /[\n\r]/g
 
   var sanitized = input
+    .replace(':', colonReplacement) // Replace first occurrence of a colon
     .replace(illegalRe, replacement)
     .replace(controlRe, replacement)
     .replace(reservedRe, replacement)
+    .replace(lineBreaks, replacement)
     .replace(windowsReservedRe, replacement)
-    .replace(windowsTrailingRe, replacement);
+    .replace(windowsTrailingRe, replacement)
+
+
+  if (sanitized.length > MAX_FILENAME_LEN) {
+    var lenToRemove = sanitized.length - MAX_FILENAME_LEN
+    var ext = Path.extname(sanitized)
+    var basename = Path.basename(sanitized, ext)
+    basename = basename.slice(0, basename.length - lenToRemove)
+    sanitized = basename + ext
+  }
+
   return sanitized
 }
 
@@ -153,17 +181,26 @@ Vue.prototype.$sanitizeSlug = (str) => {
 Vue.prototype.$copyToClipboard = (str, ctx) => {
   return new Promise((resolve) => {
     if (!navigator.clipboard) {
-      console.warn('Clipboard not supported')
-      return resolve(false)
+      navigator.clipboard.writeText(str).then(() => {
+        if (ctx) ctx.$toast.success('Copied to clipboard')
+        resolve(true)
+      }, (err) => {
+        console.error('Clipboard copy failed', str, err)
+        resolve(false)
+      })
+    } else {
+      const el = document.createElement('textarea')
+      el.value = str
+      el.setAttribute('readonly', '')
+      el.style.position = 'absolute'
+      el.style.left = '-9999px'
+      document.body.appendChild(el)
+      el.select()
+      document.execCommand('copy')
+      document.body.removeChild(el)
+
+      if (ctx) ctx.$toast.success('Copied to clipboard')
     }
-    navigator.clipboard.writeText(str).then(() => {
-      console.log('Clipboard copy success', str)
-      ctx.$toast.success('Copied to clipboard')
-      resolve(true)
-    }, (err) => {
-      console.error('Clipboard copy failed', str, err)
-      resolve(false)
-    })
   })
 }
 

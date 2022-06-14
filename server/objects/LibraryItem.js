@@ -6,6 +6,7 @@ const abmetadataGenerator = require('../utils/abmetadataGenerator')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
+const Video = require('./mediaTypes/Video')
 const { areEquivalent, copyValue, getId } = require('../utils/index')
 
 class LibraryItem {
@@ -67,11 +68,12 @@ class LibraryItem {
     this.mediaType = libraryItem.mediaType
     if (this.mediaType === 'book') {
       this.media = new Book(libraryItem.media)
-      this.media.libraryItemId = this.id
     } else if (this.mediaType === 'podcast') {
       this.media = new Podcast(libraryItem.media)
-      this.media.libraryItemId = this.id
+    } else if (this.mediaType === 'video') {
+      this.media = new Video(libraryItem.media)
     }
+    this.media.libraryItemId = this.id
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
   }
@@ -175,16 +177,15 @@ class LibraryItem {
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {
     this.id = getId('li')
-    if (libraryMediaType === 'podcast') {
-      this.mediaType = 'podcast'
+    this.mediaType = libraryMediaType
+    if (libraryMediaType === 'video') {
+      this.media = new Video()
+    } else if (libraryMediaType === 'podcast') {
       this.media = new Podcast()
-      this.media.libraryItemId = this.id
     } else {
-      this.mediaType = 'book'
       this.media = new Book()
-      this.media.libraryItemId = this.id
     }
-
+    this.media.libraryItemId = this.id
 
     for (const key in payload) {
       if (key === 'libraryFiles') {
@@ -288,7 +289,6 @@ class LibraryItem {
     // FileMetadata keys
     ['filename', 'ext', 'mtimeMs', 'ctimeMs', 'birthtimeMs', 'size'].forEach((key) => {
       if (existingFile.metadata[key] !== fileFound.metadata[key]) {
-
         // Add modified flag on file data object if exists and was changed
         if (key === 'mtimeMs' && existingFile.metadata[key]) {
           fileFound.metadata.wasModified = true
@@ -348,7 +348,7 @@ class LibraryItem {
       var fileFoundCheck = this.checkFileFound(lf, true)
       if (fileFoundCheck === null) {
         newLibraryFiles.push(lf)
-      } else if (fileFoundCheck) {
+      } else if (fileFoundCheck && lf.metadata.format !== 'abs') { // Ignore abs file updates
         hasUpdated = true
         existingLibraryFiles.push(lf)
       } else {
@@ -461,6 +461,8 @@ class LibraryItem {
 
   // Saves metadata.abs file
   async saveMetadata() {
+    if (this.mediaType === 'video') return
+
     if (this.isSavingMetadata) return
     this.isSavingMetadata = true
 
@@ -479,6 +481,17 @@ class LibraryItem {
       else Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataPath}"`)
       return success
     })
+  }
+
+  removeLibraryFile(ino) {
+    if (!ino) return false
+    var libraryFile = this.libraryFiles.find(lf => lf.ino === ino)
+    if (libraryFile) {
+      this.libraryFiles = this.libraryFiles.filter(lf => lf.ino !== ino)
+      this.updatedAt = Date.now()
+      return true
+    }
+    return false
   }
 }
 module.exports = LibraryItem

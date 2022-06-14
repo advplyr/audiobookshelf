@@ -1,18 +1,19 @@
 <template>
   <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
-    <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
+    <div id="videoDock" />
+    <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </nuxt-link>
-    <div class="flex items-start pl-24 mb-6 md:mb-0">
+    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : 'pl-24'">
       <div>
         <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
           {{ title }}
         </nuxt-link>
-        <div class="text-gray-400 flex items-center">
+        <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
           <p v-if="podcastAuthor">{{ podcastAuthor }}</p>
           <p v-else-if="authors.length" class="pl-1.5 text-sm sm:text-base">
-            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/library/${libraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
           <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
         </div>
@@ -25,7 +26,7 @@
       <div class="flex-grow" />
       <span class="material-icons px-2 py-1 md:p-4 cursor-pointer" @click="closePlayer">close</span>
     </div>
-    <audio-player
+    <player-ui
       ref="audioPlayer"
       :chapters="chapters"
       :paused="!isPlaying"
@@ -70,13 +71,11 @@ export default {
       sleepTimerRemaining: 0,
       sleepTimer: null,
       displayTitle: null,
-      initialPlaybackRate: 1
+      initialPlaybackRate: 1,
+      syncFailedToast: null
     }
   },
   computed: {
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     coverAspectRatio() {
       return this.$store.getters['getServerSetting']('coverAspectRatio')
     },
@@ -148,6 +147,7 @@ export default {
     setPlaying(isPlaying) {
       this.isPlaying = isPlaying
       this.$store.commit('setIsPlaying', isPlaying)
+      this.updateMediaSessionPlaybackState()
     },
     setSleepTimer(seconds) {
       this.sleepTimerSet = true
@@ -240,6 +240,71 @@ export default {
       this.playerHandler.closePlayer()
       this.$store.commit('setMediaPlaying', null)
     },
+    mediaSessionPlay() {
+      console.log('Media session play')
+      this.playerHandler.play()
+    },
+    mediaSessionPause() {
+      console.log('Media session pause')
+      this.playerHandler.pause()
+    },
+    mediaSessionStop() {
+      console.log('Media session stop')
+      this.playerHandler.pause()
+    },
+    mediaSessionSeekBackward() {
+      console.log('Media session seek backward')
+      this.playerHandler.jumpBackward()
+    },
+    mediaSessionSeekForward() {
+      console.log('Media session seek forward')
+      this.playerHandler.jumpForward()
+    },
+    mediaSessionSeekTo(e) {
+      console.log('Media session seek to', e)
+      if (e.seekTime !== null && !isNaN(e.seekTime)) {
+        this.playerHandler.seek(e.seekTime)
+      }
+    },
+    updateMediaSessionPlaybackState() {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
+      }
+    },
+    setMediaSession() {
+      if (!this.streamLibraryItem) {
+        console.error('setMediaSession: No library item set')
+        return
+      }
+
+      if ('mediaSession' in navigator) {
+        var coverImageSrc = this.$store.getters['globals/getLibraryItemCoverSrc'](this.streamLibraryItem, '/Logo.png')
+        const artwork = [
+          {
+            src: coverImageSrc
+          }
+        ]
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: this.title,
+          artist: this.playerHandler.displayAuthor || this.mediaMetadata.authorName || 'Unknown',
+          album: this.mediaMetadata.seriesName || '',
+          artwork
+        })
+        console.log('Set media session metadata', navigator.mediaSession.metadata)
+
+        navigator.mediaSession.setActionHandler('play', this.mediaSessionPlay)
+        navigator.mediaSession.setActionHandler('pause', this.mediaSessionPause)
+        navigator.mediaSession.setActionHandler('stop', this.mediaSessionStop)
+        navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
+        navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
+        navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
+        // navigator.mediaSession.setActionHandler('previoustrack')
+        // navigator.mediaSession.setActionHandler('nexttrack')
+      } else {
+        console.warn('Media session not available')
+      }
+    },
     streamProgress(data) {
       if (!data.numSegments) return
       var chunks = data.chunks
@@ -312,11 +377,14 @@ export default {
         libraryItem,
         episodeId
       })
-
       this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate)
     },
     pauseItem() {
       this.playerHandler.pause()
+    },
+    showFailedProgressSyncs() {
+      if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
+      this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
     }
   },
   mounted() {

@@ -1,7 +1,7 @@
 const Logger = require('../Logger')
 const User = require('../objects/user/User')
 
-const { getId } = require('../utils/index')
+const { getId, toNumber } = require('../utils/index')
 
 class UserController {
   constructor() { }
@@ -142,8 +142,24 @@ class UserController {
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     }
+
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
-    res.json(listeningSessions.slice(0, 10))
+
+    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
+    const page = toNumber(req.query.page, 0)
+
+    const start = page * itemsPerPage
+    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+
+    const payload = {
+      total: listeningSessions.length,
+      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+
+    res.json(payload)
   }
 
   // GET: api/users/:id/listening-stats

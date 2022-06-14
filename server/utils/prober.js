@@ -1,5 +1,5 @@
 const ffprobe = require('node-ffprobe')
-const AudioProbeData = require('../scanner/AudioProbeData')
+const MediaProbeData = require('../scanner/MediaProbeData')
 
 const Logger = require('../Logger')
 
@@ -70,11 +70,6 @@ function tryGrabChannelLayout(stream) {
   return String(layout).split('(').shift()
 }
 
-function tryGrabTag(stream, tag) {
-  if (!stream.tags) return null
-  return stream.tags[tag] || stream.tags[tag.toUpperCase()] || null
-}
-
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
@@ -93,8 +88,8 @@ function parseMediaStreamInfo(stream, all_streams, total_bit_rate) {
     codec_time_base: stream.codec_time_base || null,
     time_base: stream.time_base || null,
     bit_rate: tryGrabBitRate(stream, all_streams, total_bit_rate),
-    language: tryGrabTag(stream, 'language'),
-    title: tryGrabTag(stream, 'title')
+    language: tryGrabTags(stream, 'language'),
+    title: tryGrabTags(stream, 'title')
   }
   if (stream.tags) info.tags = stream.tags
 
@@ -182,14 +177,14 @@ function parseTags(format, verbose) {
     file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
-    file_tag_series: tryGrabTag(format, 'series'),
-    file_tag_seriespart: tryGrabTag(format, 'series-part'),
-    file_tag_isbn: tryGrabTag(format, 'isbn'),
+    file_tag_series: tryGrabTags(format, 'series', 'show'),
+    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id'),
+    file_tag_isbn: tryGrabTags(format, 'isbn'),
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
-    file_tag_asin: tryGrabTag(format, 'asin'),
+    file_tag_asin: tryGrabTags(format, 'asin'),
 
     // Not sure if these are actually used yet or not
-    file_tag_creation_time: tryGrabTag(format, 'creation_time'),
+    file_tag_creation_time: tryGrabTags(format, 'creation_time'),
     file_tag_wwwaudiofile: tryGrabTags(format, 'wwwaudiofile', 'woaf', 'waf'),
     file_tag_contentgroup: tryGrabTags(format, 'contentgroup', 'tit1', 'tt1'),
     file_tag_releasetime: tryGrabTags(format, 'releasetime', 'tdrl'),
@@ -197,6 +192,7 @@ function parseTags(format, verbose) {
     file_tag_movement: tryGrabTags(format, 'movement', 'mvin'),
     file_tag_genre1: tryGrabTags(format, 'tmp_genre1', 'genre1'),
     file_tag_genre2: tryGrabTags(format, 'tmp_genre2', 'genre2'),
+    file_tag_overdrive_media_marker: tryGrabTags(format, 'OverDrive MediaMarkers'),
   }
   for (const key in tags) {
     if (!tags[key]) {
@@ -274,7 +270,7 @@ function parseProbeData(data, verbose = false) {
   }
 }
 
-// Updated probe returns AudioProbeData object
+// Updated probe returns MediaProbeData object
 function probe(filepath, verbose = false) {
   if (process.env.FFPROBE_PATH) {
     ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
@@ -283,12 +279,12 @@ function probe(filepath, verbose = false) {
   return ffprobe(filepath)
     .then(raw => {
       var rawProbeData = parseProbeData(raw, verbose)
-      if (!rawProbeData || !rawProbeData.audio_stream) {
+      if (!rawProbeData || (!rawProbeData.audio_stream && !rawProbeData.video_stream)) {
         return {
-          error: rawProbeData ? 'Invalid audio file: no audio streams found' : 'Probe Failed'
+          error: rawProbeData ? 'Invalid media file: no audio or video streams found' : 'Probe Failed'
         }
       } else {
-        var probeData = new AudioProbeData()
+        var probeData = new MediaProbeData()
         probeData.setData(rawProbeData)
         return probeData
       }

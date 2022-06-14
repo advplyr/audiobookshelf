@@ -33,20 +33,20 @@ export default {
       showMenu: false,
       items: [
         {
-          text: 'Current',
-          value: 'index'
+          text: 'Pub Date',
+          value: 'publishedAt'
         },
         {
           text: 'Title',
           value: 'title'
         },
         {
-          text: 'Episode',
-          value: 'episode'
+          text: 'Season',
+          value: 'season'
         },
         {
-          text: 'Pub Date',
-          value: 'publishedAt'
+          text: 'Episode',
+          value: 'episode'
         }
       ]
     }

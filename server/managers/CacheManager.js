@@ -1,6 +1,7 @@
 const Path = require('path')
 const fs = require('fs-extra')
 const stream = require('stream')
+const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const { resizeImage } = require('../utils/ffmpegHelpers')
 
@@ -9,6 +10,34 @@ class CacheManager {
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
+
+    this.cachePathsExist = false
+  }
+
+  async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
+    if (this.cachePathsExist) return
+
+    var pathsCreated = false
+    if (!(await fs.pathExists(this.CachePath))) {
+      await fs.mkdir(this.CachePath)
+      pathsCreated = true
+    }
+
+    if (!(await fs.pathExists(this.CoverCachePath))) {
+      await fs.mkdir(this.CoverCachePath)
+      pathsCreated = true
+    }
+
+    if (!(await fs.pathExists(this.ImageCachePath))) {
+      await fs.mkdir(this.ImageCachePath)
+      pathsCreated = true
+    }
+
+    if (pathsCreated) {
+      await filePerms.setDefault(this.CachePath)
+    }
+
+    this.cachePathsExist = true
   }
 
   async handleCoverCache(res, libraryItem, options = {}) {
@@ -33,15 +62,15 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    // Write cache
-    await fs.ensureDir(this.CoverCachePath)
-
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
       return res.sendStatus(404)
     }
 
     let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(400)
+
+    // Set owner and permissions of cache image
+    await filePerms.setDefault(path)
 
     var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)
@@ -56,8 +85,6 @@ class CacheManager {
   }
 
   async purgeEntityCache(entityId, cachePath) {
-    // If purgeAll has been called... The cover cache directory no longer exists
-    await fs.ensureDir(cachePath)
     return Promise.all((await fs.readdir(cachePath)).reduce((promises, file) => {
       if (file.startsWith(entityId)) {
         Logger.debug(`[CacheManager] Going to purge ${file}`);
@@ -84,6 +111,7 @@ class CacheManager {
         Logger.error(`[CacheManager] Failed to remove cache dir "${this.CachePath}"`, error)
       })
     }
+    await this.ensureCachePaths()
   }
 
   async handleAuthorCache(res, author, options = {}) {
@@ -108,11 +136,11 @@ class CacheManager {
       return ps.pipe(res)
     }
 
-    // Write cache
-    await fs.ensureDir(this.ImageCachePath)
-
     let writtenFile = await resizeImage(author.imagePath, path, width, height)
     if (!writtenFile) return res.sendStatus(400)
+
+    // Set owner and permissions of cache image
+    await filePerms.setDefault(path)
 
     var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)

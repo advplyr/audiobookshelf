@@ -1,6 +1,6 @@
 const Logger = require('../../Logger')
 const { areEquivalent, copyValue } = require('../../utils/index')
-const parseNameString = require('../../utils/parseNameString')
+const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
     this.title = null
@@ -194,7 +194,7 @@ class BookMetadata {
   setData(scanMediaData = {}) {
     this.title = scanMediaData.title || null
     this.subtitle = scanMediaData.subtitle || null
-    this.narrators = []
+    this.narrators = this.parseNarratorsTag(scanMediaData.narrators)
     this.publishedYear = scanMediaData.publishedYear || null
     this.description = scanMediaData.description || null
     this.isbn = scanMediaData.isbn || null
@@ -262,6 +262,10 @@ class BookMetadata {
       {
         tag: 'tagASIN',
         key: 'asin'
+      },
+      {
+        tag: 'tagOverdriveMediaMarker',
+        key: 'overdriveMediaMarker'
       }
     ]
 

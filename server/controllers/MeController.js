@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const { isObject } = require('../utils/index')
+const { isObject, toNumber } = require('../utils/index')
 
 class MeController {
   constructor() { }
@@ -7,13 +7,37 @@ class MeController {
   // GET: api/me/listening-sessions
   async getListeningSessions(req, res) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
-    res.json(listeningSessions.slice(0, 10))
+
+    const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
+    const page = toNumber(req.query.page, 0)
+
+    const start = page * itemsPerPage
+    const sessions = listeningSessions.slice(start, start + itemsPerPage)
+
+    const payload = {
+      total: listeningSessions.length,
+      numPages: Math.ceil(listeningSessions.length / itemsPerPage),
+      page,
+      itemsPerPage,
+      sessions
+    }
+
+    res.json(payload)
   }
 
   // GET: api/me/listening-stats
   async getListeningStats(req, res) {
     var listeningStats = await this.getUserListeningStatsHelpers(req.user.id)
     res.json(listeningStats)
+  }
+
+  // GET: api/me/progress/:id/:episodeId?
+  async getMediaProgress(req, res) {
+    const mediaProgress = req.user.getMediaProgress(req.id, req.episodeId || null)
+    if (!mediaProgress) {
+      return res.sendStatus(404)
+    }
+    res.json(mediaProgress)
   }
 
   // DELETE: api/me/progress/:id

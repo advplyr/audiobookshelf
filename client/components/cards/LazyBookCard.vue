@@ -6,11 +6,11 @@
     </div>
 
     <!-- Alternative bookshelf title/author/sort -->
-    <div v-if="isAlternativeBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
+    <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         {{ displayTitle }}
       </p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayAuthor || '&nbsp;' }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
 
@@ -52,7 +52,7 @@
         </div>
       </div>
 
-      <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-50 top-0 right-0" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+      <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
         <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
       </div>
 
@@ -61,7 +61,7 @@
       </div>
 
       <!-- More Menu Icon -->
-      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-100" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
@@ -146,6 +146,9 @@ export default {
   computed: {
     showExperimentalFeatures() {
       return this.store.state.showExperimentalFeatures
+    },
+    enableEReader() {
+      return this.store.getters['getServerSetting']('enableEReader')
     },
     _libraryItem() {
       return this.libraryItem || {}
@@ -247,8 +250,11 @@ export default {
       }
       return this.title
     },
-    displayAuthor() {
+    displayLineTwo() {
       if (this.isPodcast) return this.author
+      if (this.isAuthorBookshelfView) {
+        return this.mediaMetadata.publishedYear || ''
+      }
       if (this.orderBy === 'media.metadata.authorNameLF') return this.authorLF
       return this.author
     },
@@ -284,13 +290,13 @@ export default {
       return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
     },
     showReadButton() {
-      return !this.isSelectionMode && this.showExperimentalFeatures && !this.showPlayButton && this.hasEbook
+      return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.showExperimentalFeatures && this.hasEbook
+      return !this.isSelectionMode && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
     },
     isMissing() {
       return this._libraryItem.isMissing
@@ -344,7 +350,7 @@ export default {
       return this.store.getters['user/getUserCanDownload']
     },
     userIsAdminOrUp() {
-      return this.$store.getters['user/getIsAdminOrUp']
+      return this.store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
       if (this.recentEpisode) {
@@ -424,8 +430,12 @@ export default {
       var constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.TITLES
     },
+    isAuthorBookshelfView() {
+      var constants = this.$constants || this.$nuxt.$constants
+      return this.bookshelfView === constants.BookshelfView.AUTHOR
+    },
     titleDisplayBottomOffset() {
-      if (!this.isAlternativeBookshelfView) return 0
+      if (!this.isAlternativeBookshelfView && !this.isAuthorBookshelfView) return 0
       else if (!this.displaySortLine) return 3 * this.sizeMultiplier
       return 4.25 * this.sizeMultiplier
     }
@@ -435,7 +445,34 @@ export default {
       this.isSelectionMode = val
       if (!val) this.selected = false
     },
-    setEntity(libraryItem) {
+    setEntity(_libraryItem) {
+      var libraryItem = _libraryItem
+
+      // this code block is only necessary when showing a selected series with sequence #
+      //   it will update the selected series so we get realtime updates for series sequence changes
+      if (this.series) {
+        // i know.. but the libraryItem passed to this func cannot be modified so we need to create a copy
+        libraryItem = {
+          ..._libraryItem,
+          media: {
+            ..._libraryItem.media,
+            metadata: {
+              ..._libraryItem.media.metadata
+            }
+          }
+        }
+        var mediaMetadata = libraryItem.media.metadata
+        if (mediaMetadata.series) {
+          var newSeries = mediaMetadata.series.find((se) => se.id === this.series.id)
+          if (newSeries) {
+            // update selected series
+            libraryItem.media.metadata.series = newSeries
+            this.libraryItem = libraryItem
+            return
+          }
+        }
+      }
+
       this.libraryItem = libraryItem
     },
     clickCard(e) {

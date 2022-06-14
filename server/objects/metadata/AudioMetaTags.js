@@ -20,6 +20,7 @@ class AudioMetaTags {
     this.tagIsbn = null
     this.tagLanguage = null
     this.tagASIN = null
+    this.tagOverdriveMediaMarker = null
 
     if (metadata) {
       this.construct(metadata)
@@ -58,6 +59,7 @@ class AudioMetaTags {
     this.tagIsbn = metadata.tagIsbn || null
     this.tagLanguage = metadata.tagLanguage || null
     this.tagASIN = metadata.tagASIN || null
+    this.tagOverdriveMediaMarker = metadata.tagOverdriveMediaMarker || null
   }
 
   // Data parsed in prober.js
@@ -82,6 +84,7 @@ class AudioMetaTags {
     this.tagIsbn = payload.file_tag_isbn || null
     this.tagLanguage = payload.file_tag_language || null
     this.tagASIN = payload.file_tag_asin || null
+    this.tagOverdriveMediaMarker = payload.file_tag_overdrive_media_marker || null
   }
 
   updateData(payload) {
@@ -105,7 +108,8 @@ class AudioMetaTags {
       tagEncodedBy: payload.file_tag_encodedby || null,
       tagIsbn: payload.file_tag_isbn || null,
       tagLanguage: payload.file_tag_language || null,
-      tagASIN: payload.file_tag_asin || null
+      tagASIN: payload.file_tag_asin || null,
+      tagOverdriveMediaMarker: payload.file_tag_overdrive_media_marker || null,
     }
 
     var hasUpdates = false

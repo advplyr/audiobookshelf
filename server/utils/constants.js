@@ -45,3 +45,7 @@ module.exports.AudioMimeType = {
   WMA: 'audio/x-ms-wma',
   AIFF: 'audio/x-aiff'
 }
+
+module.exports.VideoMimeType = {
+  MP4: 'video/mp4'
+}

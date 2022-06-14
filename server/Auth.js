@@ -17,14 +17,6 @@ class Auth {
     return this.db.users
   }
 
-  init() {
-    var root = this.users.find(u => u.type === 'root')
-    if (!root) {
-      Logger.fatal('No Root User', this.users)
-      throw new Error('No Root User')
-    }
-  }
-
   cors(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
     res.header("Access-Control-Allow-Methods", 'GET, POST, PATCH, PUT, DELETE, OPTIONS')
@@ -104,14 +96,14 @@ class Auth {
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON()
+      serverSettings: this.db.serverSettings.toJSON(),
+      Source: global.Source
     }
   }
 
   async login(req, res) {
     var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
-    Logger.debug('Check Auth', username, !!password)
 
     var user = this.users.find(u => u.username.toLowerCase() === username)
 

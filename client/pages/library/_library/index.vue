@@ -1,12 +1,7 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail class="hidden md:block" />
-      <div class="flex-grow">
-        <app-book-shelf-toolbar is-home />
-        <app-book-shelf-categorized />
-      </div>
-    </div>
+    <app-book-shelf-toolbar is-home />
+    <app-book-shelf-categorized />
   </div>
 </template>
 

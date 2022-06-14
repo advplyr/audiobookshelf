@@ -27,7 +27,20 @@ class Audnexus {
     })
   }
 
-  async findAuthorByName(name, maxLevenshtein = 2) {
+  async findAuthorByASIN(asin) {
+    var author = await this.authorRequest(asin)
+    if (!author) {
+      return null
+    }
+    return {
+      asin: author.asin,
+      description: author.description,
+      image: author.image,
+      name: author.name
+    }
+  }
+
+  async findAuthorByName(name, maxLevenshtein = 3) {
     Logger.debug(`[Audnexus] Looking up author by name ${name}`)
     var asins = await this.authorASINsRequest(name)
     var matchingAsin = asins.find(obj => levenshteinDistance(obj.name, name) <= maxLevenshtein)
@@ -44,6 +57,16 @@ class Audnexus {
       image: author.image,
       name: author.name
     }
+  }
+
+  async getChaptersByASIN(asin) {
+    Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}`)
+    return axios.get(`${this.baseUrl}/books/${asin}/chapters`).then((res) => {
+      return res.data
+    }).catch((error) => {
+      Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}`, error)
+      return null
+    })
   }
 }
 module.exports = Audnexus

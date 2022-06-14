@@ -1,6 +1,6 @@
 const Logger = require('../Logger')
 const { xmlToJSON } = require('./index')
-const { stripHtml } = require('string-strip-html')
+const htmlSanitizer = require('../utils/htmlSanitizer')
 
 function extractFirstArrayItem(json, key) {
   if (!json[key] || !json[key].length) return null
@@ -55,8 +55,9 @@ function extractPodcastMetadata(channel) {
   }
 
   if (channel['description']) {
-    metadata.description = extractFirstArrayItem(channel, 'description')
-    metadata.descriptionPlain = stripHtml(metadata.description || '').result
+    const rawDescription = extractFirstArrayItem(channel, 'description') || ''
+    metadata.description = htmlSanitizer.sanitize(rawDescription)
+    metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
   var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link']
@@ -80,12 +81,20 @@ function extractEpisodeData(item) {
     }
   }
 
-  if (item['description']) {
-    episode.description = extractFirstArrayItem(item, 'description')
-    episode.descriptionPlain = stripHtml(episode.description || '').result
+  // Full description with html
+  if (item['content:encoded']) {
+    const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()
+    episode.description = htmlSanitizer.sanitize(rawDescription)
   }
 
-  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  // Supposed to be the plaintext description but not always followed
+  if (item['description']) {
+    const rawDescription = extractFirstArrayItem(item, 'description') || ''
+    if (!episode.description) episode.description = htmlSanitizer.sanitize(rawDescription)
+    episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
+  }
+
+  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     var cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)
@@ -101,6 +110,7 @@ function cleanEpisodeData(data) {
     descriptionPlain: data.descriptionPlain || '',
     pubDate: data.pubDate || '',
     episodeType: data.episodeType || '',
+    season: data.season || '',
     episode: data.episode || '',
     author: data.author || '',
     duration: data.duration || '',
@@ -121,7 +131,7 @@ function extractPodcastEpisodes(items) {
   return episodes
 }
 
-function cleanPodcastJson(rssJson) {
+function cleanPodcastJson(rssJson, excludeEpisodeMetadata) {
   if (!rssJson.channel || !rssJson.channel.length) {
     Logger.error(`[podcastUtil] Invalid podcast no channel object`)
     return null
@@ -132,13 +142,17 @@ function cleanPodcastJson(rssJson) {
     return null
   }
   var podcast = {
-    metadata: extractPodcastMetadata(channel),
-    episodes: extractPodcastEpisodes(channel.item)
+    metadata: extractPodcastMetadata(channel)
+  }
+  if (!excludeEpisodeMetadata) {
+    podcast.episodes = extractPodcastEpisodes(channel.item)
+  } else {
+    podcast.numEpisodes = channel.item.length
   }
   return podcast
 }
 
-module.exports.parsePodcastRssFeedXml = async (xml, includeRaw = false) => {
+module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = false, includeRaw = false) => {
   if (!xml) return null
   var json = await xmlToJSON(xml)
   if (!json || !json.rss) {
@@ -146,7 +160,7 @@ module.exports.parsePodcastRssFeedXml = async (xml, includeRaw = false) => {
     return null
   }
 
-  const podcast = cleanPodcastJson(json.rss)
+  const podcast = cleanPodcastJson(json.rss, excludeEpisodeMetadata)
   if (!podcast) return null
 
   if (includeRaw) {

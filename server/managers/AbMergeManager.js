@@ -16,9 +16,26 @@ class AbMergeManager {
     this.clientEmitter = clientEmitter
 
     this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
+    this.downloadDirPathExist = false
 
     this.pendingDownloads = []
     this.downloads = []
+  }
+
+  async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
+    if (this.downloadDirPathExist) return
+
+    var pathCreated = false
+    if (!(await fs.pathExists(this.downloadDirPath))) {
+      await fs.mkdir(this.downloadDirPath)
+      pathCreated = true
+    }
+
+    if (pathCreated) {
+      await filePerms.setDefault(this.downloadDirPath)
+    }
+
+    this.downloadDirPathExist = true
   }
 
   getDownload(downloadId) {
@@ -76,6 +93,7 @@ class AbMergeManager {
       await fs.mkdir(download.dirpath)
     } catch (error) {
       Logger.error(`[AbMergeManager] Failed to make directory ${download.dirpath}`)
+      Logger.debug(`[AbMergeManager] Make directory error: ${error}`)
       var downloadJson = download.toJSON()
       this.clientEmitter(user.id, 'abmerge_failed', downloadJson)
       return
@@ -151,7 +169,7 @@ class AbMergeManager {
         input: coverPath,
         options: ['-f image2pipe']
       })
-      ffmpegOptions.push('-vf [2:v]crop=trunc(iw/2)*2:trunc(ih/2)*2')
+      ffmpegOptions.push('-c:v copy')
       ffmpegOptions.push('-map 2:v')
     }
 

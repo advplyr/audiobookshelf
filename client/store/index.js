@@ -1,12 +1,14 @@
-import { checkForUpdate } from '@/plugins/version'
+import { checkForUpdate, currentVersion } from '@/plugins/version'
 import Vue from 'vue'
 
 export const state = () => ({
+  Source: null,
   versionData: null,
   serverSettings: null,
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
+  playerIsFullscreen: false,
   editModalTab: 'details',
   showEditModal: false,
   showEReader: false,
@@ -15,13 +17,12 @@ export const state = () => ({
   selectedLibraryItems: [],
   processingBatch: false,
   previousPath: '/',
-  routeHistory: [],
-  isRoutingBack: false,
   showExperimentalFeatures: false,
   backups: [],
   bookshelfBookIds: [],
   openModal: null,
-  selectedBookshelfTexture: '/textures/wood_default.jpg'
+  innerModalOpen: false,
+  lastBookshelfScrollData: {}
 })
 
 export const getters = {
@@ -33,7 +34,7 @@ export const getters = {
     return state.serverSettings[key]
   },
   getBookCoverAspectRatio: state => {
-    if (!state.serverSettings || !state.serverSettings.coverAspectRatio) return 1
+    if (!state.serverSettings || isNaN(state.serverSettings.coverAspectRatio)) return 1
     return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
   },
   getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
@@ -64,41 +65,59 @@ export const actions = {
     })
   },
   checkForUpdate({ commit }) {
-    return checkForUpdate()
-      .then((res) => {
-        commit('setVersionData', res)
-        return res
-      })
-      .catch((error) => {
-        console.error('Update check failed', error)
-        return false
-      })
-  },
-  popRoute({ commit, state }) {
-    if (!state.routeHistory.length) {
-      return null
+    const VERSION_CHECK_BUFF = 1000 * 60 * 5 // 5 minutes
+    var lastVerCheck = localStorage.getItem('lastVerCheck') || 0
+    var savedVersionData = localStorage.getItem('versionData')
+    if (savedVersionData) {
+      try {
+        savedVersionData = JSON.parse(localStorage.getItem('versionData'))
+      } catch (error) {
+        console.error('Failed to parse version data', error)
+        savedVersionData = null
+        localStorage.removeItem('versionData')
+      }
     }
-    var _history = [...state.routeHistory]
-    var last = _history.pop()
-    commit('setRouteHistory', _history)
-    return last
-  },
-  setBookshelfTexture({ commit, state }, img) {
-    let root = document.documentElement;
-    commit('setBookshelfTexture', img)
-    root.style.setProperty('--bookshelf-texture-img', `url(${img})`);
+
+    var shouldCheckForUpdate = Date.now() - Number(lastVerCheck) > VERSION_CHECK_BUFF
+    if (!shouldCheckForUpdate && savedVersionData && savedVersionData.version !== currentVersion) {
+      // Version mismatch between saved data so check for update anyway
+      shouldCheckForUpdate = true
+    }
+
+    if (shouldCheckForUpdate) {
+      return checkForUpdate()
+        .then((res) => {
+          if (res) {
+            localStorage.setItem('lastVerCheck', Date.now())
+            localStorage.setItem('versionData', JSON.stringify(res))
+
+            commit('setVersionData', res)
+          }
+          return res && res.hasUpdate
+        })
+        .catch((error) => {
+          console.error('Update check failed', error)
+          return false
+        })
+    } else if (savedVersionData) {
+      commit('setVersionData', savedVersionData)
+    }
+    return null
   }
 }
 
 export const mutations = {
+  setSource(state, source) {
+    state.Source = source
+  },
+  setPlayerIsFullscreen(state, val) {
+    state.playerIsFullscreen = val
+  },
+  setLastBookshelfScrollData(state, { scrollTop, path, name }) {
+    state.lastBookshelfScrollData[name] = { scrollTop, path }
+  },
   setBookshelfBookIds(state, val) {
     state.bookshelfBookIds = val || []
-  },
-  setRouteHistory(state, val) {
-    state.routeHistory = val
-  },
-  setIsRoutingBack(state, val) {
-    state.isRoutingBack = val
   },
   setPreviousPath(state, val) {
     state.previousPath = val
@@ -186,7 +205,7 @@ export const mutations = {
   setOpenModal(state, val) {
     state.openModal = val
   },
-  setBookshelfTexture(state, val) {
-    state.selectedBookshelfTexture = val
+  setInnerModalOpen(state, val) {
+    state.innerModalOpen = val
   }
 }

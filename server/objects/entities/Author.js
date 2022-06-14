@@ -37,7 +37,7 @@ class Author {
       imagePath: this.imagePath,
       relImagePath: this.relImagePath,
       addedAt: this.addedAt,
-      lastUpdate: this.updatedAt
+      updatedAt: this.updatedAt
     }
   }
 

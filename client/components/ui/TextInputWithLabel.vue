@@ -1,6 +1,6 @@
 <template>
   <div class="w-full">
-    <p class="px-1 text-sm font-semibold" :class="disabled ? 'text-gray-400' : ''">
+    <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': disabled }">
       {{ label }}<em v-if="note" class="font-normal text-xs pl-2">{{ note }}</em>
     </p>
     <ui-text-input ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" @blur="inputBlurred" />

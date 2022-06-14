@@ -1,6 +1,6 @@
 const Path = require('path')
 
-const cron = require('node-cron')
+const cron = require('../libs/nodeCron')
 const fs = require('fs-extra')
 const archiver = require('archiver')
 const StreamZip = require('node-stream-zip')
@@ -141,6 +141,9 @@ class BackupManager {
             if (error.message === "Bad archive") {
               Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
               continue;
+            } else if (error.message === "unexpected end of file") {
+              Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
+              continue;
             } else {
               throw error
             }
@@ -273,7 +276,7 @@ class BackupManager {
         reject(err)
       })
       archive.on('progress', ({ fs: fsobj }) => {
-        const maxBackupSizeInBytes = this.serverSettings.maxBackupSize * 1000 * 1000 * 1000 
+        const maxBackupSizeInBytes = this.serverSettings.maxBackupSize * 1000 * 1000 * 1000
         if (fsobj.processedBytes > maxBackupSizeInBytes) {
           Logger.error(`[BackupManager] Archiver is too large - aborting to prevent endless loop, Bytes Processed: ${fsobj.processedBytes}`)
           archive.abort()

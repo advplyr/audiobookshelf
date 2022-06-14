@@ -4,7 +4,7 @@ const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
-const { sort, createNewSortInstance } = require('fast-sort')
+const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -42,6 +42,7 @@ class LibraryController {
     newLibraryPayload.displayOrder = this.db.libraries.length + 1
     library.setData(newLibraryPayload)
     await this.db.insertEntity('library', library)
+    // TODO: Only emit to users that have access
     this.emitter('library_added', library.toJSON())
 
     // Add library watcher
@@ -85,13 +86,17 @@ class LibraryController {
         return f
       })
       for (var path of newFolderPaths) {
-        var success = await fs.ensureDir(path).then(() => true).catch((error) => {
-          Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
-          return false
-        })
-        if (!success) {
-          return res.status(400).send(`Invalid folder directory "${path}"`)
-        } else {
+        var pathExists = await fs.pathExists(path)
+        if (!pathExists) {
+          // Ensure dir will recursively create directories which might be preferred over mkdir
+          var success = await fs.ensureDir(path).then(() => true).catch((error) => {
+            Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
+            return false
+          })
+          if (!success) {
+            return res.status(400).send(`Invalid folder directory "${path}"`)
+          }
+          // Set permissions on newly created path
           await filePerms.setDefault(path)
         }
       }
@@ -480,8 +485,7 @@ class LibraryController {
   }
 
   middleware(req, res, next) {
-    var librariesAccessible = req.user.librariesAccessible || []
-    if (librariesAccessible && librariesAccessible.length && !librariesAccessible.includes(req.params.id)) {
+    if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(404)
     }
@@ -492,7 +496,7 @@ class LibraryController {
     }
     req.library = library
     req.libraryItems = this.db.libraryItems.filter(li => {
-      return li.libraryId === library.id && req.user.checkCanAccessLibraryItemWithTags(li.media.tags)
+      return li.libraryId === library.id && req.user.checkCanAccessLibraryItem(li)
     })
     next()
   }

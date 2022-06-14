@@ -225,6 +225,15 @@ class MiscController {
     res.json(author)
   }
 
+  async findChapters(req, res) {
+    var asin = req.query.asin
+    var chapterData = await this.bookFinder.findChapters(asin)
+    if (!chapterData) {
+      return res.json({ error: 'Chapters not found' })
+    }
+    res.json(chapterData)
+  }
+
   authorize(req, res) {
     if (!req.user) {
       Logger.error('Invalid user in authorize')
@@ -233,7 +242,8 @@ class MiscController {
     const userResponse = {
       user: req.user,
       userDefaultLibraryId: req.user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON()
+      serverSettings: this.db.serverSettings.toJSON(),
+      Source: global.Source
     }
     res.json(userResponse)
   }

@@ -5,17 +5,15 @@ class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
 
-    // Misc/Unused
-    this.autoTagNew = false
-    this.newTagExpireDays = 15
-
     // Scanner
     this.scannerParseSubtitle = false
     this.scannerFindCovers = false
     this.scannerCoverProvider = 'google'
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
-    this.scannerDisableWatcher = false
+    this.scannerPreferMatchedMetadata = false
+    this.scannerDisableWatcher = false 
+    this.scannerPreferOverdriveMediaMarker = false
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -43,11 +41,16 @@ class ServerSettings {
     // Podcasts
     this.podcastEpisodeSchedule = '0 * * * *' // Every hour
 
+    // Sorting
     this.sortingIgnorePrefix = false
     this.sortingPrefixes = ['the', 'a']
 
+    // Misc Flags
     this.chromecastEnabled = false
+    this.enableEReader = false
+
     this.logLevel = Logger.logLevel
+
     this.version = null
 
     if (settings) {
@@ -56,14 +59,14 @@ class ServerSettings {
   }
 
   construct(settings) {
-    this.autoTagNew = settings.autoTagNew
-    this.newTagExpireDays = settings.newTagExpireDays
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
     this.scannerPreferAudioMetadata = !!settings.scannerPreferAudioMetadata
     this.scannerPreferOpfMetadata = !!settings.scannerPreferOpfMetadata
+    this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
+    this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
@@ -91,6 +94,7 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.enableEReader = !!settings.enableEReader
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -102,14 +106,14 @@ class ServerSettings {
   toJSON() {
     return {
       id: this.id,
-      autoTagNew: this.autoTagNew,
-      newTagExpireDays: this.newTagExpireDays,
       scannerFindCovers: this.scannerFindCovers,
       scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
       scannerPreferAudioMetadata: this.scannerPreferAudioMetadata,
       scannerPreferOpfMetadata: this.scannerPreferOpfMetadata,
+      scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
+      scannerPreferOverdriveMediaMarker: this.scannerPreferOverdriveMediaMarker,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
@@ -125,6 +129,7 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      enableEReader: this.enableEReader,
       logLevel: this.logLevel,
       version: this.version
     }

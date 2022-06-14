@@ -1,5 +1,5 @@
 const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
-const DEFAULT_TIMEOUT = 1000 * 60 * 20 // 20 minutes
+const DEFAULT_TIMEOUT = 1000 * 60 * 30 // 30 minutes
 class Download {
   constructor(download) {
     this.id = null

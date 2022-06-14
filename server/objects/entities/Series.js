@@ -48,7 +48,7 @@ class Series {
   }
 
   checkNameEquals(name) {
-    if (!name) return false
+    if (!name || !this.name) return false
     return this.name.toLowerCase() == name.toLowerCase().trim()
   }
 }

@@ -58,31 +58,29 @@ Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join 
 
 # Installation
 
-** Default username is "root" with no password
-
 ### Docker Install
 Available in Unraid Community Apps
 
 ```bash
-docker pull advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf:latest
 
 docker run -d \
   -e AUDIOBOOKSHELF_UID=99 \
   -e AUDIOBOOKSHELF_GID=100 \
   -p 13378:80 \
   -v </path/to/audiobooks>:/audiobooks \
-  -v </path/to/your/podcasts>:/podcasts \
+  -v </path/to/podcasts>:/podcasts \
   -v </path/to/config>:/config \
   -v </path/to/metadata>:/metadata \
   --name audiobookshelf \
-  ghcr.io/advplyr/audiobookshelf
+  ghcr.io/advplyr/audiobookshelf:latest
 ```
 
 ### Docker Update
 
 ```bash
 docker stop audiobookshelf
-docker pull ghcr.io/advplyr/audiobookshelf
+docker pull ghcr.io/advplyr/audiobookshelf:latest
 docker start audiobookshelf
 ```
 
@@ -92,15 +90,16 @@ docker start audiobookshelf
 ### docker-compose.yml ###
 services:
   audiobookshelf:
-    image: ghcr.io/advplyr/audiobookshelf
+    container_name: audiobookshelf
+    image: ghcr.io/advplyr/audiobookshelf:latest
     environment:
       - AUDIOBOOKSHELF_UID=99
       - AUDIOBOOKSHELF_GID=100
     ports:
       - 13378:80
     volumes:
-      - </path/to/your/audiobooks>:/audiobooks
-      - </path/to/your/podcasts>:/podcasts
+      - </path/to/audiobooks>:/audiobooks
+      - </path/to/podcasts>:/podcasts
       - </path/to/config>:/config
       - </path/to/metadata>:/metadata
 ```
@@ -197,7 +196,7 @@ server
                      proxy_redirect                      http:// https://;
                    }
 }
-``` 
+```
 
 ### Apache Reverse Proxy
 

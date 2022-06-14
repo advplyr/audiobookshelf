@@ -6,9 +6,11 @@ export const state = () => ({
   showUserCollectionsModal: false,
   showEditCollectionModal: false,
   showEditPodcastEpisode: false,
+  showViewPodcastEpisodeModal: false,
+  showEditAuthorModal: false,
   selectedEpisode: null,
   selectedCollection: null,
-  showBookshelfTextureModal: false,
+  selectedAuthor: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false // Script loaded
 })
@@ -51,6 +53,9 @@ export const mutations = {
   setShowEditPodcastEpisodeModal(state, val) {
     state.showEditPodcastEpisode = val
   },
+  setShowViewPodcastEpisodeModal(state, val) {
+    state.showViewPodcastEpisodeModal = val
+  },
   setEditCollection(state, collection) {
     state.selectedCollection = collection
     state.showEditCollectionModal = true
@@ -58,8 +63,15 @@ export const mutations = {
   setSelectedEpisode(state, episode) {
     state.selectedEpisode = episode
   },
-  setShowBookshelfTextureModal(state, val) {
-    state.showBookshelfTextureModal = val
+  showEditAuthorModal(state, author) {
+    state.selectedAuthor = author
+    state.showEditAuthorModal = true
+  },
+  setShowEditAuthorModal(state, val) {
+    state.showEditAuthorModal = val
+  },
+  setSelectedAuthor(state, author) {
+    state.selectedAuthor = author
   },
   setChromecastInitialized(state, val) {
     state.isChromecastInitialized = val

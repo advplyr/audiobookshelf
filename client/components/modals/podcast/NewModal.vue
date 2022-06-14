@@ -151,7 +151,7 @@ export default {
         this.fullPath = ''
         return
       }
-      this.fullPath = Path.join(this.selectedFolderPath, this.podcast.title)
+      this.fullPath = Path.join(this.selectedFolderPath, this.$sanitizeFilename(this.podcast.title))
     },
     submit() {
       const podcastPayload = {

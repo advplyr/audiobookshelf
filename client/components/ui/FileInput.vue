@@ -1,6 +1,6 @@
 <template>
   <div>
-    <input ref="fileInput" id="hidden-input" type="file" :accept="accept" class="hidden" @change="inputChanged" />
+    <input ref="fileInput" type="file" :accept="accept" class="hidden" @change="inputChanged" />
     <ui-btn @click="clickUpload" color="primary" type="text"><slot /></ui-btn>
   </div>
 </template>

@@ -22,12 +22,6 @@
     </div>
 
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
-    <!-- Experimental Bookshelf Texture -->
-    <div v-show="showExperimentalFeatures" class="fixed bottom-4 right-28 z-40">
-      <div class="rounded-full py-1 bg-primary hover:bg-bg cursor-pointer px-2 border border-black-100 text-center flex items-center box-shadow-md" @mousedown.prevent @mouseup.prevent @click="showBookshelfTextureModal">
-        <p class="text-sm py-0.5">Texture</p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -42,6 +36,7 @@ export default {
   mixins: [bookshelfCardsHelpers],
   data() {
     return {
+      routeFullPath: null,
       initialized: false,
       bookshelfHeight: 0,
       bookshelfWidth: 0,
@@ -126,7 +121,7 @@ export default {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
     },
     isAlternativeBookshelfView() {
-      if (!this.isEntityBook) return false // Only used for bookshelf showing books
+      // if (!this.isEntityBook) return false // Only used for bookshelf showing books
       return this.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     bookCoverAspectRatio() {
@@ -185,7 +180,10 @@ export default {
       return 6
     },
     shelfHeight() {
-      if (this.isAlternativeBookshelfView) return this.entityHeight + 80 * this.sizeMultiplier
+      if (this.isAlternativeBookshelfView) {
+        var extraTitleSpace = this.isEntityBook ? 80 : 40
+        return this.entityHeight + extraTitleSpace * this.sizeMultiplier
+      }
       return this.entityHeight + 40
     },
     totalEntityCardWidth() {
@@ -201,9 +199,6 @@ export default {
     }
   },
   methods: {
-    showBookshelfTextureModal() {
-      this.$store.commit('globals/setShowBookshelfTextureModal', true)
-    },
     clearFilter() {
       this.$store.dispatch('user/updateUserSettings', { filterBy: 'all' })
     },
@@ -409,6 +404,8 @@ export default {
       if (newSearchParams !== this.currentSFQueryString || newSearchParams !== currentQueryString) {
         let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + '?' + newSearchParams
         window.history.replaceState({ path: newurl }, '', newurl)
+
+        this.routeFullPath = window.location.pathname + (window.location.search || '') // Update for saving scroll position
         return true
       }
 
@@ -526,6 +523,15 @@ export default {
       await this.fetchEntites(0)
       var lastBookIndex = Math.min(this.totalEntities, this.shelvesPerPage * this.entitiesPerShelf)
       this.mountEntites(0, lastBookIndex)
+
+      // Set last scroll position for this bookshelf page
+      if (this.$store.state.lastBookshelfScrollData[this.page] && window.bookshelf) {
+        const { path, scrollTop } = this.$store.state.lastBookshelfScrollData[this.page]
+        if (path === this.routeFullPath) {
+          // Exact path match with query so use scroll position
+          window.bookshelf.scrollTop = scrollTop
+        }
+      }
     },
     executeRebuild() {
       clearTimeout(this.resizeTimeout)
@@ -601,13 +607,25 @@ export default {
       }
     },
     scan() {
-      this.$store.dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
+      this.$store
+        .dispatch('libraries/requestLibraryScan', { libraryId: this.currentLibraryId })
+        .then(() => {
+          this.$toast.success('Library scan started')
+        })
+        .catch((error) => {
+          console.error('Failed to start scan', error)
+          this.$toast.error('Failed to start scan')
+        })
     }
   },
   mounted() {
     this.initListeners()
+
+    this.routeFullPath = window.location.pathname + (window.location.search || '')
   },
   updated() {
+    this.routeFullPath = window.location.pathname + (window.location.search || '')
+
     setTimeout(() => {
       if (window.innerWidth > 0 && window.innerWidth !== this.mountWindowWidth) {
         console.log('Updated window width', window.innerWidth, 'from', this.mountWindowWidth)
@@ -618,6 +636,11 @@ export default {
   beforeDestroy() {
     this.destroyEntityComponents()
     this.removeListeners()
+
+    // Set bookshelf scroll position for specific bookshelf page and query
+    if (window.bookshelf) {
+      this.$store.commit('setLastBookshelfScrollData', { scrollTop: window.bookshelf.scrollTop || 0, path: this.routeFullPath, name: this.page })
+    }
   }
 }
 </script>

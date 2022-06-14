@@ -1,6 +1,7 @@
 @import './fonts.css';
 @import './transitions.css';
 @import './draggable.css';
+@import './defaultStyles.css';
 
 :root {
   --bookshelf-texture-img: url(/textures/wood_default.jpg);
@@ -12,17 +13,29 @@
   height: calc(100% - 64px);
   max-height: calc(100% - 64px);
 }
+
 .page.streaming {
   height: calc(100% - 64px - 165px);
   max-height: calc(100% - 64px - 165px);
 }
+
 #bookshelf {
   height: calc(100% - 40px);
   background-image: linear-gradient(to right bottom, #2e2e2e, #303030, #313131, #333333, #353535, #343434, #323232, #313131, #2c2c2c, #282828, #232323, #1f1f1f);
 }
+
+.bookshelf-row {
+  /* Sidebar width + scrollbar width */
+  width: calc(100vw - 88px);
+}
+
 @media (max-width: 768px) {
   #bookshelf {
     height: calc(100% - 80px);
+  }
+
+  .bookshelf-row {
+    width: 100vw;
   }
 }
 
@@ -34,41 +47,37 @@
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar:horizontal {
   height: 8px;
 }
-/* ::-webkit-scrollbar:horizontal { */
-  /* height: 16px; */
-  /* height: 24px;
-} */
+
 /* Track */
 ::-webkit-scrollbar-track {
-  background-color: rgba(0,0,0,0);
+  background-color: rgba(0, 0, 0, 0);
 }
-/* ::-webkit-scrollbar-track:horizontal { */
-  /* background: rgb(149, 119, 90); */
-  /* background: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%); */
-  /* background: linear-gradient(180deg, rgb(117, 88, 60) 0%, rgb(65, 41, 17) 17%, rgb(71, 43, 15) 88%, rgb(3, 2, 1) 100%);
-  box-shadow: 2px 14px 8px #111111aa;
-} */
+
 /* Handle */
 ::-webkit-scrollbar-thumb {
-  background: #855620; 
+  background: #855620;
   border-radius: 4px;
 }
-/* ::-webkit-scrollbar-thumb:horizontal { */
-  /* background: linear-gradient(180deg, rgba(149, 119, 90, 1) 0%, rgba(103, 70, 37, 1) 17%, rgba(103, 70, 37, 1) 88%, rgba(71, 48, 25, 1) 100%); */
-  /* box-shadow: 2px 14px 8px #111111aa; 
-  border-radius: 4px;
-} */
+
 /* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: #704922; 
+  background: #704922;
 }
 
 .no-scroll::-webkit-scrollbar {
   display: none;
   opacity: 0;
+}
+
+.no-scroll {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Chrome, Safari, Edge, Opera */
@@ -89,18 +98,23 @@ input[type=number] {
   width: 100%;
   border: 1px solid #474747;
 }
+
 .tracksTable tr:nth-child(even) {
   background-color: #2e2e2e;
 }
+
 .tracksTable tr {
   background-color: #373838;
 }
+
 .tracksTable tr:hover {
   background-color: #474747;
 }
+
 .tracksTable td {
   padding: 4px 8px;
 }
+
 .tracksTable th {
   padding: 4px 8px;
   font-size: 0.75rem;
@@ -113,13 +127,22 @@ input[type=number] {
   border-right: 6px solid transparent;
   border-top: 6px solid white;
 }
+
+.arrow-down-small {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+}
+
 .triangle-right {
   width: 0;
   height: 0;
   border-left: 8px solid transparent;
   border-bottom: 8px solid transparent;
-  border-top: 8px solid rgb(34,127,35);
-  border-right: 8px solid rgb(34,127,35);
+  border-top: 8px solid rgb(34, 127, 35);
+  border-right: 8px solid rgb(34, 127, 35);
 }
 
 .icon-text {
@@ -149,6 +172,7 @@ input[type=number] {
 .box-shadow-book {
   box-shadow: 4px 1px 8px #11111166, -4px 1px 8px #11111166, 1px -4px 8px #11111166;
 }
+
 .shadow-height {
   height: calc(100% - 4px);
 }
@@ -165,9 +189,9 @@ input[type=number] {
 Bookshelf Label
 */
 .categoryPlacard {
-  background-image: url(https://image.freepik.com/free-photo/brown-wooden-textured-flooring-background_53876-128537.jpg);
   letter-spacing: 1px;
 }
+
 .shinyBlack {
   background-color: #2d3436;
   background-image: linear-gradient(315deg, #19191a 0%, rgb(15, 15, 15) 74%);
@@ -194,8 +218,11 @@ Bookshelf Label
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  line-height: 16px; /* fallback */
-  max-height: 32px; /* fallback */
-  -webkit-line-clamp: 2; /* number of lines to show */
+  line-height: 16px;
+  /* fallback */
+  max-height: 32px;
+  /* fallback */
+  -webkit-line-clamp: 2;
+  /* number of lines to show */
   -webkit-box-orient: vertical;
 }

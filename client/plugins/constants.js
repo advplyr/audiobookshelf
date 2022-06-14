@@ -1,6 +1,6 @@
 const SupportedFileTypes = {
   image: ['png', 'jpg', 'jpeg', 'webp'],
-  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'mp4', 'aac', 'wma', 'aiff'],
+  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'mp4', 'aac', 'wma', 'aiff', 'wav'],
   ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   info: ['nfo'],
   text: ['txt'],
@@ -21,13 +21,15 @@ const BookCoverAspectRatio = {
 
 const BookshelfView = {
   STANDARD: 0,
-  TITLES: 1
+  TITLES: 1,
+  AUTHOR: 2 // Books shown on author page
 }
 
 const PlayMethod = {
   DIRECTPLAY: 0,
   DIRECTSTREAM: 1,
-  TRANSCODE: 2
+  TRANSCODE: 2,
+  LOCAL: 3
 }
 
 const Constants = {

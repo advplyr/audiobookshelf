@@ -90,10 +90,11 @@ class ApiRouter {
     this.router.post('/items/:id/play', LibraryItemController.middleware.bind(this), LibraryItemController.startPlaybackSession.bind(this))
     this.router.post('/items/:id/play/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.startEpisodePlaybackSession.bind(this))
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
-    this.router.patch('/items/:id/episodes', LibraryItemController.middleware.bind(this), LibraryItemController.updateEpisodes.bind(this))
-    this.router.delete('/items/:id/episode/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.removeEpisode.bind(this))
-    this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this)) // Root only
-    this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this)) // Root only
+    this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
+    this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this))
+    this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
+    this.router.post('/items/:id/open-feed', LibraryItemController.middleware.bind(this), LibraryItemController.openRSSFeed.bind(this))
+    this.router.post('/items/:id/close-feed', LibraryItemController.middleware.bind(this), LibraryItemController.closeRSSFeed.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
@@ -108,7 +109,7 @@ class ApiRouter {
     this.router.patch('/users/:id', UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.delete.bind(this))
 
-    this.router.get('/users/:id/listening-sessions', UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/listening-sessions', UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
 
     //
@@ -130,6 +131,7 @@ class ApiRouter {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
+    this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
     this.router.delete('/me/progress/:id', MeController.removeMediaProgress.bind(this))
@@ -172,6 +174,8 @@ class ApiRouter {
     //
     // Playback Session Routes
     //
+    this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
+    this.router.get('/session/:id', SessionController.middleware.bind(this), SessionController.getSession.bind(this))
     this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
     this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
@@ -181,13 +185,13 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
+    this.router.post('/podcasts/opml', PodcastController.getOPMLFeeds.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
-    this.router.post('/podcasts/:id/open-feed', PodcastController.middleware.bind(this), PodcastController.openPodcastFeed.bind(this))
-    this.router.post('/podcasts/:id/close-feed', PodcastController.middleware.bind(this), PodcastController.closePodcastFeed.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
+    this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
 
     //
     // Misc Routes
@@ -204,6 +208,7 @@ class ApiRouter {
     this.router.get('/search/books', MiscController.findBooks.bind(this))
     this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
+    this.router.get('/search/chapters', MiscController.findChapters.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
   }
 
@@ -304,6 +309,19 @@ class ApiRouter {
   async getUserListeningSessionsHelper(userId) {
     var userSessions = await this.db.selectUserSessions(userId)
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
+  }
+
+  async getAllSessionsWithUserData() {
+    var sessions = await this.db.getAllSessions()
+    sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+    return sessions.map(se => {
+      var user = this.db.users.find(u => u.id === se.userId)
+      var _se = {
+        ...se,
+        user: user ? { id: user.id, username: user.username } : null
+      }
+      return _se
+    })
   }
 
   async getUserListeningStatsHelpers(userId) {

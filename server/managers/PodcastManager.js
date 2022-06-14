@@ -1,11 +1,12 @@
 const fs = require('fs-extra')
-const cron = require('node-cron')
+const cron = require('../libs/nodeCron')
 const axios = require('axios')
 
 const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile } = require('../utils/fileUtils')
+const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
@@ -142,13 +143,13 @@ class PodcastManager {
 
   async probeAudioFile(libraryFile) {
     var path = libraryFile.metadata.path
-    var audioProbeData = await prober.probe(path)
-    if (audioProbeData.error) {
-      Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, audioProbeData.error)
+    var mediaProbeData = await prober.probe(path)
+    if (mediaProbeData.error) {
+      Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return false
     }
     var newAudioFile = new AudioFile()
-    newAudioFile.setDataFromProbe(libraryFile, audioProbeData)
+    newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
     return newAudioFile
   }
 
@@ -183,8 +184,15 @@ class PodcastManager {
 
     for (const libraryItem of podcastsWithAutoDownload) {
       const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
-      Logger.info(`[PodcastManager] checkForNewEpisodes Cron for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
-      var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
+      const latestEpisodePublishedAt = libraryItem.media.latestEpisodePublished
+      Logger.info(`[PodcastManager] checkForNewEpisodes: "${libraryItem.media.metadata.title}" | Last check: ${lastEpisodeCheckDate} | ${latestEpisodePublishedAt ? `Latest episode pubDate: ${new Date(latestEpisodePublishedAt)}` : 'No latest episode'}`)
+
+      // Use latest episode pubDate if exists OR fallback to using lastEpisodeCheckDate
+      //    lastEpisodeCheckDate will be the current time when adding a new podcast
+      const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheckDate
+      Logger.debug(`[PodcastManager] checkForNewEpisodes: "${libraryItem.media.metadata.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
+
+      var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter)
       Logger.debug(`[PodcastManager] checkForNewEpisodes checked result ${newEpisodes ? newEpisodes.length : 'N/A'}`)
 
       if (!newEpisodes) { // Failed
@@ -214,7 +222,7 @@ class PodcastManager {
     }
   }
 
-  async checkPodcastForNewEpisodes(podcastLibraryItem) {
+  async checkPodcastForNewEpisodes(podcastLibraryItem, dateToCheckForEpisodesAfter) {
     if (!podcastLibraryItem.media.metadata.feedUrl) {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`)
       return false
@@ -225,15 +233,8 @@ class PodcastManager {
       return false
     }
 
-    // Added for testing
-    Logger.debug(`[PodcastManager] checkPodcastForNewEpisodes: ${feed.episodes.length} episodes in feed for "${podcastLibraryItem.media.metadata.title}"`)
-    const latestEpisodes = feed.episodes.slice(0, 3)
-    latestEpisodes.forEach((ep) => {
-      Logger.debug(`[PodcastManager] checkPodcastForNewEpisodes: Recent episode "${ep.title}", pubDate=${ep.pubDate}, publishedAt=${ep.publishedAt}/${new Date(ep.publishedAt)} for "${podcastLibraryItem.media.metadata.title}"`)
-    })
-
     // Filter new and not already has
-    var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > podcastLibraryItem.media.lastEpisodeCheck && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
+    var newEpisodes = feed.episodes.filter(ep => ep.publishedAt > dateToCheckForEpisodesAfter && !podcastLibraryItem.media.checkHasEpisodeByFeedUrl(ep.enclosure.url))
     // Max new episodes for safety = 3
     newEpisodes = newEpisodes.slice(0, 3)
     return newEpisodes
@@ -242,7 +243,7 @@ class PodcastManager {
   async checkAndDownloadNewEpisodes(libraryItem) {
     const lastEpisodeCheckDate = new Date(libraryItem.media.lastEpisodeCheck || 0)
     Logger.info(`[PodcastManager] checkAndDownloadNewEpisodes for "${libraryItem.media.metadata.title}" - Last episode check: ${lastEpisodeCheckDate}`)
-    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem)
+    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, libraryItem.media.lastEpisodeCheck)
     if (newEpisodes.length) {
       Logger.info(`[PodcastManager] Found ${newEpisodes.length} new episodes for podcast "${libraryItem.media.metadata.title}" - starting download`)
       this.downloadPodcastEpisodes(libraryItem, newEpisodes)
@@ -258,7 +259,7 @@ class PodcastManager {
     return newEpisodes
   }
 
-  getPodcastFeed(feedUrl) {
+  getPodcastFeed(feedUrl, excludeEpisodeMetadata = false) {
     Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}"`)
     return axios.get(feedUrl, { timeout: 5000 }).then(async (data) => {
       if (!data || !data.data) {
@@ -266,7 +267,7 @@ class PodcastManager {
         return false
       }
       Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-      var payload = await parsePodcastRssFeedXml(data.data)
+      var payload = await parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
       if (!payload) {
         return false
       }
@@ -275,6 +276,30 @@ class PodcastManager {
       console.error('Failed', error)
       return false
     })
+  }
+
+  async getOPMLFeeds(opmlText) {
+    var extractedFeeds = opmlParser.parse(opmlText)
+    if (!extractedFeeds || !extractedFeeds.length) {
+      Logger.error('[PodcastManager] getOPMLFeeds: No RSS feeds found in OPML')
+      return {
+        error: 'No RSS feeds found in OPML'
+      }
+    }
+
+    var rssFeedData = []
+
+    for (let feed of extractedFeeds) {
+      var feedData = await this.getPodcastFeed(feed.feedUrl, true)
+      if (feedData) {
+        feedData.metadata.feedUrl = feed.feedUrl
+        rssFeedData.push(feedData)
+      }
+    }
+
+    return {
+      feeds: rssFeedData
+    }
   }
 }
 module.exports = PodcastManager

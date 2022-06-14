@@ -52,12 +52,12 @@ export default class CastPlayer extends EventEmitter {
       return
     }
 
-    // var currentItemId = media.currentItemId
     var currentItemId = media.media.itemId
     if (currentItemId && this.currentTrackIndex !== currentItemId - 1) {
       this.currentTrackIndex = currentItemId - 1
     }
 
+    // TODO: Emit finished event
     if (media.playerState !== this.castPlayerState) {
       this.emit('stateChange', media.playerState)
       this.castPlayerState = media.playerState
@@ -124,6 +124,8 @@ export default class CastPlayer extends EventEmitter {
 
   async seek(time, playWhenReady) {
     if (!this.player) return
+
+    this.playWhenReady = playWhenReady
     if (time < this.currentTrack.startOffset || time > this.currentTrack.startOffset + this.currentTrack.duration) {
       // Change Track
       var request = buildCastLoadRequest(this.libraryItem, this.coverUrl, this.audioTracks, time, playWhenReady, this.defaultPlaybackRate)

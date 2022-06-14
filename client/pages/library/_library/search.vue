@@ -1,17 +1,9 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex h-full">
-      <app-side-rail class="hidden md:block" />
-      <div class="flex-grow">
-        <app-book-shelf-toolbar is-home page="search" :search-query="query" />
-        <app-book-shelf-categorized v-if="hasResults" ref="bookshelf" search :results="results" />
-        <div v-else class="w-full py-16">
-          <p class="text-xl text-center">No Search results for "{{ query }}"</p>
-          <div class="flex justify-center">
-            <ui-btn class="w-52 my-4" @click="back">Back</ui-btn>
-          </div>
-        </div>
-      </div>
+    <app-book-shelf-toolbar is-home page="search" :search-query="query" />
+    <app-book-shelf-categorized v-if="hasResults" ref="bookshelf" search :results="results" />
+    <div v-else class="w-full py-16">
+      <p class="text-xl text-center">No Search results for "{{ query }}"</p>
     </div>
   </div>
 </template>
@@ -79,12 +71,6 @@ export default {
           this.$refs.bookshelf.setShelvesFromSearch()
         }
       })
-    },
-    async back() {
-      var popped = await this.$store.dispatch('popRoute')
-      if (popped) this.$store.commit('setIsRoutingBack', true)
-      var backTo = popped || '/'
-      this.$router.push(backTo)
     }
   },
   mounted() {},

@@ -64,8 +64,8 @@
       </div>
     </div>
 
-    <input ref="fileInput" id="hidden-input" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
-    <input ref="fileFolderInput" id="hidden-input" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
+    <input ref="fileInput" type="file" multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
+    <input ref="fileFolderInput" type="file" webkitdirectory multiple :accept="inputAccept" class="hidden" @change="inputChanged" />
   </div>
 </template>
 
@@ -84,6 +84,13 @@ export default {
       selectedFolderId: null,
       processing: false,
       uploadFinished: false
+    }
+  },
+  watch: {
+    selectedLibrary(newVal) {
+      if (newVal && !this.selectedFolderId) {
+        this.setDefaultFolder()
+      }
     }
   },
   computed: {

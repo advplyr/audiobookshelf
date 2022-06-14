@@ -1,4 +1,3 @@
-const { stripHtml } = require('string-strip-html')
 const { getId } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -9,6 +8,7 @@ class PodcastEpisode {
     this.id = null
     this.index = null
 
+    this.season = null
     this.episode = null
     this.episodeType = null
     this.title = null
@@ -31,6 +31,7 @@ class PodcastEpisode {
     this.libraryItemId = episode.libraryItemId
     this.id = episode.id
     this.index = episode.index
+    this.season = episode.season
     this.episode = episode.episode
     this.episodeType = episode.episodeType
     this.title = episode.title
@@ -51,6 +52,7 @@ class PodcastEpisode {
       libraryItemId: this.libraryItemId,
       id: this.id,
       index: this.index,
+      season: this.season,
       episode: this.episode,
       episodeType: this.episodeType,
       title: this.title,
@@ -70,12 +72,12 @@ class PodcastEpisode {
       libraryItemId: this.libraryItemId,
       id: this.id,
       index: this.index,
+      season: this.season,
       episode: this.episode,
       episodeType: this.episodeType,
       title: this.title,
       subtitle: this.subtitle,
-      // description: this.description,
-      description: this.descriptionPlain, // Temporary stripping HTML until proper cleaning is implemented
+      description: this.description,
       enclosure: this.enclosure ? { ...this.enclosure } : null,
       pubDate: this.pubDate,
       audioFile: this.audioFile.toJSON(),
@@ -104,10 +106,6 @@ class PodcastEpisode {
     if (this.episode) return `${this.episode} - ${this.title}`
     return this.title
   }
-  get descriptionPlain() {
-    if (!this.description) return ''
-    return stripHtml(this.description).result
-  }
 
   setData(data, index = 1) {
     this.id = getId('ep')
@@ -117,6 +115,7 @@ class PodcastEpisode {
     this.pubDate = data.pubDate || ''
     this.description = data.description || ''
     this.enclosure = data.enclosure ? { ...data.enclosure } : null
+    this.season = data.season || ''
     this.episode = data.episode || ''
     this.episodeType = data.episodeType || ''
     this.publishedAt = data.publishedAt || 0

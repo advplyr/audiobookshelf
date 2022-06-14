@@ -2,7 +2,8 @@ const Path = require('path')
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
-const { parseOpfMetadataXML } = require('../../utils/parseOpfMetadata')
+const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
+const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
@@ -153,6 +154,30 @@ class Book {
     return hasUpdates
   }
 
+  updateChapters(chapters) {
+    var hasUpdates = this.chapters.length !== chapters.length
+    if (hasUpdates) {
+      this.chapters = chapters.map(ch => ({
+        id: ch.id,
+        start: ch.start,
+        end: ch.end,
+        title: ch.title
+      }))
+    } else {
+      for (let i = 0; i < this.chapters.length; i++) {
+        const currChapter = this.chapters[i]
+        const newChapter = chapters[i]
+        if (!hasUpdates && (currChapter.title !== newChapter.title || currChapter.start !== newChapter.start || currChapter.end !== newChapter.end)) {
+          hasUpdates = true
+        }
+        this.chapters[i].title = newChapter.title
+        this.chapters[i].start = newChapter.start
+        this.chapters[i].end = newChapter.end
+      }
+    }
+    return hasUpdates
+  }
+
   updateCover(coverPath) {
     coverPath = coverPath.replace(/\\/g, '/')
     if (this.coverPath === coverPath) return false
@@ -201,6 +226,7 @@ class Book {
   // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
     var metadataUpdatePayload = {}
+    var tagsUpdated = false
 
     var descTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'desc.txt')
     if (descTxt) {
@@ -240,8 +266,13 @@ class Book {
         var opfMetadata = await parseOpfMetadataXML(xmlText)
         if (opfMetadata) {
           for (const key in opfMetadata) {
-            // Add genres only if genres are empty
-            if (key === 'genres') {
+
+            if (key === 'tags') { // Add tags only if tags are empty
+              if (opfMetadata.tags.length && (!this.tags.length || opfMetadataOverrideDetails)) {
+                this.tags = opfMetadata.tags
+                tagsUpdated = true
+              }
+            } else if (key === 'genres') { // Add genres only if genres are empty
               if (opfMetadata.genres.length && (!this.metadata.genres.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload[key] = opfMetadata.genres
               }
@@ -266,9 +297,9 @@ class Book {
     }
 
     if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload)
+      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
     }
-    return false
+    return tagsUpdated
   }
 
   searchQuery(query) {
@@ -330,10 +361,11 @@ class Book {
     this.rebuildTracks()
   }
 
-  rebuildTracks() {
+  rebuildTracks(preferOverdriveMediaMarker) {
+    Logger.debug(`[Book] Tracks being rebuilt...!`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
-    this.setChapters()
+    this.setChapters(preferOverdriveMediaMarker)
     this.checkUpdateMissingTracks()
   }
 
@@ -365,9 +397,16 @@ class Book {
     return wasUpdated
   }
 
-  setChapters() {
+  setChapters(preferOverdriveMediaMarker = false) {
     // If 1 audio file without chapters, then no chapters will be set
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
+
+    // If overdrive media markers are present and preferred, use those instead
+    if (preferOverdriveMediaMarker && overdriveMediaMarkersExist(includedAudioFiles)) {
+      Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
+      return this.chapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+    }
+
     if (includedAudioFiles.length === 1) {
       // 1 audio file with chapters
       if (includedAudioFiles[0].chapters) {
@@ -381,19 +420,27 @@ class Book {
         // If audio file has chapters use chapters
         if (file.chapters && file.chapters.length) {
           file.chapters.forEach((chapter) => {
-            var chapterDuration = chapter.end - chapter.start
-            if (chapterDuration > 0) {
-              var title = `Chapter ${currChapterId}`
-              if (chapter.title) {
-                title += ` (${chapter.title})`
+            if (chapter.start > this.duration) {
+              Logger.warn(`[Book] Invalid chapter start time > duration`)
+            } else {
+              var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
+              if (!chapterAlreadyExists) {
+                var chapterDuration = chapter.end - chapter.start
+                if (chapterDuration > 0) {
+                  var title = `Chapter ${currChapterId}`
+                  if (chapter.title) {
+                    title += ` (${chapter.title})`
+                  }
+                  var endTime = Math.min(this.duration, currStartTime + chapterDuration)
+                  this.chapters.push({
+                    id: currChapterId++,
+                    start: currStartTime,
+                    end: endTime,
+                    title
+                  })
+                  currStartTime += chapterDuration
+                }
               }
-              this.chapters.push({
-                id: currChapterId++,
-                start: currStartTime,
-                end: currStartTime + chapterDuration,
-                title
-              })
-              currStartTime += chapterDuration
             }
           })
         } else if (file.duration) {

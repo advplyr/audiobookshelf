@@ -120,9 +120,6 @@ module.exports.extractCoverArt = extractCoverArt
 
 //This should convert based on the output file extension as well
 async function resizeImage(filePath, outputPath, width, height) {
-  var dirname = Path.dirname(outputPath);
-  await fs.ensureDir(dirname);
-
   return new Promise((resolve) => {
     var ffmpeg = Ffmpeg(filePath)
     ffmpeg.addOption(['-vf', `scale=${width || -1}:${height || -1}`])

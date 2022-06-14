@@ -28,10 +28,9 @@
           <ui-editable-text v-model="newFolderPath" placeholder="New folder path" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 
-        <ui-btn class="w-full mt-2" color="primary" @click="showDirectoryPicker = true">Browse for Folder</ui-btn>
+        <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">Browse for Folder</ui-btn>
       </div>
     </div>
-
     <modals-libraries-folder-chooser v-else :paths="folderPaths" @back="showDirectoryPicker = false" @select="selectFolder" />
   </div>
 </template>
@@ -77,6 +76,9 @@ export default {
     }
   },
   methods: {
+    browseForFolder() {
+      this.showDirectoryPicker = true
+    },
     getLibraryData() {
       return {
         name: this.name,
