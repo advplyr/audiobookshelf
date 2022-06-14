@@ -1,6 +1,10 @@
 const fs = require('fs-extra')
 const Path = require('path')
 
+// Chapter Parsers
+const MediaFileChapterParser = require('../utils/parsers/chapters/parseFromMediaFile') 
+const OverdriveMediaMarkersChapterParser = require('../utils/parsers/chapters/parseOverdriveMediaMarkers')
+
 // Utils
 const Logger = require('../Logger')
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
@@ -64,6 +68,11 @@ class Scanner {
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
     // TODO: Support for single media item
     var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
+    var useOverdriveChapters = this.db.serverSettings.scannerPreferOverdriveMediaMarker
+
+    // Depending on the users setting, tell Book to use a specific parser for chapters
+    libraryItem.media.chapterParser = (useOverdriveChapters ? OverdriveMediaMarkersChapterParser : MediaFileChapterParser)
+
     if (!libraryItemData) {
       return ScanResult.NOTHING
     }
