@@ -21,7 +21,7 @@
         <template v-else>
           <p v-if="bookResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Books</p>
           <template v-for="item in bookResults">
-            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/item/${item.libraryItem.id}`">
                 <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
@@ -30,7 +30,7 @@
 
           <p v-if="podcastResults.length" class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">Podcasts</p>
           <template v-for="item in podcastResults">
-            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+            <li :key="item.libraryItem.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/item/${item.libraryItem.id}`">
                 <cards-item-search-card :library-item="item.libraryItem" :match-key="item.matchKey" :match-text="item.matchText" :search="lastSearch" />
               </nuxt-link>
@@ -39,7 +39,7 @@
 
           <p v-if="authorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Authors</p>
           <template v-for="item in authorResults">
-            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+            <li :key="item.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(item.id)}`">
                 <cards-author-search-card :author="item" />
               </nuxt-link>
@@ -48,7 +48,7 @@
 
           <p v-if="seriesResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Series</p>
           <template v-for="item in seriesResults">
-            <li :key="item.series.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+            <li :key="item.series.id" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/series/${item.series.id}`">
                 <cards-series-search-card :series="item.series" :book-items="item.books" />
               </nuxt-link>
@@ -57,7 +57,7 @@
 
           <p v-if="tagResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">Tags</p>
           <template v-for="item in tagResults">
-            <li :key="item.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option">
+            <li :key="item.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
               <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=tags.${$encode(item.name)}`">
                 <cards-tag-search-card :tag="item.name" />
               </nuxt-link>
@@ -97,6 +97,9 @@ export default {
     }
   },
   methods: {
+    clickOption() {
+      this.clearResults()
+    },
     submitSearch() {
       if (!this.search) return
       var search = this.search
