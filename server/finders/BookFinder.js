@@ -180,11 +180,11 @@ class BookFinder {
     Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'google') {
-      return this.getGoogleBooksResults(title, author)
+      books = this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
-      return this.getAudibleResults(title, author, asin)
+      books = this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
-      return this.getiTunesAudiobooksResults(title, author)
+      books = this.getiTunesAudiobooksResults(title, author)
     } else if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {
@@ -207,6 +207,14 @@ class BookFinder {
         return this.search(provider, title, null, options)
       }
     }
+
+    if (!books.length && !options.currentlyTryingCleaned) {
+      Logger.debug(`Book Search, no matches.. checking cleaned title and author`)
+      options.currentlyTryingCleaned = true
+      return this.search(provider, this.cleanTitleForCompares(title), this.cleanAuthorForCompares(author), isbn, asin, options)
+    }
+
+    if (provider in ["google", "audible", "itunes"]) return books
 
     return books.sort((a, b) => {
       return a.totalDistance - b.totalDistance
