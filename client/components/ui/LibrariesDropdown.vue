@@ -1,7 +1,7 @@
 <template>
-  <div v-if="currentLibrary" class="relative sm:w-36 h-8" v-click-outside="clickOutsideObj">
-    <button type="button" :disabled="disabled" class="w-14 sm:w-36 ml-1 mr-1 relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
-      <span class="flex items-center justify-center">
+  <div v-if="currentLibrary" class="relative sm:w-36 h-8 px-1.5" v-click-outside="clickOutsideObj">
+    <button type="button" :disabled="disabled" class="w-10 sm:w-36 relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm px-2 text-left text-sm focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+      <span class="flex items-center justify-center sm:justify-start">
         <widgets-library-icon :icon="currentLibraryIcon" class="sm:mr-2" />
         <span class="hidden sm:block">{{ currentLibrary.name }}</span>
       </span>
