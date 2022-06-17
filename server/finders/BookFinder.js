@@ -209,9 +209,13 @@ class BookFinder {
     }
 
     if (!books.length && !options.currentlyTryingCleaned) {
+      var cleanedTitle = this.cleanTitleForCompares(title)
+      var cleanedAuthor = this.cleanAuthorForCompares(author)
+      if (cleanedTitle == title && cleanedAuthor == author) return books
+
       Logger.debug(`Book Search, no matches.. checking cleaned title and author`)
       options.currentlyTryingCleaned = true
-      return this.search(provider, this.cleanTitleForCompares(title), this.cleanAuthorForCompares(author), isbn, asin, options)
+      return this.search(provider, cleanedTitle, cleanedAuthor, isbn, asin, options)
     }
 
     if (["google", "audible", "itunes"].includes(provider)) return books
