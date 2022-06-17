@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 ml-6 relative">
+  <div class="sm:w-80 w-full sm:ml-6 relative">
     <form @submit.prevent="submitSearch">
       <ui-text-input ref="input" v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
     </form>
@@ -7,7 +7,7 @@
       <span v-if="!search" class="material-icons" style="font-size: 1.2rem">search</span>
       <span v-else class="material-icons" style="font-size: 1.2rem">close</span>
     </div>
-    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-full bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu">
+    <div v-show="showMenu && (lastSearch || isTyping)" class="absolute z-40 -mt-px w-40 sm:w-full bg-bg border border-black-200 shadow-lg rounded-md py-1 px-2 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm globalSearchMenu">
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li v-if="isTyping" class="py-2 px-2">
           <p>Thinking...</p>
