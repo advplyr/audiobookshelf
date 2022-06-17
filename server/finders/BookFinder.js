@@ -214,7 +214,7 @@ class BookFinder {
       return this.search(provider, this.cleanTitleForCompares(title), this.cleanAuthorForCompares(author), isbn, asin, options)
     }
 
-    if (provider in ["google", "audible", "itunes"]) return books
+    if (["google", "audible", "itunes"].includes(provider)) return books
 
     return books.sort((a, b) => {
       return a.totalDistance - b.totalDistance
