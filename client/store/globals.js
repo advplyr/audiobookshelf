@@ -1,4 +1,3 @@
-
 export const state = () => ({
   isMobile: false,
   isMobileLandscape: false,
@@ -12,7 +11,21 @@ export const state = () => ({
   selectedCollection: null,
   selectedAuthor: null,
   isCasting: false, // Actively casting
-  isChromecastInitialized: false // Script loaded
+  isChromecastInitialized: false, // Script loaded
+  dateFormats: [
+    {
+      text: 'MM/DD/YYYY',
+      value: 'MM/dd/yyyy'
+    },
+    {
+      text: 'DD/MM/YYYY',
+      value: 'dd/MM/yyyy'
+    },
+    {
+      text: 'YYYY-MM-DD',
+      value: 'yyyy-MM-dd'
+    }
+  ]
 })
 
 export const getters = {

@@ -12,7 +12,7 @@ class ServerSettings {
     this.scannerPreferAudioMetadata = false
     this.scannerPreferOpfMetadata = false
     this.scannerPreferMatchedMetadata = false
-    this.scannerDisableWatcher = false 
+    this.scannerDisableWatcher = false
     this.scannerPreferOverdriveMediaMarker = false
 
     // Metadata - choose to store inside users library item folder
@@ -48,6 +48,7 @@ class ServerSettings {
     // Misc Flags
     this.chromecastEnabled = false
     this.enableEReader = false
+    this.dateFormat="MM/dd/yyyy"
 
     this.logLevel = Logger.logLevel
 
@@ -95,6 +96,7 @@ class ServerSettings {
     this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.enableEReader = !!settings.enableEReader
+    this.dateFormat = settings.dateFormat
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -130,6 +132,7 @@ class ServerSettings {
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
       enableEReader: this.enableEReader,
+      dateFormat: this.dateFormat,
       logLevel: this.logLevel,
       version: this.version
     }

@@ -156,6 +156,15 @@
           </p>
         </ui-tooltip>
       </div>
+
+      <div clas="flex items-center py-2">
+          <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small @input="(val) => updateSettingsKey('dateFormat', val)" style="width: 10em; display:inline-flex" />
+            <p class="pl-4 text-lg" style="display:inline-flex; vertical-align: top;">
+              Date Format
+              <span class="material-icons icon-text">info_outlined</span>
+            </p>
+      </div>
+
     </div>
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
@@ -282,6 +291,9 @@ export default {
       set(val) {
         this.$store.commit('setExperimentalFeatures', val)
       }
+    },
+    dateFormats() {
+      return this.$store.state.globals.dateFormats
     }
   },
   methods: {
