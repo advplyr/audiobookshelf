@@ -17,8 +17,8 @@
         <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 550px; min-height: 550px">
           <template v-for="(log, index) in logs">
             <div :key="index" class="flex flex-nowrap px-2 py-1 items-start text-sm bg-opacity-10" :class="`bg-${logColors[log.level]}`">
-              <p class="text-gray-400 w-40 font-mono">{{ log.timestamp.split('.')[0].split('T').join(' ') }}</p>
-              <p class="font-semibold w-12 text-right" :class="`text-${logColors[log.level]}`">{{ log.levelName }}</p>
+              <p class="text-gray-400 w-36 font-mono text-xs">{{ log.timestamp }}</p>
+              <p class="font-semibold w-12 text-right text-sm" :class="`text-${logColors[log.level]}`">{{ log.levelName }}</p>
               <p class="px-4 logmessage">{{ log.message }}</p>
             </div>
           </template>

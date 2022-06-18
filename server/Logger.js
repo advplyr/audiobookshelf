@@ -1,16 +1,16 @@
+const date = require('date-and-time')
 const { LogLevel } = require('./utils/constants')
 
 class Logger {
   constructor() {
     this.logLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.TRACE
-    // this.logFileLevel = LogLevel.INFO
     this.socketListeners = []
 
     this.logManager = null
   }
 
   get timestamp() {
-    return (new Date()).toISOString()
+    return date.format(new Date(), 'YYYY-MM-DD HH:mm:ss')
   }
 
   get levelString() {
