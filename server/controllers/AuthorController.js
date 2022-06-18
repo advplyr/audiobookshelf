@@ -63,25 +63,26 @@ class AuthorController {
     // If updating or removing cover image then clear cache
     if (payload.imagePath !== undefined && req.author.imagePath && payload.imagePath !== req.author.imagePath) {
       this.cacheManager.purgeImageCache(req.author.id)
+
       if (!payload.imagePath) { // If removing image then remove file
         var currentImagePath = req.author.imagePath
         await this.coverManager.removeFile(currentImagePath)
+      } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
+        var imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imagePath)
+        if (imageData) {
+          req.author.imagePath = imageData.path
+          req.author.relImagePath = imageData.relPath
+          hasUpdated = hasUpdated || true;
+        } else {
+          req.author.imagePath = null
+          req.author.relImagePath = null
+        }
       }
     }
 
     var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
     var hasUpdated = req.author.update(payload)
-
-    // Fetch author image from remote URL if no current image exists
-    if (payload.imageUrl !== undefined && !req.author.imagePath) {
-      var imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imageUrl)
-      if (imageData) {
-        req.author.imagePath = imageData.path
-        req.author.relImagePath = imageData.relPath
-        hasUpdated = hasUpdated || true;
-      }
-    }
 
     if (hasUpdated) {
       if (authorNameUpdate) { // Update author name on all books

@@ -25,8 +25,8 @@
                 <ui-text-input-with-label v-model="authorCopy.asin" :disabled="processing" label="ASIN" />
               </div>
             </div>
-            <div class="p-2" v-show="!author.imagePath">
-              <ui-text-input-with-label v-model="authorCopy.imageUrl" :disabled="processing" label="Photo URL" />
+            <div class="p-2">
+              <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" label="Photo Path/URL" />
             </div>
             <div class="p-2">
               <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" label="Description" :rows="8" />
@@ -46,20 +46,13 @@
 
 <script>
 export default {
-  // props: {
-  //   value: Boolean,
-  //   author: {
-  //     type: Object,
-  //     default: () => {}
-  //   }
-  // },
   data() {
     return {
       authorCopy: {
         name: '',
         asin: '',
         description: '',
-        imageUrl: undefined
+        imagePath: ''
       },
       processing: false
     }
@@ -99,9 +92,10 @@ export default {
       this.authorCopy.name = this.author.name
       this.authorCopy.asin = this.author.asin
       this.authorCopy.description = this.author.description
+      this.authorCopy.imagePath = this.author.imagePath
     },
     async submitForm() {
-      var keysToCheck = ['name', 'asin', 'description', 'imageUrl']
+      var keysToCheck = ['name', 'asin', 'description', 'imagePath']
       var updatePayload = {}
       keysToCheck.forEach((key) => {
         if (this.authorCopy[key] !== this.author[key]) {
@@ -122,7 +116,6 @@ export default {
         if (result.updated) {
           this.$toast.success('Author updated')
           this.show = false
-          this.authorCopy.imageUrl = undefined
         } else this.$toast.info('No updates were needed')
       }
       this.processing = false
