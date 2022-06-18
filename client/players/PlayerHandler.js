@@ -177,12 +177,13 @@ export default class PlayerHandler {
   }
 
   prepareOpenSession(session, playbackRate) { // Session opened on init socket
+    if (!this.player) this.switchPlayer() // Must set player first for open sessions
+
     this.libraryItem = session.libraryItem
     this.isVideo = session.libraryItem.mediaType === 'video'
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
 
-    if (!this.player) this.switchPlayer()
     this.prepareSession(session)
   }
 

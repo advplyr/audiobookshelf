@@ -110,13 +110,7 @@ export default {
       }
       console.log('Init Payload', payload)
       if (payload.session) {
-        if (this.$refs.streamContainer) {
-          this.$refs.streamContainer.sessionOpen(payload.session)
-        } else {
-          console.warn('Stream Container not mounted')
-        }
-      }
-      if (payload.serverSettings) {
+        this.$refs.streamContainer.sessionOpen(payload.session)
       }
 
       // Start scans currently running

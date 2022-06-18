@@ -140,7 +140,7 @@ class Server {
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.cacheManager.ensureCachePaths()
     await this.abMergeManager.ensureDownloadDirPath()
-    
+
     await this.backupManager.init()
     await this.logManager.init()
     await this.rssFeedManager.init()
@@ -451,6 +451,7 @@ class Server {
     } else {
       Logger.debug(`[Server] User Online ${client.user.username}`)
     }
+
     this.io.emit('user_online', client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
     user.lastSeen = Date.now()
