@@ -72,6 +72,17 @@ class AuthorController {
     var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
     var hasUpdated = req.author.update(payload)
+
+    // Fetch author image from remote URL if no current image exists
+    if (payload.imageUrl !== undefined && !req.author.imagePath) {
+      var imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imageUrl)
+      if (imageData) {
+        req.author.imagePath = imageData.path
+        req.author.relImagePath = imageData.relPath
+        hasUpdated = hasUpdated || true;
+      }
+    }
+
     if (hasUpdated) {
       if (authorNameUpdate) { // Update author name on all books
         var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
