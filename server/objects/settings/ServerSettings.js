@@ -48,7 +48,7 @@ class ServerSettings {
     // Misc Flags
     this.chromecastEnabled = false
     this.enableEReader = false
-    this.dateFormat="MM/dd/yyyy"
+    this.dateFormat = 'MM/dd/yyyy'
 
     this.logLevel = Logger.logLevel
 
@@ -96,7 +96,7 @@ class ServerSettings {
     this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.enableEReader = !!settings.enableEReader
-    this.dateFormat = settings.dateFormat
+    this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
