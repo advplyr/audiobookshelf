@@ -29,7 +29,9 @@
           </div>
         </div>
         <div class="pt-8 text-center">
-          <p class="text-xs text-white text-opacity-50 font-mono"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
+          <p class="text-xs text-white text-opacity-50 font-mono mb-4"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
+
+          <p class="text-sm text-white text-opacity-70">Folders with media files will be treated as separate library items. <span v-if="selectedLibraryMediaType === 'book'">If uploading only audio files then each audio file will be treated as a separate audiobook.</span></p>
         </div>
       </div>
       <!-- Item list header -->
