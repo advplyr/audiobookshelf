@@ -428,7 +428,7 @@ export default {
             )
             updatePayload.metadata.authors = authorPayload
           } else if (key === 'narrator') {
-            updatePayload.metadata.narrators = [this.selectedMatch[key]]
+            updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'genres') {
             updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'tags') {
