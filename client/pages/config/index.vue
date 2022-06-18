@@ -4,7 +4,7 @@
 
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
       <div class="flex items-center mb-2">
-        <h1 class="text-xl">Settings</h1>
+        <h1 class="text-xl font-semibold">Settings</h1>
       </div>
 
       <div class="flex items-center py-2">
@@ -22,26 +22,6 @@
         <ui-tooltip :text="tooltips.storeMetadataWithItem">
           <p class="pl-4 text-lg">
             Store metadata with item
-            <span class="material-icons icon-text">info_outlined</span>
-          </p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
-        <ui-tooltip :text="tooltips.coverAspectRatio">
-          <p class="pl-4 text-lg">
-            Use square book covers
-            <span class="material-icons icon-text">info_outlined</span>
-          </p>
-        </ui-tooltip>
-      </div>
-
-      <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
-        <ui-tooltip :text="tooltips.bookshelfView">
-          <p class="pl-4 text-lg">
-            Use alternative bookshelf view
             <span class="material-icons icon-text">info_outlined</span>
           </p>
         </ui-tooltip>
@@ -66,7 +46,36 @@
       </div>
 
       <div class="flex items-center mb-2 mt-8">
-        <h1 class="text-xl">Scanner Settings</h1>
+        <h1 class="text-xl font-semibold">Display Settings</h1>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
+        <ui-tooltip :text="tooltips.coverAspectRatio">
+          <p class="pl-4 text-lg">
+            Use square book covers
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
+        <ui-tooltip :text="tooltips.bookshelfView">
+          <p class="pl-4 text-lg">
+            Use alternative bookshelf view
+            <span class="material-icons icon-text">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+
+      <div class="flex items-center py-2">
+        <p class="pr-4 text-lg">Date Format</p>
+        <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-40" @input="(val) => updateSettingsKey('dateFormat', val)" />
+      </div>
+
+      <div class="flex items-center mb-2 mt-8">
+        <h1 class="text-xl font-semibold">Scanner Settings</h1>
       </div>
 
       <div class="flex items-center py-2">
@@ -144,7 +153,7 @@
       </div>
 
       <div class="flex items-center mb-2 mt-8">
-        <h1 class="text-xl">Experimental Feature Settings</h1>
+        <h1 class="text-xl font-semibold">Experimental Feature Settings</h1>
       </div>
 
       <div class="flex items-center py-2">
@@ -282,12 +291,12 @@ export default {
       set(val) {
         this.$store.commit('setExperimentalFeatures', val)
       }
+    },
+    dateFormats() {
+      return this.$store.state.globals.dateFormats
     }
   },
   methods: {
-    updateEnableChromecast(val) {
-      this.updateServerSettings({ enableChromecast: val })
-    },
     updateSortingPrefixes(val) {
       if (!val || !val.length) {
         this.$toast.error('Must have at least 1 prefix')
@@ -325,10 +334,12 @@ export default {
         .then((success) => {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false
+          this.$toast.success('Server settings updated')
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
           this.updatingServerSettings = false
+          this.$toast.error('Failed to update server settings')
         })
     },
     initServerSettings() {

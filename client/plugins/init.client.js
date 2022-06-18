@@ -169,7 +169,7 @@ Vue.prototype.$sanitizeSlug = (str) => {
     str = str.replace(new RegExp(from.charAt(i), 'g'), to.charAt(i))
   }
 
-  str = str.replace('.', '-') // replace a dot by a dash 
+  str = str.replace('.', '-') // replace a dot by a dash
     .replace(/[^a-z0-9 -_]/g, '') // remove invalid chars
     .replace(/\s+/g, '-') // collapse whitespace and replace by a dash
     .replace(/-+/g, '-') // collapse dashes
