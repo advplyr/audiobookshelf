@@ -63,15 +63,27 @@ class AuthorController {
     // If updating or removing cover image then clear cache
     if (payload.imagePath !== undefined && req.author.imagePath && payload.imagePath !== req.author.imagePath) {
       this.cacheManager.purgeImageCache(req.author.id)
+
       if (!payload.imagePath) { // If removing image then remove file
         var currentImagePath = req.author.imagePath
         await this.coverManager.removeFile(currentImagePath)
+      } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
+        var imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imagePath)
+        if (imageData) {
+          req.author.imagePath = imageData.path
+          req.author.relImagePath = imageData.relPath
+          hasUpdated = hasUpdated || true;
+        } else {
+          req.author.imagePath = null
+          req.author.relImagePath = null
+        }
       }
     }
 
     var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
     var hasUpdated = req.author.update(payload)
+
     if (hasUpdated) {
       if (authorNameUpdate) { // Update author name on all books
         var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))

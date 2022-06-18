@@ -26,6 +26,9 @@
               </div>
             </div>
             <div class="p-2">
+              <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" label="Photo Path/URL" />
+            </div>
+            <div class="p-2">
               <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" label="Description" :rows="8" />
             </div>
 
@@ -43,19 +46,13 @@
 
 <script>
 export default {
-  // props: {
-  //   value: Boolean,
-  //   author: {
-  //     type: Object,
-  //     default: () => {}
-  //   }
-  // },
   data() {
     return {
       authorCopy: {
         name: '',
         asin: '',
-        description: ''
+        description: '',
+        imagePath: ''
       },
       processing: false
     }
@@ -95,9 +92,10 @@ export default {
       this.authorCopy.name = this.author.name
       this.authorCopy.asin = this.author.asin
       this.authorCopy.description = this.author.description
+      this.authorCopy.imagePath = this.author.imagePath
     },
     async submitForm() {
-      var keysToCheck = ['name', 'asin', 'description']
+      var keysToCheck = ['name', 'asin', 'description', 'imagePath']
       var updatePayload = {}
       keysToCheck.forEach((key) => {
         if (this.authorCopy[key] !== this.author[key]) {
