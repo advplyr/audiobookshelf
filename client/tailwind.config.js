@@ -80,7 +80,8 @@ module.exports = {
         book: ['Gentium Book Basic', 'serif']
       },
       fontSize: {
-        xxs: '0.625rem'
+        xxs: '0.625rem',
+        '2.5xl': '1.6875rem'
       },
       zIndex: {
         '50': 50

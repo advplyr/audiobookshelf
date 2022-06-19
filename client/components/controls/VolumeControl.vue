@@ -1,7 +1,7 @@
 <template>
   <div class="relative" v-click-outside="clickOutside" @mouseover="mouseover" @mouseleave="mouseleave">
-    <div class="cursor-pointer" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
-      <span class="material-icons text-3xl">{{ volumeIcon }}</span>
+    <div class="cursor-pointer text-gray-300 hover:text-white" @mousedown.prevent @mouseup.prevent @click="clickVolumeIcon">
+      <span class="material-icons text-2xl sm:text-3xl">{{ volumeIcon }}</span>
     </div>
     <transition name="menux">
       <div v-show="isOpen" class="volumeMenu h-6 absolute bottom-2 w-28 px-2 bg-bg shadow-sm rounded-lg" style="left: -116px">

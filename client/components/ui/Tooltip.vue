@@ -53,7 +53,7 @@ export default {
       var tooltip = document.createElement('div')
       this.tooltipId = String(Math.floor(Math.random() * 10000))
       tooltip.id = this.tooltipId
-      tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs'
+      tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs text-center hidden sm:block'
       tooltip.style.zIndex = 100
       tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
       tooltip.innerHTML = this.text

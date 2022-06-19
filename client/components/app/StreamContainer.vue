@@ -1,30 +1,30 @@
 <template>
   <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
-    <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
+    <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-1 sm:left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </nuxt-link>
-    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : 'pl-24'">
+    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : 'pl-20 sm:pl-24'">
       <div>
-        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-base sm:text-lg">
+        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg">
           {{ title }}
         </nuxt-link>
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="podcastAuthor">{{ podcastAuthor }}</p>
-          <p v-else-if="authors.length" class="pl-1.5 text-sm sm:text-base">
+          <p v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</p>
+          <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
-          <p v-else class="text-sm sm:text-base cursor-pointer pl-2">Unknown</p>
+          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">Unknown</p>
         </div>
 
         <div class="text-gray-400 flex items-center">
           <span class="material-icons text-xs">schedule</span>
-          <p class="font-mono text-sm pl-2 pb-px">{{ totalDurationPretty }}</p>
+          <p class="font-mono text-xs sm:text-sm pl-1 sm:pl-1.5 pb-px">{{ totalDurationPretty }}</p>
         </div>
       </div>
       <div class="flex-grow" />
-      <span class="material-icons px-2 py-1 md:p-4 cursor-pointer" @click="closePlayer">close</span>
+      <span class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</span>
     </div>
     <player-ui
       ref="audioPlayer"
