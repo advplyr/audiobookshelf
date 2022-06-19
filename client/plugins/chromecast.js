@@ -23,7 +23,7 @@ export default (ctx) => {
     var castContext = cast.framework.CastContext.getInstance()
     castContext.setOptions({
       receiverApplicationId: process.env.chromecastReceiver,
-      autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      autoJoinPolicy: chrome.cast ? chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED : null
     });
 
     castContext.addEventListener(

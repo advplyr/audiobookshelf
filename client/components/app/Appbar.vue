@@ -20,11 +20,11 @@
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
           <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>
         </ui-tooltip>
-        <div v-if="isChromecastInitialized" class="w-6 h-6 mr-2 cursor-pointer">
+        <div v-if="isChromecastInitialized" class="w-6 min-w-6 h-6 ml-2 mr-1 sm:mx-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
         </div>
 
-        <nuxt-link v-if="currentLibrary" to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
+        <nuxt-link v-if="currentLibrary" to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
           <span class="material-icons" aria-label="User Stats" role="button">equalizer</span>
         </nuxt-link>
 
