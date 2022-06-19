@@ -8,7 +8,7 @@
       <div ref="trackCursor" class="h-full w-0.5 bg-gray-50 absolute top-0 left-0 opacity-0 pointer-events-none" />
       <div v-if="loading" class="h-full w-1/4 absolute left-0 top-0 loadingTrack pointer-events-none bg-white bg-opacity-25" />
     </div>
-    <div ref="track" class="w-full h-2 relative overflow-hidden">
+    <div class="w-full h-2 relative overflow-hidden" :class="useChapterTrack ? 'opacity-0' : ''">
       <template v-for="(tick, index) in chapterTicks">
         <div :key="index" :style="{ left: tick.left + 'px' }" class="absolute top-0 w-px bg-white bg-opacity-30 h-1 pointer-events-none" />
       </template>
@@ -34,6 +34,10 @@ export default {
     chapters: {
       type: Array,
       default: () => []
+    },
+    currentChapter: {
+      type: Object,
+      default: () => {}
     }
   },
   data() {
@@ -46,7 +50,8 @@ export default {
       trackOffsetLeft: 16, // Track is 16px from edge
       playedTrackWidth: 0,
       readyTrackWidth: 0,
-      bufferTrackWidth: 0
+      bufferTrackWidth: 0,
+      useChapterTrack: false
     }
   },
   watch: {
@@ -57,8 +62,22 @@ export default {
       }
     }
   },
-  computed: {},
+  computed: {
+    currentChapterDuration() {
+      if (!this.currentChapter) return 0
+      return this.currentChapter.end - this.currentChapter.start
+    },
+    currentChapterStart() {
+      if (!this.currentChapter) return 0
+      return this.currentChapter.start
+    }
+  },
   methods: {
+    setUseChapterTrack(useChapterTrack) {
+      this.useChapterTrack = useChapterTrack
+      this.updateBufferTrack()
+      this.updatePlayedTrackWidth()
+    },
     clickTrack(e) {
       if (this.loading) return
 
@@ -76,7 +95,10 @@ export default {
       this.updateBufferTrack()
     },
     updateBufferTrack() {
-      var bufferlen = (this.bufferTime / this.duration) * this.trackWidth
+      const time = this.useChapterTrack ? Math.max(0, this.bufferTime - this.currentChapterStart) : this.bufferTime
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+
+      var bufferlen = (time / duration) * this.trackWidth
       bufferlen = Math.round(bufferlen)
       if (this.bufferTrackWidth === bufferlen || !this.$refs.bufferTrack) return
       if (this.$refs.bufferTrack) this.$refs.bufferTrack.style.width = bufferlen + 'px'
@@ -97,8 +119,10 @@ export default {
       this.updatePlayedTrackWidth()
     },
     updatePlayedTrackWidth() {
-      var perc = this.currentTime / this.duration
-      var ptWidth = Math.round(perc * this.trackWidth)
+      const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+
+      var ptWidth = Math.round((time / duration) * this.trackWidth)
       if (this.playedTrackWidth === ptWidth) {
         return
       }
@@ -116,9 +140,9 @@ export default {
     },
     mousemoveTrack(e) {
       var offsetX = e.offsetX
-      var time = (offsetX / this.trackWidth) * this.duration
 
-      console.log('Mousemove track', this.trackWidth, this.duration)
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+      const time = (offsetX / this.trackWidth) * duration
 
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth

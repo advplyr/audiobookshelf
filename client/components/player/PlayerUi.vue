@@ -1,44 +1,48 @@
 <template>
   <div class="w-full -mt-6">
     <div class="w-full relative mb-1">
-      <div class="absolute -top-10 md:top-0 right-0 md:right-2 flex items-center h-full">
+      <div class="absolute -top-10 md:top-0 right-0 lg:right-2 flex items-center h-full">
         <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
         <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
 
-        <div class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
-          <span v-if="!sleepTimerSet" class="material-icons" style="font-size: 1.7rem">snooze</span>
+        <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
+          <span v-if="!sleepTimerSet" class="material-icons text-2xl sm:text-2.5xl">snooze</span>
           <div v-else class="flex items-center">
             <span class="material-icons text-lg text-warning">snooze</span>
             <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
           </div>
         </div>
 
-        <div v-if="!isPodcast" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
-          <span class="material-icons" style="font-size: 1.7rem">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+        <div v-if="!isPodcast" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+          <span class="material-icons text-2xl sm:text-2.5xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
         </div>
 
-        <div v-if="chapters.length" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
-          <span class="material-icons text-3xl">format_list_bulleted</span>
+        <div v-if="chapters.length" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+          <span class="material-icons text-2xl sm:text-3xl">format_list_bulleted</span>
         </div>
 
-        <div v-if="chapters.length" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
-          <span class="material-icons text-3xl">timelapse</span>
-        </div>
+        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? 'Use full track' : 'Use chapter track'">
+          <div class="cursor-pointer text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
+            <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
+          </div>
+        </ui-tooltip>
       </div>
 
-      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
+      <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
-    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" @seek="seek" />
+    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" @seek="seek" />
 
     <div class="flex">
-      <p ref="currentTimestamp" class="font-mono text-sm text-gray-100 pointer-events-auto">00:00:00</p>
-      <p class="font-mono text-sm text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
+      <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
+      <p class="font-mono text-sm hidden sm:block text-gray-100 pointer-events-auto">&nbsp;/&nbsp;{{ progressPercent }}%</p>
       <div class="flex-grow" />
-      <p class="text-sm text-gray-300 pt-0.5">{{ currentChapterName }}</p>
+      <p class="text-xs sm:text-sm text-gray-300 pt-0.5">
+        {{ currentChapterName }} <span v-if="useChapterTrack" class="text-xs text-gray-400">&nbsp;({{ currentChapterIndex + 1 }} of {{ chapters.length }})</span>
+      </p>
       <div class="flex-grow" />
-      <p class="font-mono text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
+      <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
     <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
@@ -104,8 +108,11 @@ export default {
       return '-' + this.$secondsToTimestamp(this.timeRemaining)
     },
     progressPercent() {
-      if (!this.duration) return 0
-      return Math.round((100 * this.currentTime) / this.duration)
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+      const time = this.useChapterTrack ? Math.max(this.currentTime - this.currentChapterStart) : this.currentTime
+
+      if (!duration) return 0
+      return Math.round((100 * time) / duration)
     },
     currentChapter() {
       return this.chapters.find((chapter) => chapter.start <= this.currentTime && this.currentTime < chapter.end)
@@ -114,7 +121,12 @@ export default {
       return this.currentChapter ? this.currentChapter.title : ''
     },
     currentChapterDuration() {
-      return (this.currentChapter.end - this.currentChapter.start)
+      if (!this.currentChapter) return 0
+      return this.currentChapter.end - this.currentChapter.start
+    },
+    currentChapterStart() {
+      if (!this.currentChapter) return 0
+      return this.currentChapter.start
     },
     isFullscreen() {
       return this.$store.state.playerIsFullscreen
@@ -207,11 +219,12 @@ export default {
     setUseChapterTrack() {
       var useChapterTrack = !this.useChapterTrack
       this.useChapterTrack = useChapterTrack
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(useChapterTrack)
 
-      this.$emit('useChapterTrack', useChapterTrack)
       this.$store.dispatch('user/updateUserSettings', { useChapterTrack }).catch((err) => {
         console.error('Failed to update settings', err)
       })
+      this.updateTimestamp()
     },
     seek(time) {
       this.$emit('seek', time)
@@ -260,7 +273,8 @@ export default {
         console.error('No timestamp el')
         return
       }
-      var currTimeClean = this.$secondsToTimestamp(this.currentTime)
+      const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
+      var currTimeClean = this.$secondsToTimestamp(time)
       ts.innerText = currTimeClean
     },
     setBufferTime(bufferTime) {
@@ -273,8 +287,8 @@ export default {
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
       this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.$emit('setPlaybackRate', this.playbackRate)
-      this.$emit('useChapterTrack', this.useChapterTrack)
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
