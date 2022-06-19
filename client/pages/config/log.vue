@@ -11,7 +11,7 @@
       </div>
 
       <div class="relative">
-        <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 550px; min-height: 550px">
+        <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 800px; min-height: 550px">
           <template v-for="(log, index) in logs">
             <div :key="index" class="flex flex-nowrap px-2 py-1 items-start text-sm bg-opacity-10" :class="`bg-${logColors[log.level]}`">
               <p class="text-gray-400 w-36 font-mono text-xs">{{ log.timestamp }}</p>
