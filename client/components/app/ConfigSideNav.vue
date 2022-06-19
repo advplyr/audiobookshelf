@@ -66,7 +66,7 @@ export default {
         },
         {
           id: 'config-sessions',
-          title: 'Sessions',
+          title: 'Listening Sessions',
           path: '/config/sessions'
         },
         {

@@ -1,63 +1,63 @@
 <template>
   <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-0 sm:p-4 mb-8">
-      <div class="py-2">
-        <div class="flex items-center mb-1">
-          <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions</h1>
-          <div class="flex-grow" />
-
-          <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
-        </div>
-        <div v-if="listeningSessions.length" class="block max-w-full">
-          <table class="userSessionsTable">
-            <tr class="bg-primary bg-opacity-40">
-              <th class="w-48 min-w-48 text-left">Item</th>
-              <th class="w-20 min-w-20 text-left hidden md:table-cell">User</th>
-              <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
-              <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
-              <th class="w-32 min-w-32">Listened</th>
-              <th class="w-16 min-w-16">Last Time</th>
-              <th class="flex-grow hidden sm:table-cell">Last Update</th>
-            </tr>
-
-            <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
-              <td class="py-1 max-w-48">
-                <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
-                <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
-              </td>
-              <td class="hidden md:table-cell">
-                <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
-                <p v-else class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
-              </td>
-              <td class="hidden md:table-cell">
-                <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
-              </td>
-              <td class="hidden sm:table-cell">
-                <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
-              </td>
-              <td class="text-center">
-                <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
-              </td>
-              <td class="text-center">
-                <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
-              </td>
-              <td class="text-center hidden sm:table-cell">
-                <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
-                  <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
-                </ui-tooltip>
-              </td>
-            </tr>
-          </table>
-          <div class="flex items-center justify-end py-1">
-            <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
-            <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
-            <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
-          </div>
-        </div>
-        <p v-else class="text-white text-opacity-50">No sessions yet...</p>
+    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+      <div class="flex items-center mb-2">
+        <h1 class="text-xl">Listening Sessions</h1>
       </div>
-    </div>
 
+      <div class="flex justify-end mb-2">
+        <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
+      </div>
+
+      <div v-if="listeningSessions.length" class="block max-w-full">
+        <table class="userSessionsTable">
+          <tr class="bg-primary bg-opacity-40">
+            <th class="w-48 min-w-48 text-left">Item</th>
+            <th class="w-20 min-w-20 text-left hidden md:table-cell">User</th>
+            <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
+            <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
+            <th class="w-32 min-w-32">Listened</th>
+            <th class="w-16 min-w-16">Last Time</th>
+            <th class="flex-grow hidden sm:table-cell">Last Update</th>
+          </tr>
+
+          <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
+            <td class="py-1 max-w-48">
+              <p class="text-xs text-gray-200 truncate">{{ session.displayTitle }}</p>
+              <p class="text-xs text-gray-400 truncate">{{ session.displayAuthor }}</p>
+            </td>
+            <td class="hidden md:table-cell">
+              <p v-if="filteredUserUsername" class="text-xs">{{ filteredUserUsername }}</p>
+              <p v-else class="text-xs">{{ session.user ? session.user.username : 'N/A' }}</p>
+            </td>
+            <td class="hidden md:table-cell">
+              <p class="text-xs">{{ getPlayMethodName(session.playMethod) }}</p>
+            </td>
+            <td class="hidden sm:table-cell">
+              <p class="text-xs" v-html="getDeviceInfoString(session.deviceInfo)" />
+            </td>
+            <td class="text-center">
+              <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
+            </td>
+            <td class="text-center">
+              <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
+            </td>
+            <td class="text-center hidden sm:table-cell">
+              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
+                <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
+              </ui-tooltip>
+            </td>
+          </tr>
+        </table>
+        <div class="flex items-center justify-end my-2">
+          <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
+          <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
+          <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
+        </div>
+      </div>
+      <p v-else class="text-white text-opacity-50">No sessions yet...</p>
+    </div>
+  
     <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" />
   </div>
 </template>
