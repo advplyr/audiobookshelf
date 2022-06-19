@@ -21,6 +21,10 @@
         <div v-if="chapters.length" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
           <span class="material-icons text-3xl">format_list_bulleted</span>
         </div>
+
+        <div v-if="chapters.length" class="cursor-pointer text-gray-300 mx-1 md:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
+          <span class="material-icons text-3xl">timelapse</span>
+        </div>
       </div>
 
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
@@ -66,7 +70,8 @@ export default {
       seekLoading: false,
       showChaptersModal: false,
       currentTime: 0,
-      duration: 0
+      duration: 0,
+      useChapterTrack: false
     }
   },
   computed: {
@@ -86,6 +91,10 @@ export default {
       return this.$store.getters['user/getToken']
     },
     timeRemaining() {
+      if (this.useChapterTrack && this.currentChapter) {
+        var currChapTime = this.currentTime - this.currentChapter.start
+        return (this.currentChapterDuration - currChapTime) / this.playbackRate
+      }
       return (this.duration - this.currentTime) / this.playbackRate
     },
     timeRemainingPretty() {
@@ -103,6 +112,9 @@ export default {
     },
     currentChapterName() {
       return this.currentChapter ? this.currentChapter.title : ''
+    },
+    currentChapterDuration() {
+      return (this.currentChapter.end - this.currentChapter.start)
     },
     isFullscreen() {
       return this.$store.state.playerIsFullscreen
@@ -192,6 +204,15 @@ export default {
       this.seek(chapter.start)
       this.showChaptersModal = false
     },
+    setUseChapterTrack() {
+      var useChapterTrack = !this.useChapterTrack
+      this.useChapterTrack = useChapterTrack
+
+      this.$emit('useChapterTrack', useChapterTrack)
+      this.$store.dispatch('user/updateUserSettings', { useChapterTrack }).catch((err) => {
+        console.error('Failed to update settings', err)
+      })
+    },
     seek(time) {
       this.$emit('seek', time)
     },
@@ -242,7 +263,6 @@ export default {
       var currTimeClean = this.$secondsToTimestamp(this.currentTime)
       ts.innerText = currTimeClean
     },
-
     setBufferTime(bufferTime) {
       if (this.$refs.trackbar) this.$refs.trackbar.setBufferTime(bufferTime)
     },
@@ -252,7 +272,9 @@ export default {
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
+      this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       this.$emit('setPlaybackRate', this.playbackRate)
+      this.$emit('useChapterTrack', this.useChapterTrack)
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
