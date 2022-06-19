@@ -76,7 +76,7 @@ export default {
         },
         {
           id: 'config-log',
-          title: 'Log',
+          title: 'Logs',
           path: '/config/log'
         }
       ]

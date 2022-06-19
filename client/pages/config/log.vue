@@ -1,20 +1,17 @@
 <template>
-  <div id="page-wrapper" class="page overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="w-full max-w-4xl mx-auto">
-      <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-end">
-        <p class="text-2xl mr-4 mb-2 sm:mb-0">Logger</p>
+  <div class="w-full h-full">
+    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+      <div class="flex items-center mb-2">
+        <h1 class="text-xl">Logs</h1>
+      </div>
+      <div class="flex justify-between mb-2 place-items-end">
+        <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
-        <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm mb-2 sm:mb-0" />
-
-        <div class="flex-grow" />
-
-        <div class="w-full sm:w-44">
-          <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" />
-        </div>
+        <ui-dropdown v-model="newServerSettings.logLevel" label="Server Log Level" :items="logLevelItems" @input="logLevelUpdated" class="w-full sm:w-44" />
       </div>
 
       <div class="relative">
-        <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 550px; min-height: 550px">
+        <div ref="container" class="relative w-full h-full bg-primary border-bg overflow-x-hidden overflow-y-auto text-red shadow-inner rounded-md" style="max-height: 800px; min-height: 550px">
           <template v-for="(log, index) in logs">
             <div :key="index" class="flex flex-nowrap px-2 py-1 items-start text-sm bg-opacity-10" :class="`bg-${logColors[log.level]}`">
               <p class="text-gray-400 w-36 font-mono text-xs">{{ log.timestamp }}</p>
