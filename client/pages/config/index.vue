@@ -171,7 +171,7 @@
 
     <div class="flex items-center py-4">
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click="purgeCache">Purge Cache</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block" :loading="isResettingLibraryItems" @click="resetLibraryItems">Remove All Library Items</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isResettingLibraryItems" @click="resetLibraryItems">Remove All Library Items</ui-btn>
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">
         Report bugs, request features, and contribute on
