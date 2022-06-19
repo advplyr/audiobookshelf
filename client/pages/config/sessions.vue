@@ -2,7 +2,7 @@
   <div class="w-full h-full">
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
       <div class="flex items-center mb-2">
-        <h1 class="text-xl">Sessions</h1>
+        <h1 class="text-xl">Listening Sessions</h1>
       </div>
 
       <div class="flex justify-end mb-2">
@@ -49,7 +49,7 @@
             </td>
           </tr>
         </table>
-        <div class="flex items-center justify-end py-1">
+        <div class="flex items-center justify-end my-2">
           <ui-icon-btn icon="arrow_back_ios_new" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage === 0" @click="prevPage" />
           <p class="text-sm mx-1">Page {{ currentPage + 1 }} of {{ numPages }}</p>
           <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
