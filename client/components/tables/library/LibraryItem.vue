@@ -20,7 +20,6 @@
       </svg>
     </div>
     <span class="material-icons text-xxl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer">reorder</span>
-
   </div>
 </template>
 
