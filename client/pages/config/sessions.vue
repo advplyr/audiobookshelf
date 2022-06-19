@@ -55,6 +55,7 @@
           <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
         </div>
       </div>
+      <p v-else class="text-white text-opacity-50">No sessions yet...</p>
     </div>
   
     <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" />
