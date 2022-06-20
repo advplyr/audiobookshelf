@@ -191,10 +191,6 @@ export default {
   padding: 0px 8px;
 }
 
-#accounts tr:first-child {
-  background-color: #272727;
-}
-
 #accounts tr:nth-child(even) {
   background-color: #373838;
 }
