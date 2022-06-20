@@ -191,8 +191,16 @@ export default {
   padding: 0px 8px;
 }
 
+#accounts tr:first-child {
+  background-color: #272727;
+}
+
 #accounts tr:nth-child(even) {
-  background-color: #3a3a3a;
+  background-color: #373838;
+}
+
+#accounts tr:nth-child(odd) {
+  background-color: #2f2f2f;
 }
 
 #accounts tr:hover {
@@ -204,6 +212,6 @@ export default {
   font-weight: 600;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: #333;
+  background-color: #272727
 }
 </style>
