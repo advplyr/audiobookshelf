@@ -1,10 +1,9 @@
 <template>
-  <div>
-    <p class="text-xl">Stats for library {{ currentLibraryName }}</p>
-
+  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+    <h1 class="text-xl">Stats for library {{ currentLibraryName }}</h1>
     <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
 
-    <div class="flex md:flex-row flex-wrap justify-between flex-col mt-12">
+    <div class="flex md:flex-row flex-wrap justify-between flex-col mt-8">
       <div class="w-80 my-6 mx-auto">
         <h1 class="text-2xl mb-4 font-book">Top 5 Genres</h1>
         <p v-if="!top5Genres.length">No Genres</p>

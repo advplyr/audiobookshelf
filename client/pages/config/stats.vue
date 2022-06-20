@@ -1,5 +1,7 @@
 <template>
-  <div>
+  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+    <h1 class="text-xl">Stats for {{ username }}</h1>
+
     <div class="flex justify-center">
       <div class="flex p-2">
         <svg class="hidden sm:block h-14 w-14 lg:h-18 lg:w-18" viewBox="0 0 24 24">
@@ -83,6 +85,9 @@ export default {
   computed: {
     user() {
       return this.$store.state.user.user
+    },
+    username() {
+      return this.user.username
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
