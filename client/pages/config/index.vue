@@ -5,9 +5,9 @@
         <h1 class="text-xl">Settings</h1>
       </div>
 
-      <div class="sm:flex">
-        <div id="firstcolumn" class="flex-1">
-          <div>
+      <div class="lg:flex">
+        <div class="flex-1">
+          <div class="pt-4">
             <h2 class="font-semibold">General</h2>
           </div>
           <div class="flex items-end py-2">
@@ -34,7 +34,7 @@
             <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
             <ui-tooltip :text="tooltips.sortingIgnorePrefix">
               <p class="pl-4">
-                Ignore prefixes when sorting title and series
+                Ignore prefixes when sorting
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -48,7 +48,7 @@
             <p class="pl-4">Chromecast support</p>
           </div>
 
-          <div class="mt-4">
+          <div class="pt-4">
             <h2 class="font-semibold">Display</h2>
           </div>
 
@@ -73,13 +73,13 @@
           </div>
 
           <div class="flex items-center py-2">
-            <p class="pr-4 ">Date Format</p>
+            <p class="pr-4">Date Format</p>
             <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-40" @input="(val) => updateSettingsKey('dateFormat', val)" />
           </div>
         </div>
 
-        <div id="secondcolumn" class="flex-1">
-          <div>
+        <div class="flex-1">
+          <div class="pt-4">
             <h2 class="font-semibold">Scanner</h2>
           </div>
 
@@ -108,20 +108,20 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferAudioMetadata">
+            <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
+            <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
               <p class="pl-4">
-                Prefer audio metadata
+                Use Overdrive Media Markers for chapters
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
+            <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
+            <ui-tooltip :text="tooltips.scannerPreferAudioMetadata">
               <p class="pl-4">
-                Prefer Overdrive Media Markers for chapters
+                Prefer audio metadata
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -157,7 +157,7 @@
             </ui-tooltip>
           </div>
 
-          <div class="mt-4">
+          <div class="pt-4">
             <h2 class="font-semibold">Experimental Features</h2>
           </div>
 
@@ -184,7 +184,6 @@
               </p>
             </ui-tooltip>
           </div>
-
         </div>
       </div>
     </div>
@@ -231,10 +230,10 @@
 
     <prompt-dialog v-model="showConfirmPurgeCache" :width="675">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p class="text-error  font-semibold">Important Notice!</p>
-        <p class=" my-2 text-center">Purge cache will delete the entire directory at <span class="font-mono">/metadata/cache</span>.</p>
+        <p class="text-error font-semibold">Important Notice!</p>
+        <p class="my-2 text-center">Purge cache will delete the entire directory at <span class="font-mono">/metadata/cache</span>.</p>
 
-        <p class=" text-center mb-8">Are you sure you want to remove the cache directory?</p>
+        <p class="text-center mb-8">Are you sure you want to remove the cache directory?</p>
         <div class="flex px-1 items-center">
           <ui-btn color="primary" @click="showConfirmPurgeCache = false">Nevermind</ui-btn>
           <div class="flex-grow" />
@@ -268,7 +267,7 @@ export default {
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
-        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle below just for you)',
+        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
         scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically'
       },
       showConfirmPurgeCache: false
