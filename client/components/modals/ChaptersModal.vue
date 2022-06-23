@@ -1,11 +1,14 @@
 <template>
-  <modals-modal v-model="show" name="chapters" :width="500" :height="'unset'">
+  <modals-modal v-model="show" name="chapters" :width="600" :height="'unset'">
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
-      <template v-for="(chap, index) in chapters">
+      <template v-for="chap in chapters">
         <div :key="chap.id" :id="`chapter-row-${chap.id}`" class="flex items-center px-6 py-3 justify-start cursor-pointer hover:bg-bg relative" :class="chap.id === currentChapterId ? 'bg-yellow-400 bg-opacity-10' : chap.end <= currentChapterStart ? 'bg-success bg-opacity-5' : 'bg-opacity-20'" @click="clickChapter(chap)">
-          {{ chap.title }}
+          <p class="truncate" style="max-width: 400px">
+            {{ chap.title }}
+          </p>
+          <span class="font-mono text-xs text-gray-400 pl-2">{{ $elapsedPrettyExtended(chap.end - chap.start) }}</span>
           <span class="flex-grow" />
-          <span class="font-mono text-sm text-gray-300">{{ $secondsToTimestamp(chap.start) }} ({{$secondsToTimestamp(timeToNextChapter(index, chapters))}})</span>
+          <span class="font-mono text-sm text-gray-300">{{ $secondsToTimestamp(chap.start) }}</span>
 
           <div v-show="chap.id === currentChapterId" class="w-0.5 h-full absolute top-0 left-0 bg-yellow-400" />
         </div>
@@ -54,12 +57,6 @@ export default {
   methods: {
     clickChapter(chap) {
       this.$emit('select', chap)
-    },
-    timeToNextChapter(index,chapters) {
-      if (index + 1 == chapters.length) {
-        return chapters[index].end - chapters[index].start
-      }
-      return chapters[index+1].start - chapters[index].start
     },
     scrollToChapter() {
       if (!this.currentChapterId) return
