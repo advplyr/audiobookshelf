@@ -146,7 +146,7 @@ export default {
       const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
       const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
       const chapterTime = (offsetX / this.trackWidth) * duration;
-      const totalTime = baseTime + ((offsetX / this.trackWidth) * duration);
+      const totalTime = baseTime + chapterTime;
 
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth
