@@ -145,8 +145,8 @@ export default {
 
       const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
       const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
-      const chapterTime = (offsetX / this.trackWidth) * duration;
-      const totalTime = baseTime + chapterTime;
+      const progressTime = (offsetX / this.trackWidth) * duration;
+      const totalTime = baseTime + progressTime;
 
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth
@@ -167,7 +167,7 @@ export default {
         this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
       }
       if (this.$refs.hoverTimestampText) {
-        var hoverText = this.$secondsToTimestamp(chapterTime)
+        var hoverText = this.$secondsToTimestamp(progressTime)
 
         var chapter = this.chapters.find((chapter) => chapter.start <= totalTime && totalTime < chapter.end)
         if (chapter && chapter.title) {
