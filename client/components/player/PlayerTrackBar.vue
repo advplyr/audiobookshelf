@@ -83,7 +83,8 @@ export default {
 
       var offsetX = e.offsetX
       var perc = offsetX / this.trackWidth
-      var time = perc * this.duration
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+      var time = perc * duration
       if (isNaN(time) || time === null) {
         console.error('Invalid time', perc, time)
         return
