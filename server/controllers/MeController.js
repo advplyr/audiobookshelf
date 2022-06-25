@@ -57,6 +57,7 @@ class MeController {
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
+
     var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)

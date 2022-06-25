@@ -91,7 +91,7 @@ class MediaProgress {
 
     var timeRemaining = this.duration - this.currentTime
     // If time remaining is less than 5 seconds then mark as finished
-    if ((this.progress >= 1 || (!isNaN(timeRemaining) && timeRemaining < 5))) {
+    if ((this.progress >= 1 || (this.duration && !isNaN(timeRemaining) && timeRemaining < 5))) {
       this.isFinished = true
       this.finishedAt = Date.now()
       this.progress = 1
