@@ -85,7 +85,7 @@ export default {
       var perc = offsetX / this.trackWidth
       const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
       const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
-      var time = baseTime + (perc * duration);
+      const time = baseTime + (perc * duration);
       if (isNaN(time) || time === null) {
         console.error('Invalid time', perc, time)
         return
@@ -143,8 +143,10 @@ export default {
     mousemoveTrack(e) {
       var offsetX = e.offsetX
 
-      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
-      const time = (offsetX / this.trackWidth) * duration
+      const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
+      const chapterTime = (offsetX / this.trackWidth) * duration;
+      const totalTime = baseTime + ((offsetX / this.trackWidth) * duration);
 
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth
@@ -165,9 +167,9 @@ export default {
         this.$refs.hoverTimestampArrow.style.left = posLeft + 'px'
       }
       if (this.$refs.hoverTimestampText) {
-        var hoverText = this.$secondsToTimestamp(time)
+        var hoverText = this.$secondsToTimestamp(chapterTime)
 
-        var chapter = this.chapters.find((chapter) => chapter.start <= time && time < chapter.end)
+        var chapter = this.chapters.find((chapter) => chapter.start <= totalTime && totalTime < chapter.end)
         if (chapter && chapter.title) {
           hoverText += ` - ${chapter.title}`
         }
