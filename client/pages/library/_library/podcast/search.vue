@@ -2,25 +2,26 @@
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="podcast-search" />
 
-    <div class="w-full h-full overflow-y-auto p-12 relative">
+    <div class="w-full h-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2" />
-          <ui-btn type="submit" :disabled="processing">Submit</ui-btn>
+          <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />
+          <ui-btn type="submit" :disabled="processing" class="hidden md:block">Submit</ui-btn>
+          <ui-btn type="submit" :disabled="processing" class="block md:hidden" small>Submit</ui-btn>
         </form>
-        <ui-file-input ref="fileInput" :accept="'.opml, .txt'" class="mx-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
+        <ui-file-input ref="fileInput" :accept="'.opml, .txt'" class="ml-2" @change="opmlFileUpload"> Upload OPML File </ui-file-input>
       </div>
 
       <div class="w-full max-w-3xl mx-auto py-4">
         <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">No podcasts found</p>
         <template v-for="podcast in results">
           <div :key="podcast.id" class="flex p-1 hover:bg-primary hover:bg-opacity-25 cursor-pointer" @click="selectPodcast(podcast)">
-            <div class="w-24 min-w-24 h-24 bg-primary">
+            <div class="w-20 min-w-20 h-20 md:w-24 md:min-w-24 md:h-24 bg-primary">
               <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
             </div>
             <div class="flex-grow pl-4 max-w-2xl">
-              <a :href="podcast.pageUrl" class="text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
-              <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
+              <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
+              <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} Episodes</p>
             </div>

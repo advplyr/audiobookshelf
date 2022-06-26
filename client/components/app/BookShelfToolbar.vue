@@ -2,13 +2,19 @@
   <div class="w-full h-20 md:h-10 relative">
     <div class="flex md:hidden h-10 items-center">
       <nuxt-link :to="`/library/${currentLibraryId}`" class="flex-grow h-full flex justify-center items-center" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p>Home</p>
+        <p class="text-sm">Home</p>
       </nuxt-link>
       <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="flex-grow h-full flex justify-center items-center" :class="showLibrary ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p>Library</p>
+        <p class="text-sm">Library</p>
       </nuxt-link>
-      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'series' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p>Series</p>
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'series' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p class="text-sm">Series</p>
+      </nuxt-link>
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p class="text-sm">Collections</p>
+      </nuxt-link>
+      <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="flex-grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p class="text-sm">Search</p>
       </nuxt-link>
     </div>
     <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-30 flex items-center justify-end md:justify-start px-2 md:px-8">
@@ -98,6 +104,9 @@ export default {
     }
   },
   computed: {
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
     },
@@ -129,6 +138,12 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
+    currentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+    },
+    isPodcastLibrary() {
+      return this.currentLibraryMediaType === 'podcast'
+    },
     homePage() {
       return this.$route.name === 'library-library'
     },
@@ -156,6 +171,9 @@ export default {
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
+    },
+    isPodcastSearchPage() {
+      return this.$route.name === 'library-library-podcast-search'
     }
   },
   methods: {
