@@ -5,23 +5,24 @@
       <widgets-podcast-details-edit v-else ref="itemDetailsEdit" :library-item="libraryItem" @submit="saveAndClose" />
     </div>
 
-    <div class="absolute bottom-0 left-0 w-full py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
+    <div class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
       <div class="flex items-center px-4">
-        <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
+        <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8 hidden md:block" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
+        <ui-icon-btn bg-color="error" icon="delete" class="md:hidden" :size="7" icon-font-size="1rem" @click.stop.prevent="removeItem" />
 
         <div class="flex-grow" />
 
-        <ui-tooltip v-if="mediaType == 'book'" :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-4">
+        <ui-tooltip v-if="mediaType == 'book'" :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-2 md:mr-4">
           <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-4">
+        <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-2 md:mr-4">
           <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
         </ui-tooltip>
 
-        <ui-btn @click="save" class="mx-2">Save</ui-btn>
+        <ui-btn @click="save" class="mx-2 hidden md:block">Save</ui-btn>
 
-        <ui-btn @click="saveAndClose">Save & Close</ui-btn>
+        <ui-btn @click="saveAndClose">Save<span class="hidden md:inline-block">&nbsp;& Close</span></ui-btn>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 <template>
-  <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6 relative">
-    <div class="flex">
+  <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
+    <div class="flex flex-wrap">
       <div class="relative">
         <covers-book-cover :library-item="libraryItem" :book-cover-aspect-ratio="bookCoverAspectRatio" />
         <!-- book cover overlay -->
@@ -11,14 +11,14 @@
           </div>
         </div>
       </div>
-      <div class="flex-grow pl-6 pr-2">
+      <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
         <div class="flex items-center">
-          <div v-if="userCanUpload" class="w-40 pr-2 pt-4" style="min-width: 160px">
-            <ui-file-input ref="fileInput" @change="fileUploadSelected">Upload Cover</ui-file-input>
+          <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 pt-4 md:min-w-32">
+            <ui-file-input ref="fileInput" @change="fileUploadSelected"><span class="hidden md:inline-block">Upload Cover</span><span class="material-icons inline-block md:!hidden">upload</span></ui-file-input>
           </div>
           <form @submit.prevent="submitForm" class="flex flex-grow">
             <ui-text-input-with-label v-model="imageUrl" label="Cover Image URL" />
-            <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-3 w-24">Update</ui-btn>
+            <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-2 sm:ml-3 w-24">Update</ui-btn>
           </form>
         </div>
 

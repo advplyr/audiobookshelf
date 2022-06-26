@@ -1,13 +1,13 @@
 <template>
   <modals-modal v-model="show" name="edit-book" :width="800" :height="height" :processing="processing" :content-margin-top="75">
     <template #outer>
-      <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-        <p class="font-book text-3xl text-white truncate pointer-events-none">{{ title }}</p>
+      <div class="absolute top-0 left-0 p-4 md:p-5 w-2/3 overflow-hidden pointer-events-none">
+        <p class="font-book text-xl md:text-3xl text-white truncate pointer-events-none">{{ title }}</p>
       </div>
     </template>
     <div class="absolute -top-10 left-0 z-10 w-full flex">
       <template v-for="tab in availableTabs">
-        <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab text-xs sm:text-base" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
+        <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-0.5 sm:mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab text-xs sm:text-base" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
       </template>
     </div>
 

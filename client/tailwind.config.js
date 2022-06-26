@@ -2,18 +2,23 @@ const defaultTheme = require('tailwindcss/defaultTheme')
 
 module.exports = {
   purge: {
-    options: {
-      safelist: [
-        'bg-success',
-        'bg-red-600',
-        'text-green-500',
-        'py-1.5',
-        'bg-info',
-        'px-1.5'
-      ]
-    }
+    content: [
+      'components/**/*.vue',
+      'layouts/**/*.vue',
+      'pages/**/*.vue',
+      'templates/**/*.vue',
+      'plugins/**/*.js',
+      'nuxt.config.js'
+    ],
+    safelist: [
+      'bg-success',
+      'bg-red-600',
+      'text-green-500',
+      'py-1.5',
+      'bg-info',
+      'px-1.5'
+    ],
   },
-  darkMode: false,
   theme: {
     extend: {
       height: {

@@ -2,13 +2,13 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
     <!-- Merge to m4b -->
     <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-8">
-      <div class="flex items-center">
+      <div class="flex flex-wrap items-center">
         <div>
           <p class="text-lg">Make M4B Audiobook File <span class="text-error">*</span></p>
           <p class="max-w-sm text-sm pt-2 text-gray-300">Generate a .M4B audiobook file with embedded metadata, cover image, and chapters. <br /><span class="text-warning">*</span> Does not delete existing audio files.</p>
         </div>
         <div class="flex-grow" />
-        <div>
+        <div class="mt-2 md:mt-0">
           <p v-if="abmergeStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
           <p v-if="abmergeStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
           <p v-if="abmergeStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>

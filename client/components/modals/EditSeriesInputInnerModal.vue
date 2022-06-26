@@ -1,16 +1,16 @@
 <template>
   <div ref="wrapper" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 rounded-lg items-center justify-center" style="z-index: 51" @click="clickClose">
-    <div class="absolute top-5 right-5 h-12 w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300">
-      <span class="material-icons text-4xl">close</span>
+    <div class="absolute top-3 right-3 md:top-5 md:right-5 h-8 w-8 md:h-12 md:w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300">
+      <span class="material-icons text-2xl md:text-4xl">close</span>
     </div>
     <div ref="content" class="text-white">
       <form v-if="selectedSeries" @submit.prevent="submitSeriesForm">
-        <div class="bg-bg rounded-lg p-8" @click.stop>
+        <div class="bg-bg rounded-lg px-2 py-6 sm:p-6 md:p-8" @click.stop>
           <div class="flex">
-            <div class="flex-grow p-1 min-w-80">
+            <div class="flex-grow p-1 min-w-48 sm:min-w-64 md:min-w-80">
               <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!selectedSeries.id.startsWith('new')" label="Series Name" />
             </div>
-            <div class="w-40 p-1">
+            <div class="w-24 sm:w-28 md:w-40 p-1">
               <ui-text-input-with-label v-model="selectedSeries.sequence" label="Sequence" />
             </div>
           </div>

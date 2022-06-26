@@ -58,7 +58,8 @@ module.exports = {
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/pwa'
+    '@nuxtjs/pwa',
+    '@nuxt/postcss8'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
@@ -123,7 +124,14 @@ module.exports = {
   },
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
-  build: {},
+  build: {
+    postcss: {
+      plugins: {
+        tailwindcss: {},
+        autoprefixer: {},
+      },
+    }
+  },
   watchers: {
     webpack: {
       aggregateTimeout: 300,
@@ -133,5 +141,13 @@ module.exports = {
   server: {
     port: process.env.NODE_ENV === 'production' ? 80 : 3000,
     host: '0.0.0.0'
-  }
+  },
+
+  /**
+ * Temporary workaround for @nuxt-community/tailwindcss-module.
+ *
+ * Reported: 2022-05-23
+ * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
+ */
+  devServerHandlers: [],
 }
