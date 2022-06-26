@@ -1,7 +1,7 @@
 const Path = require('path')
 const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
 const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
@@ -304,7 +304,7 @@ class Book {
 
   searchQuery(query) {
     var payload = {
-      tags: this.tags.filter(t => t.toLowerCase().includes(query)),
+      tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
       series: this.metadata.searchSeries(query),
       authors: this.metadata.searchAuthors(query),
       matchKey: null,

@@ -130,3 +130,9 @@ module.exports.toNumber = (val, fallback = 0) => {
   if (isNaN(val) || val === null) return fallback
   return Number(val)
 }
+
+module.exports.cleanStringForSearch = (str) => {
+  if (!str) return ''
+  // Remove ' . ` " ,
+  return str.toLowerCase().replace(/[\'\.\`\",]/g, '').trim()
+}

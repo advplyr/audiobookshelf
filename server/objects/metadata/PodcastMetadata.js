@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 
 class PodcastMetadata {
   constructor(metadata) {
@@ -94,7 +94,7 @@ class PodcastMetadata {
   searchQuery(query) { // Returns key if match is found
     var keysToCheck = ['title', 'author', 'itunesId', 'itunesArtistId']
     for (var key of keysToCheck) {
-      if (this[key] && String(this[key]).toLowerCase().includes(query)) {
+      if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
         return {
           matchKey: key,
           matchText: this[key]

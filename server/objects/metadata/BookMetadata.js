@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
@@ -342,15 +342,15 @@ class BookMetadata {
   }
 
   searchSeries(query) {
-    return this.series.filter(se => se.name.toLowerCase().includes(query))
+    return this.series.filter(se => cleanStringForSearch(se.name).includes(query))
   }
   searchAuthors(query) {
-    return this.authors.filter(se => se.name.toLowerCase().includes(query))
+    return this.authors.filter(au => cleanStringForSearch(au.name).includes(query))
   }
   searchQuery(query) { // Returns key if match is found
     var keysToCheck = ['title', 'asin', 'isbn']
     for (var key of keysToCheck) {
-      if (this[key] && this[key].toLowerCase().includes(query)) {
+      if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
         return {
           matchKey: key,
           matchText: this[key]

@@ -7,7 +7,7 @@ const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
 const Video = require('./mediaTypes/Video')
-const { areEquivalent, copyValue, getId } = require('../utils/index')
+const { areEquivalent, copyValue, getId, cleanStringForSearch } = require('../utils/index')
 
 class LibraryItem {
   constructor(libraryItem = null) {
@@ -451,7 +451,7 @@ class LibraryItem {
   }
 
   searchQuery(query) {
-    query = query.toLowerCase()
+    query = cleanStringForSearch(query)
     return this.media.searchQuery(query)
   }
 

@@ -62,21 +62,10 @@ export default {
     matchHtml() {
       if (!this.matchText || !this.search) return ''
       if (this.matchKey === 'subtitle') return ''
-      var matchSplit = this.matchText.toLowerCase().split(this.search.toLowerCase().trim())
-      if (matchSplit.length < 2) return ''
 
-      var html = ''
-      var totalLenSoFar = 0
-      for (let i = 0; i < matchSplit.length - 1; i++) {
-        var indexOf = matchSplit[i].length
-        var firstPart = this.matchText.substr(totalLenSoFar, indexOf)
-        var actualWasThere = this.matchText.substr(totalLenSoFar + indexOf, this.search.length)
-        totalLenSoFar += indexOf + this.search.length
-
-        html += `${firstPart}<strong class="text-warning">${actualWasThere}</strong>`
-      }
-      var lastPart = this.matchText.substr(totalLenSoFar)
-      html += lastPart
+      // This used to highlight the part of the search found
+      //        but with removing commas periods etc this is no longer plausible
+      const html = this.matchText
 
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
       if (this.matchKey === 'authors') return `by ${html}`
