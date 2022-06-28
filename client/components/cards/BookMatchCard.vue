@@ -6,11 +6,18 @@
       </div>
       <div v-if="!isPodcast" class="px-4 flex-grow">
         <div class="flex items-center">
-          <h1>{{ book.title }}</h1>
+          <h1 class="text-base">{{ book.title }}</h1>
           <div class="flex-grow" />
           <p>{{ book.publishedYear }}</p>
         </div>
-        <p class="text-gray-400">{{ book.author }}</p>
+        <p class="text-gray-300 text-sm">{{ book.author }}</p>
+        <div v-if="book.series && book.series.length" class="flex py-1 -mx-1">
+          <div v-for="(series, index) in book.series" :key="index" class="bg-white bg-opacity-10 rounded-full px-1 py-0.5 mx-1">
+            <p class="leading-3 text-xs text-gray-400">
+              {{ series.series }}<span v-if="series.volumeNumber">&nbsp;#{{ series.volumeNumber }}</span>
+            </p>
+          </div>
+        </div>
         <div class="w-full max-h-12 overflow-hidden">
           <p class="text-gray-500 text-xs">{{ book.description }}</p>
         </div>
