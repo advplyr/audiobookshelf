@@ -1,8 +1,8 @@
 <template>
-  <modals-modal v-model="show" name="edit-book" :width="800" :height="height" :processing="processing" :content-margin-top="75">
+  <modals-modal v-model="show" name="edit-book" :width="800" :height="height" :processing="processing" :content-margin-top="marginTop">
     <template #outer>
-      <div class="absolute top-0 left-0 p-4 md:p-5 w-2/3 overflow-hidden pointer-events-none">
-        <p class="font-book text-xl md:text-3xl text-white truncate pointer-events-none">{{ title }}</p>
+      <div class="absolute top-0 left-0 p-4 landscape:px-4 landscape:py-2 md:portrait:p-5 lg:p-5 w-2/3 overflow-hidden pointer-events-none">
+        <p class="font-book text-xl md:portrait:text-3xl md:landscape:text-lg lg:text-3xl text-white truncate pointer-events-none">{{ title }}</p>
       </div>
     </template>
     <div class="absolute -top-10 left-0 z-10 w-full flex">
@@ -30,6 +30,8 @@ export default {
     return {
       processing: false,
       libraryItem: null,
+      availableHeight: 0,
+      marginTop: 0,
       tabs: [
         {
           id: 'details',
@@ -133,8 +135,7 @@ export default {
       })
     },
     height() {
-      var maxHeightAllowed = window.innerHeight - 150
-      return Math.min(maxHeightAllowed, 650)
+      return Math.min(this.availableHeight, 650)
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
@@ -246,15 +247,29 @@ export default {
       }
     },
     registerListeners() {
+      window.addEventListener('orientationchange', this.orientationChange)
       this.$eventBus.$on('modal-hotkey', this.hotkey)
       this.$eventBus.$on(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
     },
     unregisterListeners() {
+      window.removeEventListener('orientationchange', this.orientationChange)
       this.$eventBus.$off('modal-hotkey', this.hotkey)
       this.$eventBus.$off(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
+    },
+    orientationChange() {
+      setTimeout(this.setHeight, 50)
+    },
+    setHeight() {
+      const smAndBelow = window.innerWidth < 1024 && window.innerWidth > window.innerHeight
+
+      this.marginTop = smAndBelow ? 90 : 75
+      const heightModifier = smAndBelow ? 95 : 150
+      this.availableHeight = window.innerHeight - heightModifier
     }
   },
-  mounted() {},
+  mounted() {
+    this.setHeight()
+  },
   beforeDestroy() {
     this.unregisterListeners()
   }

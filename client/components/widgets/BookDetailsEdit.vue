@@ -11,7 +11,7 @@
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
-        <div class="w-full sm:w-3/4 px-1">
+        <div class="w-full md:w-3/4 px-1">
           <!-- Authors filter only contains authors in this library, use query input to query all authors -->
           <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
         </div>
