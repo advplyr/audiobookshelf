@@ -120,6 +120,9 @@ module.exports = {
           sizes: "512x512"
         }
       ]
+    },
+    workbox: {
+      enabled: false,
     }
   },
 
