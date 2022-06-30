@@ -182,7 +182,7 @@ class BookFinder {
     if (provider === 'google') {
       books = this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
-      books = this.getAudibleResults(title, author, asin)
+      books = await this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
       books = this.getiTunesAudiobooksResults(title, author)
     } else if (provider === 'libgen') {
