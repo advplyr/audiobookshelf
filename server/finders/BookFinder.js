@@ -180,8 +180,7 @@ class BookFinder {
     Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'google') {
-      books = await 
-      this.getGoogleBooksResults(title, author)
+      books = await this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
       books = await this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
