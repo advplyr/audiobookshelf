@@ -7,19 +7,26 @@
     </svg>
     <p class="text-xl font-book pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
     <div class="flex-grow" />
-    <ui-btn v-show="isHovering && !libraryScan" small color="success" @click.stop="scan">Scan</ui-btn>
-    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2" @click.stop="forceScan">Force Re-Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" class="hidden md:block" small color="success" @click.stop="scan">Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2 hidden md:block" @click.stop="forceScan">Force Re-Scan</ui-btn>
 
-    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2" @click.stop="matchAll">Match Books</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2 hidden md:block" @click.stop="matchAll">Match Books</ui-btn>
 
-    <span v-show="isHovering && !libraryScan && showEdit" class="material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
-    <span v-show="!libraryScan && isHovering && showEdit && !isDeleting" class="material-icons text-xl text-gray-300 ml-3" :class="isMain ? 'text-opacity-5 cursor-not-allowed' : 'hover:text-gray-50 cursor-pointer'" @click.stop="deleteClick">delete</span>
+    <span v-if="isHovering && !libraryScan" class="!hidden md:!block material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
+    <span v-if="!libraryScan && isHovering && !isDeleting" class="!hidden md:!block material-icons text-xl text-gray-300 ml-3 hover:text-gray-50 cursor-pointer" @click.stop="deleteClick">delete</span>
+
+    <!-- For mobile -->
+    <span v-if="!libraryScan" class="!block md:!hidden material-icons text-xl text-gray-300 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
+    <span v-if="!libraryScan && !isDeleting" class="!block md:!hidden material-icons text-2xl text-gray-300 ml-3 cursor-pointer" @click.stop="showMenu">more_vert</span>
     <div v-show="isDeleting" class="text-xl text-gray-300 ml-3 animate-spin">
       <svg viewBox="0 0 24 24" class="w-6 h-6">
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
       </svg>
     </div>
-    <span class="material-icons text-xxl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer">reorder</span>
+    <span class="material-icons text-xl text-gray-400 hover:text-gray-50 ml-4">reorder</span>
+
+    <!-- For mobile -->
+    <modals-dialog v-model="showMobileMenu" :title="menuTitle" :items="mobileMenuItems" @action="mobileMenuAction" />
   </div>
 </template>
 
@@ -31,21 +38,18 @@ export default {
       default: () => {}
     },
     selected: Boolean,
-    showEdit: Boolean,
     dragging: Boolean
   },
   data() {
     return {
       mouseover: false,
-      isDeleting: false
+      isDeleting: false,
+      showMobileMenu: false
     }
   },
   computed: {
     isHovering() {
       return this.mouseover && !this.dragging
-    },
-    isMain() {
-      return this.library.id === 'main'
     },
     libraryScan() {
       return this.$store.getters['scanners/getLibraryScan'](this.library.id)
@@ -55,9 +59,50 @@ export default {
     },
     isBookLibrary() {
       return this.mediaType === 'book'
+    },
+    menuTitle() {
+      return this.library.name
+    },
+    mobileMenuItems() {
+      const items = [
+        {
+          text: 'Scan',
+          value: 'scan'
+        },
+        {
+          text: 'Force Re-Scan',
+          value: 'force-scan'
+        }
+      ]
+      if (this.isBookLibrary) {
+        items.push({
+          text: 'Match Books',
+          value: 'match-books'
+        })
+      }
+      items.push({
+        text: 'Delete',
+        value: 'delete'
+      })
+      return items
     }
   },
   methods: {
+    mobileMenuAction(action) {
+      this.showMobileMenu = false
+      if (action === 'scan') {
+        this.scan()
+      } else if (action === 'force-scan') {
+        this.forceScan()
+      } else if (action === 'match-books') {
+        this.matchAll()
+      } else if (action === 'delete') {
+        this.deleteClick()
+      }
+    },
+    showMenu() {
+      this.showMobileMenu = true
+    },
     matchAll() {
       this.$axios
         .$post(`/api/libraries/${this.library.id}/matchall`)
@@ -98,7 +143,6 @@ export default {
       }
     },
     deleteClick() {
-      if (this.isMain) return
       if (confirm(`Are you sure you want to permanently delete library "${this.library.name}"?`)) {
         this.isDeleting = true
         this.$axios

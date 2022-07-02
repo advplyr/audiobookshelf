@@ -9,7 +9,7 @@
     <draggable v-if="libraryCopies.length" :list="libraryCopies" v-bind="dragOptions" class="list-group" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
-          <tables-library-item :library="library" :selected="currentLibraryId === library.id" :show-edit="true" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
+          <tables-library-item :library="library" :selected="currentLibraryId === library.id" :dragging="drag" @edit="editLibrary" @click="setLibrary" />
         </div>
       </template>
     </draggable>

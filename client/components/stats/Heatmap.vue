@@ -2,7 +2,7 @@
   <div id="heatmap" class="w-full">
     <div class="mx-auto" :style="{ height: innerHeight + 160 + 'px', width: innerWidth + 52 + 'px' }" style="background-color: rgba(13, 17, 23, 0)">
       <p class="mb-2 px-1 text-sm text-gray-200">{{ Object.values(daysListening).length }} listening sessions in the last year</p>
-      <div class="border border-opacity-25 rounded py-2 w-full" style="background-color: #232323" :style="{ height: innerHeight + 80 + 'px' }">
+      <div class="border border-white border-opacity-25 rounded py-2 w-full" style="background-color: #232323" :style="{ height: innerHeight + 80 + 'px' }">
         <div :style="{ width: innerWidth + 'px', height: innerHeight + 'px' }" class="ml-10 mt-5 absolute" @mouseover="mouseover" @mouseout="mouseout">
           <div v-for="dayLabel in dayLabels" :key="dayLabel.label" :style="dayLabel.style" class="absolute top-0 left-0 text-gray-300">{{ dayLabel.label }}</div>
 

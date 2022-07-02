@@ -5,7 +5,7 @@
         <p class="font-book text-3xl text-white truncate">Session {{ _session.id }}</p>
       </div>
     </template>
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
+    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
       <div class="flex items-center">
         <p class="text-base text-gray-200">{{ _session.displayTitle }}</p>
         <p v-if="_session.displayAuthor" class="text-xs text-gray-400 px-4">by {{ _session.displayAuthor }}</p>
