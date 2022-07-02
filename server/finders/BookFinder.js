@@ -180,11 +180,11 @@ class BookFinder {
     Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
 
     if (provider === 'google') {
-      books = this.getGoogleBooksResults(title, author)
+      books = await this.getGoogleBooksResults(title, author)
     } else if (provider === 'audible') {
-      books = this.getAudibleResults(title, author, asin)
+      books = await this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
-      books = this.getiTunesAudiobooksResults(title, author)
+      books = await this.getiTunesAudiobooksResults(title, author)
     } else if (provider === 'libgen') {
       books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {
