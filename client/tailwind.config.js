@@ -1,5 +1,3 @@
-const defaultTheme = require('tailwindcss/defaultTheme')
-
 module.exports = {
   purge: {
     content: [
@@ -80,8 +78,8 @@ module.exports = {
         none: 'none'
       },
       fontFamily: {
-        sans: ['Source Sans Pro', ...defaultTheme.fontFamily.sans],
-        mono: ['Ubuntu Mono', ...defaultTheme.fontFamily.mono],
+        sans: ['Source Sans Pro'],
+        mono: ['Ubuntu Mono'],
         book: ['Gentium Book Basic', 'serif']
       },
       fontSize: {
