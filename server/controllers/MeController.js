@@ -33,7 +33,7 @@ class MeController {
 
   // GET: api/me/progress/:id/:episodeId?
   async getMediaProgress(req, res) {
-    const mediaProgress = req.user.getMediaProgress(req.id, req.episodeId || null)
+    const mediaProgress = req.user.getMediaProgress(req.params.id, req.params.episodeId || null)
     if (!mediaProgress) {
       return res.sendStatus(404)
     }
