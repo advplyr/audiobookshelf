@@ -248,12 +248,14 @@ export default {
       return this.mediaMetadata.authorNameLF
     },
     displayTitle() {
+      if (this.recentEpisode) return this.recentEpisode.title
       if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
         return this.mediaMetadata.titleIgnorePrefix
       }
       return this.title
     },
     displayLineTwo() {
+      if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
