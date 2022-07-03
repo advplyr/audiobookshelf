@@ -163,9 +163,9 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
     return []
   }
 
-  var isFile = false // item is not in a folder
   var items = []
   for (const libraryItemPath in libraryItemGrouping) {
+    var isFile = false // item is not in a folder
     var libraryItemData = null
     var fileObjs = []
     if (libraryItemPath === libraryItemGrouping[libraryItemPath]) {
