@@ -10,13 +10,9 @@ class CacheManager {
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
-
-    this.cachePathsExist = false
   }
 
   async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
-    if (this.cachePathsExist) return
-
     var pathsCreated = false
     if (!(await fs.pathExists(this.CachePath))) {
       await fs.mkdir(this.CachePath)
@@ -36,8 +32,6 @@ class CacheManager {
     if (pathsCreated) {
       await filePerms.setDefault(this.CachePath)
     }
-
-    this.cachePathsExist = true
   }
 
   async handleCoverCache(res, libraryItem, options = {}) {
