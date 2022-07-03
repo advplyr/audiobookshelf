@@ -316,6 +316,12 @@ class LibraryItem {
       hasUpdated = true
     }
 
+    if (dataFound.isFile !== this.isFile && dataFound.isFile !== undefined) {
+      Logger.info(`[LibraryItem] Check scan item isFile toggled from ${this.isFile} => ${dataFound.isFile}`)
+      this.isFile = dataFound.isFile
+      hasUpdated = true
+    }
+
     if (dataFound.ino !== this.ino) {
       this.ino = dataFound.ino
       hasUpdated = true
