@@ -54,7 +54,7 @@ export default {
   },
   computed: {
     dailyBackupsTooltip() {
-      return 'Runs at 1am every day (your server time). Saved in /metadata/backups.'
+      return 'Runs at 1:30am every day (your server time). Saved in /metadata/backups.'
     },
     maxBackupSizeTooltip() {
       return 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
@@ -74,7 +74,7 @@ export default {
         return
       }
       var updatePayload = {
-        backupSchedule: this.dailyBackups ? '0 1 * * *' : false,
+        backupSchedule: this.dailyBackups ? '30 1 * * *' : false,
         backupsToKeep: Number(this.backupsToKeep),
         maxBackupSize: Number(this.maxBackupSize)
       }

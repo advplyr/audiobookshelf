@@ -24,7 +24,7 @@ class ServerSettings {
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     // Backups
-    // this.backupSchedule = '0 1 * * *' // If false then auto-backups are disabled (default every day at 1am)
+    // this.backupSchedule = '30 1 * * *' // If false then auto-backups are disabled (default every day at 1:30am)
     this.backupSchedule = false
     this.backupsToKeep = 2
     this.maxBackupSize = 1
