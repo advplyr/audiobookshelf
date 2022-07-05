@@ -42,7 +42,6 @@
     "fs-extra": "^10.0.0",
     "htmlparser2": "^8.0.1",
     "jsonwebtoken": "^8.5.1",
-    "libgen": "^2.1.0",
     "node-ffprobe": "^3.0.0",
     "node-stream-zip": "^1.15.0",
     "recursive-readdir-async": "^1.1.8",

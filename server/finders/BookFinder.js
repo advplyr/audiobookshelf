@@ -1,5 +1,4 @@
 const OpenLibrary = require('../providers/OpenLibrary')
-const LibGen = require('../providers/LibGen')
 const GoogleBooks = require('../providers/GoogleBooks')
 const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
@@ -10,7 +9,6 @@ const { levenshteinDistance } = require('../utils/index')
 class BookFinder {
   constructor() {
     this.openLibrary = new OpenLibrary()
-    this.libGen = new LibGen()
     this.googleBooks = new GoogleBooks()
     this.audible = new Audible()
     this.iTunesApi = new iTunes()
@@ -123,20 +121,6 @@ class BookFinder {
     })
   }
 
-  async getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance) {
-    var books = await this.libGen.search(title)
-    if (this.verbose) Logger.debug(`LibGen Book Search Results: ${books.length || 0}`)
-    if (books.errorCode) {
-      Logger.error(`LibGen Search Error ${books.errorCode}`)
-      return []
-    }
-    var booksFiltered = this.filterSearchResults(books, title, author, maxTitleDistance, maxAuthorDistance)
-    if (!booksFiltered.length && books.length) {
-      if (this.verbose) Logger.debug(`Search has ${books.length} matches, but no close title matches`)
-    }
-    return booksFiltered
-  }
-
   async getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance) {
     var books = await this.openLibrary.searchTitle(title)
     if (this.verbose) Logger.debug(`OpenLib Book Search Results: ${books.length || 0}`)
@@ -185,27 +169,10 @@ class BookFinder {
       books = await this.getAudibleResults(title, author, asin)
     } else if (provider === 'itunes') {
       books = await this.getiTunesAudiobooksResults(title, author)
-    } else if (provider === 'libgen') {
-      books = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'openlibrary') {
       books = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)
-    } else if (provider === 'all') {
-      var lbBooks = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
-      var olBooks = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)
-      books = books.concat(lbBooks, olBooks)
     } else {
-      books = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)
-      var hasCloseMatch = books.find(b => (b.totalDistance < 2 && b.totalPossibleDistance > 6))
-      if (!hasCloseMatch) {
-        Logger.debug(`Book Search, openlib has no super close matches - get libgen results also`)
-        var lbBooks = await this.getLibGenResults(title, author, maxTitleDistance, maxAuthorDistance)
-        books = books.concat(lbBooks)
-      }
-
-      if (!books.length && author && options.fallbackTitleOnly) {
-        Logger.debug(`Book Search, no matches for title and author.. check title only`)
-        return this.search(provider, title, null, options)
-      }
+      books = await this.getGoogleBooksResults(title, author)
     }
 
     if (!books.length && !options.currentlyTryingCleaned) {
