@@ -679,15 +679,15 @@ class Scanner {
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
           if ((!libraryItem.media.metadata.narratorName || options.overrideDetails)) {
-            updatePayload.metadata.narrators = matchData[key].split(',')
+            updatePayload.metadata.narrators = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
           }
         } else if (key === 'genres') {
           if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
-            updatePayload.metadata[key] = matchData[key].split(',')
+            updatePayload.metadata[key] = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
           }
         } else if (key === 'tags') {
           if ((!libraryItem.media.tags || options.overrideDetails)) {
-            updatePayload[key] = matchData[key].split(',')
+            updatePayload[key] = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
           }
         } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
           updatePayload.metadata[key] = matchData[key]
@@ -697,7 +697,9 @@ class Scanner {
 
     // Add or set author if not set
     if (matchData.author && (!libraryItem.media.metadata.authorName || options.overrideDetails)) {
-      if (!Array.isArray(matchData.author)) matchData.author = [matchData.author]
+      if (!Array.isArray(matchData.author)) {
+        matchData.author = matchData.author.split(',').map(au => au.trim()).filter(au => !!au)
+      }
       const authorPayload = []
       for (let index = 0; index < matchData.author.length; index++) {
         const authorName = matchData.author[index]
