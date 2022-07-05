@@ -44,7 +44,6 @@
     "jsonwebtoken": "^8.5.1",
     "node-ffprobe": "^3.0.0",
     "node-stream-zip": "^1.15.0",
-    "recursive-readdir-async": "^1.1.8",
     "socket.io": "^4.4.1",
     "xml2js": "^0.4.23"
   }

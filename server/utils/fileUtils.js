@@ -1,5 +1,5 @@
 const fs = require('fs-extra')
-const rra = require('recursive-readdir-async')
+const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
 const Logger = require('../Logger')
