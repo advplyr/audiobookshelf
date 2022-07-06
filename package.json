@@ -33,7 +33,6 @@
     "archiver": "^5.3.0",
     "axios": "^0.26.1",
     "bcryptjs": "^2.4.3",
-    "command-line-args": "^5.2.0",
     "date-and-time": "^2.3.1",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.1",

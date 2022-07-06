@@ -6,7 +6,7 @@ const optionDefinitions = [
   { name: 'source', alias: 's', type: String }
 ]
 
-const commandLineArgs = require('command-line-args')
+const commandLineArgs = require('./server/libs/commandLineArgs')
 const options = commandLineArgs(optionDefinitions)
 
 const Path = require('path')
