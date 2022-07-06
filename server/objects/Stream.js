@@ -1,4 +1,4 @@
-const Ffmpeg = require('fluent-ffmpeg')
+const Ffmpeg = require('../libs/fluentFfmpeg')
 const EventEmitter = require('events')
 const Path = require('path')
 const fs = require('../libs/fsExtra')

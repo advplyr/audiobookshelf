@@ -1,15 +1,20 @@
+//
+// used by properLockFile
+// Source: https://github.com/tim-kos/node-retry
+//
+
 var RetryOperation = require('./retry_operation');
 
-exports.operation = function(options) {
+exports.operation = function (options) {
   var timeouts = exports.timeouts(options);
   return new RetryOperation(timeouts, {
-      forever: options && options.forever,
-      unref: options && options.unref,
-      maxRetryTime: options && options.maxRetryTime
+    forever: options && options.forever,
+    unref: options && options.unref,
+    maxRetryTime: options && options.maxRetryTime
   });
 };
 
-exports.timeouts = function(options) {
+exports.timeouts = function (options) {
   if (options instanceof Array) {
     return [].concat(options);
   }
@@ -39,14 +44,14 @@ exports.timeouts = function(options) {
   }
 
   // sort the array numerically ascending
-  timeouts.sort(function(a,b) {
+  timeouts.sort(function (a, b) {
     return a - b;
   });
 
   return timeouts;
 };
 
-exports.createTimeout = function(attempt, opts) {
+exports.createTimeout = function (attempt, opts) {
   var random = (opts.randomize)
     ? (Math.random() + 1)
     : 1;
@@ -57,7 +62,7 @@ exports.createTimeout = function(attempt, opts) {
   return timeout;
 };
 
-exports.wrap = function(obj, options, methods) {
+exports.wrap = function (obj, options, methods) {
   if (options instanceof Array) {
     methods = options;
     options = null;
@@ -73,15 +78,15 @@ exports.wrap = function(obj, options, methods) {
   }
 
   for (var i = 0; i < methods.length; i++) {
-    var method   = methods[i];
+    var method = methods[i];
     var original = obj[method];
 
     obj[method] = function retryWrapper(original) {
-      var op       = exports.operation(options);
-      var args     = Array.prototype.slice.call(arguments, 1);
+      var op = exports.operation(options);
+      var args = Array.prototype.slice.call(arguments, 1);
       var callback = args.pop();
 
-      args.push(function(err) {
+      args.push(function (err) {
         if (op.retry(err)) {
           return;
         }
@@ -91,7 +96,7 @@ exports.wrap = function(obj, options, methods) {
         callback.apply(this, arguments);
       });
 
-      op.attempt(function() {
+      op.attempt(function () {
         original.apply(obj, args);
       });
     }.bind(obj, original);

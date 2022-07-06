@@ -1,4 +1,4 @@
-const Ffmpeg = require('fluent-ffmpeg')
+const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const package = require('../../package.json')
