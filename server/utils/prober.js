@@ -1,4 +1,4 @@
-const ffprobe = require('node-ffprobe')
+const ffprobe = require('../libs/nodeFfprobe')
 const MediaProbeData = require('../scanner/MediaProbeData')
 
 const Logger = require('../Logger')
