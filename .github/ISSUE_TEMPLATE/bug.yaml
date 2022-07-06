@@ -9,6 +9,9 @@ body:
   - type: markdown
     attributes:
       value: "### Mobile app issues report [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
+  - type: markdown
+    attributes:
+      value: "## Be as descriptive as you can. Include screenshots, error logs, browser, file types, everything you can think of that might be relevant."
   - type: textarea
     id: what-happened
     attributes:
