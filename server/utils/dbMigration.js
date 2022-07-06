@@ -1,5 +1,5 @@
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const njodb = require('../libs/njodb')
 
 const { SupportedEbookTypes } = require('./globals')

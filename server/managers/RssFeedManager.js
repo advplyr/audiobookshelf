@@ -1,5 +1,5 @@
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
 const Logger = require('../Logger')
 

@@ -1,5 +1,5 @@
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
 const globals = require('./globals')

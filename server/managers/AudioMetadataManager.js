@@ -1,5 +1,5 @@
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const workerThreads = require('worker_threads')
 const Logger = require('../Logger')
 const filePerms = require('../utils/filePerms')
@@ -112,7 +112,7 @@ class AudioMetadataMangaer {
 
         Logger.debug(`[AudioFileMetaDataManager] No cover found for "${audioFile.metadata.filename}". Cover will be skipped or removed from metadata`)
       }
-      
+
       ffmpegOptions.push(...ffmpegCoverPathOptions)
 
       var workerData = {

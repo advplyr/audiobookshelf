@@ -6,7 +6,7 @@ const PlaybackSession = require('../objects/PlaybackSession')
 const DeviceInfo = require('../objects/DeviceInfo')
 const Stream = require('../objects/Stream')
 const Logger = require('../Logger')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 
 const uaParserJs = require('../libs/uaParser')
 const requestIp = require('../libs/requestIp')

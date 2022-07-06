@@ -1,5 +1,5 @@
 const axios = require('axios')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')

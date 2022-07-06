@@ -1,4 +1,4 @@
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Path = require('path')
 
 // Utils

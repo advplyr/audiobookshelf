@@ -1,6 +1,6 @@
 
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 
 const workerThreads = require('worker_threads')
 const Logger = require('../Logger')

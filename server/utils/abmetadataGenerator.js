@@ -1,4 +1,4 @@
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const filePerms = require('./filePerms')
 const package = require('../../package.json')
 const Logger = require('../Logger')

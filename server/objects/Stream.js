@@ -1,7 +1,7 @@
 const Ffmpeg = require('fluent-ffmpeg')
 const EventEmitter = require('events')
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const { secondsToTimestamp } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')

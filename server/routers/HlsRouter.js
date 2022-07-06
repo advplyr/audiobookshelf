@@ -1,6 +1,6 @@
 const express = require('express')
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 
 class HlsRouter {

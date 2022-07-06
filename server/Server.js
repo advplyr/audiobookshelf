@@ -2,7 +2,7 @@ const Path = require('path')
 const express = require('express')
 const http = require('http')
 const SocketIO = require('socket.io')
-const fs = require('fs-extra')
+const fs = require('./libs/fsExtra')
 const fileUpload = require('express-fileupload')
 const rateLimit = require('express-rate-limit')
 

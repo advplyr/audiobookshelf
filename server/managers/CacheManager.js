@@ -1,5 +1,5 @@
 const Path = require('path')
-const fs = require('fs-extra')
+const fs = require('../libs/fsExtra')
 const stream = require('stream')
 const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
