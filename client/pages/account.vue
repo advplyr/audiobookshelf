@@ -15,6 +15,18 @@
 
         <div class="w-full h-px bg-primary my-4" />
 
+        <div class="flex items-center py-1">
+          <ui-toggle-switch v-model="isSharingActivity" @input="changeSharingSetting" />
+          <ui-tooltip text="Share your latest listening activity with other users in the social tab">
+            <p class="pl-4">
+              Share Listening Activity
+              <span class="material-icons icon-text text-sm">info_outlined</span>
+            </p>
+          </ui-tooltip>
+        </div>
+
+        <div class="w-full h-px bg-primary my-4" />
+
         <p v-if="!isGuest" class="mb-4 text-lg">Change Password</p>
         <form v-if="!isGuest" @submit.prevent="submitChangePassword">
           <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" label="Password" class="my-2" />
@@ -63,6 +75,9 @@ export default {
     },
     isGuest() {
       return this.usertype === 'guest'
+    },
+    isSharingActivity() {
+      return this.$store.getters['user/getUserSetting']('shareListeningActivity')
     }
   },
   methods: {
@@ -111,6 +126,11 @@ export default {
           this.$toast.error('Api call failed')
           this.changingPassword = false
         })
+    },
+    changeSharingSetting() {
+      console.log('test')
+      console.log(String(!this.isSharingActivity))
+      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: !this.isSharingActivity })
     }
   },
   mounted() {}

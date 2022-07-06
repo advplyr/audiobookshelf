@@ -263,5 +263,27 @@ class MiscController {
     })
     res.json(tags)
   }
+  // GET: api/social
+  async getSocialStats(req, res) {
+    var filteredUsers = this.db.users.filter(c => c.settings.shareListeningActivity == true)
+    var userData = []
+    for (let i = 0; i < filteredUsers.length; i++) {
+      var user = filteredUsers[i]
+      var listeningStats = await this.getUserListeningStatsHelpers(user.id)
+      var latestItem = user.mediaProgress.sort(p => p.lastUpdate)[0]
+      var totalItems = Object.keys(listeningStats.items).length
+      var totalDays = Object.keys(listeningStats.days).length
+      var session = {
+        username: user.username,
+        lastSeen: user.lastSeen,
+        latest: latestItem || null,
+        itemsRead: totalItems || 0,
+        minutesListened: listeningStats.totalTime || 0,
+        daysListened: totalDays| 0,
+      }
+      userData.push(session)
+    }
+    res.json(userData)
+  }
 }
 module.exports = new MiscController()
