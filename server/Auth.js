@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
+const jwt = require('./libs/jsonwebtoken')
 const Logger = require('./Logger')
 
 class Auth {
