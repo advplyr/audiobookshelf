@@ -3,7 +3,7 @@ const Path = require('path')
 const cron = require('../libs/nodeCron')
 const fs = require('fs-extra')
 const archiver = require('archiver')
-const StreamZip = require('node-stream-zip')
+const StreamZip = require('../libs/nodeStreamZip')
 
 // Utils
 const { getFileSize } = require('../utils/fileUtils')
