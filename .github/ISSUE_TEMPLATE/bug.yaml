@@ -30,6 +30,7 @@ body:
     id: version
     attributes:
       label: Audiobookshelf version
+      description: Do not put 'Latest version', please put the actual version here
       placeholder: "e.g. v1.6.60"
     validations:
       required: true
