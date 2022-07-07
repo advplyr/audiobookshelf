@@ -47,6 +47,7 @@ class ServerSettings {
 
     // Misc Flags
     this.chromecastEnabled = false
+    this.sharedListeningStats = false
     this.enableEReader = false
     this.dateFormat = 'MM/dd/yyyy'
 
@@ -95,6 +96,7 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.sharedListeningStats = !!settings.sharedListeningStats
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.logLevel = settings.logLevel || Logger.logLevel
@@ -131,6 +133,7 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      sharedListeningStats: this.sharedListeningStats,
       enableEReader: this.enableEReader,
       dateFormat: this.dateFormat,
       logLevel: this.logLevel,

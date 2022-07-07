@@ -265,6 +265,10 @@ class MiscController {
   }
   // GET: api/social
   async getSocialStats(req, res) {
+    if (this.db.serverSettings.sharedListeningStats == false) {
+      return res.sendStatus(404)
+    }
+    Logger.error(this.db.serverSettings.sharedListeningStats)
     var filteredUsers = this.db.users.filter(c => c.settings.shareListeningActivity == true)
     var userData = []
     for (let i = 0; i < filteredUsers.length; i++) {
@@ -281,7 +285,9 @@ class MiscController {
         minutesListened: listeningStats.totalTime || 0,
         daysListened: totalDays| 0,
       }
-      userData.push(session)
+      if (session.minutesListened && session.latest) {
+        userData.push(session)
+      }
     }
     res.json(userData)
   }

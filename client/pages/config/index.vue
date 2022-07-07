@@ -48,6 +48,16 @@
             <p class="pl-4">Chromecast support</p>
           </div>
 
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="newServerSettings.sharedListeningStats" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sharedListeningStats', val)" />
+            <ui-tooltip :text="tooltips.shareStats">
+              <p class="pl-4">
+                Shared Listening Stats
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div class="pt-4">
             <h2 class="font-semibold">Display</h2>
           </div>
@@ -268,7 +278,8 @@ export default {
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
-        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically'
+        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
+        shareStats: 'Allow users to share latest listening activity with other users on an opt-in basis'
       },
       showConfirmPurgeCache: false
     }

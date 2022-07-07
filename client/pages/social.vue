@@ -24,12 +24,10 @@
                 </ui-tooltip>
               </nuxt-link>
               <p class="text-lg px-2 font-book text-white">{{ user.username }}&nbsp;</p>
-              <div class="">
-                <p class="text-xs text-white text-opacity-50">{{user.latest.lastUpdate != null ? "Last listened " + $dateDistanceFromNow(user.latest.lastUpdate) : "Never listened" }}</p>
-              </div>
+              <p class="text-xs text-white text-opacity-50">{{ "Last listened " + $dateDistanceFromNow(user.latest.lastUpdate) }}</p>
               <div class="flex-grow" />
-              <div class="w-30 text-right">
-                <p class="text-sm font-bold">{{ user.minutesListened > 0 ? "Has listened for " + $elapsedPrettyExtended(user.minutesListened) : "No listening time" }}</p>
+              <div class="w-30 pl-4 text-right">
+                <p class="text-sm font-bold">{{ "Has listened for " + $elapsedPrettyExtended(user.minutesListened) }}</p>
               </div>
               <widgets-online-indicator class="mx-2" :value="!!usersOnline[user.id]" />
             </div>
@@ -64,7 +62,7 @@ export default {
     },
     users() {
       if (!this.listeningStats) return []
-      return this.listeningStats.filter(c => c.latest)
+      return this.listeningStats.sort(function(a, b) {return b.latest.lastUpdate - a.latest.lastUpdate})
     },
     userMediaProgress() {
       return this.user.mediaProgress || []
@@ -109,7 +107,6 @@ export default {
           })
         }
       }
-      console.log('Loaded users shared listening data', listeningStats)
       this.listeningStats = listeningStats
     },
    async getLibraryItem(user) {
@@ -121,8 +118,6 @@ export default {
         })
     },
     changeSharingSetting() {
-      console.log('test')
-      console.log(String(!this.isSharingActivity))
       this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: !this.isSharingActivity })
       this.init()
     }
