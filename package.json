@@ -34,7 +34,6 @@
     "axios": "^0.26.1",
     "date-and-time": "^2.3.1",
     "express": "^4.17.1",
-    "express-fileupload": "^1.2.1",
     "express-rate-limit": "^5.3.0",
     "htmlparser2": "^8.0.1",
     "socket.io": "^4.4.1",

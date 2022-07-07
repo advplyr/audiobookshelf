@@ -3,7 +3,7 @@ const express = require('express')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('./libs/fsExtra')
-const fileUpload = require('express-fileupload')
+const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('express-rate-limit')
 
 const { version } = require('../package.json')
