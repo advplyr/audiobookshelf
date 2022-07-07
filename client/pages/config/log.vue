@@ -161,6 +161,7 @@ export default {
   },
   beforeDestroy() {
     if (!this.$root.socket) return
+    this.$root.socket.emit('remove_log_listener')
     this.$root.socket.off('daily_logs', this.dailyLogsLoaded)
     this.$root.socket.off('log', this.logEvtReceived)
   }

@@ -278,6 +278,7 @@ class Server {
 
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+      socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
       socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
 
       socket.on('ping', () => {
@@ -287,21 +288,21 @@ class Server {
         socket.emit('pong')
       })
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', (reason) => {
         Logger.removeSocketListener(socket.id)
 
         var _client = this.clients[socket.id]
         if (!_client) {
-          Logger.warn('[Server] Socket disconnect, no client ' + socket.id)
+          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
         } else if (!_client.user) {
-          Logger.info('[Server] Unauth socket disconnected ' + socket.id)
+          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
           delete this.clients[socket.id]
         } else {
           Logger.debug('[Server] User Offline ' + _client.user.username)
           this.io.emit('user_offline', _client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
           const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
+          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
           delete this.clients[socket.id]
         }
       })
@@ -471,11 +472,6 @@ class Server {
       initialPayload.usersOnline = this.usersOnline
     }
     client.socket.emit('init', initialPayload)
-
-    // Setup log listener for root user
-    if (user.type === 'root') {
-      Logger.addSocketListener(socket, this.db.serverSettings.logLevel || 0)
-    }
   }
 
   async stop() {
