@@ -9,6 +9,12 @@ body:
   - type: markdown
     attributes:
       value: "### Mobile app issues report [here](https://github.com/advplyr/audiobookshelf-app/issues/new/choose)."
+  - type: markdown
+    attributes:
+      value: "### Join the [discord server](https://discord.gg/pJsjuNCKRq) for questions or if you are not sure about a bug."
+  - type: markdown
+    attributes:
+      value: "## Be as descriptive as you can. Include screenshots, error logs, browser, file types, everything you can think of that might be relevant."
   - type: textarea
     id: what-happened
     attributes:
@@ -27,6 +33,7 @@ body:
     id: version
     attributes:
       label: Audiobookshelf version
+      description: Do not put 'Latest version', please put the actual version here
       placeholder: "e.g. v1.6.60"
     validations:
       required: true
