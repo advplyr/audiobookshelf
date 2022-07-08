@@ -6,15 +6,15 @@
  * https://github.com/archiverjs/node-compress-commons/blob/master/LICENSE-MIT
  */
 var Stream = require('stream').Stream;
-var PassThrough = require('readable-stream').PassThrough;
+var PassThrough = require('../../archiverUtils/readableStream').PassThrough;
 
 var util = module.exports = {};
 
-util.isStream = function(source) {
+util.isStream = function (source) {
   return source instanceof Stream;
 };
 
-util.normalizeInputSource = function(source) {
+util.normalizeInputSource = function (source) {
   if (source === null) {
     return Buffer.alloc(0);
   } else if (typeof source === 'string') {

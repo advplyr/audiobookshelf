@@ -30,9 +30,9 @@
   "author": "advplyr",
   "license": "GPL-3.0",
   "dependencies": {
-    "archiver-utils": "^2.1.0",
     "axios": "^0.26.1",
     "express": "^4.17.1",
+    "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "socket.io": "^4.4.1",
     "xml2js": "^0.4.23"

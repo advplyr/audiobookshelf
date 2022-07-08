@@ -6,10 +6,10 @@
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
 var inherits = require('util').inherits;
-var Transform = require('readable-stream').Transform;
+var Transform = require('../../archiverUtils/readableStream').Transform;
 
 var crc32 = require('../../buffer-crc32');
-var util = require('archiver-utils');
+var util = require('../../archiverUtils');
 
 /**
  * @constructor

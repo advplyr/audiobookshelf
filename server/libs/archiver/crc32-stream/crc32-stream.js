@@ -8,8 +8,7 @@
 
 'use strict';
 
-const { Transform } = require('readable-stream');
-
+const { Transform } = require('../archiverUtils/readableStream');
 const crc32 = require('../crc32');
 
 class CRC32Stream extends Transform {

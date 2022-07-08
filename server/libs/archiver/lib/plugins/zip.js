@@ -6,7 +6,7 @@
  * @copyright (c) 2012-2014 Chris Talkington, contributors.
  */
 var engine = require('../../zip-stream');
-var util = require('archiver-utils');
+var util = require('../../archiverUtils');
 
 /**
  * @constructor

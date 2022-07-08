@@ -6,12 +6,12 @@
  * https://github.com/archiverjs/node-compress-commons/blob/master/LICENSE-MIT
  */
 var inherits = require('util').inherits;
-var Transform = require('readable-stream').Transform;
+var Transform = require('../../archiverUtils/readableStream').Transform;
 
 var ArchiveEntry = require('./archive-entry');
 var util = require('../util');
 
-var ArchiveOutputStream = module.exports = function(options) {
+var ArchiveOutputStream = module.exports = function (options) {
   if (!(this instanceof ArchiveOutputStream)) {
     return new ArchiveOutputStream(options);
   }
@@ -28,33 +28,33 @@ var ArchiveOutputStream = module.exports = function(options) {
 
 inherits(ArchiveOutputStream, Transform);
 
-ArchiveOutputStream.prototype._appendBuffer = function(zae, source, callback) {
+ArchiveOutputStream.prototype._appendBuffer = function (zae, source, callback) {
   // scaffold only
 };
 
-ArchiveOutputStream.prototype._appendStream = function(zae, source, callback) {
+ArchiveOutputStream.prototype._appendStream = function (zae, source, callback) {
   // scaffold only
 };
 
-ArchiveOutputStream.prototype._emitErrorCallback = function(err) {
+ArchiveOutputStream.prototype._emitErrorCallback = function (err) {
   if (err) {
     this.emit('error', err);
   }
 };
 
-ArchiveOutputStream.prototype._finish = function(ae) {
+ArchiveOutputStream.prototype._finish = function (ae) {
   // scaffold only
 };
 
-ArchiveOutputStream.prototype._normalizeEntry = function(ae) {
+ArchiveOutputStream.prototype._normalizeEntry = function (ae) {
   // scaffold only
 };
 
-ArchiveOutputStream.prototype._transform = function(chunk, encoding, callback) {
+ArchiveOutputStream.prototype._transform = function (chunk, encoding, callback) {
   callback(null, chunk);
 };
 
-ArchiveOutputStream.prototype.entry = function(ae, source, callback) {
+ArchiveOutputStream.prototype.entry = function (ae, source, callback) {
   source = source || null;
 
   if (typeof callback !== 'function') {
@@ -95,7 +95,7 @@ ArchiveOutputStream.prototype.entry = function(ae, source, callback) {
   return this;
 };
 
-ArchiveOutputStream.prototype.finish = function() {
+ArchiveOutputStream.prototype.finish = function () {
   if (this._archive.processing) {
     this._archive.finish = true;
     return;
@@ -104,11 +104,11 @@ ArchiveOutputStream.prototype.finish = function() {
   this._finish();
 };
 
-ArchiveOutputStream.prototype.getBytesWritten = function() {
+ArchiveOutputStream.prototype.getBytesWritten = function () {
   return this.offset;
 };
 
-ArchiveOutputStream.prototype.write = function(chunk, cb) {
+ArchiveOutputStream.prototype.write = function (chunk, cb) {
   if (chunk) {
     this.offset += chunk.length;
   }

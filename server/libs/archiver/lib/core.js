@@ -9,11 +9,11 @@ var fs = require('fs');
 var glob = require('../readdir-glob');
 var async = require('../../async');
 var path = require('path');
-var util = require('archiver-utils');
+var util = require('../archiverUtils');
 
 var inherits = require('util').inherits;
 var ArchiverError = require('./error');
-var Transform = require('readable-stream').Transform;
+var Transform = require('../archiverUtils/readableStream').Transform;
 
 var win32 = process.platform === 'win32';
 

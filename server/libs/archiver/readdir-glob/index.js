@@ -7,7 +7,7 @@ module.exports = readdirGlob;
 
 const fs = require('fs');
 const { EventEmitter } = require('events');
-const { Minimatch } = require('minimatch');
+const { Minimatch } = require('../archiverUtils/minimatch');
 const { resolve } = require('path');
 
 function readdir(dir, strict) {
