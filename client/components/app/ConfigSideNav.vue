@@ -11,12 +11,14 @@
 
     <div class="w-full h-12 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamLibraryItem && isMobileLandscape ? '300px' : '65px' }">
       <div class="flex justify-between">
-        <p class="font-mono text-sm">v{{ $config.version }}</p>
+        <p class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</p>
 
         <p class="font-mono text-xs text-gray-300 italic">{{ Source }}</p>
       </div>
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
     </div>
+
+    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version"/>
   </div>
 </template>
 
@@ -26,7 +28,9 @@ export default {
     isOpen: Boolean
   },
   data() {
-    return {}
+    return {
+      showChangelogModal: false
+    }
   },
   computed: {
     Source() {
@@ -129,18 +133,24 @@ export default {
     githubTagUrl() {
       return this.versionData.githubTagUrl
     },
+    currentVersionChangelog() {
+      return this.versionData.currentVersionChangelog || 'No Changelog Available'
+    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     }
   },
   methods: {
+    clickChangelog(){
+      this.showChangelogModal = true
+    },
     clickOutside() {
       if (!this.isOpen) return
       this.closeDrawer()
     },
     closeDrawer() {
       this.$emit('update:isOpen', false)
-    }
+    },
   }
 }
 </script>

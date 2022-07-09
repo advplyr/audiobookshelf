@@ -47,8 +47,13 @@ export async function checkForUpdate() {
             largestVer = verObj
           }
         }
+
+        if (verObj.version == currVerObj.version) {
+          currVerObj.changelog = release.body
+        }
       })
     }
+
   })
   if (!largestVer) {
     console.error('No valid version tags to compare with')
@@ -59,6 +64,7 @@ export async function checkForUpdate() {
     hasUpdate: largestVer.total > currVerObj.total,
     latestVersion: largestVer.version,
     githubTagUrl: `https://github.com/advplyr/audiobookshelf/releases/tag/v${largestVer.version}`,
-    currentVersion: currVerObj.version
+    currentVersion: currVerObj.version,
+    currentVersionChangelog: currVerObj.changelog
   }
 }
