@@ -53,6 +53,12 @@ export default {
 }
 </script>
 <style scoped>
+/*
+1. we need to manually define styles to apply to the parsed markdown elements,
+since we don't have access to the actual elements in this component 
+
+2. v-deep allows these to take effect on the content passed in to the v-html in the div above
+*/
 .custom-text ::v-deep > h2 {
   @apply text-lg font-bold
 }
