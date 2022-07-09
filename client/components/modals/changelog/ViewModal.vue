@@ -6,7 +6,7 @@
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
-      <p class="text-xl font-bold">Changelog v{{ currentVersionNumber }}</p>
+      <p class="text-xl font-bold pb-4">Changelog v{{ currentVersionNumber }}</p>
       <div class="custom-text" v-html="compiledMarkedown" />
     </div>
   </modals-modal>
@@ -53,11 +53,13 @@ export default {
 }
 </script>
 <style scoped>
-.custom-text ::v-deep > h3 {
-  @apply text-lg font-bold pt-4
+.custom-text ::v-deep > h2 {
+  @apply text-lg font-bold
 }
-
+.custom-text ::v-deep > h3 {
+  @apply text-lg font-bold
+}
 .custom-text ::v-deep > ul {
-  @apply list-disc list-inside
+  @apply list-disc list-inside pb-4
 }
 </style>
