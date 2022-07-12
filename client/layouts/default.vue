@@ -40,6 +40,7 @@ export default {
       if (this.$store.state.selectedLibraryItems) {
         this.$store.commit('setSelectedLibraryItems', [])
       }
+      this.updateBodyClass()
     }
   },
   computed: {
@@ -53,11 +54,23 @@ export default {
       if (!this.$route.name) return false
       return !this.$route.name.startsWith('config') && this.$store.state.libraries.currentLibraryId
     },
+    isShowingToolbar() {
+      return this.isShowingSideRail && this.$route.name !== 'upload' && this.$route.name !== 'account'
+    },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
     }
   },
   methods: {
+    updateBodyClass() {
+      if (this.isShowingToolbar) {
+        document.body.classList.remove('no-bars', 'app-bar')
+        document.body.classList.add('app-bar-and-toolbar')
+      } else {
+        document.body.classList.remove('no-bars', 'app-bar-and-toolbar')
+        document.body.classList.add('app-bar')
+      }
+    },
     updateSocketConnectionToast(content, type, timeout) {
       if (this.socketConnectionToastId !== null && this.socketConnectionToastId !== undefined) {
         this.$toast.update(this.socketConnectionToastId, { content: content, options: { timeout: timeout, type: type, closeButton: false, position: 'bottom-center', onClose: () => null, closeOnClick: timeout !== null } }, false)
@@ -521,6 +534,7 @@ export default {
     this.initializeSocket()
   },
   mounted() {
+    this.updateBodyClass()
     this.resize()
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
