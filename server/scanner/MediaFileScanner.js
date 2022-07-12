@@ -211,22 +211,26 @@ class MediaFileScanner {
         Logger.debug(`Library Item "${scanData.path}" Audio file scan took ${mediaScanResult.elapsed}ms for ${mediaScanResult.audioFiles.length} with average time of ${mediaScanResult.averageScanDuration}ms`)
       }
 
-      var totalAudioFilesToInclude = mediaScanResult.audioFiles.length
       var newAudioFiles = mediaScanResult.audioFiles.filter(af => {
         return !libraryItem.media.findFileWithInode(af.ino)
       })
 
       // Book: Adding audio files to book media
       if (libraryItem.mediaType === 'book') {
+        var mediaScanFileInodes = mediaScanResult.audioFiles.map(af => af.ino)
+        // Filter for existing valid track audio files not included in the audio files scanned
+        var existingAudioFiles = libraryItem.media.audioFiles.filter(af => af.isValidTrack && !mediaScanFileInodes.includes(af.ino))
+
         if (newAudioFiles.length) {
           // Single Track Audiobooks
-          if (totalAudioFilesToInclude === 1) {
+          if (mediaScanFileInodes.length + existingAudioFiles.length === 1) {
             var af = mediaScanResult.audioFiles[0]
             af.index = 1
             libraryItem.media.addAudioFile(af)
             hasUpdated = true
           } else {
-            this.runSmartTrackOrder(libraryItem, mediaScanResult.audioFiles)
+            var allAudioFiles = existingAudioFiles.concat(mediaScanResult.audioFiles)
+            this.runSmartTrackOrder(libraryItem, allAudioFiles)
             hasUpdated = true
           }
         } else {

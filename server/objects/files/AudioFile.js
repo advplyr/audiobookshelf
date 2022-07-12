@@ -111,6 +111,10 @@ class AudioFile {
     }
   }
 
+  get isValidTrack() {
+    return !this.invalid && !this.exclude
+  }
+
   // New scanner creates AudioFile from MediaFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
