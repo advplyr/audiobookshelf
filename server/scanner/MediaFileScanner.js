@@ -173,14 +173,14 @@ class MediaFileScanner {
     }
 
     if (discKey !== null) {
-      Logger.debug(`[AudioFileScanner] Smart track order for "${libraryItem.media.metadata.title}" using disc key ${discKey} and track key ${trackKey}`)
+      Logger.debug(`[MediaFileScanner] Smart track order for "${libraryItem.media.metadata.title}" using disc key ${discKey} and track key ${trackKey}`)
       audioFiles.sort((a, b) => {
         let Dx = a[discKey] - b[discKey]
         if (Dx === 0) Dx = a[trackKey] - b[trackKey]
         return Dx
       })
     } else {
-      Logger.debug(`[AudioFileScanner] Smart track order for "${libraryItem.media.metadata.title}" using track key ${trackKey}`)
+      Logger.debug(`[MediaFileScanner] Smart track order for "${libraryItem.media.metadata.title}" using track key ${trackKey}`)
       audioFiles.sort((a, b) => a[trackKey] - b[trackKey])
     }
 

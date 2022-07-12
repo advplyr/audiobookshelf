@@ -111,7 +111,7 @@ class AudioFile {
     }
   }
 
-  // New scanner creates AudioFile from AudioFileScanner
+  // New scanner creates AudioFile from MediaFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
 
