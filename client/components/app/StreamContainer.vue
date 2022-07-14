@@ -377,6 +377,10 @@ export default {
         libraryItem,
         episodeId
       })
+      this.$nextTick(() => {
+        if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
+      })
+
       this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate)
     },
     pauseItem() {
