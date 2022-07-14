@@ -190,6 +190,7 @@ class MeController {
     const updatedLocalMediaProgress = []
     var numServerProgressUpdates = 0
     var localMediaProgress = req.body.localMediaProgress || []
+
     localMediaProgress.forEach(localProgress => {
       if (!localProgress.libraryItemId) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
@@ -216,7 +217,8 @@ class MeController {
         Logger.debug(`[MeController] syncLocalMediaProgress server progress is more recent by ${updateTimeDifference}ms - ${mediaProgress.id}`)
 
         for (const key in localProgress) {
-          if (mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
+          // Local media progress ID uses the local library item id and server media progress uses the library item id
+          if (key !== 'id' && mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
             // Logger.debug(`[MeController] syncLocalMediaProgress key ${key} changed from ${localProgress[key]} to ${mediaProgress[key]} - ${mediaProgress.id}`)
             localProgress[key] = mediaProgress[key]
           }
