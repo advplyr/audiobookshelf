@@ -176,7 +176,8 @@ class LibraryController {
       }
 
       // Handle server setting sortingIgnorePrefix
-      if (sortKey === 'media.metadata.title' && this.db.serverSettings.sortingIgnorePrefix) {
+      const sortByTitle = sortKey === 'media.metadata.title'
+      if (sortByTitle && this.db.serverSettings.sortingIgnorePrefix) {
         // BookMetadata.js has titleIgnorePrefix getter
         sortKey += 'IgnorePrefix'
       }
@@ -186,6 +187,16 @@ class LibraryController {
       var sortArray = [
         {
           [direction]: (li) => {
+            // When collapsing by series and sorting by title use the series name instead of the book title
+            if (payload.mediaType === 'book' && payload.collapseseries && li.media.metadata.seriesName) {
+              if (sortByTitle) {
+                return li.media.metadata.seriesName
+              } else {
+                // When not sorting by title always show the collapsed series at the end
+                return direction === 'desc' ? -1 : 'zzzz'
+              }
+            }
+
             // Supports dot notation strings i.e. "media.metadata.title"
             return sortKey.split('.').reduce((a, b) => a[b], li)
           }

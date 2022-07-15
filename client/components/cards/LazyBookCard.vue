@@ -249,6 +249,7 @@ export default {
     },
     displayTitle() {
       if (this.recentEpisode) return this.recentEpisode.title
+      if (this.collapsedSeries) return this.collapsedSeries.name
       if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
         return this.mediaMetadata.titleIgnorePrefix
       }
@@ -257,6 +258,7 @@ export default {
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
+      if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
       }
@@ -264,6 +266,7 @@ export default {
       return this.author
     },
     displaySortLine() {
+      if (this.collapsedSeries) return null
       if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
       if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
       if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
