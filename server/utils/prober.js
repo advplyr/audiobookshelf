@@ -220,19 +220,18 @@ function getDefaultAudioStream(audioStreams) {
 function parseProbeData(data, verbose = false) {
   try {
     var { format, streams, chapters } = data
-    var { format_long_name, duration, size, bit_rate } = format
 
-    var sizeBytes = !isNaN(size) ? Number(size) : null
+    var sizeBytes = !isNaN(format.size) ? Number(format.size) : null
     var sizeMb = sizeBytes !== null ? Number((sizeBytes / (1024 * 1024)).toFixed(2)) : null
 
     // Logger.debug('Parsing Data for', Path.basename(format.filename))
     var tags = parseTags(format, verbose)
     var cleanedData = {
-      format: format_long_name,
-      duration: !isNaN(duration) ? Number(duration) : null,
+      format: format.format_long_name || format.name || 'Unknown',
+      duration: !isNaN(format.duration) ? Number(format.duration) : null,
       size: sizeBytes,
       sizeMb,
-      bit_rate: !isNaN(bit_rate) ? Number(bit_rate) : null,
+      bit_rate: !isNaN(format.bit_rate) ? Number(format.bit_rate) : null,
       ...tags
     }
     if (verbose && format.tags) {
@@ -278,6 +277,12 @@ function probe(filepath, verbose = false) {
 
   return ffprobe(filepath)
     .then(raw => {
+      if (raw.error) {
+        return {
+          error: raw.error.string
+        }
+      }
+
       var rawProbeData = parseProbeData(raw, verbose)
       if (!rawProbeData || (!rawProbeData.audio_stream && !rawProbeData.video_stream)) {
         return {

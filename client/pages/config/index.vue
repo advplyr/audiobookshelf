@@ -157,6 +157,17 @@
             </ui-tooltip>
           </div>
 
+          <div class="flex items-center py-2">
+            <ui-text-input type="number" v-model="newServerSettings.scannerMaxThreads" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateScannerMaxThreads" />
+            <ui-tooltip :text="tooltips.scannerMaxThreads">
+              <p class="pl-4">
+                Max # of threads to use
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+            <!-- <p class="pl-4 text-sm"></p> -->
+          </div>
+
           <div class="pt-4">
             <h2 class="font-semibold">Experimental Features</h2>
           </div>
@@ -180,6 +191,16 @@
             <ui-tooltip :text="tooltips.enableEReader">
               <p class="pl-4">
                 Enable e-reader for all users
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="newServerSettings.scannerUseSingleThreadedProber" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseSingleThreadedProber', val)" />
+            <ui-tooltip :text="tooltips.scannerUseSingleThreadedProber">
+              <p class="pl-4">
+                Scanner use old single threaded audio prober
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -268,7 +289,9 @@ export default {
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
-        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically'
+        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
+        scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
+        scannerMaxThreads: 'Number of concurrent media files to scan at a time. Value of 1 will be a slower scan but less CPU usage. <br><br>Value of 0 defaults to # of CPU cores for this server times 2 (i.e. 4-core CPU will be 8)'
       },
       showConfirmPurgeCache: false
     }
@@ -300,6 +323,26 @@ export default {
     }
   },
   methods: {
+    updateScannerMaxThreads(val) {
+      if (!val || isNaN(val)) {
+        this.$toast.error('Invalid max threads must be a number')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      if (Number(val) < 0) {
+        this.$toast.error('Max threads must be >= 0')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      if (Math.round(Number(val)) !== Number(val)) {
+        this.$toast.error('Max threads must be an integer')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      this.updateServerSettings({
+        scannerMaxThreads: Number(val)
+      })
+    },
     updateSortingPrefixes(val) {
       if (!val || !val.length) {
         this.$toast.error('Must have at least 1 prefix')

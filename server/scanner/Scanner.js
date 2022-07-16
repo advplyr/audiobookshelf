@@ -205,20 +205,27 @@ class Scanner {
           checkRes.libraryItem = libraryItem
           checkRes.scanData = dataFound
 
-          // If this item will go over max size then push current chunk
-          if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
-            itemDataToRescanChunks.push(itemDataToRescan)
-            itemDataToRescanSize = 0
-            itemDataToRescan = []
+          console.log('Has New Library Files', libraryItem.media.metadata.title, 'num new', checkRes.newLibraryFiles.length)
+
+          if (global.ServerSettings.scannerUseSingleThreadedProber) {
+            // If this item will go over max size then push current chunk
+            if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
+              itemDataToRescanChunks.push(itemDataToRescan)
+              itemDataToRescanSize = 0
+              itemDataToRescan = []
+            }
+
+            itemDataToRescan.push(checkRes)
+            itemDataToRescanSize += libraryItem.audioFileTotalSize
+            if (itemDataToRescanSize >= MaxSizePerChunk) {
+              itemDataToRescanChunks.push(itemDataToRescan)
+              itemDataToRescanSize = 0
+              itemDataToRescan = []
+            }
+          } else {
+            itemDataToRescan.push(checkRes)
           }
 
-          itemDataToRescan.push(checkRes)
-          itemDataToRescanSize += libraryItem.audioFileTotalSize
-          if (itemDataToRescanSize >= MaxSizePerChunk) {
-            itemDataToRescanChunks.push(itemDataToRescan)
-            itemDataToRescanSize = 0
-            itemDataToRescan = []
-          }
         } else if (libraryScan.findCovers && libraryItem.media.shouldSearchForCover) { // Search cover
           libraryScan.resultsUpdated++
           itemsToFindCovers.push(libraryItem)
@@ -235,27 +242,31 @@ class Scanner {
     // Potential NEW Library Items
     for (let i = 0; i < libraryItemDataFound.length; i++) {
       var dataFound = libraryItemDataFound[i]
-
+      console.log('Potential new library item data')
       var hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
       } else {
-        var mediaFileSize = 0
-        dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
+        if (global.ServerSettings.scannerUseSingleThreadedProber) {
+          // If this item will go over max size then push current chunk
+          var mediaFileSize = 0
+          dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
+          if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
+            newItemDataToScanChunks.push(newItemDataToScan)
+            newItemDataToScanSize = 0
+            newItemDataToScan = []
+          }
 
-        // If this item will go over max size then push current chunk
-        if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
-          newItemDataToScanChunks.push(newItemDataToScan)
-          newItemDataToScanSize = 0
-          newItemDataToScan = []
-        }
+          newItemDataToScan.push(dataFound)
+          newItemDataToScanSize += mediaFileSize
 
-        newItemDataToScan.push(dataFound)
-        newItemDataToScanSize += mediaFileSize
-        if (newItemDataToScanSize >= MaxSizePerChunk) {
-          newItemDataToScanChunks.push(newItemDataToScan)
-          newItemDataToScanSize = 0
-          newItemDataToScan = []
+          if (newItemDataToScanSize >= MaxSizePerChunk) {
+            newItemDataToScanChunks.push(newItemDataToScan)
+            newItemDataToScanSize = 0
+            newItemDataToScan = []
+          }
+        } else { // Chunking is not necessary for new scanner
+          newItemDataToScan.push(dataFound)
         }
       }
     }
@@ -272,14 +283,14 @@ class Scanner {
       await this.updateLibraryItemChunk(itemsToUpdate)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
     }
+
+    // Chunking will be removed when legacy single threaded scanner is removed
     for (let i = 0; i < itemDataToRescanChunks.length; i++) {
       await this.rescanLibraryItemDataChunk(itemDataToRescanChunks[i], libraryScan)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
-      // console.log('Rescan chunk done', i, 'of', itemDataToRescanChunks.length)
     }
     for (let i = 0; i < newItemDataToScanChunks.length; i++) {
       await this.scanNewLibraryItemDataChunk(newItemDataToScanChunks[i], libraryScan)
-      // console.log('New scan chunk done', i, 'of', newItemDataToScanChunks.length)
       if (this.cancelLibraryScan[libraryScan.libraryId]) return true
     }
   }

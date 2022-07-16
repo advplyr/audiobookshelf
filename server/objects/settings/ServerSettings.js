@@ -1,4 +1,5 @@
 const { BookCoverAspectRatio, BookshelfView } = require('../../utils/constants')
+const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
 class ServerSettings {
@@ -14,6 +15,8 @@ class ServerSettings {
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
     this.scannerPreferOverdriveMediaMarker = false
+    this.scannerUseSingleThreadedProber = false
+    this.scannerMaxThreads = 0 // 0 = defaults to CPUs * 2
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -68,6 +71,8 @@ class ServerSettings {
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
     this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
+    this.scannerUseSingleThreadedProber = !!settings.scannerUseSingleThreadedProber
+    this.scannerMaxThreads = isNullOrNaN(settings.scannerMaxThreads) ? 0 : Number(settings.scannerMaxThreads)
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
@@ -116,6 +121,8 @@ class ServerSettings {
       scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
       scannerPreferOverdriveMediaMarker: this.scannerPreferOverdriveMediaMarker,
+      scannerUseSingleThreadedProber: this.scannerUseSingleThreadedProber,
+      scannerMaxThreads: this.scannerMaxThreads,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
