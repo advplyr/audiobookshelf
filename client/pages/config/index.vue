@@ -157,7 +157,7 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
+          <!-- <div class="flex items-center py-2">
             <ui-text-input type="number" v-model="newServerSettings.scannerMaxThreads" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateScannerMaxThreads" />
             <ui-tooltip :text="tooltips.scannerMaxThreads">
               <p class="pl-4">
@@ -165,8 +165,7 @@
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-            <!-- <p class="pl-4 text-sm"></p> -->
-          </div>
+          </div> -->
 
           <div class="pt-4">
             <h2 class="font-semibold">Experimental Features</h2>
@@ -196,7 +195,7 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
+          <!-- <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerUseSingleThreadedProber" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseSingleThreadedProber', val)" />
             <ui-tooltip :text="tooltips.scannerUseSingleThreadedProber">
               <p class="pl-4">
@@ -204,7 +203,7 @@
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

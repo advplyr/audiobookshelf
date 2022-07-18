@@ -16,7 +16,7 @@ class ServerSettings {
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
     this.scannerPreferOverdriveMediaMarker = false
-    this.scannerUseSingleThreadedProber = false
+    this.scannerUseSingleThreadedProber = true
     this.scannerMaxThreads = 0 // 0 = defaults to CPUs * 2
 
     // Metadata - choose to store inside users library item folder
@@ -74,6 +74,9 @@ class ServerSettings {
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
     this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
     this.scannerUseSingleThreadedProber = !!settings.scannerUseSingleThreadedProber
+    if (settings.scannerUseSingleThreadedProber === undefined) { // Default to original scanner
+      this.scannerUseSingleThreadedProber = true
+    }
     this.scannerMaxThreads = isNullOrNaN(settings.scannerMaxThreads) ? 0 : Number(settings.scannerMaxThreads)
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem

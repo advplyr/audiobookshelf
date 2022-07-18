@@ -68,9 +68,9 @@ class RssFeedManager {
       return
     }
 
-    const extname = Path.extname(feedData.coverPath).toLowerCase().slice(1)
+    const extname = Path.extname(feed.coverPath).toLowerCase().slice(1)
     res.type(`image/${extname}`)
-    var readStream = fs.createReadStream(feedData.coverPath)
+    var readStream = fs.createReadStream(feed.coverPath)
     readStream.pipe(res)
   }
 
