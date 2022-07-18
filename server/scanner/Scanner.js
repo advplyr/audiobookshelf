@@ -205,8 +205,6 @@ class Scanner {
           checkRes.libraryItem = libraryItem
           checkRes.scanData = dataFound
 
-          console.log('Has New Library Files', libraryItem.media.metadata.title, 'num new', checkRes.newLibraryFiles.length)
-
           if (global.ServerSettings.scannerUseSingleThreadedProber) {
             // If this item will go over max size then push current chunk
             if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
@@ -242,7 +240,7 @@ class Scanner {
     // Potential NEW Library Items
     for (let i = 0; i < libraryItemDataFound.length; i++) {
       var dataFound = libraryItemDataFound[i]
-      console.log('Potential new library item data')
+
       var hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
