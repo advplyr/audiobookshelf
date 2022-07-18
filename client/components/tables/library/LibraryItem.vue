@@ -23,7 +23,7 @@
         <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
       </svg>
     </div>
-    <span class="material-icons text-xl text-gray-400 hover:text-gray-50 ml-4">reorder</span>
+    <span class="material-icons drag-handle text-xl text-gray-400 hover:text-gray-50 ml-4">reorder</span>
 
     <!-- For mobile -->
     <modals-dialog v-model="showMobileMenu" :title="menuTitle" :items="mobileMenuItems" @action="mobileMenuAction" />

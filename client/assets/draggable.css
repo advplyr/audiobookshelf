@@ -1,34 +1,40 @@
 .flip-list-move {
   transition: transform 0.5s;
 }
+
 .no-move {
   transition: transform 0s;
 }
+
 .ghost {
   opacity: 0.5;
   background-color: rgba(255, 255, 255, 0.25);
 }
+
 .list-group {
   min-height: 30px;
 }
-#librariesTable .item {
-  cursor: n-resize;
-}
+
 .drag-handle {
   cursor: n-resize;
 }
+
 .list-group-item:not(.exclude) {
   cursor: n-resize;
 }
+
 .list-group-item.exclude {
   cursor: not-allowed;
 }
+
 .list-group-item:not(.ghost):not(.exclude):hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
+
 .list-group-item:nth-child(even):not(.ghost):not(.exclude) {
   background-color: rgba(0, 0, 0, 0.25);
 }
+
 .list-group-item:nth-child(even):not(.ghost):not(.exclude):hover {
   background-color: rgba(0, 0, 0, 0.1);
 }
@@ -36,6 +42,7 @@
 .list-group-item.exclude:not(.ghost) {
   background-color: rgba(255, 0, 0, 0.25);
 }
+
 .list-group-item.exclude:not(.ghost):hover {
   background-color: rgba(223, 0, 0, 0.25);
 }
