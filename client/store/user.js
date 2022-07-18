@@ -136,6 +136,10 @@ export const mutations = {
       localStorage.removeItem('token')
     }
   },
+  setUserToken(state, token) {
+    state.user.token = token
+    localStorage.setItem('token', user.token)
+  },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return
     if (!data) {

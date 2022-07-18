@@ -242,7 +242,7 @@ class MiscController {
     const userResponse = {
       user: req.user,
       userDefaultLibraryId: req.user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON(),
+      serverSettings: this.db.serverSettings.toJSONForBrowser(),
       Source: global.Source
     }
     res.json(userResponse)

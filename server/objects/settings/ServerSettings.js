@@ -5,6 +5,7 @@ const Logger = require('../../Logger')
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
+    this.tokenSecret = null
 
     // Scanner
     this.scannerParseSubtitle = false
@@ -63,6 +64,7 @@ class ServerSettings {
   }
 
   construct(settings) {
+    this.tokenSecret = settings.tokenSecret
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
@@ -110,9 +112,10 @@ class ServerSettings {
     }
   }
 
-  toJSON() {
+  toJSON() { // Use toJSONForBrowser if sending to client
     return {
       id: this.id,
+      tokenSecret: this.tokenSecret, // Do not return to client
       scannerFindCovers: this.scannerFindCovers,
       scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
@@ -143,6 +146,12 @@ class ServerSettings {
       logLevel: this.logLevel,
       version: this.version
     }
+  }
+
+  toJSONForBrowser() {
+    const json = this.toJSON()
+    delete json.tokenSecret
+    return json
   }
 
   update(payload) {

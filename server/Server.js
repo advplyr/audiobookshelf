@@ -136,6 +136,11 @@ class Server {
       await this.db.init()
     }
 
+    // Create token secret if does not exist (Added v2.1.0)
+    if (!this.db.serverSettings.tokenSecret) {
+      await this.auth.initTokenSecret()
+    }
+
     await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.cacheManager.ensureCachePaths()
@@ -314,7 +319,7 @@ class Server {
     const newRoot = req.body.newRoot
     let rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    let rootToken = await this.auth.generateAccessToken({ userId: 'root' })
+    let rootToken = await this.auth.generateAccessToken({ userId: 'root', username: newRoot.username })
     await this.db.createRootUser(newRoot.username, rootPash, rootToken)
 
     res.sendStatus(200)
@@ -459,8 +464,6 @@ class Server {
     await this.db.updateEntity('user', user)
 
     const initialPayload = {
-      // TODO: this is sent with user auth now, update mobile app to use that then remove this
-      serverSettings: this.db.serverSettings.toJSON(),
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),

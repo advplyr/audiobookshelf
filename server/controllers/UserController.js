@@ -43,7 +43,7 @@ class UserController {
     account.id = getId('usr')
     account.pash = await this.auth.hashPass(account.password)
     delete account.password
-    account.token = await this.auth.generateAccessToken({ userId: account.id })
+    account.token = await this.auth.generateAccessToken({ userId: account.id, username })
     account.createdAt = Date.now()
     var newUser = new User(account)
     var success = await this.db.insertEntity('user', newUser)
@@ -74,12 +74,14 @@ class UserController {
     }
 
     var account = req.body
+    var shouldUpdateToken = false
 
     if (account.username !== undefined && account.username !== user.username) {
       var usernameExists = this.db.users.find(u => u.username.toLowerCase() === account.username.toLowerCase())
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
+      shouldUpdateToken = true
     }
 
     // Updating password
@@ -90,6 +92,10 @@ class UserController {
 
     var hasUpdated = user.update(account)
     if (hasUpdated) {
+      if (shouldUpdateToken) {
+        user.token = await this.auth.generateAccessToken({ userId: user.id, username: user.username })
+        Logger.info(`[UserController] User ${user.username} was generated a new api token`)
+      }
       await this.db.updateEntity('user', user)
     }
 
