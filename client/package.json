@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "2.0.24",
+  "version": "2.1.0",
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
   "scripts": {
