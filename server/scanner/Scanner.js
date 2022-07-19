@@ -512,6 +512,7 @@ class Scanner {
       }
       var relFilePaths = folderGroups[folderId].fileUpdates.map(fileUpdate => fileUpdate.relPath)
       var fileUpdateGroup = groupFilesIntoLibraryItemPaths(library.mediaType, relFilePaths)
+
       if (!Object.keys(fileUpdateGroup).length) {
         Logger.info(`[Scanner] No important changes to scan for in folder "${folderId}"`)
         continue;

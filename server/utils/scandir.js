@@ -20,11 +20,22 @@ function isMediaFile(mediaType, ext) {
 // Output: map of files grouped into potential item dirs
 function groupFilesIntoLibraryItemPaths(mediaType, paths) {
   // Step 1: Clean path, Remove leading "/", Filter out non-media files in root dir
+  var nonMediaFilePaths = []
   var pathsFiltered = paths.map(path => {
     return path.startsWith('/') ? path.slice(1) : path
   }).filter(path => {
     let parsedPath = Path.parse(path)
-    return parsedPath.dir || (mediaType === 'book' && isMediaFile(mediaType, parsedPath.ext))
+    // Is not in root dir OR is a book media file
+    if (parsedPath.dir) {
+      if (!isMediaFile(mediaType, parsedPath.ext)) { // Seperate out non-media files
+        nonMediaFilePaths.push(path)
+        return false
+      }
+      return true
+    } else if (mediaType === 'book' && isMediaFile(mediaType, parsedPath.ext)) { // (book media type supports single file audiobooks/ebooks in root dir)
+      return true
+    }
+    return false
   })
 
   // Step 2: Sort by least number of directories
@@ -64,6 +75,17 @@ function groupFilesIntoLibraryItemPaths(mediaType, paths) {
       }
     }
   })
+
+  // Step 4: Add in non-media files if they fit into item group
+  if (nonMediaFilePaths.length) {
+    for (const nonMediaFilePath of nonMediaFilePaths) {
+      const pathDir = Path.dirname(nonMediaFilePath)
+      if (itemGroup[pathDir]) {
+        itemGroup[pathDir].push(nonMediaFilePath)
+      }
+    }
+  }
+
   return itemGroup
 }
 module.exports.groupFilesIntoLibraryItemPaths = groupFilesIntoLibraryItemPaths
