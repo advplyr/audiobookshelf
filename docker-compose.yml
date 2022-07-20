@@ -7,6 +7,7 @@ services:
     ports:
       - 13378:80
     volumes:
-      - /audiobooks:/audiobooks
-      - /metadata:/metadata
-      - /config:/config
+      - ./audiobooks:/audiobooks
+      - ./metadata:/metadata
+      - ./config:/config
+    restart: unless-stopped
