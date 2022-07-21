@@ -38,7 +38,7 @@ export default {
   },
   computed: {
     userCanUpdate() {
-      return this.$store.getters['user/getUserCanUpdate']
+      return this.$store.getters['user/getUserCanUpdate'] && this.filterKey == "all"
     },
     media() {
       return this.libraryItem.media || {}
