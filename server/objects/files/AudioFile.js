@@ -1,4 +1,3 @@
-const { isNullOrNaN } = require('../../utils/index')
 const { AudioMimeType } = require('../../utils/constants')
 const AudioMetaTags = require('../metadata/AudioMetaTags')
 const FileMetadata = require('../metadata/FileMetadata')

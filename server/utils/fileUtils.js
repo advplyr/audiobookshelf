@@ -3,6 +3,7 @@ const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
 const Logger = require('../Logger')
+const { AudioMimeType } = require('./constants')
 
 async function getFileStat(path) {
   try {
@@ -210,4 +211,12 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
   }
 
   return sanitized
+}
+
+// Returns null if extname is not in our defined list of audio extnames
+module.exports.getAudioMimeTypeFromExtname = (extname) => {
+  if (!extname || !extname.length) return null
+  const formatUpper = extname.slice(1).toUpperCase()
+  if (AudioMimeType[formatUpper]) return AudioMimeType[formatUpper]
+  return null
 }

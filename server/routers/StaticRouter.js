@@ -1,6 +1,6 @@
 const express = require('express')
 const Path = require('path')
-const Logger = require('../Logger')
+const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 
 class StaticRouter {
   constructor(db) {
@@ -20,7 +20,16 @@ class StaticRouter {
       var fullPath = null
       if (item.isFile) fullPath = item.path
       else fullPath = Path.join(item.path, remainingPath)
-      res.sendFile(fullPath)
+
+      var opts = {}
+
+      // Express does not set the correct mimetype for m4b files so use our defined mimetypes if available
+      const audioMimeType = getAudioMimeTypeFromExtname(Path.extname(fullPath))
+      if (audioMimeType) {
+        opts = { headers: { 'Content-Type': audioMimeType } }
+      }
+
+      res.sendFile(fullPath, opts)
     })
   }
 }

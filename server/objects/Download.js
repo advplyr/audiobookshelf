@@ -1,5 +1,8 @@
+const { AudioMimeType } = require('../utils/constants')
+const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
 const DEFAULT_TIMEOUT = 1000 * 60 * 30 // 30 minutes
+
 class Download {
   constructor(download) {
     this.id = null
@@ -32,16 +35,7 @@ class Download {
   }
 
   get mimeType() {
-    if (this.ext === '.mp3' || this.ext === '.m4b' || this.ext === '.m4a') {
-      return 'audio/mpeg'
-    } else if (this.ext === '.mp4') {
-      return 'audio/mp4'
-    } else if (this.ext === '.ogg') {
-      return 'audio/ogg'
-    } else if (this.ext === '.aac' || this.ext === '.m4p') {
-      return 'audio/aac'
-    }
-    return 'audio/mpeg'
+    return getAudioMimeTypeFromExtname(this.ext) || AudioMimeType.MP3
   }
 
   toJSON() {
