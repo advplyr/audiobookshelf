@@ -255,6 +255,7 @@ class Server {
       Logger.info('Recieved ping')
       res.json({ success: true })
     })
+    app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
       Logger.info(`Listening on http://${this.Host}:${this.Port}`)
