@@ -191,6 +191,14 @@ class BookMetadata {
     return true
   }
 
+  replaceAuthor(oldAuthor, newAuthor) {
+    this.authors = this.authors.filter(au => au.id !== oldAuthor.id) // Remove old author
+    this.authors.push({
+      id: newAuthor.id,
+      name: newAuthor.name
+    })
+  }
+
   setData(scanMediaData = {}) {
     this.title = scanMediaData.title || null
     this.subtitle = scanMediaData.subtitle || null
