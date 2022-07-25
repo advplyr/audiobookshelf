@@ -138,7 +138,7 @@
 
 <script>
 export default {
-  async asyncData({ store, params, app, redirect, route }) {
+  async asyncData({ store, params, app, redirect, from }) {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
@@ -154,8 +154,12 @@ export default {
       console.error('Invalid media type')
       return redirect('/')
     }
+
+    var previousRoute = from ? from.fullPath : null
+    if (from && from.path === '/login') previousRoute = null
     return {
-      libraryItem
+      libraryItem,
+      previousRoute
     }
   },
   data() {
@@ -342,7 +346,6 @@ export default {
 
       this.saving = true
 
-      console.log('udpated chapters', this.newChapters)
       const payload = {
         chapters: this.newChapters
       }
@@ -352,7 +355,11 @@ export default {
           this.saving = false
           if (data.updated) {
             this.$toast.success('Chapters updated')
-            this.$router.push(`/item/${this.libraryItem.id}`)
+            if (this.previousRoute) {
+              this.$router.push(this.previousRoute)
+            } else {
+              this.$router.push(`/item/${this.libraryItem.id}`)
+            }
           } else {
             this.$toast.info('No changes needed updating')
           }
