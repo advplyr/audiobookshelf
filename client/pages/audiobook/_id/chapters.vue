@@ -17,6 +17,7 @@
         <div class="flex items-center">
           <p class="text-lg mb-4 font-semibold">Audiobook Chapters</p>
           <div class="flex-grow" />
+          <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
           <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">Lookup</ui-btn>
           <ui-btn color="success" small @click="saveChapters">Save</ui-btn>
           <div class="w-40" />
@@ -32,7 +33,8 @@
           <div :key="chapter.id" class="flex py-1">
             <div class="w-12">#{{ chapter.id + 1 }}</div>
             <div class="w-32 px-1">
-              <ui-text-input v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
+              <ui-text-input v-if="showSecondInputs" v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
+              <ui-time-picker v-else class="text-xs" v-model="chapter.start" @change="checkChapters" />
             </div>
             <div class="flex-grow px-1">
               <ui-text-input v-model="chapter.title" class="text-xs" />
@@ -168,7 +170,8 @@ export default {
       asinInput: null,
       findingChapters: false,
       showFindChaptersModal: false,
-      chapterData: null
+      chapterData: null,
+      showSecondInputs: false
     }
   },
   computed: {
