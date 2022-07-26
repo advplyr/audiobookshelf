@@ -1,5 +1,5 @@
 <template>
-  <div class="sm:w-80 w-full sm:ml-6 relative">
+  <div class="sm:w-80 w-full relative">
     <form @submit.prevent="submitSearch">
       <ui-text-input ref="input" v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
     </form>
