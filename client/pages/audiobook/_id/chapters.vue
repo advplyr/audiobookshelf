@@ -34,7 +34,7 @@
             <div class="w-12">#{{ chapter.id + 1 }}</div>
             <div class="w-32 px-1">
               <ui-text-input v-if="showSecondInputs" v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
-              <ui-time-picker v-else class="text-xs" v-model="chapter.start" @change="checkChapters" />
+              <ui-time-picker v-else class="text-xs" v-model="chapter.start" :show-three-digit-hour="mediaDuration >= 360000" @change="checkChapters" />
             </div>
             <div class="flex-grow px-1">
               <ui-text-input v-model="chapter.title" class="text-xs" />

@@ -1,6 +1,6 @@
 <template>
   <div class="relative">
-    <div class="rounded bg-primary text-gray-200 focus:border-gray-300 focus:bg-bg focus:outline-none border border-gray-600 w-full px-3 py-2" @click="clickInput" v-click-outside="clickOutsideObj">
+    <div class="rounded text-gray-200 border w-full px-3 py-2" :class="focusedDigit ? 'bg-primary bg-opacity-50 border-gray-300' : 'bg-primary border-gray-600'" @click="clickInput" v-click-outside="clickOutsideObj">
       <div class="flex items-center">
         <template v-for="(digit, index) in digitDisplay">
           <div v-if="digit == ':'" :key="index" class="px-px" @click.stop="clickMedian(index)">:</div>
@@ -14,7 +14,8 @@
 <script>
 export default {
   props: {
-    value: [String, Number]
+    value: [String, Number],
+    showThreeDigitHour: Boolean
   },
   data() {
     return {
@@ -26,13 +27,15 @@ export default {
       digitDisplay: ['hour1', 'hour0', ':', 'minute1', 'minute0', ':', 'second1', 'second0'],
       focusedDigit: null,
       digits: {
+        hour2: 0,
         hour1: 0,
         hour0: 0,
         minute1: 0,
         minute0: 0,
         second1: 0,
         second0: 0
-      }
+      },
+      isOver99Hours: false
     }
   },
   watch: {
@@ -60,13 +63,28 @@ export default {
       this.digits.minute1 = minutes <= 9 ? 0 : Number(String(minutes)[0])
       this.digits.minute0 = minutes <= 9 ? minutes : Number(String(minutes)[1])
 
-      this.digits.hour1 = hours <= 9 ? 0 : Number(String(hours)[0])
-      this.digits.hour0 = hours <= 9 ? hours : Number(String(hours)[1])
+      if (hours > 99) {
+        this.digits.hour2 = Number(String(hours)[0])
+        this.digits.hour1 = Number(String(hours)[1])
+        this.digits.hour0 = Number(String(hours)[2])
+        this.isOver99Hours = true
+      } else {
+        this.digits.hour1 = hours <= 9 ? 0 : Number(String(hours)[0])
+        this.digits.hour0 = hours <= 9 ? hours : Number(String(hours)[1])
+        this.isOver99Hours = this.showThreeDigitHour
+      }
+
+      if (this.isOver99Hours) {
+        this.digitDisplay = ['hour2', 'hour1', 'hour0', ':', 'minute1', 'minute0', ':', 'second1', 'second0']
+      } else {
+        this.digitDisplay = ['hour1', 'hour0', ':', 'minute1', 'minute0', ':', 'second1', 'second0']
+      }
     },
     updateSeconds() {
       var seconds = this.digits.second0 + this.digits.second1 * 10
       seconds += this.digits.minute0 * 60 + this.digits.minute1 * 600
       seconds += this.digits.hour0 * 3600 + this.digits.hour1 * 36000
+      if (this.isOver99Hours) seconds += this.digits.hour2 * 360000
 
       if (Number(this.value) !== seconds) {
         this.$emit('input', seconds)
@@ -98,6 +116,8 @@ export default {
     },
     shiftFocusLeft() {
       if (!this.focusedDigit) return
+      if (this.focusedDigit.endsWith('2')) return
+
       const isDigit1 = this.focusedDigit.endsWith('1')
       if (!isDigit1) {
         const digit1Key = this.focusedDigit.replace('0', '1')
@@ -106,10 +126,17 @@ export default {
         this.focusedDigit = 'minute0'
       } else if (this.focusedDigit.startsWith('minute')) {
         this.focusedDigit = 'hour0'
+      } else if (this.isOver99Hours && this.focusedDigit.startsWith('hour')) {
+        this.focusedDigit = 'hour2'
       }
     },
     shiftFocusRight() {
       if (!this.focusedDigit) return
+      if (this.focusedDigit.endsWith('2')) {
+        // Must be hour2
+        this.focusedDigit = 'hour1'
+        return
+      }
       const isDigit1 = this.focusedDigit.endsWith('1')
       if (isDigit1) {
         const digit0Key = this.focusedDigit.replace('1', '0')
@@ -180,6 +207,6 @@ export default {
 
 <style scoped>
 .digit-focused {
-  background-color: #666;
+  background-color: #555;
 }
 </style>
