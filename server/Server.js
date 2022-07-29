@@ -143,6 +143,7 @@ class Server {
 
     await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
+    await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
     await this.abMergeManager.ensureDownloadDirPath()
 
@@ -175,7 +176,6 @@ class Server {
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
-
 
     // Metadata folder static path
     app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))

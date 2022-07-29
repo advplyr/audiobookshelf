@@ -413,6 +413,23 @@ class Db {
     })
   }
 
+  removeEntities(entityName, selectFunc) {
+    var entityDb = this.getEntityDb(entityName)
+    return entityDb.delete(selectFunc).then((results) => {
+      Logger.debug(`[DB] Deleted entities ${entityName}: ${results.deleted}`)
+      var arrayKey = this.getEntityArrayKey(entityName)
+      if (this[arrayKey]) {
+        this[arrayKey] = this[arrayKey].filter(e => {
+          return !selectFunc(e)
+        })
+      }
+      return results.deleted
+    }).catch((error) => {
+      Logger.error(`[DB] Remove entities ${entityName} Failed: ${error}`)
+      return 0
+    })
+  }
+
   recreateLibraryItemsDb() {
     return this.libraryItemsDb.drop().then((results) => {
       Logger.info(`[DB] Dropped library items db`, results)
@@ -425,8 +442,8 @@ class Db {
     })
   }
 
-  getAllSessions() {
-    return this.sessionsDb.select(() => true).then((results) => {
+  getAllSessions(selectFunc = () => true) {
+    return this.sessionsDb.select(selectFunc).then((results) => {
       return results.data || []
     }).catch((error) => {
       Logger.error('[Db] Failed to select sessions', error)
