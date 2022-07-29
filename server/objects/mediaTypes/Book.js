@@ -420,10 +420,10 @@ class Book {
         // If audio file has chapters use chapters
         if (file.chapters && file.chapters.length) {
           file.chapters.forEach((chapter) => {
-            if (chapter.start > this.duration) {
+            if (currStartTime > this.duration) {
               Logger.warn(`[Book] Invalid chapter start time > duration`)
             } else {
-              var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
+              var chapterAlreadyExists = this.chapters.find(ch => ch.start === currStartTime)
               if (!chapterAlreadyExists) {
                 var chapterDuration = chapter.end - chapter.start
                 if (chapterDuration > 0) {
