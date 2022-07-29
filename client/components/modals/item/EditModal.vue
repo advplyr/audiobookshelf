@@ -190,7 +190,6 @@ export default {
       if (prevBook) {
         this.unregisterListeners()
         this.libraryItem = prevBook
-        this.selectedTab = 'details'
         this.$store.commit('setSelectedLibraryItem', prevBook)
         this.$nextTick(this.registerListeners)
       } else {
@@ -210,7 +209,6 @@ export default {
       if (nextBook) {
         this.unregisterListeners()
         this.libraryItem = nextBook
-        this.selectedTab = 'details'
         this.$store.commit('setSelectedLibraryItem', nextBook)
         this.$nextTick(this.registerListeners)
       } else {
