@@ -124,7 +124,21 @@ export default {
         })
       }
     },
-    toggleFinished() {
+    toggleFinished(confirmed = false) {
+      if (!this.userIsFinished && this.itemProgressPercent > 0 && !confirmed) {
+        const payload = {
+          message: `Are you sure you want to mark "${this.title}" as finished?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.toggleFinished(true)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+        return
+      }
+
       var updatePayload = {
         isFinished: !this.userIsFinished
       }
