@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix } = require('../../utils/index')
 const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
@@ -109,15 +109,7 @@ class BookMetadata {
   }
 
   get titleIgnorePrefix() {
-    if (!this.title) return ''
-    var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
-    for (const prefix of prefixesToIgnore) {
-      // e.g. for prefix "the". If title is "The Book Title" return "Book Title, The"
-      if (this.title.toLowerCase().startsWith(`${prefix} `)) {
-        return this.title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
-      }
-    }
-    return this.title
+    return getTitleIgnorePrefix(this.title)
   }
   get authorName() {
     if (!this.authors.length) return ''
@@ -132,6 +124,13 @@ class BookMetadata {
     return this.series.map(se => {
       if (!se.sequence) return se.name
       return `${se.name} #${se.sequence}`
+    }).join(', ')
+  }
+  get seriesNameIgnorePrefix() {
+    if (!this.series.length) return ''
+    return this.series.map(se => {
+      if (!se.sequence) return getTitleIgnorePrefix(se.name)
+      return `${getTitleIgnorePrefix(se.name)} #${se.sequence}`
     }).join(', ')
   }
   get narratorName() {

@@ -1,4 +1,5 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
+const { getTitleIgnorePrefix } = require('../utils/index')
 const Logger = require('../Logger')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -228,6 +229,7 @@ module.exports = {
         libraryItemJson.collapsedSeries = {
           id: seriesToUse[li.id].id,
           name: seriesToUse[li.id].name,
+          nameIgnorePrefix: getTitleIgnorePrefix(seriesToUse[li.id].name),
           numBooks: seriesToUse[li.id].books.length
         }
       }

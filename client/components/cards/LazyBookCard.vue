@@ -249,11 +249,9 @@ export default {
     },
     displayTitle() {
       if (this.recentEpisode) return this.recentEpisode.title
-      if (this.collapsedSeries) return this.collapsedSeries.name
-      if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
-        return this.mediaMetadata.titleIgnorePrefix
-      }
-      return this.title
+      const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
+      if (this.collapsedSeries) return ignorePrefix ? this.collapsedSeries.nameIgnorePrefix : this.collapsedSeries.name
+      return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix : this.title
     },
     displayLineTwo() {
       if (this.recentEpisode) return this.title

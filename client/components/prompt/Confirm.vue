@@ -69,6 +69,7 @@ export default {
   },
   methods: {
     clickedOutside(evt) {
+      if (!this.show) return
       if (evt) {
         evt.stopPropagation()
         evt.preventDefault()

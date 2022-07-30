@@ -136,3 +136,15 @@ module.exports.cleanStringForSearch = (str) => {
   // Remove ' . ` " ,
   return str.toLowerCase().replace(/[\'\.\`\",]/g, '').trim()
 }
+
+module.exports.getTitleIgnorePrefix = (title) => {
+  if (!title) return ''
+  var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
+  for (const prefix of prefixesToIgnore) {
+    // e.g. for prefix "the". If title is "The Book" return "Book, The"
+    if (title.toLowerCase().startsWith(`${prefix} `)) {
+      return title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
+    }
+  }
+  return title
+}
