@@ -273,7 +273,7 @@ class LibraryController {
 
     var series = libraryHelpers.getSeriesFromBooks(libraryItems, payload.minified)
     series = sort(series).asc(s => {
-      return s.name
+      return this.db.serverSettings.sortingIgnorePrefix ? s.nameIgnorePrefix : s.name
     })
     payload.total = series.length
 
