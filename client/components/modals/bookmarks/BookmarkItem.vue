@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center px-4 py-4 justify-start relative bg-primary hover:bg-opacity-25" :class="wrapperClass" @click="click" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-4 justify-start relative bg-primary hover:bg-opacity-25" :class="wrapperClass" @click.stop="click" @mouseover="mouseover" @mouseleave="mouseleave">
     <div class="w-16 max-w-16 text-center">
       <p class="text-sm font-mono text-gray-400">
         {{ this.$secondsToTimestamp(bookmark.time) }}
