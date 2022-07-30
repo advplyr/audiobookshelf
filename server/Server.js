@@ -252,7 +252,7 @@ class Server {
       res.json(payload)
     })
     app.get('/ping', (req, res) => {
-      Logger.info('Recieved ping')
+      Logger.info('Received ping')
       res.json({ success: true })
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
