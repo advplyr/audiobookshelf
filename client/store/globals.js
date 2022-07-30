@@ -6,6 +6,8 @@ export const state = () => ({
   showEditCollectionModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
+  showConfirmPrompt: false,
+  confirmPromptOptions: null,
   showEditAuthorModal: false,
   selectedEpisode: null,
   selectedCollection: null,
@@ -68,6 +70,13 @@ export const mutations = {
   },
   setShowViewPodcastEpisodeModal(state, val) {
     state.showViewPodcastEpisodeModal = val
+  },
+  setShowConfirmPrompt(state, val) {
+    state.showConfirmPrompt = val
+  },
+  setConfirmPrompt(state, options) {
+    state.confirmPromptOptions = options
+    state.showConfirmPrompt = true
   },
   setEditCollection(state, collection) {
     state.selectedCollection = collection
