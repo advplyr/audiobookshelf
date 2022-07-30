@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 flex items-center justify-center z-50 opacity-0">
+  <div ref="wrapper" class="modal modal-bg w-full h-full fixed top-0 left-0 bg-primary bg-opacity-75 flex items-center justify-center z-60 opacity-0">
     <div class="absolute top-0 left-0 right-0 w-full h-36 bg-gradient-to-t from-transparent via-black-500 to-black-700 opacity-90 pointer-events-none" />
     <div ref="content" style="min-width: 400px; min-height: 200px" class="relative text-white" :style="{ height: modalHeight, width: modalWidth }" v-click-outside="clickedOutside">
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
@@ -68,7 +68,12 @@ export default {
     }
   },
   methods: {
-    clickedOutside() {
+    clickedOutside(evt) {
+      if (evt) {
+        evt.stopPropagation()
+        evt.preventDefault()
+      }
+
       if (this.persistent) return
       if (this.callback) this.callback(false)
       this.show = false
@@ -82,16 +87,16 @@ export default {
       this.show = false
     },
     setShow() {
+      this.$eventBus.$emit('showing-prompt', true)
       document.body.appendChild(this.el)
       setTimeout(() => {
         this.content.style.transform = 'scale(1)'
       }, 10)
-      document.documentElement.classList.add('modal-open')
     },
     setHide() {
+      this.$eventBus.$emit('showing-prompt', false)
       this.content.style.transform = 'scale(0)'
       this.el.remove()
-      document.documentElement.classList.remove('modal-open')
     }
   },
   mounted() {
@@ -101,6 +106,11 @@ export default {
     this.content.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
     this.el.style.opacity = 1
     this.el.remove()
+  },
+  beforeDestroy() {
+    if (this.show) {
+      this.$eventBus.$emit('showing-prompt', false)
+    }
   }
 }
 </script>

@@ -41,8 +41,9 @@ export const getters = {
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
   },
-  getIsEpisodeStreaming: state => (libraryItemId, episodeId) => {
+  getIsMediaStreaming: state => (libraryItemId, episodeId) => {
     if (!state.streamLibraryItem) return null
+    if (!episodeId) return state.streamLibraryItem.id == libraryItemId
     return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
   }
 }

@@ -89,7 +89,6 @@ export default {
       setTimeout(() => {
         this.content.style.transform = 'scale(1)'
       }, 10)
-      document.documentElement.classList.add('modal-open')
 
       this.$store.commit('setInnerModalOpen', true)
       this.$eventBus.$on('modal-hotkey', this.hotkey)
@@ -97,7 +96,6 @@ export default {
     setHide() {
       if (this.content) this.content.style.transform = 'scale(0)'
       if (this.el) this.el.remove()
-      document.documentElement.classList.remove('modal-open')
 
       this.$store.commit('setInnerModalOpen', false)
       this.$eventBus.$off('modal-hotkey', this.hotkey)

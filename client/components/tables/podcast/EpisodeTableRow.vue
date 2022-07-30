@@ -78,7 +78,7 @@ export default {
       return this.$secondsToTimestamp(this.episode.duration)
     },
     isStreaming() {
-      return this.$store.getters['getIsEpisodeStreaming'](this.libraryItemId, this.episode.id)
+      return this.$store.getters['getIsMediaStreaming'](this.libraryItemId, this.episode.id)
     },
     streamIsPlaying() {
       return this.$store.state.streamIsPlaying && this.isStreaming

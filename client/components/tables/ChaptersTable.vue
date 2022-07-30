@@ -24,10 +24,10 @@
           <td class="font-book">
             {{ chapter.title }}
           </td>
-          <td class="font-mono text-center">
+          <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
             {{ $secondsToTimestamp(chapter.start) }}
           </td>
-          <td class="font-mono text-center">
+          <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">
             {{ $secondsToTimestamp(chapter.end) }}
           </td>
         </tr>
@@ -57,6 +57,9 @@ export default {
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
     },
+    metadata() {
+      return this.media.metadata || {}
+    },
     chapters() {
       return this.media.chapters || []
     },
@@ -67,6 +70,30 @@ export default {
   methods: {
     clickBar() {
       this.expanded = !this.expanded
+    },
+    goToTimestamp(time) {
+      if (this.$store.getters['getIsMediaStreaming'](this.libraryItemId)) {
+        this.$eventBus.$emit('play-item', {
+          libraryItemId: this.libraryItemId,
+          episodeId: null,
+          startTime: time
+        })
+      } else {
+        const payload = {
+          message: `Start playback for "${this.metadata.title}" at ${this.$secondsToTimestamp(time)}?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.$eventBus.$emit('play-item', {
+                libraryItemId: this.libraryItemId,
+                episodeId: null,
+                startTime: time
+              })
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+      }
     }
   },
   mounted() {}

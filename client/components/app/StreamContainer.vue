@@ -364,7 +364,11 @@ export default {
       var episodeId = payload.episodeId || null
 
       if (this.playerHandler.libraryItemId == libraryItemId && this.playerHandler.episodeId == episodeId) {
-        this.playerHandler.play()
+        if (payload.startTime !== null && !isNaN(payload.startTime)) {
+          this.seek(payload.startTime)
+        } else {
+           this.playerHandler.play()
+        }
         return
       }
 
