@@ -105,7 +105,7 @@ export default {
     },
     matchAll() {
       this.$axios
-        .$post(`/api/libraries/${this.library.id}/matchall`)
+        .$get(`/api/libraries/${this.library.id}/matchall`)
         .then(() => {
           console.log('Starting scan for matches')
         })
