@@ -381,7 +381,7 @@ export default {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })
 
-      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate)
+      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate, payload.startTime)
     },
     pauseItem() {
       this.playerHandler.pause()
@@ -393,11 +393,13 @@ export default {
   },
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
+    this.$eventBus.$on('playback-seek', this.seek)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
+    this.$eventBus.$off('playback-seek', this.seek)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }

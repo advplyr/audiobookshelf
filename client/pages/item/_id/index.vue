@@ -11,7 +11,7 @@
 
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
-              <div v-show="showPlayButton && !streaming" class="h-full flex items-center justify-center pointer-events-none">
+              <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
                 <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="startStream">
                   <span class="material-icons text-4xl">play_circle_filled</span>
                 </div>
@@ -129,12 +129,12 @@
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
-            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
-              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ streaming ? 'Playing' : 'Play' }}
+            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
+              <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
+              {{ isStreaming ? 'Playing' : 'Play' }}
             </ui-btn>
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
-              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>
+              <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
@@ -160,7 +160,11 @@
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <!-- Experimental RSS feed open -->
+            <ui-tooltip v-if="bookmarks.length" text="Your Bookmarks" direction="top">
+              <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
+            </ui-tooltip>
+
+            <!-- RSS feed -->
             <ui-tooltip v-if="showRssFeedBtn" text="Open RSS Feed" direction="top">
               <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeedUrl ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
@@ -189,6 +193,7 @@
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed-url="rssFeedUrl" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>
 
@@ -222,7 +227,8 @@ export default {
       podcastFeedEpisodes: [],
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      showRssFeedModal: false
+      showRssFeedModal: false,
+      showBookmarksModal: false
     }
   },
   computed: {
@@ -295,6 +301,10 @@ export default {
     },
     chapters() {
       return this.media.chapters || []
+    },
+    bookmarks() {
+      if (this.isPodcast) return []
+      return this.$store.getters['user/getUserBookmarksForItem'](this.libraryItemId)
     },
     tracks() {
       return this.media.tracks || []
@@ -389,7 +399,7 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
-    streaming() {
+    isStreaming() {
       return this.streamLibraryItem && this.streamLibraryItem.id === this.libraryItemId
     },
     userCanUpdate() {
@@ -409,6 +419,23 @@ export default {
     }
   },
   methods: {
+    clickBookmarksBtn() {
+      this.showBookmarksModal = true
+    },
+    selectBookmark(bookmark) {
+      if (!bookmark) return
+      console.log('Select bookmark', bookmark)
+      if (this.isStreaming) {
+        this.$eventBus.$emit('playback-seek', bookmark.time)
+      } else if (this.streamLibraryItem) {
+        if (confirm(`Are you sure you want to play ${this.title} @ ${this.$secondsToTimestamp(bookmark.time)}?`)) {
+          this.startStream(bookmark.time)
+        }
+      } else {
+        this.startStream(bookmark.time)
+      }
+      this.showBookmarksModal = false
+    },
     clearDownloadQueue() {
       if (confirm('Are you sure you want to clear episode download queue?')) {
         this.$axios
@@ -470,7 +497,7 @@ export default {
           this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
-    startStream() {
+    startStream(startTime = null) {
       var episodeId = null
       if (this.isPodcast) {
         var episode = this.podcastEpisodes.find((ep) => {
@@ -483,7 +510,8 @@ export default {
 
       this.$eventBus.$emit('play-item', {
         libraryItemId: this.libraryItem.id,
-        episodeId
+        episodeId,
+        startTime
       })
     },
     editClick() {
