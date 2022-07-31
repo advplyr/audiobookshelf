@@ -211,6 +211,12 @@ export default {
     libraryItemUpdated(libraryItem) {
       if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
         this.$store.commit('setSelectedLibraryItem', libraryItem)
+        if (this.$store.state.globals.selectedEpisode && libraryItem.mediaType === 'podcast') {
+          const episode = libraryItem.media.episodes.find((ep) => ep.id === this.$store.state.globals.selectedEpisode.id)
+          if (episode) {
+            this.$store.commit('globals/setSelectedEpisode', episode)
+          }
+        }
       }
       this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
       this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)

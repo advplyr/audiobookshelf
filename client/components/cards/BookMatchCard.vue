@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full border-b border-gray-700 pb-2">
+  <div v-if="book" class="w-full border-b border-gray-700 pb-2">
     <div class="flex py-1 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer" @click="selectMatch">
       <div class="h-24 bg-primary" :style="{ minWidth: 96 / bookCoverAspectRatio + 'px' }">
         <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
@@ -25,7 +25,7 @@
       <div v-else class="px-4 flex-grow">
         <h1>{{ book.title }}</h1>
         <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ book.author }}</p>
-        <p class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
+        <p v-if="book.genres" class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
         <p class="text-xs text-gray-400 leading-5">{{ book.trackCount }} Episodes</p>
       </div>
     </div>
@@ -63,7 +63,7 @@ export default {
     selectMatch() {
       var book = { ...this.book }
       book.cover = this.selectedCover
-      this.$emit('select', this.book)
+      this.$emit('select', book)
     },
     clickCover(cover) {
       this.selectedCover = cover

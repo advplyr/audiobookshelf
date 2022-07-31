@@ -6,6 +6,7 @@ const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile } = require('../utils/fileUtils')
+const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
 const LibraryFile = require('../objects/files/LibraryFile')
@@ -259,6 +260,37 @@ class PodcastManager {
     return newEpisodes
   }
 
+  async findEpisode(rssFeedUrl, searchTitle) {
+    const feed = await this.getPodcastFeed(rssFeedUrl).catch(() => {
+      return null
+    })
+    if (!feed || !feed.episodes) {
+      return null
+    }
+
+    const matches = []
+    feed.episodes.forEach(ep => {
+      if (!ep.title) return
+
+      const epTitle = ep.title.toLowerCase().trim()
+      if (epTitle === searchTitle) {
+        matches.push({
+          episode: ep,
+          levenshtein: 0
+        })
+      } else {
+        const levenshtein = levenshteinDistance(searchTitle, epTitle, true)
+        if (levenshtein <= 6 && epTitle.length > levenshtein) {
+          matches.push({
+            episode: ep,
+            levenshtein
+          })
+        }
+      }
+    })
+    return matches.sort((a, b) => a.levenshtein - b.levenshtein)
+  }
+
   getPodcastFeed(feedUrl, excludeEpisodeMetadata = false) {
     Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}"`)
     return axios.get(feedUrl, { timeout: 5000 }).then(async (data) => {
@@ -273,7 +305,7 @@ class PodcastManager {
       }
       return payload.podcast
     }).catch((error) => {
-      console.error('Failed', error)
+      Logger.error('[PodcastManager] getPodcastFeed Error', error)
       return false
     })
   }
