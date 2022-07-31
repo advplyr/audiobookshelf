@@ -24,7 +24,8 @@ class PodcastManager {
     this.currentDownload = null
 
     this.episodeScheduleTask = null
-    this.failedCheckMap = {}
+    this.failedCheckMap = {},
+      this.MaxFailedEpisodeChecks = 24
   }
 
   get serverSettings() {
@@ -200,8 +201,8 @@ class PodcastManager {
         // Allow up to 3 failed attempts before disabling auto download
         if (!this.failedCheckMap[libraryItem.id]) this.failedCheckMap[libraryItem.id] = 0
         this.failedCheckMap[libraryItem.id]++
-        if (this.failedCheckMap[libraryItem.id] > 2) {
-          Logger.error(`[PodcastManager] checkForNewEpisodes 3 failed attempts at checking episodes for "${libraryItem.media.metadata.title}" - disabling auto download`)
+        if (this.failedCheckMap[libraryItem.id] >= this.MaxFailedEpisodeChecks) {
+          Logger.error(`[PodcastManager] checkForNewEpisodes ${this.failedCheckMap[libraryItem.id]} failed attempts at checking episodes for "${libraryItem.media.metadata.title}" - disabling auto download`)
           libraryItem.media.autoDownloadEpisodes = false
           delete this.failedCheckMap[libraryItem.id]
         } else {
