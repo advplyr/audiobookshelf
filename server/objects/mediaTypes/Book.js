@@ -402,9 +402,12 @@ class Book {
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
 
     // If overdrive media markers are present and preferred, use those instead
-    if (preferOverdriveMediaMarker && overdriveMediaMarkersExist(includedAudioFiles)) {
-      Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
-      return this.chapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+    if (preferOverdriveMediaMarker) {
+      var overdriveChapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+      if (overdriveChapters) {
+        Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
+        return this.chapters = overdriveChapters
+      }
     }
 
     if (includedAudioFiles.length === 1) {

@@ -3,7 +3,7 @@ const Logger = require('../../Logger')
 // given a list of audio files, extract all of the Overdrive Media Markers metaTags, and return an array of them as XML
 function extractOverdriveMediaMarkers(includedAudioFiles) {
   Logger.debug('[parseOverdriveMediaMarkers] Extracting overdrive media markers')
-  var markers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(notUndefined => notUndefined !== undefined).filter(elem => { return elem !== null }) || []
+  var markers = includedAudioFiles.map((af) => af.metaTags.tagOverdriveMediaMarker).filter(af => af) || []
 
   return markers
 }
@@ -29,11 +29,11 @@ function cleanOverdriveMediaMarkers(overdriveMediaMarkers) {
   ]
   */
 
-  var parseString = require('xml2js').parseString; // function to convert xml to JSON
+  var parseString = require('xml2js').parseString // function to convert xml to JSON
   var parsedOverdriveMediaMarkers = []
 
-  overdriveMediaMarkers.forEach(function (item, index) {
-    var parsed_result
+  overdriveMediaMarkers.forEach((item, index) => {
+    var parsed_result = null
     parseString(item, function (err, result) {
       /*
       result.Markers.Marker is the result of parsing the XML for the MediaMarker tags for the MP3 file (Part##.mp3)
@@ -54,10 +54,14 @@ function cleanOverdriveMediaMarkers(overdriveMediaMarkers) {
       */
 
       // The values for Name and Time in results.Markers.Marker are returned as Arrays from parseString and should be strings
-      parsed_result = objectValuesArrayToString(result.Markers.Marker)
+      if (result && result.Markers && result.Markers.Marker) {
+        parsed_result = objectValuesArrayToString(result.Markers.Marker)
+      }
     })
 
-    parsedOverdriveMediaMarkers.push(parsed_result)
+    if (parsed_result) {
+      parsedOverdriveMediaMarkers.push(parsed_result)
+    }
   })
 
   return removeExtraChapters(parsedOverdriveMediaMarkers)
@@ -114,6 +118,7 @@ function generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers
 
   // cleanedOverdriveMediaMarkers is an array of array of objects, where the inner array matches to the included audio files tracks
   //     this allows us to leverage the individual track durations when calculating the start times of chapters in tracks after the first (using length)
+  // TODO: can we guarantee the inner array matches the included audio files? 
   includedAudioFiles.forEach((track, track_index) => {
     cleanedOverdriveMediaMarkers[track_index].forEach((chapter) => {
       time = chapter.Time.split(":")
@@ -141,7 +146,13 @@ module.exports.parseOverdriveMediaMarkersAsChapters = (includedAudioFiles) => {
   Logger.info('[parseOverdriveMediaMarkers] Parsing of Overdrive Media Markers started')
 
   var overdriveMediaMarkers = extractOverdriveMediaMarkers(includedAudioFiles)
+  if (!overdriveMediaMarkers.length) return null
+
   var cleanedOverdriveMediaMarkers = cleanOverdriveMediaMarkers(overdriveMediaMarkers)
+  // TODO: generateParsedChapters requires overdrive media markers and included audio files length to be the same
+  //         so if not equal then we must exit
+  if (cleanedOverdriveMediaMarkers.length !== includedAudioFiles.length) return null
+
   var parsedChapters = generateParsedChapters(includedAudioFiles, cleanedOverdriveMediaMarkers)
 
   return parsedChapters
