@@ -2,7 +2,7 @@ const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const filePerms = require('../utils/filePerms')
-
+const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject } = require('../utils/index')
 
 //
@@ -262,6 +262,21 @@ class MiscController {
       }
     })
     res.json(tags)
+  }
+
+  validateCronExpression(req, res) {
+    const expression = req.body.expression
+    if (!expression) {
+      return res.sendStatus(400)
+    }
+
+    try {
+      patternValidation(expression)
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.warn(`[MiscController] Invalid cron expression ${expression}`, error.message)
+      res.status(400).send(error.message)
+    }
   }
 }
 module.exports = new MiscController()

@@ -211,6 +211,7 @@ class ApiRouter {
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
     this.router.get('/search/chapters', MiscController.findChapters.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
+    this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {

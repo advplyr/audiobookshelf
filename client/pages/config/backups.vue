@@ -14,6 +14,12 @@
         </ui-tooltip>
       </div>
 
+      <!-- <div class="flex items-center py-2">
+        <ui-text-input v-model="cronExpression" :disabled="updatingServerSettings" class="w-32" @change="changedCronExpression" />
+
+        <p class="pl-4 text-lg">Cron expression</p>
+      </div> -->
+
       <div class="flex items-center py-2">
         <ui-text-input type="number" v-model="backupsToKeep" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
@@ -41,6 +47,7 @@ export default {
       dailyBackups: true,
       backupsToKeep: 2,
       maxBackupSize: 1,
+      // cronExpression: '',
       newServerSettings: {}
     }
   },
@@ -64,6 +71,18 @@ export default {
     }
   },
   methods: {
+    // changedCronExpression() {
+    //   this.$axios
+    //     .$post('/api/validate-cron', { expression: this.cronExpression })
+    //     .then(() => {
+    //       console.log('Cron is valid')
+    //     })
+    //     .catch((error) => {
+    //       console.error('Cron validation failed', error)
+    //       const msg = (error.response ? error.response.data : null) || 'Unknown cron validation error'
+    //       this.$toast.error(msg)
+    //     })
+    // },
     updateBackupsSettings() {
       if (isNaN(this.maxBackupSize) || this.maxBackupSize <= 0) {
         this.$toast.error('Invalid maximum backup size')
@@ -99,6 +118,7 @@ export default {
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
       this.dailyBackups = !!this.newServerSettings.backupSchedule
       this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
+      // this.cronExpression = '30 1 * * *'
     }
   },
   mounted() {
