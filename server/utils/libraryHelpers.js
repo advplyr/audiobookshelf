@@ -450,7 +450,7 @@ module.exports = {
               if (bookInProgress) { // Update if this series is in progress
                 seriesMap[librarySeries.id].inProgress = true
 
-                if (seriesMap[librarySeries.id].bookInProgressLastUpdate > mediaProgress.lastUpdate) {
+                if (seriesMap[librarySeries.id].bookInProgressLastUpdate < mediaProgress.lastUpdate) {
                   seriesMap[librarySeries.id].bookInProgressLastUpdate = mediaProgress.lastUpdate
                 }
               } else if (!seriesMap[librarySeries.id].firstBookUnread) {
