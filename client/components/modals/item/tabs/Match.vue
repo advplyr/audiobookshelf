@@ -299,7 +299,7 @@ export default {
       this.isProcessing = true
       this.lastSearch = searchQuery
       var searchEntity = this.isPodcast ? 'podcast' : 'books'
-      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 10000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })
@@ -363,6 +363,10 @@ export default {
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
       else this.provider = localStorage.getItem('book-provider') || 'google'
+
+      if (this.searchTitle) {
+        this.submitSearch()
+      }
     },
     selectMatch(match) {
       if (match) {
