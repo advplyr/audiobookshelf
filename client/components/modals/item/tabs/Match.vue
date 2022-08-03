@@ -1,14 +1,14 @@
 <template>
-  <div id="match-wrapper" class="w-full h-full overflow-hidden px-4 py-6 relative">
+  <div id="match-wrapper" class="w-full h-full overflow-hidden px-2 md:px-4 py-4 md:py-6 relative">
     <form @submit.prevent="submitSearch">
-      <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-40 px-1">
+      <div class="flex flex-wrap md:flex-nowrap items-center justify-start -mx-1">
+        <div class="w-36 px-1">
           <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
         </div>
-        <div class="w-72 px-1">
+        <div class="flex-grow md:w-72 px-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" placeholder="Search" />
         </div>
-        <div v-show="provider != 'itunes'" class="w-72 px-1">
+        <div v-show="provider != 'itunes'" class="w-60 md:w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" label="Author" />
         </div>
         <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
@@ -20,7 +20,7 @@
     <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
       <p>No Results</p>
     </div>
-    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper">
+    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
       <template v-for="(res, index) in searchResults">
         <cards-book-match-card :key="index" :book="res" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
@@ -319,7 +319,6 @@ export default {
       }
 
       this.searchResults = results || []
-      console.log('Results', results)
       this.isProcessing = false
       this.hasSearched = true
     },
@@ -502,6 +501,11 @@ export default {
 
 <style>
 .matchListWrapper {
-  height: calc(100% - 80px);
+  height: calc(100% - 124px);
+}
+@media (min-width: 768px) {
+  .matchListWrapper {
+    height: calc(100% - 80px);
+  }
 }
 </style>
