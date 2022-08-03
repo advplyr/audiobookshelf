@@ -85,7 +85,8 @@ class FeedEpisode {
 
   setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
-    const audiobookPubDate = date.format(new Date(libraryItem.addedAt), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+    const timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
+    const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 
     const contentUrl = `/feed/${slug}/item/${audioTrack.index}/${audioTrack.metadata.filename}`
     const media = libraryItem.media
