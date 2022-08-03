@@ -319,6 +319,7 @@ export default {
       }
 
       this.searchResults = results || []
+      console.log('Results', results)
       this.isProcessing = false
       this.hasSearched = true
     },

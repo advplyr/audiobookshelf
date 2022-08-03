@@ -6,7 +6,7 @@ class Audible {
     constructor() { }
 
     cleanResult(item) {
-        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language } = item
+        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin } = item
 
         var series = []
         if (seriesPrimary) series.push(seriesPrimary)
@@ -28,7 +28,8 @@ class Audible {
             genres: genresFiltered.length > 0 ? genresFiltered.map(({ name }) => name).join(', ') : null,
             tags: tagsFiltered.length > 0 ? tagsFiltered.map(({ name }) => name).join(', ') : null,
             series: series != [] ? series.map(({ name, position }) => ({ series: name, volumeNumber: position })) : null,
-            language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null
+            language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
+            duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0
         }
     }
 
@@ -77,7 +78,6 @@ class Audible {
                 return []
             })
         }
-
         return items ? items.map(item => this.cleanResult(item)) : []
     }
 }
