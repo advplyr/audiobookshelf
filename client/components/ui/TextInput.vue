@@ -80,6 +80,9 @@ export default {
     blur() {
       if (this.$refs.input) this.$refs.input.blur()
     },
+    setFocus() {
+      if (this.$refs.input) this.$refs.input.focus()
+    },
     mouseover() {
       this.isHovering = true
     },

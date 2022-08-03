@@ -89,6 +89,9 @@ export default {
         // this.currentSearch = this.textInput
       }, 100)
     },
+    setFocus() {
+      if (this.$refs.input && this.editable) this.$refs.input.focus()
+    },
     inputFocus() {
       this.isFocused = true
     },

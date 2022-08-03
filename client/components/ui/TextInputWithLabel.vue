@@ -34,6 +34,11 @@ export default {
     }
   },
   methods: {
+    setFocus() {
+      if (this.$refs.input && this.$refs.input.setFocus) {
+        this.$refs.input.setFocus()
+      }
+    },
     blur() {
       if (this.$refs.input && this.$refs.input.blur) {
         this.$refs.input.blur()
