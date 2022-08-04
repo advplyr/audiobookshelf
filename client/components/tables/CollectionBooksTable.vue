@@ -1,9 +1,10 @@
 <template>
   <div class="w-full bg-primary bg-opacity-40">
-    <div class="w-full h-14 flex items-center px-4 bg-primary">
-      <p>Collection List</p>
-      <div class="w-6 h-6 bg-white bg-opacity-10 flex items-center justify-center rounded-full ml-2">
-        <p class="font-mono text-sm">{{ books.length }}</p>
+    <div class="w-full h-14 flex items-center px-4 md:px-6 py-2 bg-primary">
+      <p class="pr-4">Collection List</p>
+
+      <div class="w-6 h-6 md:w-7 md:h-7 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+        <span class="text-xs md:text-sm font-mono leading-none">{{ books.length }}</span>
       </div>
       <div class="flex-grow" />
       <!-- <p v-if="totalDuration">{{ totalDurationPretty }}</p> -->
