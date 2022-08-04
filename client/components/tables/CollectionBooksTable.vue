@@ -7,7 +7,7 @@
         <span class="text-xs md:text-sm font-mono leading-none">{{ books.length }}</span>
       </div>
       <div class="flex-grow" />
-      <!-- <p v-if="totalDuration">{{ totalDurationPretty }}</p> -->
+      <p v-if="totalDuration" class="text-sm text-gray-200">{{ totalDurationPretty }}</p>
     </div>
     <draggable v-model="booksCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'collection-book' : null">
@@ -57,6 +57,16 @@ export default {
     },
     bookCoverAspectRatio() {
       return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+    },
+    totalDuration() {
+      var _total = 0
+      this.books.forEach((book) => {
+        _total += book.media.duration
+      })
+      return _total
+    },
+    totalDurationPretty() {
+      return this.$elapsedPrettyExtended(this.totalDuration)
     }
   },
   methods: {
