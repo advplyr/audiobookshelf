@@ -11,6 +11,10 @@ class RssFeedManager {
     this.feeds = {}
   }
 
+  get feedsArray() {
+    return Object.values(this.feeds)
+  }
+
   async init() {
     var feedObjects = await this.db.getAllEntities('feed')
     if (feedObjects && feedObjects.length) {
@@ -91,7 +95,7 @@ class RssFeedManager {
 
     Logger.debug(`[RssFeedManager] Opened RSS feed ${feed.feedUrl}`)
     await this.db.insertEntity('feed', feed)
-    this.emitter('rss_feed_open', { entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    this.emitter('rss_feed_open', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
     return feed
   }
 
@@ -105,7 +109,7 @@ class RssFeedManager {
     if (!this.feeds[id]) return
     var feed = this.feeds[id]
     await this.db.removeEntity('feed', id)
-    this.emitter('rss_feed_closed', { entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    this.emitter('rss_feed_closed', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
     delete this.feeds[id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
   }

@@ -230,7 +230,7 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
+    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     app.post('/init', (req, res) => {
       if (this.db.hasRootUser) {

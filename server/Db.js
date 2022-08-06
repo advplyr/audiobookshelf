@@ -10,6 +10,7 @@ const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/settings/ServerSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
+const Feed = require('./objects/Feed')
 
 class Db {
   constructor() {

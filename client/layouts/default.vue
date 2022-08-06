@@ -361,11 +361,11 @@ export default {
       download.status = this.$constants.DownloadStatus.EXPIRED
       this.$store.commit('downloads/addUpdateDownload', download)
     },
-    showErrorToast(message) {
-      this.$toast.error(message)
+    rssFeedOpen(data) {
+      this.$store.commit('feeds/addFeed', data)
     },
-    showSuccessToast(message) {
-      this.$toast.success(message)
+    rssFeedClosed(data) {
+      this.$store.commit('feeds/removeFeed', data)
     },
     backupApplied() {
       // Force refresh
@@ -437,9 +437,9 @@ export default {
       this.socket.on('abmerge_killed', this.abmergeKilled)
       this.socket.on('abmerge_expired', this.abmergeExpired)
 
-      // Toast Listeners
-      this.socket.on('show_error_toast', this.showErrorToast)
-      this.socket.on('show_success_toast', this.showSuccessToast)
+      // Feed Listeners
+      this.socket.on('rss_feed_open', this.rssFeedOpen)
+      this.socket.on('rss_feed_closed', this.rssFeedClosed)
 
       this.socket.on('backup_applied', this.backupApplied)
     },

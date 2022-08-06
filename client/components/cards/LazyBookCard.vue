@@ -78,6 +78,10 @@
       </div>
     </ui-tooltip>
 
+    <div v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }">
+      <span class="material-icons" :style="{ fontSize: sizeMultiplier * 1.5 + 'rem' }">rss_feed</span>
+    </div>
+
     <!-- Series sequence -->
     <div v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
@@ -444,6 +448,10 @@ export default {
       if (!this.isAlternativeBookshelfView && !this.isAuthorBookshelfView) return 0
       else if (!this.displaySortLine) return 3 * this.sizeMultiplier
       return 4.25 * this.sizeMultiplier
+    },
+    rssFeed() {
+      if (this.booksInSeries) return null
+      return this.store.getters['feeds/getFeedForItem'](this.libraryItemId)
     }
   },
   methods: {

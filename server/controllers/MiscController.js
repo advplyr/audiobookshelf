@@ -239,12 +239,7 @@ class MiscController {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    const userResponse = {
-      user: req.user,
-      userDefaultLibraryId: req.user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSONForBrowser(),
-      Source: global.Source
-    }
+    const userResponse = this.auth.getUserLoginResponsePayload(req.user, this.rssFeedManager.feedsArray)
     res.json(userResponse)
   }
 
