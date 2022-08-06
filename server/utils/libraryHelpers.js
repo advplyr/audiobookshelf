@@ -10,7 +10,7 @@ module.exports = {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
   },
 
-  getFilteredLibraryItems(libraryItems, filterBy, user) {
+  getFilteredLibraryItems(libraryItems, filterBy, user, feedsArray) {
     var filtered = libraryItems
 
     var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages']
@@ -61,6 +61,8 @@ module.exports = {
       }
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(li => li.hasIssues)
+    } else if (filterBy === 'feed-open') {
+      filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
     }
 
     return filtered

@@ -88,6 +88,7 @@ export default {
       if (this.page === 'collections') return "You haven't made any collections yet"
       if (this.hasFilter) {
         if (this.filterName === 'Issues') return 'No Issues'
+        else if (this.filterName === 'Feed-open') return 'No RSS feeds are open'
         return `No Results for filter "${this.filterName}: ${this.filterValue}"`
       }
       return 'No results'

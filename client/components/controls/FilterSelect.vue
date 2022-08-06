@@ -116,6 +116,11 @@ export default {
           text: 'Issues',
           value: 'issues',
           sublist: false
+        },
+        {
+          text: 'RSS Feed Open',
+          value: 'feed-open',
+          sublist: false
         }
       ],
       podcastItems: [
