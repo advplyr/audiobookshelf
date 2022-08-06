@@ -71,6 +71,11 @@ export default {
 .configContent.page-library-stats {
   width: 1200px;
 }
+@media (max-width: 1550px) {
+  .configContent.page-library-stats {
+    margin-left: 176px;
+  }
+}
 @media (max-width: 1240px) {
   .configContent {
     margin-left: 176px;
@@ -81,6 +86,9 @@ export default {
     margin-left: 0px;
     width: 100%;
     max-width: 100%;
+  }
+  .configContent.page-library-stats {
+    margin-left: 0px;
   }
 }
 </style>
