@@ -24,12 +24,13 @@
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
-              <div class="flex sm:items-end flex-col sm:flex-row">
-                <h1 class="text-2xl md:text-3xl font-sans">
-                  {{ title }}
-                </h1>
-                <p v-if="bookSubtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ bookSubtitle }}</p>
-              </div>
+              <h1 class="text-2xl md:text-3xl font-semibold">
+                {{ title }}
+              </h1>
+
+              <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
+
+              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <template v-if="!isVideo">
                 <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
@@ -38,8 +39,6 @@
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
-
-              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
