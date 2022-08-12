@@ -15,10 +15,9 @@ function parseCreators(metadata) {
   })
 }
 
-function fetchCreator(creators, role) {
+function fetchCreators(creators, role) {
   if (!creators || !creators.length) return null
-  var creator = creators.find(c => c.role === role)
-  return creator ? creator.value : null
+  return creators.filter(c => c.role === role).map(c => c.value)
 }
 
 function fetchTagString(metadata, tag) {
@@ -80,11 +79,11 @@ function fetchVolumeNumber(metadataMeta) {
 }
 
 function fetchNarrators(creators, metadata) {
-  var roleNrt = fetchCreator(creators, 'nrt')
-  if (typeof metadata.meta == "undefined" || roleNrt != null) return roleNrt
+  var narrators = fetchCreators(creators, 'nrt')
+  if (typeof metadata.meta == "undefined" || narrators.length) return narrators
   try {
     var narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
-    return narratorsJSON["#value#"].join(", ")
+    return narratorsJSON["#value#"]
   } catch {
     return null
   }
@@ -128,11 +127,13 @@ module.exports.parseOpfMetadataXML = async (xml) => {
     })
   }
 
-  var creators = parseCreators(metadata)
-  var data = {
+  const creators = parseCreators(metadata)
+  const authors = (fetchCreators(creators, 'aut') || []).filter(au => au && au.trim())
+  const narrators = (fetchNarrators(creators, metadata) || []).filter(nrt => nrt && nrt.trim())
+  const data = {
     title: fetchTitle(metadata),
-    author: fetchCreator(creators, 'aut'),
-    narrator: fetchNarrators(creators, metadata),
+    authors,
+    narrators,
     publishedYear: fetchDate(metadata),
     publisher: fetchPublisher(metadata),
     isbn: fetchISBN(metadata),

@@ -276,13 +276,18 @@ class Book {
               if (opfMetadata.genres.length && (!this.metadata.genres.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload[key] = opfMetadata.genres
               }
-            } else if (key === 'author') {
-              if (opfMetadata.author && (!this.metadata.authors.length || opfMetadataOverrideDetails)) {
-                metadataUpdatePayload.authors = this.metadata.parseAuthorsTag(opfMetadata.author)
+            } else if (key === 'authors') {
+              if (opfMetadata.authors && opfMetadata.authors.length && (!this.metadata.authors.length || opfMetadataOverrideDetails)) {
+                metadataUpdatePayload.authors = opfMetadata.authors.map(authorName => {
+                  return {
+                    id: `new-${Math.floor(Math.random() * 1000000)}`,
+                    name: authorName
+                  }
+                })
               }
-            } else if (key === 'narrator') {
-              if (opfMetadata.narrator && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
-                metadataUpdatePayload.narrators = this.metadata.parseNarratorsTag(opfMetadata.narrator)
+            } else if (key === 'narrators') {
+              if (opfMetadata.narrators && opfMetadata.narrators.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
+                metadataUpdatePayload.narrators = opfMetadata.narrators
               }
             } else if (key === 'series') {
               if (opfMetadata.series && (!this.metadata.series.length || opfMetadataOverrideDetails)) {
