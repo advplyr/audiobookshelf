@@ -14,7 +14,7 @@
         </div>
         <p class="text-gray-300 text-xs md:text-sm">by {{ book.author }}</p>
         <p v-if="book.narrator" class="text-gray-400 text-xs">Narrated by {{ book.narrator }}</p>
-        <p v-if="book.duration" class="text-gray-400 text-xs">Runtime: {{ $elapsedPrettyExtended(book.duration) }}</p>
+        <p v-if="book.duration" class="text-gray-400 text-xs">Runtime: {{ $elapsedPrettyExtended(book.duration * 60) }}</p>
         <div v-if="book.series && book.series.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white bg-opacity-10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">
