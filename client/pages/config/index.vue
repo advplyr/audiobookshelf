@@ -61,6 +61,15 @@
               </p>
             </ui-tooltip>
           </div> -->
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="homeUseAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateHomeAlternativeBookshelfView" />
+            <ui-tooltip :text="tooltips.bookshelfView">
+              <p class="pl-4">
+                Alternative bookshelf view for home page
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
@@ -271,6 +280,7 @@ export default {
       isResettingLibraryItems: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
+      homeUseAlternativeBookshelfView: false,
       useAlternativeBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
@@ -362,6 +372,11 @@ export default {
         coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
       })
     },
+    updateHomeAlternativeBookshelfView(val) {
+      this.updateServerSettings({
+        homeBookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+      })
+    },
     updateAlternativeBookshelfView(val) {
       this.updateServerSettings({
         bookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
@@ -393,6 +408,7 @@ export default {
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
 
+      this.homeUseAlternativeBookshelfView = this.newServerSettings.homeBookshelfView === this.$constants.BookshelfView.TITLES
       this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     resetLibraryItems() {

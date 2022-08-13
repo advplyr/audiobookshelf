@@ -112,17 +112,16 @@ export default {
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
-    bookshelfView() {
-      return this.$store.getters['getServerSetting']('bookshelfView')
-    },
     sortingIgnorePrefix() {
       return this.$store.getters['getServerSetting']('sortingIgnorePrefix')
     },
     isCoverSquareAspectRatio() {
       return this.coverAspectRatio == 1
     },
+    bookshelfView() {
+      return this.$store.getters['getBookshelfView']
+    },
     isAlternativeBookshelfView() {
-      // if (!this.isEntityBook) return false // Only used for bookshelf showing books
       return this.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     hasFilter() {

@@ -39,7 +39,11 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     // Cover
+    // TODO: Remove after mobile apps are configured to use library server settings
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
+
+    // Bookshelf Display
+    this.homeBookshelfView = BookshelfView.STANDARD
     this.bookshelfView = BookshelfView.STANDARD
 
     // Podcasts
@@ -80,13 +84,7 @@ class ServerSettings {
     this.scannerMaxThreads = isNullOrNaN(settings.scannerMaxThreads) ? 0 : Number(settings.scannerMaxThreads)
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
-    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
-      this.storeCoverWithItem = !!settings.storeCoverWithBook
-    }
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
-    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was old name of setting < v2
-      this.storeMetadataWithItem = !!settings.storeMetadataWithBook
-    }
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -100,6 +98,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
     this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
+    this.homeBookshelfView = settings.homeBookshelfView || BookshelfView.STANDARD
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
@@ -109,6 +108,17 @@ class ServerSettings {
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
+
+    // Migrations
+    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
+      this.storeCoverWithItem = !!settings.storeCoverWithBook
+    }
+    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
+      this.storeMetadataWithItem = !!settings.storeMetadataWithBook
+    }
+    if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
+      this.homeBookshelfView = settings.bookshelfView
+    }
 
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
@@ -140,6 +150,7 @@ class ServerSettings {
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
+      homeBookshelfView: this.homeBookshelfView,
       bookshelfView: this.bookshelfView,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],

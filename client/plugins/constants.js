@@ -75,6 +75,9 @@ const Hotkeys = {
   }
 }
 
+export {
+  Constants
+}
 export default ({ app }, inject) => {
   inject('constants', Constants)
   inject('keynames', KeyNames)

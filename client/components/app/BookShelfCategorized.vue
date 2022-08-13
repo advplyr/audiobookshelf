@@ -70,11 +70,8 @@ export default {
     libraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
-    bookshelfView() {
-      return this.$store.getters['getServerSetting']('bookshelfView')
-    },
     isAlternativeBookshelfView() {
-      return this.bookshelfView === this.$constants.BookshelfView.TITLES
+      return this.$store.getters['getHomeBookshelfView'] === this.$constants.BookshelfView.TITLES
     },
     bookCoverWidth() {
       var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
