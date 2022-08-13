@@ -14,7 +14,7 @@
     <div class="px-4 w-full text-sm pt-6 pb-20 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
       <component v-if="libraryCopy && show" :is="tabName" :is-new="!library" :library="libraryCopy" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
 
-      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-opacity-10">
+      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
         <div class="flex justify-end">
           <ui-btn @click="submit">{{ buttonText }}</ui-btn>
         </div>

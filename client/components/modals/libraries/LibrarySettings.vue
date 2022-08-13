@@ -4,20 +4,20 @@
       <div class="flex items-center">
         <ui-toggle-switch v-if="!globalWatcherDisabled" v-model="disableWatcher" @input="formUpdated" />
         <ui-toggle-switch v-else disabled :value="false" />
-        <p class="pl-4 text-lg">Disable folder watcher for library</p>
+        <p class="pl-4 text-base">Disable folder watcher for library</p>
       </div>
       <p v-if="globalWatcherDisabled" class="text-xs text-warning">*Watcher is disabled globally in server settings</p>
     </div>
     <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithAsin" @input="formUpdated" />
-        <p class="pl-4 text-lg">Skip matching books that already have an ASIN</p>
+        <p class="pl-4 text-base">Skip matching books that already have an ASIN</p>
       </div>
     </div>
     <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithIsbn" @input="formUpdated" />
-        <p class="pl-4 text-lg">Skip matching books that already have an ISBN</p>
+        <p class="pl-4 text-base">Skip matching books that already have an ISBN</p>
       </div>
     </div>
   </div>
