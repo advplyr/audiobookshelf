@@ -42,7 +42,7 @@ class SessionController {
     res.json(payload)
   }
 
-  getSession(req, res) {
+  getOpenSession(req, res) {
     var libraryItem = this.db.getLibraryItem(req.session.libraryItemId)
     var sessionForClient = req.session.toJSONForClient(libraryItem)
     res.json(sessionForClient)
@@ -58,18 +58,46 @@ class SessionController {
     this.playbackSessionManager.closeSessionRequest(req.user, req.session, req.body, res)
   }
 
+  // DELETE: api/session/:id
+  async delete(req, res) {
+    // if session is open then remove it
+    const openSession = this.playbackSessionManager.getSession(req.session.id)
+    if (openSession) {
+      await this.playbackSessionManager.removeSession(req.session.id)
+    }
+
+    await this.db.removeEntity('session', req.session.id)
+    res.sendStatus(200)
+  }
+
   // POST: api/session/local
   syncLocal(req, res) {
     this.playbackSessionManager.syncLocalSessionRequest(req.user, req.body, res)
   }
 
-  middleware(req, res, next) {
+  openSessionMiddleware(req, res, next) {
     var playbackSession = this.playbackSessionManager.getSession(req.params.id)
     if (!playbackSession) return res.sendStatus(404)
 
     if (playbackSession.userId !== req.user.id) {
       Logger.error(`[SessionController] User "${req.user.username}" attempting to access session belonging to another user "${req.params.id}"`)
       return res.sendStatus(404)
+    }
+
+    req.session = playbackSession
+    next()
+  }
+
+  async middleware(req, res, next) {
+    var playbackSession = await this.db.getPlaybackSession(req.params.id)
+    if (!playbackSession) return res.sendStatus(404)
+
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[SessionController] User attempted to delete without permission`, req.user)
+      return res.sendStatus(403)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn('[SessionController] User attempted to update without permission', req.user.username)
+      return res.sendStatus(403)
     }
 
     req.session = playbackSession

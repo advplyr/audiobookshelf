@@ -175,9 +175,11 @@ class ApiRouter {
     // Playback Session Routes
     //
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
-    this.router.get('/session/:id', SessionController.middleware.bind(this), SessionController.getSession.bind(this))
-    this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
-    this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
+    this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
+    // TODO: Update these endpoints because they are only for open playback sessions
+    this.router.get('/session/:id', SessionController.openSessionMiddleware.bind(this), SessionController.getOpenSession.bind(this))
+    this.router.post('/session/:id/sync', SessionController.openSessionMiddleware.bind(this), SessionController.sync.bind(this))
+    this.router.post('/session/:id/close', SessionController.openSessionMiddleware.bind(this), SessionController.close.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
 
     //

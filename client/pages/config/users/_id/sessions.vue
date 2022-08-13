@@ -62,7 +62,7 @@
       </div>
     </div>
 
-    <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" />
+    <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" @removedSession="removedSession" />
   </div>
 </template>
 
@@ -98,6 +98,9 @@ export default {
     }
   },
   methods: {
+    removedSession() {
+      this.loadSessions(this.currentPage)
+    },
     async clickCurrentTime(session) {
       if (this.processingGoToTimestamp) return
       this.processingGoToTimestamp = true

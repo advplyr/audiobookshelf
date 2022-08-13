@@ -183,17 +183,6 @@ class Db {
   getLibraryItemsInLibrary(libraryId) {
     return this.libraryItems.filter(li => li.libraryId === libraryId)
   }
-  getPlaybackSession(id) {
-    return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
-      if (results.data.length) {
-        return new PlaybackSession(results.data[0])
-      }
-      return null
-    }).catch((error) => {
-      Logger.error('Failed to get session', error)
-      return null
-    })
-  }
 
   async updateLibraryItem(libraryItem) {
     return this.updateLibraryItems([libraryItem])
@@ -449,6 +438,18 @@ class Db {
     }).catch((error) => {
       Logger.error('[Db] Failed to select sessions', error)
       return []
+    })
+  }
+
+  getPlaybackSession(id) {
+    return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
+      if (results.data.length) {
+        return new PlaybackSession(results.data[0])
+      }
+      return null
+    }).catch((error) => {
+      Logger.error('Failed to get session', error)
+      return null
     })
   }
 
