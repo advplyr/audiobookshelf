@@ -52,7 +52,7 @@
             <h2 class="font-semibold">Display</h2>
           </div>
 
-          <div class="flex items-center py-2">
+          <!-- <div class="flex items-center py-2">
             <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
             <ui-tooltip :text="tooltips.coverAspectRatio">
               <p class="pl-4">
@@ -60,7 +60,7 @@
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-          </div>
+          </div> -->
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />

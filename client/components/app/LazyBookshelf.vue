@@ -110,7 +110,7 @@ export default {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
     },
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     bookshelfView() {
       return this.$store.getters['getServerSetting']('bookshelfView')
@@ -119,14 +119,11 @@ export default {
       return this.$store.getters['getServerSetting']('sortingIgnorePrefix')
     },
     isCoverSquareAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+      return this.coverAspectRatio == 1
     },
     isAlternativeBookshelfView() {
       // if (!this.isEntityBook) return false // Only used for bookshelf showing books
       return this.bookshelfView === this.$constants.BookshelfView.TITLES
-    },
-    bookCoverAspectRatio() {
-      return this.isCoverSquareAspectRatio ? 1 : 1.6
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'

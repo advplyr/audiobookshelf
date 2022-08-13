@@ -246,7 +246,7 @@ export default {
       }
     },
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders

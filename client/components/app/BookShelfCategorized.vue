@@ -33,7 +33,7 @@
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
       </template>
     </div>
   </div>
@@ -82,13 +82,10 @@ export default {
       return coverSize
     },
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     isCoverSquareAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
-    },
-    bookCoverAspectRatio() {
-      return this.isCoverSquareAspectRatio ? 1 : 1.6
+      return this.coverAspectRatio == 1
     },
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120

@@ -144,12 +144,6 @@ export default {
     isPodcastLibrary() {
       return this.mediaType === 'podcast'
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
-    bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
-    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },

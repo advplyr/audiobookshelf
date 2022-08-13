@@ -70,7 +70,7 @@ export default {
       return this.selectedLibraryItem ? this.selectedLibraryItem.media.metadata.title : ''
     },
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     selectedLibraryItem() {
       return this.$store.state.selectedLibraryItem

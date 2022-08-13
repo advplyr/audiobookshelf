@@ -1,8 +1,8 @@
 const { BookCoverAspectRatio } = require('../../utils/constants')
-const Logger = require('../../Logger')
 
 class LibrarySettings {
   constructor(settings) {
+    this.coverAspectRatio = BookCoverAspectRatio.SQUARE
     this.disableWatcher = false
     this.skipMatchingMediaWithAsin = false
     this.skipMatchingMediaWithIsbn = false
@@ -13,6 +13,7 @@ class LibrarySettings {
   }
 
   construct(settings) {
+    this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
     this.disableWatcher = !!settings.disableWatcher
     this.skipMatchingMediaWithAsin = !!settings.skipMatchingMediaWithAsin
     this.skipMatchingMediaWithIsbn = !!settings.skipMatchingMediaWithIsbn
@@ -20,6 +21,7 @@ class LibrarySettings {
 
   toJSON() {
     return {
+      coverAspectRatio: this.coverAspectRatio,
       disableWatcher: this.disableWatcher,
       skipMatchingMediaWithAsin: this.skipMatchingMediaWithAsin,
       skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn

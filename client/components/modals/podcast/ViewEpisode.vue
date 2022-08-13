@@ -66,7 +66,7 @@ export default {
       return this.mediaMetadata.author
     },
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     }
   },
   methods: {},

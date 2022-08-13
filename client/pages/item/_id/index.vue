@@ -246,11 +246,8 @@ export default {
     isFile() {
       return this.libraryItem.isFile
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     bookCoverWidth() {
       return 208

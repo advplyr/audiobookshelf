@@ -51,7 +51,7 @@ export default {
         index,
         width: this.entityWidth,
         height: this.entityHeight,
-        bookCoverAspectRatio: this.bookCoverAspectRatio,
+        bookCoverAspectRatio: this.coverAspectRatio,
         bookshelfView: this.bookshelfView,
         sortingIgnorePrefix: !!this.sortingIgnorePrefix
       }

@@ -129,11 +129,8 @@ export default {
       else if (this.provider == 'itunes') return 'Search Term'
       return 'Search Title'
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     libraryItemId() {
       return this.libraryItem ? this.libraryItem.id : null

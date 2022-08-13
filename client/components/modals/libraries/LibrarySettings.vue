@@ -1,5 +1,14 @@
 <template>
   <div class="w-full h-full px-4 py-1 mb-4">
+    <div class="flex items-center py-2">
+      <ui-toggle-switch v-model="useSquareBookCovers" @input="formUpdated" />
+      <ui-tooltip :text="tooltips.coverAspectRatio">
+        <p class="pl-4 text-base">
+          Use square book covers
+          <span class="material-icons icon-text text-sm">info_outlined</span>
+        </p>
+      </ui-tooltip>
+    </div>
     <div class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-if="!globalWatcherDisabled" v-model="disableWatcher" @input="formUpdated" />
@@ -35,9 +44,13 @@ export default {
   data() {
     return {
       provider: null,
+      useSquareBookCovers: false,
       disableWatcher: false,
       skipMatchingMediaWithAsin: false,
-      skipMatchingMediaWithIsbn: false
+      skipMatchingMediaWithIsbn: false,
+      tooltips: {
+        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
+      }
     }
   },
   computed: {
@@ -59,6 +72,7 @@ export default {
     getLibraryData() {
       return {
         settings: {
+          coverAspectRatio: this.useSquareBookCovers ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD,
           disableWatcher: !!this.disableWatcher,
           skipMatchingMediaWithAsin: !!this.skipMatchingMediaWithAsin,
           skipMatchingMediaWithIsbn: !!this.skipMatchingMediaWithIsbn
@@ -69,6 +83,7 @@ export default {
       this.$emit('update', this.getLibraryData())
     },
     init() {
+      this.useSquareBookCovers = this.librarySettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
       this.disableWatcher = !!this.librarySettings.disableWatcher
       this.skipMatchingMediaWithAsin = !!this.librarySettings.skipMatchingMediaWithAsin
       this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
