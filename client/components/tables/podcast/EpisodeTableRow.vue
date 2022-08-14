@@ -1,12 +1,18 @@
 <template>
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
-    <div v-if="episode" class="flex items-center h-24 cursor-pointer" @click="$emit('view', episode)">
+    <div v-if="episode" class="flex items-center cursor-pointer" :class="{ 'opacity-70': isSelected || selectionMode }" @click="clickedEpisode">
       <div class="flex-grow px-2">
         <p class="text-sm font-semibold">
           {{ title }}
         </p>
 
         <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ subtitle }}</p>
+
+        <div class="flex justify-between pt-2 max-w-xl">
+          <p v-if="episode.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
+          <p v-if="episode.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
+          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
+        </div>
 
         <div class="flex items-center pt-2">
           <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
@@ -17,20 +23,18 @@
           <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
-          <p v-if="episode.season" class="px-4 text-sm text-gray-300">Season #{{ episode.season }}</p>
-          <p v-if="episode.episode" class="px-4 text-sm text-gray-300">Episode #{{ episode.episode }}</p>
-          <p v-if="publishedAt" class="px-4 text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
+
+          <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
+          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
         </div>
       </div>
-      <div class="w-24 min-w-24" />
+      <div v-if="isHovering || isSelected || selectionMode" class="hidden md:block w-12 min-w-12" />
     </div>
-    <div class="w-24 min-w-24 -right-0 absolute top-0 h-full transform transition-transform" :class="!isHovering ? 'translate-x-32' : 'translate-x-0'">
+    <div v-if="isSelected || selectionMode" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-10 z-10 cursor-pointer" @click.stop="clickedSelectionBg" />
+    <div class="hidden md:block md:w-12 md:min-w-12 md:-right-0 md:absolute md:top-0 h-full transform transition-transform z-20" :class="!isHovering && !isSelected && !selectionMode ? 'translate-x-24' : 'translate-x-0'">
       <div class="flex h-full items-center">
         <div class="mx-1">
-          <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
-        </div>
-        <div class="mx-1">
-          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
+          <ui-checkbox v-model="isSelected" @input="selectedUpdated" checkbox-bg="bg" />
         </div>
       </div>
     </div>
@@ -46,13 +50,15 @@ export default {
     episode: {
       type: Object,
       default: () => {}
-    }
+    },
+    selectionMode: Boolean
   },
   data() {
     return {
       isProcessingReadUpdate: false,
       processingRemove: false,
-      isHovering: false
+      isHovering: false,
+      isSelected: false
     }
   },
   computed: {
@@ -104,8 +110,17 @@ export default {
     }
   },
   methods: {
+    clickedEpisode() {
+      this.$emit('view', this.episode)
+    },
+    clickedSelectionBg() {
+      this.isSelected = !this.isSelected
+      this.selectedUpdated(this.isSelected)
+    },
+    selectedUpdated(value) {
+      this.$emit('selected', { isSelected: value, episode: this.episode })
+    },
     mouseover() {
-      // if (this.isDragging) return
       this.isHovering = true
     },
     mouseleave() {
