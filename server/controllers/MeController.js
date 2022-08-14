@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { sort } = require('../libs/fastSort')
 const { isObject, toNumber } = require('../utils/index')
 
 class MeController {
@@ -238,6 +239,41 @@ class MeController {
     res.json({
       numServerProgressUpdates,
       localProgressUpdates: updatedLocalMediaProgress
+    })
+  }
+
+  // GET: api/me/items-in-progress
+  async getAllLibraryItemsInProgress(req, res) {
+    const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
+
+    var itemsInProgress = []
+    for (const mediaProgress of req.user.mediaProgress) {
+      if (!mediaProgress.isFinished && mediaProgress.progress > 0) {
+        const libraryItem = await this.db.getLibraryItem(mediaProgress.libraryItemId)
+        if (libraryItem) {
+          if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
+            const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)
+            if (episode) {
+              const libraryItemWithEpisode = {
+                ...libraryItem.toJSONMinified(),
+                recentEpisode: episode.toJSON(),
+                progressLastUpdate: mediaProgress.lastUpdate
+              }
+              itemsInProgress.push(libraryItemWithEpisode)
+            }
+          } else if (!mediaProgress.episodeId) {
+            itemsInProgress.push({
+              ...libraryItem.toJSONMinified(),
+              progressLastUpdate: mediaProgress.lastUpdate
+            })
+          }
+        }
+      }
+    }
+
+    itemsInProgress = sort(itemsInProgress).desc(li => li.progressLastUpdate).slice(0, limit)
+    res.json({
+      libraryItems: itemsInProgress
     })
   }
 }

@@ -142,6 +142,7 @@ class ApiRouter {
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
+    this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
 
     //
     // Backup Routes

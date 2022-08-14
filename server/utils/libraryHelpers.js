@@ -1,6 +1,5 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const { getTitleIgnorePrefix } = require('../utils/index')
-const Logger = require('../Logger')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
