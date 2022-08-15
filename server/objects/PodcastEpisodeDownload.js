@@ -9,6 +9,7 @@ class PodcastEpisodeDownload {
     this.url = null
     this.libraryItem = null
 
+    this.isAutoDownload = false
     this.isDownloading = false
     this.isFinished = false
     this.failed = false
@@ -46,11 +47,12 @@ class PodcastEpisodeDownload {
     return this.libraryItem ? this.libraryItem.id : null
   }
 
-  setData(podcastEpisode, libraryItem) {
+  setData(podcastEpisode, libraryItem, isAutoDownload) {
     this.id = getId('epdl')
     this.podcastEpisode = podcastEpisode
     this.url = podcastEpisode.enclosure.url
     this.libraryItem = libraryItem
+    this.isAutoDownload = isAutoDownload
     this.createdAt = Date.now()
   }
 

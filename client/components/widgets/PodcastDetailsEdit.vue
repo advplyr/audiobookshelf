@@ -40,8 +40,20 @@
         </div>
       </div>
 
-      <div class="flex-grow px-1 pt-6">
-        <ui-checkbox v-model="autoDownloadEpisodes" label="Auto Download New Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+      <div class="flex items-center px-1 pt-6">
+        <div class="w-1/2 px-1 py-5">
+          <ui-checkbox v-model="autoDownloadEpisodes" label="Auto Download New Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+        </div>
+        <div v-if="autoDownloadEpisodes" class="w-1/2 px-1">
+          <ui-text-input-with-label ref="maxEpisodesToKeep" v-model="maxEpisodesToKeep" type="number" class="max-w-48">
+            <ui-tooltip direction="bottom" text="Value of 0 sets no max limit. After a new episode is auto-downloaded this will delete the oldest episode if you have more than X episodes.">
+              <p class="text-sm">
+                Max episodes to keep
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </ui-text-input-with-label>
+        </div>
       </div>
     </form>
   </div>
@@ -72,6 +84,7 @@ export default {
         language: null
       },
       autoDownloadEpisodes: false,
+      maxEpisodesToKeep: 0,
       newTags: []
     }
   },
@@ -199,6 +212,9 @@ export default {
       if (this.media.autoDownloadEpisodes !== this.autoDownloadEpisodes) {
         updatePayload.autoDownloadEpisodes = !!this.autoDownloadEpisodes
       }
+      if (this.autoDownloadEpisodes && !isNaN(this.maxEpisodesToKeep) && Number(this.maxEpisodesToKeep) != this.media.maxEpisodesToKeep) {
+        updatePayload.maxEpisodesToKeep = Number(this.maxEpisodesToKeep)
+      }
 
       return {
         updatePayload,
@@ -220,6 +236,7 @@ export default {
       this.details.explicit = !!this.mediaMetadata.explicit
 
       this.autoDownloadEpisodes = !!this.media.autoDownloadEpisodes
+      this.maxEpisodesToKeep = this.media.maxEpisodesToKeep || 0
       this.newTags = [...(this.media.tags || [])]
     },
     submitForm() {

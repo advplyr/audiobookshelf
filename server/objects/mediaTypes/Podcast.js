@@ -19,6 +19,7 @@ class Podcast {
 
     this.autoDownloadEpisodes = false
     this.lastEpisodeCheck = 0
+    this.maxEpisodesToKeep = 0
 
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
@@ -40,6 +41,7 @@ class Podcast {
     })
     this.autoDownloadEpisodes = !!podcast.autoDownloadEpisodes
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
+    this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
   }
 
   toJSON() {
@@ -50,7 +52,8 @@ class Podcast {
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
-      lastEpisodeCheck: this.lastEpisodeCheck
+      lastEpisodeCheck: this.lastEpisodeCheck,
+      maxEpisodesToKeep: this.maxEpisodesToKeep
     }
   }
 
@@ -62,6 +65,7 @@ class Podcast {
       numEpisodes: this.episodes.length,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       lastEpisodeCheck: this.lastEpisodeCheck,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
       size: this.size
     }
   }
@@ -75,6 +79,7 @@ class Podcast {
       episodes: this.episodes.map(e => e.toJSONExpanded()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       lastEpisodeCheck: this.lastEpisodeCheck,
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
       size: this.size
     }
   }
@@ -112,6 +117,9 @@ class Podcast {
       }
     })
     return largestPublishedAt
+  }
+  get episodesWithPubDate() {
+    return this.episodes.filter(ep => !!ep.publishedAt)
   }
 
   update(payload) {

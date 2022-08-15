@@ -16,7 +16,7 @@ async function getFileStat(path) {
       birthtime: stat.birthtime
     }
   } catch (err) {
-    console.error('Failed to stat', err)
+    Logger.error('[fileUtils] Failed to stat', err)
     return false
   }
 }
@@ -33,7 +33,7 @@ async function getFileTimestampsWithIno(path) {
       ino: String(stat.ino)
     }
   } catch (err) {
-    console.error('Failed to getFileTimestampsWithIno', err)
+    Logger.error('[fileUtils] Failed to getFileTimestampsWithIno', err)
     return false
   }
 }
@@ -219,4 +219,12 @@ module.exports.getAudioMimeTypeFromExtname = (extname) => {
   const formatUpper = extname.slice(1).toUpperCase()
   if (AudioMimeType[formatUpper]) return AudioMimeType[formatUpper]
   return null
+}
+
+module.exports.removeFile = (path) => {
+  if (!path) return false
+  return fs.remove(path).then(() => true).catch((error) => {
+    Logger.error(`[fileUtils] Failed remove file "${path}"`, error)
+    return false
+  })
 }
