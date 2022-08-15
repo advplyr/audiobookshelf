@@ -25,7 +25,7 @@
         <cards-book-match-card :key="index" :book="res" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
     </div>
-    <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full p-8 max-h-full overflow-y-auto overflow-x-hidden">
+    <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
       <div class="flex mb-2">
         <div class="w-8 h-8 rounded-full hover:bg-white hover:bg-opacity-10 flex items-center justify-center cursor-pointer" @click="selectedMatch = null">
           <span class="material-icons text-3xl">arrow_back</span>
@@ -35,7 +35,12 @@
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatch.cover" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.cover" />
-          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" label="Cover" class="flex-grow ml-4" />
+          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly label="Cover" class="flex-grow mx-4" />
+          <div class="min-w-12 max-w-12 md:min-w-16 md:max-w-16">
+            <a :href="selectedMatch.cover" target="_blank" class="w-full bg-primary">
+              <img :src="selectedMatch.cover" class="h-full w-full object-contain" />
+            </a>
+          </div>
         </div>
         <div v-if="selectedMatch.title" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.title" />
