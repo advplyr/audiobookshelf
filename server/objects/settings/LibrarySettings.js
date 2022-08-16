@@ -6,6 +6,7 @@ class LibrarySettings {
     this.disableWatcher = false
     this.skipMatchingMediaWithAsin = false
     this.skipMatchingMediaWithIsbn = false
+    this.autoScanCronExpression = null
 
     if (settings) {
       this.construct(settings)
@@ -17,6 +18,7 @@ class LibrarySettings {
     this.disableWatcher = !!settings.disableWatcher
     this.skipMatchingMediaWithAsin = !!settings.skipMatchingMediaWithAsin
     this.skipMatchingMediaWithIsbn = !!settings.skipMatchingMediaWithIsbn
+    this.autoScanCronExpression = settings.autoScanCronExpression || null
   }
 
   toJSON() {
@@ -24,7 +26,8 @@ class LibrarySettings {
       coverAspectRatio: this.coverAspectRatio,
       disableWatcher: this.disableWatcher,
       skipMatchingMediaWithAsin: this.skipMatchingMediaWithAsin,
-      skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn
+      skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn,
+      autoScanCronExpression: this.autoScanCronExpression
     }
   }
 

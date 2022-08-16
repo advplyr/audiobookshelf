@@ -47,6 +47,11 @@ export default {
           title: 'Settings',
           component: 'modals-libraries-library-settings'
         }
+        // {
+        //   id: 'schedule',
+        //   title: 'Schedule',
+        //   component: 'modals-libraries-schedule-scan'
+        // }
       ],
       libraryCopy: null
     }
@@ -84,6 +89,7 @@ export default {
     },
     updateLibrary(library) {
       this.mapLibraryToCopy(library)
+      console.log('Updated library', this.libraryCopy)
     },
     getNewLibraryData() {
       return {
@@ -93,9 +99,11 @@ export default {
         icon: 'database',
         mediaType: 'book',
         settings: {
+          coverAspectRatio: this.$constants.BookCoverAspectRatio.SQUARE,
           disableWatcher: false,
           skipMatchingMediaWithAsin: false,
-          skipMatchingMediaWithIsbn: false
+          skipMatchingMediaWithIsbn: false,
+          autoScanCronExpression: null
         }
       }
     },
@@ -112,7 +120,9 @@ export default {
           if (key === 'folders') {
             this.libraryCopy.folders = library.folders.map((f) => ({ ...f }))
           } else if (key === 'settings') {
-            this.libraryCopy.settings = { ...library.settings }
+            for (const settingKey in library.settings) {
+              this.libraryCopy.settings[settingKey] = library.settings[settingKey]
+            }
           } else {
             this.libraryCopy[key] = library[key]
           }
