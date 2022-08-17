@@ -24,7 +24,7 @@
       </template>
       <template v-else>
         <p class="px-1 text-sm font-semibold">Cron Expression</p>
-        <ui-text-input v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-4xl -tracking-widest mb-4 font-mono" />
+        <ui-text-input ref="customExpressionInput" v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-4xl -tracking-widest mb-4 font-mono" />
 
         <div class="flex items-center justify-center">
           <widgets-loading-spinner v-if="isValidating" class="mr-2" />
@@ -127,6 +127,14 @@ export default {
     }
   },
   methods: {
+    checkBlurExpressionInput() {
+      if (!this.showAdvancedView || !this.$refs.customExpressionInput) return false
+      if (this.$refs.customExpressionInput.isFocused) {
+        this.$refs.customExpressionInput.blur()
+        return true
+      }
+      return false
+    },
     updateCron() {
       if (!this.minuteIsValid || !this.hourIsValid || !this.selectedWeekdays.length) {
         this.cronExpression = null
@@ -168,11 +176,12 @@ export default {
         this.customCronError = 'Invalid cron expression'
         this.isValid = false
         return
-      } else if (this.customCronExpression.split(' ')[0] === '*') {
-        this.customCronError = 'Cannot use * in minutes position'
-        this.isValid = false
-        return
       }
+      // if (this.customCronExpression.split(' ')[0] === '*') {
+      //   this.customCronError = 'Cannot use * in minutes position'
+      //   this.isValid = false
+      //   return
+      // }
 
       if (this.customCronExpression !== this.cronExpression) {
         this.selectedWeekdays = []

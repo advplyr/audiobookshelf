@@ -4,7 +4,7 @@
       <p class="text-lg">Schedule Automatic Library Scans</p>
       <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" label="Enable" checkbox-bg="bg" label-class="pl-2 text-base" />
     </div>
-    <widgets-cron-expression-builder v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
+    <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
   </div>
 </template>
 
@@ -25,6 +25,11 @@ export default {
   },
   computed: {},
   methods: {
+    checkBlurExpressionInput() {
+      // returns true if advanced cron input is focused
+      if (!this.$refs.cronExpressionBuilder) return false
+      return this.$refs.cronExpressionBuilder.checkBlurExpressionInput()
+    },
     toggleEnableAutoScan(v) {
       if (!v) this.updatedCron(null)
       else if (!this.cronExpression) {
