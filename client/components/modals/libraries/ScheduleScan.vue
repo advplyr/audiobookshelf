@@ -27,6 +27,10 @@ export default {
   methods: {
     toggleEnableAutoScan(v) {
       if (!v) this.updatedCron(null)
+      else if (!this.cronExpression) {
+        this.cronExpression = '0 0 * * 1'
+        this.updatedCron(this.cronExpression)
+      }
     },
     updatedCron(expression) {
       this.$emit('update', {

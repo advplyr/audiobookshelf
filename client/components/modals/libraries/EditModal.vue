@@ -46,12 +46,12 @@ export default {
           id: 'settings',
           title: 'Settings',
           component: 'modals-libraries-library-settings'
+        },
+        {
+          id: 'schedule',
+          title: 'Schedule',
+          component: 'modals-libraries-schedule-scan'
         }
-        // {
-        //   id: 'schedule',
-        //   title: 'Schedule',
-        //   component: 'modals-libraries-schedule-scan'
-        // }
       ],
       libraryCopy: null
     }

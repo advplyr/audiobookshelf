@@ -1,26 +1,39 @@
 <template>
   <div class="w-full py-2">
-    <template v-if="!showAdvancedView">
-      <ui-multi-select-dropdown v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
-
-      <div v-show="selectedWeekdays.length" class="flex items-center py-2">
-        <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" label="Hour" class="max-w-20" />
-        <p class="text-xl px-2 mt-4">:</p>
-        <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" label="Minute" class="max-w-20" />
+    <div class="flex">
+      <div class="w-28 h-8 rounded-tl-md shadow-md relative border border-black-200 flex items-center justify-center cursor-pointer hover:text-white" :class="!showAdvancedView ? 'text-gray-200 bg-primary hover:bg-opacity-60' : 'text-gray-400 bg-bg hover:bg-primary hover:bg-opacity-20'" @click="showAdvancedView = false">
+        <p class="text-sm">Cron Builder</p>
       </div>
-
-      <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-4 text-center mt-2">
-        <p class="text-lg text-gray-200" v-html="description" />
+      <div class="w-28 h-8 rounded-tr-md shadow-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer hover:text-white" :class="showAdvancedView ? 'text-gray-200 bg-primary hover:bg-opacity-60' : 'text-gray-400 bg-bg hover:bg-primary hover:bg-opacity-20'" @click="showAdvancedView = true">
+        <p class="text-sm">Advanced</p>
       </div>
-    </template>
-    <template v-else>
-      <p class="px-1 text-sm font-semibold">Cron Expression</p>
-      <ui-text-input v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="1" text-center class="w-full text-4xl -tracking-widest mb-2" />
-      <ui-btn v-if="!customCronError" small :disabled="isValidating" @click="validateCron">Validate Cron Expression</ui-btn>
-      <p v-else class="text-error text-xl">{{ customCronError }}</p>
-    </template>
-        <div class="flex justify-end mt-4">
-      <ui-checkbox v-model="showAdvancedView" small checkbox-bg="bg" label="Advanced" />
+    </div>
+    <div class="p-4 border border-black-200 rounded-b-md rounded-tr-md -mt-px" style="min-height: 200px">
+      <template v-if="!showAdvancedView">
+        <ui-multi-select-dropdown v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
+
+        <div v-show="selectedWeekdays.length" class="flex items-center py-2">
+          <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" label="Hour" class="max-w-20" />
+          <p class="text-xl px-2 mt-4">:</p>
+          <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" label="Minute" class="max-w-20" />
+        </div>
+
+        <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-4 text-center mt-2">
+          <p class="text-lg text-gray-200" v-html="description" />
+        </div>
+      </template>
+      <template v-else>
+        <p class="px-1 text-sm font-semibold">Cron Expression</p>
+        <ui-text-input v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-4xl -tracking-widest mb-4 font-mono" />
+
+        <div class="flex items-center justify-center">
+          <widgets-loading-spinner v-if="isValidating" class="mr-2" />
+          <span v-else class="material-icons-outlined mr-2" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
+          <p v-if="isValidating" class="text-gray-300 text-lg text-center">Checking cron...</p>
+          <p v-else-if="customCronError" class="text-error text-lg text-center">{{ customCronError }}</p>
+          <p v-else class="text-success text-lg text-center">Valid cron expression</p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -42,7 +55,9 @@ export default {
       cronExpression: '0 0 * * *',
       customCronExpression: '0 0 * * *',
       customCronError: '',
-      isValidating: false
+      isValidating: false,
+      validatedCron: null,
+      isValid: true
     }
   },
   computed: {
@@ -120,6 +135,9 @@ export default {
       this.selectedWeekdays.sort()
       this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * ${this.selectedWeekdays.join(',')}`
       this.customCronExpression = this.cronExpression
+      this.validatedCron = this.cronExpression
+      this.isValid = true
+      this.customCronError = ''
       this.$emit('input', this.cronExpression)
     },
     minuteBlur() {
@@ -144,13 +162,15 @@ export default {
       }
       this.updateCron()
     },
-    simpleValidateCustomCron() {
-      return this.customCronExpression && this.customCronExpression.split(' ').length === 5
-    },
-    cronExpressionBlur() {
+    async cronExpressionBlur() {
       this.customCronError = ''
-      if (!this.simpleValidateCustomCron()) {
+      if (!this.customCronExpression || this.customCronExpression.split(' ').length !== 5) {
         this.customCronError = 'Invalid cron expression'
+        this.isValid = false
+        return
+      } else if (this.customCronExpression.split(' ')[0] === '*') {
+        this.customCronError = 'Cannot use * in minutes position'
+        this.isValid = false
         return
       }
 
@@ -160,29 +180,65 @@ export default {
         this.selectedMinute = 0
         this.cronExpression = this.customCronExpression
       }
-      this.$emit('input', this.cronExpression)
+
+      if (!this.validatedCron || this.validatedCron !== this.cronExpression) {
+        const validationPayload = await this.validateCron()
+        this.isValid = validationPayload.isValid
+        this.validatedCron = this.cronExpression
+        this.customCronError = validationPayload.error || ''
+      }
+
+      if (this.isValid) {
+        this.$emit('input', this.cronExpression)
+      }
     },
     validateCron() {
       this.isValidating = true
-      this.$axios
+      return this.$axios
         .$post('/api/validate-cron', { expression: this.customCronExpression })
         .then(() => {
-          this.$toast.success('Cron expression is valid!')
           this.isValidating = false
+          return {
+            isValid: true
+          }
         })
         .catch((error) => {
           console.error('Invalid cron', error)
           var errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error('Invalid cron: ' + errMsg)
           this.isValidating = false
+          return {
+            isValid: false,
+            error: errMsg || 'Invalid cron expression'
+          }
         })
     },
     init() {
       if (!this.value) return
       // TODO: parse
-      // const pieces = this.value.split(' ')
-      // this.selectedMinute = Number(pieces[0])
+      const pieces = this.value.split(' ')
+      if (pieces.length !== 5) {
+        console.error('Invalid cron expression input', this.value)
+        return
+      }
 
+      var isCustomCron = false
+      if (isNaN(pieces[0]) || isNaN(pieces[1])) {
+        isCustomCron = true
+      } else if (pieces[2] !== '*' || pieces[3] !== '*') {
+        isCustomCron = true
+      } else if (pieces[4].split(',').some((num) => isNaN(num))) {
+        isCustomCron = true
+      }
+
+      if (isCustomCron) {
+        this.showAdvancedView = true
+      } else {
+        this.selectedWeekdays = pieces[4].split(',').map((num) => Number(num))
+        this.selectedHour = pieces[1]
+        this.selectedMinute = pieces[0]
+      }
+      this.cronExpression = this.value
+      this.customCronExpression = this.value
     }
   },
   mounted() {
