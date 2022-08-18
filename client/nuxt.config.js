@@ -48,7 +48,8 @@ module.exports = {
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
-    '@/plugins/toast.js'
+    '@/plugins/toast.js',
+    '@/plugins/utils.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

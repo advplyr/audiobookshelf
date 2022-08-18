@@ -231,11 +231,6 @@ export default {
         this.isValid = false
         return
       }
-      // if (this.customCronExpression.split(' ')[0] === '*') {
-      //   this.customCronError = 'Cannot use * in minutes position'
-      //   this.isValid = false
-      //   return
-      // }
 
       if (this.customCronExpression !== this.cronExpression) {
         this.selectedWeekdays = []
@@ -306,7 +301,6 @@ export default {
           this.selectedMinute = pieces[0]
         }
       }
-
       this.cronExpression = this.value
       this.customCronExpression = this.value
     }

@@ -41,13 +41,6 @@ export default {
         this.setTooltipPosition(this.tooltip)
       }
     },
-    getTextWidth() {
-      var styles = {
-        'font-size': '0.75rem'
-      }
-      var size = this.$calculateTextSize(this.text, styles)
-      return size.width
-    },
     createTooltip() {
       if (!this.$refs.box) return
       var tooltip = document.createElement('div')
