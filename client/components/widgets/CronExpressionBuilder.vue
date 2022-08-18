@@ -14,7 +14,7 @@
 
         <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
 
-        <div v-if="selectedWeekdays.length && selectedInterval === 'custom'" class="flex items-center py-2">
+        <div v-if="(selectedWeekdays.length && selectedInterval === 'custom') || selectedInterval === 'daily'" class="flex items-center py-2">
           <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" label="Hour" class="max-w-20" />
           <p class="text-xl px-2 mt-4">:</p>
           <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" label="Minute" class="max-w-20" />
@@ -71,7 +71,7 @@ export default {
       return !(isNaN(this.selectedHour) || this.selectedHour === '' || this.selectedHour < 0 || this.selectedHour > 23)
     },
     description() {
-      if (this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) return ''
+      if ((this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) && this.selectedInterval !== 'daily') return ''
 
       if (!this.hourIsValid) {
         return `<span class="text-error">Invalid hour must be 0-23 | ${this.selectedHour < 0 || this.selectedHour > 23}</span>`
@@ -81,14 +81,16 @@ export default {
       }
 
       var description = 'Run every '
-      const weekdayTexts =
-        this.selectedWeekdays.length === 7
-          ? 'day'
-          : this.selectedWeekdays
-              .map((weekday) => {
-                return this.weekdays.find((w) => w.value === weekday).text
-              })
-              .join(', ')
+      var weekdayTexts = ''
+      if (this.selectedWeekdays.length === 7 || this.selectedInterval === 'daily') {
+        weekdayTexts = 'day'
+      } else {
+        weekdayTexts = this.selectedWeekdays
+          .map((weekday) => {
+            return this.weekdays.find((w) => w.value === weekday).text
+          })
+          .join(', ')
+      }
       description += `<span class="font-bold text-white">${weekdayTexts}</span>`
 
       const hourString = this.selectedHour.toString()
@@ -103,28 +105,32 @@ export default {
           value: 'custom'
         },
         {
-          text: 'Every 15 minutes',
-          value: '*/15 * * * *'
+          text: 'Every day',
+          value: 'daily'
         },
         {
-          text: 'Every 30 minutes',
-          value: '*/30 * * * *'
-        },
-        {
-          text: 'Every hour',
-          value: '0 * * * *'
-        },
-        {
-          text: 'Every 2 hours',
-          value: '0 */2 * * *'
+          text: 'Every 12 hours',
+          value: '0 */12 * * *'
         },
         {
           text: 'Every 6 hours',
           value: '0 */6 * * *'
         },
         {
-          text: 'Every 12 hours',
-          value: '0 */12 * * *'
+          text: 'Every 2 hours',
+          value: '0 */2 * * *'
+        },
+        {
+          text: 'Every hour',
+          value: '0 * * * *'
+        },
+        {
+          text: 'Every 30 minutes',
+          value: '*/30 * * * *'
+        },
+        {
+          text: 'Every 15 minutes',
+          value: '*/15 * * * *'
         }
       ]
     },
@@ -177,7 +183,15 @@ export default {
           return
         }
         this.selectedWeekdays.sort()
-        this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * ${this.selectedWeekdays.join(',')}`
+
+        const daysOfWeekPiece = this.selectedWeekdays.length === 7 ? '*' : this.selectedWeekdays.join(',')
+        this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * ${daysOfWeekPiece}`
+      } else if (this.selectedInterval === 'daily') {
+        if (!this.minuteIsValid || !this.hourIsValid) {
+          this.cronExpression = null
+          return
+        }
+        this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * *`
       } else {
         this.cronExpression = this.selectedInterval
       }
@@ -278,14 +292,16 @@ export default {
           isCustomCron = true
         } else if (pieces[2] !== '*' || pieces[3] !== '*') {
           isCustomCron = true
-        } else if (pieces[4].split(',').some((num) => isNaN(num))) {
+        } else if (pieces[4] !== '*' && pieces[4].split(',').some((num) => isNaN(num))) {
           isCustomCron = true
         }
 
         if (isCustomCron) {
           this.showAdvancedView = true
         } else {
-          this.selectedWeekdays = pieces[4].split(',').map((num) => Number(num))
+          if (pieces[4] === '*') this.selectedInterval = 'daily'
+
+          this.selectedWeekdays = pieces[4] === '*' ? [0, 1, 2, 3, 4, 5, 6] : pieces[4].split(',').map((num) => Number(num))
           this.selectedHour = pieces[1]
           this.selectedMinute = pieces[0]
         }
