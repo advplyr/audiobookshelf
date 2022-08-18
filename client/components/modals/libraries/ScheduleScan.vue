@@ -1,8 +1,8 @@
 <template>
-  <div class="w-full h-full px-4 py-1 mb-4">
+  <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
     <div class="flex items-center justify-between mb-4">
-      <p class="text-lg">Schedule Automatic Library Scans</p>
-      <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" label="Enable" checkbox-bg="bg" label-class="pl-2 text-base" />
+      <p class="text-base md:text-lg font-semibold">Schedule Automatic Library Scans</p>
+      <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" label="Enable" small checkbox-bg="bg" label-class="pl-2 text-base" />
     </div>
     <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
   </div>

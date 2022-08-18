@@ -1,37 +1,39 @@
 <template>
   <div class="w-full py-2">
-    <div class="flex">
-      <div class="w-28 h-8 rounded-tl-md shadow-md relative border border-black-200 flex items-center justify-center cursor-pointer hover:text-white" :class="!showAdvancedView ? 'text-gray-200 bg-primary hover:bg-opacity-60' : 'text-gray-400 bg-bg hover:bg-primary hover:bg-opacity-20'" @click="showAdvancedView = false">
-        <p class="text-sm">Cron Builder</p>
+    <div class="flex -mb-px">
+      <div class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer" :class="!showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = false">
+        <p class="text-sm">Scheduler</p>
       </div>
-      <div class="w-28 h-8 rounded-tr-md shadow-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer hover:text-white" :class="showAdvancedView ? 'text-gray-200 bg-primary hover:bg-opacity-60' : 'text-gray-400 bg-bg hover:bg-primary hover:bg-opacity-20'" @click="showAdvancedView = true">
+      <div class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer" :class="showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = true">
         <p class="text-sm">Advanced</p>
       </div>
     </div>
-    <div class="p-4 border border-black-200 rounded-b-md rounded-tr-md -mt-px" style="min-height: 200px">
+    <div class="px-2 py-4 md:p-4 border border-black-200 rounded-b-md mr-px" style="min-height: 280px">
       <template v-if="!showAdvancedView">
-        <ui-multi-select-dropdown v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
+        <ui-dropdown v-model="selectedInterval" @input="updateCron" label="Interval" :items="intervalOptions" class="mb-2" />
 
-        <div v-show="selectedWeekdays.length" class="flex items-center py-2">
+        <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
+
+        <div v-if="selectedWeekdays.length && selectedInterval === 'custom'" class="flex items-center py-2">
           <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" label="Hour" class="max-w-20" />
           <p class="text-xl px-2 mt-4">:</p>
           <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" label="Minute" class="max-w-20" />
         </div>
 
-        <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-4 text-center mt-2">
-          <p class="text-lg text-gray-200" v-html="description" />
+        <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-2 md:p-4 text-center mt-2">
+          <p class="text-base md:text-lg text-gray-200" v-html="description" />
         </div>
       </template>
       <template v-else>
         <p class="px-1 text-sm font-semibold">Cron Expression</p>
-        <ui-text-input ref="customExpressionInput" v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-4xl -tracking-widest mb-4 font-mono" />
+        <ui-text-input ref="customExpressionInput" v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-2xl md:text-4xl -tracking-widest mb-4 font-mono" />
 
         <div class="flex items-center justify-center">
           <widgets-loading-spinner v-if="isValidating" class="mr-2" />
-          <span v-else class="material-icons-outlined mr-2" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
-          <p v-if="isValidating" class="text-gray-300 text-lg text-center">Checking cron...</p>
-          <p v-else-if="customCronError" class="text-error text-lg text-center">{{ customCronError }}</p>
-          <p v-else class="text-success text-lg text-center">Valid cron expression</p>
+          <span v-else class="material-icons-outlined mr-2 text-xl" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
+          <p v-if="isValidating" class="text-gray-300 text-base md:text-lg text-center">Checking cron...</p>
+          <p v-else-if="customCronError" class="text-error text-base md:text-lg text-center">{{ customCronError }}</p>
+          <p v-else class="text-success text-base md:text-lg text-center">Valid cron expression</p>
         </div>
       </template>
     </div>
@@ -48,6 +50,7 @@ export default {
   },
   data() {
     return {
+      selectedInterval: 'custom',
       showAdvancedView: false,
       selectedHour: 0,
       selectedMinute: 0,
@@ -68,7 +71,7 @@ export default {
       return !(isNaN(this.selectedHour) || this.selectedHour === '' || this.selectedHour < 0 || this.selectedHour > 23)
     },
     description() {
-      if (!this.selectedWeekdays.length) return ''
+      if (this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) return ''
 
       if (!this.hourIsValid) {
         return `<span class="text-error">Invalid hour must be 0-23 | ${this.selectedHour < 0 || this.selectedHour > 23}</span>`
@@ -92,6 +95,38 @@ export default {
       const minuteString = this.selectedMinute.toString().padStart(2, '0')
       description += ` at <span class="font-bold text-white">${hourString}:${minuteString}</span>`
       return description
+    },
+    intervalOptions() {
+      return [
+        {
+          text: 'Custom daily/weekly',
+          value: 'custom'
+        },
+        {
+          text: 'Every 15 minutes',
+          value: '*/15 * * * *'
+        },
+        {
+          text: 'Every 30 minutes',
+          value: '*/30 * * * *'
+        },
+        {
+          text: 'Every hour',
+          value: '0 * * * *'
+        },
+        {
+          text: 'Every 2 hours',
+          value: '0 */2 * * *'
+        },
+        {
+          text: 'Every 6 hours',
+          value: '0 */6 * * *'
+        },
+        {
+          text: 'Every 12 hours',
+          value: '0 */12 * * *'
+        }
+      ]
     },
     weekdays() {
       return [
@@ -136,12 +171,17 @@ export default {
       return false
     },
     updateCron() {
-      if (!this.minuteIsValid || !this.hourIsValid || !this.selectedWeekdays.length) {
-        this.cronExpression = null
-        return
+      if (this.selectedInterval === 'custom') {
+        if (!this.minuteIsValid || !this.hourIsValid || !this.selectedWeekdays.length) {
+          this.cronExpression = null
+          return
+        }
+        this.selectedWeekdays.sort()
+        this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * ${this.selectedWeekdays.join(',')}`
+      } else {
+        this.cronExpression = this.selectedInterval
       }
-      this.selectedWeekdays.sort()
-      this.cronExpression = `${this.selectedMinute} ${this.selectedHour} * * ${this.selectedWeekdays.join(',')}`
+
       this.customCronExpression = this.cronExpression
       this.validatedCron = this.cronExpression
       this.isValid = true
@@ -223,29 +263,34 @@ export default {
     },
     init() {
       if (!this.value) return
-      // TODO: parse
       const pieces = this.value.split(' ')
       if (pieces.length !== 5) {
         console.error('Invalid cron expression input', this.value)
         return
       }
 
-      var isCustomCron = false
-      if (isNaN(pieces[0]) || isNaN(pieces[1])) {
-        isCustomCron = true
-      } else if (pieces[2] !== '*' || pieces[3] !== '*') {
-        isCustomCron = true
-      } else if (pieces[4].split(',').some((num) => isNaN(num))) {
-        isCustomCron = true
+      const intervalMatch = this.intervalOptions.find((opt) => opt.value === this.value)
+      if (intervalMatch) {
+        this.selectedInterval = this.value
+      } else {
+        var isCustomCron = false
+        if (isNaN(pieces[0]) || isNaN(pieces[1])) {
+          isCustomCron = true
+        } else if (pieces[2] !== '*' || pieces[3] !== '*') {
+          isCustomCron = true
+        } else if (pieces[4].split(',').some((num) => isNaN(num))) {
+          isCustomCron = true
+        }
+
+        if (isCustomCron) {
+          this.showAdvancedView = true
+        } else {
+          this.selectedWeekdays = pieces[4].split(',').map((num) => Number(num))
+          this.selectedHour = pieces[1]
+          this.selectedMinute = pieces[0]
+        }
       }
 
-      if (isCustomCron) {
-        this.showAdvancedView = true
-      } else {
-        this.selectedWeekdays = pieces[4].split(',').map((num) => Number(num))
-        this.selectedHour = pieces[1]
-        this.selectedMinute = pieces[0]
-      }
       this.cronExpression = this.value
       this.customCronExpression = this.value
     }

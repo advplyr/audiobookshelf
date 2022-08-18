@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full px-4 py-1 mb-4">
+  <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
     <div class="flex items-center py-2">
       <ui-toggle-switch v-model="useSquareBookCovers" @input="formUpdated" />
       <ui-tooltip :text="tooltips.coverAspectRatio">
