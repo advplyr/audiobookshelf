@@ -18,6 +18,7 @@ class Podcast {
     this.episodes = []
 
     this.autoDownloadEpisodes = false
+    this.autoDownloadSchedule = null
     this.lastEpisodeCheck = 0
     this.maxEpisodesToKeep = 0
 
@@ -40,6 +41,7 @@ class Podcast {
       return podcastEpisode
     })
     this.autoDownloadEpisodes = !!podcast.autoDownloadEpisodes
+    this.autoDownloadSchedule = podcast.autoDownloadSchedule || '0 * * * *' // Added in 2.1.3 so default to hourly
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
     this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
   }
@@ -52,6 +54,7 @@ class Podcast {
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSON()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep
     }
@@ -64,6 +67,7 @@ class Podcast {
       tags: [...this.tags],
       numEpisodes: this.episodes.length,
       autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       size: this.size
@@ -78,6 +82,7 @@ class Podcast {
       tags: [...this.tags],
       episodes: this.episodes.map(e => e.toJSONExpanded()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
+      autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       size: this.size
@@ -165,14 +170,15 @@ class Podcast {
     return null
   }
 
-  setData(mediaMetadata) {
+  setData(mediaData) {
     this.metadata = new PodcastMetadata()
-    if (mediaMetadata.metadata) {
-      this.metadata.setData(mediaMetadata.metadata)
+    if (mediaData.metadata) {
+      this.metadata.setData(mediaData.metadata)
     }
 
-    this.coverPath = mediaMetadata.coverPath || null
-    this.autoDownloadEpisodes = !!mediaMetadata.autoDownloadEpisodes
+    this.coverPath = mediaData.coverPath || null
+    this.autoDownloadEpisodes = !!mediaData.autoDownloadEpisodes
+    this.autoDownloadSchedule = mediaData.autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule
     this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
   }
 

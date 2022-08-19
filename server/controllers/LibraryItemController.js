@@ -79,12 +79,27 @@ class LibraryItemController {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
+    // Book specific
     if (libraryItem.isBook) {
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
     }
 
+    // Podcast specific
+    var isPodcastAutoDownloadUpdated = false
+    if (libraryItem.isPodcast) {
+      if (mediaPayload.autoDownloadEpisodes !== undefined && libraryItem.media.autoDownloadEpisodes !== mediaPayload.autoDownloadEpisodes) {
+        isPodcastAutoDownloadUpdated = true
+      } else if (mediaPayload.autoDownloadSchedule !== undefined && libraryItem.media.autoDownloadSchedule !== mediaPayload.autoDownloadSchedule) {
+        isPodcastAutoDownloadUpdated = true
+      }
+    }
+
     var hasUpdates = libraryItem.media.update(mediaPayload)
     if (hasUpdates) {
+      if (isPodcastAutoDownloadUpdated) {
+        this.cronManager.checkUpdatePodcastCron(libraryItem)
+      }
+
       Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
       await this.db.updateLibraryItem(libraryItem)
       this.emitter('item_updated', libraryItem.toJSONExpanded())

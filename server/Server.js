@@ -75,7 +75,7 @@ class Server {
     this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
-    this.cronManager = new CronManager(this.db, this.scanner)
+    this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
     this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.emitter.bind(this), this.clientEmitter.bind(this))
@@ -152,7 +152,6 @@ class Server {
     await this.backupManager.init()
     await this.logManager.init()
     await this.rssFeedManager.init()
-    this.podcastManager.init()
     this.cronManager.init()
 
     if (this.db.serverSettings.scannerDisableWatcher) {

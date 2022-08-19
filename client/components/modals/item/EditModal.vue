@@ -46,12 +46,14 @@ export default {
         {
           id: 'chapters',
           title: 'Chapters',
-          component: 'modals-item-tabs-chapters'
+          component: 'modals-item-tabs-chapters',
+          mediaType: 'book'
         },
         {
           id: 'episodes',
           title: 'Episodes',
-          component: 'modals-item-tabs-episodes'
+          component: 'modals-item-tabs-episodes',
+          mediaType: 'podcast'
         },
         {
           id: 'files',
@@ -66,7 +68,16 @@ export default {
         {
           id: 'manage',
           title: 'Manage',
-          component: 'modals-item-tabs-manage'
+          component: 'modals-item-tabs-manage',
+          mediaType: 'book',
+          admin: true
+        },
+        {
+          id: 'schedule',
+          title: 'Schedule',
+          component: 'modals-item-tabs-schedule',
+          mediaType: 'podcast',
+          admin: true
         }
       ]
     }
@@ -120,13 +131,17 @@ export default {
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
         if (tab.experimental && !this.showExperimentalFeatures) return false
-        if (tab.id === 'manage' && (this.isMissing || this.mediaType !== 'book')) return false
-        if (this.mediaType == 'podcast' && tab.id == 'chapters') return false
-        if (this.mediaType == 'book' && tab.id == 'episodes') return false
+        if (tab.mediaType && this.mediaType !== tab.mediaType) return false
+        if (tab.admin && !this.userIsAdminOrUp) return false
+
+        if (tab.id === 'manage' && this.isMissing) return false
 
         if ((tab.id === 'manage' || tab.id === 'files') && this.userCanDownload) return true
         if (tab.id !== 'manage' && tab.id !== 'files' && this.userCanUpdate) return true
