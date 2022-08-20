@@ -16,6 +16,7 @@ class BackupManager {
   constructor(db, emitter) {
     this.BackupPath = Path.join(global.MetadataPath, 'backups')
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
+    this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
 
     this.db = db
     this.emitter = emitter
@@ -119,6 +120,7 @@ class BackupManager {
     await zip.extract('config/', global.ConfigPath)
     if (backup.backupMetadataCovers) {
       await zip.extract('metadata-items/', this.ItemsMetadataPath)
+      await zip.extract('metadata-authors/', this.AuthorsMetadataPath)
     }
     await this.db.reinit()
     this.emitter('backup_applied')
@@ -178,8 +180,6 @@ class BackupManager {
   async runBackup() {
     // Check if Metadata Path is inside Config Path (otherwise there will be an infinite loop as the archiver tries to zip itself)
     Logger.info(`[BackupManager] Running Backup`)
-    var metadataItemsPath = this.serverSettings.backupMetadataCovers ? this.ItemsMetadataPath : null
-
     var newBackup = new Backup()
 
     const newBackData = {
@@ -188,7 +188,10 @@ class BackupManager {
     }
     newBackup.setData(newBackData)
 
-    var zipResult = await this.zipBackup(metadataItemsPath, newBackup).then(() => true).catch((error) => {
+    var metadataAuthorsPath = this.AuthorsMetadataPath
+    if (!await fs.pathExists(metadataAuthorsPath)) metadataAuthorsPath = null
+
+    var zipResult = await this.zipBackup(metadataAuthorsPath, newBackup).then(() => true).catch((error) => {
       Logger.error(`[BackupManager] Backup Failed ${error}`)
       return false
     })
@@ -228,7 +231,7 @@ class BackupManager {
     }
   }
 
-  zipBackup(metadataItemsPath, backup) {
+  zipBackup(metadataAuthorsPath, backup) {
     return new Promise((resolve, reject) => {
       // create a file to stream archive data to
       const output = fs.createWriteStream(backup.fullPath)
@@ -299,10 +302,16 @@ class BackupManager {
       archive.directory(this.db.AuthorsPath, 'config/authors')
       archive.directory(this.db.SeriesPath, 'config/series')
 
-      if (metadataItemsPath) {
-        Logger.debug(`[BackupManager] Backing up Metadata Items "${metadataItemsPath}"`)
-        archive.directory(metadataItemsPath, 'metadata-items')
+      if (this.serverSettings.backupMetadataCovers) {
+        Logger.debug(`[BackupManager] Backing up Metadata Items "${this.ItemsMetadataPath}"`)
+        archive.directory(this.ItemsMetadataPath, 'metadata-items')
+
+        if (metadataAuthorsPath) {
+          Logger.debug(`[BackupManager] Backing up Metadata Authors "${metadataAuthorsPath}"`)
+          archive.directory(metadataAuthorsPath, 'metadata-authors')
+        }
       }
+
       archive.append(backup.detailsString, { name: 'details' })
 
       archive.finalize()
