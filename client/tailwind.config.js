@@ -15,7 +15,10 @@ module.exports = {
       'py-1.5',
       'bg-info',
       'px-1.5',
-      'min-w-5'
+      'min-w-5',
+      'w-3.5',
+      'h-3.5',
+      'border-warning'
     ],
   },
   theme: {
