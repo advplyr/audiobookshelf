@@ -6,8 +6,8 @@
       </template>
       <template v-if="feedUrl || autoDownloadEpisodes">
         <div class="flex items-center justify-between mb-4">
-          <p class="text-base md:text-lg font-semibold">Schedule Automatic Episode Downloads</p>
-          <ui-checkbox v-model="enableAutoDownloadEpisodes" label="Enable" medium checkbox-bg="bg" label-class="pl-2 text-lg" />
+          <p class="text-base md:text-xl font-semibold">Schedule Automatic Episode Downloads</p>
+          <ui-checkbox v-model="enableAutoDownloadEpisodes" label="Enable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
         </div>
 
         <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">

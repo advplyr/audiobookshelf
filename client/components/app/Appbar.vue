@@ -3,7 +3,7 @@
     <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-50">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="/icon.svg" class="w-10 min-w-10 h-10 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
+          <img src="/icon.svg" class="w-8 min-w-8 h-8 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
         </nuxt-link>
 
         <nuxt-link to="/">
@@ -12,10 +12,10 @@
 
         <ui-libraries-dropdown class="mr-2" />
 
-        <controls-global-search v-if="currentLibrary" class="" />
+        <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
         <div class="flex-grow" />
 
-        <span v-if="showExperimentalFeatures" class="material-icons text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
+        <span v-if="showExperimentalFeatures" class="material-icons text-2xl md:text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
 
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
           <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>
