@@ -35,10 +35,11 @@ module.exports.PlayMethod = {
 
 module.exports.AudioMimeType = {
   MP3: 'audio/mpeg',
-  M4B: 'audio/mpeg',
-  M4A: 'audio/mpeg',
+  M4B: 'audio/mp4',
+  M4A: 'audio/mp4',
   MP4: 'audio/mp4',
   OGG: 'audio/ogg',
+  OGA: 'audio/ogg',
   OPUS: 'audio/ogg',
   AAC: 'audio/aac',
   FLAC: 'audio/flac',

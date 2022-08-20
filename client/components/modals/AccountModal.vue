@@ -146,7 +146,6 @@ export default {
   watch: {
     show: {
       handler(newVal) {
-        console.log('accoutn modal show change', newVal)
         if (newVal) {
           this.init()
         }
@@ -161,6 +160,9 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    user() {
+      return this.$store.state.user.user
     },
     title() {
       return this.isNew ? 'Add New Account' : `Update ${(this.account || {}).username}`
@@ -250,6 +252,12 @@ export default {
             this.$toast.error(`Failed to update account: ${data.error}`)
           } else {
             console.log('Account updated', data.user)
+
+            if (data.user.id === this.user.id && data.user.token !== this.user.token) {
+              console.log('Current user token was updated')
+              this.$store.commit('user/setUserToken', data.user.token)
+            }
+
             this.$toast.success('Account updated')
             this.show = false
           }
@@ -305,7 +313,6 @@ export default {
 
       this.isNew = !this.account
       if (this.account) {
-        console.log(this.account)
         this.newUser = {
           username: this.account.username,
           password: this.account.password,

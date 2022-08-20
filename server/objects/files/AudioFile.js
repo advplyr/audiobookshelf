@@ -1,4 +1,3 @@
-const { isNullOrNaN } = require('../../utils/index')
 const { AudioMimeType } = require('../../utils/constants')
 const AudioMetaTags = require('../metadata/AudioMetaTags')
 const FileMetadata = require('../metadata/FileMetadata')
@@ -111,7 +110,11 @@ class AudioFile {
     }
   }
 
-  // New scanner creates AudioFile from AudioFileScanner
+  get isValidTrack() {
+    return !this.invalid && !this.exclude
+  }
+
+  // New scanner creates AudioFile from MediaFileScanner
   setDataFromProbe(libraryFile, probeData) {
     this.ino = libraryFile.ino || null
 
@@ -130,23 +133,6 @@ class AudioFile {
     this.chapters = probeData.chapters || []
     this.metaTags = probeData.audioFileMetadata
     this.embeddedCoverArt = probeData.embeddedCoverArt
-  }
-
-  validateTrackIndex() {
-    var numFromMeta = isNullOrNaN(this.trackNumFromMeta) ? null : Number(this.trackNumFromMeta)
-    var numFromFilename = isNullOrNaN(this.trackNumFromFilename) ? null : Number(this.trackNumFromFilename)
-
-    if (numFromMeta !== null) return numFromMeta
-    if (numFromFilename !== null) return numFromFilename
-
-    this.invalid = true
-    this.error = 'Failed to get track number'
-    return null
-  }
-
-  setDuplicateTrackNumber(num) {
-    this.invalid = true
-    this.error = 'Duplicate track number "' + num + '"'
   }
 
   syncChapters(updatedChapters) {

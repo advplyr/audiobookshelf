@@ -48,7 +48,8 @@ module.exports = {
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
-    '@/plugins/toast.js'
+    '@/plugins/toast.js',
+    '@/plugins/utils.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -108,15 +109,15 @@ module.exports = {
       background_color: '#373838',
       icons: [
         {
-          src: '/icon64.png',
+          src: '/icon.svg',
           sizes: "64x64"
         },
         {
-          src: '/icon192.png',
+          src: '/icon.svg',
           sizes: "192x192"
         },
         {
-          src: '/Logo.png',
+          src: '/icon.svg',
           sizes: "512x512"
         }
       ]

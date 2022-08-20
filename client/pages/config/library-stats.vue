@@ -3,7 +3,7 @@
     <h1 class="text-xl">Stats for library {{ currentLibraryName }}</h1>
     <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
 
-    <div class="flex md:flex-row flex-wrap justify-between flex-col mt-8">
+    <div class="flex lg:flex-row flex-wrap justify-between flex-col mt-8">
       <div class="w-80 my-6 mx-auto">
         <h1 class="text-2xl mb-4 font-book">Top 5 Genres</h1>
         <p v-if="!top5Genres.length">No Genres</p>

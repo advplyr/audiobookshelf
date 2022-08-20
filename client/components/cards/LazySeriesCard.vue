@@ -2,7 +2,7 @@
   <div ref="card" :id="`series-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
     <div class="w-full h-full bg-primary relative rounded overflow-hidden z-0">
-      <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="title" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" :group-to="seriesBooksRoute" />
+      <covers-group-cover v-if="series" ref="cover" :id="seriesId" :name="displayTitle" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" :group-to="seriesBooksRoute" />
     </div>
 
     <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ books.length }}</div>
@@ -10,16 +10,16 @@
     <div v-if="isSeriesFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success w-full" />
 
     <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
-      <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ title }}</p>
+      <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
     </div>
 
     <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
-        <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
+        <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
       </div>
     </div>
     <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
-      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
+      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
     </div>
   </div>
 </template>
@@ -39,7 +39,8 @@ export default {
     seriesMount: {
       type: Object,
       default: () => null
-    }
+    },
+    sortingIgnorePrefix: Boolean
   },
   data() {
     return {
@@ -64,6 +65,13 @@ export default {
     },
     title() {
       return this.series ? this.series.name : ''
+    },
+    nameIgnorePrefix() {
+      return this.series ? this.series.nameIgnorePrefix : ''
+    },
+    displayTitle() {
+      if (this.sortingIgnorePrefix) return this.nameIgnorePrefix || this.title
+      return this.title
     },
     books() {
       return this.series ? this.series.books || [] : []

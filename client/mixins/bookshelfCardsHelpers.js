@@ -51,14 +51,14 @@ export default {
         index,
         width: this.entityWidth,
         height: this.entityHeight,
-        bookCoverAspectRatio: this.bookCoverAspectRatio,
-        bookshelfView: this.bookshelfView
+        bookCoverAspectRatio: this.coverAspectRatio,
+        bookshelfView: this.bookshelfView,
+        sortingIgnorePrefix: !!this.sortingIgnorePrefix
       }
 
       if (this.entityName === 'books') {
         props.filterBy = this.filterBy
         props.orderBy = this.orderBy
-        props.sortingIgnorePrefix = !!this.sortingIgnorePrefix
       }
 
       var _this = this

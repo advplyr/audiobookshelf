@@ -1,5 +1,5 @@
 <template>
-  <div :class="`h-${size} w-${size}`">
+  <div :class="`h-${size} w-${size} min-w-${size}`">
     <component :is="iconComponentName" />
   </div>
 </template>

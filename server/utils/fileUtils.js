@@ -3,6 +3,7 @@ const rra = require('../libs/recursiveReaddirAsync')
 const axios = require('axios')
 const Path = require('path')
 const Logger = require('../Logger')
+const { AudioMimeType } = require('./constants')
 
 async function getFileStat(path) {
   try {
@@ -15,7 +16,7 @@ async function getFileStat(path) {
       birthtime: stat.birthtime
     }
   } catch (err) {
-    console.error('Failed to stat', err)
+    Logger.error('[fileUtils] Failed to stat', err)
     return false
   }
 }
@@ -32,7 +33,7 @@ async function getFileTimestampsWithIno(path) {
       ino: String(stat.ino)
     }
   } catch (err) {
-    console.error('Failed to getFileTimestampsWithIno', err)
+    Logger.error('[fileUtils] Failed to getFileTimestampsWithIno', err)
     return false
   }
 }
@@ -210,4 +211,20 @@ module.exports.sanitizeFilename = (filename, colonReplacement = ' - ') => {
   }
 
   return sanitized
+}
+
+// Returns null if extname is not in our defined list of audio extnames
+module.exports.getAudioMimeTypeFromExtname = (extname) => {
+  if (!extname || !extname.length) return null
+  const formatUpper = extname.slice(1).toUpperCase()
+  if (AudioMimeType[formatUpper]) return AudioMimeType[formatUpper]
+  return null
+}
+
+module.exports.removeFile = (path) => {
+  if (!path) return false
+  return fs.remove(path).then(() => true).catch((error) => {
+    Logger.error(`[fileUtils] Failed remove file "${path}"`, error)
+    return false
+  })
 }

@@ -1,5 +1,5 @@
 const Path = require('path')
-const date = require('date-and-time')
+const date = require('../libs/dateAndTime')
 const serverVersion = require('../../package.json').version
 const { PlayMethod } = require('../utils/constants')
 const PlaybackSession = require('../objects/PlaybackSession')
@@ -242,6 +242,17 @@ class PlaybackSessionManager {
       }
     } catch (error) {
       Logger.error(`[PlaybackSessionManager] cleanOrphanStreams failed`, error)
+    }
+  }
+
+  // Android app v0.9.54 and below had a bug where listening time was sending unix timestamp
+  //  See https://github.com/advplyr/audiobookshelf/issues/868
+  // Remove playback sessions with listening time too high
+  async removeInvalidSessions() {
+    const selectFunc = (session) => isNaN(session.timeListening) || Number(session.timeListening) > 3600000000
+    const numSessionsRemoved = await this.db.removeEntities('session', selectFunc)
+    if (numSessionsRemoved) {
+      Logger.info(`[PlaybackSessionManager] Removed ${numSessionsRemoved} invalid playback sessions`)
     }
   }
 }

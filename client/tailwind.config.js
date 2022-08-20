@@ -14,7 +14,8 @@ module.exports = {
       'text-green-500',
       'py-1.5',
       'bg-info',
-      'px-1.5'
+      'px-1.5',
+      'min-w-5'
     ],
   },
   theme: {
@@ -36,11 +37,14 @@ module.exports = {
         '32': '8rem',
         '40': '10rem',
         '48': '12rem',
+        '52': '13rem',
         '64': '16rem',
         '80': '20rem'
       },
       minWidth: {
+        '5': '1.25rem',
         '6': '1.5rem',
+        '10': '2.5rem',
         '12': '3rem',
         '16': '4rem',
         '20': '5rem',
@@ -87,7 +91,8 @@ module.exports = {
         '2.5xl': '1.6875rem'
       },
       zIndex: {
-        '50': 50
+        '50': 50,
+        '60': 60
       }
     }
   },

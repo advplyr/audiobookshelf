@@ -3,14 +3,14 @@
     <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-50">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="/icon48.png" class="w-8 h-8 mr-8 sm:w-12 sm:h-12 sm:mr-4" />
+          <img src="/icon.svg" class="w-10 min-w-10 h-10 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
         </nuxt-link>
 
         <nuxt-link to="/">
           <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
         </nuxt-link>
 
-        <ui-libraries-dropdown />
+        <ui-libraries-dropdown class="mr-2" />
 
         <controls-global-search v-if="currentLibrary" class="" />
         <div class="flex-grow" />

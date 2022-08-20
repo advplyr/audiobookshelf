@@ -31,7 +31,7 @@ export default {
   },
   computed: {
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     coverWidth() {
       if (this.bookCoverAspectRatio === 1) return 50 * 1.2

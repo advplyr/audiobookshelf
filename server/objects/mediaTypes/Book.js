@@ -276,13 +276,18 @@ class Book {
               if (opfMetadata.genres.length && (!this.metadata.genres.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload[key] = opfMetadata.genres
               }
-            } else if (key === 'author') {
-              if (opfMetadata.author && (!this.metadata.authors.length || opfMetadataOverrideDetails)) {
-                metadataUpdatePayload.authors = this.metadata.parseAuthorsTag(opfMetadata.author)
+            } else if (key === 'authors') {
+              if (opfMetadata.authors && opfMetadata.authors.length && (!this.metadata.authors.length || opfMetadataOverrideDetails)) {
+                metadataUpdatePayload.authors = opfMetadata.authors.map(authorName => {
+                  return {
+                    id: `new-${Math.floor(Math.random() * 1000000)}`,
+                    name: authorName
+                  }
+                })
               }
-            } else if (key === 'narrator') {
-              if (opfMetadata.narrator && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
-                metadataUpdatePayload.narrators = this.metadata.parseNarratorsTag(opfMetadata.narrator)
+            } else if (key === 'narrators') {
+              if (opfMetadata.narrators && opfMetadata.narrators.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
+                metadataUpdatePayload.narrators = opfMetadata.narrators
               }
             } else if (key === 'series') {
               if (opfMetadata.series && (!this.metadata.series.length || opfMetadataOverrideDetails)) {
@@ -402,9 +407,12 @@ class Book {
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
 
     // If overdrive media markers are present and preferred, use those instead
-    if (preferOverdriveMediaMarker && overdriveMediaMarkersExist(includedAudioFiles)) {
-      Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
-      return this.chapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+    if (preferOverdriveMediaMarker) {
+      var overdriveChapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+      if (overdriveChapters) {
+        Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
+        return this.chapters = overdriveChapters
+      }
     }
 
     if (includedAudioFiles.length === 1) {
@@ -420,10 +428,10 @@ class Book {
         // If audio file has chapters use chapters
         if (file.chapters && file.chapters.length) {
           file.chapters.forEach((chapter) => {
-            if (chapter.start > this.duration) {
+            if (currStartTime > this.duration) {
               Logger.warn(`[Book] Invalid chapter start time > duration`)
             } else {
-              var chapterAlreadyExists = this.chapters.find(ch => ch.start === chapter.start)
+              var chapterAlreadyExists = this.chapters.find(ch => ch.start === currStartTime)
               if (!chapterAlreadyExists) {
                 var chapterDuration = chapter.end - chapter.start
                 if (chapterDuration > 0) {

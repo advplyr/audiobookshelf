@@ -1,6 +1,11 @@
 <template>
   <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'">
-    <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
+    <template #outer>
+      <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
+        <p class="font-book text-3xl text-white truncate">Your Bookmarks</p>
+      </div>
+    </template>
+    <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <template v-for="bookmark in bookmarks">
           <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" @click="clickBookmark" @update="submitUpdateBookmark" @delete="deleteBookmark" />
@@ -8,8 +13,8 @@
         <div v-if="!bookmarks.length" class="flex h-32 items-center justify-center">
           <p class="text-xl">No Bookmarks</p>
         </div>
-        <div class="w-full h-px bg-white bg-opacity-10" />
-        <form @submit.prevent="submitCreateBookmark">
+        <div v-if="!hideCreate" class="w-full h-px bg-white bg-opacity-10" />
+        <form v-if="!hideCreate" @submit.prevent="submitCreateBookmark">
           <div v-show="canCreateBookmark" class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
             <div class="w-16 max-w-16 text-center">
               <p class="text-sm font-mono text-gray-400">
@@ -39,7 +44,8 @@ export default {
       type: Number,
       default: 0
     },
-    libraryItemId: String
+    libraryItemId: String,
+    hideCreate: Boolean
   },
   data() {
     return {

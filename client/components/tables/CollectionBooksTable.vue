@@ -1,12 +1,13 @@
 <template>
   <div class="w-full bg-primary bg-opacity-40">
-    <div class="w-full h-14 flex items-center px-4 bg-primary">
-      <p>Collection List</p>
-      <div class="w-6 h-6 bg-white bg-opacity-10 flex items-center justify-center rounded-full ml-2">
-        <p class="font-mono text-sm">{{ books.length }}</p>
+    <div class="w-full h-14 flex items-center px-4 md:px-6 py-2 bg-primary">
+      <p class="pr-4">Collection List</p>
+
+      <div class="w-6 h-6 md:w-7 md:h-7 bg-white bg-opacity-10 rounded-full flex items-center justify-center">
+        <span class="text-xs md:text-sm font-mono leading-none">{{ books.length }}</span>
       </div>
       <div class="flex-grow" />
-      <!-- <p v-if="totalDuration">{{ totalDurationPretty }}</p> -->
+      <p v-if="totalDuration" class="text-sm text-gray-200">{{ totalDurationPretty }}</p>
     </div>
     <draggable v-model="booksCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'collection-book' : null">
@@ -51,11 +52,18 @@ export default {
     }
   },
   computed: {
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
+    },
+    totalDuration() {
+      var _total = 0
+      this.books.forEach((book) => {
+        _total += book.media.duration
+      })
+      return _total
+    },
+    totalDurationPretty() {
+      return this.$elapsedPrettyExtended(this.totalDuration)
     }
   },
   methods: {

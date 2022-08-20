@@ -1,5 +1,6 @@
 import { checkForUpdate, currentVersion } from '@/plugins/version'
 import Vue from 'vue'
+const { Constants } = require('../plugins/constants')
 
 export const state = () => ({
   Source: null,
@@ -41,9 +42,18 @@ export const getters = {
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
   },
-  getIsEpisodeStreaming: state => (libraryItemId, episodeId) => {
+  getIsMediaStreaming: state => (libraryItemId, episodeId) => {
     if (!state.streamLibraryItem) return null
+    if (!episodeId) return state.streamLibraryItem.id == libraryItemId
     return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
+  },
+  getBookshelfView: state => {
+    if (!state.serverSettings || isNaN(state.serverSettings.bookshelfView)) return Constants.BookshelfView.STANDARD
+    return state.serverSettings.bookshelfView
+  },
+  getHomeBookshelfView: state => {
+    if (!state.serverSettings || isNaN(state.serverSettings.homeBookshelfView)) return Constants.BookshelfView.STANDARD
+    return state.serverSettings.homeBookshelfView
   }
 }
 

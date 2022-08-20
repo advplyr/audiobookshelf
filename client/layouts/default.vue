@@ -15,6 +15,7 @@
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
+    <prompt-confirm />
     <readers-reader />
   </div>
 </template>
@@ -40,6 +41,7 @@ export default {
       if (this.$store.state.selectedLibraryItems) {
         this.$store.commit('setSelectedLibraryItems', [])
       }
+      this.updateBodyClass()
     }
   },
   computed: {
@@ -53,11 +55,23 @@ export default {
       if (!this.$route.name) return false
       return !this.$route.name.startsWith('config') && this.$store.state.libraries.currentLibraryId
     },
+    isShowingToolbar() {
+      return this.isShowingSideRail && this.$route.name !== 'upload' && this.$route.name !== 'account'
+    },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
     }
   },
   methods: {
+    updateBodyClass() {
+      if (this.isShowingToolbar) {
+        document.body.classList.remove('no-bars', 'app-bar')
+        document.body.classList.add('app-bar-and-toolbar')
+      } else {
+        document.body.classList.remove('no-bars', 'app-bar-and-toolbar')
+        document.body.classList.add('app-bar')
+      }
+    },
     updateSocketConnectionToast(content, type, timeout) {
       if (this.socketConnectionToastId !== null && this.socketConnectionToastId !== undefined) {
         this.$toast.update(this.socketConnectionToastId, { content: content, options: { timeout: timeout, type: type, closeButton: false, position: 'bottom-center', onClose: () => null, closeOnClick: timeout !== null } }, false)
@@ -197,6 +211,12 @@ export default {
     libraryItemUpdated(libraryItem) {
       if (this.$store.state.selectedLibraryItem && this.$store.state.selectedLibraryItem.id === libraryItem.id) {
         this.$store.commit('setSelectedLibraryItem', libraryItem)
+        if (this.$store.state.globals.selectedEpisode && libraryItem.mediaType === 'podcast') {
+          const episode = libraryItem.media.episodes.find((ep) => ep.id === this.$store.state.globals.selectedEpisode.id)
+          if (episode) {
+            this.$store.commit('globals/setSelectedEpisode', episode)
+          }
+        }
       }
       this.$eventBus.$emit(`${libraryItem.id}_updated`, libraryItem)
       this.$store.commit('libraries/updateFilterDataWithItem', libraryItem)
@@ -341,11 +361,11 @@ export default {
       download.status = this.$constants.DownloadStatus.EXPIRED
       this.$store.commit('downloads/addUpdateDownload', download)
     },
-    showErrorToast(message) {
-      this.$toast.error(message)
+    rssFeedOpen(data) {
+      this.$store.commit('feeds/addFeed', data)
     },
-    showSuccessToast(message) {
-      this.$toast.success(message)
+    rssFeedClosed(data) {
+      this.$store.commit('feeds/removeFeed', data)
     },
     backupApplied() {
       // Force refresh
@@ -417,9 +437,9 @@ export default {
       this.socket.on('abmerge_killed', this.abmergeKilled)
       this.socket.on('abmerge_expired', this.abmergeExpired)
 
-      // Toast Listeners
-      this.socket.on('show_error_toast', this.showErrorToast)
-      this.socket.on('show_success_toast', this.showSuccessToast)
+      // Feed Listeners
+      this.socket.on('rss_feed_open', this.rssFeedOpen)
+      this.socket.on('rss_feed_closed', this.rssFeedClosed)
 
       this.socket.on('backup_applied', this.backupApplied)
     },
@@ -521,6 +541,7 @@ export default {
     this.initializeSocket()
   },
   mounted() {
+    this.updateBodyClass()
     this.resize()
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)

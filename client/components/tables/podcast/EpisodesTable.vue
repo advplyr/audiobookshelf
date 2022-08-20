@@ -3,14 +3,18 @@
     <div class="flex items-center mb-4">
       <p class="text-lg mb-0 font-semibold">Episodes</p>
       <div class="flex-grow" />
-      <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+      <template v-if="isSelectionMode">
+        <ui-btn color="error" small @click="removeSelectedEpisodes">Remove {{ selectedEpisodes.length }} episode{{ selectedEpisodes.length > 1 ? 's' : '' }}</ui-btn>
+        <ui-btn small class="ml-2" @click="clearSelected">Cancel</ui-btn>
+      </template>
+      <controls-episode-sort-select v-else v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" class="item" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" />
     </template>
 
-    <modals-podcast-remove-episode v-model="showPodcastRemoveModal" :library-item="libraryItem" :episode="selectedEpisode" />
+    <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
   </div>
 </template>
 
@@ -28,7 +32,9 @@ export default {
       sortKey: 'publishedAt',
       sortDesc: true,
       selectedEpisode: null,
-      showPodcastRemoveModal: false
+      showPodcastRemoveModal: false,
+      selectedEpisodes: [],
+      episodesToRemove: []
     }
   },
   watch: {
@@ -37,6 +43,9 @@ export default {
     }
   },
   computed: {
+    isSelectionMode() {
+      return this.selectedEpisodes.length > 0
+    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
@@ -59,8 +68,31 @@ export default {
     }
   },
   methods: {
+    removeEpisodeModalToggled(val) {
+      if (!val) this.episodesToRemove = []
+    },
+    clearSelected() {
+      const episodeRows = this.$refs.episodeRow
+      if (episodeRows && episodeRows.length) {
+        for (const epRow of episodeRows) {
+          if (epRow) epRow.isSelected = false
+        }
+      }
+      this.selectedEpisodes = []
+    },
+    removeSelectedEpisodes() {
+      this.episodesToRemove = this.selectedEpisodes
+      this.showPodcastRemoveModal = true
+    },
+    episodeSelected({ isSelected, episode }) {
+      if (isSelected) {
+        this.selectedEpisodes.push(episode)
+      } else {
+        this.selectedEpisodes = this.selectedEpisodes.filter((ep) => ep.id !== episode.id)
+      }
+    },
     removeEpisode(episode) {
-      this.selectedEpisode = episode
+      this.episodesToRemove = [episode]
       this.showPodcastRemoveModal = true
     },
     editEpisode(episode) {

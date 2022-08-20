@@ -1,12 +1,12 @@
 <template>
-  <div class="w-full px-2 py-2 overflow-hidden relative" @mouseover="mouseover" @mouseleave="mouseleave" :class="isHovering ? 'bg-white bg-opacity-5' : ''">
-    <div v-if="book" class="flex h-20">
-      <div class="w-16 max-w-16 h-full">
+  <div class="w-full px-1 md:px-2 py-2 overflow-hidden relative" @mouseover="mouseover" @mouseleave="mouseleave" :class="isHovering ? 'bg-white bg-opacity-5' : ''">
+    <div v-if="book" class="flex h-16 md:h-20">
+      <div class="w-10 min-w-10 md:w-16 md:max-w-16 h-full">
         <div class="flex h-full items-center justify-center">
-          <span class="material-icons drag-handle text-xl">menu</span>
+          <span class="material-icons drag-handle text-lg md:text-xl">menu</span>
         </div>
       </div>
-      <div class="h-full relative" :style="{ width: coverWidth + 'px' }">
+      <div class="h-full relative" :style="{ width: coverWidth + 'px', minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }">
         <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
         <div class="absolute top-0 left-0 bg-black bg-opacity-50 flex items-center justify-center h-full w-full z-10" v-show="isHovering && showPlayBtn">
           <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
@@ -107,9 +107,12 @@ export default {
     userIsFinished() {
       return this.itemProgress ? !!this.itemProgress.isFinished : false
     },
+    coverSize() {
+      return this.$store.state.globals.isMobile ? 40 : 50
+    },
     coverWidth() {
-      if (this.bookCoverAspectRatio === 1) return 50 * 1.6
-      return 50
+      if (this.bookCoverAspectRatio === 1) return this.coverSize * 1.6
+      return this.coverSize
     }
   },
   methods: {

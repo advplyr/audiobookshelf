@@ -1,5 +1,5 @@
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
+const bcrypt = require('./libs/bcryptjs')
+const jwt = require('./libs/jsonwebtoken')
 const Logger = require('./Logger')
 
 class Auth {
@@ -28,6 +28,26 @@ class Auth {
       res.sendStatus(200)
     } else {
       next()
+    }
+  }
+
+  async initTokenSecret() {
+    if (process.env.TOKEN_SECRET) { // User can supply their own token secret
+      Logger.debug(`[Auth] Setting token secret - using user passed in TOKEN_SECRET env var`)
+      this.db.serverSettings.tokenSecret = process.env.TOKEN_SECRET
+    } else {
+      Logger.debug(`[Auth] Setting token secret - using random bytes`)
+      this.db.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
+    }
+    await this.db.updateServerSettings()
+
+    // New token secret creation added in v2.1.0 so generate new API tokens for each user
+    if (this.db.users.length) {
+      for (const user of this.db.users) {
+        user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
+        Logger.warn(`[Auth] User ${user.username} api token has been updated using new token secret`)
+      }
+      await this.db.updateEntities('user', this.db.users)
     }
   }
 
@@ -74,7 +94,7 @@ class Auth {
   }
 
   generateAccessToken(payload) {
-    return jwt.sign(payload, process.env.TOKEN_SECRET);
+    return jwt.sign(payload, global.ServerSettings.tokenSecret);
   }
 
   authenticateUser(token) {
@@ -83,27 +103,28 @@ class Auth {
 
   verifyToken(token) {
     return new Promise((resolve) => {
-      jwt.verify(token, process.env.TOKEN_SECRET, (err, payload) => {
+      jwt.verify(token, global.ServerSettings.tokenSecret, (err, payload) => {
         if (!payload || err) {
           Logger.error('JWT Verify Token Failed', err)
           return resolve(null)
         }
-        var user = this.users.find(u => u.id === payload.userId)
+        var user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
         resolve(user || null)
       })
     })
   }
 
-  getUserLoginResponsePayload(user) {
+  getUserLoginResponsePayload(user, feeds) {
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON(),
+      serverSettings: this.db.serverSettings.toJSONForBrowser(),
+      feeds,
       Source: global.Source
     }
   }
 
-  async login(req, res) {
+  async login(req, res, feeds) {
     var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
 
@@ -122,14 +143,14 @@ class Auth {
       if (password) {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
-        return res.json(this.getUserLoginResponsePayload(user))
+        return res.json(this.getUserLoginResponsePayload(user, feeds))
       }
     }
 
     // Check password match
     var compare = await bcrypt.compare(password, user.pash)
     if (compare) {
-      res.json(this.getUserLoginResponsePayload(user))
+      res.json(this.getUserLoginResponsePayload(user, feeds))
     } else {
       Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)
       if (req.rateLimit.remaining <= 2) {

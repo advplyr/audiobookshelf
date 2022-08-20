@@ -25,5 +25,5 @@ HEALTHCHECK \
     --interval=30s \
     --timeout=3s \
     --start-period=10s \
-    CMD curl -f http://127.0.0.1/ping || exit 1
+    CMD curl -f http://127.0.0.1/healthcheck || exit 1
 CMD ["npm", "start"]

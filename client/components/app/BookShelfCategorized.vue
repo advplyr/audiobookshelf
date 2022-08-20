@@ -33,7 +33,7 @@
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
       </template>
     </div>
   </div>
@@ -70,11 +70,8 @@ export default {
     libraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
-    bookshelfView() {
-      return this.$store.getters['getServerSetting']('bookshelfView')
-    },
     isAlternativeBookshelfView() {
-      return this.bookshelfView === this.$constants.BookshelfView.TITLES
+      return this.$store.getters['getHomeBookshelfView'] === this.$constants.BookshelfView.TITLES
     },
     bookCoverWidth() {
       var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
@@ -82,13 +79,10 @@ export default {
       return coverSize
     },
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     isCoverSquareAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
-    },
-    bookCoverAspectRatio() {
-      return this.isCoverSquareAspectRatio ? 1 : 1.6
+      return this.coverAspectRatio == 1
     },
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120

@@ -1,18 +1,18 @@
 <template>
-  <div v-if="currentLibrary" class="relative sm:w-36 h-8 px-1.5" v-click-outside="clickOutsideObj">
-    <button type="button" :disabled="disabled" class="w-10 sm:w-36 relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm px-2 text-left text-sm focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
-      <span class="flex items-center justify-center sm:justify-start">
-        <widgets-library-icon :icon="currentLibraryIcon" class="sm:mr-2" />
-        <span class="hidden sm:block">{{ currentLibrary.name }}</span>
-      </span>
+  <div v-if="currentLibrary" class="relative h-8 max-w-52 min-w-32" v-click-outside="clickOutsideObj">
+    <button type="button" :disabled="disabled" class="w-10 sm:w-full relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm px-2 text-left text-sm focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+      <div class="flex items-center justify-center sm:justify-start">
+        <widgets-library-icon :icon="currentLibraryIcon" class="sm:mr-1.5" />
+        <span class="hidden sm:block truncate">{{ currentLibrary.name }}</span>
+      </div>
     </button>
 
     <transition name="menu">
-      <ul v-show="showMenu" class="absolute z-10 -mt-px w-36 bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox">
+      <ul v-show="showMenu" class="absolute z-10 -mt-px min-w-48 w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox">
         <template v-for="library in librariesFiltered">
           <li :key="library.id" class="text-gray-100 select-none relative py-2 cursor-pointer hover:bg-black-400" id="listbox-option-0" role="option" @click="selectLibrary(library)">
-            <div class="flex items-center px-3">
-              <widgets-library-icon :icon="library.icon" class="mr-2" />
+            <div class="flex items-center px-2">
+              <widgets-library-icon :icon="library.icon" class="mr-1.5 text-gray-400" />
               <span class="font-normal block truncate font-sans text-sm">{{ library.name }}</span>
             </div>
           </li>

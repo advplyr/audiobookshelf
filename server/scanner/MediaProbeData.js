@@ -1,7 +1,7 @@
 const AudioFileMetadata = require('../objects/metadata/AudioMetaTags')
 
 class MediaProbeData {
-  constructor() {
+  constructor(probeData) {
     this.embeddedCoverArt = null
     this.format = null
     this.duration = null
@@ -26,6 +26,20 @@ class MediaProbeData {
 
     this.discNumber = null
     this.discTotal = null
+
+    if (probeData) {
+      this.construct(probeData)
+    }
+  }
+
+  construct(probeData) {
+    for (const key in probeData) {
+      if (key === 'audioFileMetadata' && probeData[key]) {
+        this[key] = new AudioFileMetadata(probeData[key])
+      } else if (this[key] !== undefined) {
+        this[key] = probeData[key]
+      }
+    }
   }
 
   getEmbeddedCoverArt(videoStream) {

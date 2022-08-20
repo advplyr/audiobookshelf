@@ -8,10 +8,10 @@
         <div class="bg-bg rounded-lg px-2 py-6 sm:p-6 md:p-8" @click.stop>
           <div class="flex">
             <div class="flex-grow p-1 min-w-48 sm:min-w-64 md:min-w-80">
-              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!selectedSeries.id.startsWith('new')" label="Series Name" />
+              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!isNewSeries" label="Series Name" />
             </div>
             <div class="w-24 sm:w-28 md:w-40 p-1">
-              <ui-text-input-with-label v-model="selectedSeries.sequence" label="Sequence" />
+              <ui-text-input-with-label ref="sequenceInput" v-model="selectedSeries.sequence" label="Sequence" />
             </div>
           </div>
           <div class="flex justify-end mt-2 p-1">
@@ -59,9 +59,26 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    isNewSeries() {
+      if (!this.selectedSeries || !this.selectedSeries.id) return false
+      return this.selectedSeries.id.startsWith('new')
     }
   },
   methods: {
+    setInputFocus() {
+      if (this.isNewSeries) {
+        // Focus on series input if new series
+        if (this.$refs.newSeriesSelect) {
+          this.$refs.newSeriesSelect.setFocus()
+        }
+      } else {
+        // Focus on sequence input if existing series
+        if (this.$refs.sequenceInput) {
+          this.$refs.sequenceInput.setFocus()
+        }
+      }
+    },
     submitSeriesForm() {
       if (this.$refs.newSeriesSelect) {
         this.$refs.newSeriesSelect.blur()
@@ -89,15 +106,15 @@ export default {
       setTimeout(() => {
         this.content.style.transform = 'scale(1)'
       }, 10)
-      document.documentElement.classList.add('modal-open')
 
       this.$store.commit('setInnerModalOpen', true)
       this.$eventBus.$on('modal-hotkey', this.hotkey)
+
+      this.setInputFocus()
     },
     setHide() {
       if (this.content) this.content.style.transform = 'scale(0)'
       if (this.el) this.el.remove()
-      document.documentElement.classList.remove('modal-open')
 
       this.$store.commit('setInnerModalOpen', false)
       this.$eventBus.$off('modal-hotkey', this.hotkey)

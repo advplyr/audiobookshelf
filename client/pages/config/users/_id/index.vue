@@ -13,11 +13,12 @@
         <widgets-online-indicator :value="!!userOnline" />
         <h1 class="text-xl pl-2">{{ username }}</h1>
       </div>
-      <div class="cursor-pointer text-gray-400 hover:text-white" @click="copyToClipboard(userToken)">
-        <p v-if="userToken" class="py-2 text-xs">
-          <strong class="text-white">API Token: </strong><br /><span class="text-white">{{ userToken }}</span
-          ><span class="material-icons pl-2 text-base">content_copy</span>
-        </p>
+      <div v-if="userToken" class="flex text-xs mt-4">
+        <ui-text-input-with-label label="API Token" :value="userToken" readonly />
+
+        <div class="px-1 mt-8 cursor-pointer" @click="copyToClipboard(userToken)">
+          <span class="material-icons pl-2 text-base">content_copy</span>
+        </div>
       </div>
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
@@ -104,11 +105,8 @@ export default {
     userToken() {
       return this.user.token
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     username() {
       return this.user.username
@@ -138,12 +136,15 @@ export default {
       this.$copyToClipboard(str, this)
     },
     async init() {
-      this.listeningSessions = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=0&itemsPerPage=10`).then((data) => {
-        return data.sessions || []
-      }).catch((err) => {
-        console.error('Failed to load listening sesions', err)
-        return []
-      })
+      this.listeningSessions = await this.$axios
+        .$get(`/api/users/${this.user.id}/listening-sessions?page=0&itemsPerPage=10`)
+        .then((data) => {
+          return data.sessions || []
+        })
+        .catch((err) => {
+          console.error('Failed to load listening sesions', err)
+          return []
+        })
       this.listeningStats = await this.$axios.$get(`/api/users/${this.user.id}/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return []

@@ -7,11 +7,11 @@
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
             <!-- Item Progress Bar -->
-            <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 bg-yellow-400 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
+            <div v-if="!isPodcast" class="absolute bottom-0 left-0 h-1.5 shadow-sm z-10" :class="userIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: 208 * progressPercent + 'px' }"></div>
 
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
-              <div v-show="showPlayButton && !streaming" class="h-full flex items-center justify-center pointer-events-none">
+              <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
                 <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="startStream">
                   <span class="material-icons text-4xl">play_circle_filled</span>
                 </div>
@@ -24,12 +24,13 @@
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
-              <div class="flex sm:items-end flex-col sm:flex-row">
-                <h1 class="text-2xl md:text-3xl font-sans">
-                  {{ title }}
-                </h1>
-                <p v-if="bookSubtitle" class="sm:ml-4 text-gray-400 text-xl md:text-2xl">{{ bookSubtitle }}</p>
-              </div>
+              <h1 class="text-2xl md:text-3xl font-semibold">
+                {{ title }}
+              </h1>
+
+              <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
+
+              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <template v-if="!isVideo">
                 <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
@@ -38,8 +39,6 @@
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
-
-              <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300 text-lg leading-7"> {{ _series.text }}</nuxt-link>
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
@@ -129,12 +128,12 @@
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
-            <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
-              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ streaming ? 'Playing' : 'Play' }}
+            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
+              <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
+              {{ isStreaming ? 'Playing' : 'Play' }}
             </ui-btn>
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
-              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">error</span>
+              <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? 'Missing' : 'Incomplete' }}
             </ui-btn>
 
@@ -160,7 +159,11 @@
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <!-- Experimental RSS feed open -->
+            <ui-tooltip v-if="bookmarks.length" text="Your Bookmarks" direction="top">
+              <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
+            </ui-tooltip>
+
+            <!-- RSS feed -->
             <ui-tooltip v-if="showRssFeedBtn" text="Open RSS Feed" direction="top">
               <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeedUrl ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
@@ -189,6 +192,7 @@
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed-url="rssFeedUrl" />
+    <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>
 
@@ -222,7 +226,8 @@ export default {
       podcastFeedEpisodes: [],
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      showRssFeedModal: false
+      showRssFeedModal: false,
+      showBookmarksModal: false
     }
   },
   computed: {
@@ -241,11 +246,8 @@ export default {
     isFile() {
       return this.libraryItem.isFile
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     bookCoverWidth() {
       return 208
@@ -295,6 +297,10 @@ export default {
     },
     chapters() {
       return this.media.chapters || []
+    },
+    bookmarks() {
+      if (this.isPodcast) return []
+      return this.$store.getters['user/getUserBookmarksForItem'](this.libraryItemId)
     },
     tracks() {
       return this.media.tracks || []
@@ -389,7 +395,7 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
-    streaming() {
+    isStreaming() {
       return this.streamLibraryItem && this.streamLibraryItem.id === this.libraryItemId
     },
     userCanUpdate() {
@@ -409,6 +415,31 @@ export default {
     }
   },
   methods: {
+    clickBookmarksBtn() {
+      this.showBookmarksModal = true
+    },
+    selectBookmark(bookmark) {
+      if (!bookmark) return
+      if (this.isStreaming) {
+        this.$eventBus.$emit('playback-seek', bookmark.time)
+      } else if (this.streamLibraryItem) {
+        this.showBookmarksModal = false
+        console.log('Already streaming library item so ask about it')
+        const payload = {
+          message: `Start playback for "${this.title}" at ${this.$secondsToTimestamp(bookmark.time)}?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.startStream(bookmark.time)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+      } else {
+        this.startStream(bookmark.time)
+      }
+      this.showBookmarksModal = false
+    },
     clearDownloadQueue() {
       if (confirm('Are you sure you want to clear episode download queue?')) {
         this.$axios
@@ -453,7 +484,21 @@ export default {
     openEbook() {
       this.$store.commit('showEReader', this.libraryItem)
     },
-    toggleFinished() {
+    toggleFinished(confirmed = false) {
+      if (!this.userIsFinished && this.progressPercent > 0 && !confirmed) {
+        const payload = {
+          message: `Are you sure you want to mark "${this.title}" as finished?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.toggleFinished(true)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.$store.commit('globals/setConfirmPrompt', payload)
+        return
+      }
+
       var updatePayload = {
         isFinished: !this.userIsFinished
       }
@@ -470,7 +515,7 @@ export default {
           this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
-    startStream() {
+    startStream(startTime = null) {
       var episodeId = null
       if (this.isPodcast) {
         var episode = this.podcastEpisodes.find((ep) => {
@@ -483,7 +528,8 @@ export default {
 
       this.$eventBus.$emit('play-item', {
         libraryItemId: this.libraryItem.id,
-        episodeId
+        episodeId,
+        startTime
       })
     },
     editClick() {

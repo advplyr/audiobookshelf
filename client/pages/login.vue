@@ -124,9 +124,10 @@ export default {
 
       location.reload()
     },
-    setUser({ user, userDefaultLibraryId, serverSettings, Source }) {
+    setUser({ user, userDefaultLibraryId, serverSettings, Source, feeds }) {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
+      this.$store.commit('feeds/setFeeds', feeds)
 
       if (serverSettings.chromecastEnabled) {
         console.log('Chromecast enabled import script')

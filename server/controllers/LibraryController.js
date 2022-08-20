@@ -108,6 +108,9 @@ class LibraryController {
       // Update watcher
       this.watcher.updateLibrary(library)
 
+      // Update auto scan cron
+      this.cronManager.updateLibraryScanCron(library)
+
       // Remove libraryItems no longer in library
       var itemsToRemove = this.db.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
       if (itemsToRemove.length) {
@@ -163,7 +166,7 @@ class LibraryController {
       // If filtering by series, will include seriesName and seriesSequence on media metadata
       filterSeries = (payload.mediaType == 'book' && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
 
-      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user)
+      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
       payload.total = libraryItems.length
     }
 
@@ -176,7 +179,8 @@ class LibraryController {
       }
 
       // Handle server setting sortingIgnorePrefix
-      if (sortKey === 'media.metadata.title' && this.db.serverSettings.sortingIgnorePrefix) {
+      const sortByTitle = sortKey === 'media.metadata.title'
+      if (sortByTitle && this.db.serverSettings.sortingIgnorePrefix) {
         // BookMetadata.js has titleIgnorePrefix getter
         sortKey += 'IgnorePrefix'
       }
@@ -186,6 +190,16 @@ class LibraryController {
       var sortArray = [
         {
           [direction]: (li) => {
+            // When collapsing by series and sorting by title use the series name instead of the book title
+            if (payload.mediaType === 'book' && payload.collapseseries && li.media.metadata.seriesName) {
+              if (sortByTitle) {
+                return this.db.serverSettings.sortingIgnorePrefix ? li.media.metadata.seriesNameIgnorePrefix : li.media.metadata.seriesName
+              } else {
+                // When not sorting by title always show the collapsed series at the end
+                return direction === 'desc' ? -1 : 'zzzz'
+              }
+            }
+
             // Supports dot notation strings i.e. "media.metadata.title"
             return sortKey.split('.').reduce((a, b) => a[b], li)
           }
@@ -262,7 +276,7 @@ class LibraryController {
 
     var series = libraryHelpers.getSeriesFromBooks(libraryItems, payload.minified)
     series = sort(series).asc(s => {
-      return s.name
+      return this.db.serverSettings.sortingIgnorePrefix ? s.nameIgnorePrefix : s.name
     })
     payload.total = series.length
 

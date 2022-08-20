@@ -2,7 +2,7 @@ const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const filePerms = require('../utils/filePerms')
-
+const patternValidation = require('../libs/nodeCron/pattern-validation')
 const { isObject } = require('../utils/index')
 
 //
@@ -239,12 +239,7 @@ class MiscController {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    const userResponse = {
-      user: req.user,
-      userDefaultLibraryId: req.user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSON(),
-      Source: global.Source
-    }
+    const userResponse = this.auth.getUserLoginResponsePayload(req.user, this.rssFeedManager.feedsArray)
     res.json(userResponse)
   }
 
@@ -290,6 +285,20 @@ class MiscController {
       }
     }
     res.json(userData)
+
+  validateCronExpression(req, res) {
+    const expression = req.body.expression
+    if (!expression) {
+      return res.sendStatus(400)
+    }
+
+    try {
+      patternValidation(expression)
+      res.sendStatus(200)
+    } catch (error) {
+      Logger.warn(`[MiscController] Invalid cron expression ${expression}`, error.message)
+      res.status(400).send(error.message)
+    }
   }
 }
 module.exports = new MiscController()

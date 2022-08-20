@@ -226,6 +226,13 @@ export default {
       })
       this.updateTimestamp()
     },
+    checkUpdateChapterTrack() {
+      // Changing media in player may not have chapters
+      if (!this.chapters.length && this.useChapterTrack) {
+        this.useChapterTrack = false
+        if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
+      }
+    },
     seek(time) {
       this.$emit('seek', time)
     },
@@ -286,7 +293,10 @@ export default {
     },
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
-      this.useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+
+      var _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
+
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
       this.$emit('setPlaybackRate', this.playbackRate)
     },

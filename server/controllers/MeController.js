@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { sort } = require('../libs/fastSort')
 const { isObject, toNumber } = require('../utils/index')
 
 class MeController {
@@ -190,6 +191,7 @@ class MeController {
     const updatedLocalMediaProgress = []
     var numServerProgressUpdates = 0
     var localMediaProgress = req.body.localMediaProgress || []
+
     localMediaProgress.forEach(localProgress => {
       if (!localProgress.libraryItemId) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
@@ -216,7 +218,8 @@ class MeController {
         Logger.debug(`[MeController] syncLocalMediaProgress server progress is more recent by ${updateTimeDifference}ms - ${mediaProgress.id}`)
 
         for (const key in localProgress) {
-          if (mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
+          // Local media progress ID uses the local library item id and server media progress uses the library item id
+          if (key !== 'id' && mediaProgress[key] != undefined && localProgress[key] !== mediaProgress[key]) {
             // Logger.debug(`[MeController] syncLocalMediaProgress key ${key} changed from ${localProgress[key]} to ${mediaProgress[key]} - ${mediaProgress.id}`)
             localProgress[key] = mediaProgress[key]
           }
@@ -236,6 +239,41 @@ class MeController {
     res.json({
       numServerProgressUpdates,
       localProgressUpdates: updatedLocalMediaProgress
+    })
+  }
+
+  // GET: api/me/items-in-progress
+  async getAllLibraryItemsInProgress(req, res) {
+    const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
+
+    var itemsInProgress = []
+    for (const mediaProgress of req.user.mediaProgress) {
+      if (!mediaProgress.isFinished && mediaProgress.progress > 0) {
+        const libraryItem = await this.db.getLibraryItem(mediaProgress.libraryItemId)
+        if (libraryItem) {
+          if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
+            const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)
+            if (episode) {
+              const libraryItemWithEpisode = {
+                ...libraryItem.toJSONMinified(),
+                recentEpisode: episode.toJSON(),
+                progressLastUpdate: mediaProgress.lastUpdate
+              }
+              itemsInProgress.push(libraryItemWithEpisode)
+            }
+          } else if (!mediaProgress.episodeId) {
+            itemsInProgress.push({
+              ...libraryItem.toJSONMinified(),
+              progressLastUpdate: mediaProgress.lastUpdate
+            })
+          }
+        }
+      }
+    }
+
+    itemsInProgress = sort(itemsInProgress).desc(li => li.progressLastUpdate).slice(0, limit)
+    res.json({
+      libraryItems: itemsInProgress
     })
   }
 }

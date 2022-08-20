@@ -36,7 +36,8 @@ export default {
   data() {
     return {
       showPassword: false,
-      isHovering: false
+      isHovering: false,
+      isFocused: false
     }
   },
   computed: {
@@ -66,9 +67,11 @@ export default {
       this.inputValue = ''
     },
     focused() {
+      this.isFocused = true
       this.$emit('focus')
     },
     blurred() {
+      this.isFocused = false
       this.$emit('blur')
     },
     change(e) {
@@ -79,6 +82,9 @@ export default {
     },
     blur() {
       if (this.$refs.input) this.$refs.input.blur()
+    },
+    setFocus() {
+      if (this.$refs.input) this.$refs.input.focus()
     },
     mouseover() {
       this.isHovering = true

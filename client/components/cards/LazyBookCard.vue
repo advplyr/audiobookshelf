@@ -78,6 +78,10 @@
       </div>
     </ui-tooltip>
 
+    <div v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }">
+      <span class="material-icons" :style="{ fontSize: sizeMultiplier * 1.5 + 'rem' }">rss_feed</span>
+    </div>
+
     <!-- Series sequence -->
     <div v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
@@ -249,14 +253,14 @@ export default {
     },
     displayTitle() {
       if (this.recentEpisode) return this.recentEpisode.title
-      if (this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix) {
-        return this.mediaMetadata.titleIgnorePrefix
-      }
-      return this.title
+      const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
+      if (this.collapsedSeries) return ignorePrefix ? this.collapsedSeries.nameIgnorePrefix : this.collapsedSeries.name
+      return ignorePrefix ? this.mediaMetadata.titleIgnorePrefix : this.title
     },
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
+      if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
       }
@@ -264,6 +268,7 @@ export default {
       return this.author
     },
     displaySortLine() {
+      if (this.collapsedSeries) return null
       if (this.orderBy === 'mtimeMs') return 'Modified ' + this.$formatDate(this._libraryItem.mtimeMs, this.dateFormat)
       if (this.orderBy === 'birthtimeMs') return 'Born ' + this.$formatDate(this._libraryItem.birthtimeMs, this.dateFormat)
       if (this.orderBy === 'addedAt') return 'Added ' + this.$formatDate(this._libraryItem.addedAt, this.dateFormat)
@@ -443,6 +448,10 @@ export default {
       if (!this.isAlternativeBookshelfView && !this.isAuthorBookshelfView) return 0
       else if (!this.displaySortLine) return 3 * this.sizeMultiplier
       return 4.25 * this.sizeMultiplier
+    },
+    rssFeed() {
+      if (this.booksInSeries) return null
+      return this.store.getters['feeds/getFeedForItem'](this.libraryItemId)
     }
   },
   methods: {
@@ -499,7 +508,21 @@ export default {
       }
       this.$emit('edit', this.libraryItem)
     },
-    toggleFinished() {
+    toggleFinished(confirmed = false) {
+      if (!this.itemIsFinished && this.userProgressPercent > 0 && !confirmed) {
+        const payload = {
+          message: `Are you sure you want to mark "${this.displayTitle}" as finished?`,
+          callback: (confirmed) => {
+            if (confirmed) {
+              this.toggleFinished(true)
+            }
+          },
+          type: 'yesNo'
+        }
+        this.store.commit('globals/setConfirmPrompt', payload)
+        return
+      }
+
       var updatePayload = {
         isFinished: !this.itemIsFinished
       }

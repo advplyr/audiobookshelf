@@ -1,3 +1,8 @@
+//
+// used by properLockFile
+// Source: https://github.com/tapjs/signal-exit
+//
+
 // Note: since nyc uses this module to output coverage, any lines
 // that are in the direct sync flow of nyc's outputCoverage are
 // ignored, since we can never get coverage for them.
@@ -20,7 +25,7 @@ const processOk = function (process) {
 /* istanbul ignore if */
 if (!processOk(process)) {
   module.exports = function () {
-    return function () {}
+    return function () { }
   }
 } else {
   var assert = require('assert')
@@ -54,7 +59,7 @@ if (!processOk(process)) {
   module.exports = function (cb, opts) {
     /* istanbul ignore if */
     if (!processOk(global.process)) {
-      return function () {}
+      return function () { }
     }
     assert.equal(typeof cb, 'function', 'a callback must be provided for exit handler')
 
@@ -70,7 +75,7 @@ if (!processOk(process)) {
     var remove = function () {
       emitter.removeListener(ev, cb)
       if (emitter.listeners('exit').length === 0 &&
-          emitter.listeners('afterexit').length === 0) {
+        emitter.listeners('afterexit').length === 0) {
         unload()
       }
     }
@@ -79,7 +84,7 @@ if (!processOk(process)) {
     return remove
   }
 
-  var unload = function unload () {
+  var unload = function unload() {
     if (!loaded || !processOk(global.process)) {
       return
     }
@@ -88,7 +93,7 @@ if (!processOk(process)) {
     signals.forEach(function (sig) {
       try {
         process.removeListener(sig, sigListeners[sig])
-      } catch (er) {}
+      } catch (er) { }
     })
     process.emit = originalProcessEmit
     process.reallyExit = originalProcessReallyExit
@@ -96,7 +101,7 @@ if (!processOk(process)) {
   }
   module.exports.unload = unload
 
-  var emit = function emit (event, code, signal) {
+  var emit = function emit(event, code, signal) {
     /* istanbul ignore if */
     if (emitter.emitted[event]) {
       return
@@ -108,7 +113,7 @@ if (!processOk(process)) {
   // { <signal>: <listener fn>, ... }
   var sigListeners = {}
   signals.forEach(function (sig) {
-    sigListeners[sig] = function listener () {
+    sigListeners[sig] = function listener() {
       /* istanbul ignore if */
       if (!processOk(global.process)) {
         return
@@ -141,7 +146,7 @@ if (!processOk(process)) {
 
   var loaded = false
 
-  var load = function load () {
+  var load = function load() {
     if (loaded || !processOk(global.process)) {
       return
     }
@@ -168,7 +173,7 @@ if (!processOk(process)) {
   module.exports.load = load
 
   var originalProcessReallyExit = process.reallyExit
-  var processReallyExit = function processReallyExit (code) {
+  var processReallyExit = function processReallyExit(code) {
     /* istanbul ignore if */
     if (!processOk(global.process)) {
       return
@@ -182,7 +187,7 @@ if (!processOk(process)) {
   }
 
   var originalProcessEmit = process.emit
-  var processEmit = function processEmit (ev, arg) {
+  var processEmit = function processEmit(ev, arg) {
     if (ev === 'exit' && processOk(global.process)) {
       /* istanbul ignore else */
       if (arg !== undefined) {

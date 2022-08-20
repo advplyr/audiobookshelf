@@ -1,5 +1,10 @@
 'use strict'
 
+//
+// used by fsExtra
+// Source: https://github.com/RyanZim/universalify
+//
+
 exports.fromCallback = function (fn) {
   return Object.defineProperty(function (...args) {
     if (typeof args[args.length - 1] === 'function') fn.apply(this, args)

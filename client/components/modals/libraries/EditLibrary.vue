@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full h-full px-4 py-2 mb-4">
+  <div class="w-full h-full px-1 md:px-4 py-2 mb-4">
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
       <div class="flex flex-wrap md:flex-nowrap -mx-1">
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">

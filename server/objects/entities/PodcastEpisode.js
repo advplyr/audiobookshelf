@@ -1,3 +1,4 @@
+const Path = require('path')
 const { getId } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -126,7 +127,7 @@ class PodcastEpisode {
   setDataFromAudioFile(audioFile, index) {
     this.id = getId('ep')
     this.audioFile = audioFile
-    this.title = audioFile.metadata.filename
+    this.title = Path.basename(audioFile.metadata.filename, Path.extname(audioFile.metadata.filename))
     this.index = index
     this.addedAt = Date.now()
     this.updatedAt = Date.now()

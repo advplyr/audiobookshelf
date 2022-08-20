@@ -1,14 +1,14 @@
 <template>
-  <div id="match-wrapper" class="w-full h-full overflow-hidden px-4 py-6 relative">
+  <div id="match-wrapper" class="w-full h-full overflow-hidden px-2 md:px-4 py-4 md:py-6 relative">
     <form @submit.prevent="submitSearch">
-      <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-40 px-1">
+      <div class="flex flex-wrap md:flex-nowrap items-center justify-start -mx-1">
+        <div class="w-36 px-1">
           <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
         </div>
-        <div class="w-72 px-1">
+        <div class="flex-grow md:w-72 px-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" placeholder="Search" />
         </div>
-        <div v-show="provider != 'itunes'" class="w-72 px-1">
+        <div v-show="provider != 'itunes'" class="w-60 md:w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" label="Author" />
         </div>
         <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
@@ -20,64 +20,70 @@
     <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
       <p>No Results</p>
     </div>
-    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper">
+    <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
       <template v-for="(res, index) in searchResults">
         <cards-book-match-card :key="index" :book="res" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
     </div>
-    <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full p-8 max-h-full overflow-y-auto overflow-x-hidden">
-      <div class="flex mb-2">
+    <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
+      <div class="flex mb-4">
         <div class="w-8 h-8 rounded-full hover:bg-white hover:bg-opacity-10 flex items-center justify-center cursor-pointer" @click="selectedMatch = null">
           <span class="material-icons text-3xl">arrow_back</span>
         </div>
         <p class="text-xl pl-3">Update Book Details</p>
       </div>
+      <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
         <div v-if="selectedMatch.cover" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.cover" />
-          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" label="Cover" class="flex-grow ml-4" />
+          <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
+          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly label="Cover" class="flex-grow mx-4" />
+          <div class="min-w-12 max-w-12 md:min-w-16 md:max-w-16">
+            <a :href="selectedMatch.cover" target="_blank" class="w-full bg-primary">
+              <img :src="selectedMatch.cover" class="h-full w-full object-contain" />
+            </a>
+          </div>
         </div>
         <div v-if="selectedMatch.title" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.title" />
+          <ui-checkbox v-model="selectedMatchUsage.title" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" label="Title" />
             <p v-if="mediaMetadata.title" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.title || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.subtitle" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.subtitle" />
+          <ui-checkbox v-model="selectedMatchUsage.subtitle" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" label="Subtitle" />
             <p v-if="mediaMetadata.subtitle" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.subtitle || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.author" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.author" />
+          <ui-checkbox v-model="selectedMatchUsage.author" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" label="Author" />
             <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.authorName || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.narrator" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.narrator" />
+          <ui-checkbox v-model="selectedMatchUsage.narrator" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" label="Narrator" />
             <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.narratorName || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.description" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.description" />
+          <ui-checkbox v-model="selectedMatchUsage.description" checkbox-bg="bg" @input="checkboxToggled" />
           <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" label="Description" class="flex-grow ml-4" />
         </div>
         <div v-if="selectedMatch.publisher" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.publisher" />
+          <ui-checkbox v-model="selectedMatchUsage.publisher" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" label="Publisher" />
             <p v-if="mediaMetadata.publisher" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.publisher || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.publishedYear" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.publishedYear" />
+          <ui-checkbox v-model="selectedMatchUsage.publishedYear" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" label="Published Year" />
             <p v-if="mediaMetadata.publishedYear" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.publishedYear || '' }}</p>
@@ -85,46 +91,46 @@
         </div>
 
         <div v-if="selectedMatch.series" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.series" />
+          <ui-checkbox v-model="selectedMatchUsage.series" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <widgets-series-input-widget v-model="selectedMatch.series" />
             <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.volumeNumber" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.volumeNumber" />
+          <ui-checkbox v-model="selectedMatchUsage.volumeNumber" @input="checkboxToggled" />
           <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
         </div>
         <div v-if="selectedMatch.genres" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.genres" />
+          <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" />
             <p v-if="mediaMetadata.genresList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genresList || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.tags" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.tags" />
+          <ui-checkbox v-model="selectedMatchUsage.tags" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" label="Tags" />
             <p v-if="mediaMetadata.tagsList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.tagsList || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.language" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.language" />
+          <ui-checkbox v-model="selectedMatchUsage.language" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" label="Language" />
             <p v-if="mediaMetadata.language" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.language || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.isbn" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.isbn" />
+          <ui-checkbox v-model="selectedMatchUsage.isbn" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" />
             <p v-if="mediaMetadata.isbn" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.isbn || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.asin" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.asin" />
+          <ui-checkbox v-model="selectedMatchUsage.asin" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" />
             <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.asin || '' }}</p>
@@ -132,28 +138,28 @@
         </div>
 
         <div v-if="selectedMatch.itunesId" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.itunesId" />
+          <ui-checkbox v-model="selectedMatchUsage.itunesId" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.itunesId" type="number" :disabled="!selectedMatchUsage.itunesId" label="iTunes ID" />
             <p v-if="mediaMetadata.itunesId" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesId || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.feedUrl" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.feedUrl" />
+          <ui-checkbox v-model="selectedMatchUsage.feedUrl" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.feedUrl" :disabled="!selectedMatchUsage.feedUrl" label="RSS Feed URL" />
             <p v-if="mediaMetadata.feedUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.feedUrl || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.itunesPageUrl" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.itunesPageUrl" />
+          <ui-checkbox v-model="selectedMatchUsage.itunesPageUrl" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.itunesPageUrl" :disabled="!selectedMatchUsage.itunesPageUrl" label="iTunes Page URL" />
             <p v-if="mediaMetadata.itunesPageUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesPageUrl || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.releaseDate" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.releaseDate" />
+          <ui-checkbox v-model="selectedMatchUsage.releaseDate" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.releaseDate" :disabled="!selectedMatchUsage.releaseDate" label="Release Date" />
             <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.releaseDate || '' }}</p>
@@ -209,7 +215,8 @@ export default {
         itunesId: true,
         feedUrl: true,
         releaseDate: true
-      }
+      },
+      selectAll: true
     }
   },
   watch: {
@@ -246,7 +253,7 @@ export default {
       }
     },
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
@@ -271,6 +278,14 @@ export default {
     }
   },
   methods: {
+    selectAllToggled(val) {
+      for (const key in this.selectedMatchUsage) {
+        this.selectedMatchUsage[key] = val
+      }
+    },
+    checkboxToggled() {
+      this.selectAll = Object.values(this.selectedMatchUsage).findIndex((v) => v == false) < 0
+    },
     persistProvider() {
       try {
         localStorage.setItem('book-provider', this.provider)
@@ -299,7 +314,7 @@ export default {
       this.isProcessing = true
       this.lastSearch = searchQuery
       var searchEntity = this.isPodcast ? 'podcast' : 'books'
-      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 10000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })
@@ -363,6 +378,10 @@ export default {
       this.searchAuthor = this.libraryItem.media.metadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
       else this.provider = localStorage.getItem('book-provider') || 'google'
+
+      if (this.searchTitle) {
+        this.submitSearch()
+      }
     },
     selectMatch(match) {
       if (match) {
@@ -497,6 +516,11 @@ export default {
 
 <style>
 .matchListWrapper {
-  height: calc(100% - 80px);
+  height: calc(100% - 124px);
+}
+@media (min-width: 768px) {
+  .matchListWrapper {
+    height: calc(100% - 80px);
+  }
 }
 </style>

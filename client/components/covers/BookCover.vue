@@ -125,6 +125,9 @@ export default {
     },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    resolution() {
+      return `${this.naturalWidth}x${this.naturalHeight}px`
     }
   },
   methods: {

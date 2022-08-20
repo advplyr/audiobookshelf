@@ -8,8 +8,8 @@
           </div>
         </div>
         <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
-          <div class="flex sm:items-end flex-col sm:flex-row">
-            <h1 class="text-2xl md:text-3xl font-sans">
+          <div class="flex items-end flex-row flex-wrap md:flex-nowrap">
+            <h1 class="text-2xl md:text-3xl font-sans w-full md:w-fit mb-4 md:mb-0">
               {{ collectionName }}
             </h1>
             <div class="flex-grow" />
@@ -65,7 +65,7 @@ export default {
   },
   computed: {
     bookCoverAspectRatio() {
-      return this.$store.getters['getBookCoverAspectRatio']
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem

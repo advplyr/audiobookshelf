@@ -1,4 +1,4 @@
-const date = require('date-and-time')
+const date = require('../libs/dateAndTime')
 const { getId } = require('../utils/index')
 const { PlayMethod } = require('../utils/constants')
 const BookMetadata = require('./metadata/BookMetadata')

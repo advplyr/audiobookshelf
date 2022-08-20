@@ -164,6 +164,25 @@ class PodcastController {
     })
   }
 
+  async findEpisode(req, res) {
+    const rssFeedUrl = req.libraryItem.media.metadata.feedUrl
+    if (!rssFeedUrl) {
+      Logger.error(`[PodcastController] findEpisode: Podcast has no feed url`)
+      return res.status(500).send('Podcast does not have an RSS feed URL')
+    }
+
+    var searchTitle = req.query.title
+    if (!searchTitle) {
+      return res.sendStatus(500)
+    }
+    searchTitle = searchTitle.toLowerCase().trim()
+
+    const episodes = await this.podcastManager.findEpisode(rssFeedUrl, searchTitle)
+    res.json({
+      episodes: episodes || []
+    })
+  }
+
   async downloadEpisodes(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
@@ -185,7 +204,7 @@ class PodcastController {
 
     var episodeId = req.params.episodeId
     if (!libraryItem.media.checkHasEpisode(episodeId)) {
-      return res.status(500).send('Episode not found')
+      return res.status(404).send('Episode not found')
     }
 
     var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)

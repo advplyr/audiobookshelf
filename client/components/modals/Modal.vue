@@ -50,7 +50,8 @@ export default {
     return {
       el: null,
       content: null,
-      preventClickoutside: false
+      preventClickoutside: false,
+      isShowingPrompt: false
     }
   },
   watch: {
@@ -93,7 +94,7 @@ export default {
       this.show = false
     },
     clickBg(ev) {
-      if (!this.show) return
+      if (!this.show || this.isShowingPrompt) return
       if (this.preventClickoutside) {
         this.preventClickoutside = false
         return
@@ -147,8 +148,16 @@ export default {
       } else {
         console.warn('Invalid modal init', this.name)
       }
+    },
+    showingPrompt(isShowing) {
+      this.isShowingPrompt = isShowing
     }
   },
-  mounted() {}
+  mounted() {
+    this.$eventBus.$on('showing-prompt', this.showingPrompt)
+  },
+  beforeDestroy() {
+    this.$eventBus.$off('showing-prompt', this.showingPrompt)
+  }
 }
 </script>

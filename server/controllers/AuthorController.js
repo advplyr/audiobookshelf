@@ -82,31 +82,59 @@ class AuthorController {
 
     var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
-    var hasUpdated = req.author.update(payload)
-
-    if (hasUpdated) {
-      if (authorNameUpdate) { // Update author name on all books
-        var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
-        itemsWithAuthor.forEach(libraryItem => {
-          libraryItem.media.metadata.updateAuthor(req.author)
-        })
-        if (itemsWithAuthor.length) {
-          await this.db.updateLibraryItems(itemsWithAuthor)
-          this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
-        }
+    // Check if author name matches another author and merge the authors
+    var existingAuthor = authorNameUpdate ? this.db.authors.find(au => au.id !== req.author.id && payload.name === au.name) : false
+    if (existingAuthor) {
+      var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+      itemsWithAuthor.forEach(libraryItem => { // Replace old author with merging author for each book
+        libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
+      })
+      if (itemsWithAuthor.length) {
+        await this.db.updateLibraryItems(itemsWithAuthor)
+        this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
       }
 
-      await this.db.updateEntity('author', req.author)
-      var numBooks = this.db.libraryItems.filter(li => {
-        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
-      }).length
-      this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
-    }
+      // Remove old author
+      await this.db.removeEntity('author', req.author.id)
+      this.emitter('author_removed', req.author.toJSON())
 
-    res.json({
-      author: req.author.toJSON(),
-      updated: hasUpdated
-    })
+      // Send updated num books for merged author
+      var numBooks = this.db.libraryItems.filter(li => {
+        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(existingAuthor.id)
+      }).length
+      this.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
+
+      res.json({
+        author: existingAuthor.toJSON(),
+        merged: true
+      })
+    } else { // Regular author update
+      var hasUpdated = req.author.update(payload)
+
+      if (hasUpdated) {
+        if (authorNameUpdate) { // Update author name on all books
+          var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+          itemsWithAuthor.forEach(libraryItem => {
+            libraryItem.media.metadata.updateAuthor(req.author)
+          })
+          if (itemsWithAuthor.length) {
+            await this.db.updateLibraryItems(itemsWithAuthor)
+            this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+          }
+        }
+
+        await this.db.updateEntity('author', req.author)
+        var numBooks = this.db.libraryItems.filter(li => {
+          return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
+        }).length
+        this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+      }
+
+      res.json({
+        author: req.author.toJSON(),
+        updated: hasUpdated
+      })
+    }
   }
 
   async search(req, res) {

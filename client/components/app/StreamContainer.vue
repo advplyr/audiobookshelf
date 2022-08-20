@@ -2,7 +2,7 @@
   <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
     <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-1 sm:left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
-      <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+      <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </nuxt-link>
     <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : 'pl-20 sm:pl-24'">
       <div>
@@ -77,16 +77,13 @@ export default {
   },
   computed: {
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
-    bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     bookCoverWidth() {
       return 88
     },
     bookCoverPosTop() {
-      if (this.bookCoverAspectRatio === 1) return -10
+      if (this.coverAspectRatio == 1) return -10
       return -64
     },
     cover() {
@@ -364,7 +361,11 @@ export default {
       var episodeId = payload.episodeId || null
 
       if (this.playerHandler.libraryItemId == libraryItemId && this.playerHandler.episodeId == episodeId) {
-        this.playerHandler.play()
+        if (payload.startTime !== null && !isNaN(payload.startTime)) {
+          this.seek(payload.startTime)
+        } else {
+          this.playerHandler.play()
+        }
         return
       }
 
@@ -377,7 +378,11 @@ export default {
         libraryItem,
         episodeId
       })
-      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate)
+      this.$nextTick(() => {
+        if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
+      })
+
+      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate, payload.startTime)
     },
     pauseItem() {
       this.playerHandler.pause()
@@ -389,11 +394,13 @@ export default {
   },
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
+    this.$eventBus.$on('playback-seek', this.seek)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
+    this.$eventBus.$off('playback-seek', this.seek)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }

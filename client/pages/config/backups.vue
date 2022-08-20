@@ -8,10 +8,18 @@
       <p class="text-base mb-4 text-gray-300">Backups include users, user progress, book details, server settings and covers stored in <span class="font-mono text-gray-100">/metadata/items</span>. <br />Backups <strong>do not</strong> include any files stored in your library folders.</p>
 
       <div class="flex items-center py-2">
-        <ui-toggle-switch v-model="dailyBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
-        <ui-tooltip :text="dailyBackupsTooltip">
-          <p class="pl-4 text-lg">Run daily backups <span class="material-icons icon-text">info_outlined</span></p>
+        <ui-toggle-switch v-model="enableBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
+        <ui-tooltip :text="backupsTooltip">
+          <p class="pl-4 text-lg">Enable automatic backups <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
+      </div>
+
+      <div v-if="enableBackups" class="mb-6">
+        <div class="flex items-center pl-6">
+          <span class="material-icons-outlined text-black-50">schedule</span>
+          <p class="text-gray-100 px-2">{{ scheduleDescription }}</p>
+          <span class="material-icons text-lg text-black-50 hover:text-yellow-500 cursor-pointer" @click="showCronBuilder = !showCronBuilder">edit</span>
+        </div>
       </div>
 
       <div class="flex items-center py-2">
@@ -30,6 +38,8 @@
 
       <tables-backups-table />
     </div>
+
+    <modals-backup-schedule-modal v-model="showCronBuilder" :cron-expression.sync="cronExpression" />
   </div>
 </template>
 
@@ -38,10 +48,12 @@ export default {
   data() {
     return {
       updatingServerSettings: false,
-      dailyBackups: true,
+      enableBackups: true,
       backupsToKeep: 2,
       maxBackupSize: 1,
-      newServerSettings: {}
+      cronExpression: '',
+      newServerSettings: {},
+      showCronBuilder: false
     }
   },
   watch: {
@@ -53,14 +65,19 @@ export default {
     }
   },
   computed: {
-    dailyBackupsTooltip() {
-      return 'Runs at 1:30am every day (your server time). Saved in /metadata/backups.'
+    backupsTooltip() {
+      return 'Backups saved in /metadata/backups'
     },
     maxBackupSizeTooltip() {
       return 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
     },
     serverSettings() {
       return this.$store.state.serverSettings
+    },
+    scheduleDescription() {
+      if (!this.cronExpression) return ''
+      const parsed = this.$parseCronExpression(this.cronExpression)
+      return parsed ? parsed.description : 'Custom cron expression ' + this.cronExpression
     }
   },
   methods: {
@@ -74,7 +91,7 @@ export default {
         return
       }
       var updatePayload = {
-        backupSchedule: this.dailyBackups ? '30 1 * * *' : false,
+        backupSchedule: this.enableBackups ? this.cronExpression : false,
         backupsToKeep: Number(this.backupsToKeep),
         maxBackupSize: Number(this.maxBackupSize)
       }
@@ -97,8 +114,9 @@ export default {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
 
       this.backupsToKeep = this.newServerSettings.backupsToKeep || 2
-      this.dailyBackups = !!this.newServerSettings.backupSchedule
+      this.enableBackups = !!this.newServerSettings.backupSchedule
       this.maxBackupSize = this.newServerSettings.maxBackupSize || 1
+      this.cronExpression = this.newServerSettings.backupSchedule || '30 1 * * *'
     }
   },
   mounted() {

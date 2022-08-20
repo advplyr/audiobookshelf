@@ -1,6 +1,6 @@
 <template>
-  <div class="relative rounded-sm overflow-hidden" :style="{ height: width * bookCoverAspectRatio + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }" @mouseover="isHovering = true" @mouseleave="isHovering = false">
-    <div class="w-full h-full relative">
+  <div class="relative rounded-sm" :style="{ height: width * bookCoverAspectRatio + 'px', width: width + 'px', maxWidth: width + 'px', minWidth: width + 'px' }" @mouseover="isHovering = true" @mouseleave="isHovering = false">
+    <div class="w-full h-full relative overflow-hidden">
       <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
         <div class="absolute cover-bg" ref="coverBg" />
       </div>
@@ -17,6 +17,8 @@
         <p class="text-center font-book text-error" :style="{ fontSize: sizeMultiplier + 'rem' }">Invalid Cover</p>
       </div>
     </div>
+
+    <p v-if="!imageFailed" class="absolute -bottom-5 left-0 right-0 mx-auto text-xs text-gray-300 text-center">{{ resolution }}</p>
   </div>
 </template>
 
@@ -54,6 +56,9 @@ export default {
     },
     placeholderCoverPadding() {
       return 0.8 * this.sizeMultiplier
+    },
+    resolution() {
+      return `${this.naturalWidth}x${this.naturalHeight}px`
     }
   },
   methods: {

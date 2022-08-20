@@ -62,11 +62,20 @@
             <h2 class="font-semibold">Display</h2>
           </div>
 
-          <div class="flex items-center py-2">
+          <!-- <div class="flex items-center py-2">
             <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
             <ui-tooltip :text="tooltips.coverAspectRatio">
               <p class="pl-4">
                 Square book covers
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div> -->
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="homeUseAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateHomeAlternativeBookshelfView" />
+            <ui-tooltip :text="tooltips.bookshelfView">
+              <p class="pl-4">
+                Alternative bookshelf view for home page
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -167,6 +176,16 @@
             </ui-tooltip>
           </div>
 
+          <!-- <div class="flex items-center py-2">
+            <ui-text-input type="number" v-model="newServerSettings.scannerMaxThreads" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateScannerMaxThreads" />
+            <ui-tooltip :text="tooltips.scannerMaxThreads">
+              <p class="pl-4">
+                Max # of threads to use
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div> -->
+
           <div class="pt-4">
             <h2 class="font-semibold">Experimental Features</h2>
           </div>
@@ -194,6 +213,16 @@
               </p>
             </ui-tooltip>
           </div>
+
+          <!-- <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="newServerSettings.scannerUseSingleThreadedProber" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseSingleThreadedProber', val)" />
+            <ui-tooltip :text="tooltips.scannerUseSingleThreadedProber">
+              <p class="pl-4">
+                Scanner use old single threaded audio prober
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div> -->
         </div>
       </div>
     </div>
@@ -261,6 +290,7 @@ export default {
       isResettingLibraryItems: false,
       updatingServerSettings: false,
       useSquareBookCovers: false,
+      homeUseAlternativeBookshelfView: false,
       useAlternativeBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
@@ -280,6 +310,8 @@ export default {
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
         scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
         shareStats: 'Allow users to share latest listening activity with other users on an opt-in basis'
+        scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
+        scannerMaxThreads: 'Number of concurrent media files to scan at a time. Value of 1 will be a slower scan but less CPU usage. <br><br>Value of 0 defaults to # of CPU cores for this server times 2 (i.e. 4-core CPU will be 8)'
       },
       showConfirmPurgeCache: false
     }
@@ -311,6 +343,26 @@ export default {
     }
   },
   methods: {
+    updateScannerMaxThreads(val) {
+      if (!val || isNaN(val)) {
+        this.$toast.error('Invalid max threads must be a number')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      if (Number(val) < 0) {
+        this.$toast.error('Max threads must be >= 0')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      if (Math.round(Number(val)) !== Number(val)) {
+        this.$toast.error('Max threads must be an integer')
+        this.newServerSettings.scannerMaxThreads = 0
+        return
+      }
+      this.updateServerSettings({
+        scannerMaxThreads: Number(val)
+      })
+    },
     updateSortingPrefixes(val) {
       if (!val || !val.length) {
         this.$toast.error('Must have at least 1 prefix')
@@ -329,6 +381,11 @@ export default {
     updateBookCoverAspectRatio(val) {
       this.updateServerSettings({
         coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
+      })
+    },
+    updateHomeAlternativeBookshelfView(val) {
+      this.updateServerSettings({
+        homeBookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
       })
     },
     updateAlternativeBookshelfView(val) {
@@ -362,6 +419,7 @@ export default {
 
       this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
 
+      this.homeUseAlternativeBookshelfView = this.newServerSettings.homeBookshelfView === this.$constants.BookshelfView.TITLES
       this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
     },
     resetLibraryItems() {

@@ -17,6 +17,7 @@
         <div class="flex items-center">
           <p class="text-lg mb-4 font-semibold">Audiobook Chapters</p>
           <div class="flex-grow" />
+          <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
           <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">Lookup</ui-btn>
           <ui-btn color="success" small @click="saveChapters">Save</ui-btn>
           <div class="w-40" />
@@ -32,7 +33,8 @@
           <div :key="chapter.id" class="flex py-1">
             <div class="w-12">#{{ chapter.id + 1 }}</div>
             <div class="w-32 px-1">
-              <ui-text-input v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
+              <ui-text-input v-if="showSecondInputs" v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
+              <ui-time-picker v-else class="text-xs" v-model="chapter.start" :show-three-digit-hour="mediaDuration >= 360000" @change="checkChapters" />
             </div>
             <div class="flex-grow px-1">
               <ui-text-input v-model="chapter.title" class="text-xs" />
@@ -136,7 +138,7 @@
 
 <script>
 export default {
-  async asyncData({ store, params, app, redirect, route }) {
+  async asyncData({ store, params, app, redirect, from }) {
     if (!store.getters['user/getUserCanUpdate']) {
       return redirect('/?error=unauthorized')
     }
@@ -152,8 +154,12 @@ export default {
       console.error('Invalid media type')
       return redirect('/')
     }
+
+    var previousRoute = from ? from.fullPath : null
+    if (from && from.path === '/login') previousRoute = null
     return {
-      libraryItem
+      libraryItem,
+      previousRoute
     }
   },
   data() {
@@ -168,7 +174,8 @@ export default {
       asinInput: null,
       findingChapters: false,
       showFindChaptersModal: false,
-      chapterData: null
+      chapterData: null,
+      showSecondInputs: false
     }
   },
   computed: {
@@ -339,7 +346,6 @@ export default {
 
       this.saving = true
 
-      console.log('udpated chapters', this.newChapters)
       const payload = {
         chapters: this.newChapters
       }
@@ -349,7 +355,11 @@ export default {
           this.saving = false
           if (data.updated) {
             this.$toast.success('Chapters updated')
-            this.$router.push(`/item/${this.libraryItem.id}`)
+            if (this.previousRoute) {
+              this.$router.push(this.previousRoute)
+            } else {
+              this.$router.push(`/item/${this.libraryItem.id}`)
+            }
           } else {
             this.$toast.info('No changes needed updating')
           }

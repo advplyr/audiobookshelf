@@ -1,3 +1,5 @@
+const { Constants } = require('../plugins/constants')
+
 export const state = () => ({
   libraries: [],
   lastLoad: 0,
@@ -42,6 +44,14 @@ export const getters = {
     })
     if (!librariesSorted.length) return null
     return librariesSorted[0]
+  },
+  getCurrentLibrarySettings: (state, getters) => {
+    if (!getters.getCurrentLibrary) return null
+    return getters.getCurrentLibrary.settings
+  },
+  getBookCoverAspectRatio: (state, getters) => {
+    if (!getters.getCurrentLibrarySettings || isNaN(getters.getCurrentLibrarySettings.coverAspectRatio)) return 1
+    return getters.getCurrentLibrarySettings.coverAspectRatio === Constants.BookCoverAspectRatio.STANDARD ? 1.6 : 1
   }
 }
 

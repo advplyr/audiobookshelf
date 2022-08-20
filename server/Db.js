@@ -121,7 +121,7 @@ class Db {
   async init() {
     await this.load()
 
-    if (!this.serverSettings) {
+    if (!this.serverSettings) { // Create first load server settings
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
     }
@@ -142,7 +142,7 @@ class Db {
       this.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
       Logger.info(`[DB] ${this.libraries.length} Libraries Loaded`)
     })
-    var p4 = this.settingsDb.select(() => true).then((results) => {
+    var p4 = this.settingsDb.select(() => true).then(async (results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
         var serverSettings = this.settings.find(s => s.id === 'server-settings')
@@ -152,6 +152,18 @@ class Db {
           // Check if server was upgraded
           if (!this.serverSettings.version || this.serverSettings.version !== version) {
             this.previousVersion = this.serverSettings.version || '1.0.0'
+
+            // Library settings and server settings updated in 2.1.3 - run migration
+            if (this.previousVersion.localeCompare('2.1.3') < 0) {
+              Logger.info(`[Db] Running servers & library settings migration`)
+              for (const library of this.libraries) {
+                if (library.settings.coverAspectRatio !== serverSettings.coverAspectRatio) {
+                  library.settings.coverAspectRatio = serverSettings.coverAspectRatio
+                  await this.updateEntity('library', library)
+                  Logger.debug(`[Db] Library ${library.name} migrated`)
+                }
+              }
+            }
           }
         }
       }
@@ -182,17 +194,6 @@ class Db {
   }
   getLibraryItemsInLibrary(libraryId) {
     return this.libraryItems.filter(li => li.libraryId === libraryId)
-  }
-  getPlaybackSession(id) {
-    return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
-      if (results.data.length) {
-        return new PlaybackSession(results.data[0])
-      }
-      return null
-    }).catch((error) => {
-      Logger.error('Failed to get session', error)
-      return null
-    })
   }
 
   async updateLibraryItem(libraryItem) {
@@ -368,22 +369,7 @@ class Db {
     }
 
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
-      if (process.env.NODE_ENV !== 'production') {
-        Logger.debug(`[DB] Updated ${entityName}: ${results.updated} | Selected: ${results.selected}`)
-
-        if (!results.selected) {
-          entityDb.select(match => match.id == jsonEntity.id).then((results) => {
-            if (results.data.length) {
-              console.log('Said selected 0 but found it right here...', results.data[0].id)
-            } else {
-              console.log('Said selected 0 and no results for json entity id', jsonEntity.id)
-            }
-          })
-        }
-      } else {
-        Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
-      }
-
+      Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
       var arrayKey = this.getEntityArrayKey(entityName)
       if (this[arrayKey]) {
         this[arrayKey] = this[arrayKey].map(e => {
@@ -414,6 +400,23 @@ class Db {
     })
   }
 
+  removeEntities(entityName, selectFunc) {
+    var entityDb = this.getEntityDb(entityName)
+    return entityDb.delete(selectFunc).then((results) => {
+      Logger.debug(`[DB] Deleted entities ${entityName}: ${results.deleted}`)
+      var arrayKey = this.getEntityArrayKey(entityName)
+      if (this[arrayKey]) {
+        this[arrayKey] = this[arrayKey].filter(e => {
+          return !selectFunc(e)
+        })
+      }
+      return results.deleted
+    }).catch((error) => {
+      Logger.error(`[DB] Remove entities ${entityName} Failed: ${error}`)
+      return 0
+    })
+  }
+
   recreateLibraryItemsDb() {
     return this.libraryItemsDb.drop().then((results) => {
       Logger.info(`[DB] Dropped library items db`, results)
@@ -426,12 +429,24 @@ class Db {
     })
   }
 
-  getAllSessions() {
-    return this.sessionsDb.select(() => true).then((results) => {
+  getAllSessions(selectFunc = () => true) {
+    return this.sessionsDb.select(selectFunc).then((results) => {
       return results.data || []
     }).catch((error) => {
       Logger.error('[Db] Failed to select sessions', error)
       return []
+    })
+  }
+
+  getPlaybackSession(id) {
+    return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
+      if (results.data.length) {
+        return new PlaybackSession(results.data[0])
+      }
+      return null
+    }).catch((error) => {
+      Logger.error('Failed to get session', error)
+      return null
     })
   }
 

@@ -65,12 +65,10 @@ export default {
       setTimeout(() => {
         this.content.style.transform = 'scale(1)'
       }, 10)
-      document.documentElement.classList.add('modal-open')
     },
     setHide() {
       this.content.style.transform = 'scale(0)'
       this.el.remove()
-      document.documentElement.classList.remove('modal-open')
     }
   },
   mounted() {

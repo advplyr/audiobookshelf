@@ -2,7 +2,7 @@ const Path = require('path')
 
 const cron = require('../libs/nodeCron')
 const fs = require('../libs/fsExtra')
-const archiver = require('archiver')
+const archiver = require('../libs/archiver')
 const StreamZip = require('../libs/nodeStreamZip')
 
 // Utils
@@ -56,14 +56,14 @@ class BackupManager {
   updateCronSchedule() {
     if (this.scheduleTask && !this.serverSettings.backupSchedule) {
       Logger.info(`[BackupManager] Disabling backup schedule`)
-      if (this.scheduleTask.destroy) this.scheduleTask.destroy()
+      if (this.scheduleTask.stop) this.scheduleTask.stop()
       this.scheduleTask = null
     } else if (!this.scheduleTask && this.serverSettings.backupSchedule) {
       Logger.info(`[BackupManager] Starting backup schedule ${this.serverSettings.backupSchedule}`)
       this.scheduleCron()
     } else if (this.serverSettings.backupSchedule) {
       Logger.info(`[BackupManager] Restarting backup schedule ${this.serverSettings.backupSchedule}`)
-      if (this.scheduleTask.destroy) this.scheduleTask.destroy()
+      if (this.scheduleTask.stop) this.scheduleTask.stop()
       this.scheduleCron()
     }
   }

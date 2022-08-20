@@ -1,4 +1,4 @@
-const Ffmpeg = require('fluent-ffmpeg')
+const Ffmpeg = require('../libs/fluentFfmpeg')
 
 if (process.env.FFMPEG_PATH) {
   Ffmpeg.setFfmpegPath(process.env.FFMPEG_PATH)

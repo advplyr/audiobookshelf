@@ -31,9 +31,9 @@
 
           <div v-if="showLocalCovers" class="flex items-center justify-center">
             <template v-for="cover in localCovers">
-              <div :key="cover.path" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(cover)">
+              <div :key="cover.path" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(cover)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
-                  <img :src="`${cover.localPath}?token=${userToken}`" class="h-full w-full object-contain" />
+                  <covers-preview-cover :src="`${cover.localPath}?token=${userToken}`" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </div>
               </div>
             </template>
@@ -58,7 +58,7 @@
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
       <p v-if="!coversFound.length">No Covers Found</p>
       <template v-for="cover in coversFound">
-        <div :key="cover" class="m-0.5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
+        <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
         </div>
       </template>
@@ -129,11 +129,8 @@ export default {
       else if (this.provider == 'itunes') return 'Search Term'
       return 'Search Title'
     },
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     libraryItemId() {
       return this.libraryItem ? this.libraryItem.id : null

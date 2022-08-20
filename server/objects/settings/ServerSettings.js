@@ -1,9 +1,11 @@
 const { BookCoverAspectRatio, BookshelfView } = require('../../utils/constants')
+const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
 class ServerSettings {
   constructor(settings) {
     this.id = 'server-settings'
+    this.tokenSecret = null
 
     // Scanner
     this.scannerParseSubtitle = false
@@ -14,6 +16,8 @@ class ServerSettings {
     this.scannerPreferMatchedMetadata = false
     this.scannerDisableWatcher = false
     this.scannerPreferOverdriveMediaMarker = false
+    this.scannerUseSingleThreadedProber = true
+    this.scannerMaxThreads = 0 // 0 = defaults to CPUs * 2
 
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
@@ -35,7 +39,11 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     // Cover
+    // TODO: Remove after mobile apps are configured to use library server settings
     this.coverAspectRatio = BookCoverAspectRatio.SQUARE
+
+    // Bookshelf Display
+    this.homeBookshelfView = BookshelfView.STANDARD
     this.bookshelfView = BookshelfView.STANDARD
 
     // Podcasts
@@ -61,6 +69,7 @@ class ServerSettings {
   }
 
   construct(settings) {
+    this.tokenSecret = settings.tokenSecret
     this.scannerFindCovers = !!settings.scannerFindCovers
     this.scannerCoverProvider = settings.scannerCoverProvider || 'google'
     this.scannerParseSubtitle = settings.scannerParseSubtitle
@@ -69,15 +78,14 @@ class ServerSettings {
     this.scannerPreferMatchedMetadata = !!settings.scannerPreferMatchedMetadata
     this.scannerDisableWatcher = !!settings.scannerDisableWatcher
     this.scannerPreferOverdriveMediaMarker = !!settings.scannerPreferOverdriveMediaMarker
+    this.scannerUseSingleThreadedProber = !!settings.scannerUseSingleThreadedProber
+    if (settings.scannerUseSingleThreadedProber === undefined) { // Default to original scanner
+      this.scannerUseSingleThreadedProber = true
+    }
+    this.scannerMaxThreads = isNullOrNaN(settings.scannerMaxThreads) ? 0 : Number(settings.scannerMaxThreads)
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
-    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was old name of setting < v2
-      this.storeCoverWithItem = !!settings.storeCoverWithBook
-    }
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
-    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was old name of setting < v2
-      this.storeMetadataWithItem = !!settings.storeMetadataWithBook
-    }
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -91,6 +99,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
     this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
+    this.homeBookshelfView = settings.homeBookshelfView || BookshelfView.STANDARD
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
@@ -102,14 +111,26 @@ class ServerSettings {
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
+    // Migrations
+    if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
+      this.storeCoverWithItem = !!settings.storeCoverWithBook
+    }
+    if (settings.storeMetadataWithBook != undefined) { // storeMetadataWithBook was renamed to storeMetadataWithItem in 2.0.0
+      this.storeMetadataWithItem = !!settings.storeMetadataWithBook
+    }
+    if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
+      this.homeBookshelfView = settings.bookshelfView
+    }
+
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
     }
   }
 
-  toJSON() {
+  toJSON() { // Use toJSONForBrowser if sending to client
     return {
       id: this.id,
+      tokenSecret: this.tokenSecret, // Do not return to client
       scannerFindCovers: this.scannerFindCovers,
       scannerCoverProvider: this.scannerCoverProvider,
       scannerParseSubtitle: this.scannerParseSubtitle,
@@ -118,6 +139,8 @@ class ServerSettings {
       scannerPreferMatchedMetadata: this.scannerPreferMatchedMetadata,
       scannerDisableWatcher: this.scannerDisableWatcher,
       scannerPreferOverdriveMediaMarker: this.scannerPreferOverdriveMediaMarker,
+      scannerUseSingleThreadedProber: this.scannerUseSingleThreadedProber,
+      scannerMaxThreads: this.scannerMaxThreads,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
@@ -129,6 +152,7 @@ class ServerSettings {
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       coverAspectRatio: this.coverAspectRatio,
+      homeBookshelfView: this.homeBookshelfView,
       bookshelfView: this.bookshelfView,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
@@ -139,6 +163,12 @@ class ServerSettings {
       logLevel: this.logLevel,
       version: this.version
     }
+  }
+
+  toJSONForBrowser() {
+    const json = this.toJSON()
+    delete json.tokenSecret
+    return json
   }
 
   update(payload) {

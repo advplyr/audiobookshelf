@@ -39,7 +39,7 @@
             <td class="text-center">
               <p class="text-xs font-mono">{{ $elapsedPretty(session.timeListening) }}</p>
             </td>
-            <td class="text-center">
+            <td class="text-center hover:underline" @click.stop="clickCurrentTime(session)">
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
             </td>
             <td class="text-center hidden sm:table-cell">
@@ -57,8 +57,8 @@
       </div>
       <p v-else class="text-white text-opacity-50">No sessions yet...</p>
     </div>
-  
-    <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" />
+
+    <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" @removedSession="removedSession" />
   </div>
 </template>
 
@@ -89,7 +89,8 @@ export default {
       total: 0,
       currentPage: 0,
       userFilter: null,
-      selectedUser: ''
+      selectedUser: '',
+      processingGoToTimestamp: false
     }
   },
   computed: {
@@ -110,6 +111,44 @@ export default {
     }
   },
   methods: {
+    removedSession() {
+      this.loadSessions(this.currentPage)
+    },
+    async clickCurrentTime(session) {
+      if (this.processingGoToTimestamp) return
+      this.processingGoToTimestamp = true
+      const libraryItem = await this.$axios.$get(`/api/items/${session.libraryItemId}`).catch((error) => {
+        console.error('Failed to get library item', error)
+        return null
+      })
+
+      if (!libraryItem) {
+        this.$toast.error('Failed to get library item')
+        this.processingGoToTimestamp = false
+        return
+      }
+      if (session.episodeId && !libraryItem.media.episodes.find((ep) => ep.id === session.episodeId)) {
+        this.$toast.error('Failed to get podcast episode')
+        this.processingGoToTimestamp = false
+        return
+      }
+
+      const payload = {
+        message: `Start playback for "${session.displayTitle}" at ${this.$secondsToTimestamp(session.currentTime)}?`,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$eventBus.$emit('play-item', {
+              libraryItemId: libraryItem.id,
+              episodeId: session.episodeId || null,
+              startTime: session.currentTime
+            })
+          }
+          this.processingGoToTimestamp = false
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
     updateUserFilter() {
       this.loadSessions(0)
     },

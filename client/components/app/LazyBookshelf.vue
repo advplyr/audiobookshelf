@@ -88,6 +88,7 @@ export default {
       if (this.page === 'collections') return "You haven't made any collections yet"
       if (this.hasFilter) {
         if (this.filterName === 'Issues') return 'No Issues'
+        else if (this.filterName === 'Feed-open') return 'No RSS feeds are open'
         return `No Results for filter "${this.filterName}: ${this.filterValue}"`
       }
       return 'No results'
@@ -109,23 +110,19 @@ export default {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
     },
     coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
-    bookshelfView() {
-      return this.$store.getters['getServerSetting']('bookshelfView')
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     sortingIgnorePrefix() {
       return this.$store.getters['getServerSetting']('sortingIgnorePrefix')
     },
     isCoverSquareAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
+      return this.coverAspectRatio == 1
+    },
+    bookshelfView() {
+      return this.$store.getters['getBookshelfView']
     },
     isAlternativeBookshelfView() {
-      // if (!this.isEntityBook) return false // Only used for bookshelf showing books
       return this.bookshelfView === this.$constants.BookshelfView.TITLES
-    },
-    bookCoverAspectRatio() {
-      return this.isCoverSquareAspectRatio ? 1 : 1.6
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'

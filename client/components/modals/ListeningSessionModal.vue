@@ -1,5 +1,5 @@
 <template>
-  <modals-modal v-model="show" name="listening-session-modal" :width="700" :height="'unset'">
+  <modals-modal v-model="show" name="listening-session-modal" :processing="processing" :width="700" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
         <p class="font-book text-3xl text-white truncate">Session {{ _session.id }}</p>
@@ -96,6 +96,10 @@
           <p v-if="deviceInfo.deviceType" class="mb-1">Type: {{ deviceInfo.deviceType }}</p>
         </div>
       </div>
+
+      <div class="flex items-center">
+        <ui-btn small color="error" @click.stop="deleteSessionClick">Delete</ui-btn>
+      </div>
     </div>
   </modals-modal>
 </template>
@@ -110,7 +114,9 @@ export default {
     }
   },
   data() {
-    return {}
+    return {
+      processing: false
+    }
   },
   computed: {
     show: {
@@ -147,7 +153,37 @@ export default {
       return 'Unknown'
     }
   },
-  methods: {},
+  methods: {
+    deleteSessionClick() {
+      const payload = {
+        message: `Are you sure you want to delete this session?`,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.deleteSession()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    deleteSession() {
+      this.processing = true
+      this.$axios
+        .$delete(`/api/sessions/${this._session.id}`)
+        .then(() => {
+          this.processing = false
+          this.$toast.success('Session deleted successfully')
+          this.$emit('removedSession')
+          this.show = false
+        })
+        .catch((error) => {
+          this.processing = false
+          console.error('Failed to delete session', error)
+          var errMsg = error.response ? error.response.data || '' : ''
+          this.$toast.error(errMsg || 'Failed to delete session')
+        })
+    }
+  },
   mounted() {}
 }
 </script>

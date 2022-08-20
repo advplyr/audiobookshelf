@@ -75,6 +75,9 @@ export const actions = {
       if (state.settings.orderBy == 'media.duration') {
         settingsUpdate.orderBy = 'media.numTracks'
       }
+      if (state.settings.orderBy == 'media.metadata.publishedYear') {
+        settingsUpdate.orderBy = 'media.metadata.title'
+      }
       var invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
       var filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
       if (invalidFilters.includes(filterByFirstPart)) {
@@ -135,6 +138,10 @@ export const mutations = {
     } else {
       localStorage.removeItem('token')
     }
+  },
+  setUserToken(state, token) {
+    state.user.token = token
+    localStorage.setItem('token', user.token)
   },
   updateMediaProgress(state, { id, data }) {
     if (!state.user) return

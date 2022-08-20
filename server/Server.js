@@ -3,8 +3,8 @@ const express = require('express')
 const http = require('http')
 const SocketIO = require('socket.io')
 const fs = require('./libs/fsExtra')
-const fileUpload = require('express-fileupload')
-const rateLimit = require('express-rate-limit')
+const fileUpload = require('./libs/expressFileupload')
+const rateLimit = require('./libs/expressRateLimit')
 
 const { version } = require('../package.json')
 
@@ -32,6 +32,7 @@ const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
+const CronManager = require('./managers/CronManager')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH) {
@@ -74,9 +75,10 @@ class Server {
     this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
+    this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 
@@ -136,15 +138,21 @@ class Server {
       await this.db.init()
     }
 
+    // Create token secret if does not exist (Added v2.1.0)
+    if (!this.db.serverSettings.tokenSecret) {
+      await this.auth.initTokenSecret()
+    }
+
     await this.checkUserMediaProgress() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
+    await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
     await this.abMergeManager.ensureDownloadDirPath()
 
     await this.backupManager.init()
     await this.logManager.init()
     await this.rssFeedManager.init()
-    this.podcastManager.init()
+    this.cronManager.init()
 
     if (this.db.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
@@ -170,7 +178,6 @@ class Server {
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
     app.use(express.static(distPath))
-
 
     // Metadata folder static path
     app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
@@ -225,7 +232,7 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
+    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
     app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     app.post('/init', (req, res) => {
       if (this.db.hasRootUser) {
@@ -247,9 +254,10 @@ class Server {
       res.json(payload)
     })
     app.get('/ping', (req, res) => {
-      Logger.info('Recieved ping')
+      Logger.info('Received ping')
       res.json({ success: true })
     })
+    app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
       Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -278,6 +286,7 @@ class Server {
 
       // Logs
       socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
+      socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
       socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
 
       socket.on('ping', () => {
@@ -287,21 +296,21 @@ class Server {
         socket.emit('pong')
       })
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', (reason) => {
         Logger.removeSocketListener(socket.id)
 
         var _client = this.clients[socket.id]
         if (!_client) {
-          Logger.warn('[Server] Socket disconnect, no client ' + socket.id)
+          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
         } else if (!_client.user) {
-          Logger.info('[Server] Unauth socket disconnected ' + socket.id)
+          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
           delete this.clients[socket.id]
         } else {
           Logger.debug('[Server] User Offline ' + _client.user.username)
           this.io.emit('user_offline', _client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
           const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms`)
+          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
           delete this.clients[socket.id]
         }
       })
@@ -313,7 +322,7 @@ class Server {
     const newRoot = req.body.newRoot
     let rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    let rootToken = await this.auth.generateAccessToken({ userId: 'root' })
+    let rootToken = await this.auth.generateAccessToken({ userId: 'root', username: newRoot.username })
     await this.db.createRootUser(newRoot.username, rootPash, rootToken)
 
     res.sendStatus(200)
@@ -458,8 +467,6 @@ class Server {
     await this.db.updateEntity('user', user)
 
     const initialPayload = {
-      // TODO: this is sent with user auth now, update mobile app to use that then remove this
-      serverSettings: this.db.serverSettings.toJSON(),
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),
@@ -471,11 +478,6 @@ class Server {
       initialPayload.usersOnline = this.usersOnline
     }
     client.socket.emit('init', initialPayload)
-
-    // Setup log listener for root user
-    if (user.type === 'root') {
-      Logger.addSocketListener(socket, this.db.serverSettings.logLevel || 0)
-    }
   }
 
   async stop() {

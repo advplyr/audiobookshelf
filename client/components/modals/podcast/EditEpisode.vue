@@ -5,33 +5,14 @@
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
-      <div class="flex flex-wrap">
-        <div class="w-1/5 p-1">
-          <ui-text-input-with-label v-model="newEpisode.season" label="Season" />
-        </div>
-        <div class="w-1/5 p-1">
-          <ui-text-input-with-label v-model="newEpisode.episode" label="Episode" />
-        </div>
-        <div class="w-1/5 p-1">
-          <ui-text-input-with-label v-model="newEpisode.episodeType" label="Episode Type" />
-        </div>
-        <div class="w-2/5 p-1">
-          <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" label="Pub Date" />
-        </div>
-        <div class="w-full p-1">
-          <ui-text-input-with-label v-model="newEpisode.title" label="Title" />
-        </div>
-        <div class="w-full p-1">
-          <ui-textarea-with-label v-model="newEpisode.subtitle" label="Subtitle" :rows="3" />
-        </div>
-        <div class="w-full p-1 default-style">
-          <ui-rich-text-editor v-if="show" label="Description" v-model="newEpisode.description" />
-        </div>
-      </div>
-      <div class="flex justify-end pt-4">
-        <ui-btn @click="submit">Submit</ui-btn>
-      </div>
+    <div class="absolute -top-10 left-0 z-10 w-full flex">
+      <template v-for="tab in tabs">
+        <div :key="tab.id" class="w-28 rounded-t-lg flex items-center justify-center mr-0.5 sm:mr-1 cursor-pointer hover:bg-bg font-book border-t border-l border-r border-black-300 tab text-xs sm:text-base" :class="selectedTab === tab.id ? 'tab-selected bg-bg pb-px' : 'bg-primary text-gray-400'" @click="selectTab(tab.id)">{{ tab.title }}</div>
+      </template>
+    </div>
+
+    <div ref="wrapper" class="p-4 w-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
+      <component v-if="libraryItem && show" :is="tabComponentName" :library-item="libraryItem" :episode="episode" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
 </template>
@@ -41,25 +22,19 @@ export default {
   data() {
     return {
       processing: false,
-      newEpisode: {
-        season: null,
-        episode: null,
-        episodeType: null,
-        title: null,
-        subtitle: null,
-        description: null,
-        pubDate: null,
-        publishedAt: null
-      },
-      pubDateInput: null
-    }
-  },
-  watch: {
-    episode: {
-      immediate: true,
-      handler(newVal) {
-        if (newVal) this.init()
-      }
+      selectedTab: 'details',
+      tabs: [
+        {
+          id: 'details',
+          title: 'Details',
+          component: 'modals-podcast-tabs-episode-details'
+        },
+        {
+          id: 'match',
+          title: 'Match',
+          component: 'modals-podcast-tabs-episode-match'
+        }
+      ]
     }
   },
   computed: {
@@ -77,67 +52,29 @@ export default {
     episode() {
       return this.$store.state.globals.selectedEpisode
     },
-    episodeId() {
-      return this.episode ? this.episode.id : null
-    },
     title() {
       if (!this.libraryItem) return ''
       return this.libraryItem.media.metadata.title || 'Unknown'
+    },
+    tabComponentName() {
+      var _tab = this.tabs.find((t) => t.id === this.selectedTab)
+      return _tab ? _tab.component : ''
     }
   },
   methods: {
-    updatePubDate(val) {
-      if (val) {
-        this.newEpisode.pubDate = this.$formatJsDate(new Date(val), 'E, d MMM yyyy HH:mm:ssxx')
-        this.newEpisode.publishedAt = new Date(val).valueOf()
-      } else {
-        this.newEpisode.pubDate = null
-        this.newEpisode.publishedAt = null
-      }
-    },
-    init() {
-      this.newEpisode.season = this.episode.season || ''
-      this.newEpisode.episode = this.episode.episode || ''
-      this.newEpisode.episodeType = this.episode.episodeType || ''
-      this.newEpisode.title = this.episode.title || ''
-      this.newEpisode.subtitle = this.episode.subtitle || ''
-      this.newEpisode.description = this.episode.description || ''
-      this.newEpisode.pubDate = this.episode.pubDate || ''
-      this.newEpisode.publishedAt = this.episode.publishedAt
-
-      this.pubDateInput = this.episode.pubDate ? this.$formatJsDate(new Date(this.episode.pubDate), "yyyy-MM-dd'T'HH:mm") : null
-    },
-    getUpdatePayload() {
-      var updatePayload = {}
-      for (const key in this.newEpisode) {
-        if (this.newEpisode[key] != this.episode[key]) {
-          updatePayload[key] = this.newEpisode[key]
-        }
-      }
-      return updatePayload
-    },
-    submit() {
-      const payload = this.getUpdatePayload()
-      if (!Object.keys(payload).length) {
-        return this.$toast.info('No updates were made')
-      }
-
-      this.processing = true
-      this.$axios
-        .$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, payload)
-        .then(() => {
-          this.processing = false
-          this.$toast.success('Podcast episode updated')
-          this.show = false
-        })
-        .catch((error) => {
-          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed update episode'
-          console.error('Failed update episode', error)
-          this.processing = false
-          this.$toast.error(errorMsg)
-        })
+    selectTab(tab) {
+      this.selectedTab = tab
     }
   },
   mounted() {}
 }
 </script>
+
+<style scoped>
+.tab {
+  height: 40px;
+}
+.tab.tab-selected {
+  height: 41px;
+}
+</style>

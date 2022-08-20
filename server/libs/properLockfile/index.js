@@ -1,5 +1,11 @@
 'use strict';
 
+//
+// used by njodb
+// Source: https://github.com/moxystudio/node-proper-lockfile
+//
+
+
 const lockfile = require('./lib/lockfile');
 const { toPromise, toSync, toSyncOptions } = require('./lib/adapter');
 

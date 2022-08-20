@@ -1,16 +1,20 @@
 <template>
-  <div class="w-full border-b border-gray-700 pb-2">
+  <div v-if="book" class="w-full border-b border-gray-700 pb-2">
     <div class="flex py-1 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer" @click="selectMatch">
-      <div class="h-24 bg-primary" :style="{ minWidth: 96 / bookCoverAspectRatio + 'px' }">
-        <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
-      </div>
-      <div v-if="!isPodcast" class="px-4 flex-grow">
-        <div class="flex items-center">
-          <h1 class="text-base">{{ book.title }}</h1>
-          <div class="flex-grow" />
-          <p>{{ book.publishedYear }}</p>
+      <div class="min-w-12 max-w-12 md:min-w-20 md:max-w-20">
+        <div class="w-full bg-primary">
+          <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
         </div>
-        <p class="text-gray-300 text-sm">{{ book.author }}</p>
+      </div>
+      <div v-if="!isPodcast" class="px-2 md:px-4 flex-grow">
+        <div class="flex items-center">
+          <h1 class="text-sm md:text-base">{{ book.title }}</h1>
+          <div class="flex-grow" />
+          <p class="text-sm md:text-base">{{ book.publishedYear }}</p>
+        </div>
+        <p class="text-gray-300 text-xs md:text-sm">by {{ book.author }}</p>
+        <p v-if="book.narrator" class="text-gray-400 text-xs">Narrated by {{ book.narrator }}</p>
+        <p v-if="book.duration" class="text-gray-400 text-xs">Runtime: {{ $elapsedPrettyExtended(book.duration * 60) }}</p>
         <div v-if="book.series && book.series.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white bg-opacity-10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">
@@ -25,7 +29,7 @@
       <div v-else class="px-4 flex-grow">
         <h1>{{ book.title }}</h1>
         <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ book.author }}</p>
-        <p class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
+        <p v-if="book.genres" class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
         <p class="text-xs text-gray-400 leading-5">{{ book.trackCount }} Episodes</p>
       </div>
     </div>
@@ -63,7 +67,7 @@ export default {
     selectMatch() {
       var book = { ...this.book }
       book.cover = this.selectedCover
-      this.$emit('select', this.book)
+      this.$emit('select', book)
     },
     clickCover(cover) {
       this.selectedCover = cover

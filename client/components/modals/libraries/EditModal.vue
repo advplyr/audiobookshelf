@@ -11,10 +11,10 @@
       </template>
     </div>
 
-    <div class="px-4 w-full text-sm pt-6 pb-20 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
-      <component v-if="libraryCopy && show" :is="tabName" :is-new="!library" :library="libraryCopy" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
+    <div class="px-2 md:px-4 w-full text-sm pt-6 pb-20 rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
+      <component v-if="libraryCopy && show" ref="tabComponent" :is="tabName" :is-new="!library" :library="libraryCopy" :processing.sync="processing" @update="updateLibrary" @close="show = false" />
 
-      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-opacity-10">
+      <div class="absolute bottom-0 left-0 w-full px-4 py-4 border-t border-white border-opacity-10">
         <div class="flex justify-end">
           <ui-btn @click="submit">{{ buttonText }}</ui-btn>
         </div>
@@ -46,6 +46,11 @@ export default {
           id: 'settings',
           title: 'Settings',
           component: 'modals-libraries-library-settings'
+        },
+        {
+          id: 'schedule',
+          title: 'Schedule',
+          component: 'modals-libraries-schedule-scan'
         }
       ],
       libraryCopy: null
@@ -84,6 +89,7 @@ export default {
     },
     updateLibrary(library) {
       this.mapLibraryToCopy(library)
+      console.log('Updated library', this.libraryCopy)
     },
     getNewLibraryData() {
       return {
@@ -93,9 +99,11 @@ export default {
         icon: 'database',
         mediaType: 'book',
         settings: {
+          coverAspectRatio: this.$constants.BookCoverAspectRatio.SQUARE,
           disableWatcher: false,
           skipMatchingMediaWithAsin: false,
-          skipMatchingMediaWithIsbn: false
+          skipMatchingMediaWithIsbn: false,
+          autoScanCronExpression: null
         }
       }
     },
@@ -112,7 +120,9 @@ export default {
           if (key === 'folders') {
             this.libraryCopy.folders = library.folders.map((f) => ({ ...f }))
           } else if (key === 'settings') {
-            this.libraryCopy.settings = { ...library.settings }
+            for (const settingKey in library.settings) {
+              this.libraryCopy.settings[settingKey] = library.settings[settingKey]
+            }
           } else {
             this.libraryCopy[key] = library[key]
           }
@@ -133,6 +143,13 @@ export default {
     },
     submit() {
       if (!this.validate()) return
+
+      // If custom expression input is focused then unfocus it instead of submitting
+      if (this.$refs.tabComponent && this.$refs.tabComponent.checkBlurExpressionInput) {
+        if (this.$refs.tabComponent.checkBlurExpressionInput()) {
+          return
+        }
+      }
 
       if (this.library) {
         this.submitUpdateLibrary()

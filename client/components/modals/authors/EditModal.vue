@@ -116,6 +116,9 @@ export default {
         if (result.updated) {
           this.$toast.success('Author updated')
           this.show = false
+        } else if (result.merged) {
+          this.$toast.success('Author merged')
+          this.show = false
         } else this.$toast.info('No updates were needed')
       }
       this.processing = false

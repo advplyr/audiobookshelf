@@ -1,5 +1,3 @@
-const Logger = require('../../Logger')
-
 class MediaProgress {
   constructor(progress) {
     this.id = null

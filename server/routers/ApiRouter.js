@@ -1,7 +1,7 @@
 const express = require('express')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
-const date = require('date-and-time')
+const date = require('../libs/dateAndTime')
 const Logger = require('../Logger')
 
 const LibraryController = require('../controllers/LibraryController')
@@ -25,7 +25,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -38,6 +38,7 @@ class ApiRouter {
     this.podcastManager = podcastManager
     this.audioMetadataManager = audioMetadataManager
     this.rssFeedManager = rssFeedManager
+    this.cronManager = cronManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -68,7 +69,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
-    this.router.post('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
+    this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.get('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this)) // Root only
 
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
@@ -142,6 +143,7 @@ class ApiRouter {
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
+    this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
 
     //
     // Backup Routes
@@ -175,9 +177,11 @@ class ApiRouter {
     // Playback Session Routes
     //
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
-    this.router.get('/session/:id', SessionController.middleware.bind(this), SessionController.getSession.bind(this))
-    this.router.post('/session/:id/sync', SessionController.middleware.bind(this), SessionController.sync.bind(this))
-    this.router.post('/session/:id/close', SessionController.middleware.bind(this), SessionController.close.bind(this))
+    this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
+    // TODO: Update these endpoints because they are only for open playback sessions
+    this.router.get('/session/:id', SessionController.openSessionMiddleware.bind(this), SessionController.getOpenSession.bind(this))
+    this.router.post('/session/:id/sync', SessionController.openSessionMiddleware.bind(this), SessionController.sync.bind(this))
+    this.router.post('/session/:id/close', SessionController.openSessionMiddleware.bind(this), SessionController.close.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
 
     //
@@ -189,6 +193,7 @@ class ApiRouter {
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
+    this.router.get('/podcasts/:id/search-episode', PodcastController.middleware.bind(this), PodcastController.findEpisode.bind(this))
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
@@ -211,6 +216,7 @@ class ApiRouter {
     this.router.get('/search/chapters', MiscController.findChapters.bind(this))
     this.router.get('/social', MiscController.getSocialStats.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
+    this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
   }
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {

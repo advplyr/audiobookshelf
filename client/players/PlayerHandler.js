@@ -18,6 +18,7 @@ export default class PlayerHandler {
     this.isHlsTranscode = false
     this.isVideo = false
     this.currentSessionId = null
+    this.startTimeOverride = undefined // Used for starting playback at a specific time (i.e. clicking bookmark from library item page)
     this.startTime = 0
 
     this.failedProgressSyncs = 0
@@ -51,12 +52,13 @@ export default class PlayerHandler {
     return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
   }
 
-  load(libraryItem, episodeId, playWhenReady, playbackRate) {
+  load(libraryItem, episodeId, playWhenReady, playbackRate, startTimeOverride = undefined) {
     this.libraryItem = libraryItem
     this.episodeId = episodeId
     this.playWhenReady = playWhenReady
     this.initialPlaybackRate = playbackRate
     this.isVideo = libraryItem.mediaType === 'video'
+    this.startTimeOverride = (startTimeOverride == null || isNaN(startTimeOverride)) ? undefined : Number(startTimeOverride)
 
     if (!this.player) this.switchPlayer(playWhenReady)
     else this.prepare()
@@ -142,11 +144,13 @@ export default class PlayerHandler {
     } else {
       this.stopPlayInterval()
     }
-    if (this.playerState === 'LOADED' || this.playerState === 'PLAYING') {
-      this.ctx.setDuration(this.getDuration())
-    }
-    if (this.playerState !== 'LOADING') {
-      this.ctx.setCurrentTime(this.player.getCurrentTime())
+    if (this.player) {
+      if (this.playerState === 'LOADED' || this.playerState === 'PLAYING') {
+        this.ctx.setDuration(this.getDuration())
+      }
+      if (this.playerState !== 'LOADING') {
+        this.ctx.setCurrentTime(this.player.getCurrentTime())
+      }
     }
 
     this.ctx.setPlaying(this.playerState === 'PLAYING')
@@ -183,13 +187,14 @@ export default class PlayerHandler {
     this.isVideo = session.libraryItem.mediaType === 'video'
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
+    this.startTimeOverride = undefined
 
     this.prepareSession(session)
   }
 
   prepareSession(session) {
     this.failedProgressSyncs = 0
-    this.startTime = session.currentTime
+    this.startTime = this.startTimeOverride !== undefined ? this.startTimeOverride : session.currentTime
     this.currentSessionId = session.id
     this.displayTitle = session.displayTitle
     this.displayAuthor = session.displayAuthor
