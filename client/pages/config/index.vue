@@ -309,7 +309,7 @@ export default {
         coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
         scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
-        shareStats: 'Allow users to share latest listening activity with other users on an opt-in basis'
+        shareStats: 'Allow users to share latest listening activity with other users on an opt-in basis',
         scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
         scannerMaxThreads: 'Number of concurrent media files to scan at a time. Value of 1 will be a slower scan but less CPU usage. <br><br>Value of 0 defaults to # of CPU cores for this server times 2 (i.e. 4-core CPU will be 8)'
       },

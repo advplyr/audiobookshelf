@@ -285,6 +285,7 @@ class MiscController {
       }
     }
     res.json(userData)
+  }
 
   validateCronExpression(req, res) {
     const expression = req.body.expression
