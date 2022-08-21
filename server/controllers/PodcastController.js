@@ -86,8 +86,8 @@ class PodcastController {
     }
 
     // Turn on podcast auto download cron if not already on
-    if (libraryItem.media.autoDownloadEpisodes && !this.podcastManager.episodeScheduleTask) {
-      this.podcastManager.schedulePodcastEpisodeCron()
+    if (libraryItem.media.autoDownloadEpisodes) {
+      this.cronManager.checkUpdatePodcastCron(libraryItem)
     }
   }
 
