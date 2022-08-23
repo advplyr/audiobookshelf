@@ -1,25 +1,17 @@
 <template>
   <div class="relative">
-    <div class="rounded-sm h-full relative" :style="{ padding: `0px ${paddingX}px` }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
+    <div class="rounded-sm h-full relative" :style="{ width: width + 'px', height: height + 'px' }" @mouseover="mouseoverCard" @mouseleave="mouseleaveCard" @click="clickCard">
       <nuxt-link :to="groupTo" class="cursor-pointer">
-        <div class="w-full h-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'" :style="{ height: coverHeight + 'px', width: coverWidth + 'px' }">
-          <covers-group-cover ref="groupcover" :id="seriesId" :name="groupName" :group-to="groupTo" :type="groupType" :book-items="bookItems" :width="coverWidth" :height="coverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <div class="w-full h-full relative" :class="isHovering ? 'bg-black-400' : 'bg-primary'">
+          <covers-group-cover ref="groupcover" :id="groupEncode" :name="groupName" :type="groupType" :book-items="bookItems" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
           <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity z-30" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
-            <p class="font-book" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ groupName }}</p>
+            <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ groupName }}</p>
           </div>
 
-          <div class="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black bg-opacity-90 text-gray-300 box-shadow-book flex items-center justify-center border border-white border-opacity-25 pointer-events-none z-40">
-            <p class="font-book text-xl">{{ bookItems.length }}</p>
-          </div>
+          <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ bookItems.length }}</div>
         </div>
       </nuxt-link>
-    </div>
-
-    <div v-if="!isCategorized" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto bottom-0 h-6 rounded-md font-book text-center" :style="{ width: Math.min(160, coverWidth) + 'px' }">
-      <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${1 * sizeMultiplier}rem` }">
-        <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ groupName }}</p>
-      </div>
     </div>
   </div>
 </template>
@@ -31,11 +23,8 @@ export default {
       type: Object,
       default: () => null
     },
-    width: {
-      type: Number,
-      default: 120
-    },
-    isCategorized: Boolean,
+    width: Number,
+    height: Number,
     bookCoverAspectRatio: Number
   },
   data() {
@@ -43,23 +32,7 @@ export default {
       isHovering: false
     }
   },
-  watch: {
-    width(newVal) {
-      this.$nextTick(() => {
-        if (this.$refs.groupcover) {
-          this.$refs.groupcover.init()
-        }
-      })
-    }
-  },
   computed: {
-    seriesId() {
-      return this.groupEncode
-    },
-    labelFontSize() {
-      if (this.coverWidth < 160) return 0.75
-      return 0.875
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -70,29 +43,11 @@ export default {
       return this._group.type
     },
     groupTo() {
-      if (this.groupType === 'series') {
-        return `/library/${this.currentLibraryId}/series/${this._group.id}`
-      } else if (this.groupType === 'collection') {
-        return `/collection/${this._group.id}`
-      } else {
-        return `/library/${this.currentLibraryId}/bookshelf?filter=tags.${this.groupEncode}`
-      }
-    },
-    squareAspectRatio() {
-      return this.bookCoverAspectRatio === 1
-    },
-    coverWidth() {
-      return this.width * 2
-    },
-    coverHeight() {
-      return this.width * this.bookCoverAspectRatio
+      return `/library/${this.currentLibraryId}/bookshelf?filter=${this.filter}`
     },
     sizeMultiplier() {
-      var baseSize = this.squareAspectRatio ? 192 : 120
-      return this.width / baseSize
-    },
-    paddingX() {
-      return 16 * this.sizeMultiplier
+      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
+      return this.width / 240
     },
     bookItems() {
       return this._group.books || []

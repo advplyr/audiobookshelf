@@ -17,7 +17,6 @@ export default {
     },
     width: Number,
     height: Number,
-    groupTo: String,
     bookCoverAspectRatio: Number
   },
   data() {

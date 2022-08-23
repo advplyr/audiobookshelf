@@ -30,7 +30,12 @@ export default {
     bookshelfView: {
       type: Number,
       default: 0
-    }
+    },
+    collectionMount: {
+      type: Object,
+      default: () => null
+    },
+    isTag: Boolean
   },
   data() {
     return {
@@ -99,6 +104,10 @@ export default {
       }
     }
   },
-  mounted() {}
+  mounted() {
+    if (this.collectionMount) {
+      this.setEntity(this.collectionMount)
+    }
+  }
 }
 </script>
