@@ -111,21 +111,8 @@ export default {
     reconnectFailed() {
       console.error('[SOCKET] reconnect failed')
     },
-    init(payload, count = 0) {
-      if (!this.$refs.streamContainer) {
-        if (count > 20) {
-          console.error('Stream container never mounted')
-          return
-        }
-        setTimeout(() => {
-          this.init(payload, ++count)
-        }, 100)
-        return
-      }
+    init(payload) {
       console.log('Init Payload', payload)
-      if (payload.session) {
-        this.$refs.streamContainer.sessionOpen(payload.session)
-      }
 
       // Start scans currently running
       if (payload.librariesScanning) {

@@ -312,7 +312,7 @@ export default {
         console.error('No Audio Ref')
       }
     },
-    sessionOpen(session) {
+    sessionOpen(session) { // For opening session on init (temporarily unused)
       this.$store.commit('setMediaPlaying', {
         libraryItem: session.libraryItem,
         episodeId: session.episodeId
