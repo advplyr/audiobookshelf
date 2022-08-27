@@ -78,6 +78,7 @@ class PlaybackSessionManager {
       session = new PlaybackSession(sessionJson)
       await this.db.insertEntity('session', session)
     } else {
+      session.currentTime = sessionJson.currentTime
       session.timeListening = sessionJson.timeListening
       session.updatedAt = sessionJson.updatedAt
       session.date = date.format(new Date(), 'YYYY-MM-DD')
