@@ -118,12 +118,15 @@ export default {
     toggleSelectEpisode(index) {
       this.$set(this.selectedEpisodes, String(index), !this.selectedEpisodes[String(index)])
     },
+    clearSelectedEpisodes() {
+      Object.keys(this.selectedEpisodes).forEach((key, idx) => this.$set(this.selectedEpisodes, String(idx), false))
+    },
     submit() {
       var episodesToDownload = []
       if (this.episodesSelected.length) {
         episodesToDownload = this.episodesSelected.map((episodeIndex) => this.episodes[Number(episodeIndex)])
       }
-      this.selectedEpisodes = []
+      this.clearSelectedEpisodes()
 
       var payloadSize = JSON.stringify(episodesToDownload).length
       var sizeInMb = payloadSize / 1024 / 1024
