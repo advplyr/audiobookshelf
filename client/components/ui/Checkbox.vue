@@ -55,9 +55,10 @@ export default {
     },
     labelClassname() {
       if (this.labelClass) return this.labelClass
-      var classes = ['pl-1']
-      if (this.small) classes.push('text-xs md:text-sm')
-      else if (this.medium) classes.push('text-base md:text-lg')
+      var classes = []
+      if (this.small) classes.push('text-xs md:text-sm pl-1')
+      else if (this.medium) classes.push('text-base md:text-lg pl-2')
+      else classes.push('pl-2')
       return classes.join(' ')
     },
     svgClass() {

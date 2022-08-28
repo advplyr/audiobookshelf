@@ -148,8 +148,12 @@ export default {
     }
   },
   methods: {
-    mediaFinished(libraryItemId, episodeId) { // Play next item in queue
-      if (!this.playerQueueItems.length) return
+    mediaFinished(libraryItemId, episodeId) {
+      // Play next item in queue
+      if (!this.playerQueueItems.length || !this.$store.state.playerQueueAutoPlay) {
+        // TODO: Set media finished flag so play button will play next queue item
+        return
+      }
       var currentQueueIndex = this.playerQueueItems.findIndex((i) => {
         if (episodeId) return i.libraryItemId === libraryItemId && i.episodeId === episodeId
         return i.libraryItemId === libraryItemId

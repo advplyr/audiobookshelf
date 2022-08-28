@@ -669,6 +669,7 @@ export default {
 
         if (fullLibraryItem && fullLibraryItem.media.episodes) {
           const episodes = fullLibraryItem.media.episodes || []
+          episodes.sort((a, b) => b.publishedAt - a.publishedAt)
           const episodeIndex = episodes.findIndex((ep) => ep.id === this.recentEpisode.id)
           if (episodeIndex >= 0) {
             for (let i = episodeIndex; i < episodes.length; i++) {

@@ -10,6 +10,7 @@ export const state = () => ({
   streamEpisodeId: null,
   streamIsPlaying: false,
   playerQueueItems: [],
+  playerQueueAutoPlay: true,
   playerIsFullscreen: false,
   editModalTab: 'details',
   showEditModal: false,
@@ -157,6 +158,10 @@ export const mutations = {
   },
   setPlayerQueueItems(state, items) {
     state.playerQueueItems = items || []
+  },
+  setPlayerQueueAutoPlay(state, autoPlay) {
+    state.playerQueueAutoPlay = !!autoPlay
+    localStorage.setItem('playerQueueAutoPlay', !!autoPlay ? '1' : '0')
   },
   showEditModal(state, libraryItem) {
     state.editModalTab = 'details'

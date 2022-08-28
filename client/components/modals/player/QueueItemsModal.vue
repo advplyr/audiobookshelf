@@ -7,6 +7,12 @@
     </template>
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden py-4" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
+        <div class="pb-4 px-4 flex items-center">
+          <p class="text-base text-gray-200">Player Queue</p>
+          <p class="text-base text-gray-400 px-4">{{ playerQueueItems.length }} Items</p>
+          <div class="flex-grow" />
+          <ui-checkbox v-model="playerQueueAutoPlay" label="Auto Play" medium checkbox-bg="primary" border-color="gray-600" label-class="pl-2 mb-px" />
+        </div>
         <modals-player-queue-item-row v-for="(item, index) in playerQueueItems" :key="index" :item="item" :index="index" @play="playItem" @remove="removeItem" />
       </div>
     </div>
@@ -29,6 +35,14 @@ export default {
       },
       set(val) {
         this.$emit('input', val)
+      }
+    },
+    playerQueueAutoPlay: {
+      get() {
+        return this.$store.state.playerQueueAutoPlay
+      },
+      set(val) {
+        this.$store.commit('setPlayerQueueAutoPlay', val)
       }
     },
     playerQueueItems() {
