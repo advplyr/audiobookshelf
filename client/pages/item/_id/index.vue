@@ -12,7 +12,7 @@
             <!-- Item Cover Overlay -->
             <div class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity" @mousedown.prevent @mouseup.prevent>
               <div v-show="showPlayButton && !isStreaming" class="h-full flex items-center justify-center pointer-events-none">
-                <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="startStream">
+                <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto cursor-pointer" @click.stop.prevent="playItem">
                   <span class="material-icons text-4xl">play_circle_filled</span>
                 </div>
               </div>
@@ -128,7 +128,7 @@
 
           <!-- Icon buttons -->
           <div class="flex items-center justify-center md:justify-start pt-4">
-            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="startStream">
+            <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
               <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
               {{ isStreaming ? 'Playing' : 'Play' }}
             </ui-btn>
@@ -429,14 +429,14 @@ export default {
           message: `Start playback for "${this.title}" at ${this.$secondsToTimestamp(bookmark.time)}?`,
           callback: (confirmed) => {
             if (confirmed) {
-              this.startStream(bookmark.time)
+              this.playItem(bookmark.time)
             }
           },
           type: 'yesNo'
         }
         this.$store.commit('globals/setConfirmPrompt', payload)
       } else {
-        this.startStream(bookmark.time)
+        this.playItem(bookmark.time)
       }
       this.showBookmarksModal = false
     },
@@ -515,21 +515,37 @@ export default {
           this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
-    startStream(startTime = null) {
+    playItem(startTime = null) {
       var episodeId = null
+      const queueItems = []
       if (this.isPodcast) {
-        var episode = this.podcastEpisodes.find((ep) => {
+        var episodeIndex = this.podcastEpisodes.findIndex((ep) => {
           var podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
-        if (!episode) episode = this.podcastEpisodes[0]
-        episodeId = episode.id
+        if (episodeIndex < 0) episodeIndex = 0
+
+        episodeId = this.podcastEpisodes[episodeIndex].id
+
+        for (let i = episodeIndex; i < this.podcastEpisodes.length; i++) {
+          const episode = this.podcastEpisodes[i]
+          const audioFile = episode.audioFile
+          queueItems.push({
+            libraryItemId: this.libraryItemId,
+            episodeId: episode.id,
+            title: episode.title,
+            subtitle: this.title,
+            duration: audioFile.duration || null,
+            coverPath: this.libraryItem.media.coverPath || null
+          })
+        }
       }
 
       this.$eventBus.$emit('play-item', {
         libraryItemId: this.libraryItem.id,
         episodeId,
-        startTime
+        startTime,
+        queueItems
       })
     },
     editClick() {

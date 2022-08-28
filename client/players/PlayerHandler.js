@@ -133,6 +133,8 @@ export default class PlayerHandler {
 
     // TODO: Add listening time between last sync and now?
     this.sendProgressSync(currentTime)
+
+    this.ctx.mediaFinished(this.libraryItemId, this.episodeId)
   }
 
   playerStateChange(state) {

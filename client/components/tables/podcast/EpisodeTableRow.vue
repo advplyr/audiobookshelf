@@ -133,10 +133,7 @@ export default {
       if (this.streamIsPlaying) {
         this.$eventBus.$emit('pause-item')
       } else {
-        this.$eventBus.$emit('play-item', {
-          libraryItemId: this.libraryItemId,
-          episodeId: this.episode.id
-        })
+        this.$emit('play', this.episode)
       }
     },
     toggleFinished(confirmed = false) {

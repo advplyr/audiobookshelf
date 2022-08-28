@@ -18,7 +18,7 @@
       </div>
     </div>
 
-    <p v-if="!imageFailed" class="absolute -bottom-5 left-0 right-0 mx-auto text-xs text-gray-300 text-center">{{ resolution }}</p>
+    <p v-if="!imageFailed && showResolution" class="absolute -bottom-5 left-0 right-0 mx-auto text-xs text-gray-300 text-center">{{ resolution }}</p>
   </div>
 </template>
 
@@ -31,7 +31,11 @@ export default {
       default: 120
     },
     showOpenNewTab: Boolean,
-    bookCoverAspectRatio: Number
+    bookCoverAspectRatio: Number,
+    showResolution: {
+      type: Boolean,
+      default: true
+    }
   },
   data() {
     return {

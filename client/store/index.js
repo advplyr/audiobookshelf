@@ -9,6 +9,7 @@ export const state = () => ({
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
+  playerQueueItems: [],
   playerIsFullscreen: false,
   editModalTab: 'details',
   showEditModal: false,
@@ -144,13 +145,18 @@ export const mutations = {
       state.streamLibraryItem = null
       state.streamEpisodeId = null
       state.streamIsPlaying = false
+      state.playerQueueItems = []
     } else {
       state.streamLibraryItem = payload.libraryItem
       state.streamEpisodeId = payload.episodeId || null
+      state.playerQueueItems = payload.queueItems || []
     }
   },
   setIsPlaying(state, isPlaying) {
     state.streamIsPlaying = isPlaying
+  },
+  setPlayerQueueItems(state, items) {
+    state.playerQueueItems = items || []
   },
   showEditModal(state, libraryItem) {
     state.editModalTab = 'details'

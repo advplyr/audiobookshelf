@@ -44,11 +44,14 @@
       @close="closePlayer"
       @showBookmarks="showBookmarks"
       @showSleepTimer="showSleepTimerModal = true"
+      @showPlayerQueueItems="showPlayerQueueItemsModal = true"
     />
 
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :current-time="bookmarkCurrentTime" :library-item-id="libraryItemId" @select="selectBookmark" />
 
     <modals-sleep-timer-modal v-model="showSleepTimerModal" :timer-set="sleepTimerSet" :timer-time="sleepTimerTime" :remaining="sleepTimerRemaining" @set="setSleepTimer" @cancel="cancelSleepTimer" @increment="incrementSleepTimer" @decrement="decrementSleepTimer" />
+
+    <modals-player-queue-items-modal v-model="showPlayerQueueItemsModal" :library-item-id="libraryItemId" />
   </div>
 </template>
 
@@ -66,6 +69,7 @@ export default {
       isPlaying: false,
       currentTime: 0,
       showSleepTimerModal: false,
+      showPlayerQueueItemsModal: false,
       sleepTimerSet: false,
       sleepTimerTime: 0,
       sleepTimerRemaining: 0,
@@ -138,9 +142,35 @@ export default {
     podcastAuthor() {
       if (!this.isPodcast) return null
       return this.mediaMetadata.author || 'Unknown'
+    },
+    playerQueueItems() {
+      return this.$store.state.playerQueueItems || []
     }
   },
   methods: {
+    mediaFinished(libraryItemId, episodeId) { // Play next item in queue
+      if (!this.playerQueueItems.length) return
+      var currentQueueIndex = this.playerQueueItems.findIndex((i) => {
+        if (episodeId) return i.libraryItemId === libraryItemId && i.episodeId === episodeId
+        return i.libraryItemId === libraryItemId
+      })
+      if (currentQueueIndex < 0) {
+        console.error('Media finished not found in queue', this.playerQueueItems)
+        return
+      }
+      if (currentQueueIndex === this.playerQueueItems.length - 1) {
+        console.log('Finished last item in queue')
+        return
+      }
+      const nextItemInQueue = this.playerQueueItems[currentQueueIndex + 1]
+      if (nextItemInQueue) {
+        this.playLibraryItem({
+          libraryItemId: nextItemInQueue.libraryItemId,
+          episodeId: nextItemInQueue.episodeId || null,
+          queueItems: this.playerQueueItems
+        })
+      }
+    },
     setPlaying(isPlaying) {
       this.isPlaying = isPlaying
       this.$store.commit('setIsPlaying', isPlaying)
@@ -312,7 +342,8 @@ export default {
         console.error('No Audio Ref')
       }
     },
-    sessionOpen(session) { // For opening session on init (temporarily unused)
+    sessionOpen(session) {
+      // For opening session on init (temporarily unused)
       this.$store.commit('setMediaPlaying', {
         libraryItem: session.libraryItem,
         episodeId: session.episodeId
@@ -376,7 +407,8 @@ export default {
       if (!libraryItem) return
       this.$store.commit('setMediaPlaying', {
         libraryItem,
-        episodeId
+        episodeId,
+        queueItems: payload.queueItems || []
       })
       this.$nextTick(() => {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()

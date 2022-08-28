@@ -11,7 +11,7 @@
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
@@ -90,6 +90,28 @@ export default {
       } else {
         this.selectedEpisodes = this.selectedEpisodes.filter((ep) => ep.id !== episode.id)
       }
+    },
+    playEpisode(episode) {
+      const queueItems = []
+      const episodeIndex = this.episodes.findIndex((e) => e.id === episode.id)
+      for (let i = episodeIndex; i < this.episodes.length; i++) {
+        const episode = this.episodes[i]
+        const audioFile = episode.audioFile
+        queueItems.push({
+          libraryItemId: this.libraryItem.id,
+          episodeId: episode.id,
+          title: episode.title,
+          subtitle: this.mediaMetadata.title,
+          duration: audioFile.duration || null,
+          coverPath: this.media.coverPath || null
+        })
+      }
+
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: this.libraryItem.id,
+        episodeId: episode.id,
+        queueItems
+      })
     },
     removeEpisode(episode) {
       this.episodesToRemove = [episode]
