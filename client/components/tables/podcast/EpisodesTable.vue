@@ -4,8 +4,11 @@
       <p class="text-lg mb-0 font-semibold">Episodes</p>
       <div class="flex-grow" />
       <template v-if="isSelectionMode">
-        <ui-btn color="error" small @click="removeSelectedEpisodes">Remove {{ selectedEpisodes.length }} episode{{ selectedEpisodes.length > 1 ? 's' : '' }}</ui-btn>
-        <ui-btn small class="ml-2" @click="clearSelected">Cancel</ui-btn>
+        <ui-tooltip :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+          <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
+        </ui-tooltip>
+        <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">Remove {{ selectedEpisodes.length }} episode{{ selectedEpisodes.length > 1 ? 's' : '' }}</ui-btn>
+        <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">Cancel</ui-btn>
       </template>
       <controls-episode-sort-select v-else v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
     </div>
@@ -34,7 +37,8 @@ export default {
       selectedEpisode: null,
       showPodcastRemoveModal: false,
       selectedEpisodes: [],
-      episodesToRemove: []
+      episodesToRemove: [],
+      processing: false
     }
   },
   watch: {
@@ -65,9 +69,40 @@ export default {
         }
         return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
       })
+    },
+    selectedIsFinished() {
+      // Find an item that is not finished, if none then all items finished
+      return !this.selectedEpisodes.find((episode) => {
+        var itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        return !itemProgress || !itemProgress.isFinished
+      })
     }
   },
   methods: {
+    toggleBatchFinished() {
+      this.processing = true
+      var newIsFinished = !this.selectedIsFinished
+      var updateProgressPayloads = this.selectedEpisodes.map((episode) => {
+        return {
+          libraryItemId: this.libraryItem.id,
+          episodeId: episode.id,
+          isFinished: newIsFinished
+        }
+      })
+
+      this.$axios
+        .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
+        .then(() => {
+          this.$toast.success('Batch update success!')
+          this.processing = false
+          this.clearSelected()
+        })
+        .catch((error) => {
+          this.$toast.error('Batch update failed')
+          console.error('Failed to batch update read/not read', error)
+          this.processing = false
+        })
+    },
     removeEpisodeModalToggled(val) {
       if (!val) this.episodesToRemove = []
     },

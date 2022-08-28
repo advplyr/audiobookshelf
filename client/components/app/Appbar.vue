@@ -158,7 +158,7 @@ export default {
       var newIsFinished = !this.selectedIsFinished
       var updateProgressPayloads = this.selectedLibraryItems.map((lid) => {
         return {
-          id: lid,
+          libraryItemId: lid,
           isFinished: newIsFinished
         }
       })

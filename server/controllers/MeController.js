@@ -96,9 +96,9 @@ class MeController {
 
     var shouldUpdate = false
     itemProgressPayloads.forEach((itemProgress) => {
-      var libraryItem = this.db.libraryItems.find(li => li.id === itemProgress.id) // Make sure this library item exists
+      var libraryItem = this.db.libraryItems.find(li => li.id === itemProgress.libraryItemId) // Make sure this library item exists
       if (libraryItem) {
-        var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, itemProgress)
+        var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, itemProgress, itemProgress.episodeId)
         if (wasUpdated) shouldUpdate = true
       } else {
         Logger.error(`[MeController] batchUpdateMediaProgress: Library Item does not exist ${itemProgress.id}`)

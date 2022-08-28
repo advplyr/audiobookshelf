@@ -228,7 +228,7 @@ export default {
       this.processingSeries = true
       var updateProgressPayloads = this.seriesLibraryItemIds.map((lid) => {
         return {
-          id: lid,
+          libraryItemId: lid,
           isFinished: newIsFinished
         }
       })
