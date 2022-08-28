@@ -39,7 +39,7 @@
     <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
-    <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen)" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
+    <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
       <div v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
         <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
@@ -66,6 +66,11 @@
       </div>
     </div>
 
+    <!-- Processing/loading spinner overlay -->
+    <div v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
+      <widgets-loading-spinner size="la-lg" />
+    </div>
+
     <!-- Series name overlay -->
     <div v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
       <p class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ series }}</p>
@@ -88,7 +93,7 @@
     </div>
 
     <!-- Podcast Episode # -->
-    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
     </div>
 
@@ -129,7 +134,7 @@ export default {
     return {
       isHovering: false,
       isMoreMenuOpen: false,
-      isProcessingReadUpdate: false,
+      processing: false,
       libraryItem: null,
       imageReady: false,
       rescanning: false,
@@ -490,6 +495,7 @@ export default {
       this.libraryItem = libraryItem
     },
     clickCard(e) {
+      if (this.processing) return
       if (this.isSelectionMode) {
         e.stopPropagation()
         e.preventDefault()
@@ -526,7 +532,7 @@ export default {
       var updatePayload = {
         isFinished: !this.itemIsFinished
       }
-      this.isProcessingReadUpdate = true
+      this.processing = true
 
       var apiEndpoint = `/api/me/progress/${this.libraryItemId}`
       if (this.recentEpisode) apiEndpoint += `/${this.recentEpisode.id}`
@@ -536,12 +542,12 @@ export default {
       axios
         .$patch(apiEndpoint, updatePayload)
         .then(() => {
-          this.isProcessingReadUpdate = false
+          this.processing = false
           toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
         .catch((error) => {
           console.error('Failed', error)
-          this.isProcessingReadUpdate = false
+          this.processing = false
           toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
         })
     },
@@ -647,11 +653,44 @@ export default {
       this.selected = !this.selected
       this.$emit('select', this.libraryItem)
     },
-    play() {
+    async play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
+
+      const queueItems = []
+      // Podcast episode load queue items
+      if (this.recentEpisode) {
+        const axios = this.$axios || this.$nuxt.$axios
+        this.processing = true
+        const fullLibraryItem = await axios.$get(`/api/items/${this.libraryItemId}`).catch((err) => {
+          console.error('Failed to fetch library item', err)
+          return null
+        })
+        this.processing = false
+
+        if (fullLibraryItem && fullLibraryItem.media.episodes) {
+          const episodes = fullLibraryItem.media.episodes || []
+          const episodeIndex = episodes.findIndex((ep) => ep.id === this.recentEpisode.id)
+          if (episodeIndex >= 0) {
+            for (let i = episodeIndex; i < episodes.length; i++) {
+              const episode = episodes[i]
+              const audioFile = episode.audioFile
+              queueItems.push({
+                libraryItemId: this.libraryItemId,
+                episodeId: episode.id,
+                title: episode.title,
+                subtitle: this.mediaMetadata.title,
+                duration: audioFile.duration || null,
+                coverPath: this.media.coverPath || null
+              })
+            }
+          }
+        }
+      }
+
       eventBus.$emit('play-item', {
         libraryItemId: this.libraryItemId,
-        episodeId: this.recentEpisode ? this.recentEpisode.id : null
+        episodeId: this.recentEpisode ? this.recentEpisode.id : null,
+        queueItems
       })
     },
     mouseover() {
