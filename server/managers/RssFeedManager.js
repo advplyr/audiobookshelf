@@ -30,12 +30,21 @@ class RssFeedManager {
     return Object.values(this.feeds).find(feed => feed.entityId === libraryItemId)
   }
 
-  getFeed(req, res) {
+  async getFeed(req, res) {
     var feed = this.feeds[req.params.id]
     if (!feed) {
       Logger.error(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
+    }
+
+    if (feed.entityType === 'item') {
+      const libraryItem = this.db.getLibraryItem(feed.entityId)
+      if (libraryItem && (!feed.entityUpdatedAt || libraryItem.updatedAt > feed.entityUpdatedAt)) {
+        Logger.debug(`[RssFeedManager] Updating RSS feed for item ${libraryItem.id} "${libraryItem.media.metadata.title}"`)
+        feed.updateFromItem(libraryItem)
+        await this.db.updateEntity('feed', feed)
+      }
     }
 
     var xml = feed.buildXml()
