@@ -256,7 +256,6 @@ export default {
         console.log('Chapter already playing', this.isLoadingChapter, this.isPlayingChapter)
         if (this.isLoadingChapter) return
         if (this.isPlayingChapter) {
-          console.log('Destroying chapter')
           this.destroyAudioEl()
           return
         }
@@ -427,6 +426,9 @@ export default {
         }
       ]
     }
+  },
+  beforeDestroy() {
+    this.destroyAudioEl()
   }
 }
 </script>
