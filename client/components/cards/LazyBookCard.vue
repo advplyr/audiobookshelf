@@ -137,7 +137,6 @@ export default {
       processing: false,
       libraryItem: null,
       imageReady: false,
-      rescanning: false,
       selected: false,
       isSelectionMode: false,
       showCoverBg: false
@@ -555,11 +554,12 @@ export default {
       this.$emit('editPodcast', this.libraryItem)
     },
     rescan() {
-      this.rescanning = true
-      this.$axios
+      if (this.processing) return
+      const axios = this.$axios || this.$nuxt.$axios
+      this.processing = true
+      axios
         .$get(`/api/items/${this.libraryItemId}/scan`)
         .then((data) => {
-          this.rescanning = false
           var result = data.result
           if (!result) {
             this.$toast.error(`Re-Scan Failed for "${this.title}"`)
@@ -570,11 +570,12 @@ export default {
           } else if (result === 'REMOVED') {
             this.$toast.error(`Re-Scan complete item was removed`)
           }
+          this.processing = false
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
           this.$toast.error('Failed to scan library item')
-          this.rescanning = false
+          this.processing = false
         })
     },
     showEditModalFiles() {
