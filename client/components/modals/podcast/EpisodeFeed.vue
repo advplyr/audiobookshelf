@@ -12,11 +12,11 @@
           :key="index"
           class="relative"
           :class="episode.enclosure && itemEpisodeMap[episode.enclosure.url] ? 'bg-primary bg-opacity-40' : selectedEpisodes[String(index)] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
-          @click="toggleSelectEpisode(index)"
+
         >
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
             <span v-if="episode.enclosure && itemEpisodeMap[episode.enclosure.url]" class="material-icons text-success text-xl">download_done</span>
-            <ui-checkbox v-else v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
+            <ui-checkbox v-else v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" @click="toggleSelectEpisode(index)"/>
           </div>
           <div class="px-8 py-2">
             <p v-if="episode.episode" class="font-semibold text-gray-200">#{{ episode.episode }}</p>
@@ -123,6 +123,7 @@ export default {
       if (this.episodesSelected.length) {
         episodesToDownload = this.episodesSelected.map((episodeIndex) => this.episodes[Number(episodeIndex)])
       }
+      this.selectedEpisodes = []
 
       var payloadSize = JSON.stringify(episodesToDownload).length
       var sizeInMb = payloadSize / 1024 / 1024
