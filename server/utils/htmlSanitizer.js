@@ -1,4 +1,5 @@
 const sanitizeHtml = require('../libs/sanitizeHtml')
+const {entities} = require("./htmlEntities");
 
 function sanitize(html) {
   const sanitizerOptions = {
@@ -17,12 +18,22 @@ function sanitize(html) {
 }
 module.exports.sanitize = sanitize
 
-function stripAllTags(html) {
+function stripAllTags(html, shouldDecodeEntities = true) {
   const sanitizerOptions = {
     allowedTags: [],
     disallowedTagsMode: 'discard'
   }
 
-  return sanitizeHtml(html, sanitizerOptions)
+  let sanitized = sanitizeHtml(html, sanitizerOptions)
+  return shouldDecodeEntities ? decodeHTMLEntities(sanitized) : sanitized
 }
 module.exports.stripAllTags = stripAllTags
+
+function decodeHTMLEntities(strToDecode) {
+  return strToDecode.replace(/\&([^;]+);/g, function (entity) {
+    if (entity in entities) {
+      return entities[entity]
+    }
+    return entity;
+  })
+}
