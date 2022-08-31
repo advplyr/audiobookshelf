@@ -30,7 +30,7 @@ function stripAllTags(html, shouldDecodeEntities = true) {
 module.exports.stripAllTags = stripAllTags
 
 function decodeHTMLEntities(strToDecode) {
-  return strToDecode.replace(/\&([^;]+);/g, function (entity) {
+  return strToDecode.replace(/\&([^;]+);?/g, function (entity) {
     if (entity in entities) {
       return entities[entity]
     }
