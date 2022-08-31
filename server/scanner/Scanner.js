@@ -28,6 +28,10 @@ class Scanner {
     this.cancelLibraryScan = {}
     this.librariesScanning = []
 
+    // Watcher file update scan vars
+    this.pendingFileUpdatesToScan = []
+    this.scanningFilesChanged = false
+
     this.bookFinder = new BookFinder()
   }
 
@@ -494,7 +498,16 @@ class Scanner {
   }
 
   async scanFilesChanged(fileUpdates) {
-    if (!fileUpdates.length) return
+    if (!fileUpdates || !fileUpdates.length) return
+
+    // If already scanning files from watcher then add these updates to queue
+    if (this.scanningFilesChanged) {
+      this.pendingFileUpdatesToScan.push(fileUpdates)
+      Logger.debug(`[Scanner] Already scanning files from watcher - file updates pushed to queue (size ${this.pendingFileUpdatesToScan.length})`)
+      return
+    }
+    this.scanningFilesChanged = true
+
     // files grouped by folder
     var folderGroups = this.getFileUpdatesGrouped(fileUpdates)
 
@@ -519,6 +532,13 @@ class Scanner {
       }
       var folderScanResults = await this.scanFolderUpdates(library, folder, fileUpdateGroup)
       Logger.debug(`[Scanner] Folder scan results`, folderScanResults)
+    }
+
+    this.scanningFilesChanged = false
+
+    if (this.pendingFileUpdatesToScan.length) {
+      Logger.debug(`[Scanner] File updates finished scanning with more updates in queue (${this.pendingFileUpdatesToScan.length})`)
+      this.scanFilesChanged(this.pendingFileUpdatesToScan.shift())
     }
   }
 
