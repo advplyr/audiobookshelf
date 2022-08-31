@@ -4,7 +4,7 @@
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
       <covers-collection-cover ref="cover" :book-items="books" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
     </div>
-    <div v-show="isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
+    <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
       <div class="absolute pointer-events-auto" :style="{ top: 0.5 * sizeMultiplier + 'rem', right: 0.5 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickEdit">
         <span class="material-icons text-xl text-white text-opacity-75 hover:text-opacity-100">edit</span>
       </div>
@@ -69,6 +69,9 @@ export default {
     isAlternativeBookshelfView() {
       const constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView == constants.BookshelfView.TITLES
+    },
+    userCanUpdate() {
+      return this.store.getters['user/getUserCanUpdate']
     }
   },
   methods: {

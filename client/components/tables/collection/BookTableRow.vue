@@ -27,15 +27,15 @@
         <span class="material-icons text-lg text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">radio_button_unchecked</span>
       </div> -->
     </div>
-    <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : '-translate-x-24'">
+    <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : translateDistance">
       <div class="flex h-full items-center">
         <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
           <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
         </ui-tooltip>
-        <div class="mx-1" :class="isHovering ? '' : 'ml-6'">
+        <div v-if="userCanUpdate" class="mx-1" :class="isHovering ? '' : 'ml-6'">
           <ui-icon-btn icon="edit" borderless @click="clickEdit" />
         </div>
-        <div class="mx-1">
+        <div v-if="userCanDelete" class="mx-1">
           <ui-icon-btn icon="close" borderless @click="removeClick" />
         </div>
       </div>
@@ -71,6 +71,11 @@ export default {
     }
   },
   computed: {
+    translateDistance() {
+      if (!this.userCanUpdate && !this.userCanDelete) return 'translate-x-0'
+      else if (!this.userCanUpdate || !this.userCanDelete) return '-translate-x-12'
+      return '-translate-x-24'
+    },
     media() {
       return this.book.media || {}
     },
@@ -113,6 +118,12 @@ export default {
     coverWidth() {
       if (this.bookCoverAspectRatio === 1) return this.coverSize * 1.6
       return this.coverSize
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {

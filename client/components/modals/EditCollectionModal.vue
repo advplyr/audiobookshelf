@@ -20,7 +20,7 @@
             </div>
           </div>
           <div class="absolute bottom-0 left-0 right-0 w-full py-2 px-4 flex">
-            <ui-btn small color="error" type="button" @click.stop="removeClick">Remove</ui-btn>
+            <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">Remove</ui-btn>
             <div class="flex-grow" />
             <ui-btn color="success" type="submit">Save</ui-btn>
           </div>
@@ -85,6 +85,9 @@ export default {
     },
     books() {
       return this.collection.books || []
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {

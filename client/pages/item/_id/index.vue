@@ -150,7 +150,7 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast" text="Collections" direction="top">
+            <ui-tooltip v-if="!isPodcast && userCanUpdate" text="Collections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 

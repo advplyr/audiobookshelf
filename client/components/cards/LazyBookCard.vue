@@ -386,14 +386,14 @@ export default {
           {
             func: 'toggleFinished',
             text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
-          },
-          {
-            func: 'openCollections',
-            text: 'Add to Collection'
           }
         ]
       }
       if (this.userCanUpdate) {
+        items.push({
+          func: 'openCollections',
+          text: 'Add to Collection'
+        })
         items.push({
           func: 'showEditModalFiles',
           text: 'Files'
