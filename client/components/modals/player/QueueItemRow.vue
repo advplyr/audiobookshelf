@@ -3,7 +3,8 @@
     <covers-preview-cover :src="coverUrl" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
     <div class="flex-grow px-2 py-1 queue-item-row-content truncate">
       <p class="text-gray-200 text-sm truncate">{{ title }}</p>
-      <p class="text-gray-400 text-sm">{{ subtitle }}</p>
+      <p class="text-gray-300 text-sm">{{ subtitle }}</p>
+      <p v-if="caption" class="text-gray-400 text-xs">{{ caption }}</p>
     </div>
     <div class="w-28">
       <p v-if="isOpenInPlayer" class="text-sm text-right text-gray-400">Streaming</p>
@@ -40,6 +41,9 @@ export default {
     },
     subtitle() {
       return this.item.subtitle || ''
+    },
+    caption() {
+      return this.item.caption
     },
     libraryItemId() {
       return this.item.libraryItemId

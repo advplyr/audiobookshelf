@@ -519,25 +519,31 @@ export default {
       var episodeId = null
       const queueItems = []
       if (this.isPodcast) {
-        var episodeIndex = this.podcastEpisodes.findIndex((ep) => {
+        const episodesInListeningOrder = this.podcastEpisodes.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+
+        // Find most recent episode unplayed
+        var episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
           var podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
         if (episodeIndex < 0) episodeIndex = 0
 
-        episodeId = this.podcastEpisodes[episodeIndex].id
+        episodeId = episodesInListeningOrder[episodeIndex].id
 
-        for (let i = episodeIndex; i < this.podcastEpisodes.length; i++) {
-          const episode = this.podcastEpisodes[i]
-          const audioFile = episode.audioFile
-          queueItems.push({
-            libraryItemId: this.libraryItemId,
-            episodeId: episode.id,
-            title: episode.title,
-            subtitle: this.title,
-            duration: audioFile.duration || null,
-            coverPath: this.libraryItem.media.coverPath || null
-          })
+        for (let i = episodeIndex; i < episodesInListeningOrder.length; i++) {
+          const episode = episodesInListeningOrder[i]
+          const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, episode.id)
+          if (!podcastProgress || !podcastProgress.isFinished) {
+            queueItems.push({
+              libraryItemId: this.libraryItemId,
+              episodeId: episode.id,
+              title: episode.title,
+              subtitle: this.title,
+              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+              duration: episode.audioFile.duration || null,
+              coverPath: this.libraryItem.media.coverPath || null
+            })
+          }
         }
       }
 

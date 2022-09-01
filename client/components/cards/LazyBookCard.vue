@@ -672,20 +672,25 @@ export default {
 
         if (fullLibraryItem && fullLibraryItem.media.episodes) {
           const episodes = fullLibraryItem.media.episodes || []
-          episodes.sort((a, b) => b.publishedAt - a.publishedAt)
+          // Sort from least recent to most recent
+          episodes.sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+
           const episodeIndex = episodes.findIndex((ep) => ep.id === this.recentEpisode.id)
           if (episodeIndex >= 0) {
             for (let i = episodeIndex; i < episodes.length; i++) {
               const episode = episodes[i]
-              const audioFile = episode.audioFile
-              queueItems.push({
-                libraryItemId: this.libraryItemId,
-                episodeId: episode.id,
-                title: episode.title,
-                subtitle: this.mediaMetadata.title,
-                duration: audioFile.duration || null,
-                coverPath: this.media.coverPath || null
-              })
+              const podcastProgress = this.store.getters['user/getUserMediaProgress'](this.libraryItemId, episode.id)
+              if (!podcastProgress || !podcastProgress.isFinished) {
+                queueItems.push({
+                  libraryItemId: this.libraryItemId,
+                  episodeId: episode.id,
+                  title: episode.title,
+                  subtitle: this.mediaMetadata.title,
+                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+                  duration: episode.audioFile.duration || null,
+                  coverPath: this.media.coverPath || null
+                })
+              }
             }
           }
         }

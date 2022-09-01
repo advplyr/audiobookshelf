@@ -128,18 +128,23 @@ export default {
     },
     playEpisode(episode) {
       const queueItems = []
-      const episodeIndex = this.episodes.findIndex((e) => e.id === episode.id)
-      for (let i = episodeIndex; i < this.episodes.length; i++) {
-        const episode = this.episodes[i]
-        const audioFile = episode.audioFile
-        queueItems.push({
-          libraryItemId: this.libraryItem.id,
-          episodeId: episode.id,
-          title: episode.title,
-          subtitle: this.mediaMetadata.title,
-          duration: audioFile.duration || null,
-          coverPath: this.media.coverPath || null
-        })
+
+      const episodesInListeningOrder = this.episodesCopy.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
+      const episodeIndex = episodesInListeningOrder.findIndex((e) => e.id === episode.id)
+      for (let i = episodeIndex; i < episodesInListeningOrder.length; i++) {
+        const episode = episodesInListeningOrder[i]
+        const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        if (!podcastProgress || !podcastProgress.isFinished) {
+          queueItems.push({
+            libraryItemId: this.libraryItem.id,
+            episodeId: episode.id,
+            title: episode.title,
+            subtitle: this.mediaMetadata.title,
+            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+            duration: episode.audioFile.duration || null,
+            coverPath: this.media.coverPath || null
+          })
+        }
       }
 
       this.$eventBus.$emit('play-item', {
