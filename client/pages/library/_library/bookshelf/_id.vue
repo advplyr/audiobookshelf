@@ -1,6 +1,6 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar :page="id || ''" :view-mode.sync="viewMode" />
+    <app-book-shelf-toolbar :page="id || ''" :view-mode.sync="viewMode" :library-id="libraryId"/>
     <app-lazy-bookshelf :page="id || ''" :view-mode="viewMode" />
   </div>
 </template>
