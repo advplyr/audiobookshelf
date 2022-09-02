@@ -12,11 +12,11 @@
 
         <div class="flex-grow" />
 
-        <ui-tooltip v-if="mediaType == 'book'" :disabled="!!quickMatching" :text="`(Root User Only) Populate empty book details & cover with first book result from '${libraryProvider}'. Does not overwrite details.`" direction="bottom" class="mr-2 md:mr-4">
+        <ui-tooltip :disabled="!!quickMatching" :text="`Populate empty ${mediaType} details & cover with first ${mediaType} result from '${libraryProvider}'. Does not overwrite details unless 'Prefer matched metadata' server setting is enabled.`" direction="bottom" class="mr-2 md:mr-4">
           <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
         </ui-tooltip>
 
-        <ui-tooltip :disabled="!!libraryScan" text="(Root User Only) Rescan audiobook including metadata" direction="bottom" class="mr-2 md:mr-4">
+        <ui-tooltip :disabled="!!libraryScan" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
           <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
         </ui-tooltip>
 

@@ -10,6 +10,7 @@ const { ScanResult, LogLevel } = require('../utils/constants')
 
 const MediaFileScanner = require('./MediaFileScanner')
 const BookFinder = require('../finders/BookFinder')
+const PodcastFinder = require('../finders/PodcastFinder')
 const LibraryItem = require('../objects/LibraryItem')
 const LibraryScan = require('./LibraryScan')
 const ScanOptions = require('./ScanOptions')
@@ -33,6 +34,7 @@ class Scanner {
     this.scanningFilesChanged = false
 
     this.bookFinder = new BookFinder()
+    this.podcastFinder = new PodcastFinder()
   }
 
   isLibraryScanning(libraryId) {
@@ -672,16 +674,6 @@ class Scanner {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
-    var searchISBN = options.isbn || libraryItem.media.metadata.isbn
-    var searchASIN = options.asin || libraryItem.media.metadata.asin
-
-    var results = await this.bookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
-    if (!results.length) {
-      return {
-        warning: `No ${provider} match found`
-      }
-    }
-    var matchData = results[0]
 
     // Set to override existing metadata if scannerPreferMatchedMetadata setting is true
     if (this.db.serverSettings.scannerPreferMatchedMetadata) {
@@ -689,18 +681,110 @@ class Scanner {
       options.overrideDetails = true
     }
 
-    // Update cover if not set OR overrideCover flag
+    var updatePayload = {}
     var hasUpdated = false
-    if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
-      Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
-      var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
-      if (!coverResult || coverResult.error || !coverResult.cover) {
-        Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
-      } else {
+
+    if (libraryItem.mediaType === 'book') {
+      var searchISBN = options.isbn || libraryItem.media.metadata.isbn
+      var searchASIN = options.asin || libraryItem.media.metadata.asin
+
+      var results = await this.bookFinder.search(provider, searchTitle, searchAuthor, searchISBN, searchASIN)
+      if (!results.length) {
+        return {
+          warning: `No ${provider} match found`
+        }
+      }
+      var matchData = results[0]
+
+      // Update cover if not set OR overrideCover flag
+      if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
+        Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
+        var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
+        if (!coverResult || coverResult.error || !coverResult.cover) {
+          Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+        } else {
+          hasUpdated = true
+        }
+      }
+
+      updatePayload = await this.quickMatchBookBuildUpdatePayload(libraryItem, matchData, options)
+    } else { // Podcast quick match
+      var results = await this.podcastFinder.search(searchTitle)
+      if (!results.length) {
+        return {
+          warning: `No ${provider} match found`
+        }
+      }
+      var matchData = results[0]
+
+      // Update cover if not set OR overrideCover flag
+      if (matchData.cover && (!libraryItem.media.coverPath || options.overrideCover)) {
+        Logger.debug(`[Scanner] Updating cover "${matchData.cover}"`)
+        var coverResult = await this.coverManager.downloadCoverFromUrl(libraryItem, matchData.cover)
+        if (!coverResult || coverResult.error || !coverResult.cover) {
+          Logger.warn(`[Scanner] Match cover "${matchData.cover}" failed to use: ${coverResult ? coverResult.error : 'Unknown Error'}`)
+        } else {
+          hasUpdated = true
+        }
+      }
+
+      updatePayload = this.quickMatchPodcastBuildUpdatePayload(libraryItem, matchData, options)
+    }
+
+    if (Object.keys(updatePayload).length) {
+      Logger.debug('[Scanner] Updating details', updatePayload)
+      if (libraryItem.media.update(updatePayload)) {
         hasUpdated = true
       }
     }
 
+    if (hasUpdated) {
+      await this.db.updateLibraryItem(libraryItem)
+      this.emitter('item_updated', libraryItem.toJSONExpanded())
+    }
+
+    return {
+      updated: hasUpdated,
+      libraryItem: libraryItem.toJSONExpanded()
+    }
+  }
+
+  quickMatchPodcastBuildUpdatePayload(libraryItem, matchData, options) {
+    const updatePayload = {}
+    updatePayload.metadata = {}
+
+    const matchDataTransformed = {
+      title: matchData.title || null,
+      author: matchData.artistName || null,
+      genres: matchData.genres || [],
+      itunesId: matchData.id || null,
+      itunesPageUrl: matchData.pageUrl || null,
+      itunesArtistId: matchData.artistId || null,
+      releaseDate: matchData.releaseDate || null,
+      imageUrl: matchData.cover || null,
+      description: matchData.descriptionPlain || null
+    }
+
+    for (const key in matchDataTransformed) {
+      if (matchDataTransformed[key]) {
+        if (key === 'genres') {
+          if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
+            updatePayload.metadata[key] = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+          }
+        } else if (!libraryItem.media.metadata[key] || options.overrideDetails) {
+          updatePayload.metadata[key] = matchDataTransformed[key]
+        }
+      }
+    }
+
+    if (!Object.keys(updatePayload.metadata).length) {
+      delete updatePayload.metadata
+    }
+
+    return updatePayload
+  }
+
+  async quickMatchBookBuildUpdatePayload(libraryItem, matchData, options) {
     // Update media metadata if not set OR overrideDetails flag
     const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'asin', 'isbn']
     const updatePayload = {}
@@ -763,22 +847,11 @@ class Scanner {
       updatePayload.metadata.series = seriesPayload
     }
 
-    if (Object.keys(updatePayload).length) {
-      Logger.debug('[Scanner] Updating details', updatePayload)
-      if (libraryItem.media.update(updatePayload)) {
-        hasUpdated = true
-      }
+    if (!Object.keys(updatePayload.metadata).length) {
+      delete updatePayload.metadata
     }
 
-    if (hasUpdated) {
-      await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
-    }
-
-    return {
-      updated: hasUpdated,
-      libraryItem: libraryItem.toJSONExpanded()
-    }
+    return updatePayload
   }
 
   async matchLibraryItems(library) {
