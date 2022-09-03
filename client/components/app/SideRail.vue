@@ -68,7 +68,7 @@
 
       <p class="font-book pt-1.5" style="font-size: 0.9rem">Social</p>
 
-      <div v-show="paramId === 'collections'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      <div v-show="isSocialPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
     <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">

@@ -260,10 +260,9 @@ class MiscController {
   }
   // GET: api/social
   async getSocialStats(req, res) {
-    if (this.db.serverSettings.sharedListeningStats == false) {
+    if (!this.db.serverSettings.sharedListeningStats) {
       return res.sendStatus(404)
     }
-    Logger.error(this.db.serverSettings.sharedListeningStats)
     var filteredUsers = this.db.users.filter(c => c.settings.shareListeningActivity == true)
     var userData = []
     for (let i = 0; i < filteredUsers.length; i++) {

@@ -51,11 +51,8 @@ export default {
     }
   },
   computed: {
-    coverAspectRatio() {
-      return this.$store.getters['getServerSetting']('coverAspectRatio')
-    },
     bookCoverAspectRatio() {
-      return this.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE ? 1 : 1.6
+      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     bookCoverWidth() {
       return 70
@@ -63,25 +60,6 @@ export default {
     users() {
       if (!this.listeningStats) return []
       return this.listeningStats.sort(function(a, b) {return b.latest.lastUpdate - a.latest.lastUpdate})
-    },
-    userMediaProgress() {
-      return this.user.mediaProgress || []
-    },
-    userItemsFinished() {
-      if (!this.listeningStats) return []
-      return this.listeningStats.itemsRead
-    },
-    mostRecentListeningSessions() {
-      if (!this.listeningStats) return []
-      return this.listeningStats.recentSessions || []
-    },
-    totalMinutesListening() {
-      if (!this.listeningStats) return 0
-      return Math.round(this.listeningStats.totalTime / 60)
-    },
-    totalDaysListened() {
-      if (!this.listeningStats) return 0
-      return Object.values(this.listeningStats.days).length
     },
     usersOnline() {
       var usermap = {}
@@ -108,14 +86,6 @@ export default {
         }
       }
       this.listeningStats = listeningStats
-    },
-   async getLibraryItem(user) {
-      user.libraryItem = await this.$axios
-        .$get(`/api/items/${id}`)
-        .catch((error) => {
-          console.error('Failed', error)
-          return false
-        })
     },
     changeSharingSetting() {
       this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: !this.isSharingActivity })
