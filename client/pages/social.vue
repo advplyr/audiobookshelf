@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full overflow-y-auto px-2 py-18 md:p-8">
-    <div class="flex flex-col md:flex-row">
+    <div v-if="this.listeningStats" class="flex flex-col md:flex-row">
       <div class="w-200 my-6 mx-auto">
         <div class="grid grid-cols-2 content-between">
           <h1 class="text-2xl mb-4 font-book">Social</h1>
@@ -11,12 +11,12 @@
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-            <ui-toggle-switch v-model="isSharingActivity" @input="changeSharingSetting" />
+            <ui-toggle-switch v-model="isUserSharing" @input="changeSharingSetting" />
           </div>
         </div>
         <p v-if="!users.length">No Other User Sessions</p>
         <template v-for="(user, num) in users">
-          <div :key="user.username" class="w-full py-0.5">
+          <div :key="user.username" class="w-full">
             <div class="flex items-center mb-1">
               <nuxt-link :to="`/item/${user.latest.libraryItemId}`">
                 <ui-tooltip direction="left" :text="Math.round(user.latest.progress * 100) + '%'">
@@ -36,18 +36,20 @@
         </template>
       </div>
     </div>
-    <div class="h-16" />
+    <div v-else>
+      <p class="text-xl text-center">There is no listening activity to display</p>
+    </div>
   </div>
 </template>
 
 <script>
-import BookCover from '../components/covers/BookCover.vue'
 import Cover from '../components/modals/item/tabs/Cover.vue'
 export default {
   components: { Cover },
   data() {
     return {
-      listeningStats: null
+      listeningStats: null,
+      isUserSharing: null
     }
   },
   computed: {
@@ -66,12 +68,16 @@ export default {
       this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, session: u.session }))
       return usermap
     },
-    isSharingActivity() {
-      return this.$store.getters['user/getUserSetting']('shareListeningActivity')
-    }
   },
   methods: {
-    async init() {
+    init() {
+      this.getUserSharing()
+      this.loadStats()
+    },
+    getUserSharing() {
+      this.isUserSharing = this.$store.getters['user/getUserSetting']('shareListeningActivity')
+    },
+    async loadStats() {
       let listeningStats = await this.$axios.$get(`/api/social`).catch((err) => {
         console.error('Failed to load shared user listening sesions', err)
         return []
@@ -88,8 +94,8 @@ export default {
       this.listeningStats = listeningStats
     },
     changeSharingSetting() {
-      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: !this.isSharingActivity })
-      this.init()
+      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: this.isUserSharing})
+      this.loadStats()
     }
   },
   mounted() {

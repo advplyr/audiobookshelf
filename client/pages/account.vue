@@ -16,7 +16,7 @@
         <div class="w-full h-px bg-primary my-4" />
 
         <div v-if="isGlobalSharing" class="flex items-center py-1">
-          <ui-toggle-switch v-model="isSharingActivity" @input="changeSharingSetting" />
+          <ui-toggle-switch v-model="isUserSharing" @input="changeSharingSetting" />
           <ui-tooltip text="Share your latest listening activity with other users in the social tab">
             <p class="pl-4">
               Share Listening Activity
@@ -54,7 +54,8 @@ export default {
       password: null,
       newPassword: null,
       confirmPassword: null,
-      changingPassword: false
+      changingPassword: false,
+      isUserSharing: null 
     }
   },
   computed: {
@@ -76,14 +77,14 @@ export default {
     isGuest() {
       return this.usertype === 'guest'
     },
-    isSharingActivity() {
-      return this.$store.getters['user/getUserSetting']('shareListeningActivity')
-    },
     isGlobalSharing() {
       return this.$store.getters['getServerSetting']('sharedListeningStats')
     }
   },
   methods: {
+    init() {
+      this.isUserSharing = this.$store.getters['user/getUserSetting']('shareListeningActivity')
+    },
     logout() {
       var rootSocket = this.$root.socket || {}
       const logoutPayload = {
@@ -131,9 +132,11 @@ export default {
         })
     },
     changeSharingSetting() {
-      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: !this.isSharingActivity })
+      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: this.isUserSharing})
     }
   },
-  mounted() {}
+  mounted() {
+    this.init()
+  }
 }
 </script>

@@ -63,7 +63,7 @@
       <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
-    <nuxt-link v-if="socialTrue && isGlobalSharing" :to="`/social`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="isSocialPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+    <nuxt-link v-if="isGlobalSharing" :to="`/social`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="isSocialPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <span class="material-icons-outlined">connect_without_contact</span>
 
       <p class="font-book pt-1.5" style="font-size: 0.9rem">Social</p>
@@ -154,13 +154,6 @@ export default {
     },
     isGlobalSharing() {
       return this.$store.getters['getServerSetting']('sharedListeningStats')
-    },
-    async socialTrue() {
-      let listeningStats = await this.$axios.$get(`/api/social`).catch((err) => {
-        console.error('Failed to load shared user listening sesions', err)
-        return false
-      })
-      return listeningStats != null ? true : false
     },
     showingIssues() {
       if (!this.$route.query) return false
