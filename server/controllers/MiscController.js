@@ -271,10 +271,14 @@ class MiscController {
       var latestItem = user.mediaProgress.sort(p => p.lastUpdate)
       var totalItems = Object.keys(listeningStats.items).length
       var totalDays = Object.keys(listeningStats.days).length
+      var latestProgress = latestItem[latestItem.length - 1]
+      if (latestProgress) {
+        var latestItem = this.db.getLibraryItem(latestProgress.id)
+      }
       var session = {
         username: user.username,
         lastSeen: user.lastSeen,
-        latest: latestItem[latestItem.length - 1] || null,
+        latest: {'progress': latestProgress, 'item': latestItem} || null,
         itemsRead: totalItems || 0,
         minutesListened: listeningStats.totalTime || 0,
         daysListened: totalDays| 0,

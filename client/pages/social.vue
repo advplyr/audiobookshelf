@@ -18,13 +18,13 @@
         <template v-for="(user, num) in users">
           <div :key="user.username" class="w-full">
             <div class="flex items-center mb-1">
-              <nuxt-link :to="`/item/${user.latest.libraryItemId}`">
-                <ui-tooltip direction="left" :text="Math.round(user.latest.progress * 100) + '%'">
-                  <covers-book-cover class="absolute left-0 right-0" :library-item="user.libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              <nuxt-link :to="`/item/${user.latest.progress.libraryItemId}`">
+                <ui-tooltip direction="left" :text="Math.round(user.latest.progress.progress * 100) + '%'">
+                  <covers-book-cover class="absolute left-0 right-0" :library-item="user.latest.item" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </ui-tooltip>
               </nuxt-link>
               <p class="text-lg px-2 font-book text-white">{{ user.username }}&nbsp;</p>
-              <p class="text-xs text-white text-opacity-50">{{ "Last listened " + $dateDistanceFromNow(user.latest.lastUpdate) }}</p>
+              <p class="text-xs text-white text-opacity-50">{{ "Last listened " + $dateDistanceFromNow(user.latest.progress.lastUpdate) }}</p>
               <div class="flex-grow" />
               <div class="w-30 pl-4 text-right">
                 <p class="text-sm font-bold">{{ "Has listened for " + $elapsedPrettyExtended(user.minutesListened) }}</p>
@@ -61,7 +61,7 @@ export default {
     },
     users() {
       if (!this.listeningStats) return []
-      return this.listeningStats.sort(function(a, b) {return b.latest.lastUpdate - a.latest.lastUpdate})
+      return this.listeningStats.sort(function(a, b) {return b.latest.progress.lastUpdate - a.latest.progress.lastUpdate})
     },
     usersOnline() {
       var usermap = {}
@@ -82,15 +82,6 @@ export default {
         console.error('Failed to load shared user listening sesions', err)
         return []
       })
-      for (let i = 0; i < listeningStats.length; i++) {
-        if (listeningStats[i].latest != null) {
-        listeningStats[i].libraryItem = await this.$axios
-          .$get(`/api/items/${listeningStats[i].latest.libraryItemId}`)
-          .catch((error) => {
-            console.error('Failed', error)
-          })
-        }
-      }
       this.listeningStats = listeningStats
     },
     changeSharingSetting() {
