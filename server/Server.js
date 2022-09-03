@@ -440,26 +440,7 @@ class Server {
       return
     }
 
-    // Check if user has session open
-    var session = this.playbackSessionManager.getUserSession(user.id)
-    if (session) {
-      Logger.debug(`[Server] User Online "${client.user.username}" with session open "${session.id}"`)
-      var sessionLibraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
-      if (!sessionLibraryItem) {
-        Logger.error(`[Server] Library Item for session "${session.id}" does not exist "${session.libraryItemId}"`)
-        this.playbackSessionManager.removeSession(session.id)
-        session = null
-      } else if (session.mediaType === 'podcast' && !sessionLibraryItem.media.checkHasEpisode(session.episodeId)) {
-        Logger.error(`[Server] Library Item for session "${session.id}" episode ${session.episodeId} does not exist "${session.libraryItemId}"`)
-        this.playbackSessionManager.removeSession(session.id)
-        session = null
-      }
-      if (session) {
-        session = session.toJSONForClient(sessionLibraryItem)
-      }
-    } else {
-      Logger.debug(`[Server] User Online ${client.user.username}`)
-    }
+    Logger.debug(`[Server] User Online ${client.user.username}`)
 
     this.io.emit('user_online', client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
@@ -470,7 +451,6 @@ class Server {
       metadataPath: global.MetadataPath,
       configPath: global.ConfigPath,
       user: client.user.toJSONForBrowser(),
-      session,
       librariesScanning: this.scanner.librariesScanning,
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }

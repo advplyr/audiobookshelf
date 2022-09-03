@@ -111,21 +111,8 @@ export default {
     reconnectFailed() {
       console.error('[SOCKET] reconnect failed')
     },
-    init(payload, count = 0) {
-      if (!this.$refs.streamContainer) {
-        if (count > 20) {
-          console.error('Stream container never mounted')
-          return
-        }
-        setTimeout(() => {
-          this.init(payload, ++count)
-        }, 100)
-        return
-      }
+    init(payload) {
       console.log('Init Payload', payload)
-      if (payload.session) {
-        this.$refs.streamContainer.sessionOpen(payload.session)
-      }
 
       // Start scans currently running
       if (payload.librariesScanning) {
@@ -535,6 +522,17 @@ export default {
           if (res && res.hasUpdate) this.showUpdateToast(res)
         })
         .catch((err) => console.error(err))
+    },
+    initLocalStorage() {
+      // If experimental features set in local storage
+      var experimentalFeaturesSaved = localStorage.getItem('experimental')
+      if (experimentalFeaturesSaved === '1') {
+        this.$store.commit('setExperimentalFeatures', true)
+      }
+
+      // Queue auto play
+      var playerQueueAutoPlay = localStorage.getItem('playerQueueAutoPlay')
+      this.$store.commit('setPlayerQueueAutoPlay', playerQueueAutoPlay !== '0')
     }
   },
   beforeMount() {
@@ -548,11 +546,7 @@ export default {
 
     this.$store.dispatch('libraries/load')
 
-    // If experimental features set in local storage
-    var experimentalFeaturesSaved = localStorage.getItem('experimental')
-    if (experimentalFeaturesSaved === '1') {
-      this.$store.commit('setExperimentalFeatures', true)
-    }
+    this.initLocalStorage()
 
     this.checkVersionUpdate()
 

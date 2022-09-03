@@ -23,8 +23,15 @@
         <ui-rich-text-editor label="Description" v-model="newEpisode.description" />
       </div>
     </div>
-    <div class="flex justify-end pt-4">
+    <div class="flex items-center justify-end pt-4">
       <ui-btn @click="submit">Submit</ui-btn>
+    </div>
+    <div v-if="enclosureUrl" class="py-4">
+      <p class="text-xs text-gray-300 font-semibold">Episode URL from RSS feed</p>
+      <a :href="enclosureUrl" target="_blank" class="text-xs text-blue-400 hover:text-blue-500 hover:underline">{{ enclosureUrl }}</a>
+    </div>
+    <div v-else class="py-4">
+      <p class="text-xs text-gray-300 font-semibold">Episode not linked to RSS feed episode</p>
     </div>
   </div>
 </template>
@@ -76,6 +83,12 @@ export default {
     },
     episodeId() {
       return this.episode ? this.episode.id : null
+    },
+    enclosure() {
+      return this.episode ? this.episode.enclosure || {} : {}
+    },
+    enclosureUrl() {
+      return this.enclosure.url
     }
   },
   methods: {

@@ -5,7 +5,7 @@ set -o pipefail
 FFMPEG_INSTALL_DIR="/usr/lib/audiobookshelf-ffmpeg"
 DEFAULT_DATA_DIR="/usr/share/audiobookshelf"
 CONFIG_PATH="/etc/default/audiobookshelf"
-DEFAULT_PORT=7331
+DEFAULT_PORT=13378
 DEFAULT_HOST="0.0.0.0"
 
 

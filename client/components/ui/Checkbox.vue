@@ -14,6 +14,7 @@ export default {
     value: Boolean,
     label: String,
     small: Boolean,
+    medium: Boolean,
     checkboxBg: {
       type: String,
       default: 'white'
@@ -47,19 +48,23 @@ export default {
     wrapperClass() {
       var classes = [`bg-${this.checkboxBg} border-${this.borderColor}`]
       if (this.small) classes.push('w-4 h-4')
+      else if (this.medium) classes.push('w-5 h-5')
       else classes.push('w-6 h-6')
 
       return classes.join(' ')
     },
     labelClassname() {
       if (this.labelClass) return this.labelClass
-      var classes = ['pl-1']
-      if (this.small) classes.push('text-xs md:text-sm')
+      var classes = []
+      if (this.small) classes.push('text-xs md:text-sm pl-1')
+      else if (this.medium) classes.push('text-base md:text-lg pl-2')
+      else classes.push('pl-2')
       return classes.join(' ')
     },
     svgClass() {
       var classes = [`text-${this.checkColor}`]
       if (this.small) classes.push('w-3 h-3')
+      else if (this.medium) classes.push('w-3.5 h-3.5')
       else classes.push('w-4 h-4')
 
       return classes.join(' ')

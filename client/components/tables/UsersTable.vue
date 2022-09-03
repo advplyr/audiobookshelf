@@ -164,8 +164,8 @@ export default {
     }
 
     if (this.$root.socket) {
-      this.$root.socket.off('user_added', this.newUserAdded)
-      this.$root.socket.off('user_updated', this.userUpdated)
+      this.$root.socket.off('user_added', this.addUpdateUser)
+      this.$root.socket.off('user_updated', this.addUpdateUser)
       this.$root.socket.off('user_removed', this.userRemoved)
     }
   }
@@ -208,6 +208,6 @@ export default {
   font-weight: 600;
   padding-top: 5px;
   padding-bottom: 5px;
-  background-color: #272727
+  background-color: #272727;
 }
 </style>

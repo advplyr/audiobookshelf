@@ -89,7 +89,7 @@ export default {
     authors: {
       type: Array,
       default: () => []
-    }
+    },
   },
   data() {
     return {
@@ -215,6 +215,7 @@ export default {
             this.$toast.success('Removed library items with issues')
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
             this.processingIssues = false
+            this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
@@ -228,7 +229,7 @@ export default {
       this.processingSeries = true
       var updateProgressPayloads = this.seriesLibraryItemIds.map((lid) => {
         return {
-          id: lid,
+          libraryItemId: lid,
           isFinished: newIsFinished
         }
       })

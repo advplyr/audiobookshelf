@@ -116,16 +116,16 @@ class ApiRouter {
     //
     // Collection Routes
     //
-    this.router.post('/collections', CollectionController.create.bind(this))
+    this.router.post('/collections', CollectionController.middleware.bind(this), CollectionController.create.bind(this))
     this.router.get('/collections', CollectionController.findAll.bind(this))
-    this.router.get('/collections/:id', CollectionController.findOne.bind(this))
-    this.router.patch('/collections/:id', CollectionController.update.bind(this))
-    this.router.delete('/collections/:id', CollectionController.delete.bind(this))
+    this.router.get('/collections/:id', CollectionController.middleware.bind(this), CollectionController.findOne.bind(this))
+    this.router.patch('/collections/:id', CollectionController.middleware.bind(this), CollectionController.update.bind(this))
+    this.router.delete('/collections/:id', CollectionController.middleware.bind(this), CollectionController.delete.bind(this))
 
-    this.router.post('/collections/:id/book', CollectionController.addBook.bind(this))
-    this.router.delete('/collections/:id/book/:bookId', CollectionController.removeBook.bind(this))
-    this.router.post('/collections/:id/batch/add', CollectionController.addBatch.bind(this))
-    this.router.post('/collections/:id/batch/remove', CollectionController.removeBatch.bind(this))
+    this.router.post('/collections/:id/book', CollectionController.middleware.bind(this), CollectionController.addBook.bind(this))
+    this.router.delete('/collections/:id/book/:bookId', CollectionController.middleware.bind(this), CollectionController.removeBook.bind(this))
+    this.router.post('/collections/:id/batch/add', CollectionController.middleware.bind(this), CollectionController.addBatch.bind(this))
+    this.router.post('/collections/:id/batch/remove', CollectionController.middleware.bind(this), CollectionController.removeBatch.bind(this))
 
     //
     // Current User Routes (Me)

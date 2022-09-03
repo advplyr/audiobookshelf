@@ -24,18 +24,11 @@ class CollectionController {
   }
 
   findOne(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
-    res.json(collection.toJSONExpanded(this.db.libraryItems))
+    res.json(req.collection.toJSONExpanded(this.db.libraryItems))
   }
 
   async update(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
+    const collection = req.collection
     var wasUpdated = collection.update(req.body)
     var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     if (wasUpdated) {
@@ -46,10 +39,7 @@ class CollectionController {
   }
 
   async delete(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
+    const collection = req.collection
     var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     await this.db.removeEntity('collection', collection.id)
     this.emitter('collection_removed', jsonExpanded)
@@ -57,10 +47,7 @@ class CollectionController {
   }
 
   async addBook(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
+    const collection = req.collection
     var libraryItem = this.db.libraryItems.find(li => li.id === req.body.id)
     if (!libraryItem) {
       return res.status(500).send('Book not found')
@@ -80,11 +67,7 @@ class CollectionController {
 
   // DELETE: api/collections/:id/book/:bookId
   async removeBook(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
-
+    const collection = req.collection
     if (collection.books.includes(req.params.bookId)) {
       collection.removeBook(req.params.bookId)
       var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
@@ -96,10 +79,7 @@ class CollectionController {
 
   // POST: api/collections/:id/batch/add
   async addBatch(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
+    const collection = req.collection
     if (!req.body.books || !req.body.books.length) {
       return res.status(500).send('Invalid request body')
     }
@@ -120,10 +100,7 @@ class CollectionController {
 
   // POST: api/collections/:id/batch/remove
   async removeBatch(req, res) {
-    var collection = this.db.collections.find(c => c.id === req.params.id)
-    if (!collection) {
-      return res.status(404).send('Collection not found')
-    }
+    const collection = req.collection
     if (!req.body.books || !req.body.books.length) {
       return res.status(500).send('Invalid request body')
     }
@@ -140,6 +117,26 @@ class CollectionController {
       this.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
     res.json(collection.toJSONExpanded(this.db.libraryItems))
+  }
+
+  middleware(req, res, next) {
+    if (req.params.id) {
+      var collection = this.db.collections.find(c => c.id === req.params.id)
+      if (!collection) {
+        return res.status(404).send('Collection not found')
+      }
+      req.collection = collection
+    }
+
+    if (req.method == 'DELETE' && !req.user.canDelete) {
+      Logger.warn(`[CollectionController] User attempted to delete without permission`, req.user.username)
+      return res.sendStatus(403)
+    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
+      Logger.warn('[CollectionController] User attempted to update without permission', req.user.username)
+      return res.sendStatus(403)
+    }
+
+    next()
   }
 }
 module.exports = new CollectionController()

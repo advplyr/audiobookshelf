@@ -62,15 +62,6 @@
             <h2 class="font-semibold">Display</h2>
           </div>
 
-          <!-- <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="useSquareBookCovers" :disabled="updatingServerSettings" @input="updateBookCoverAspectRatio" />
-            <ui-tooltip :text="tooltips.coverAspectRatio">
-              <p class="pl-4">
-                Square book covers
-                <span class="material-icons icon-text text-sm">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div> -->
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="homeUseAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateHomeAlternativeBookshelfView" />
             <ui-tooltip :text="tooltips.bookshelfView">
@@ -289,7 +280,6 @@ export default {
     return {
       isResettingLibraryItems: false,
       updatingServerSettings: false,
-      useSquareBookCovers: false,
       homeUseAlternativeBookshelfView: false,
       useAlternativeBookshelfView: false,
       isPurgingCache: false,
@@ -416,8 +406,6 @@ export default {
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
-
-      this.useSquareBookCovers = this.newServerSettings.coverAspectRatio === this.$constants.BookCoverAspectRatio.SQUARE
 
       this.homeUseAlternativeBookshelfView = this.newServerSettings.homeBookshelfView === this.$constants.BookshelfView.TITLES
       this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES

@@ -19,6 +19,7 @@ class PlaybackSessionManager {
     this.clientEmitter = clientEmitter
 
     this.sessions = []
+    this.localSessionLock = {}
   }
 
   getSession(sessionId) {
@@ -58,11 +59,18 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionRequest(user, sessionJson, res) {
+    if (this.localSessionLock[sessionJson.id]) {
+      Logger.debug(`[PlaybackSessionManager] syncLocalSessionRequest: Local session is locked and already syncing`)
+      return res.sendStatus(200)
+    }
+
     var libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Library item not found for session "${sessionJson.libraryItemId}"`)
       return res.sendStatus(200)
     }
+
+    this.localSessionLock[sessionJson.id] = true // Lock local session
 
     var session = await this.db.getPlaybackSession(sessionJson.id)
     if (!session) {
@@ -70,6 +78,7 @@ class PlaybackSessionManager {
       session = new PlaybackSession(sessionJson)
       await this.db.insertEntity('session', session)
     } else {
+      session.currentTime = sessionJson.currentTime
       session.timeListening = sessionJson.timeListening
       session.updatedAt = sessionJson.updatedAt
       session.date = date.format(new Date(), 'YYYY-MM-DD')
@@ -94,6 +103,9 @@ class PlaybackSessionManager {
         data: itemProgress.toJSON()
       })
     }
+
+    delete this.localSessionLock[sessionJson.id] // Unlock local session
+
     res.sendStatus(200)
   }
 

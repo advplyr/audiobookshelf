@@ -9,6 +9,7 @@ class Feed {
     this.userId = null
     this.entityType = null
     this.entityId = null
+    this.entityUpdatedAt = null
 
     this.coverPath = null
     this.serverAddress = null
@@ -79,6 +80,7 @@ class Feed {
     this.userId = userId
     this.entityType = 'item'
     this.entityId = libraryItem.id
+    this.entityUpdatedAt = libraryItem.updatedAt
     this.coverPath = media.coverPath || null
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
@@ -109,6 +111,39 @@ class Feed {
 
     this.createdAt = Date.now()
     this.updatedAt = Date.now()
+  }
+
+  updateFromItem(libraryItem) {
+    const media = libraryItem.media
+    const mediaMetadata = media.metadata
+    const isPodcast = libraryItem.mediaType === 'podcast'
+    const author = isPodcast ? mediaMetadata.author : mediaMetadata.authorName
+
+    this.entityUpdatedAt = libraryItem.updatedAt
+
+    this.meta.title = mediaMetadata.title
+    this.meta.description = mediaMetadata.description
+    this.meta.author = author
+    this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
+    this.meta.explicit = !!mediaMetadata.explicit
+
+    this.episodes = []
+    if (isPodcast) { // PODCAST EPISODES
+      media.episodes.forEach((episode) => {
+        var feedEpisode = new FeedEpisode()
+        feedEpisode.setFromPodcastEpisode(libraryItem, this.serverAddress, this.slug, episode, this.meta)
+        this.episodes.push(feedEpisode)
+      })
+    } else { // AUDIOBOOK EPISODES
+      media.tracks.forEach((audioTrack) => {
+        var feedEpisode = new FeedEpisode()
+        feedEpisode.setFromAudiobookTrack(libraryItem, this.serverAddress, this.slug, audioTrack, this.meta)
+        this.episodes.push(feedEpisode)
+      })
+    }
+
+    this.updatedAt = Date.now()
+    this.xml = null
   }
 
   buildXml() {

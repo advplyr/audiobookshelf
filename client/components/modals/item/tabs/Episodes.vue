@@ -2,8 +2,15 @@
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
       <div v-if="userIsAdminOrUp" class="flex items-end justify-end mb-4">
-        <!-- <p v-if="autoDownloadEpisodes">Last new episode check {{ $formatDate(lastEpisodeCheck) }}</p> -->
         <ui-text-input-with-label ref="lastCheckInput" v-model="lastEpisodeCheckInput" :disabled="checkingNewEpisodes" type="datetime-local" label="Look for new episodes after this date" class="max-w-xs mr-2" />
+        <ui-text-input-with-label ref="maxEpisodesInput" v-model="maxEpisodesToDownload" :disabled="checkingNewEpisodes" type="number" label="Max episodes" class="w-16 mr-2" input-class="h-10">
+          <div class="flex -mb-0.5">
+            <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">Limit</p>
+            <ui-tooltip direction="top" text="Max # of episodes to download. Use 0 for unlimited.">
+              <span class="material-icons text-base">info_outlined</span>
+            </ui-tooltip>
+          </div>
+        </ui-text-input-with-label>
         <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check & Download New Episodes</ui-btn>
       </div>
 
@@ -52,7 +59,8 @@ export default {
   data() {
     return {
       checkingNewEpisodes: false,
-      lastEpisodeCheckInput: null
+      lastEpisodeCheckInput: null,
+      maxEpisodesToDownload: 3
     }
   },
   watch: {
@@ -89,6 +97,16 @@ export default {
       if (this.$refs.lastCheckInput) {
         this.$refs.lastCheckInput.blur()
       }
+      if (this.$refs.maxEpisodesInput) {
+        this.$refs.maxEpisodesInput.blur()
+      }
+
+      if (this.maxEpisodesToDownload < 0) {
+        this.maxEpisodesToDownload = 3
+        this.$toast.error('Invalid max episodes to download')
+        return
+      }
+
       this.checkingNewEpisodes = true
       const lastEpisodeCheck = new Date(this.lastEpisodeCheckInput).valueOf()
 
@@ -102,7 +120,7 @@ export default {
       }
 
       this.$axios
-        .$get(`/api/podcasts/${this.libraryItemId}/checknew`)
+        .$get(`/api/podcasts/${this.libraryItemId}/checknew?limit=${this.maxEpisodesToDownload}`)
         .then((response) => {
           if (response.episodes && response.episodes.length) {
             console.log('New episodes', response.episodes.length)

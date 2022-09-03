@@ -19,9 +19,9 @@
               {{ streaming ? 'Streaming' : 'Play' }}
             </ui-btn>
 
-            <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
+            <ui-icon-btn v-if="userCanUpdate" icon="edit" class="mx-0.5" @click="editClick" />
 
-            <ui-icon-btn icon="delete" class="mx-0.5" @click="removeClick" />
+            <ui-icon-btn v-if="userCanDelete" icon="delete" class="mx-0.5" @click="removeClick" />
           </div>
 
           <div class="my-8 max-w-2xl">
@@ -92,6 +92,12 @@ export default {
     },
     showPlayButton() {
       return this.playableBooks.length
+    },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
     }
   },
   methods: {

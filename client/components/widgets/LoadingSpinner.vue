@@ -147,6 +147,16 @@ export default {
   margin-top: -2px;
   margin-left: -2px;
 }
+.la-ball-spin-clockwise.la-lg {
+  width: 32px;
+  height: 32px;
+}
+.la-ball-spin-clockwise.la-lg > div {
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  margin-left: -4px;
+}
 .la-ball-spin-clockwise.la-2x {
   width: 64px;
   height: 64px;
