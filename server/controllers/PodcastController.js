@@ -140,7 +140,9 @@ class PodcastController {
       return res.status(500).send('Podcast has no rss feed url')
     }
 
-    var newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(libraryItem)
+    const maxEpisodesToDownload = !isNaN(req.query.limit) ? Number(req.query.limit) : 3
+
+    var newEpisodes = await this.podcastManager.checkAndDownloadNewEpisodes(libraryItem, maxEpisodesToDownload)
     res.json({
       episodes: newEpisodes || []
     })

@@ -5,7 +5,7 @@
         {{ label }}<em v-if="note" class="font-normal text-xs pl-2">{{ note }}</em>
       </p>
     </slot>
-    <ui-text-input ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" @blur="inputBlurred" />
+    <ui-text-input ref="input" v-model="inputValue" :disabled="disabled" :readonly="readonly" :type="type" class="w-full" :class="inputClass" @blur="inputBlurred" />
   </div>
 </template>
 
@@ -20,7 +20,8 @@ export default {
       default: 'text'
     },
     readonly: Boolean,
-    disabled: Boolean
+    disabled: Boolean,
+    inputClass: String
   },
   data() {
     return {}
