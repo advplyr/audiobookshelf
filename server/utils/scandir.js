@@ -6,8 +6,6 @@ const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
 
 function isMediaFile(mediaType, ext) {
-  // if (!path) return false
-  // var ext = Path.extname(path)
   if (!ext) return false
   var extclean = ext.slice(1).toLowerCase()
   if (mediaType === 'podcast') return globals.SupportedAudioTypes.includes(extclean)
