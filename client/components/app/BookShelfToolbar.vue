@@ -21,9 +21,6 @@
       <template v-if="page !== 'search' && page !== 'podcast-search' && !isHome">
         <p v-if="!selectedSeries" class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
         <div v-else class="items-center hidden md:flex w-full">
-          <div @click="seriesBackArrow" class="rounded-full h-9 w-9 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
-            <span class="material-icons text-2xl text-white">west</span>
-          </div>
           <p class="pl-4 font-book text-lg">
             {{ seriesName }}
           </p>
@@ -60,9 +57,6 @@
         <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
       <template v-else-if="page === 'search'">
-        <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
-          <span class="material-icons text-3xl text-white">west</span>
-        </div>
         <div class="flex-grow" />
         <p>Search results for "{{ searchQuery }}"</p>
         <div class="flex-grow" />
@@ -246,12 +240,6 @@ export default {
           console.error('Failed to batch update read/not read', error)
           this.processingSeries = false
         })
-    },
-    searchBackArrow() {
-      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
-    },
-    seriesBackArrow() {
-      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/series`)
     },
     updateOrder() {
       this.saveSettings()
