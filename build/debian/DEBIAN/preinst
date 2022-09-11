@@ -82,7 +82,7 @@ setup_config() {
       echo "Adding TONE_PATH to existing config"
       echo "TONE_PATH=$FFMPEG_INSTALL_DIR/tone" >> "$CONFIG_PATH"
     fi
-    
+
   else
 
     if [ ! -d "$DEFAULT_DATA_DIR" ]; then
@@ -97,7 +97,7 @@ setup_config() {
     config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata
 CONFIG_PATH=$DEFAULT_DATA_DIR/config
 FFMPEG_PATH=$FFMPEG_INSTALL_DIR/ffmpeg
-FFPROBE_PATH=$FFMPEG_INSTALL_DIR-ffmpeg/ffprobe
+FFPROBE_PATH=$FFMPEG_INSTALL_DIR/ffprobe
 TONE_PATH=$FFMPEG_INSTALL_DIR/tone
 PORT=$DEFAULT_PORT
 HOST=$DEFAULT_HOST"
