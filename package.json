@@ -34,6 +34,7 @@
     "express": "^4.17.1",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
+    "node-tone": "^1.0.1",
     "socket.io": "^4.4.1",
     "xml2js": "^0.4.23"
   }

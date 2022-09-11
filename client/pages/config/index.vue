@@ -172,17 +172,15 @@
           </div>
 
           <div class="flex items-center py-2">
-            <div class="flex items-center">
-              <ui-toggle-switch v-model="showExperimentalFeatures" />
-              <ui-tooltip :text="tooltips.experimentalFeatures">
-                <p class="pl-4">
-                  Experimental Features
-                  <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
-                    <span class="material-icons icon-text text-sm">info_outlined</span>
-                  </a>
-                </p>
-              </ui-tooltip>
-            </div>
+            <ui-toggle-switch v-model="showExperimentalFeatures" />
+            <ui-tooltip :text="tooltips.experimentalFeatures">
+              <p class="pl-4">
+                Experimental Features
+                <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
+                  <span class="material-icons icon-text text-sm">info_outlined</span>
+                </a>
+              </p>
+            </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
@@ -195,15 +193,15 @@
             </ui-tooltip>
           </div>
 
-          <!-- <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerUseSingleThreadedProber" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseSingleThreadedProber', val)" />
-            <ui-tooltip :text="tooltips.scannerUseSingleThreadedProber">
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="newServerSettings.scannerUseTone" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseTone', val)" />
+            <ui-tooltip text="Tone library for metadata">
               <p class="pl-4">
-                Scanner use old single threaded audio prober
+                Use Tone library for metadata
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-          </div> -->
+          </div>
         </div>
       </div>
     </div>
