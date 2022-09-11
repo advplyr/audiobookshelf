@@ -52,6 +52,7 @@ install_ffmpeg() {
   echo "Starting FFMPEG Install"
 
   WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
+  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.0.9/tone-0.0.9-linux-x64.tar.gz"
 
   if ! cd "$FFMPEG_INSTALL_DIR"; then
     echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
@@ -64,7 +65,13 @@ install_ffmpeg() {
   tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1
   rm ffmpeg-git-amd64-static.tar.xz
 
-  echo "Good to go on Ffmpeg... hopefully"
+  # Temp downloading tone library to the ffmpeg dir
+  echo "Getting tone.."
+  $WGET_TONE
+  tar xvf tone-0.0.9-linux-x64.tar.gz --strip-components=1
+  rm tone-0.0.9-linux-x64.tar.gz
+
+  echo "Good to go on Ffmpeg (& tone)... hopefully"
 }
 
 setup_config() {
@@ -86,6 +93,7 @@ setup_config() {
   CONFIG_PATH=$DEFAULT_DATA_DIR/config
   FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
   FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
+  TONE_PATH=/usr/lib/audiobookshelf-ffmpeg/tone
   PORT=$DEFAULT_PORT
   HOST=$DEFAULT_HOST"
 
