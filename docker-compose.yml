@@ -3,11 +3,11 @@ version: "3.7"
 
 services:
   audiobookshelf:
-    image: audiobookshelf-test
+    image: ghcr.io/advplyr/audiobookshelf
     ports:
       - 13378:80
     volumes:
-      - ./media/audiobooks:/audiobooks
-      - ./test/metadata:/metadata
-      - ./test/config:/config
+      - ./audiobooks:/audiobooks
+      - ./metadata:/metadata
+      - ./config:/config
     restart: unless-stopped
