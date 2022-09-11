@@ -8,8 +8,6 @@ CONFIG_PATH="/etc/default/audiobookshelf"
 DEFAULT_PORT=13378
 DEFAULT_HOST="0.0.0.0"
 
-
-
 add_user() {
   : "${1:?'User was not defined'}"
   declare -r user="$1"
@@ -78,6 +76,13 @@ setup_config() {
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
     cat $CONFIG_PATH
+
+    # TONE_PATH variable added in 2.1.6, if it doesnt exist then add it
+    if ! grep -q "TONE_PATH" "$CONFIG_PATH"; then
+      echo "Adding TONE_PATH to existing config"
+      echo "TONE_PATH=$FFMPEG_INSTALL_DIR/tone" >> "$CONFIG_PATH"
+    fi
+    
   else
 
     if [ ! -d "$DEFAULT_DATA_DIR" ]; then
@@ -90,12 +95,12 @@ setup_config() {
     echo "Creating default config."
 
     config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata
-  CONFIG_PATH=$DEFAULT_DATA_DIR/config
-  FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
-  FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
-  TONE_PATH=/usr/lib/audiobookshelf-ffmpeg/tone
-  PORT=$DEFAULT_PORT
-  HOST=$DEFAULT_HOST"
+CONFIG_PATH=$DEFAULT_DATA_DIR/config
+FFMPEG_PATH=$FFMPEG_INSTALL_DIR/ffmpeg
+FFPROBE_PATH=$FFMPEG_INSTALL_DIR-ffmpeg/ffprobe
+TONE_PATH=$FFMPEG_INSTALL_DIR/tone
+PORT=$DEFAULT_PORT
+HOST=$DEFAULT_HOST"
 
     echo "$config_text"
 
