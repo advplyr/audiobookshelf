@@ -138,7 +138,7 @@ function parseProbeDump(dumpPayload) {
 
 module.exports.probe = (filepath, verbose = false) => {
   if (process.env.TONE_PATH) {
-    ffprobe.TONE_PATH = process.env.TONE_PATH
+    tone.TONE_PATH = process.env.TONE_PATH
   }
 
   return tone.dump(filepath).then((dumpPayload) => {
