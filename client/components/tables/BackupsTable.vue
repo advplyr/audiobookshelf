@@ -21,7 +21,7 @@
           <td class="hidden sm:table-cell font-mono md:text-sm text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
             <div class="w-full flex flex-row items-center justify-center">
-              <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">Apply</ui-btn>
+              <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">Restore</ui-btn>
 
               <a v-if="backup.serverVersion" :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
