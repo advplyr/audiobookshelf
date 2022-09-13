@@ -296,7 +296,7 @@ export default class PlayerHandler {
       currentTime
     }
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 1000 }).then(() => {
+    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 3000 }).then(() => {
       this.failedProgressSyncs = 0
     }).catch((error) => {
       console.error('Failed to update session progress', error)
