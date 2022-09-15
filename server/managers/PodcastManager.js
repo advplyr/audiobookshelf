@@ -1,7 +1,6 @@
 const fs = require('../libs/fsExtra')
-const axios = require('axios')
 
-const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
+const { getPodcastFeed } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile, removeFile } = require('../utils/fileUtils')
@@ -226,7 +225,7 @@ class PodcastManager {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes no feed url for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`)
       return false
     }
-    var feed = await this.getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
+    var feed = await getPodcastFeed(podcastLibraryItem.media.metadata.feedUrl)
     if (!feed || !feed.episodes) {
       Logger.error(`[PodcastManager] checkPodcastForNewEpisodes invalid feed payload for ${podcastLibraryItem.media.metadata.title} (ID: ${podcastLibraryItem.id})`, feed)
       return false
@@ -262,7 +261,7 @@ class PodcastManager {
   }
 
   async findEpisode(rssFeedUrl, searchTitle) {
-    const feed = await this.getPodcastFeed(rssFeedUrl).catch(() => {
+    const feed = await getPodcastFeed(rssFeedUrl).catch(() => {
       return null
     })
     if (!feed || !feed.episodes) {
@@ -292,25 +291,6 @@ class PodcastManager {
     return matches.sort((a, b) => a.levenshtein - b.levenshtein)
   }
 
-  getPodcastFeed(feedUrl, excludeEpisodeMetadata = false) {
-    Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}"`)
-    return axios.get(feedUrl, { timeout: 5000 }).then(async (data) => {
-      if (!data || !data.data) {
-        Logger.error('Invalid podcast feed request response')
-        return false
-      }
-      Logger.debug(`[PodcastManager] getPodcastFeed for "${feedUrl}" success - parsing xml`)
-      var payload = await parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
-      if (!payload) {
-        return false
-      }
-      return payload.podcast
-    }).catch((error) => {
-      Logger.error('[PodcastManager] getPodcastFeed Error', error)
-      return false
-    })
-  }
-
   async getOPMLFeeds(opmlText) {
     var extractedFeeds = opmlParser.parse(opmlText)
     if (!extractedFeeds || !extractedFeeds.length) {
@@ -323,7 +303,7 @@ class PodcastManager {
     var rssFeedData = []
 
     for (let feed of extractedFeeds) {
-      var feedData = await this.getPodcastFeed(feed.feedUrl, true)
+      var feedData = await getPodcastFeed(feed.feedUrl, true)
       if (feedData) {
         feedData.metadata.feedUrl = feed.feedUrl
         rssFeedData.push(feedData)

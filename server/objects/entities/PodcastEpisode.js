@@ -107,6 +107,9 @@ class PodcastEpisode {
     if (this.episode) return `${this.episode} - ${this.title}`
     return this.title
   }
+  get enclosureUrl() {
+    return this.enclosure ? this.enclosure.url : null
+  }
 
   setData(data, index = 1) {
     this.id = getId('ep')

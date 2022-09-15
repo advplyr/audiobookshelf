@@ -7,6 +7,7 @@ const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = r
 const { comparePaths } = require('../utils/index')
 const { getIno } = require('../utils/fileUtils')
 const { ScanResult, LogLevel } = require('../utils/constants')
+const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
 
 const MediaFileScanner = require('./MediaFileScanner')
 const BookFinder = require('../finders/BookFinder')
@@ -684,7 +685,7 @@ class Scanner {
     var updatePayload = {}
     var hasUpdated = false
 
-    if (libraryItem.mediaType === 'book') {
+    if (libraryItem.isBook) {
       var searchISBN = options.isbn || libraryItem.media.metadata.isbn
       var searchASIN = options.asin || libraryItem.media.metadata.asin
 
@@ -708,7 +709,7 @@ class Scanner {
       }
 
       updatePayload = await this.quickMatchBookBuildUpdatePayload(libraryItem, matchData, options)
-    } else { // Podcast quick match
+    } else if (libraryItem.isPodcast) { // Podcast quick match
       var results = await this.podcastFinder.search(searchTitle)
       if (!results.length) {
         return {
@@ -739,6 +740,10 @@ class Scanner {
     }
 
     if (hasUpdated) {
+      if (libraryItem.isPodcast && libraryItem.media.metadata.feedUrl) { // Quick match all unmatched podcast episodes
+        await this.quickMatchPodcastEpisodes(libraryItem, options)
+      }
+
       await this.db.updateLibraryItem(libraryItem)
       this.emitter('item_updated', libraryItem.toJSONExpanded())
     }
@@ -762,6 +767,7 @@ class Scanner {
       itunesArtistId: matchData.artistId || null,
       releaseDate: matchData.releaseDate || null,
       imageUrl: matchData.cover || null,
+      feedUrl: matchData.feedUrl || null,
       description: matchData.descriptionPlain || null
     }
 
@@ -769,9 +775,10 @@ class Scanner {
       if (matchDataTransformed[key]) {
         if (key === 'genres') {
           if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
+            // TODO: Genres array or string?
             updatePayload.metadata[key] = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
           }
-        } else if (!libraryItem.media.metadata[key] || options.overrideDetails) {
+        } else if (libraryItem.media.metadata[key] !== matchDataTransformed[key] && (!libraryItem.media.metadata[key] || options.overrideDetails)) {
           updatePayload.metadata[key] = matchDataTransformed[key]
         }
       }
@@ -852,6 +859,61 @@ class Scanner {
     }
 
     return updatePayload
+  }
+
+  async quickMatchPodcastEpisodes(libraryItem, options = {}) {
+    const episodesToQuickMatch = libraryItem.media.episodes.filter(ep => !ep.enclosureUrl) // Only quick match episodes without enclosure
+    if (!episodesToQuickMatch.length) return false
+
+    const feed = await getPodcastFeed(libraryItem.media.metadata.feedUrl)
+    if (!feed) {
+      Logger.error(`[Scanner] quickMatchPodcastEpisodes: Unable to quick match episodes feed not found for "${libraryItem.media.metadata.feedUrl}"`)
+      return false
+    }
+
+    var episodesWereUpdated = false
+    for (const episode of episodesToQuickMatch) {
+      const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title)
+      if (episodeMatches && episodeMatches.length) {
+        const wasUpdated = this.updateEpisodeWithMatch(libraryItem, episode, episodeMatches[0].episode, options)
+        if (wasUpdated) episodesWereUpdated = true
+      }
+    }
+    return episodesWereUpdated
+  }
+
+  updateEpisodeWithMatch(libraryItem, episode, episodeToMatch, options = {}) {
+    Logger.debug(`[Scanner] quickMatchPodcastEpisodes: Found episode match for "${episode.title}" => ${episodeToMatch.title}`)
+    const matchDataTransformed = {
+      title: episodeToMatch.title || '',
+      subtitle: episodeToMatch.subtitle || '',
+      description: episodeToMatch.description || '',
+      enclosure: episodeToMatch.enclosure || null,
+      episode: episodeToMatch.episode || '',
+      episodeType: episodeToMatch.episodeType || '',
+      season: episodeToMatch.season || '',
+      pubDate: episodeToMatch.pubDate || '',
+      publishedAt: episodeToMatch.publishedAt
+    }
+    const updatePayload = {}
+    for (const key in matchDataTransformed) {
+      if (matchDataTransformed[key]) {
+        if (key === 'enclosure') {
+          if (!episode.enclosure || JSON.stringify(episode.enclosure) !== JSON.stringify(matchDataTransformed.enclosure)) {
+            updatePayload[key] = {
+              ...matchDataTransformed.enclosure
+            }
+          }
+        } else if (episode[key] !== matchDataTransformed[key] && (!episode[key] || options.overrideDetails)) {
+          updatePayload[key] = matchDataTransformed[key]
+        }
+      }
+    }
+
+    if (Object.keys(updatePayload).length) {
+      return libraryItem.media.updateEpisode(episode.id, updatePayload)
+    }
+    return false
   }
 
   async matchLibraryItems(library) {

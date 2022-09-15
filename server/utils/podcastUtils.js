@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
-const { xmlToJSON } = require('./index')
+const axios = require('axios')
+const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 function extractFirstArrayItem(json, key) {
@@ -173,4 +174,65 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
       podcast
     }
   }
+}
+
+module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
+  Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
+  return axios.get(feedUrl, { timeout: 6000 }).then(async (data) => {
+    if (!data || !data.data) {
+      Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
+      return false
+    }
+    Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
+    var payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+    if (!payload) {
+      return false
+    }
+
+    // RSS feed may be a private RSS feed
+    payload.podcast.metadata.feedUrl = feedUrl
+
+    return payload.podcast
+  }).catch((error) => {
+    Logger.error('[podcastUtils] getPodcastFeed Error', error)
+    return false
+  })
+}
+
+// Return array of episodes ordered by closest match (Levenshtein distance of 6 or less)
+module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
+  const feed = await this.getPodcastFeed(feedUrl).catch(() => {
+    return null
+  })
+
+  return this.findMatchingEpisodesInFeed(feed, searchTitle)
+}
+
+module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
+  searchTitle = searchTitle.toLowerCase().trim()
+  if (!feed || !feed.episodes) {
+    return null
+  }
+
+  const matches = []
+  feed.episodes.forEach(ep => {
+    if (!ep.title) return
+
+    const epTitle = ep.title.toLowerCase().trim()
+    if (epTitle === searchTitle) {
+      matches.push({
+        episode: ep,
+        levenshtein: 0
+      })
+    } else {
+      const levenshtein = levenshteinDistance(searchTitle, epTitle, true)
+      if (levenshtein <= 6 && epTitle.length > levenshtein) {
+        matches.push({
+          episode: ep,
+          levenshtein
+        })
+      }
+    }
+  })
+  return matches.sort((a, b) => a.levenshtein - b.levenshtein)
 }
