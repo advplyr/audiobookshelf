@@ -485,7 +485,7 @@ class LibraryController {
     res.sendStatus(200)
   }
 
-  // GET: api/scan (Root)
+  // GET: api/libraries/:id/scan
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
@@ -497,6 +497,40 @@ class LibraryController {
     res.sendStatus(200)
     await this.scanner.scan(req.library, options)
     Logger.info('[LibraryController] Scan complete')
+  }
+
+  // GET: api/libraries/:id/recent-episode
+  async getRecentEpisodes(req, res) {
+    if (!req.library.isPodcast) {
+      return res.sendStatus(404)
+    }
+
+    const payload = {
+      episodes: [],
+      total: 0,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+    }
+
+    var allUnfinishedEpisodes = []
+    for (const libraryItem of req.libraryItems) {
+      const unfinishedEpisodes = libraryItem.media.episodes.filter(ep => {
+        const userProgress = req.user.getMediaProgress(libraryItem.id, ep.id)
+        return !userProgress || !userProgress.isFinished
+      })
+      allUnfinishedEpisodes.push(...unfinishedEpisodes)
+    }
+
+    payload.total = allUnfinishedEpisodes.length
+
+    allUnfinishedEpisodes = sort(allUnfinishedEpisodes).desc(ep => ep.publishedAt)
+
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      allUnfinishedEpisodes = allUnfinishedEpisodes.slice(startIndex, startIndex + payload.limit)
+    }
+    payload.episodes = allUnfinishedEpisodes
+    res.json(payload)
   }
 
   middleware(req, res, next) {
