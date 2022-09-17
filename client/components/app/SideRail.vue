@@ -14,6 +14,14 @@
       <div v-show="homePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
+    <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <span class="material-icons">format_list_bulleted</span>
+
+      <p class="font-book pt-1" style="font-size: 0.9rem">Latest</p>
+
+      <div v-show="isPodcastLatestPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+    </nuxt-link>
+
     <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="showLibrary ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -80,7 +88,7 @@
       <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
     </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version"/>
+    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
   </div>
 </template>
 
@@ -122,6 +130,9 @@ export default {
     },
     isPodcastSearchPage() {
       return this.$route.name === 'library-library-podcast-search'
+    },
+    isPodcastLatestPage() {
+      return this.$route.name === 'library-library-podcast-latest'
     },
     homePage() {
       return this.$route.name === 'library-library'
@@ -165,9 +176,9 @@ export default {
     }
   },
   methods: {
-    clickChangelog(){
+    clickChangelog() {
       this.showChangelogModal = true
-    } 
+    }
   },
   mounted() {}
 }

@@ -2,7 +2,7 @@
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
     <app-book-shelf-toolbar page="podcast-search" />
 
-    <div class="w-full h-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
+    <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
           <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />

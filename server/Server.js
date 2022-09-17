@@ -226,6 +226,8 @@ class Server {
       '/library/:library/bookshelf/:id?',
       '/library/:library/authors',
       '/library/:library/series/:id?',
+      '/library/:library/podcast/search',
+      '/library/:library/podcast/latest',
       '/config/users/:id',
       '/config/users/:id/sessions',
       '/collection/:id'

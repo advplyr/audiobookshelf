@@ -517,6 +517,11 @@ class LibraryController {
       const unfinishedEpisodes = libraryItem.media.episodes.filter(ep => {
         const userProgress = req.user.getMediaProgress(libraryItem.id, ep.id)
         return !userProgress || !userProgress.isFinished
+      }).map(_ep => {
+        const ep = _ep.toJSONExpanded()
+        ep.podcast = libraryItem.media.toJSONMinified()
+        ep.libraryItemId = libraryItem.id
+        return ep
       })
       allUnfinishedEpisodes.push(...unfinishedEpisodes)
     }
