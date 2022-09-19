@@ -49,6 +49,9 @@
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
         <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
         <div class="flex-grow" />
+        <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" text="Quick Match Selected" direction="bottom">
+          <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
+        </ui-tooltip>
         <ui-tooltip v-if="!isPodcastLibrary" :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
@@ -210,7 +213,10 @@ export default {
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
-    }
+    },
+    batchAutoMatchClick() {
+      this.$store.commit('globals/setShowBatchQuickMatchModal', true)
+    },
   },
   mounted() {
     this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
