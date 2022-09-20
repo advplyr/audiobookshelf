@@ -23,6 +23,7 @@ const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
+const NotificationManager = require('./managers/NotificationManager')
 const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -64,13 +65,14 @@ class Server {
     this.auth = new Auth(this.db)
 
     // Managers
+    this.notificationManager = new NotificationManager(this.db)
     this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
     this.abMergeManager = new AbMergeManager(this.db, this.clientEmitter.bind(this))
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this), this.notificationManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 

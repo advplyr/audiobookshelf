@@ -13,10 +13,11 @@ const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
 
 class PodcastManager {
-  constructor(db, watcher, emitter) {
+  constructor(db, watcher, emitter, notificationManager) {
     this.db = db
     this.watcher = watcher
     this.emitter = emitter
+    this.notificationManager = notificationManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -122,8 +123,8 @@ class PodcastManager {
     }
     libraryItem.libraryFiles.push(libraryFile)
 
-    // Check setting maxEpisodesToKeep and remove episode if necessary
-    if (this.currentDownload.isAutoDownload) { // only applies for auto-downloaded episodes
+    if (this.currentDownload.isAutoDownload) {
+      // Check setting maxEpisodesToKeep and remove episode if necessary
       if (libraryItem.media.maxEpisodesToKeep && libraryItem.media.episodesWithPubDate.length > libraryItem.media.maxEpisodesToKeep) {
         Logger.info(`[PodcastManager] # of episodes (${libraryItem.media.episodesWithPubDate.length}) exceeds max episodes to keep (${libraryItem.media.maxEpisodesToKeep})`)
         await this.removeOldestEpisode(libraryItem, podcastEpisode.id)
@@ -133,6 +134,11 @@ class PodcastManager {
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
     this.emitter('item_updated', libraryItem.toJSONExpanded())
+
+    if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
+      this.notificationManager.onNewPodcastEpisode(libraryItem, podcastEpisode)
+    }
+
     return true
   }
 
