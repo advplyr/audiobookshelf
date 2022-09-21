@@ -9,8 +9,8 @@ const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/settings/ServerSettings')
+const NotificationSettings = require('./objects/settings/NotificationSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
-const Feed = require('./objects/Feed')
 
 class Db {
   constructor() {
@@ -43,6 +43,7 @@ class Db {
     this.series = []
 
     this.serverSettings = null
+    this.notificationSettings = null
 
     // Stores previous version only if upgraded
     this.previousVersion = null
@@ -125,6 +126,10 @@ class Db {
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
     }
+    if (!this.notificationSettings) {
+      this.notificationSettings = new NotificationSettings()
+      await this.insertEntity('settings', this.notificationSettings)
+    }
     global.ServerSettings = this.serverSettings.toJSON()
   }
 
@@ -165,6 +170,11 @@ class Db {
               }
             }
           }
+        }
+
+        var notificationSettings = this.settings.find(s => s.id === 'notification-settings')
+        if (notificationSettings) {
+          this.notificationSettings = new NotificationSettings(notificationSettings)
         }
       }
     })

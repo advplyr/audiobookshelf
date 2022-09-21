@@ -14,6 +14,7 @@ const SeriesController = require('../controllers/SeriesController')
 const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
+const NotificationController = require('../controllers/NotificationController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -198,6 +199,12 @@ class ApiRouter {
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
+
+    //
+    // Notification Routes
+    //
+    this.router.get('/notifications', NotificationController.middleware.bind(this), NotificationController.get.bind(this))
+    this.router.patch('/notifications', NotificationController.middleware.bind(this), NotificationController.update.bind(this))
 
     //
     // Misc Routes

@@ -136,7 +136,7 @@ class PodcastManager {
     this.emitter('item_updated', libraryItem.toJSONExpanded())
 
     if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
-      this.notificationManager.onNewPodcastEpisode(libraryItem, podcastEpisode)
+      this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
     }
 
     return true

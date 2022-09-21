@@ -82,6 +82,11 @@ export default {
           id: 'config-log',
           title: 'Logs',
           path: '/config/log'
+        },
+        {
+          id: 'config-notifications',
+          title: 'Notifications',
+          path: '/config/notifications'
         }
       ]
 
