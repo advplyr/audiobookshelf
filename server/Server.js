@@ -80,7 +80,7 @@ class Server {
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 

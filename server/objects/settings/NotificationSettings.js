@@ -1,3 +1,5 @@
+const Notification = require('../Notification')
+
 class NotificationSettings {
   constructor(settings = null) {
     this.id = 'notification-settings'
@@ -40,6 +42,24 @@ class NotificationSettings {
       return true
     }
     return false
+  }
+
+  addNewEvent(payload) {
+    if (!payload) return false
+    // TODO: validate
+
+    const notification = new Notification()
+    notification.setData(payload)
+    this.notifications.push(notification)
+    return true
+  }
+
+  updateEvent(payload) {
+    if (!payload) return false
+    const notification = this.notifications.find(n => n.id === payload.id)
+    if (!notification) return false
+
+    return notification.update(payload)
   }
 }
 module.exports = NotificationSettings

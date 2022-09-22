@@ -1,3 +1,5 @@
+const { getId } = require('../utils/index')
+
 class Notification {
   constructor(notification = null) {
     this.id = null
@@ -40,6 +42,37 @@ class Notification {
       type: this.type,
       createdAt: this.createdAt
     }
+  }
+
+  setData(payload) {
+    this.id = getId('noti')
+    this.libraryId = payload.libraryId || null
+    this.eventName = payload.eventName
+    this.urls = payload.urls
+    this.titleTemplate = payload.titleTemplate
+    this.bodyTemplate = payload.bodyTemplate
+    this.enabled = !!payload.enabled
+    this.type = payload.type || null
+    this.createdAt = Date.now()
+  }
+
+  update(payload) {
+    const keysToUpdate = ['libraryId', 'eventName', 'urls', 'titleTemplate', 'bodyTemplate', 'enabled', 'type']
+    var hasUpdated = false
+    for (const key of keysToUpdate) {
+      if (payload[key]) {
+        if (key === 'urls') {
+          if (payload[key].join(',') !== this.urls.join(',')) {
+            this.urls = [...payload[key]]
+            hasUpdated = true
+          }
+        } else if (payload[key] !== this[key]) {
+          this[key] = payload[key]
+          hasUpdated = true
+        }
+      }
+    }
+    return hasUpdated
   }
 
   parseTitleTemplate(data) {

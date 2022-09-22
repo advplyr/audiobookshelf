@@ -26,7 +26,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -40,6 +40,7 @@ class ApiRouter {
     this.audioMetadataManager = audioMetadataManager
     this.rssFeedManager = rssFeedManager
     this.cronManager = cronManager
+    this.notificationManager = notificationManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -205,6 +206,9 @@ class ApiRouter {
     //
     this.router.get('/notifications', NotificationController.middleware.bind(this), NotificationController.get.bind(this))
     this.router.patch('/notifications', NotificationController.middleware.bind(this), NotificationController.update.bind(this))
+    this.router.post('/notifications/event', NotificationController.middleware.bind(this), NotificationController.createEvent.bind(this))
+    this.router.patch('/notifications/event', NotificationController.middleware.bind(this), NotificationController.updateEvent.bind(this))
+    this.router.get('/notificationdata', NotificationController.middleware.bind(this), NotificationController.getData.bind(this))
 
     //
     // Misc Routes

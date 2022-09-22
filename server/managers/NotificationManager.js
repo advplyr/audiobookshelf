@@ -1,11 +1,16 @@
 const axios = require('axios')
 const Logger = require("../Logger")
+const { notificationData } = require('../utils/notifications')
 
 class NotificationManager {
   constructor(db) {
     this.db = db
 
     this.notificationFailedMap = {}
+  }
+
+  getData() {
+    return notificationData
   }
 
   onPodcastEpisodeDownloaded(libraryItem, episode) {

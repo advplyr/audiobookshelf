@@ -4,7 +4,10 @@ class NotificationController {
   constructor() { }
 
   get(req, res) {
-    res.json(this.db.notificationSettings)
+    res.json({
+      data: this.notificationManager.getData(),
+      settings: this.db.notificationSettings
+    })
   }
 
   async update(req, res) {
@@ -13,6 +16,28 @@ class NotificationController {
       await this.db.updateEntity('settings', this.db.notificationSettings)
     }
     res.sendStatus(200)
+  }
+
+  async createEvent(req, res) {
+    const success = this.db.notificationSettings.addNewEvent(req.body)
+
+    if (success) {
+      await this.db.updateEntity('settings', this.db.notificationSettings)
+    }
+    res.sendStatus(200)
+  }
+
+  async updateEvent(req, res) {
+    const success = this.db.notificationSettings.updateEvent(req.body)
+
+    if (success) {
+      await this.db.updateEntity('settings', this.db.notificationSettings)
+    }
+    res.sendStatus(200)
+  }
+
+  getData(req, res) {
+    res.json(this.notificationManager.getData())
   }
 
   middleware(req, res, next) {
