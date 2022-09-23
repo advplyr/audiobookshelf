@@ -17,6 +17,7 @@
 		    <p class="pr-4">Provider</p>
 			<ui-dropdown v-model="options.provider" :items="providers" small />
 	      </div>
+		  <p class="text-base px-8 py-2">Quick Match will attempt to add missing covers and metadata for the selected books.  Enable the options below to allow Quick Match to overwrite existing covers and/or metadata.</p>
           <div class="flex px-8 items-end py-2">
             <ui-toggle-switch v-model="options.overrideCover"/>
             <ui-tooltip :text="tooltips.updateCovers">
@@ -56,11 +57,12 @@ export default {
 	  options: {
 		provider: 'google',
 		overrideDetails: true,
-		overrideCover: true
+		overrideCover: true,
+		overrideDefaults: true
 	  },
 	  tooltips: {
-		  updateCovers: 'Update the selected book covers when a match is located.',
-		  updateDetails: 'Update the selected book details when a match is located.'
+		  updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
+		  updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
 	  }
     }
   },
