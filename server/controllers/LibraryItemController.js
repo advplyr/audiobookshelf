@@ -305,6 +305,31 @@ class LibraryItemController {
     res.json(libraryItems)
   }
 
+  // POST: api/items/batch/quickmatch
+  async batchQuickMatch(req, res) {
+	var itemsUpdated = 0
+
+	var matchData = req.body
+	var options = matchData.options || {}
+	var items = matchData.libraryItemIds
+    if (!items || !items.length) {
+      return res.sendStatus(500)
+    }
+	
+    for (let i = 0; i < items.length; i++) {
+		var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
+		var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+		if (matchResult.updated) {
+			itemsUpdated++
+		}
+	}
+	
+	res.json({
+	  success: itemsUpdated > 0,
+	  updates: itemsUpdated
+    })
+  }
+
   // DELETE: api/items/all
   async deleteAll(req, res) {
     if (!req.user.isAdminOrUp) {

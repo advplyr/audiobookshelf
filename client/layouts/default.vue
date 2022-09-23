@@ -15,6 +15,7 @@
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
+	<modals-batch-quick-match-model />
     <prompt-confirm />
     <readers-reader />
   </div>
