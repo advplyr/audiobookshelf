@@ -10,19 +10,19 @@
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
           <h1 class="text-2xl">Quick Match {{ selectedBookIds.length }} Books</h1>
-		</div>
-		
-		<div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
+        </div>
+        
+        <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <div class="flex px-8 items-center py-2">
-		    <p class="pr-4">Provider</p>
-			<ui-dropdown v-model="options.provider" :items="providers" small />
-	      </div>
-		  <p class="text-base px-8 py-2">Quick Match will attempt to add missing covers and metadata for the selected books.  Enable the options below to allow Quick Match to overwrite existing covers and/or metadata.</p>
+            <p class="pr-4">Provider</p>
+            <ui-dropdown v-model="options.provider" :items="providers" small />
+          </div>
+          <p class="text-base px-8 py-2">Quick Match will attempt to add missing covers and metadata for the selected books.  Enable the options below to allow Quick Match to overwrite existing covers and/or metadata.</p>
           <div class="flex px-8 items-end py-2">
             <ui-toggle-switch v-model="options.overrideCover"/>
             <ui-tooltip :text="tooltips.updateCovers">
               <p class="pl-4">
-			    Update Covers
+                Update Covers
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -43,7 +43,7 @@
               <ui-btn color="success" @click="doBatchQuickMatch">Continue</ui-btn>
             </div>
           </div>
-		</div>
+        </div>
       </div>
     </div>
   </modals-modal>
@@ -54,26 +54,24 @@ export default {
   data() {
     return {
       processing: false,
-	  options: {
-		provider: 'google',
-		overrideDetails: true,
-		overrideCover: true,
-		overrideDefaults: true
-	  },
-	  tooltips: {
-		  updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
-		  updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
-	  }
+      options: {
+        provider: 'google',
+        overrideDetails: true,
+        overrideCover: true,
+        overrideDefaults: true
+      },
+      tooltips: {
+          updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
+          updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
+      }
     }
   },
   computed: {
     show: {
       get() {
-		  console.log("Getter")
         return this.$store.state.globals.showBatchQuickMatchModal
       },
       set(val) {
-		  console.log("Setter")
         this.$store.commit('globals/setShowBatchQuickMatchModal', val)
       }
     },
@@ -95,31 +93,31 @@ export default {
     }
   },
   methods: {
-	  doBatchQuickMatch() {
-		  if (!this.selectedBookIds.length) return
-		  if (this.processing) return
-		  
-		  this.processing = true
-		  this.$store.commit('setProcessingBatch', true)
-		  this.$axios
+      doBatchQuickMatch() {
+          if (!this.selectedBookIds.length) return
+          if (this.processing) return
+          
+          this.processing = true
+          this.$store.commit('setProcessingBatch', true)
+          this.$axios
             .$post(`/api/items/batch/quickmatch`, {
-			  options: this.options,
+              options: this.options,
               libraryItemIds: this.selectedBookIds
             })
             .then(() => {
               this.$toast.success('Batch quick match success!')
               this.processing = false
               this.$store.commit('setProcessingBatch', false)
-			  this.show = false
+              this.show = false
             })
             .catch((error) => {
               this.$toast.error('Batch quick match failed')
               console.error('Failed to batch quick match', error)
               this.processing = false
               this.$store.commit('setProcessingBatch', false)
-			  this.show = false
+              this.show = false
             })
-	  }
+      }
   },
   mounted() {}
 }

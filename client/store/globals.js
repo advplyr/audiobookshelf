@@ -111,7 +111,6 @@ export const mutations = {
     state.isCasting = val
   },
   setShowBatchQuickMatchModal(state, val) {
-	  console.log("setShowBatchQuickMatchModal: " + val)
     state.showBatchQuickMatchModal = val
   }
 }
