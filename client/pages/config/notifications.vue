@@ -23,7 +23,17 @@
       </div>
       <template v-for="notification in notifications">
         <div :key="notification.id" class="w-full bg-primary rounded-xl p-4">
-          <p>{{ notification.eventName }}</p>
+          <div class="flex items-center">
+            <p class="text-lg font-semibold">{{ notification.eventName }}</p>
+            <div class="flex-grow" />
+
+            <ui-btn :loading="sendingTest" small class="mr-2" @click="sendTest(notification)">Test</ui-btn>
+
+            <ui-icon-btn bg-color="error" :size="7" icon-font-size="1.2rem" icon="delete" @click="deleteNotification(notification)" />
+          </div>
+          <div class="pt-4">
+            <p class="text-gray-300">{{ notification.urls.join(', ') }}</p>
+          </div>
         </div>
       </template>
     </div>
@@ -42,11 +52,40 @@ export default {
       notificationSettings: null,
       notificationData: null,
       showEditModal: false,
-      selectedNotification: null
+      selectedNotification: null,
+      sendingTest: false
     }
   },
   computed: {},
   methods: {
+    deleteNotification(notification) {
+      this.$axios
+        .$delete(`/api/notifications/${notification.id}`)
+        .then(() => {
+          this.$toast.success('Deleted notification')
+          this.notificationSettings.notifications = this.notificationSettings.notifications.filter((n) => n.id !== notification.id)
+          this.notifications = this.notificationSettings.notifications
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Failed to delete notification')
+        })
+    },
+    sendTest(notification) {
+      this.sendingTest = true
+      this.$axios
+        .$get(`/api/notifications/${notification.id}/test`)
+        .then(() => {
+          this.$toast.success('Triggered test notification')
+        })
+        .catch((error) => {
+          console.error('Failed', error)
+          this.$toast.error('Failed to trigger test notification')
+        })
+        .finally(() => {
+          this.sendingTest = false
+        })
+    },
     clickCreate() {
       this.selectedNotification = null
       this.showEditModal = true

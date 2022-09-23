@@ -15,7 +15,7 @@ class NotificationSettings {
   construct(settings) {
     this.appriseType = settings.appriseType
     this.appriseApiUrl = settings.appriseApiUrl || null
-    this.notifications = (settings.notifications || []).map(n => ({ ...n }))
+    this.notifications = (settings.notifications || []).map(n => new Notification(n))
   }
 
   toJSON() {
@@ -35,6 +35,18 @@ class NotificationSettings {
     return this.notifications.filter(n => n.eventName === eventName)
   }
 
+  getNotification(id) {
+    return this.notifications.find(n => n.id === id)
+  }
+
+  removeNotification(id) {
+    if (this.notifications.some(n => n.id === id)) {
+      this.notifications = this.notifications.filter(n => n.id !== id)
+      return true
+    }
+    return false
+  }
+
   update(payload) {
     if (!payload) return false
     if (payload.appriseApiUrl !== this.appriseApiUrl) {
@@ -44,7 +56,7 @@ class NotificationSettings {
     return false
   }
 
-  addNewEvent(payload) {
+  createNotification(payload) {
     if (!payload) return false
     // TODO: validate
 
@@ -54,7 +66,7 @@ class NotificationSettings {
     return true
   }
 
-  updateEvent(payload) {
+  updateNotification(payload) {
     if (!payload) return false
     const notification = this.notifications.find(n => n.id === payload.id)
     if (!notification) return false

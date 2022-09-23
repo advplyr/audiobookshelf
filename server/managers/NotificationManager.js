@@ -48,8 +48,8 @@ class NotificationManager {
 
   sendNotification(notification, eventData) {
     const payload = notification.getApprisePayload(eventData)
-    return axios.post(`${this.db.notificationSettings.appriseApiUrl}/notify`, payload, { timeout: 6000 }).then((data) => {
-      Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=${data}`)
+    return axios.post(`${this.db.notificationSettings.appriseApiUrl}/notify`, payload, { timeout: 6000 }).then((response) => {
+      Logger.debug(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} response=`, response.data)
       return true
     }).catch((error) => {
       Logger.error(`[NotificationManager] sendNotification: ${notification.eventName}/${notification.id} error=`, error)

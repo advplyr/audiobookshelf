@@ -210,7 +210,7 @@ export default {
       }
       console.log('Sending create notification', payload)
       this.$axios
-        .$post('/api/notifications/event', payload)
+        .$post('/api/notifications', payload)
         .then(() => {
           this.$toast.success('Notification created')
         })

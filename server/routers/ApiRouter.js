@@ -206,9 +206,11 @@ class ApiRouter {
     //
     this.router.get('/notifications', NotificationController.middleware.bind(this), NotificationController.get.bind(this))
     this.router.patch('/notifications', NotificationController.middleware.bind(this), NotificationController.update.bind(this))
-    this.router.post('/notifications/event', NotificationController.middleware.bind(this), NotificationController.createEvent.bind(this))
-    this.router.patch('/notifications/event', NotificationController.middleware.bind(this), NotificationController.updateEvent.bind(this))
     this.router.get('/notificationdata', NotificationController.middleware.bind(this), NotificationController.getData.bind(this))
+    this.router.post('/notifications', NotificationController.middleware.bind(this), NotificationController.createNotification.bind(this))
+    this.router.delete('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.deleteNotification.bind(this))
+    this.router.patch('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.updateNotification.bind(this))
+    this.router.get('/notifications/:id/test', NotificationController.middleware.bind(this), NotificationController.sendNotificationTest.bind(this))
 
     //
     // Misc Routes
