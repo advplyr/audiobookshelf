@@ -675,10 +675,10 @@ class Scanner {
     var provider = options.provider || 'google'
     var searchTitle = options.title || libraryItem.media.metadata.title
     var searchAuthor = options.author || libraryItem.media.metadata.authorName
-	var overrideDefaults = options.overrideDefaults || false
+    var overrideDefaults = options.overrideDefaults || false
 
     // Set to override existing metadata if scannerPreferMatchedMetadata setting is true and 
-	// the overrideDefaults option is not set or set to false.
+    // the overrideDefaults option is not set or set to false.
     if ((overrideDefaults == false) && (this.db.serverSettings.scannerPreferMatchedMetadata)) {
       options.overrideCover = true
       options.overrideDetails = true
