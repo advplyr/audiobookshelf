@@ -337,7 +337,7 @@ class LibraryItemController {
       success: itemsUpdated > 0,
       updates: itemsUpdated,
       unmatched: itemsUnmatched
-    };
+    }
     this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
   }
 
