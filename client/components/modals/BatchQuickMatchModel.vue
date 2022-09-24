@@ -54,7 +54,6 @@ export default {
   data() {
     return {
       processing: false,
-      isScrollable: false,
       lastUsedLibrary: undefined,
       options: {
         provider: undefined,
