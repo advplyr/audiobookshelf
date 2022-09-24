@@ -17,7 +17,7 @@
             <p class="pr-4">Provider</p>
             <ui-dropdown v-model="options.provider" :items="providers" small />
           </div>
-          <p class="text-base px-8 py-2">Quick Match will attempt to add missing covers and metadata for the selected books.  Enable the options below to allow Quick Match to overwrite existing covers and/or metadata.</p>
+          <p class="text-base px-8 py-2">Quick Match will attempt to add missing covers and metadata for the selected books. Enable the options below to allow Quick Match to overwrite existing covers and/or metadata.</p>
           <div class="flex px-8 items-end py-2">
             <ui-toggle-switch v-model="options.overrideCover"/>
             <ui-tooltip :text="tooltips.updateCovers">
