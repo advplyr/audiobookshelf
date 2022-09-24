@@ -15,6 +15,7 @@
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
+    <modals-batch-quick-match-model />
     <prompt-confirm />
     <readers-reader />
   </div>
@@ -358,6 +359,18 @@ export default {
       // Force refresh
       location.reload()
     },
+    batchQuickMatchComplete(result) {
+      var success = result.success || false
+      var toast = 'Batch quick match complete!\n' + result.updates + ' Updated'
+      if (result.unmatched && (result.unmatched > 0)) {
+        toast += '\n' + result.unmatched + ' with no matches'
+      }
+      if (success) {
+        this.$toast.success(toast)
+      } else {
+        this.$toast.info(toast)
+      }
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -429,6 +442,8 @@ export default {
       this.socket.on('rss_feed_closed', this.rssFeedClosed)
 
       this.socket.on('backup_applied', this.backupApplied)
+      
+      this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

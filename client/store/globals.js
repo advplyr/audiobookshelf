@@ -14,6 +14,7 @@ export const state = () => ({
   selectedAuthor: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loaded
+  showBatchQuickMatchModal: false,
   dateFormats: [
     {
       text: 'MM/DD/YYYY',
@@ -108,5 +109,8 @@ export const mutations = {
   },
   setCasting(state, val) {
     state.isCasting = val
+  },
+  setShowBatchQuickMatchModal(state, val) {
+    state.showBatchQuickMatchModal = val
   }
 }
