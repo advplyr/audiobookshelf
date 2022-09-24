@@ -109,7 +109,7 @@ export default {
       // the selected provider to the current library default provider
       if (!this.options.provider || (this.options.lastUsedLibrary != this.currentLibraryId)) {
         this.options.lastUsedLibrary = this.currentLibraryId
-        this.options.provider = this.libraryProvider;
+        this.options.provider = this.libraryProvider
       }
     },
     doBatchQuickMatch() {
