@@ -1,3 +1,4 @@
+const Logger = require('../../Logger')
 const Notification = require('../Notification')
 
 class NotificationSettings {
@@ -58,7 +59,7 @@ class NotificationSettings {
 
   createNotification(payload) {
     if (!payload) return false
-    // TODO: validate
+    if (!payload.eventName || !payload.urls.length) return false
 
     const notification = new Notification()
     notification.setData(payload)
@@ -69,7 +70,10 @@ class NotificationSettings {
   updateNotification(payload) {
     if (!payload) return false
     const notification = this.notifications.find(n => n.id === payload.id)
-    if (!notification) return false
+    if (!notification) {
+      Logger.error(`[NotificationSettings] updateNotification: Notification not found ${payload.id}`)
+      return false
+    }
 
     return notification.update(payload)
   }

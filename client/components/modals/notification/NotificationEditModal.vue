@@ -201,7 +201,28 @@ export default {
         this.submitUpdate()
       }
     },
-    submitUpdate() {},
+    submitUpdate() {
+      this.processing = true
+
+      const payload = {
+        ...this.newNotification
+      }
+      console.log('Sending update notification', payload)
+      this.$axios
+        .$patch(`/api/notifications/${payload.id}`, payload)
+        .then((updatedSettings) => {
+          this.$emit('update', updatedSettings)
+          this.$toast.success('Notification updated')
+          this.show = false
+        })
+        .catch((error) => {
+          console.error('Failed to update notification', error)
+          this.$toast.error('Failed to update notification')
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
     submitCreate() {
       this.processing = true
 
@@ -211,8 +232,10 @@ export default {
       console.log('Sending create notification', payload)
       this.$axios
         .$post('/api/notifications', payload)
-        .then(() => {
+        .then((updatedSettings) => {
+          this.$emit('update', updatedSettings)
           this.$toast.success('Notification created')
+          this.show = false
         })
         .catch((error) => {
           console.error('Failed to create notification', error)

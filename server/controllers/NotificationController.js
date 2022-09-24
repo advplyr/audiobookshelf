@@ -18,36 +18,37 @@ class NotificationController {
     res.sendStatus(200)
   }
 
+  getData(req, res) {
+    res.json(this.notificationManager.getData())
+  }
+
   async createNotification(req, res) {
     const success = this.db.notificationSettings.createNotification(req.body)
 
     if (success) {
       await this.db.updateEntity('settings', this.db.notificationSettings)
     }
-    res.sendStatus(200)
-  }
-
-  getData(req, res) {
-    res.json(this.notificationManager.getData())
+    res.json(this.db.notificationSettings)
   }
 
   async deleteNotification(req, res) {
     if (this.db.notificationSettings.removeNotification(req.notification.id)) {
       await this.db.updateEntity('settings', this.db.notificationSettings)
     }
-    res.sendStatus(200)
+    res.json(this.db.notificationSettings)
   }
 
   async updateNotification(req, res) {
     const success = this.db.notificationSettings.updateNotification(req.body)
-
+    console.log('Update notification', success, req.body)
     if (success) {
       await this.db.updateEntity('settings', this.db.notificationSettings)
     }
-    res.sendStatus(200)
+    res.json(this.db.notificationSettings)
   }
 
   sendNotificationTest(req, res) {
+    if (!this.db.notificationSettings.isUsable) return res.status(500).send('Apprise is not configured')
     this.notificationManager.onTest()
     res.sendStatus(200)
   }

@@ -60,7 +60,7 @@ class Notification {
     const keysToUpdate = ['libraryId', 'eventName', 'urls', 'titleTemplate', 'bodyTemplate', 'enabled', 'type']
     var hasUpdated = false
     for (const key of keysToUpdate) {
-      if (payload[key]) {
+      if (payload[key] !== undefined) {
         if (key === 'urls') {
           if (payload[key].join(',') !== this.urls.join(',')) {
             this.urls = [...payload[key]]

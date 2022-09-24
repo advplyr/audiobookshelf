@@ -5,9 +5,9 @@
       <p class="mb-6">Insert some text here describing this feature</p>
 
       <form @submit.prevent="submitForm">
-        <ui-text-input-with-label v-model="appriseApiUrl" label="Apprise API Url" />
+        <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" />
         <div class="flex items-center justify-end pt-4">
-          <ui-btn type="submit">Save</ui-btn>
+          <ui-btn :loading="savingSettings" type="submit">Save</ui-btn>
         </div>
       </form>
 
@@ -22,23 +22,11 @@
         <p class="text-lg text-gray-200">No notifications</p>
       </div>
       <template v-for="notification in notifications">
-        <div :key="notification.id" class="w-full bg-primary rounded-xl p-4">
-          <div class="flex items-center">
-            <p class="text-lg font-semibold">{{ notification.eventName }}</p>
-            <div class="flex-grow" />
-
-            <ui-btn :loading="sendingTest" small class="mr-2" @click="sendTest(notification)">Test</ui-btn>
-
-            <ui-icon-btn bg-color="error" :size="7" icon-font-size="1.2rem" icon="delete" @click="deleteNotification(notification)" />
-          </div>
-          <div class="pt-4">
-            <p class="text-gray-300">{{ notification.urls.join(', ') }}</p>
-          </div>
-        </div>
+        <cards-notification-card :key="notification.id" :notification="notification" @update="updateSettings" @edit="editNotification" />
       </template>
     </div>
 
-    <modals-notification-edit-modal v-model="showEditModal" :notification="selectedNotification" :notification-data="notificationData" />
+    <modals-notification-edit-modal v-model="showEditModal" :notification="selectedNotification" :notification-data="notificationData" @update="updateSettings" />
   </div>
 </template>
 
@@ -47,6 +35,7 @@ export default {
   data() {
     return {
       loading: false,
+      savingSettings: false,
       appriseApiUrl: null,
       notifications: [],
       notificationSettings: null,
@@ -58,33 +47,13 @@ export default {
   },
   computed: {},
   methods: {
-    deleteNotification(notification) {
-      this.$axios
-        .$delete(`/api/notifications/${notification.id}`)
-        .then(() => {
-          this.$toast.success('Deleted notification')
-          this.notificationSettings.notifications = this.notificationSettings.notifications.filter((n) => n.id !== notification.id)
-          this.notifications = this.notificationSettings.notifications
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.$toast.error('Failed to delete notification')
-        })
+    updateSettings(settings) {
+      this.notificationSettings = settings
+      this.notifications = settings.notifications
     },
-    sendTest(notification) {
-      this.sendingTest = true
-      this.$axios
-        .$get(`/api/notifications/${notification.id}/test`)
-        .then(() => {
-          this.$toast.success('Triggered test notification')
-        })
-        .catch((error) => {
-          console.error('Failed', error)
-          this.$toast.error('Failed to trigger test notification')
-        })
-        .finally(() => {
-          this.sendingTest = false
-        })
+    editNotification(notification) {
+      this.selectedNotification = notification
+      this.showEditModal = true
     },
     clickCreate() {
       this.selectedNotification = null
@@ -92,7 +61,12 @@ export default {
     },
     submitForm() {
       if (this.notificationSettings && this.notificationSettings.appriseApiUrl == this.appriseApiUrl) {
+        this.$toast.info('No update necessary')
         return
+      }
+
+      if (this.$refs.apiUrlInput) {
+        this.$refs.apiUrlInput.blur()
       }
 
       // TODO: Validate apprise api url
@@ -100,7 +74,7 @@ export default {
       const updatePayload = {
         appriseApiUrl: this.appriseApiUrl || null
       }
-      this.loading = true
+      this.savingSettings = true
       this.$axios
         .$patch('/api/notifications', updatePayload)
         .then(() => {
@@ -111,7 +85,7 @@ export default {
           this.$toast.error('Failed to update notification settings')
         })
         .finally(() => {
-          this.loading = false
+          this.savingSettings = false
         })
     },
     async init() {
@@ -127,7 +101,6 @@ export default {
       }
       this.notificationSettings = notificationResponse.settings
       this.notificationData = notificationResponse.data
-      console.log('Notification response', notificationResponse)
       this.appriseApiUrl = this.notificationSettings.appriseApiUrl
       this.notifications = this.notificationSettings.notifications || []
     }
