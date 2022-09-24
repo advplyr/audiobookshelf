@@ -321,7 +321,7 @@ class LibraryItemController {
     if (!items || !items.length) {
       return res.sendStatus(500)
     }
-    res.sendStatus(200);
+    res.sendStatus(200)
     
     for (let i = 0; i < items.length; i++) {
         var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
