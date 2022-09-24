@@ -65,7 +65,7 @@ class Server {
     this.auth = new Auth(this.db)
 
     // Managers
-    this.notificationManager = new NotificationManager(this.db)
+    this.notificationManager = new NotificationManager(this.db, this.emitter.bind(this))
     this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()

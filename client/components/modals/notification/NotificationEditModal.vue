@@ -6,7 +6,7 @@
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+      <div class="p-4 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
         <div class="w-full p-8">
           <ui-dropdown v-model="newNotification.eventName" label="Notification Event" :items="eventOptions" class="mb-4" @input="eventOptionUpdated" />
 
@@ -16,7 +16,7 @@
 
           <ui-textarea-with-label v-model="newNotification.bodyTemplate" label="Body Template" class="mb-2" />
 
-          <div class="flex pt-4">
+          <div class="flex items-center pt-4">
             <div class="flex items-center">
               <ui-toggle-switch v-model="newNotification.enabled" />
               <p class="text-lg pl-2">Enabled</p>
@@ -25,105 +25,6 @@
             <ui-btn color="success" type="submit">Submit</ui-btn>
           </div>
         </div>
-        <!-- <div class="w-full p-8">
-          <div class="flex py-2">
-            <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-model="newUser.username" label="Username" />
-            </div>
-            <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-if="!isEditingRoot" v-model="newUser.password" :label="isNew ? 'Password' : 'Change Password'" type="password" />
-            </div>
-          </div>
-          <div v-show="!isEditingRoot" class="flex py-2">
-            <div class="px-2 w-52">
-              <ui-dropdown v-model="newUser.type" label="Account Type" :disabled="isEditingRoot" :items="accountTypes" @input="userTypeUpdated" />
-            </div>
-            <div class="flex-grow" />
-            <div class="flex items-center pt-4 px-2">
-              <p class="px-3 font-semibold" :class="isEditingRoot ? 'text-gray-300' : ''">Is Active</p>
-              <ui-toggle-switch v-model="newUser.isActive" :disabled="isEditingRoot" />
-            </div>
-          </div>
-
-          <div v-if="!isEditingRoot && newUser.permissions" class="w-full border-t border-b border-black-200 py-2 px-3 mt-4">
-            <p class="text-lg mb-2 font-semibold">Permissions</p>
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Download</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.download" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Update</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.update" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Delete</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.delete" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Upload</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.upload" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Access Explicit Content</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.accessExplicitContent" />
-              </div>
-            </div>
-
-            <div class="flex items-center my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Access All Libraries</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.accessAllLibraries" @input="accessAllLibrariesToggled" />
-              </div>
-            </div>
-
-            <div v-if="!newUser.permissions.accessAllLibraries" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" label="Libraries Accessible to User" />
-            </div>
-
-            <div class="flex items-cen~ter my-2 max-w-md">
-              <div class="w-1/2">
-                <p>Can Access All Tags</p>
-              </div>
-              <div class="w-1/2">
-                <ui-toggle-switch v-model="newUser.permissions.accessAllTags" @input="accessAllTagsToggled" />
-              </div>
-            </div>
-            <div v-if="!newUser.permissions.accessAllTags" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
-            </div>
-          </div>
-
-          <div class="flex pt-4 px-2">
-            <ui-btn v-if="isEditingRoot" to="/account">Change Root Password</ui-btn>
-            <div class="flex-grow" />
-            <ui-btn color="success" type="submit">Submit</ui-btn>
-          </div>
-        </div> -->
       </div>
     </form>
   </modals-modal>
@@ -195,6 +96,11 @@ export default {
       if (this.$refs.modal) this.$refs.modal.setHide()
     },
     submitForm() {
+      if (!this.newNotification.urls.length) {
+        this.$toast.error('Must enter an Apprise URL')
+        return
+      }
+
       if (this.isNew) {
         this.submitCreate()
       } else {
@@ -263,11 +169,12 @@ export default {
           libraryId: null,
           eventName: 'onTest',
           urls: [],
-          titleTemplate: 'Test Title',
-          bodyTemplate: 'Test Body',
+          titleTemplate: '',
+          bodyTemplate: '',
           enabled: true,
           type: null
         }
+        this.eventOptionUpdated()
       }
     }
   },

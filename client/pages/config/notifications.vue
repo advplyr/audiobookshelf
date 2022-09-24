@@ -59,6 +59,15 @@ export default {
       this.selectedNotification = null
       this.showEditModal = true
     },
+    validateAppriseApiUrl() {
+      try {
+        return new URL(this.appriseApiUrl)
+      } catch (error) {
+        console.log('URL error', error)
+        this.$toast.error(error.message)
+        return false
+      }
+    },
     submitForm() {
       if (this.notificationSettings && this.notificationSettings.appriseApiUrl == this.appriseApiUrl) {
         this.$toast.info('No update necessary')
@@ -69,7 +78,10 @@ export default {
         this.$refs.apiUrlInput.blur()
       }
 
-      // TODO: Validate apprise api url
+      const isValid = this.validateAppriseApiUrl()
+      if (!isValid) {
+        return
+      }
 
       const updatePayload = {
         appriseApiUrl: this.appriseApiUrl || null
@@ -99,14 +111,25 @@ export default {
       if (!notificationResponse) {
         return
       }
-      this.notificationSettings = notificationResponse.settings
       this.notificationData = notificationResponse.data
-      this.appriseApiUrl = this.notificationSettings.appriseApiUrl
-      this.notifications = this.notificationSettings.notifications || []
+      this.setNotificationSettings(notificationResponse.settings)
+    },
+    setNotificationSettings(notificationSettings) {
+      this.notificationSettings = notificationSettings
+      this.appriseApiUrl = notificationSettings.appriseApiUrl
+      this.notifications = notificationSettings.notifications || []
+    },
+    notificationsUpdated(notificationSettings) {
+      console.log('Notifications updated', notificationSettings)
+      this.setNotificationSettings(notificationSettings)
     }
   },
   mounted() {
     this.init()
+    this.$root.socket.on('notifications_updated', this.notificationsUpdated)
+  },
+  beforeDestroy() {
+    this.$root.socket.off('notifications_updated', this.notificationsUpdated)
   }
 }
 </script>

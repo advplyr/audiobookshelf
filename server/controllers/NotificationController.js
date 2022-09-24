@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const { version } = require('../../package.json')
 
 class NotificationController {
   constructor() { }
@@ -22,6 +23,11 @@ class NotificationController {
     res.json(this.notificationManager.getData())
   }
 
+  async fireTestEvent(req, res) {
+    await this.notificationManager.triggerNotification('onTest', { version: `v${version}` }, req.query.fail === '1')
+    res.sendStatus(200)
+  }
+
   async createNotification(req, res) {
     const success = this.db.notificationSettings.createNotification(req.body)
 
@@ -40,17 +46,18 @@ class NotificationController {
 
   async updateNotification(req, res) {
     const success = this.db.notificationSettings.updateNotification(req.body)
-    console.log('Update notification', success, req.body)
     if (success) {
       await this.db.updateEntity('settings', this.db.notificationSettings)
     }
     res.json(this.db.notificationSettings)
   }
 
-  sendNotificationTest(req, res) {
-    if (!this.db.notificationSettings.isUsable) return res.status(500).send('Apprise is not configured')
-    this.notificationManager.onTest()
-    res.sendStatus(200)
+  async sendNotificationTest(req, res) {
+    if (!this.db.notificationSettings.isUseable) return res.status(500).send('Apprise is not configured')
+
+    const success = await this.notificationManager.sendTestNotification(req.notification)
+    if (success) res.sendStatus(200)
+    else res.sendStatus(500)
   }
 
   middleware(req, res, next) {

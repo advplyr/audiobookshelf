@@ -11,6 +11,10 @@ class Notification {
     this.type = 'info'
     this.enabled = false
 
+    this.lastFiredAt = null
+    this.lastAttemptFailed = false
+    this.numConsecutiveFailedAttempts = 0
+    this.numTimesFired = 0
     this.createdAt = null
 
     if (notification) {
@@ -27,6 +31,10 @@ class Notification {
     this.bodyTemplate = notification.bodyTemplate || ''
     this.type = notification.type || 'info'
     this.enabled = !!notification.enabled
+    this.lastFiredAt = notification.lastFiredAt || null
+    this.lastAttemptFailed = !!notification.lastAttemptFailed
+    this.numConsecutiveFailedAttempts = notification.numConsecutiveFailedAttempts || 0
+    this.numTimesFired = notification.numTimesFired || 0
     this.createdAt = notification.createdAt
   }
 
@@ -40,6 +48,10 @@ class Notification {
       bodyTemplate: this.bodyTemplate,
       enabled: this.enabled,
       type: this.type,
+      lastFiredAt: this.lastFiredAt,
+      lastAttemptFailed: this.lastAttemptFailed,
+      numConsecutiveFailedAttempts: this.numConsecutiveFailedAttempts,
+      numTimesFired: this.numTimesFired,
       createdAt: this.createdAt
     }
   }
@@ -57,6 +69,13 @@ class Notification {
   }
 
   update(payload) {
+    if (!this.enabled && payload.enabled) {
+      // Reset
+      this.lastFiredAt = null
+      this.lastAttemptFailed = false
+      this.numConsecutiveFailedAttempts = 0
+    }
+
     const keysToUpdate = ['libraryId', 'eventName', 'urls', 'titleTemplate', 'bodyTemplate', 'enabled', 'type']
     var hasUpdated = false
     for (const key of keysToUpdate) {
@@ -75,14 +94,32 @@ class Notification {
     return hasUpdated
   }
 
+  updateNotificationFired(success) {
+    this.lastFiredAt = Date.now()
+    this.lastAttemptFailed = !success
+    this.numConsecutiveFailedAttempts = success ? 0 : this.numConsecutiveFailedAttempts + 1
+    this.numTimesFired++
+  }
+
+  replaceVariablesInTemplate(templateText, data) {
+    const ptrn = /{{ ?([a-zA-Z]+) ?}}/mg
+
+    var match
+    var updatedTemplate = templateText
+    while ((match = ptrn.exec(templateText)) != null) {
+      if (data[match[1]]) {
+        updatedTemplate = updatedTemplate.replace(match[0], data[match[1]])
+      }
+    }
+    return updatedTemplate
+  }
+
   parseTitleTemplate(data) {
-    // TODO: Implement template parsing
-    return 'Test Title'
+    return this.replaceVariablesInTemplate(this.titleTemplate, data)
   }
 
   parseBodyTemplate(data) {
-    // TODO: Implement template parsing
-    return 'Test Body'
+    return this.replaceVariablesInTemplate(this.bodyTemplate, data)
   }
 
   getApprisePayload(data) {
