@@ -36,7 +36,7 @@
               </p>
             </ui-tooltip>
           </div>
-          <div class="mt-4 py-4 border-b border-white border-opacity-10 text-white text-opacity-80" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
+          <div class="mt-4 py-4 border-b border-white border-opacity-10 text-white text-opacity-80 border-t border-white border-opacity-5">
             <div class="flex items-center px-4">
               <ui-btn type="button" @click="show = false">Cancel</ui-btn>
               <div class="flex-grow" />
