@@ -101,7 +101,7 @@ export default {
     },
     libraryProvider() {
       return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
-    },
+    }
   },
   methods: {
     init() {
