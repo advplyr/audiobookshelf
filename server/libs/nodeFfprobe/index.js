@@ -22,8 +22,7 @@ module.exports = (function () {
       proc.on('error', err => reject(err))
       proc.on('close', () => {
         try {
-            let result = JSON.parse(probeData.join(''))
-            resolve(result);
+            resolve(JSON.parse(probeData.join('')))
         } catch (err) {
             reject(err);
         }
