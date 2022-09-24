@@ -124,17 +124,8 @@ export default {
           options: this.options,
           libraryItemIds: this.selectedBookIds
         })
-        .then((result) => {
-		  var success = result.success || false
-		  var toast = 'Batch quick match complete!\n' + result.updates + ' Updated'
-		  if (result.unmatched && (result.unmatched > 0)) {
-			toast += '\n' + result.unmatched + ' with no matches'
-		  }
-		  if (success) {
-			this.$toast.success(toast)
-		  } else {
-		    this.$toast.info(toast)
-		  }
+        .then(() => {
+          this.$toast.info('Batch quick match of ' + this.selectedBookIds.length + ' books started!')
           this.processing = false
           this.$store.commit('setProcessingBatch', false)
           this.show = false
