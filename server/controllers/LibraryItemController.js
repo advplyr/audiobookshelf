@@ -311,9 +311,9 @@ class LibraryItemController {
       Logger.warn('User other than admin attempted to batch quick match library items', req.user)
       return res.sendStatus(403)
     }
-	  
+      
     var itemsUpdated = 0
-	var itemsUnmatched = 0
+    var itemsUnmatched = 0
 
     var matchData = req.body
     var options = matchData.options || {}
@@ -321,7 +321,7 @@ class LibraryItemController {
     if (!items || !items.length) {
       return res.sendStatus(500)
     }
-	res.sendStatus(200);
+    res.sendStatus(200);
     
     for (let i = 0; i < items.length; i++) {
         var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
@@ -329,16 +329,16 @@ class LibraryItemController {
         if (matchResult.updated) {
             itemsUpdated++
         } else if (matchResult.warning) {
-			itemsUnmatched++
-		}
+            itemsUnmatched++
+        }
     }
     
-	var result = {
+    var result = {
       success: itemsUpdated > 0,
       updates: itemsUpdated,
       unmatched: itemsUnmatched
     };
-	this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
+    this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
   }
 
   // DELETE: api/items/all
