@@ -125,13 +125,10 @@ export default {
         })
         .then(() => {
           this.$toast.info('Batch quick match of ' + this.selectedBookIds.length + ' books started!')
-          this.processing = false
-          this.$store.commit('setProcessingBatch', false)
-          this.show = false
-        })
-        .catch((error) => {
+        }).catch((error) => {
           this.$toast.error('Batch quick match failed')
           console.error('Failed to batch quick match', error)
+        }).finally(() => {
           this.processing = false
           this.$store.commit('setProcessingBatch', false)
           this.show = false
