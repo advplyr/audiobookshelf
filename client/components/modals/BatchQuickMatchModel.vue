@@ -62,8 +62,8 @@ export default {
         overrideDefaults: true
       },
       tooltips: {
-          updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
-          updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
+        updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
+        updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
       }
     }
   },
