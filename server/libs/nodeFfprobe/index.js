@@ -21,13 +21,13 @@ module.exports = (function () {
       proc.on('exit', code => { exitCode = code })
       proc.on('error', err => reject(err))
       proc.on('close', () => {
-		try {
-			let result = JSON.parse(probeData.join(''))
-			resolve(result);
-		} catch (err) {
-			reject(err);
-	    }
-	  })
+        try {
+            let result = JSON.parse(probeData.join(''))
+            resolve(result);
+        } catch (err) {
+            reject(err);
+        }
+      })
     })
   }
 
