@@ -308,6 +308,7 @@ class LibraryItemController {
   // POST: api/items/batch/quickmatch
   async batchQuickMatch(req, res) {
     var itemsUpdated = 0
+	var itemsUnmatched = 0
 
     var matchData = req.body
     var options = matchData.options || {}
@@ -321,12 +322,15 @@ class LibraryItemController {
         var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
         if (matchResult.updated) {
             itemsUpdated++
-        }
+        } else if (matchResult.warning) {
+			itemsUnmatched++
+		}
     }
     
     res.json({
       success: itemsUpdated > 0,
-      updates: itemsUpdated
+      updates: itemsUpdated,
+	  unmatched: itemsUnmatched
     })
   }
 
