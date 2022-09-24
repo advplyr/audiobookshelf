@@ -54,8 +54,10 @@ export default {
   data() {
     return {
       processing: false,
+      isScrollable: false,
+      lastUsedLibrary: undefined,
       options: {
-        provider: 'google',
+        provider: undefined,
         overrideDetails: true,
         overrideCover: true,
         overrideDefaults: true
@@ -63,6 +65,13 @@ export default {
       tooltips: {
           updateCovers: 'Allow overwriting of existing covers for the selected books when a match is located.',
           updateDetails: 'Allow overwriting of existing details for the selected books when a match is located.'
+      }
+    }
+  },
+  watch: {
+    show: {
+      handler(newVal) {
+        this.init()
       }
     }
   },
@@ -90,34 +99,45 @@ export default {
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
       return this.$store.state.scanners.providers
-    }
+    },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
+    },
   },
   methods: {
-      doBatchQuickMatch() {
-          if (!this.selectedBookIds.length) return
-          if (this.processing) return
-          
-          this.processing = true
-          this.$store.commit('setProcessingBatch', true)
-          this.$axios
-            .$post(`/api/items/batch/quickmatch`, {
-              options: this.options,
-              libraryItemIds: this.selectedBookIds
-            })
-            .then(() => {
-              this.$toast.success('Batch quick match success!')
-              this.processing = false
-              this.$store.commit('setProcessingBatch', false)
-              this.show = false
-            })
-            .catch((error) => {
-              this.$toast.error('Batch quick match failed')
-              console.error('Failed to batch quick match', error)
-              this.processing = false
-              this.$store.commit('setProcessingBatch', false)
-              this.show = false
-            })
+    init() {
+      // If we don't have a set provider (first open of dialog) or we've switched library, set
+      // the selected provider to the current library default provider
+      if (!this.options.provider || (this.options.lastUsedLibrary != this.currentLibraryId)) {
+        this.options.lastUsedLibrary = this.currentLibraryId
+        this.options.provider = this.libraryProvider;
       }
+    },
+    doBatchQuickMatch() {
+      if (!this.selectedBookIds.length) return
+      if (this.processing) return
+         
+      this.processing = true
+      this.$store.commit('setProcessingBatch', true)
+      this.$axios
+        .$post(`/api/items/batch/quickmatch`, {
+          options: this.options,
+          libraryItemIds: this.selectedBookIds
+        })
+        .then(() => {
+          this.$toast.success('Batch quick match success!')
+          this.processing = false
+          this.$store.commit('setProcessingBatch', false)
+          this.show = false
+        })
+        .catch((error) => {
+          this.$toast.error('Batch quick match failed')
+          console.error('Failed to batch quick match', error)
+          this.processing = false
+          this.$store.commit('setProcessingBatch', false)
+          this.show = false
+        })
+    }
   },
   mounted() {}
 }
