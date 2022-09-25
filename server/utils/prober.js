@@ -74,7 +74,7 @@ function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
     var value = stream.tags[tags[i]] || stream.tags[tags[i].toUpperCase()]
-    if (value) return value
+    if (value && value.trim()) return value.trim()
   }
   return null
 }
