@@ -76,7 +76,7 @@ export default {
     },
     sendTestClick() {
       const payload = {
-        message: `Send a test notification to event ${this.eventName}?`,
+        message: `Trigger this notification with test data?`,
         callback: (confirmed) => {
           if (confirmed) {
             this.sendTest()

@@ -16,6 +16,8 @@
 
           <ui-textarea-with-label v-model="newNotification.bodyTemplate" label="Body Template" class="mb-2" />
 
+          <p v-if="availableVariables" class="text-sm text-gray-300"><strong>Available variables:</strong> {{ availableVariables.join(', ') }}</p>
+
           <div class="flex items-center pt-4">
             <div class="flex items-center">
               <ui-toggle-switch v-model="newNotification.enabled" />
@@ -73,7 +75,7 @@ export default {
       return this.notificationData.events || []
     },
     eventOptions() {
-      return this.notificationEvents.map((e) => ({ value: e.name, text: e.name }))
+      return this.notificationEvents.map((e) => ({ value: e.name, text: e.name, subtext: e.description }))
     },
     selectedEventData() {
       return this.notificationEvents.find((e) => e.name === this.newNotification.eventName)
@@ -83,6 +85,9 @@ export default {
     },
     title() {
       return this.isNew ? 'Create Notification' : 'Update Notification'
+    },
+    availableVariables() {
+      return this.selectedEventData ? this.selectedEventData.variables || null : null
     }
   },
   methods: {

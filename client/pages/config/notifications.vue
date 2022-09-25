@@ -1,8 +1,11 @@
 <template>
   <div>
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-8 mb-2 max-w-3xl mx-auto">
-      <h2 class="text-xl font-semibold mb-2">Apprise Notification Settings</h2>
-      <p class="mb-6">Insert some text here describing this feature</p>
+      <h2 class="text-xl font-semibold mb-4">Apprise Notification Settings</h2>
+      <p class="mb-6 text-gray-200">
+        In order to use this feature you will need to have an instance of <a href="https://github.com/caronc/apprise-api" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">Apprise API</a> running or an api that will handle those same requests. <br />The Apprise API Url should be the full URL path to send the notification, e.g., if your API instance is served at
+        <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">http://192.168.1.1:8337</span> then you would put <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">http://192.168.1.1:8337/notify</span>.
+      </p>
 
       <form @submit.prevent="submitForm">
         <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" />

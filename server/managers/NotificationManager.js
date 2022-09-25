@@ -37,7 +37,7 @@ class NotificationManager {
   async triggerNotification(eventName, eventData, intentionallyFail = false) {
     if (!this.db.notificationSettings.isUseable) return false
 
-    const notifications = this.db.notificationSettings.getNotificationsForEvent(eventName)
+    const notifications = this.db.notificationSettings.getActiveNotificationsForEvent(eventName)
     for (const notification of notifications) {
       Logger.debug(`[NotificationManager] triggerNotification: Sending ${eventName} notification ${notification.id}`)
       const success = intentionallyFail ? false : await this.sendNotification(notification, eventData)

@@ -24,7 +24,7 @@ module.exports.notificationData = {
     {
       name: 'onTest',
       requiresLibrary: false,
-      description: 'Notification for testing',
+      description: 'Event for testing the notification system',
       variables: ['version'],
       defaults: {
         title: 'Test Notification on Abs {{version}}',

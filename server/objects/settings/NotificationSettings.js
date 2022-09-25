@@ -32,8 +32,8 @@ class NotificationSettings {
     return !!this.appriseApiUrl
   }
 
-  getNotificationsForEvent(eventName) {
-    return this.notifications.filter(n => n.eventName === eventName)
+  getActiveNotificationsForEvent(eventName) {
+    return this.notifications.filter(n => n.eventName === eventName && n.enabled)
   }
 
   getNotification(id) {
