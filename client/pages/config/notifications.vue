@@ -8,7 +8,24 @@
       </p>
 
       <form @submit.prevent="submitForm">
-        <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" />
+        <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" class="mb-2" />
+
+        <div class="flex items-center py-2">
+          <ui-text-input ref="maxNotificationQueueInput" type="number" v-model="maxNotificationQueue" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
+
+          <ui-tooltip text="Events are limited to firing 1 per second. Events will be ignored if the queue is at max size. This prevents notification spamming." direction="right">
+            <p class="pl-4 text-lg">Max queue size for notification events<span class="material-icons icon-text ml-1">info_outlined</span></p>
+          </ui-tooltip>
+        </div>
+
+        <div class="flex items-center py-2">
+          <ui-text-input ref="maxFailedAttemptsInput" type="number" v-model="maxFailedAttempts" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
+
+          <ui-tooltip text="Notifications are disabled once they fail to send this many times." direction="right">
+            <p class="pl-4 text-lg">Max failed attempts<span class="material-icons icon-text ml-1">info_outlined</span></p>
+          </ui-tooltip>
+        </div>
+
         <div class="flex items-center justify-end pt-4">
           <ui-btn :loading="savingSettings" type="submit">Save</ui-btn>
         </div>
@@ -40,6 +57,8 @@ export default {
       loading: false,
       savingSettings: false,
       appriseApiUrl: null,
+      maxNotificationQueue: 0,
+      maxFailedAttempts: 0,
       notifications: [],
       notificationSettings: null,
       notificationData: null,
@@ -71,23 +90,40 @@ export default {
         return false
       }
     },
-    submitForm() {
-      if (this.notificationSettings && this.notificationSettings.appriseApiUrl == this.appriseApiUrl) {
-        this.$toast.info('No update necessary')
-        return
-      }
-
+    validateForm() {
       if (this.$refs.apiUrlInput) {
         this.$refs.apiUrlInput.blur()
       }
-
-      const isValid = this.validateAppriseApiUrl()
-      if (!isValid) {
-        return
+      if (this.$refs.maxNotificationQueueInput) {
+        this.$refs.maxNotificationQueueInput.blur()
+      }
+      if (this.$refs.maxFailedAttemptsInput) {
+        this.$refs.maxFailedAttemptsInput.blur()
       }
 
+      if (!this.validateAppriseApiUrl()) {
+        return false
+      }
+
+      if (isNaN(this.maxNotificationQueue) || this.maxNotificationQueue <= 0) {
+        this.$toast.error('Max notification queue must be >= 0')
+        return false
+      }
+
+      if (isNaN(this.maxFailedAttempts) || this.maxFailedAttempts <= 0) {
+        this.$toast.error('Max failed attempts must be >= 0')
+        return false
+      }
+
+      return true
+    },
+    submitForm() {
+      if (!this.validateForm()) return
+
       const updatePayload = {
-        appriseApiUrl: this.appriseApiUrl || null
+        appriseApiUrl: this.appriseApiUrl || null,
+        maxNotificationQueue: Number(this.maxNotificationQueue),
+        maxFailedAttempts: Number(this.maxFailedAttempts)
       }
       this.savingSettings = true
       this.$axios
@@ -120,6 +156,8 @@ export default {
     setNotificationSettings(notificationSettings) {
       this.notificationSettings = notificationSettings
       this.appriseApiUrl = notificationSettings.appriseApiUrl
+      this.maxNotificationQueue = notificationSettings.maxNotificationQueue
+      this.maxFailedAttempts = notificationSettings.maxFailedAttempts
       this.notifications = notificationSettings.notifications || []
     },
     notificationsUpdated(notificationSettings) {

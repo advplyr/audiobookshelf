@@ -1,5 +1,6 @@
 const Logger = require('../../Logger')
 const Notification = require('../Notification')
+const { isNullOrNaN } = require('../../utils')
 
 class NotificationSettings {
   constructor(settings = null) {
@@ -59,11 +60,26 @@ class NotificationSettings {
 
   update(payload) {
     if (!payload) return false
+
+    var hasUpdates = false
     if (payload.appriseApiUrl !== this.appriseApiUrl) {
       this.appriseApiUrl = payload.appriseApiUrl || null
-      return true
+      hasUpdates = true
     }
-    return false
+
+    const _maxFailedAttempts = isNullOrNaN(payload.maxFailedAttempts) ? 5 : Number(payload.maxFailedAttempts)
+    if (_maxFailedAttempts !== this.maxFailedAttempts) {
+      this.maxFailedAttempts = _maxFailedAttempts
+      hasUpdates = true
+    }
+
+    const _maxNotificationQueue = isNullOrNaN(payload.maxNotificationQueue) ? 20 : Number(payload.maxNotificationQueue)
+    if (_maxNotificationQueue !== this.maxNotificationQueue) {
+      this.maxNotificationQueue = _maxNotificationQueue
+      hasUpdates = true
+    }
+
+    return hasUpdates
   }
 
   createNotification(payload) {
