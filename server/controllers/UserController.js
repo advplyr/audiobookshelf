@@ -28,10 +28,6 @@ class UserController {
   }
 
   async create(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.warn('Non-admin user attempted to create user', req.user)
-      return res.sendStatus(403)
-    }
     var account = req.body
 
     var username = account.username
@@ -58,15 +54,7 @@ class UserController {
   }
 
   async update(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('[UserController] User other than admin attempting to update user', req.user)
-      return res.sendStatus(403)
-    }
-
-    var user = this.db.users.find(u => u.id === req.params.id)
-    if (!user) {
-      return res.sendStatus(404)
-    }
+    var user = req.reqUser
 
     if (user.type === 'root' && !req.user.isRoot) {
       Logger.error(`[UserController] Admin user attempted to update root user`, req.user.username)
@@ -97,9 +85,9 @@ class UserController {
         Logger.info(`[UserController] User ${user.username} was generated a new api token`)
       }
       await this.db.updateEntity('user', user)
+      this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     }
 
-    this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     res.json({
       success: true,
       user: user.toJSONForBrowser()
@@ -107,24 +95,15 @@ class UserController {
   }
 
   async delete(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('User other than admin attempting to delete user', req.user)
-      return res.sendStatus(403)
-    }
     if (req.params.id === 'root') {
+      Logger.error('[UserController] Attempt to delete root user. Root user cannot be deleted')
       return res.sendStatus(500)
     }
     if (req.user.id === req.params.id) {
-      Logger.error('Attempting to delete themselves...')
+      Logger.error(`[UserController] ${req.user.username} is attempting to delete themselves... why? WHY?`)
       return res.sendStatus(500)
     }
-    var user = this.db.users.find(u => u.id === req.params.id)
-    if (!user) {
-      Logger.error('User not found')
-      return res.json({
-        error: 'User not found'
-      })
-    }
+    var user = req.reqUser
 
     // delete user collections
     var userCollections = this.db.collections.filter(c => c.userId === user.id)
@@ -145,10 +124,6 @@ class UserController {
 
   // GET: api/users/:id/listening-sessions
   async getListeningSessions(req, res) {
-    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
-      return res.sendStatus(403)
-    }
-
     var listeningSessions = await this.getUserListeningSessionsHelper(req.params.id)
 
     const itemsPerPage = toNumber(req.query.itemsPerPage, 10) || 10
@@ -170,11 +145,59 @@ class UserController {
 
   // GET: api/users/:id/listening-stats
   async getListeningStats(req, res) {
-    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
-      return res.sendStatus(403)
-    }
     var listeningStats = await this.getUserListeningStatsHelpers(req.params.id)
     res.json(listeningStats)
+  }
+
+  // POST: api/users/:id/purge-media-progress
+  async purgeMediaProgress(req, res) {
+    const user = req.reqUser
+
+    if (user.type === 'root' && !req.user.isRoot) {
+      Logger.error(`[UserController] Admin user attempted to purge media progress of root user`, req.user.username)
+      return res.sendStatus(403)
+    }
+
+    var progressPurged = 0
+    user.mediaProgress = user.mediaProgress.filter(mp => {
+      const libraryItem = this.db.libraryItems.find(li => li.id === mp.libraryItemId)
+      if (!libraryItem) {
+        progressPurged++
+        return false
+      } else if (mp.episodeId) {
+        const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(mp.episodeId) : null
+        if (!episode) { // Episode not found
+          progressPurged++
+          return false
+        }
+      }
+      return true
+    })
+
+    if (progressPurged) {
+      Logger.info(`[UserController] Purged ${progressPurged} media progress for user ${user.username}`)
+      await this.db.updateEntity('user', user)
+      this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+    }
+
+    res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
+  }
+
+  middleware(req, res, next) {
+    if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
+      return res.sendStatus(403)
+    } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
+      return res.sendStatus(403)
+    }
+
+    if (req.params.id) {
+      req.reqUser = this.db.users.find(u => u.id === req.params.id)
+      if (!req.reqUser) {
+        return res.sendStatus(404)
+      }
+    }
+
+    next()
   }
 }
 module.exports = new UserController()

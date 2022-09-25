@@ -109,14 +109,15 @@ class ApiRouter {
     //
     // User Routes
     //
-    this.router.post('/users', UserController.create.bind(this))
-    this.router.get('/users', UserController.findAll.bind(this))
-    this.router.get('/users/:id', UserController.findOne.bind(this))
-    this.router.patch('/users/:id', UserController.update.bind(this))
-    this.router.delete('/users/:id', UserController.delete.bind(this))
+    this.router.post('/users', UserController.middleware.bind(this), UserController.create.bind(this))
+    this.router.get('/users', UserController.middleware.bind(this), UserController.findAll.bind(this))
+    this.router.get('/users/:id', UserController.middleware.bind(this), UserController.findOne.bind(this))
+    this.router.patch('/users/:id', UserController.middleware.bind(this), UserController.update.bind(this))
+    this.router.delete('/users/:id', UserController.middleware.bind(this), UserController.delete.bind(this))
 
-    this.router.get('/users/:id/listening-sessions', UserController.getListeningSessions.bind(this))
-    this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
+    this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
+    this.router.post('/users/:id/purge-media-progress', UserController.middleware.bind(this), UserController.purgeMediaProgress.bind(this))
 
     //
     // Collection Routes
@@ -274,12 +275,24 @@ class ApiRouter {
     }
 
     json.mediaProgress = json.mediaProgress.map(lip => {
-      var libraryItem = this.db.libraryItems.find(li => li.id === lip.id)
+      var libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
       if (!libraryItem) {
-        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.id)
-        return null
+        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
+        lip.media = null
+      } else {
+        if (lip.episodeId) {
+          const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(lip.episodeId) : null
+          if (!episode) {
+            Logger.warn(`[ApiRouter] Episode ${lip.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
+            lip.media = null
+          } else {
+            lip.media = libraryItem.media.toJSONExpanded()
+            lip.episode = episode.toJSON()
+          }
+        } else {
+          lip.media = libraryItem.media.toJSONExpanded()
+        }
       }
-      lip.media = libraryItem.media.toJSONExpanded()
       return lip
     }).filter(lip => !!lip)
 

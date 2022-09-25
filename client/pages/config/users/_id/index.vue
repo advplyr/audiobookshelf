@@ -46,7 +46,14 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Saved Media Progress</h1>
-        <table v-if="mediaProgress.length" class="userAudiobooksTable">
+
+        <div v-if="mediaProgressWithoutMedia.length" class="flex items-center py-2 mb-2">
+          <p class="text-error">User has media progress for {{ mediaProgressWithoutMedia.length }} items that no longer exist.</p>
+          <div class="flex-grow" />
+          <ui-btn small :loading="purgingMediaProgress" @click.stop="purgeMediaProgress">Purge Media Progress</ui-btn>
+        </div>
+
+        <table v-if="mediaProgressWithMedia.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="w-16 text-left">Item</th>
             <th class="text-left"></th>
@@ -54,13 +61,19 @@
             <th class="w-40 hidden sm:table-cell">Started At</th>
             <th class="w-40 hidden sm:table-cell">Last Update</th>
           </tr>
-          <tr v-for="item in mediaProgress" :key="item.id" :class="!item.isFinished ? '' : 'isFinished'">
+          <tr v-for="item in mediaProgressWithMedia" :key="item.id" :class="!item.isFinished ? '' : 'isFinished'">
             <td>
               <covers-book-cover :width="50" :library-item="item" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
             <td class="font-book">
-              <p>{{ item.media && item.media.metadata ? item.media.metadata.title : 'Unknown' }}</p>
-              <p v-if="item.media && item.media.metadata && item.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ item.media.metadata.authorName }}</p>
+              <template v-if="item.media && item.media.metadata && item.episode">
+                <p>{{ item.episode.title || 'Unknown' }}</p>
+                <p class="text-white text-opacity-50 text-sm font-sans">{{ item.media.metadata.title }}</p>
+              </template>
+              <template v-else-if="item.media && item.media.metadata">
+                <p>{{ item.media.metadata.title || 'Unknown' }}</p>
+                <p v-if="item.media.metadata.authorName" class="text-white text-opacity-50 text-sm font-sans">by {{ item.media.metadata.authorName }}</p>
+              </template>
             </td>
             <td class="text-center">
               <p class="text-sm">{{ Math.floor(item.progress * 100) }}%</p>
@@ -98,7 +111,8 @@ export default {
   data() {
     return {
       listeningSessions: [],
-      listeningStats: {}
+      listeningStats: {},
+      purgingMediaProgress: false
     }
   },
   computed: {
@@ -116,6 +130,12 @@ export default {
     },
     mediaProgress() {
       return this.user.mediaProgress.sort((a, b) => b.lastUpdate - a.lastUpdate)
+    },
+    mediaProgressWithMedia() {
+      return this.mediaProgress.filter((mp) => mp.media)
+    },
+    mediaProgressWithoutMedia() {
+      return this.mediaProgress.filter((mp) => !mp.media)
     },
     totalListeningTime() {
       return this.listeningStats.totalTime || 0
@@ -150,6 +170,24 @@ export default {
         return []
       })
       console.log('Loaded user listening data', this.listeningSessions, this.listeningStats)
+    },
+    purgeMediaProgress() {
+      this.purgingMediaProgress = true
+
+      this.$axios
+        .$post(`/api/users/${this.user.id}/purge-media-progress`)
+        .then((updatedUser) => {
+          console.log('Updated user', updatedUser)
+          this.$toast.success('Media progress purged')
+          this.user = updatedUser
+        })
+        .catch((error) => {
+          console.error('Failed to purge media progress', error)
+          this.$toast.error('Failed to purge media progress')
+        })
+        .finally(() => {
+          this.purgingMediaProgress = false
+        })
     }
   },
   mounted() {
