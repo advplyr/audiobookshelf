@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-8 mb-2 max-w-3xl mx-auto">
+    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-3 md:p-8 mb-2 max-w-3xl mx-auto">
       <h2 class="text-xl font-semibold mb-4">Apprise Notification Settings</h2>
       <p class="mb-6 text-gray-200">
         In order to use this feature you will need to have an instance of <a href="https://github.com/caronc/apprise-api" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">Apprise API</a> running or an api that will handle those same requests. <br />The Apprise API Url should be the full URL path to send the notification, e.g., if your API instance is served at
@@ -14,7 +14,7 @@
           <ui-text-input ref="maxNotificationQueueInput" type="number" v-model="maxNotificationQueue" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
 
           <ui-tooltip text="Events are limited to firing 1 per second. Events will be ignored if the queue is at max size. This prevents notification spamming." direction="right">
-            <p class="pl-4 text-lg">Max queue size for notification events<span class="material-icons icon-text ml-1">info_outlined</span></p>
+            <p class="pl-2 md:pl-4 text-base md:text-lg">Max queue size for notification events<span class="material-icons icon-text ml-1">info_outlined</span></p>
           </ui-tooltip>
         </div>
 
@@ -22,7 +22,7 @@
           <ui-text-input ref="maxFailedAttemptsInput" type="number" v-model="maxFailedAttempts" no-spinner :disabled="savingSettings" :padding-x="1" text-center class="w-10" />
 
           <ui-tooltip text="Notifications are disabled once they fail to send this many times." direction="right">
-            <p class="pl-4 text-lg">Max failed attempts<span class="material-icons icon-text ml-1">info_outlined</span></p>
+            <p class="pl-2 md:pl-4 text-base md:text-lg">Max failed attempts<span class="material-icons icon-text ml-1">info_outlined</span></p>
           </ui-tooltip>
         </div>
 

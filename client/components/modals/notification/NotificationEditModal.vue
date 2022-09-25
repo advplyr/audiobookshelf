@@ -6,15 +6,15 @@
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="p-4 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
-        <div class="w-full p-8">
+      <div class="w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
+        <div class="w-full px-3 py-5 md:p-12">
           <ui-dropdown v-model="newNotification.eventName" label="Notification Event" :items="eventOptions" class="mb-4" @input="eventOptionUpdated" />
 
           <ui-multi-select v-model="newNotification.urls" label="Apprise URL(s)" class="mb-2" />
 
           <ui-text-input-with-label v-model="newNotification.titleTemplate" label="Title Template" class="mb-2" />
 
-          <ui-textarea-with-label v-model="newNotification.bodyTemplate" label="Body Template" class="mb-2" />
+          <ui-textarea-with-label v-model="newNotification.bodyTemplate" label="Body Template" :rows="4" class="mb-2" />
 
           <p v-if="availableVariables" class="text-sm text-gray-300"><strong>Available variables:</strong> {{ availableVariables.join(', ') }}</p>
 
