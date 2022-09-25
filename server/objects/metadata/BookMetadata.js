@@ -133,6 +133,14 @@ class BookMetadata {
       return `${getTitleIgnorePrefix(se.name)} #${se.sequence}`
     }).join(', ')
   }
+  get firstSeriesName() {
+    if (!this.series.length) return ''
+    return this.series[0].name
+  }
+  get firstSeriesSequence() {
+    if (!this.series.length) return ''
+    return this.series[0].sequence
+  }
   get narratorName() {
     return this.narrators.join(', ')
   }

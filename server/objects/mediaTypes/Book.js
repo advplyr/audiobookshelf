@@ -3,7 +3,7 @@ const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
-const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
+const { parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
@@ -111,12 +111,15 @@ class Book {
   get invalidAudioFiles() {
     return this.audioFiles.filter(af => af.invalid)
   }
+  get includedAudioFiles() {
+    return this.audioFiles.filter(af => !af.exclude && !af.invalid)
+  }
   get hasIssues() {
     return this.missingParts.length || this.invalidAudioFiles.length
   }
   get tracks() {
     var startOffset = 0
-    return this.audioFiles.filter(af => !af.exclude && !af.invalid).map((af) => {
+    return this.includedAudioFiles.map((af) => {
       var audioTrack = new AudioTrack()
       audioTrack.setData(this.libraryItemId, af, startOffset)
       startOffset += audioTrack.duration

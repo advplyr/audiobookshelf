@@ -5,6 +5,7 @@ const Logger = require('../Logger')
 const filePerms = require('../utils/filePerms')
 const { secondsToTimestamp } = require('../utils/index')
 const { writeMetadataFile } = require('../utils/ffmpegHelpers')
+const toneHelpers = require('../utils/toneHelpers')
 
 class AudioMetadataMangaer {
   constructor(db, emitter, clientEmitter) {
@@ -13,7 +14,104 @@ class AudioMetadataMangaer {
     this.clientEmitter = clientEmitter
   }
 
-  async updateAudioFileMetadataForItem(user, libraryItem) {
+  updateMetadataForItem(user, libraryItem, useTone = true) {
+    if (useTone) {
+      this.updateMetadataForItemWithTone(user, libraryItem)
+    } else {
+      this.updateMetadataForItemWithFfmpeg(user, libraryItem)
+    }
+  }
+
+  //
+  // TONE
+  //
+  getToneMetadataObjectForApi(libraryItem) {
+    return toneHelpers.getToneMetadataObject(libraryItem)
+  }
+
+  async updateMetadataForItemWithTone(user, libraryItem) {
+    var audioFiles = libraryItem.media.includedAudioFiles
+
+    const itemAudioMetadataPayload = {
+      userId: user.id,
+      libraryItemId: libraryItem.id,
+      startedAt: Date.now(),
+      audioFiles: audioFiles.map(af => ({ index: af.index, ino: af.ino, filename: af.metadata.filename }))
+    }
+
+    this.emitter('audio_metadata_started', itemAudioMetadataPayload)
+
+    // Write chapters file
+    var chaptersFilePath = null
+    var cachePath = Path.join(global.MetadataPath, 'cache/items')
+    console.log('Items Cache Path', cachePath)
+
+    var itemCacheDir = Path.join(cachePath, libraryItem.id)
+    await fs.ensureDir(itemCacheDir)
+
+    if (libraryItem.media.chapters.length) {
+      chaptersFilePath = Path.join(itemCacheDir, 'chapters.txt')
+      try {
+        await toneHelpers.writeToneChaptersFile(libraryItem.media.chapters, chaptersFilePath)
+      } catch (error) {
+        Logger.error(`[AudioMetadataManager] Write chapters.txt failed`, error)
+        chaptersFilePath = null
+      }
+    }
+
+    const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
+    Logger.debug(`[AudioMetadataManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
+
+    const results = []
+    for (const af of audioFiles) {
+      const result = await this.updateAudioFileMetadataWithTone(libraryItem.id, af, toneMetadataObject, itemCacheDir)
+      results.push(result)
+    }
+
+    const elapsed = Date.now() - itemAudioMetadataPayload.startedAt
+    Logger.debug(`[AudioMetadataManager] Elapsed ${secondsToTimestamp(elapsed)}`)
+    itemAudioMetadataPayload.results = results
+    itemAudioMetadataPayload.elapsed = elapsed
+    itemAudioMetadataPayload.finishedAt = Date.now()
+    this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
+  }
+
+  async updateAudioFileMetadataWithTone(libraryItemId, audioFile, toneMetadataObject, itemCacheDir) {
+    const resultPayload = {
+      libraryItemId,
+      index: audioFile.index,
+      ino: audioFile.ino,
+      filename: audioFile.metadata.filename
+    }
+    this.emitter('audiofile_metadata_started', resultPayload)
+
+    // Backup audio file
+    try {
+      const backupFilePath = Path.join(itemCacheDir, audioFile.metadata.filename)
+      await fs.copy(audioFile.metadata.path, backupFilePath)
+      Logger.debug(`[AudioMetadataManager] Backed up audio file at "${backupFilePath}"`)
+    } catch (err) {
+      Logger.error(`[AudioMetadataManager] Failed to backup audio file "${audioFile.metadata.path}"`, err)
+    }
+
+    const _toneMetadataObject = {
+      ...toneMetadataObject,
+      'TrackNumber': audioFile.index
+    }
+
+    resultPayload.success = await toneHelpers.tagAudioFile(audioFile.metadata.path, _toneMetadataObject)
+    if (resultPayload.success) {
+      Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${audioFile.metadata.path}"`)
+    }
+
+    this.emitter('audiofile_metadata_finished', resultPayload)
+    return resultPayload
+  }
+
+  //
+  // FFMPEG
+  //
+  async updateMetadataForItemWithFfmpeg(user, libraryItem) {
     var audioFiles = libraryItem.media.audioFiles
 
     const itemAudioMetadataPayload = {
@@ -36,9 +134,8 @@ class AudioMetadataMangaer {
       var coverPath = libraryItem.media.coverPath.replace(/\\/g, '/')
     }
 
-    // TODO: Split into batches
     const proms = audioFiles.map(af => {
-      return this.updateAudioFileMetadata(libraryItem.id, af, outputDir, metadataFilePath, coverPath)
+      return this.updateAudioFileMetadataWithFfmpeg(libraryItem.id, af, outputDir, metadataFilePath, coverPath)
     })
 
     const results = await Promise.all(proms)
@@ -55,7 +152,7 @@ class AudioMetadataMangaer {
     this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
-  updateAudioFileMetadata(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath = '') {
+  updateAudioFileMetadataWithFfmpeg(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath = '') {
     return new Promise((resolve) => {
       const resultPayload = {
         libraryItemId,

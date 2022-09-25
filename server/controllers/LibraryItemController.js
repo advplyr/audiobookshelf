@@ -311,7 +311,7 @@ class LibraryItemController {
       Logger.warn('User other than admin attempted to batch quick match library items', req.user)
       return res.sendStatus(403)
     }
-      
+
     var itemsUpdated = 0
     var itemsUnmatched = 0
 
@@ -322,17 +322,17 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
     res.sendStatus(200)
-    
+
     for (let i = 0; i < items.length; i++) {
-        var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
-        var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
-        if (matchResult.updated) {
-            itemsUpdated++
-        } else if (matchResult.warning) {
-            itemsUnmatched++
-        }
+      var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
+      var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+      if (matchResult.updated) {
+        itemsUpdated++
+      } else if (matchResult.warning) {
+        itemsUnmatched++
+      }
     }
-    
+
     var result = {
       success: itemsUpdated > 0,
       updates: itemsUpdated,
@@ -371,6 +371,20 @@ class LibraryItemController {
     })
   }
 
+  getToneMetadataObject(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-root user attempted to get tone metadata object`, req.user)
+      return res.sendStatus(403)
+    }
+
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
+      Logger.error(`[LibraryItemController] Invalid library item`)
+      return res.sendStatus(500)
+    }
+
+    res.json(this.audioMetadataManager.getToneMetadataObjectForApi(req.libraryItem))
+  }
+
   // GET: api/items/:id/audio-metadata
   async updateAudioFileMetadata(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -383,7 +397,8 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    this.audioMetadataManager.updateAudioFileMetadataForItem(req.user, req.libraryItem)
+    const useTone = req.query.tone === '1'
+    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone)
     res.sendStatus(200)
   }
 
