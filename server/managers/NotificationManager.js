@@ -7,7 +7,8 @@ class NotificationManager {
     this.db = db
     this.emitter = emitter
 
-    this.notificationFailedMap = {}
+    this.sendingNotification = false
+    this.notificationQueue = []
   }
 
   getData() {
@@ -35,7 +36,10 @@ class NotificationManager {
   }
 
   async triggerNotification(eventName, eventData, intentionallyFail = false) {
-    if (!this.db.notificationSettings.isUseable) return false
+    if (!this.db.notificationSettings.isUseable) return
+
+    // Will queue the notification if sendingNotification and queue is not full
+    if (!this.checkTriggerNotification(eventName, eventData)) return
 
     const notifications = this.db.notificationSettings.getActiveNotificationsForEvent(eventName)
     for (const notification of notifications) {
@@ -44,7 +48,7 @@ class NotificationManager {
 
       notification.updateNotificationFired(success)
       if (!success) { // Failed notification
-        if (notification.numConsecutiveFailedAttempts > 2) {
+        if (notification.numConsecutiveFailedAttempts >= this.db.notificationSettings.maxFailedAttempts) {
           Logger.error(`[NotificationManager] triggerNotification: ${notification.eventName}/${notification.id} reached max failed attempts`)
           notification.enabled = false
         } else {
@@ -55,7 +59,34 @@ class NotificationManager {
 
     await this.db.updateEntity('settings', this.db.notificationSettings)
     this.emitter('notifications_updated', this.db.notificationSettings)
+
+    this.notificationFinished()
+  }
+
+  // Return TRUE if notification should be triggered now
+  checkTriggerNotification(eventName, eventData) {
+    if (this.sendingNotification) {
+      if (this.notificationQueue.length >= this.db.notificationSettings.maxNotificationQueue) {
+        Logger.warn(`[NotificationManager] Notification queue is full - ignoring event ${eventName}`)
+      } else {
+        Logger.debug(`[NotificationManager] Queueing notification ${eventName} (Queue size: ${this.notificationQueue.length})`)
+        this.notificationQueue.push({ eventName, eventData })
+      }
+      return false
+    }
+    this.sendingNotification = true
     return true
+  }
+
+  notificationFinished() {
+    // Delay between events then run next notification in queue
+    setTimeout(() => {
+      this.sendingNotification = false
+      if (this.notificationQueue.length) { // Send next notification in queue
+        const nextNotificationEvent = this.notificationQueue.shift()
+        this.triggerNotification(nextNotificationEvent.eventName, nextNotificationEvent.eventData)
+      }
+    }, this.db.notificationSettings.notificationDelay)
   }
 
   sendTestNotification(notification) {

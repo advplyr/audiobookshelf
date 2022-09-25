@@ -7,6 +7,9 @@ class NotificationSettings {
     this.appriseType = 'api'
     this.appriseApiUrl = null
     this.notifications = []
+    this.maxFailedAttempts = 5
+    this.maxNotificationQueue = 20 // once reached events will be ignored
+    this.notificationDelay = 1000 // ms delay between firing notifications
 
     if (settings) {
       this.construct(settings)
@@ -17,6 +20,9 @@ class NotificationSettings {
     this.appriseType = settings.appriseType
     this.appriseApiUrl = settings.appriseApiUrl || null
     this.notifications = (settings.notifications || []).map(n => new Notification(n))
+    this.maxFailedAttempts = settings.maxFailedAttempts || 5
+    this.maxNotificationQueue = settings.maxNotificationQueue || 20
+    this.notificationDelay = settings.notificationDelay || 1000
   }
 
   toJSON() {
@@ -24,7 +30,10 @@ class NotificationSettings {
       id: this.id,
       appriseType: this.appriseType,
       appriseApiUrl: this.appriseApiUrl,
-      notifications: this.notifications.map(n => n.toJSON())
+      notifications: this.notifications.map(n => n.toJSON()),
+      maxFailedAttempts: this.maxFailedAttempts,
+      maxNotificationQueue: this.maxNotificationQueue,
+      notificationDelay: this.notificationDelay
     }
   }
 

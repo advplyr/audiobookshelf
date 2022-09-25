@@ -6,6 +6,7 @@
 
       <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="fireTestEventAndSucceed">Fire onTest Event</ui-btn>
       <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" color="red-600" @click.stop="fireTestEventAndFail">Fire & Fail</ui-btn>
+      <!-- <ui-btn v-if="eventName === 'onTest' && notification.enabled" :loading="testing" small class="mr-2" @click.stop="rapidFireTestEvents">Rapid Fire</ui-btn> -->
       <ui-btn v-else-if="notification.enabled" :loading="sendingTest" small class="mr-2" @click.stop="sendTestClick">Test</ui-btn>
       <ui-btn v-else :loading="enabling" small color="success" class="mr-2" @click="enableNotification">Enable</ui-btn>
 
@@ -52,6 +53,7 @@ export default {
     }
   },
   methods: {
+    // For testing using the onTest event
     fireTestEventAndFail() {
       this.fireTestEvent(true)
     },
@@ -74,6 +76,19 @@ export default {
           this.testing = false
         })
     },
+    rapidFireTestEvents() {
+      this.testing = true
+      var numFired = 0
+      var interval = setInterval(() => {
+        this.fireTestEvent()
+        numFired++
+        if (numFired > 25) {
+          this.testing = false
+          clearInterval(interval)
+        }
+      }, 100)
+    },
+    // End testing functions
     sendTestClick() {
       const payload = {
         message: `Trigger this notification with test data?`,
