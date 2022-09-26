@@ -110,53 +110,53 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  // GET: api/download/:id
-  async getDownload(req, res) {
+  // GET: api/ab-manager-tasks/:id
+  async getAbManagerTask(req, res) {
     if (!req.user.canDownload) {
       Logger.error('User attempting to download without permission', req.user)
       return res.sendStatus(403)
     }
-    var downloadId = req.params.id
-    Logger.info('Download Request', downloadId)
-    var download = this.abMergeManager.getDownload(downloadId)
-    if (!download) {
-      Logger.error('Download request not found', downloadId)
+    var taskId = req.params.id
+    Logger.info('Download Request', taskId)
+    var task = this.abMergeManager.getTask(taskId)
+    if (!task) {
+      Logger.error('Ab manager task request not found', taskId)
       return res.sendStatus(404)
     }
 
     var options = {
       headers: {
-        'Content-Type': download.mimeType
+        'Content-Type': task.mimeType
       }
     }
-    res.download(download.path, download.filename, options, (err) => {
+    res.download(task.path, task.filename, options, (err) => {
       if (err) {
         Logger.error('Download Error', err)
       }
     })
   }
 
-  // DELETE: api/download/:id
-  async removeDownload(req, res) {
+  // DELETE: api/ab-manager-tasks/:id
+  async removeAbManagerTask(req, res) {
     if (!req.user.canDownload || !req.user.canDelete) {
-      Logger.error('User attempting to remove download without permission', req.user.username)
+      Logger.error('User attempting to remove ab manager task without permission', req.user.username)
       return res.sendStatus(403)
     }
-    this.abMergeManager.removeDownloadById(req.params.id)
+    this.abMergeManager.removeTaskById(req.params.id)
     res.sendStatus(200)
   }
 
-  // GET: api/downloads
-  async getDownloads(req, res) {
+  // GET: api/ab-manager-tasks
+  async getAbManagerTasks(req, res) {
     if (!req.user.canDownload) {
-      Logger.error('User attempting to get downloads without permission', req.user.username)
+      Logger.error('User attempting to get ab manager tasks without permission', req.user.username)
       return res.sendStatus(403)
     }
-    var downloads = {
-      downloads: this.abMergeManager.downloads,
-      pendingDownloads: this.abMergeManager.pendingDownloads
+    var taskData = {
+      tasks: this.abMergeManager.tasks,
+      pendingTasks: this.abMergeManager.pendingTasks
     }
-    res.json(downloads)
+    res.json(taskData)
   }
 
   // PATCH: api/settings (admin)

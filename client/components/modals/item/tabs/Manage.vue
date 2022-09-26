@@ -16,8 +16,8 @@
           <ui-btn v-if="abmergeStatus !== $constants.DownloadStatus.READY" :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="tempDisable" @click="startAudiobookMerge">Start Merge</ui-btn>
           <div v-else>
             <div class="flex">
-              <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
-              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" />
+              <!-- <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
+              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" /> -->
             </div>
             <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(abmergeDownload.size) }}</p>
           </div>
@@ -34,18 +34,7 @@
         </div>
         <div class="flex-grow" />
         <div>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.FAILED" class="text-error mb-2">Download Failed</p>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.READY" class="text-success mb-2">Download Ready!</p>
-          <p v-if="abmergeStatus === $constants.DownloadStatus.EXPIRED" class="text-error mb-2">Download Expired</p>
-
-          <ui-btn v-if="abmergeStatus !== $constants.DownloadStatus.READY" :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="true" @click="startAudiobookMerge">Not yet implemented</ui-btn>
-          <div v-else>
-            <div class="flex">
-              <ui-btn @click="downloadWithProgress(abmergeDownload)">Download</ui-btn>
-              <ui-icon-btn small icon="delete" bg-color="error" class="ml-2" @click="removeDownload" />
-            </div>
-            <p class="px-0.5 py-1 text-sm font-mono text-center">Size: {{ $bytesPretty(abmergeDownload.size) }}</p>
-          </div>
+          <ui-btn :loading="abmergeStatus === $constants.DownloadStatus.PENDING" :disabled="true" @click="startAudiobookMerge">Not yet implemented</ui-btn>
         </div>
       </div>
     </div>
@@ -164,7 +153,7 @@ export default {
 
       this.tempDisable = true
       this.$axios
-        .$delete(`/api/download/${downloadId}`)
+        .$delete(`/api/ab-manager-tasks/${downloadId}`)
         .then(() => {
           this.tempDisable = false
           this.$toast.success('Merge download deleted')
@@ -192,7 +181,7 @@ export default {
     },
     downloadWithProgress(download) {
       var downloadId = download.id
-      var downloadUrl = `${process.env.serverUrl}/api/download/${downloadId}`
+      var downloadUrl = `${process.env.serverUrl}/api/ab-manager-tasks/${downloadId}`
       var filename = download.filename
 
       this.isDownloading = true
@@ -242,18 +231,18 @@ export default {
     },
     loadDownloads() {
       this.$axios
-        .$get(`/api/downloads`)
+        .$get(`/api/ab-manager-tasks`)
         .then((data) => {
-          var pendingDownloads = data.pendingDownloads.map((pd) => {
+          var pendingTasks = data.pendingTasks.map((pd) => {
             pd.download.status = this.$constants.DownloadStatus.PENDING
             return pd.download
           })
-          var downloads = data.downloads.map((d) => {
+          var tasks = data.tasks.map((d) => {
             d.status = this.$constants.DownloadStatus.READY
             return d
           })
-          var allDownloads = downloads.concat(pendingDownloads)
-          this.$store.commit('downloads/setDownloads', allDownloads)
+          var allTasks = tasks.concat(pendingTasks)
+          this.$store.commit('downloads/setDownloads', allTasks)
         })
         .catch((error) => {
           console.error('Failed to load downloads', error)

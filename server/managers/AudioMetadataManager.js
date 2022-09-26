@@ -43,10 +43,7 @@ class AudioMetadataMangaer {
 
     // Write chapters file
     var chaptersFilePath = null
-    var cachePath = Path.join(global.MetadataPath, 'cache/items')
-    console.log('Items Cache Path', cachePath)
-
-    var itemCacheDir = Path.join(cachePath, libraryItem.id)
+    const itemCacheDir = Path.join(global.MetadataPath, `cache/items/${libraryItem.id}`)
     await fs.ensureDir(itemCacheDir)
 
     if (libraryItem.media.chapters.length) {

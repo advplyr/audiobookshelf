@@ -3,10 +3,11 @@ const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 const DEFAULT_EXPIRATION = 1000 * 60 * 60 // 60 minutes
 const DEFAULT_TIMEOUT = 1000 * 60 * 30 // 30 minutes
 
-class Download {
-  constructor(download) {
+class AbManagerTask {
+  constructor() {
     this.id = null
     this.libraryItemId = null
+    this.libraryItemPath = null
     this.type = null
 
     this.dirpath = null
@@ -14,6 +15,8 @@ class Download {
     this.ext = null
     this.filename = null
     this.size = 0
+    this.toneMetadataObject = null
+    this.originalTrackPaths = []
 
     this.userId = null
     this.isReady = false
@@ -28,10 +31,6 @@ class Download {
 
     this.timeoutTimer = null
     this.expirationTimer = null
-
-    if (download) {
-      this.construct(download)
-    }
   }
 
   get mimeType() {
@@ -52,13 +51,21 @@ class Download {
       isReady: this.isReady,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
-      expirationSeconds: this.expirationSeconds
+      expirationSeconds: this.expirationSeconds,
+      toneMetadataObject: this.toneMetadataObject
     }
+  }
+
+  setData(downloadData) {
+    downloadData.startedAt = Date.now()
+    downloadData.isProcessing = true
+    this.construct(downloadData)
   }
 
   construct(download) {
     this.id = download.id
     this.libraryItemId = download.libraryItemId
+    this.libraryItemPath = download.libraryItemPath
     this.type = download.type
 
     this.dirpath = download.dirpath
@@ -66,6 +73,7 @@ class Download {
     this.ext = download.ext
     this.filename = download.filename
     this.size = download.size || 0
+    this.originalTrackPaths = download.originalTrackPaths
 
     this.userId = download.userId
     this.isReady = !!download.isReady
@@ -77,12 +85,6 @@ class Download {
     this.timeoutTimeMs = download.timeoutTimeMs || DEFAULT_TIMEOUT
 
     this.expiresAt = download.expiresAt || null
-  }
-
-  setData(downloadData) {
-    downloadData.startedAt = Date.now()
-    downloadData.isProcessing = true
-    this.construct(downloadData)
   }
 
   setComplete(fileSize) {
@@ -117,4 +119,4 @@ class Download {
     clearTimeout(this.expirationTimer)
   }
 }
-module.exports = Download
+module.exports = AbManagerTask
