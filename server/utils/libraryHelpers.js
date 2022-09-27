@@ -417,7 +417,7 @@ module.exports = {
 
             if (!seriesMap[librarySeries.id]) {
               const seriesObj = allSeries.find(se => se.id === librarySeries.id)
-              if (seriesObj) {
+              if (seriesObj && !seriesObj.hideFromHome) {
                 var series = {
                   ...seriesObj.toJSON(),
                   books: [libraryItemJson],

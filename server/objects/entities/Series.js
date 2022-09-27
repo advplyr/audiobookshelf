@@ -5,6 +5,7 @@ class Series {
     this.id = null
     this.name = null
     this.description = null
+    this.hideFromHome = false
     this.addedAt = null
     this.updatedAt = null
 
@@ -17,6 +18,7 @@ class Series {
     this.id = series.id
     this.name = series.name
     this.description = series.description || null
+    this.hideFromHome = !!series.hideFromHome
     this.addedAt = series.addedAt
     this.updatedAt = series.updatedAt
   }
@@ -26,6 +28,7 @@ class Series {
       id: this.id,
       name: this.name,
       description: this.description,
+      hideFromHome: this.hideFromHome,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
@@ -43,8 +46,22 @@ class Series {
     this.id = getId('ser')
     this.name = data.name
     this.description = data.description || null
+    this.hideFromHome = !!data.hideFromHome
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
+  }
+
+  update(series) {
+    if (!series) return false
+    const keysToUpdate = ['name', 'description', 'hideFromHome']
+    var hasUpdated = false
+    for (const key of keysToUpdate) {
+      if (series[key] !== undefined && series[key] !== this[key]) {
+        this[key] = series[key]
+        hasUpdated = true
+      }
+    }
+    return hasUpdated
   }
 
   checkNameEquals(name) {

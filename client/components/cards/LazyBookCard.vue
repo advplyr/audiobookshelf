@@ -411,6 +411,12 @@ export default {
           text: 'Re-Scan'
         })
       }
+      if (this.userIsAdminOrUp && this.series && this.bookMount) {
+        items.push({
+          func: 'hideSeriesFromHome',
+          text: 'Hide Series from Home'
+        })
+      }
       return items
     },
     _socket() {
@@ -572,11 +578,12 @@ export default {
           } else if (result === 'REMOVED') {
             this.$toast.error(`Re-Scan complete item was removed`)
           }
-          this.processing = false
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
           this.$toast.error('Failed to scan library item')
+        })
+        .finally(() => {
           this.processing = false
         })
     },
@@ -587,6 +594,22 @@ export default {
     showEditModalMatch() {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
+    },
+    hideSeriesFromHome() {
+      const axios = this.$axios || this.$nuxt.$axios
+      this.processing = true
+      axios
+        .$patch(`/api/series/${this.series.id}`, { hideFromHome: true })
+        .then((data) => {
+          console.log('Series updated', data)
+        })
+        .catch((error) => {
+          console.error('Failed to hide series from home', error)
+          this.$toast.error('Failed to update series')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     openCollections() {
       this.store.commit('setSelectedLibraryItem', this.libraryItem)

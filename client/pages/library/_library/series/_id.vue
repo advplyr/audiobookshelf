@@ -40,7 +40,20 @@ export default {
       return this.$store.state.streamLibraryItem
     }
   },
-  mounted() {},
-  beforeDestroy() {}
+  methods: {
+    seriesUpdated(series) {
+      this.series = series
+    }
+  },
+  mounted() {
+    if (this.$root.socket) {
+      this.$root.socket.on('series_updated', this.seriesUpdated)
+    }
+  },
+  beforeDestroy() {
+    if (this.$root.socket) {
+      this.$root.socket.off('series_updated', this.seriesUpdated)
+    }
+  }
 }
 </script>

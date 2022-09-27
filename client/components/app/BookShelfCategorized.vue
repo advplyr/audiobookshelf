@@ -244,6 +244,24 @@ export default {
         this.libraryItemUpdated(li)
       })
     },
+    seriesUpdated(series) {
+      if (series.hideFromHome) {
+        this.shelves.forEach((shelf) => {
+          if (shelf.type == 'book' && shelf.id == 'continue-series') {
+            // Filter out series books from continue series shelf
+            shelf.entities = shelf.entities.filter((ent) => {
+              if (ent.media.metadata.series && ent.media.metadata.series.id == series.id) return false
+              return true
+            })
+          } else if (shelf.type == 'series') {
+            // Filter out series from series shelf
+            shelf.entities = shelf.entities.filter((ent) => {
+              return ent.id != series.id
+            })
+          }
+        })
+      }
+    },
     authorUpdated(author) {
       this.shelves.forEach((shelf) => {
         if (shelf.type == 'authors') {
@@ -270,6 +288,7 @@ export default {
       this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
 
       if (this.$root.socket) {
+        this.$root.socket.on('series_updated', this.seriesUpdated)
         this.$root.socket.on('author_updated', this.authorUpdated)
         this.$root.socket.on('author_removed', this.authorRemoved)
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -285,6 +304,7 @@ export default {
       this.$store.commit('user/removeSettingsListener', 'bookshelf')
 
       if (this.$root.socket) {
+        this.$root.socket.off('series_updated', this.seriesUpdated)
         this.$root.socket.off('author_updated', this.authorUpdated)
         this.$root.socket.off('author_removed', this.authorRemoved)
         this.$root.socket.off('item_updated', this.libraryItemUpdated)

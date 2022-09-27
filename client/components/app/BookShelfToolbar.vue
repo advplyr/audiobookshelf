@@ -21,13 +21,14 @@
       <template v-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
         <p v-if="!selectedSeries" class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
         <div v-else class="items-center hidden md:flex w-full">
-          <p class="pl-4 font-book text-lg">
+          <p class="pl-2 font-book text-lg">
             {{ seriesName }}
           </p>
           <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
             <span class="font-mono">{{ numShowing }}</span>
           </div>
           <div class="flex-grow" />
+          <ui-btn v-if="seriesHideFromHome" :loading="processingSeriesHideFromHome" color="primary" small class="mr-2" @click="showSeriesOnHome">Show on Home</ui-btn>
           <ui-btn color="primary" small :loading="processingSeries" class="flex items-center" @click="markSeriesFinished">
             <div class="h-5 w-5">
               <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
@@ -37,8 +38,8 @@
                 <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-7 19.6l-7-4.66V3h14v12.93l-7 4.67zm-2.01-7.42l-2.58-2.59L6 12l4 4 8-8-1.42-1.42z" />
               </svg>
             </div>
-            <span class="pl-2"> Mark Series {{ isSeriesFinished ? 'Not Finished' : 'Finished' }}</span></ui-btn
-          >
+            <span class="pl-2"> Mark Series {{ isSeriesFinished ? 'Not Finished' : 'Finished' }}</span>
+          </ui-btn>
         </div>
         <div class="flex-grow hidden sm:inline-block" />
 
@@ -83,7 +84,7 @@ export default {
     authors: {
       type: Array,
       default: () => []
-    },
+    }
   },
   data() {
     return {
@@ -94,7 +95,8 @@ export default {
       keywordTimeout: null,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false
+      processingAuthors: false,
+      processingSeriesHideFromHome: false
     }
   },
   computed: {
@@ -150,6 +152,9 @@ export default {
     seriesName() {
       return this.selectedSeries ? this.selectedSeries.name : null
     },
+    seriesHideFromHome() {
+      return this.selectedSeries ? this.selectedSeries.hideFromHome : null
+    },
     seriesProgress() {
       return this.selectedSeries ? this.selectedSeries.progress : null
     },
@@ -171,6 +176,23 @@ export default {
     }
   },
   methods: {
+    async showSeriesOnHome() {
+      this.processingSeriesHideFromHome = true
+      const seriesId = this.selectedSeries.id
+      this.$axios
+        .$patch(`/api/series/${seriesId}`, { hideFromHome: false })
+        .then((data) => {
+          console.log('Updated series', data)
+          this.$toast.success('Series updated successfully')
+        })
+        .catch((error) => {
+          console.error('Failed to update series', error)
+          this.$toast.error('Failed to update series')
+        })
+        .finally(() => {
+          this.processingSeriesHideFromHome = false
+        })
+    },
     async matchAllAuthors() {
       this.processingAuthors = true
 

@@ -178,6 +178,7 @@ class ApiRouter {
     //
     this.router.get('/series/search', SeriesController.search.bind(this))
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
+    this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
 
     //
     // Playback Session Routes
