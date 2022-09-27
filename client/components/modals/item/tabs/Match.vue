@@ -73,7 +73,10 @@
         </div>
         <div v-if="selectedMatch.description" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.description" checkbox-bg="bg" @input="checkboxToggled" />
-          <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" label="Description" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" label="Description" />
+            <p v-if="mediaMetadata.description" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.description.substr(0, 100) + (mediaMetadata.description.length > 100 ? '...' : '') }}</p>
+          </div>
         </div>
         <div v-if="selectedMatch.publisher" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publisher" checkbox-bg="bg" @input="checkboxToggled" />
@@ -105,14 +108,14 @@
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" />
-            <p v-if="mediaMetadata.genresList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genresList || '' }}</p>
+            <p v-if="mediaMetadata.genres" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genres.join(', ') }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.tags" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.tags" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" label="Tags" />
-            <p v-if="mediaMetadata.tagsList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.tagsList || '' }}</p>
+            <p v-if="media.tags" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ media.tags.join(', ') }}</p>
           </div>
         </div>
         <div v-if="selectedMatch.language" class="flex items-center py-2">
