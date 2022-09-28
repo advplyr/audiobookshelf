@@ -138,6 +138,7 @@ class ApiRouter {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
+    this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
@@ -150,7 +151,7 @@ class ApiRouter {
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
-    this.router.post('/me/series/:id/hide', MeController.hideSeriesFromContinueListening.bind(this))
+    this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
 
     //
     // Backup Routes

@@ -128,7 +128,8 @@ export default {
     },
     orderBy: String,
     filterBy: String,
-    sortingIgnorePrefix: Boolean
+    sortingIgnorePrefix: Boolean,
+    continueListeningShelf: Boolean
   },
   data() {
     return {
@@ -368,7 +369,7 @@ export default {
     },
     moreMenuItems() {
       if (this.recentEpisode) {
-        return [
+        const items = [
           {
             func: 'editPodcast',
             text: 'Edit Podcast'
@@ -378,6 +379,7 @@ export default {
             text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
           }
         ]
+        return items
       }
 
       var items = []
@@ -413,8 +415,14 @@ export default {
       }
       if (this.series && this.bookMount) {
         items.push({
-          func: 'hideSeriesFromContinueListening',
-          text: 'Hide Series from Continue Series'
+          func: 'removeSeriesFromContinueListening',
+          text: 'Remove Series from Continue Series'
+        })
+      }
+      if (this.continueListeningShelf) {
+        items.push({
+          func: 'removeFromContinueListening',
+          text: 'Remove from Continue Listening'
         })
       }
       return items
@@ -595,11 +603,29 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
-    hideSeriesFromContinueListening() {
+    removeSeriesFromContinueListening() {
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
       axios
-        .$post(`/api/me/series/${this.series.id}/hide`)
+        .$get(`/api/me/series/${this.series.id}/remove-from-continue-listening`)
+        .then((data) => {
+          console.log('User updated', data)
+        })
+        .catch((error) => {
+          console.error('Failed to remove series from home', error)
+          this.$toast.error('Failed to update user')
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
+    removeFromContinueListening() {
+      if (!this.userProgress) return
+
+      const axios = this.$axios || this.$nuxt.$axios
+      this.processing = true
+      axios
+        .$get(`/api/me/progress/${this.userProgress.id}/remove-from-continue-listening`)
         .then((data) => {
           console.log('User updated', data)
         })

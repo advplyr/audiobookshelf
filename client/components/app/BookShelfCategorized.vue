@@ -16,7 +16,7 @@
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
         </widgets-item-slider>
         <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
@@ -33,7 +33,7 @@
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening'" />
       </template>
     </div>
   </div>
@@ -191,6 +191,10 @@ export default {
       if (user.seriesHideFromContinueListening && user.seriesHideFromContinueListening.length) {
         this.removeAllSeriesFromContinueSeries(user.seriesHideFromContinueListening)
       }
+      if (user.mediaProgress.length) {
+        const libraryItemsToHide = user.mediaProgress.filter((mp) => mp.hideFromContinueListening).map((mp) => mp.libraryItemId)
+        this.removeAllItemsFromContinueListening(libraryItemsToHide)
+      }
     },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)
@@ -255,6 +259,17 @@ export default {
           // Filter out series books from continue series shelf
           shelf.entities = shelf.entities.filter((ent) => {
             if (ent.media.metadata.series && seriesIds.includes(ent.media.metadata.series.id)) return false
+            return true
+          })
+        }
+      })
+    },
+    removeAllItemsFromContinueListening(itemIds) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book' && shelf.id == 'continue-listening') {
+          // Filter out books from continue listening shelf
+          shelf.entities = shelf.entities.filter((ent) => {
+            if (itemIds.includes(ent.id)) return false
             return true
           })
         }

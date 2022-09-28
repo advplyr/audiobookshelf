@@ -407,5 +407,11 @@ class User {
     this.seriesHideFromContinueListening.push(seriesId)
     return true
   }
+
+  removeProgressFromContinueListening(progressId) {
+    const progress = this.mediaProgress.find(mp => mp.id === progressId)
+    if (!progress) return false
+    return progress.removeFromContinueListening()
+  }
 }
 module.exports = User

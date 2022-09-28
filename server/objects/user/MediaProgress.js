@@ -8,6 +8,7 @@ class MediaProgress {
     this.progress = null // 0 to 1
     this.currentTime = null // seconds
     this.isFinished = false
+    this.hideFromContinueListening = false
 
     this.lastUpdate = null
     this.startedAt = null
@@ -27,6 +28,7 @@ class MediaProgress {
       progress: this.progress,
       currentTime: this.currentTime,
       isFinished: this.isFinished,
+      hideFromContinueListening: this.hideFromContinueListening,
       lastUpdate: this.lastUpdate,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt
@@ -41,6 +43,7 @@ class MediaProgress {
     this.progress = progress.progress
     this.currentTime = progress.currentTime
     this.isFinished = !!progress.isFinished
+    this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null
@@ -58,6 +61,7 @@ class MediaProgress {
     this.progress = Math.min(1, (progress.progress || 0))
     this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished || this.progress == 1
+    this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.lastUpdate = Date.now()
     this.startedAt = Date.now()
     this.finishedAt = null
@@ -102,9 +106,21 @@ class MediaProgress {
       this.startedAt = Date.now()
     }
     if (hasUpdates) {
+      if (payload.hideFromContinueListening === undefined) {
+        // Reset this flag when the media progress is updated
+        this.hideFromContinueListening = false
+      }
+
       this.lastUpdate = Date.now()
     }
     return hasUpdates
+  }
+
+  removeFromContinueListening() {
+    if (this.hideFromContinueListening) return false
+
+    this.hideFromContinueListening = true
+    return true
   }
 }
 module.exports = MediaProgress

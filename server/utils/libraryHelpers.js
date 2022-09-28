@@ -531,7 +531,7 @@ module.exports = {
               }
               categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
             }
-          } else if (mediaProgress.inProgress) { // Handle most recently listened
+          } else if (mediaProgress.inProgress && !mediaProgress.hideFromContinueListening) { // Handle most recently listened
             if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
               const libraryItemObj = {
                 ...libraryItem.toJSONMinified(),
