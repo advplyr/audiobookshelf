@@ -28,7 +28,6 @@
             <span class="font-mono">{{ numShowing }}</span>
           </div>
           <div class="flex-grow" />
-          <ui-btn v-if="seriesHideFromHome" :loading="processingSeriesHideFromHome" color="primary" small class="mr-2" @click="showSeriesOnHome">Show on Home</ui-btn>
           <ui-btn color="primary" small :loading="processingSeries" class="flex items-center" @click="markSeriesFinished">
             <div class="h-5 w-5">
               <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
@@ -95,8 +94,7 @@ export default {
       keywordTimeout: null,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false,
-      processingSeriesHideFromHome: false
+      processingAuthors: false
     }
   },
   computed: {
@@ -152,9 +150,6 @@ export default {
     seriesName() {
       return this.selectedSeries ? this.selectedSeries.name : null
     },
-    seriesHideFromHome() {
-      return this.selectedSeries ? this.selectedSeries.hideFromHome : null
-    },
     seriesProgress() {
       return this.selectedSeries ? this.selectedSeries.progress : null
     },
@@ -176,23 +171,6 @@ export default {
     }
   },
   methods: {
-    async showSeriesOnHome() {
-      this.processingSeriesHideFromHome = true
-      const seriesId = this.selectedSeries.id
-      this.$axios
-        .$patch(`/api/series/${seriesId}`, { hideFromHome: false })
-        .then((data) => {
-          console.log('Updated series', data)
-          this.$toast.success('Series updated successfully')
-        })
-        .catch((error) => {
-          console.error('Failed to update series', error)
-          this.$toast.error('Failed to update series')
-        })
-        .finally(() => {
-          this.processingSeriesHideFromHome = false
-        })
-    },
     async matchAllAuthors() {
       this.processingAuthors = true
 

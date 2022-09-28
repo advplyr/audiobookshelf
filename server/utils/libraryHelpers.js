@@ -415,13 +415,16 @@ module.exports = {
             const libraryItemJson = libraryItem.toJSONMinified()
             libraryItemJson.seriesSequence = librarySeries.sequence
 
+            const hideFromContinueListening = user.checkShouldHideSeriesFromContinueListening(librarySeries.id)
+
             if (!seriesMap[librarySeries.id]) {
               const seriesObj = allSeries.find(se => se.id === librarySeries.id)
-              if (seriesObj && !seriesObj.hideFromHome) {
+              if (seriesObj) {
                 var series = {
                   ...seriesObj.toJSON(),
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
+                  hideFromContinueListening,
                   bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
                   firstBookUnread: bookInProgress ? null : libraryItemJson
                 }
@@ -555,7 +558,7 @@ module.exports = {
 
     // For Continue Series - Find next book in series for series that are in progress
     for (const seriesId in seriesMap) {
-      if (seriesMap[seriesId].inProgress) {
+      if (seriesMap[seriesId].inProgress && !seriesMap[seriesId].hideFromContinueListening) {
         seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
 
         // NEW implementation takes the first book unread with the smallest series sequence

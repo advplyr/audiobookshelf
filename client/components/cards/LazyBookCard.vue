@@ -411,10 +411,10 @@ export default {
           text: 'Re-Scan'
         })
       }
-      if (this.userIsAdminOrUp && this.series && this.bookMount) {
+      if (this.series && this.bookMount) {
         items.push({
-          func: 'hideSeriesFromHome',
-          text: 'Hide Series from Home'
+          func: 'hideSeriesFromContinueListening',
+          text: 'Hide Series from Continue Series'
         })
       }
       return items
@@ -595,17 +595,17 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
-    hideSeriesFromHome() {
+    hideSeriesFromContinueListening() {
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
       axios
-        .$patch(`/api/series/${this.series.id}`, { hideFromHome: true })
+        .$post(`/api/me/series/${this.series.id}/hide`)
         .then((data) => {
-          console.log('Series updated', data)
+          console.log('User updated', data)
         })
         .catch((error) => {
           console.error('Failed to hide series from home', error)
-          this.$toast.error('Failed to update series')
+          this.$toast.error('Failed to update user')
         })
         .finally(() => {
           this.processing = false

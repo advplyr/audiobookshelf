@@ -187,6 +187,11 @@ export default {
           this.$toast.error('Failed to start scan')
         })
     },
+    userUpdated(user) {
+      if (user.seriesHideFromContinueListening && user.seriesHideFromContinueListening.length) {
+        this.removeAllSeriesFromContinueSeries(user.seriesHideFromContinueListening)
+      }
+    },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)
       // TODO: Check if libraryItem would be on this shelf
@@ -244,23 +249,16 @@ export default {
         this.libraryItemUpdated(li)
       })
     },
-    seriesUpdated(series) {
-      if (series.hideFromHome) {
-        this.shelves.forEach((shelf) => {
-          if (shelf.type == 'book' && shelf.id == 'continue-series') {
-            // Filter out series books from continue series shelf
-            shelf.entities = shelf.entities.filter((ent) => {
-              if (ent.media.metadata.series && ent.media.metadata.series.id == series.id) return false
-              return true
-            })
-          } else if (shelf.type == 'series') {
-            // Filter out series from series shelf
-            shelf.entities = shelf.entities.filter((ent) => {
-              return ent.id != series.id
-            })
-          }
-        })
-      }
+    removeAllSeriesFromContinueSeries(seriesIds) {
+      this.shelves.forEach((shelf) => {
+        if (shelf.type == 'book' && shelf.id == 'continue-series') {
+          // Filter out series books from continue series shelf
+          shelf.entities = shelf.entities.filter((ent) => {
+            if (ent.media.metadata.series && seriesIds.includes(ent.media.metadata.series.id)) return false
+            return true
+          })
+        }
+      })
     },
     authorUpdated(author) {
       this.shelves.forEach((shelf) => {
@@ -288,7 +286,7 @@ export default {
       this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
 
       if (this.$root.socket) {
-        this.$root.socket.on('series_updated', this.seriesUpdated)
+        this.$root.socket.on('user_updated', this.userUpdated)
         this.$root.socket.on('author_updated', this.authorUpdated)
         this.$root.socket.on('author_removed', this.authorRemoved)
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -304,7 +302,7 @@ export default {
       this.$store.commit('user/removeSettingsListener', 'bookshelf')
 
       if (this.$root.socket) {
-        this.$root.socket.off('series_updated', this.seriesUpdated)
+        this.$root.socket.off('user_updated', this.userUpdated)
         this.$root.socket.off('author_updated', this.authorUpdated)
         this.$root.socket.off('author_removed', this.authorRemoved)
         this.$root.socket.off('item_updated', this.libraryItemUpdated)

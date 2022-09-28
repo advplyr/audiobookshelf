@@ -276,5 +276,21 @@ class MeController {
       libraryItems: itemsInProgress
     })
   }
+
+  // GET: api/me/series/:id/hide
+  async hideSeriesFromContinueListening(req, res) {
+    const series = this.db.series.find(se => se.id === req.params.id)
+    if (!series) {
+      Logger.error(`[MeController] hideSeriesFromContinueListening: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const hasUpdated = req.user.addSeriesToHideFromContinueListening(req.params.id)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.json(req.user.toJSONForBrowser())
+  }
 }
 module.exports = new MeController()

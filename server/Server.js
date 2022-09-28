@@ -145,7 +145,7 @@ class Server {
       await this.auth.initTokenSecret()
     }
 
-    await this.checkUserMediaProgress() // Remove invalid user item progress
+    await this.cleanUserData() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
@@ -368,20 +368,36 @@ class Server {
     return purged
   }
 
-  // Remove user media progress entries that dont have a library item
-  // TODO: Check podcast episode exists still
-  async checkUserMediaProgress() {
+  // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
+  async cleanUserData() {
     for (let i = 0; i < this.db.users.length; i++) {
       var _user = this.db.users[i]
-      if (_user.mediaProgress) {
-        var itemProgressIdsToRemove = _user.mediaProgress.map(lip => lip.id).filter(lipId => !this.db.libraryItems.find(_li => _li.id == lipId))
-        if (itemProgressIdsToRemove.length) {
-          Logger.debug(`[Server] Found ${itemProgressIdsToRemove.length} media progress data to remove from user ${_user.username}`)
-          for (const lipId of itemProgressIdsToRemove) {
-            _user.removeMediaProgress(lipId)
-          }
-          await this.db.updateEntity('user', _user)
+      var hasUpdated = false
+      if (_user.mediaProgress.length) {
+        const lengthBefore = _user.mediaProgress.length
+        _user.mediaProgress = _user.mediaProgress.filter(mp => {
+          const libraryItem = this.db.libraryItems.find(li => li.id === mp.libraryItemId)
+          if (!libraryItem) return false
+          if (mp.episodeId && (libraryItem.mediaType !== 'podcast' || !libraryItem.media.checkHasEpisode(mp.episodeId))) return false // Episode not found
+          return true
+        })
+
+        if (lengthBefore > _user.mediaProgress.length) {
+          Logger.debug(`[Server] Removing ${_user.mediaProgress.length - lengthBefore} media progress data from user ${_user.username}`)
+          hasUpdated = true
         }
+      }
+      if (_user.seriesHideFromContinueListening.length) {
+        _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {
+          if (!this.db.series.some(se => se.id === seriesId)) { // Series removed
+            hasUpdated = true
+            return false
+          }
+          return true
+        })
+      }
+      if (hasUpdated) {
+        await this.db.updateEntity('user', _user)
       }
     }
   }

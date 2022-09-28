@@ -15,6 +15,7 @@ class User {
     this.createdAt = null
 
     this.mediaProgress = []
+    this.seriesHideFromContinueListening = [] // Series IDs that should not show on home page continue listening
     this.bookmarks = []
 
     this.settings = {}
@@ -92,6 +93,7 @@ class User {
       type: this.type,
       token: this.token,
       mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
+      seriesHideFromContinueListening: [...this.seriesHideFromContinueListening],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -111,6 +113,7 @@ class User {
       type: this.type,
       token: this.token,
       mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
+      seriesHideFromContinueListening: [...this.seriesHideFromContinueListening],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
       isActive: this.isActive,
       isLocked: this.isLocked,
@@ -161,6 +164,9 @@ class User {
       this.bookmarks = user.bookmarks.filter(bm => typeof bm.libraryItemId == 'string').map(bm => new AudioBookmark(bm))
     }
 
+    this.seriesHideFromContinueListening = []
+    if (user.seriesHideFromContinueListening) this.seriesHideFromContinueListening = [...user.seriesHideFromContinueListening]
+
     this.isActive = (user.isActive === undefined || user.type === 'root') ? true : !!user.isActive
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
@@ -195,6 +201,13 @@ class User {
         }
       }
     })
+
+    if (payload.seriesHideFromContinueListening && Array.isArray(payload.seriesHideFromContinueListening)) {
+      if (this.seriesHideFromContinueListening.join(',') !== payload.seriesHideFromContinueListening.join(',')) {
+        hasUpdates = true
+        this.seriesHideFromContinueListening = [...payload.seriesHideFromContinueListening]
+      }
+    }
 
     // And update permissions
     if (payload.permissions) {
@@ -297,7 +310,13 @@ class User {
     return wasUpdated
   }
 
-  removeMediaProgress(libraryItemId) {
+  removeMediaProgress(id) {
+    if (!this.mediaProgress.some(mp => mp.id === id)) return false
+    this.mediaProgress = this.mediaProgress.filter(mp => mp.id !== id)
+    return true
+  }
+
+  removeMediaProgressForLibraryItem(libraryItemId) {
     if (!this.mediaProgress.some(lip => lip.libraryItemId == libraryItemId)) return false
     this.mediaProgress = this.mediaProgress.filter(lip => lip.libraryItemId != libraryItemId)
     return true
@@ -377,6 +396,16 @@ class User {
 
   removeBookmark(libraryItemId, time) {
     this.bookmarks = this.bookmarks.filter(bm => (bm.libraryItemId !== libraryItemId || bm.time !== time))
+  }
+
+  checkShouldHideSeriesFromContinueListening(seriesId) {
+    return this.seriesHideFromContinueListening.includes(seriesId)
+  }
+
+  addSeriesToHideFromContinueListening(seriesId) {
+    if (this.seriesHideFromContinueListening.includes(seriesId)) return false
+    this.seriesHideFromContinueListening.push(seriesId)
+    return true
   }
 }
 module.exports = User

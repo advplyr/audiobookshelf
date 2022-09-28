@@ -150,6 +150,7 @@ class ApiRouter {
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
+    this.router.post('/me/series/:id/hide', MeController.hideSeriesFromContinueListening.bind(this))
 
     //
     // Backup Routes
@@ -304,7 +305,7 @@ class ApiRouter {
     // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.removeMediaProgress(libraryItem.id)
+      var madeUpdates = user.removeMediaProgressForLibraryItem(libraryItem.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }
