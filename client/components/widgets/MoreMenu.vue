@@ -1,7 +1,7 @@
 <template>
   <div class="absolute w-36 bg-bg rounded-md border border-black-200 shadow-lg z-50" v-click-outside="clickOutsideObj" style="top: 0; left: 0">
     <template v-for="(item, index) in items">
-      <div :key="index" class="flex h-7 items-center px-2 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.func)">
+      <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.func)">
         <p>{{ item.text }}</p>
       </div>
     </template>
