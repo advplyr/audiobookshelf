@@ -19,7 +19,7 @@
         <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
         </widgets-item-slider>
-        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
         </widgets-episode-slider>
         <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
@@ -175,7 +175,6 @@ export default {
       }
       this.shelves = shelves
     },
-    settingsUpdated(settings) {},
     scan() {
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.$store.state.libraries.currentLibraryId })
@@ -192,8 +191,8 @@ export default {
         this.removeAllSeriesFromContinueSeries(user.seriesHideFromContinueListening)
       }
       if (user.mediaProgress.length) {
-        const libraryItemsToHide = user.mediaProgress.filter((mp) => mp.hideFromContinueListening).map((mp) => mp.libraryItemId)
-        this.removeAllItemsFromContinueListening(libraryItemsToHide)
+        const mediaProgressToHide = user.mediaProgress.filter((mp) => mp.hideFromContinueListening)
+        this.removeItemsFromContinueListening(mediaProgressToHide)
       }
     },
     libraryItemAdded(libraryItem) {
@@ -264,16 +263,33 @@ export default {
         }
       })
     },
-    removeAllItemsFromContinueListening(itemIds) {
-      this.shelves.forEach((shelf) => {
-        if (shelf.type == 'book' && shelf.id == 'continue-listening') {
-          // Filter out books from continue listening shelf
-          shelf.entities = shelf.entities.filter((ent) => {
-            if (itemIds.includes(ent.id)) return false
+    removeItemsFromContinueListening(mediaProgressItems) {
+      const continueListeningShelf = this.shelves.find((s) => s.id === 'continue-listening')
+      if (continueListeningShelf) {
+        if (continueListeningShelf.type === 'book') {
+          continueListeningShelf.entities = continueListeningShelf.entities.filter((ent) => {
+            if (mediaProgressItems.some((mp) => mp.libraryItemId === ent.id)) return false
+            return true
+          })
+        } else if (continueListeningShelf.type === 'episode') {
+          continueListeningShelf.entities = continueListeningShelf.entities.filter((ent) => {
+            if (!ent.recentEpisode) return true // Should always have this here
+            if (mediaProgressItems.some((mp) => mp.libraryItemId === ent.id && mp.episodeId === ent.recentEpisode.id)) return false
             return true
           })
         }
-      })
+      }
+      // this.shelves.forEach((shelf) => {
+      //   if (shelf.id == 'continue-listening') {
+      //     if (shelf.type == 'book') {
+      //       // Filter out books from continue listening shelf
+      //       shelf.entities = shelf.entities.filter((ent) => {
+      //         if (mediaProgressItems.some(mp => mp.libraryItemId === ent.id)) return false
+      //         return true
+      //       })
+      //     }
+      //   }
+      // })
     },
     authorUpdated(author) {
       this.shelves.forEach((shelf) => {
@@ -298,8 +314,6 @@ export default {
       })
     },
     initListeners() {
-      this.$store.commit('user/addSettingsListener', { id: 'bookshelf', meth: this.settingsUpdated })
-
       if (this.$root.socket) {
         this.$root.socket.on('user_updated', this.userUpdated)
         this.$root.socket.on('author_updated', this.authorUpdated)

@@ -379,6 +379,12 @@ export default {
             text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
           }
         ]
+        if (this.continueListeningShelf) {
+          items.push({
+            func: 'removeFromContinueListening',
+            text: 'Remove from Continue Listening'
+          })
+        }
         return items
       }
 
@@ -630,7 +636,7 @@ export default {
           console.log('User updated', data)
         })
         .catch((error) => {
-          console.error('Failed to hide series from home', error)
+          console.error('Failed to hide item from home', error)
           this.$toast.error('Failed to update user')
         })
         .finally(() => {

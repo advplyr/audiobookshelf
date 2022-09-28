@@ -9,7 +9,21 @@
         </div>
         <div v-if="shelf.type === 'episode'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @editPodcast="editItem" @edit="editEpisode" />
+            <cards-lazy-book-card
+              :key="entity.recentEpisode.id"
+              :ref="`shelf-episode-${entity.recentEpisode.id}`"
+              :index="index"
+              :width="bookCoverWidth"
+              :height="bookCoverHeight"
+              :book-cover-aspect-ratio="bookCoverAspectRatio"
+              :book-mount="entity"
+              :continue-listening-shelf="continueListeningShelf"
+              class="relative mx-2"
+              @hook:updated="updatedBookCard"
+              @select="selectItem"
+              @editPodcast="editItem"
+              @edit="editEpisode"
+            />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
