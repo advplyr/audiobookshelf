@@ -142,8 +142,11 @@
               <p class="pl-2">Chapter start is after the end of your audiobook</p>
             </div>
           </div>
-          <div class="flex pt-2">
-            <ui-btn small color="primary" @click="applyChapterNamesOnly">Apply Names Only</ui-btn>
+          <div class="flex items-center pt-2">
+            <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">Map Chapter Titles</ui-btn>
+            <ui-tooltip text="Map chapter titles to your existing audiobook chapters without adjusting timestamps" direction="top">
+              <span class="material-icons-outlined">info</span>
+            </ui-tooltip>
             <div class="flex-grow" />
             <ui-btn small color="success" @click="applyChapterData">Apply Chapters</ui-btn>
           </div>
@@ -389,7 +392,16 @@ export default {
           this.$toast.error('Failed to update chapters')
         })
     },
-    applyChapterNamesOnly() {},
+    applyChapterNamesOnly() {
+      this.newChapters.forEach((chapter, index) => {
+        if (this.chapterData.chapters[index]) {
+          chapter.title = this.chapterData.chapters[index].title
+        }
+      })
+
+      this.showFindChaptersModal = false
+      this.chapterData = null
+    },
     applyChapterData() {
       var index = 0
       this.newChapters = this.chapterData.chapters
