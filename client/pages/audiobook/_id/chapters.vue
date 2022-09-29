@@ -9,7 +9,7 @@
       </button>
       <div class="flex-grow" />
       <p class="text-base">Duration:</p>
-      <p class="text-base font-mono ml-8">{{ mediaDuration }}</p>
+      <p class="text-base font-mono ml-8">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
     <div class="flex flex-wrap-reverse justify-center py-4">
@@ -81,7 +81,7 @@
               <p class="text-xs truncate max-w-sm">{{ track.metadata.filename }}</p>
             </div>
             <div class="w-20" style="min-width: 80px">
-              <p class="text-xs font-mono text-gray-200">{{ track.duration }}</p>
+              <p class="text-xs font-mono text-gray-200">{{ $secondsToTimestamp(Math.round(track.duration), false, true) }}</p>
             </div>
             <div class="w-20 flex justify-center" style="min-width: 80px">
               <span v-if="(track.chapters || []).length" class="material-icons text-success text-sm">check</span>
@@ -107,10 +107,16 @@
           <ui-btn small color="primary" class="mt-5 ml-2" @click="findChapters">Find</ui-btn>
         </div>
         <div v-else class="w-full p-4">
-          <p class="mb-4">Duration found: {{ chapterData.runtimeLengthSec }}</p>
-          <div v-if="chapterData.runtimeLengthSec > mediaDuration" class="w-full bg-error bg-opacity-25 p-4 text-center mb-2 rounded border border-white border-opacity-10 text-gray-100 text-sm">
-            <p>Chapter data invalid duration<br />Your media duration is shorter than duration found</p>
+          <div class="flex justify-between mb-4">
+            <p>
+              Duration found: <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span>
+            </p>
+            <p>
+              Your audiobook duration: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span>
+            </p>
           </div>
+          <widgets-alert v-if="chapterData.runtimeLengthSec > mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is shorter than duration found </widgets-alert>
+          <widgets-alert v-else-if="chapterData.runtimeLengthSec < mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is longer than the duration found </widgets-alert>
 
           <div class="flex py-0.5 text-xs font-semibold uppercase text-gray-300 mb-1">
             <div class="w-24 px-2">Start</div>
@@ -126,7 +132,18 @@
               </div>
             </div>
           </div>
+          <div v-if="chapterData.runtimeLengthSec > mediaDurationRounded" class="w-full pt-2">
+            <div class="flex items-center">
+              <div class="w-2 h-2 bg-warning bg-opacity-50" />
+              <p class="pl-2">Chapter end is after the end of your audiobook</p>
+            </div>
+            <div class="flex items-center">
+              <div class="w-2 h-2 bg-error bg-opacity-50" />
+              <p class="pl-2">Chapter start is after the end of your audiobook</p>
+            </div>
+          </div>
           <div class="flex pt-2">
+            <ui-btn small color="primary" @click="applyChapterNamesOnly">Apply Names Only</ui-btn>
             <div class="flex-grow" />
             <ui-btn small color="success" @click="applyChapterData">Apply Chapters</ui-btn>
           </div>
@@ -196,6 +213,9 @@ export default {
     },
     mediaDuration() {
       return this.media.duration
+    },
+    mediaDurationRounded() {
+      return Math.round(this.mediaDuration)
     },
     chapters() {
       return this.media.chapters || []
@@ -369,6 +389,7 @@ export default {
           this.$toast.error('Failed to update chapters')
         })
     },
+    applyChapterNamesOnly() {},
     applyChapterData() {
       var index = 0
       this.newChapters = this.chapterData.chapters
