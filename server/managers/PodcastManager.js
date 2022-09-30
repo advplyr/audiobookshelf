@@ -4,6 +4,7 @@ const { getPodcastFeed } = require('../utils/podcastUtils')
 const Logger = require('../Logger')
 
 const { downloadFile, removeFile } = require('../utils/fileUtils')
+const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
@@ -71,6 +72,13 @@ class PodcastManager {
 
     // Ignores all added files to this dir
     this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
+
+    // Make sure podcast library item folder exists
+    if (!(await fs.pathExists(this.currentDownload.libraryItem.path))) {
+      Logger.warn(`[PodcastManager] Podcast episode download: Podcast folder no longer exists at "${this.currentDownload.libraryItem.path}" - Creating it`)
+      await fs.mkdir(this.currentDownload.libraryItem.path)
+      await filePerms.setDefault(this.currentDownload.libraryItem.path)
+    }
 
     var success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
       Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
