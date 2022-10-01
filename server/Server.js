@@ -36,7 +36,7 @@ const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -44,6 +44,7 @@ class Server {
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
+    global.RouterBasePath = ROUTER_BASE_PATH
 
     // Fix backslash if not on Windows
     if (process.platform !== 'win32') {
@@ -170,29 +171,32 @@ class Server {
     await this.init()
 
     const app = express()
+    const router = express.Router()
+    app.use(global.RouterBasePath, router)
+
     this.server = http.createServer(app)
 
-    app.use(this.auth.cors)
-    app.use(fileUpload())
-    app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-    app.use(express.json({ limit: "5mb" }))
+    router.use(this.auth.cors)
+    router.use(fileUpload())
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
-    app.use(express.static(distPath))
+    router.use(express.static(distPath))
 
     // Metadata folder static path
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
+    router.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
     // Static folder
-    app.use(express.static(Path.join(global.appRoot, 'static')))
+    router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    app.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
-    app.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-    app.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
+    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
+    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
-    app.get('/ebook/:library/:folder/*', (req, res) => {
+    router.get('/ebook/:library/:folder/*', (req, res) => {
       var library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
       var folder = library.folders.find(fol => fol.id === req.params.folder)
@@ -204,14 +208,14 @@ class Server {
     })
 
     // RSS Feed temp route
-    app.get('/feed/:id', (req, res) => {
+    router.get('/feed/:id', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.id}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    app.get('/feed/:id/cover', (req, res) => {
+    router.get('/feed/:id/cover', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
-    app.get('/feed/:id/item/:episodeId/*', (req, res) => {
+    router.get('/feed/:id/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.id}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
@@ -234,18 +238,18 @@ class Server {
       '/config/users/:id/sessions',
       '/collection/:id'
     ]
-    dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
-    app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
-    app.post('/init', (req, res) => {
+    router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
+    router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    router.post('/init', (req, res) => {
       if (this.db.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
         return res.sendStatus(500)
       }
       this.initializeServer(req, res)
     })
-    app.get('/status', (req, res) => {
+    router.get('/status', (req, res) => {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
@@ -257,7 +261,7 @@ class Server {
       }
       res.json(payload)
     })
-    app.get('/ping', (req, res) => {
+    router.get('/ping', (req, res) => {
       Logger.info('Received ping')
       res.json({ success: true })
     })

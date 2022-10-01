@@ -38,7 +38,7 @@
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`${$config.routerBasePath}/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
               </td>
             </tr>
           </template>

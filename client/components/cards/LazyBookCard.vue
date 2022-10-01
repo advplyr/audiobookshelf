@@ -182,7 +182,7 @@ export default {
       return this.mediaType === 'podcast'
     },
     placeholderUrl() {
-      return '/book_placeholder.jpg'
+      return `${this.$config.routerBasePath}/book_placeholder.jpg`
     },
     bookCoverSrc() {
       return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)

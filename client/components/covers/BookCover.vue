@@ -94,7 +94,7 @@ export default {
       return this.author
     },
     placeholderUrl() {
-      return '/book_placeholder.jpg'
+      return `${this.$config.routerBasePath}/book_placeholder.jpg`
     },
     fullCoverUrl() {
       if (!this.libraryItem) return null

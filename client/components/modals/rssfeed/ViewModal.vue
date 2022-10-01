@@ -117,7 +117,7 @@ export default {
         serverAddress: window.origin,
         slug: this.newFeedSlug
       }
-      if (this.$isDev) payload.serverAddress = 'http://localhost:3333'
+      if (this.$isDev) payload.serverAddress = `http://localhost:3333${this.$config.routerBasePath}`
 
       console.log('Payload', payload)
       this.$axios

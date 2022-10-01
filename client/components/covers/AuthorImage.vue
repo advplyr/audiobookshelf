@@ -58,7 +58,7 @@ export default {
       if (!this.imagePath) return null
       if (process.env.NODE_ENV !== 'production') {
         // Testing
-        return `http://localhost:3333/api/authors/${this.authorId}/image?token=${this.userToken}&ts=${this.updatedAt}`
+        return `http://localhost:3333${this.$config.routerBasePath}/api/authors/${this.authorId}/image?token=${this.userToken}&ts=${this.updatedAt}`
       }
       return `/api/authors/${this.authorId}/image?token=${this.userToken}&ts=${this.updatedAt}`
     }

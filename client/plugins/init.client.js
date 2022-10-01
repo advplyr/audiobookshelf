@@ -143,8 +143,10 @@ export {
   encode,
   decode
 }
-export default ({ app }, inject) => {
+export default ({ app, store }, inject) => {
   app.$decode = decode
   app.$encode = encode
   inject('isDev', process.env.NODE_ENV !== 'production')
+
+  store.commit('setRouterBasePath', app.$config.routerBasePath)
 }

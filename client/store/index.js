@@ -25,7 +25,8 @@ export const state = () => ({
   bookshelfBookIds: [],
   openModal: null,
   innerModalOpen: false,
-  lastBookshelfScrollData: {}
+  lastBookshelfScrollData: {},
+  routerBasePath: '/'
 })
 
 export const getters = {
@@ -119,6 +120,9 @@ export const actions = {
 }
 
 export const mutations = {
+  setRouterBasePath(state, rbp) {
+    state.routerBasePath = rbp
+  },
   setSource(state, source) {
     state.Source = source
   },

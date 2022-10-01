@@ -32,7 +32,8 @@ export const state = () => ({
 })
 
 export const getters = {
-  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = '/book_placeholder.jpg') => {
+  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null) => {
+    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItem) return placeholder
     var media = libraryItem.media
     if (!media || !media.coverPath || media.coverPath === placeholder) return placeholder
@@ -45,18 +46,19 @@ export const getters = {
     const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
 
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
     }
 
-    return `/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
   },
-  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = '/book_placeholder.jpg') => {
+  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = null) => {
+    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItemId) return placeholder
     var userToken = rootGetters['user/getToken']
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333/api/items/${libraryItemId}/cover?token=${userToken}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
     }
-    return `/api/items/${libraryItemId}/cover?token=${userToken}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
   }
 }
 

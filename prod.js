@@ -26,8 +26,9 @@ const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve
 const UID = 99
 const GID = 100
 const SOURCE = options.source || 'debian'
+const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
 
 console.log(process.env.NODE_ENV, 'Config', CONFIG_PATH, METADATA_PATH)
 
-const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH)
+const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH)
 Server.start()
