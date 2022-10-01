@@ -100,10 +100,6 @@
             <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatchOrig.volumeNumber" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.volumeNumber" @input="checkboxToggled" />
-          <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
-        </div>
         <div v-if="selectedMatchOrig.genres && selectedMatchOrig.genres.length" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
@@ -208,7 +204,6 @@ export default {
         publisher: true,
         publishedYear: true,
         series: true,
-        volumeNumber: true,
         genres: true,
         tags: true,
         language: true,
@@ -246,9 +241,9 @@ export default {
         return this.selectedMatch.series.map((se) => {
           return {
             id: `new-${Math.floor(Math.random() * 10000)}`,
-            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+            displayName: se.sequence ? `${se.series} #${se.sequence}` : se.series,
             name: se.series,
-            sequence: se.volumeNumber || ''
+            sequence: se.sequence || ''
           }
         })
       },
@@ -353,7 +348,6 @@ export default {
         publisher: true,
         publishedYear: true,
         series: true,
-        volumeNumber: true,
         genres: true,
         tags: true,
         language: true,
@@ -396,9 +390,9 @@ export default {
             match.series = match.series.map((se) => {
               return {
                 id: `new-${Math.floor(Math.random() * 10000)}`,
-                displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+                displayName: se.sequence ? `${se.series} #${se.sequence}` : se.series,
                 name: se.series,
-                sequence: se.volumeNumber || ''
+                sequence: se.sequence || ''
               }
             })
           }
@@ -417,18 +411,13 @@ export default {
       var updatePayload = {}
       updatePayload.metadata = {}
 
-      var volumeNumber = this.selectedMatchUsage.volumeNumber ? this.selectedMatch.volumeNumber || null : null
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
           if (key === 'series') {
-            var seriesPayload = []
             if (!Array.isArray(this.selectedMatch[key])) {
-              seriesPayload.push({
-                id: `new-${Math.floor(Math.random() * 10000)}`,
-                name: this.selectedMatch[key],
-                sequence: volumeNumber
-              })
+              console.error('Invalid series in selectedMatch', this.selectedMatch[key])
             } else {
+              var seriesPayload = []
               this.selectedMatch[key].forEach((seriesItem) =>
                 seriesPayload.push({
                   id: seriesItem.id,
@@ -436,9 +425,8 @@ export default {
                   sequence: seriesItem.sequence
                 })
               )
+              updatePayload.metadata.series = seriesPayload
             }
-
-            updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
             var authors = this.selectedMatch[key]
             if (!Array.isArray(authors)) {

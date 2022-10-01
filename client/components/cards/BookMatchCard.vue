@@ -19,7 +19,7 @@
         <div v-if="book.series && book.series.length" class="flex py-1 -mx-1">
           <div v-for="(series, index) in book.series" :key="index" class="bg-white bg-opacity-10 rounded-full px-1 py-0.5 mx-1">
             <p class="leading-3 text-xs text-gray-400">
-              {{ series.series }}<span v-if="series.volumeNumber">&nbsp;#{{ series.volumeNumber }}</span>
+              {{ series.series }}<span v-if="series.sequence">&nbsp;#{{ series.sequence }}</span>
             </p>
           </div>
         </div>

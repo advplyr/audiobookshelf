@@ -850,7 +850,7 @@ class Scanner {
 
     // Add or set series if not set
     if (matchData.series && (!libraryItem.media.metadata.seriesName || options.overrideDetails)) {
-      if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, volumeNumber: matchData.volumeNumber }]
+      if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesPayload = []
       for (let index = 0; index < matchData.series.length; index++) {
         const seriesMatchItem = matchData.series[index]
@@ -861,7 +861,7 @@ class Scanner {
           await this.db.insertEntity('series', seriesItem)
           this.emitter('series_added', seriesItem)
         }
-        seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.volumeNumber))
+        seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))
       }
       updatePayload.metadata.series = seriesPayload
     }

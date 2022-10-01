@@ -27,7 +27,7 @@ class Audible {
             asin,
             genres: genresFiltered.length ? genresFiltered : null,
             tags: tagsFiltered.length ? tagsFiltered.join(', ') : null,
-            series: series != [] ? series.map(({ name, position }) => ({ series: name, volumeNumber: position })) : null,
+            series: series != [] ? series.map(({ name, position }) => ({ series: name, sequence: position })) : null,
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
             duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0
         }
