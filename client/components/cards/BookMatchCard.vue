@@ -4,6 +4,7 @@
       <div class="min-w-12 max-w-12 md:min-w-20 md:max-w-20">
         <div class="w-full bg-primary">
           <img v-if="selectedCover" :src="selectedCover" class="h-full w-full object-contain" />
+          <div v-else class="w-12 h-12 md:w-20 md:h-20 bg-primary" />
         </div>
       </div>
       <div v-if="!isPodcast" class="px-2 md:px-4 flex-grow">
@@ -12,7 +13,7 @@
           <div class="flex-grow" />
           <p class="text-sm md:text-base">{{ book.publishedYear }}</p>
         </div>
-        <p class="text-gray-300 text-xs md:text-sm">by {{ book.author }}</p>
+        <p v-if="book.author" class="text-gray-300 text-xs md:text-sm">by {{ book.author }}</p>
         <p v-if="book.narrator" class="text-gray-400 text-xs">Narrated by {{ book.narrator }}</p>
         <p v-if="book.duration" class="text-gray-400 text-xs">Runtime: {{ $elapsedPrettyExtended(book.duration * 60) }}</p>
         <div v-if="book.series && book.series.length" class="flex py-1 -mx-1">

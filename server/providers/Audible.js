@@ -12,8 +12,8 @@ class Audible {
         if (seriesPrimary) series.push(seriesPrimary)
         if (seriesSecondary) series.push(seriesSecondary)
 
-        var genresFiltered = genres ? genres.filter(g => g.type == "genre") : []
-        var tagsFiltered = genres ? genres.filter(g => g.type == "tag") : []
+        const genresFiltered = genres ? genres.filter(g => g.type == "genre").map(g => g.name) : []
+        const tagsFiltered = genres ? genres.filter(g => g.type == "tag").map(g => g.name) : []
 
         return {
             title,
@@ -25,8 +25,8 @@ class Audible {
             description: summary ? htmlSanitizer.stripAllTags(summary) : null,
             cover: image,
             asin,
-            genres: genresFiltered.length > 0 ? genresFiltered.map(({ name }) => name).join(', ') : null,
-            tags: tagsFiltered.length > 0 ? tagsFiltered.map(({ name }) => name).join(', ') : null,
+            genres: genresFiltered.length ? genresFiltered : null,
+            tags: tagsFiltered.length ? tagsFiltered.join(', ') : null,
             series: series != [] ? series.map(({ name, position }) => ({ series: name, volumeNumber: position })) : null,
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
             duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0

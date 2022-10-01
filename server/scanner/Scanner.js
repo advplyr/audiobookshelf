@@ -798,6 +798,7 @@ class Scanner {
     const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'asin', 'isbn']
     const updatePayload = {}
     updatePayload.metadata = {}
+
     for (const key in matchData) {
       if (matchData[key] && detailKeysToUpdate.includes(key)) {
         if (key === 'narrator') {
@@ -805,12 +806,21 @@ class Scanner {
             updatePayload.metadata.narrators = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
           }
         } else if (key === 'genres') {
-          if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
-            updatePayload.metadata[key] = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+          if ((!libraryItem.media.metadata.genres.length || options.overrideDetails)) {
+            var genresArray = []
+            if (Array.isArray(matchData[key])) genresArray = [...matchData[key]]
+            else { // Genres should always be passed in as an array but just incase handle a string
+              Logger.warn(`[Scanner] quickMatch genres is not an array ${matchData[key]}`)
+              genresArray = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+            }
+            updatePayload.metadata[key] = genresArray
           }
         } else if (key === 'tags') {
-          if ((!libraryItem.media.tags || options.overrideDetails)) {
-            updatePayload[key] = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
+          if ((!libraryItem.media.tags.length || options.overrideDetails)) {
+            var tagsArray = []
+            if (Array.isArray(matchData[key])) tagsArray = [...matchData[key]]
+            else tagsArray = tagsArray[key].split(',').map(v => v.trim()).filter(v => !!v)
+            updatePayload[key] = tagsArray
           }
         } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
           updatePayload.metadata[key] = matchData[key]
