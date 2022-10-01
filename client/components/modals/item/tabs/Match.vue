@@ -96,15 +96,14 @@
         <div v-if="selectedMatchOrig.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <widgets-series-input-widget v-model="selectedMatch.series" />
+            <widgets-series-input-widget v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" />
             <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
         <div v-if="selectedMatchOrig.genres && selectedMatchOrig.genres.length" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <!-- <ui-text-input-with-label v-model="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" /> -->
-            <ui-multi-select v-model="selectedMatch.genres" :items="selectedMatch.genres" label="Genres" />
+            <ui-multi-select v-model="selectedMatch.genres" :items="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" />
             <p v-if="mediaMetadata.genres" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genres.join(', ') }}</p>
           </div>
         </div>
