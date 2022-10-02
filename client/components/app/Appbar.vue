@@ -7,7 +7,7 @@
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
+          <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf <span v-if="showExperimentalFeatures" class="material-icons text-lg text-warning pr-1">logo_dev</span></h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />
@@ -15,7 +15,7 @@
         <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
         <div class="flex-grow" />
 
-        <span v-if="showExperimentalFeatures" class="material-icons text-2xl md:text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
+        <widgets-notification-widget class="hidden md:block" />
 
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
           <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>

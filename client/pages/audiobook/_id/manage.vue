@@ -45,7 +45,7 @@
         <div class="w-full max-h-72 overflow-auto">
           <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">No chapters</p>
           <template v-for="(chapter, index) in metadataChapters">
-            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
+            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary bg-opacity-25' : ''">
               <div class="flex-grow font-semibold">{{ chapter.title }}</div>
               <div class="w-24">
                 {{ $secondsToTimestamp(chapter.start) }}
@@ -67,7 +67,8 @@
         <p v-else class="text-success text-lg font-semibold">Embed Finished!</p>
       </div>
       <div v-else class="w-full flex justify-end items-center mb-4">
-        <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">Start M4B Encode</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">Start M4B Encode</ui-btn>
+        <p v-else-if="taskFailed" class="text-error text-lg font-semibold">M4B Failed! {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">M4B Finished!</p>
       </div>
 
@@ -160,12 +161,21 @@ export default {
   },
   data() {
     return {
+      processing: false,
       audiofilesEncoding: {},
       audiofilesFinished: {},
-      processing: false,
       isFinished: false,
       toneObject: null,
       selectedTool: 'embed'
+    }
+  },
+  watch: {
+    task: {
+      handler(newVal) {
+        if (newVal) {
+          this.taskUpdated(newVal)
+        }
+      }
     }
   },
   computed: {
@@ -202,6 +212,21 @@ export default {
           { value: 'm4b', text: 'M4B Encoder' }
         ]
       }
+    },
+    taskFailed() {
+      return this.isTaskFinished && this.task.isFailed
+    },
+    taskError() {
+      return this.taskFailed ? this.task.error || 'Unknown Error' : null
+    },
+    isTaskFinished() {
+      return this.task && this.task.isFinished
+    },
+    task() {
+      return this.$store.getters['tasks/getTaskByLibraryItemId'](this.libraryItemId)
+    },
+    taskRunning() {
+      return this.task && !this.task.isFinished
     }
   },
   methods: {
@@ -210,12 +235,12 @@ export default {
       this.$axios
         .$get(`/api/audiobook-merge/${this.libraryItemId}`)
         .then(() => {
-          this.processing = false
+          console.log('Ab m4b merge started')
         })
         .catch((error) => {
           var errorMsg = error.response ? error.response.data || 'Unknown Error' : 'Unknown Error'
           this.$toast.error(errorMsg)
-          this.processing = false
+          this.processing = true
         })
     },
     embedClick() {
@@ -246,7 +271,6 @@ export default {
       console.log('audio metadata started', data)
       if (data.libraryItemId !== this.libraryItemId) return
       this.audiofilesFinished = {}
-      this.processing = true
     },
     audioMetadataFinished(data) {
       console.log('audio metadata finished', data)
@@ -278,6 +302,8 @@ export default {
           this.selectedToolUpdated()
         }
       }
+
+      if (this.task) this.taskUpdated(this.task)
     },
     fetchToneObject() {
       this.$axios
@@ -289,6 +315,9 @@ export default {
         .catch((error) => {
           console.error('Failed to fetch tone object', error)
         })
+    },
+    taskUpdated(task) {
+      this.processing = !task.isFinished
     }
   },
   mounted() {

@@ -8,8 +8,9 @@ const { writeMetadataFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
 class AudioMetadataMangaer {
-  constructor(db, emitter, clientEmitter) {
+  constructor(db, taskManager, emitter, clientEmitter) {
     this.db = db
+    this.taskManager = taskManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
   }

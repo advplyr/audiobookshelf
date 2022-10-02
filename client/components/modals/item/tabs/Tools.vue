@@ -42,7 +42,7 @@
         </div>
         <div class="flex-grow" />
         <div>
-          <ui-btn :to="`/audiobook/${libraryItemId}/manage`" class="flex items-center"
+          <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
             >Open Manager
             <span class="material-icons text-lg ml-2">launch</span>
           </ui-btn>

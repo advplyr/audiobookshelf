@@ -34,6 +34,7 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
+const TaskManager = require('./managers/TaskManager')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -66,22 +67,23 @@ class Server {
     this.auth = new Auth(this.db)
 
     // Managers
+    this.taskManager = new TaskManager(this.emitter.bind(this))
     this.notificationManager = new NotificationManager(this.db, this.emitter.bind(this))
     this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
-    this.abMergeManager = new AbMergeManager(this.db, this.clientEmitter.bind(this))
+    this.abMergeManager = new AbMergeManager(this.db, this.taskManager, this.clientEmitter.bind(this))
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.coverManager = new CoverManager(this.db, this.cacheManager)
     this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this), this.notificationManager)
-    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 
@@ -127,7 +129,6 @@ class Server {
 
   async init() {
     Logger.info('[Server] Init v' + version)
-    await this.abMergeManager.removeOrphanDownloads()
     await this.playbackSessionManager.removeOrphanStreams()
 
     var previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version

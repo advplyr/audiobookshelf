@@ -4,23 +4,22 @@ const fs = require('../libs/fsExtra')
 
 const workerThreads = require('worker_threads')
 const Logger = require('../Logger')
-const AbManagerTask = require('../objects/AbManagerTask')
+const Task = require('../objects/Task')
 const filePerms = require('../utils/filePerms')
-const { getId } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
-const { getFileSize } = require('../utils/fileUtils')
 
 class AbMergeManager {
-  constructor(db, clientEmitter) {
+  constructor(db, taskManager, clientEmitter) {
     this.db = db
+    this.taskManager = taskManager
     this.clientEmitter = clientEmitter
 
+    this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
     this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
     this.downloadDirPathExist = false
 
     this.pendingTasks = []
-    this.tasks = []
   }
 
   async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
@@ -39,85 +38,47 @@ class AbMergeManager {
     this.downloadDirPathExist = true
   }
 
-  getTask(taskId) {
-    return this.tasks.find(d => d.id === taskId)
-  }
-
-  removeTaskById(taskId) {
-    var task = this.getTask(taskId)
-    if (task) {
-      this.removeTask(task)
-    }
-  }
-
-  async removeOrphanDownloads() {
-    try {
-      var dirs = await fs.readdir(this.downloadDirPath)
-      if (!dirs || !dirs.length) return true
-
-      dirs = dirs.filter(d => d.startsWith('abmerge'))
-
-      await Promise.all(dirs.map(async (dirname) => {
-        var fullPath = Path.join(this.downloadDirPath, dirname)
-        Logger.info(`Removing Orphan Download ${dirname}`)
-        return fs.remove(fullPath)
-      }))
-      return true
-    } catch (error) {
-      return false
-    }
-  }
-
   async startAudiobookMerge(user, libraryItem) {
-    var taskId = getId('abmerge')
-    var dlpath = Path.join(this.downloadDirPath, taskId)
-    Logger.info(`Start audiobook merge for ${libraryItem.id} - TaskId: ${taskId} - ${dlpath}`)
+    const task = new Task()
 
-    var audiobookDirname = Path.basename(libraryItem.path)
-    var filename = audiobookDirname + '.m4b'
-    var taskData = {
-      id: taskId,
+    const audiobookDirname = Path.basename(libraryItem.path)
+    const targetFilename = audiobookDirname + '.m4b'
+    const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
+    const tempFilepath = Path.join(itemCachePath, targetFilename)
+    const taskData = {
       libraryItemId: libraryItem.id,
-      type: 'abmerge',
-      dirpath: dlpath,
-      path: Path.join(dlpath, filename),
-      filename,
-      ext: '.m4b',
-      userId: user.id,
       libraryItemPath: libraryItem.path,
-      originalTrackPaths: libraryItem.media.tracks.map(t => t.metadata.path)
+      userId: user.id,
+      originalTrackPaths: libraryItem.media.tracks.map(t => t.metadata.path),
+      tempFilepath,
+      targetFilename,
+      targetFilepath: Path.join(libraryItem.path, targetFilename),
+      itemCachePath,
+      toneMetadataObject: null
     }
-    var abManagerTask = new AbManagerTask()
-    abManagerTask.setData(taskData)
-    abManagerTask.setTimeoutTimer(this.downloadTimedOut.bind(this))
+    const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
+    task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
+    this.taskManager.addTask(task)
+    Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
-    try {
-      await fs.mkdir(abManagerTask.dirpath)
-    } catch (error) {
-      Logger.error(`[AbMergeManager] Failed to make directory ${abManagerTask.dirpath}`)
-      Logger.debug(`[AbMergeManager] Make directory error: ${error}`)
-      var taskJson = abManagerTask.toJSON()
-      this.clientEmitter(user.id, 'abmerge_failed', taskJson)
-      return
+    if (!await fs.pathExists(taskData.itemCachePath)) {
+      await fs.mkdir(taskData.itemCachePath)
     }
 
-    this.clientEmitter(user.id, 'abmerge_started', abManagerTask.toJSON())
-    this.runAudiobookMerge(libraryItem, abManagerTask)
+    this.runAudiobookMerge(libraryItem, task)
   }
 
-  async runAudiobookMerge(libraryItem, abManagerTask) {
+  async runAudiobookMerge(libraryItem, task) {
     // If changing audio file type then encoding is needed
     var audioTracks = libraryItem.media.tracks
-    var audioRequiresEncode = audioTracks[0].metadata.ext !== abManagerTask.ext
-    var shouldIncludeCover = libraryItem.media.coverPath
+    var audioRequiresEncode = audioTracks[0].metadata.ext !== '.m4b'
     var firstTrackIsM4b = audioTracks[0].metadata.ext.toLowerCase() === '.m4b'
     var isOneTrack = audioTracks.length === 1
 
     const ffmpegInputs = []
 
     if (!isOneTrack) {
-      var concatFilePath = Path.join(abManagerTask.dirpath, 'files.txt')
-      console.log('Write files.txt', concatFilePath)
+      var concatFilePath = Path.join(task.data.itemCachePath, 'files.txt')
       await writeConcatFile(audioTracks, concatFilePath)
       ffmpegInputs.push({
         input: concatFilePath,
@@ -132,7 +93,7 @@ class AbMergeManager {
 
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
     var ffmpegOptions = [`-loglevel ${logLevel}`]
-    var ffmpegOutputOptions = []
+    var ffmpegOutputOptions = ['-f mp4']
 
     if (audioRequiresEncode) {
       ffmpegOptions = ffmpegOptions.concat([
@@ -140,25 +101,20 @@ class AbMergeManager {
         '-acodec aac',
         '-ac 2',
         '-b:a 64k'
-        // '-movflags use_metadata_tags'
       ])
     } else {
       ffmpegOptions.push('-max_muxing_queue_size 1000')
 
-      if (isOneTrack && firstTrackIsM4b && !shouldIncludeCover) {
+      if (isOneTrack && firstTrackIsM4b) {
         ffmpegOptions.push('-c copy')
       } else {
         ffmpegOptions.push('-c:a copy')
       }
     }
-    if (abManagerTask.ext === '.m4b') {
-      ffmpegOutputOptions.push('-f mp4')
-    }
-
 
     var chaptersFilePath = null
     if (libraryItem.media.chapters.length) {
-      chaptersFilePath = Path.join(abManagerTask.dirpath, 'chapters.txt')
+      chaptersFilePath = Path.join(task.data.itemCachePath, 'chapters.txt')
       try {
         await toneHelpers.writeToneChaptersFile(libraryItem.media.chapters, chaptersFilePath)
       } catch (error) {
@@ -169,7 +125,7 @@ class AbMergeManager {
 
     const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
     toneMetadataObject.TrackNumber = 1
-    abManagerTask.toneMetadataObject = toneMetadataObject
+    task.data.toneMetadataObject = toneMetadataObject
 
     Logger.debug(`[AbMergeManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
 
@@ -177,7 +133,7 @@ class AbMergeManager {
       inputs: ffmpegInputs,
       options: ffmpegOptions,
       outputOptions: ffmpegOutputOptions,
-      output: abManagerTask.path,
+      output: task.data.tempFilepath
     }
 
     var worker = null
@@ -186,137 +142,83 @@ class AbMergeManager {
       worker = new workerThreads.Worker(workerPath, { workerData })
     } catch (error) {
       Logger.error(`[AbMergeManager] Start worker thread failed`, error)
-      if (abManagerTask.userId) {
-        var taskJson = abManagerTask.toJSON()
-        this.clientEmitter(abManagerTask.userId, 'abmerge_failed', taskJson)
-      }
-      this.removeTask(abManagerTask)
+      task.setFailed('Failed to start worker thread')
+      this.removeTask(task, true)
       return
     }
 
     worker.on('message', (message) => {
       if (message != null && typeof message === 'object') {
         if (message.type === 'RESULT') {
-          if (!abManagerTask.isTimedOut) {
-            this.sendResult(abManagerTask, message)
-          }
+          this.sendResult(task, message)
         } else if (message.type === 'FFMPEG') {
           if (Logger[message.level]) {
             Logger[message.level](message.log)
           }
         }
-      } else {
-        Logger.error('Invalid worker message', message)
       }
     })
     this.pendingTasks.push({
-      id: abManagerTask.id,
-      abManagerTask,
+      id: task.id,
+      task,
       worker
     })
   }
 
-  async sendResult(abManagerTask, result) {
-    abManagerTask.clearTimeoutTimer()
-
+  async sendResult(task, result) {
     // Remove pending task
-    this.pendingTasks = this.pendingTasks.filter(d => d.id !== abManagerTask.id)
+    this.pendingTasks = this.pendingTasks.filter(d => d.id !== task.id)
 
     if (result.isKilled) {
-      if (abManagerTask.userId) {
-        this.clientEmitter(abManagerTask.userId, 'abmerge_killed', abManagerTask.toJSON())
-      }
+      task.setFailed('Ffmpeg task killed')
+      this.removeTask(task, true)
       return
     }
 
     if (!result.success) {
-      if (abManagerTask.userId) {
-        this.clientEmitter(abManagerTask.userId, 'abmerge_failed', abManagerTask.toJSON())
-      }
-      this.removeTask(abManagerTask)
+      task.setFailed('Encoding failed')
+      this.removeTask(task, true)
       return
     }
 
     // Write metadata to merged file
-    const success = await toneHelpers.tagAudioFile(abManagerTask.path, abManagerTask.toneMetadataObject)
+    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneMetadataObject)
     if (!success) {
-      Logger.error(`[AbMergeManager] Failed to write metadata to file "${abManagerTask.path}"`)
-      if (abManagerTask.userId) {
-        this.clientEmitter(abManagerTask.userId, 'abmerge_failed', abManagerTask.toJSON())
-      }
-      this.removeTask(abManagerTask)
+      Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
+      task.setFailed('Failed to write metadata to m4b file')
+      this.removeTask(task, true)
       return
     }
 
     // Move library item tracks to cache
-    const itemCacheDir = Path.join(global.MetadataPath, `cache/items/${abManagerTask.libraryItemId}`)
-    await fs.ensureDir(itemCacheDir)
-    for (const trackPath of abManagerTask.originalTrackPaths) {
+    for (const trackPath of task.data.originalTrackPaths) {
       const trackFilename = Path.basename(trackPath)
-      const moveToPath = Path.join(itemCacheDir, trackFilename)
+      const moveToPath = Path.join(task.data.itemCachePath, trackFilename)
       Logger.debug(`[AbMergeManager] Backing up original track "${trackPath}" to ${moveToPath}`)
       await fs.move(trackPath, moveToPath, { overwrite: true }).catch((err) => {
         Logger.error(`[AbMergeManager] Failed to move track "${trackPath}" to "${moveToPath}"`, err)
       })
     }
 
+    // Move m4b to target
+    Logger.debug(`[AbMergeManager] Moving m4b from ${task.data.tempFilepath} to ${task.data.targetFilepath}`)
+    await fs.move(task.data.tempFilepath, task.data.targetFilepath)
+
     // Set file permissions and ownership
-    await filePerms.setDefault(abManagerTask.path)
-    await filePerms.setDefault(itemCacheDir)
+    await filePerms.setDefault(task.data.targetFilepath)
+    await filePerms.setDefault(task.data.itemCachePath)
 
-    // Move merged file to library item
-    const moveToPath = Path.join(abManagerTask.libraryItemPath, abManagerTask.filename)
-    Logger.debug(`[AbMergeManager] Moving merged audiobook to library item at "${moveToPath}"`)
-    const moveSuccess = await fs.move(abManagerTask.path, moveToPath, { overwrite: true }).then(() => true).catch((err) => {
-      Logger.error(`[AbMergeManager] Failed to move merged audiobook from "${abManagerTask.path}" to "${moveToPath}"`, err)
-      return false
-    })
-    if (!moveSuccess) {
-      // TODO: Revert cached og files?
-    }
-
-    var filesize = await getFileSize(abManagerTask.path)
-    abManagerTask.setComplete(filesize)
-    if (abManagerTask.userId) {
-      this.clientEmitter(abManagerTask.userId, 'abmerge_ready', abManagerTask.toJSON())
-    }
-    // abManagerTask.setExpirationTimer(this.downloadExpired.bind(this))
-
-    // this.tasks.push(abManagerTask)
-    await this.removeTask(abManagerTask)
-    Logger.info(`[AbMergeManager] Ab task finished ${abManagerTask.id}`)
+    task.setFinished()
+    await this.removeTask(task, false)
+    Logger.info(`[AbMergeManager] Ab task finished ${task.id}`)
   }
 
-  // async downloadExpired(abManagerTask) {
-  //   Logger.info(`[AbMergeManager] Download ${abManagerTask.id} expired`)
+  async removeTask(task, removeTempFilepath = false) {
+    Logger.info('[AbMergeManager] Removing task ' + task.id)
 
-  //   if (abManagerTask.userId) {
-  //     this.clientEmitter(abManagerTask.userId, 'abmerge_expired', abManagerTask.toJSON())
-  //   }
-  //   this.removeTask(abManagerTask)
-  // }
-
-  async downloadTimedOut(abManagerTask) {
-    Logger.info(`[AbMergeManager] Download ${abManagerTask.id} timed out (${abManagerTask.timeoutTimeMs}ms)`)
-
-    if (abManagerTask.userId) {
-      var taskJson = abManagerTask.toJSON()
-      taskJson.isTimedOut = true
-      this.clientEmitter(abManagerTask.userId, 'abmerge_failed', taskJson)
-    }
-    this.removeTask(abManagerTask)
-  }
-
-  async removeTask(abManagerTask) {
-    Logger.info('[AbMergeManager] Removing task ' + abManagerTask.id)
-
-    abManagerTask.clearTimeoutTimer()
-    // abManagerTask.clearExpirationTimer()
-
-    var pendingDl = this.pendingTasks.find(d => d.id === abManagerTask.id)
-
+    const pendingDl = this.pendingTasks.find(d => d.id === task.id)
     if (pendingDl) {
-      this.pendingTasks = this.pendingTasks.filter(d => d.id !== abManagerTask.id)
+      this.pendingTasks = this.pendingTasks.filter(d => d.id !== task.id)
       Logger.warn(`[AbMergeManager] Removing download in progress - stopping worker`)
       if (pendingDl.worker) {
         try {
@@ -327,12 +229,17 @@ class AbMergeManager {
       }
     }
 
-    await fs.remove(abManagerTask.dirpath).then(() => {
-      Logger.info('[AbMergeManager] Deleted download', abManagerTask.dirpath)
-    }).catch((err) => {
-      Logger.error('[AbMergeManager] Failed to delete download', err)
-    })
-    this.tasks = this.tasks.filter(d => d.id !== abManagerTask.id)
+    if (removeTempFilepath) { // On failed tasks remove the bad file if it exists
+      if (await fs.pathExists(task.data.tempFilepath)) {
+        await fs.remove(task.data.tempFilepath).then(() => {
+          Logger.info('[AbMergeManager] Deleted target file', task.data.tempFilepath)
+        }).catch((err) => {
+          Logger.error('[AbMergeManager] Failed to delete target file', err)
+        })
+      }
+    }
+
+    this.taskManager.taskFinished(task)
   }
 }
 module.exports = AbMergeManager

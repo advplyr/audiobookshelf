@@ -26,7 +26,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -41,6 +41,7 @@ class ApiRouter {
     this.rssFeedManager = rssFeedManager
     this.cronManager = cronManager
     this.notificationManager = notificationManager
+    this.taskManager = taskManager
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -224,9 +225,7 @@ class ApiRouter {
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
     this.router.get('/audiobook-merge/:id', MiscController.mergeAudiobook.bind(this))
-    this.router.get('/ab-manager-tasks/:id', MiscController.getAbManagerTask.bind(this))
-    this.router.delete('/ab-manager-tasks/:id', MiscController.removeAbManagerTask.bind(this))
-    this.router.get('/ab-manager-tasks', MiscController.getAbManagerTasks.bind(this))
+    this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
     this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
     this.router.post('/authorize', MiscController.authorize.bind(this))

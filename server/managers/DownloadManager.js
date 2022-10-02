@@ -25,22 +25,6 @@ class DownloadManager {
     return this.downloads.find(d => d.id === downloadId)
   }
 
-  async removeOrphanDownloads() {
-    try {
-      var dirs = await fs.readdir(this.downloadDirPath)
-      if (!dirs || !dirs.length) return true
-
-      await Promise.all(dirs.map(async (dirname) => {
-        var fullPath = Path.join(this.downloadDirPath, dirname)
-        Logger.info(`Removing Orphan Download ${dirname}`)
-        return fs.remove(fullPath)
-      }))
-      return true
-    } catch (error) {
-      return false
-    }
-  }
-
   downloadSocketRequest(socket, payload) {
     var client = socket.sheepClient
     var audiobook = this.db.audiobooks.find(a => a.id === payload.audiobookId)
