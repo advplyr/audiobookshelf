@@ -88,7 +88,7 @@
         <div class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
-            A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span> so you can restore the originals if necessary.
+            A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
           </p>
         </div>
         <div class="flex items-start mb-2">
