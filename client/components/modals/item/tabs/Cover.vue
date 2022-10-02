@@ -164,7 +164,7 @@ export default {
         .filter((f) => f.fileType === 'image')
         .map((file) => {
           var _file = { ...file }
-          _file.localPath = `/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}`
+          _file.localPath = `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}`
           return _file
         })
     }
