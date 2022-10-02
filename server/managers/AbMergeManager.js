@@ -22,6 +22,14 @@ class AbMergeManager {
     this.pendingTasks = []
   }
 
+  getPendingTaskByLibraryItemId(libraryItemId) {
+    return this.pendingTasks.find(t => t.task.data.libraryItemId === libraryItemId)
+  }
+
+  cancelEncode(task) {
+    return this.removeTask(task, true)
+  }
+
   async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
     if (this.downloadDirPathExist) return
 
@@ -223,6 +231,7 @@ class AbMergeManager {
       if (pendingDl.worker) {
         try {
           pendingDl.worker.postMessage('STOP')
+          return
         } catch (error) {
           Logger.error('[AbMergeManager] Error posting stop message to worker', error)
         }

@@ -67,6 +67,7 @@
         <p v-else class="text-success text-lg font-semibold">Embed Finished!</p>
       </div>
       <div v-else class="w-full flex justify-end items-center mb-4">
+        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">Cancel Encode</ui-btn>
         <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">Start M4B Encode</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">M4B Failed! {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">M4B Finished!</p>
@@ -166,7 +167,8 @@ export default {
       audiofilesFinished: {},
       isFinished: false,
       toneObject: null,
-      selectedTool: 'embed'
+      selectedTool: 'embed',
+      isCancelingEncode: false
     }
   },
   watch: {
@@ -230,10 +232,25 @@ export default {
     }
   },
   methods: {
+    cancelEncodeClick() {
+      this.isCancelingEncode = true
+      this.$axios
+        .$post(`/api/encode-m4b/${this.libraryItemId}/cancel`)
+        .then(() => {
+          this.$toast.success('Encode canceled')
+        })
+        .catch((error) => {
+          console.error('Failed to cancel encode', error)
+          this.$toast.error('Failed to cancel encode')
+        })
+        .finally(() => {
+          this.isCancelingEncode = false
+        })
+    },
     encodeM4bClick() {
       this.processing = true
       this.$axios
-        .$get(`/api/audiobook-merge/${this.libraryItemId}`)
+        .$get(`/api/encode-m4b/${this.libraryItemId}`)
         .then(() => {
           console.log('Ab m4b merge started')
         })

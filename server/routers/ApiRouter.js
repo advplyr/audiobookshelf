@@ -224,7 +224,8 @@ class ApiRouter {
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
-    this.router.get('/audiobook-merge/:id', MiscController.mergeAudiobook.bind(this))
+    this.router.get('/encode-m4b/:id', MiscController.encodeM4b.bind(this))
+    this.router.post('/encode-m4b/:id/cancel', MiscController.cancelM4bEncode.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
     this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only

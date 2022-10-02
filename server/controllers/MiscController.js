@@ -82,30 +82,45 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  // GET: api/audiobook-merge/:id
-  async mergeAudiobook(req, res) {
+  // GET: api/encode-m4b/:id
+  async encodeM4b(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error('[MiscController] mergeAudiobook: Non-admin user attempting to make m4b', req.user)
+      Logger.error('[MiscController] encodeM4b: Non-admin user attempting to make m4b', req.user)
       return res.sendStatus(403)
     }
 
     var libraryItem = this.db.getLibraryItem(req.params.id)
     if (!libraryItem || libraryItem.isMissing || libraryItem.isInvalid) {
-      Logger.error(`[MiscController] mergeAudiboook: library item not found or invalid ${req.params.id}`)
+      Logger.error(`[MiscController] encodeM4b: library item not found or invalid ${req.params.id}`)
       return res.status(404).send('Audiobook not found')
     }
 
     if (libraryItem.mediaType !== 'book') {
-      Logger.error(`[MiscController] mergeAudiboook: Invalid library item ${req.params.id}: not a book`)
+      Logger.error(`[MiscController] encodeM4b: Invalid library item ${req.params.id}: not a book`)
       return res.status(500).send('Invalid library item: not a book')
     }
 
     if (libraryItem.media.tracks.length <= 0) {
-      Logger.error(`[MiscController] mergeAudiboook: Invalid audiobook ${req.params.id}: no audio tracks`)
+      Logger.error(`[MiscController] encodeM4b: Invalid audiobook ${req.params.id}: no audio tracks`)
       return res.status(500).send('Invalid audiobook: no audio tracks')
     }
 
     this.abMergeManager.startAudiobookMerge(req.user, libraryItem)
+
+    res.sendStatus(200)
+  }
+
+  // POST: api/encode-m4b/:id/cancel
+  async cancelM4bEncode(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[MiscController] cancelM4bEncode: Non-admin user attempting to cancel m4b encode', req.user)
+      return res.sendStatus(403)
+    }
+
+    const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
+    if (!workerTask) return res.sendStatus(404)
+
+    this.abMergeManager.cancelEncode(workerTask.task)
 
     res.sendStatus(200)
   }

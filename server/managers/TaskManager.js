@@ -12,7 +12,7 @@ class TaskManager {
 
   taskFinished(task) {
     if (this.tasks.some(t => t.id === task.id)) {
-      this.tasks = this.tasks.filter(t => t !== task.id)
+      this.tasks = this.tasks.filter(t => t.id !== task.id)
       this.emitter('task_finished', task.toJSON())
     }
   }
