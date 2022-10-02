@@ -156,3 +156,18 @@ module.exports.probe = (filepath, verbose = false) => {
     }
   })
 }
+
+module.exports.rawProbe = (filepath) => {
+  if (process.env.TONE_PATH) {
+    tone.TONE_PATH = process.env.TONE_PATH
+  }
+
+  return tone.dump(filepath).then((dumpPayload) => {
+    return dumpPayload
+  }).catch((error) => {
+    Logger.error(`[toneProber] Failed to probe file at path "${filepath}"`, error)
+    return {
+      error
+    }
+  })
+}

@@ -289,5 +289,10 @@ class MediaFileScanner {
 
     return hasUpdated
   }
+
+  probeAudioFileWithTone(audioFile) {
+    Logger.debug(`[MediaFileScanner] using tone to probe audio file "${audioFile.metadata.path}"`)
+    return toneProber.rawProbe(audioFile.metadata.path)
+  }
 }
 module.exports = new MediaFileScanner()

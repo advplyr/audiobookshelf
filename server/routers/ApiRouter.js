@@ -101,6 +101,7 @@ class ApiRouter {
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/open-feed', LibraryItemController.middleware.bind(this), LibraryItemController.openRSSFeed.bind(this))
     this.router.post('/items/:id/close-feed', LibraryItemController.middleware.bind(this), LibraryItemController.closeRSSFeed.bind(this))
+    this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))

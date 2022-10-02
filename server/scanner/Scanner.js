@@ -991,5 +991,9 @@ class Scanner {
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
     this.emitter('scan_complete', libraryScan.getScanEmitData)
   }
+
+  probeAudioFileWithTone(audioFile) {
+    return MediaFileScanner.probeAudioFileWithTone(audioFile)
+  }
 }
 module.exports = Scanner

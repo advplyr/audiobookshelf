@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const { reqSupportsWebp } = require('../utils/index')
+const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
 class LibraryItemController {
@@ -462,6 +462,22 @@ class LibraryItemController {
     await this.rssFeedManager.closeFeedForItem(req.params.id)
 
     res.sendStatus(200)
+  }
+
+  async toneScan(req, res) {
+    if (!req.libraryItem.media.audioFiles.length) {
+      return res.sendStatus(404)
+    }
+
+    const audioFileIndex = isNullOrNaN(req.params.index) ? 1 : Number(req.params.index)
+    const audioFile = req.libraryItem.media.audioFiles.find(af => af.index === audioFileIndex)
+    if (!audioFile) {
+      Logger.error(`[LibraryItemController] toneScan: Audio file not found with index ${audioFileIndex}`)
+      return res.sendStatus(404)
+    }
+
+    const toneData = await this.scanner.probeAudioFileWithTone(audioFile)
+    res.json(toneData)
   }
 
   middleware(req, res, next) {
