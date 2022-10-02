@@ -223,10 +223,10 @@ class Server {
     // Client dynamic routes
     const dyanimicRoutes = [
       '/item/:id',
-      '/item/:id/manage',
       '/author/:id',
       '/audiobook/:id/chapters',
       '/audiobook/:id/edit',
+      '/audiobook/:id/manage',
       '/library/:library',
       '/library/:library/search',
       '/library/:library/bookshelf/:id?',

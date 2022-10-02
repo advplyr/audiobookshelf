@@ -66,9 +66,9 @@ export default {
           component: 'modals-item-tabs-match'
         },
         {
-          id: 'manage',
-          title: 'Manage',
-          component: 'modals-item-tabs-manage',
+          id: 'tools',
+          title: 'Tools',
+          component: 'modals-item-tabs-tools',
           mediaType: 'book',
           admin: true
         },
@@ -141,10 +141,10 @@ export default {
         if (tab.mediaType && this.mediaType !== tab.mediaType) return false
         if (tab.admin && !this.userIsAdminOrUp) return false
 
-        if (tab.id === 'manage' && this.isMissing) return false
+        if (tab.id === 'tools' && this.isMissing) return false
 
-        if ((tab.id === 'manage' || tab.id === 'files') && this.userCanDownload) return true
-        if (tab.id !== 'manage' && tab.id !== 'files' && this.userCanUpdate) return true
+        if ((tab.id === 'tools' || tab.id === 'files') && this.userCanDownload) return true
+        if (tab.id !== 'tools' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })

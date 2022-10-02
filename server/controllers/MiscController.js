@@ -84,8 +84,8 @@ class MiscController {
 
   // GET: api/audiobook-merge/:id
   async mergeAudiobook(req, res) {
-    if (!req.user.canDownload) {
-      Logger.error('User attempting to download without permission', req.user)
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[MiscController] mergeAudiobook: Non-admin user attempting to make m4b', req.user)
       return res.sendStatus(403)
     }
 
