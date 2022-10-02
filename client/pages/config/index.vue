@@ -193,7 +193,7 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
+          <!-- <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerUseTone" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseTone', val)" />
             <ui-tooltip text="Tone library for metadata">
               <p class="pl-4">
@@ -201,7 +201,7 @@
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

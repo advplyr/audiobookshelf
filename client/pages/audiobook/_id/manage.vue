@@ -91,6 +91,14 @@
             A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
           </p>
         </div>
+        <div v-if="selectedTool === 'm4b'" class="flex items-start mb-2">
+          <span class="material-icons text-base text-warning pt-1">star</span>
+          <p class="text-gray-200 ml-2">Encoding can take up to 30 minutes.</p>
+        </div>
+        <div v-if="selectedTool === 'm4b'" class="flex items-start mb-2">
+          <span class="material-icons text-base text-warning pt-1">star</span>
+          <p class="text-gray-200 ml-2">If you have the watcher disabled you will need to re-scan this audiobook afterwards.</p>
+        </div>
         <div class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Once the task is started you can navigate away from this page.</p>

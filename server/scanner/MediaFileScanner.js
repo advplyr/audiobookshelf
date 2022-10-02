@@ -60,12 +60,13 @@ class MediaFileScanner {
     var probeStart = Date.now()
 
     var probeData = null
-    if (global.ServerSettings.scannerUseTone) {
-      Logger.debug(`[MediaFileScanner] using tone to probe audio file "${libraryFile.metadata.path}"`)
-      probeData = await toneProber.probe(libraryFile.metadata.path, true)
-    } else {
-      probeData = await prober.probe(libraryFile.metadata.path, verbose)
-    }
+    // TODO: Temp not using tone for probing until more testing can be done
+    // if (global.ServerSettings.scannerUseTone) {
+    //   Logger.debug(`[MediaFileScanner] using tone to probe audio file "${libraryFile.metadata.path}"`)
+    //   probeData = await toneProber.probe(libraryFile.metadata.path, true)
+    // } else {
+    probeData = await prober.probe(libraryFile.metadata.path, verbose)
+    // }
 
     if (probeData.error) {
       Logger.error(`[MediaFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
