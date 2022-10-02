@@ -22,7 +22,7 @@ class PodcastEpisodeDownload {
   toJSONForClient() {
     return {
       id: this.id,
-      episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.bestFilename : null,
+      episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.title : null,
       url: this.url,
       libraryItemId: this.libraryItem ? this.libraryItem.id : null,
       isDownloading: this.isDownloading,
@@ -35,7 +35,7 @@ class PodcastEpisodeDownload {
   }
 
   get targetFilename() {
-    return sanitizeFilename(`${this.podcastEpisode.bestFilename}.mp3`)
+    return sanitizeFilename(`${this.podcastEpisode.title}.mp3`)
   }
   get targetPath() {
     return Path.join(this.libraryItem.path, this.targetFilename)
