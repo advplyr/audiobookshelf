@@ -114,6 +114,15 @@ class CacheManager {
     await this.ensureCachePaths()
   }
 
+  async purgeItems() {
+    if (await fs.pathExists(this.ItemCachePath)) {
+      await fs.remove(this.ItemCachePath).catch((error) => {
+        Logger.error(`[CacheManager] Failed to remove items cache dir "${this.ItemCachePath}"`, error)
+      })
+    }
+    await this.ensureCachePaths()
+  }
+
   async handleAuthorCache(res, author, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400

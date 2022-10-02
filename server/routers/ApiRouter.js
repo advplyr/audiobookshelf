@@ -227,8 +227,9 @@ class ApiRouter {
     this.router.get('/encode-m4b/:id', MiscController.encodeM4b.bind(this))
     this.router.post('/encode-m4b/:id/cancel', MiscController.cancelM4bEncode.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
-    this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
-    this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
+    this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
+    this.router.post('/cache/purge', MiscController.purgeCache.bind(this))
+    this.router.post('/cache/items/purge', MiscController.purgeItemsCache.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/search/covers', MiscController.findCovers.bind(this))
     this.router.get('/search/books', MiscController.findBooks.bind(this))

@@ -209,8 +209,12 @@
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
     <div class="flex items-center py-4">
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click="purgeCache">Purge Cache</ui-btn>
+      <div class="flex-grow" />
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click.stop="purgeCache">Purge All Cache</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click.stop="purgeItemsCache">Purge Items Cache</ui-btn>
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isResettingLibraryItems" @click="resetLibraryItems">Remove All Library Items</ui-btn>
+    </div>
+    <div class="flex items-center py-4">
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">
         Report bugs, request features, and contribute on
@@ -421,13 +425,38 @@ export default {
       this.showConfirmPurgeCache = false
       this.isPurgingCache = true
       await this.$axios
-        .$post('/api/purgecache')
+        .$post('/api/cache/purge')
         .then(() => {
           this.$toast.success('Cache Purged!')
         })
         .catch((error) => {
           console.error('Failed to purge cache', error)
           this.$toast.error('Failed to purge cache')
+        })
+      this.isPurgingCache = false
+    },
+    purgeItemsCache() {
+      const payload = {
+        message: `<span class="text-warning text-base">Warning! This will delete the entire folder at /metadata/cache/items.</span><br />Are you sure you want to purge items cache?`,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.sendPurgeItemsCache()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    async sendPurgeItemsCache() {
+      this.isPurgingCache = true
+      await this.$axios
+        .$post('/api/cache/items/purge')
+        .then(() => {
+          this.$toast.success('Items Cache Purged!')
+        })
+        .catch((error) => {
+          console.error('Failed to purge items cache', error)
+          this.$toast.error('Failed to purge items cache')
         })
       this.isPurgingCache = false
     }
