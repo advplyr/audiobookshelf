@@ -146,8 +146,7 @@ export default {
       return this.$store.state.streamLibraryItem
     },
     metadataChapters() {
-      var chapters = this.media.chapters || []
-      return chapters.concat(chapters)
+      return this.media.chapters || []
     }
   },
   methods: {
