@@ -819,7 +819,7 @@ class Scanner {
           if ((!libraryItem.media.tags.length || options.overrideDetails)) {
             var tagsArray = []
             if (Array.isArray(matchData[key])) tagsArray = [...matchData[key]]
-            else tagsArray = tagsArray[key].split(',').map(v => v.trim()).filter(v => !!v)
+            else tagsArray = matchData[key].split(',').map(v => v.trim()).filter(v => !!v)
             updatePayload[key] = tagsArray
           }
         } else if ((!libraryItem.media.metadata[key] || options.overrideDetails)) {
