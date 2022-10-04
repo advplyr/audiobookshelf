@@ -60,11 +60,15 @@ class iTunes {
   }
 
   cleanAudiobook(data) {
+    // artistName can be "Name1, Name2 & Name3" so we refactor this to "Name1, Name2, Name3"
+    //  see: https://github.com/advplyr/audiobookshelf/issues/1022
+    const author = (data.artistName || '').split(' & ').join(', ')
+
     return {
       id: data.collectionId,
       artistId: data.artistId,
       title: data.collectionName,
-      author: data.artistName,
+      author,
       description: htmlSanitizer.stripAllTags(data.description || ''),
       publishedYear: data.releaseDate ? data.releaseDate.split('-')[0] : null,
       genres: data.primaryGenreName ? [data.primaryGenreName] : null,
