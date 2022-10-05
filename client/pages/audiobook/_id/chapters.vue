@@ -18,9 +18,33 @@
           <p class="text-lg mb-4 font-semibold">Audiobook Chapters</p>
           <div class="flex-grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
+          <div class="w-40" />
+        </div>
+        <div class="flex items-center mb-3 py-1">
+          <div class="flex-grow" />
+          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" small @click="showShiftTimes = !showShiftTimes">Shift Times</ui-btn>
           <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">Lookup</ui-btn>
           <ui-btn color="success" small @click="saveChapters">Save</ui-btn>
           <div class="w-40" />
+        </div>
+
+        <div class="overflow-hidden">
+          <transition name="slide">
+            <div v-if="showShiftTimes" class="flex mb-4">
+              <div class="w-12"></div>
+              <div class="flex-grow">
+                <div class="flex items-center">
+                  <p class="text-sm mb-1 font-semibold pr-2">Time to shift in seconds</p>
+                  <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
+                  <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">Add</ui-btn>
+                  <div class="flex-grow" />
+                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">close</span>
+                </div>
+                <p class="text-xs py-1.5 text-gray-300 max-w-md">Note: First chapter start time must remain at 0:00 and the last chapter start time cannot exceed this audiobooks duration.</p>
+              </div>
+              <div class="w-40"></div>
+            </div>
+          </transition>
         </div>
 
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
@@ -38,6 +62,7 @@
             </div>
             <div class="flex-grow px-1">
               <ui-text-input v-model="chapter.title" class="text-xs" />
+              {{ $secondsToTimestamp(chapter.end) }}
             </div>
             <div class="w-40 px-2 py-1">
               <div class="flex items-center">
@@ -186,6 +211,8 @@ export default {
     return {
       newChapters: [],
       selectedChapter: null,
+      showShiftTimes: false,
+      shiftAmount: 0,
       audioEl: null,
       isPlayingChapter: false,
       isLoadingChapter: false,
@@ -237,6 +264,32 @@ export default {
     }
   },
   methods: {
+    shiftChapterTimes() {
+      if (!this.shiftAmount || isNaN(this.shiftAmount) || this.newChapters.length <= 1) {
+        return
+      }
+
+      const amount = Number(this.shiftAmount)
+
+      const lastChapter = this.newChapters[this.newChapters.length - 1]
+      if (lastChapter.start + amount > this.mediaDurationRounded) {
+        this.$toast.error('Invalid shift amount. Last chapter start time would extend beyond the duration of this audiobook.')
+        return
+      }
+
+      if (this.newChapters[0].end + amount <= 0) {
+        this.$toast.error('Invalid shift amount. First chapter would have zero or negative length.')
+        return
+      }
+
+      for (let i = 0; i < this.newChapters.length; i++) {
+        const chap = this.newChapters[i]
+        chap.end = Math.min(chap.end + amount, this.mediaDuration)
+        if (i > 0) {
+          chap.start = Math.max(0, chap.start + amount)
+        }
+      }
+    },
     editItem() {
       this.$store.commit('showEditModal', this.libraryItem)
     },
