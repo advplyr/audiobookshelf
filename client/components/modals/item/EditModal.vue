@@ -231,8 +231,10 @@ export default {
       }
     },
     selectTab(tab) {
+      if (this.selectedTab === tab) return
       if (this.availableTabs.find((t) => t.id === tab)) {
         this.selectedTab = tab
+        this.processing = false
       }
     },
     libraryItemUpdated(expandedLibraryItem) {
