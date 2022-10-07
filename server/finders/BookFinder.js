@@ -150,8 +150,9 @@ class BookFinder {
     return this.iTunesApi.searchAudiobooks(title)
   }
 
-  async getAudibleResults(title, author, asin) {
-    var books = await this.audible.search(title, author, asin);
+  async getAudibleResults(title, author, asin, provider) {
+    const region = provider.includes('.') ? provider.split('.').pop() : ''
+    const books = await this.audible.search(title, author, asin, region)
     if (this.verbose) Logger.debug(`Audible Book Search Results: ${books.length || 0}`)
     if (!books) return []
     return books
@@ -165,8 +166,8 @@ class BookFinder {
 
     if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
-    } else if (provider === 'audible') {
-      books = await this.getAudibleResults(title, author, asin)
+    } else if (provider.startsWith('audible')) {
+      books = await this.getAudibleResults(title, author, asin, provider)
     } else if (provider === 'itunes') {
       books = await this.getiTunesAudiobooksResults(title, author)
     } else if (provider === 'openlibrary') {

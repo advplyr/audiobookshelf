@@ -258,7 +258,7 @@ export default {
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
-      if (this.provider == 'audible') return 'Search Title or ASIN'
+      if (this.provider.startsWith('audible')) return 'Search Title or ASIN'
       else if (this.provider == 'itunes') return 'Search Term'
       return 'Search Title'
     },
@@ -312,7 +312,7 @@ export default {
       this.isProcessing = true
       this.lastSearch = searchQuery
       var searchEntity = this.isPodcast ? 'podcast' : 'books'
-      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 10000 }).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })

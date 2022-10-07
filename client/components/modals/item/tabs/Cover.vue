@@ -125,7 +125,7 @@ export default {
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
-      if (this.provider == 'audible') return 'Search Title or ASIN'
+      if (this.provider.startsWith('audible')) return 'Search Title or ASIN'
       else if (this.provider == 'itunes') return 'Search Term'
       return 'Search Title'
     },

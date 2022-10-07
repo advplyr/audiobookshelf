@@ -10,12 +10,48 @@ export const state = () => ({
       value: 'openlibrary'
     },
     {
-      text: 'Audible',
+      text: 'iTunes',
+      value: 'itunes'
+    },
+    {
+      text: 'Audible.com',
       value: 'audible'
     },
     {
-      text: 'iTunes',
-      value: 'itunes'
+      text: 'Audible.ca',
+      value: 'audible.ca'
+    },
+    {
+      text: 'Audible.co.uk',
+      value: 'audible.uk'
+    },
+    {
+      text: 'Audible.co.au',
+      value: 'audible.au'
+    },
+    {
+      text: 'Audible.fr',
+      value: 'audible.fr'
+    },
+    {
+      text: 'Audible.de',
+      value: 'audible.de'
+    },
+    {
+      text: 'Audible.co.jp',
+      value: 'audible.jp'
+    },
+    {
+      text: 'Audible.it',
+      value: 'audible.it'
+    },
+    {
+      text: 'Audible.co.in',
+      value: 'audible.in'
+    },
+    {
+      text: 'Audible.es',
+      value: 'audible.es'
     }
   ],
   podcastProviders: [

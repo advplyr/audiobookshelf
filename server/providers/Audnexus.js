@@ -35,7 +35,7 @@ class Audnexus {
     return {
       asin: author.asin,
       description: author.description,
-      image: author.image,
+      image: author.image || null,
       name: author.name
     }
   }
@@ -54,7 +54,7 @@ class Audnexus {
     return {
       asin: author.asin,
       description: author.description,
-      image: author.image,
+      image: author.image || null,
       name: author.name
     }
   }
