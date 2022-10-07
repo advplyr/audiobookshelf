@@ -6,7 +6,7 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM sandreas/tone:v0.0.9 AS tone
+FROM sandreas/tone:v0.1.1 AS tone
 FROM node:16-alpine
 
 ENV NODE_ENV=production

@@ -50,7 +50,7 @@ install_ffmpeg() {
   echo "Starting FFMPEG Install"
 
   WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
-  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.0.9/tone-0.0.9-linux-x64.tar.gz"
+  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.1.1/tone-0.1.1-linux-x64.tar.gz"
 
   if ! cd "$FFMPEG_INSTALL_DIR"; then
     echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
@@ -66,8 +66,8 @@ install_ffmpeg() {
   # Temp downloading tone library to the ffmpeg dir
   echo "Getting tone.."
   $WGET_TONE
-  tar xvf tone-0.0.9-linux-x64.tar.gz --strip-components=1
-  rm tone-0.0.9-linux-x64.tar.gz
+  tar xvf tone-0.1.1-linux-x64.tar.gz --strip-components=1
+  rm tone-0.1.1-linux-x64.tar.gz
 
   echo "Good to go on Ffmpeg (& tone)... hopefully"
 }
