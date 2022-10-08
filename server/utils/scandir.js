@@ -254,6 +254,7 @@ function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
     path: Path.posix.join(folderPath, relPath) // i.e. /audiobook/Author Name/Book Name/..
   }
 }
+module.exports.getBookDataFromDir = getBookDataFromDir
 
 function getNarrator(folder) {
   let pattern = /^(?<title>.*) \{(?<narrators>.*)\}$/
@@ -277,16 +278,15 @@ function getSequence(folder) {
   // ]
 
   // Matches a valid volume string. Also matches a book whose title starts with a 1 to 3 digit number. Will handle that later.
-  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{1,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?$/i
+  let pattern = /^(?<volumeLabel>vol\.? |volume |book )?(?<sequence>\d{0,3}(?:\.\d{1,2})?)(?<trailingDot>\.?)(?: (?<suffix>.*))?$/i
 
   let volumeNumber = null
   let parts = folder.split(' - ')
   for (let i = 0; i < parts.length; i++) {
     let match = parts[i].match(pattern)
-
     // This excludes '101 Dalmations' but includes '101. Dalmations'
     if (match && !(match.groups.suffix && !(match.groups.volumeLabel || match.groups.trailingDot))) {
-      volumeNumber = match.groups.sequence
+      volumeNumber = isNaN(match.groups.sequence) ? match.groups.sequence : Number(match.groups.sequence).toString()
       parts[i] = match.groups.suffix
       if (!parts[i]) { parts.splice(i, 1) }
       break
@@ -338,7 +338,7 @@ function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettin
     var parseSubtitle = !!serverSettings.scannerParseSubtitle
     return getBookDataFromDir(folderPath, relPath, parseSubtitle)
   } else {
-    return this.getPodcastDataFromDir(folderPath, relPath)
+    return getPodcastDataFromDir(folderPath, relPath)
   }
 }
 
