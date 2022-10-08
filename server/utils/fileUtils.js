@@ -168,7 +168,8 @@ module.exports.downloadFile = async (url, filepath) => {
   const response = await axios({
     url,
     method: 'GET',
-    responseType: 'stream'
+    responseType: 'stream',
+    timeout: 30000
   })
   response.data.pipe(writer)
   return new Promise((resolve, reject) => {
