@@ -62,7 +62,6 @@
             </div>
             <div class="flex-grow px-1">
               <ui-text-input v-model="chapter.title" class="text-xs" />
-              {{ $secondsToTimestamp(chapter.end) }}
             </div>
             <div class="w-40 px-2 py-1">
               <div class="flex items-center">
