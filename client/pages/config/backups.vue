@@ -25,7 +25,9 @@
       <div class="flex items-center py-2">
         <ui-text-input type="number" v-model="backupsToKeep" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
-        <p class="pl-4 text-lg">Number of backups to keep</p>
+        <ui-tooltip :text="numBackupsToKeepTooltip">
+          <p class="pl-4 text-lg">Number of backups to keep <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
@@ -53,7 +55,10 @@ export default {
       maxBackupSize: 1,
       cronExpression: '',
       newServerSettings: {},
-      showCronBuilder: false
+      showCronBuilder: false,
+      backupsTooltip: 'Backups saved in /metadata/backups',
+      numBackupsToKeepTooltip: 'Only 1 backup will be removed at a time so if you already have more backups than this you should manually remove them.',
+      maxBackupSizeTooltip: 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
     }
   },
   watch: {
@@ -65,12 +70,6 @@ export default {
     }
   },
   computed: {
-    backupsTooltip() {
-      return 'Backups saved in /metadata/backups'
-    },
-    maxBackupSizeTooltip() {
-      return 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
-    },
     serverSettings() {
       return this.$store.state.serverSettings
     },
