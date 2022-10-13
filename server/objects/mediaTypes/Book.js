@@ -399,7 +399,7 @@ class Book {
     var newMissingParts = (this.missingParts || []).join(',') || ''
     var wasUpdated = newMissingParts !== currMissingParts
     if (wasUpdated && this.missingParts.length) {
-      Logger.info(`[Audiobook] "${this.name}" has ${missingParts.length} missing parts`)
+      Logger.info(`[Audiobook] "${this.metadata.title}" has ${missingParts.length} missing parts`)
     }
 
     return wasUpdated
