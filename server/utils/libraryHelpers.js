@@ -232,6 +232,7 @@ module.exports = {
           id: seriesToUse[li.id].id,
           name: seriesToUse[li.id].name,
           nameIgnorePrefix: seriesToUse[li.id].nameIgnorePrefix,
+          libraryItemIds: seriesToUse[li.id].books.map(b => b.id),
           numBooks: seriesToUse[li.id].books.length
         }
       }

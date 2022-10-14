@@ -37,6 +37,8 @@
 
     <!-- No progress shown for collapsed series in library and podcasts (unless showing podcast episode) -->
     <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <!-- Finished progress bar for collapsed series -->
+    <div v-else-if="booksInSeries && seriesIsFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -234,6 +236,10 @@ export default {
       // Only added to item object when collapseSeries is enabled
       return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
     },
+    libraryItemIdsInSeries() {
+      // Only added to item object when collapseSeries is enabled
+      return this.collapsedSeries ? this.collapsedSeries.libraryItemIds || [] : []
+    },
     hasCover() {
       return !!this.media.coverPath
     },
@@ -297,6 +303,12 @@ export default {
     },
     itemIsFinished() {
       return this.userProgress ? !!this.userProgress.isFinished : false
+    },
+    seriesIsFinished() {
+      return !this.libraryItemIdsInSeries.some((lid) => {
+        const progress = this.store.getters['user/getUserMediaProgress'](lid)
+        return !progress || !progress.isFinished
+      })
     },
     showError() {
       if (this.recentEpisode) return false // Dont show podcast error on episode card
