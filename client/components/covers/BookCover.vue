@@ -94,7 +94,8 @@ export default {
       return this.author
     },
     placeholderUrl() {
-      return `${this.$config.routerBasePath}/book_placeholder.jpg`
+      const config = this.$config || this.$nuxt.$config
+      return `${config.routerBasePath}/book_placeholder.jpg`
     },
     fullCoverUrl() {
       if (!this.libraryItem) return null
