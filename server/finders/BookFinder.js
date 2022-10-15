@@ -209,8 +209,8 @@ class BookFinder {
     return covers
   }
 
-  findChapters(asin) {
-    return this.audnexus.getChaptersByASIN(asin)
+  findChapters(asin, region) {
+    return this.audnexus.getChaptersByASIN(asin, region)
   }
 }
 module.exports = BookFinder

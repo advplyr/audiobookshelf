@@ -210,7 +210,8 @@ class MiscController {
 
   async findChapters(req, res) {
     var asin = req.query.asin
-    var chapterData = await this.bookFinder.findChapters(asin)
+    var region = (req.query.region || 'us').toLowerCase()
+    var chapterData = await this.bookFinder.findChapters(asin, region)
     if (!chapterData) {
       return res.json({ error: 'Chapters not found' })
     }

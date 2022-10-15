@@ -128,7 +128,8 @@
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
         <div v-if="!chapterData" class="flex p-20">
           <ui-text-input-with-label v-model="asinInput" label="ASIN" />
-          <ui-btn small color="primary" class="mt-5 ml-2" @click="findChapters">Find</ui-btn>
+          <ui-dropdown v-model="regionInput" label="Region" small :items="audibleRegions" class="w-32 mx-1" />
+          <ui-btn small color="primary" class="mt-5" @click="findChapters">Find</ui-btn>
         </div>
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
@@ -218,10 +219,12 @@ export default {
       currentTrackIndex: 0,
       saving: false,
       asinInput: null,
+      regionInput: 'US',
       findingChapters: false,
       showFindChaptersModal: false,
       chapterData: null,
-      showSecondInputs: false
+      showSecondInputs: false,
+      audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES']
     }
   },
   computed: {
@@ -475,10 +478,16 @@ export default {
         this.$toast.error('Must input an ASIN')
         return
       }
+
+      // Update local storage region
+      if (this.regionInput !== localStorage.getItem('audibleRegion')) {
+        localStorage.setItem('audibleRegion', this.regionInput)
+      }
+
       this.findingChapters = true
       this.chapterData = null
       this.$axios
-        .$get(`/api/search/chapters?asin=${this.asinInput}`)
+        .$get(`/api/search/chapters?asin=${this.asinInput}&region=${this.regionInput}`)
         .then((data) => {
           this.findingChapters = false
 
@@ -499,6 +508,7 @@ export default {
     }
   },
   mounted() {
+    this.regionInput = localStorage.getItem('audibleRegion') || 'US'
     this.asinInput = this.mediaMetadata.asin || null
     this.newChapters = this.chapters.map((c) => ({ ...c }))
     if (!this.newChapters.length) {

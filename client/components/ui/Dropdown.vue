@@ -14,7 +14,7 @@
 
     <transition name="menu">
       <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox">
-        <template v-for="item in items">
+        <template v-for="item in itemsToShow">
           <li :key="item.value" class="text-gray-100 select-none relative py-2 cursor-pointer hover:bg-black-400" id="listbox-option-0" role="option" @click="clickedOption(item.value)">
             <div class="flex items-center">
               <span class="ml-3 block truncate font-sans text-sm" :class="{ 'font-semibold': item.subtext }">{{ item.text }}</span>
@@ -62,8 +62,19 @@ export default {
         this.$emit('input', val)
       }
     },
+    itemsToShow() {
+      return this.items.map((i) => {
+        if (typeof i === 'string') {
+          return {
+            text: i,
+            value: i
+          }
+        }
+        return i
+      })
+    },
     selectedItem() {
-      return this.items.find((i) => i.value === this.selected)
+      return this.itemsToShow.find((i) => i.value === this.selected)
     },
     selectedText() {
       return this.selectedItem ? this.selectedItem.text : ''
