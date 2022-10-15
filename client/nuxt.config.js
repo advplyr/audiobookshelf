@@ -6,7 +6,7 @@ module.exports = {
   target: 'static',
   dev: process.env.NODE_ENV !== 'production',
   env: {
-    serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH : 'http://localhost:3333',
+    serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH || '' : 'http://localhost:3333',
     chromecastReceiver: 'FD1F76C5'
   },
   telemetry: false,
