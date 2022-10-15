@@ -68,8 +68,8 @@ export default {
           this.$on('edit', (entity) => {
             if (_this.editEntity) _this.editEntity(entity)
           })
-          this.$on('select', (entity) => {
-            if (_this.selectEntity) _this.selectEntity(entity)
+          this.$on('select', ({ entity, shiftKey }) => {
+            if (_this.selectEntity) _this.selectEntity(entity, shiftKey)
           })
         }
       })

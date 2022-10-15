@@ -16,10 +16,10 @@
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
         </widgets-item-slider>
-        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+        <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
         </widgets-episode-slider>
         <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
@@ -33,7 +33,7 @@
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening'" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
   </div>
@@ -54,7 +54,8 @@ export default {
       keywordFilterTimeout: null,
       scannerParseSubtitle: false,
       wrapperClientWidth: 0,
-      shelves: []
+      shelves: [],
+      lastItemIndexSelected: -1
     }
   },
   computed: {
@@ -87,9 +88,64 @@ export default {
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.bookCoverWidth / baseSize
+    },
+    selectedLibraryItems() {
+      return this.$store.state.selectedLibraryItems || []
     }
   },
   methods: {
+    selectEntity({ entity, shiftKey }, shelfIndex) {
+      const shelf = this.shelves[shelfIndex]
+      const entityShelfIndex = shelf.entities.findIndex((ent) => ent.id === entity.id)
+      const indexOf = shelf.shelfStartIndex + entityShelfIndex
+
+      const lastLastItemIndexSelected = this.lastItemIndexSelected
+      if (!this.selectedLibraryItems.includes(entity.id)) {
+        this.lastItemIndexSelected = indexOf
+      } else {
+        this.lastItemIndexSelected = -1
+      }
+
+      if (shiftKey && lastLastItemIndexSelected >= 0) {
+        var loopStart = indexOf
+        var loopEnd = lastLastItemIndexSelected
+        if (indexOf > lastLastItemIndexSelected) {
+          loopStart = lastLastItemIndexSelected
+          loopEnd = indexOf
+        }
+
+        const flattenedEntitiesArray = []
+        this.shelves.map((s) => flattenedEntitiesArray.push(...s.entities))
+
+        var isSelecting = false
+        // If any items in this range is not selected then select all otherwise unselect all
+        for (let i = loopStart; i <= loopEnd; i++) {
+          const thisEntity = flattenedEntitiesArray[i]
+          if (thisEntity) {
+            if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+              isSelecting = true
+              break
+            }
+          }
+        }
+        if (isSelecting) this.lastItemIndexSelected = indexOf
+
+        for (let i = loopStart; i <= loopEnd; i++) {
+          const thisEntity = flattenedEntitiesArray[i]
+          if (thisEntity) {
+            this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+          } else {
+            console.error('Invalid entity index', i)
+          }
+        }
+      } else {
+        this.$store.commit('toggleLibraryItemSelected', entity.id)
+      }
+
+      this.$nextTick(() => {
+        this.$eventBus.$emit('item-selected', entity)
+      })
+    },
     async init() {
       this.wrapperClientWidth = this.$refs.wrapper ? this.$refs.wrapper.clientWidth : 0
 
@@ -110,6 +166,12 @@ export default {
           console.error('Failed to fetch categories', error)
           return []
         })
+
+      let totalEntityCount = 0
+      for (const shelf of categories) {
+        shelf.shelfStartIndex = totalEntityCount
+        totalEntityCount += shelf.entities.length
+      }
       this.shelves = categories
     },
     async setShelvesFromSearch() {

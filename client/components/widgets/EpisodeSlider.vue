@@ -94,11 +94,8 @@ export default {
       this.$store.commit('setBookshelfBookIds', itemIds)
       this.$store.commit('showEditModal', libraryItem)
     },
-    selectItem(libraryItem) {
-      this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
-      this.$nextTick(() => {
-        this.$eventBus.$emit('item-selected', libraryItem)
-      })
+    selectItem(payload) {
+      this.$emit('selectEntity', payload)
     },
     itemSelectedEvt() {
       this.updateSelectionMode(this.isSelectionMode)

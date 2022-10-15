@@ -61,7 +61,8 @@ export default {
       keywordFilter: null,
       currScrollTop: 0,
       resizeTimeout: null,
-      mountWindowWidth: 0
+      mountWindowWidth: 0,
+      lastItemIndexSelected: -1
     }
   },
   watch: {
@@ -212,9 +213,55 @@ export default {
       this.updateBookSelectionMode(false)
       this.isSelectionMode = false
     },
-    selectEntity(entity) {
+    selectEntity(entity, shiftKey) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
-        this.$store.commit('toggleLibraryItemSelected', entity.id)
+        var indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
+        const lastLastItemIndexSelected = this.lastItemIndexSelected
+        if (!this.selectedLibraryItems.includes(entity.id)) {
+          this.lastItemIndexSelected = indexOf
+        } else {
+          this.lastItemIndexSelected = -1
+        }
+
+        if (shiftKey && lastLastItemIndexSelected >= 0) {
+          var loopStart = indexOf
+          var loopEnd = lastLastItemIndexSelected
+          if (indexOf > lastLastItemIndexSelected) {
+            loopStart = lastLastItemIndexSelected
+            loopEnd = indexOf
+          }
+
+          var isSelecting = false
+          // If any items in this range is not selected then select all otherwise unselect all
+          for (let i = loopStart; i <= loopEnd; i++) {
+            const thisEntity = this.entities[i]
+            if (thisEntity && !thisEntity.collapsedSeries) {
+              if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+                isSelecting = true
+                break
+              }
+            }
+          }
+          if (isSelecting) this.lastItemIndexSelected = indexOf
+
+          for (let i = loopStart; i <= loopEnd; i++) {
+            const thisEntity = this.entities[i]
+            if (thisEntity.collapsedSeries) {
+              console.warn('Ignoring collapsed series')
+              continue
+            }
+
+            const entityComponentRef = this.entityComponentRefs[i]
+            if (thisEntity && entityComponentRef) {
+              entityComponentRef.selected = isSelecting
+              this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+            } else {
+              console.error('Invalid entity index', i)
+            }
+          }
+        } else {
+          this.$store.commit('toggleLibraryItemSelected', entity.id)
+        }
 
         var newIsSelectionMode = !!this.selectedLibraryItems.length
         if (this.isSelectionMode !== newIsSelectionMode) {
@@ -228,6 +275,9 @@ export default {
         if (this.entityIndexesMounted.includes(Number(key))) {
           this.entityComponentRefs[key].setSelectionMode(isSelectionMode)
         }
+      }
+      if (!isSelectionMode) {
+        this.lastItemIndexSelected = -1
       }
     },
     async fetchEntites(page = 0) {

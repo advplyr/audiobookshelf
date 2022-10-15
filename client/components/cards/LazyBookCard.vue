@@ -719,10 +719,10 @@ export default {
       console.log('Got library itemn', libraryItem)
       this.store.commit('showEReader', libraryItem)
     },
-    selectBtnClick() {
+    selectBtnClick(evt) {
       if (this.processingBatch) return
       this.selected = !this.selected
-      this.$emit('select', this.libraryItem)
+      this.$emit('select', { entity: this.libraryItem, shiftKey: evt.shiftKey })
     },
     async play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
