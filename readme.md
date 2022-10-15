@@ -29,8 +29,10 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 * Progressive Web App (PWA)
 * Chromecast support on the web app and android app
 * Fetch metadata and cover art from several sources
+* Chapter editor and chapter lookup (using [Audnexus API](https://audnex.us/))
+* Merge your audio files into a single m4b
+* Embed metadata and cover image into your audio files (using [Tone](https://github.com/sandreas/tone))
 * Basic ebook support and e-reader *(experimental)*
-* Merge your audio files into a single m4b w/ metadata and embedded cover *(experimental)*
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
@@ -80,6 +82,7 @@ docker run -d \
 
 ```bash
 docker stop audiobookshelf
+docker rm audiobookshelf
 docker pull ghcr.io/advplyr/audiobookshelf:latest
 docker start audiobookshelf
 ```
@@ -124,8 +127,6 @@ docker compose --file <path/to/config>/docker-compose.yml up -d
 docker-compose --file <path/to/config>/docker-compose.yml pull
 docker-compose --file <path/to/config>/docker-compose.yml up -d
 ```
-
-** We recommend updating the the latest version of Docker Compose
 
 ### Linux (amd64) Install
 
