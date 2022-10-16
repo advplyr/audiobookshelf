@@ -95,7 +95,20 @@ function extractEpisodeData(item) {
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
-  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  if (item['pubDate']) {
+    if (typeof item['pubDate'] === 'string') {
+      episode.pubDate = item['pubDate']
+    } else if (Array.isArray(item['pubDate'])) {
+      const pubDateObj = extractFirstArrayItem(item, 'pubDate')
+      if (pubDateObj && typeof pubDateObj._ === 'string') {
+        episode.pubDate = pubDateObj._
+      }
+    } else {
+      Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
+    }
+  }
+
+  var arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     var cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)
@@ -104,6 +117,8 @@ function extractEpisodeData(item) {
 }
 
 function cleanEpisodeData(data) {
+  const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
+  const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
   return {
     title: data.title,
     subtitle: data.subtitle || '',
@@ -116,7 +131,7 @@ function cleanEpisodeData(data) {
     author: data.author || '',
     duration: data.duration || '',
     explicit: data.explicit || '',
-    publishedAt: (new Date(data.pubDate)).valueOf(),
+    publishedAt,
     enclosure: data.enclosure
   }
 }
