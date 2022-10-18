@@ -8,7 +8,7 @@ class Library {
     this.name = null
     this.folders = []
     this.displayOrder = 1
-    this.icon = 'database' // database, podcast, book, audiobook, comic
+    this.icon = 'database'
     this.mediaType = 'book' // book, podcast
     this.provider = 'google'
 
@@ -46,14 +46,15 @@ class Library {
 
     this.createdAt = library.createdAt
     this.lastUpdate = library.lastUpdate
-    this.cleanOldValues() // mediaType changed for v2
+    this.cleanOldValues() // mediaType changed for v2 and icon change for v2.2.2
   }
 
   cleanOldValues() {
-    var availableIcons = ['database', 'audiobook', 'book', 'comic', 'podcast']
+    const availableIcons = ['database', 'audiobookshelf', 'books-1', 'books-2', 'book-1', 'microphone-1', 'microphone-3', 'radio', 'podcast', 'rss', 'headphones', 'music', 'file-picture', 'rocket', 'power', 'star', 'heart']
     if (!availableIcons.includes(this.icon)) {
-      if (this.icon === 'default') this.icon = 'database'
-      else if (this.icon.endsWith('s') && availableIcons.includes(this.icon.slice(0, -1))) this.icon = this.icon.slice(0, -1)
+      if (this.icon === 'audiobook') this.icon = 'audiobookshelf'
+      else if (this.icon === 'book') this.icon = 'books-1'
+      else if (this.icon === 'comic') this.icon = 'file-picture'
       else this.icon = 'database'
     }
     if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book' && this.mediaType !== 'video')) {

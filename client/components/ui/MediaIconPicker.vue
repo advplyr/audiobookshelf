@@ -3,19 +3,19 @@
     <p class="text-sm font-semibold">{{ label }}</p>
 
     <button type="button" :disabled="disabled" class="relative h-full w-full border border-gray-600 rounded shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer bg-primary text-gray-100 hover:text-gray-200" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
-      <span class="flex items-center">
-        <widgets-library-icon :icon="selected" />
-      </span>
+      <ui-library-icon :icon="selectedItem" />
     </button>
 
     <transition name="menu">
-      <ul v-show="showMenu" class="absolute z-10 -mt-px w-full bg-primary border border-black-200 shadow-lg max-h-56 rounded-b-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" tabindex="-1" role="listbox">
-        <template v-for="type in types">
-          <li :key="type.id" class="text-gray-100 select-none relative py-2 cursor-pointer hover:bg-black-400 flex justify-center" id="listbox-option-0" role="option" @click="select(type)">
-            <widgets-library-icon :icon="type.id" />
-          </li>
-        </template>
-      </ul>
+      <div v-show="showMenu" class="absolute -left-[4.5rem] z-10 -mt-px bg-primary border border-black-200 shadow-lg max-h-56 w-48 rounded-md py-1 overflow-auto focus:outline-none sm:text-sm">
+        <div class="flex justify-center items-center flex-wrap">
+          <template v-for="icon in icons">
+            <div :key="icon" class="p-2">
+              <span class="abs-icons text-xl text-white text-opacity-80 hover:text-opacity-100 cursor-pointer" :class="`icon-${icon}`" @click="select(icon)"></span>
+            </div>
+          </template>
+        </div>
+      </div>
     </transition>
   </div>
 </template>
@@ -37,29 +37,7 @@ export default {
         events: ['mousedown'],
         isActive: true
       },
-      showMenu: false,
-      types: [
-        {
-          id: 'database',
-          name: 'Database'
-        },
-        {
-          id: 'audiobook',
-          name: 'Audiobooks'
-        },
-        {
-          id: 'book',
-          name: 'Books'
-        },
-        {
-          id: 'podcast',
-          name: 'Podcasts'
-        },
-        {
-          id: 'comic',
-          name: 'Comics'
-        }
-      ]
+      showMenu: false
     }
   },
   computed: {
@@ -71,11 +49,11 @@ export default {
         this.$emit('input', val)
       }
     },
-    selectedItem() {
-      return this.types.find((t) => t.id === this.selected)
+    icons() {
+      return this.$store.state.globals.libraryIcons
     },
-    selectedName() {
-      return this.selectedItem ? this.selectedItem.name : 'Database'
+    selectedItem() {
+      return this.icons.find((i) => i === this.selected) || 'audiobookshelf'
     }
   },
   methods: {
@@ -86,9 +64,9 @@ export default {
     clickedOutside() {
       this.showMenu = false
     },
-    select(type) {
+    select(icon) {
       if (this.disabled) return
-      this.selected = type.id
+      this.selected = icon
       this.showMenu = false
     }
   },

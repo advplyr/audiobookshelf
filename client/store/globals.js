@@ -28,7 +28,8 @@ export const state = () => ({
       text: 'YYYY-MM-DD',
       value: 'yyyy-MM-dd'
     }
-  ]
+  ],
+  libraryIcons: ['database', 'audiobookshelf', 'books-1', 'books-2', 'book-1', 'microphone-1', 'microphone-3', 'radio', 'podcast', 'rss', 'headphones', 'music', 'file-picture', 'rocket', 'power', 'star', 'heart']
 })
 
 export const getters = {
