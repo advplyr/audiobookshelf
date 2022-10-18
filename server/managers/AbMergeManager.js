@@ -131,7 +131,7 @@ class AbMergeManager {
       }
     }
 
-    const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
+    const toneMetadataObject = toneHelpers.getEscapedToneMetadataObject(libraryItem, chaptersFilePath)
     toneMetadataObject.TrackNumber = 1
     task.data.toneMetadataObject = toneMetadataObject
 
