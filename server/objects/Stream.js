@@ -73,7 +73,9 @@ class Stream extends EventEmitter {
       AudioMimeType.FLAC,
       AudioMimeType.OPUS,
       AudioMimeType.WMA,
-      AudioMimeType.AIFF
+      AudioMimeType.AIFF,
+      AudioMimeType.WEBM,
+      AudioMimeType.WEBMA
     ]
   }
   get userToken() {
