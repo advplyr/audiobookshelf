@@ -234,6 +234,7 @@ class BookMetadata {
       },
       {
         tag: 'tagDescription',
+        altTag: 'tagComment',
         key: 'description'
       },
       {
