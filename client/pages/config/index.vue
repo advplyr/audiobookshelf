@@ -288,7 +288,6 @@ export default {
         bookshelfView: 'Alternative view without wooden bookshelf',
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
-        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers',
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
         scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
         scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
@@ -357,11 +356,6 @@ export default {
     updateScannerCoverProvider(val) {
       this.updateServerSettings({
         scannerCoverProvider: val
-      })
-    },
-    updateBookCoverAspectRatio(val) {
-      this.updateServerSettings({
-        coverAspectRatio: val ? this.$constants.BookCoverAspectRatio.SQUARE : this.$constants.BookCoverAspectRatio.STANDARD
       })
     },
     updateHomeAlternativeBookshelfView(val) {

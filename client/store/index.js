@@ -37,10 +37,6 @@ export const getters = {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
-  getBookCoverAspectRatio: state => {
-    if (!state.serverSettings || isNaN(state.serverSettings.coverAspectRatio)) return 1
-    return state.serverSettings.coverAspectRatio === 0 ? 1.6 : 1
-  },
   getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null

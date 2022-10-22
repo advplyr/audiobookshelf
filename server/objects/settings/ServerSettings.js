@@ -1,4 +1,4 @@
-const { BookCoverAspectRatio, BookshelfView } = require('../../utils/constants')
+const { BookshelfView } = require('../../utils/constants')
 const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
@@ -29,8 +29,7 @@ class ServerSettings {
     this.rateLimitLoginWindow = 10 * 60 * 1000 // 10 Minutes
 
     // Backups
-    // this.backupSchedule = '30 1 * * *' // If false then auto-backups are disabled (default every day at 1:30am)
-    this.backupSchedule = false
+    this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
     this.maxBackupSize = 1
     this.backupMetadataCovers = true
@@ -38,10 +37,6 @@ class ServerSettings {
     // Logger
     this.loggerDailyLogsToKeep = 7
     this.loggerScannerLogsToKeep = 2
-
-    // Cover
-    // TODO: Remove after mobile apps are configured to use library server settings
-    this.coverAspectRatio = BookCoverAspectRatio.SQUARE
 
     // Bookshelf Display
     this.homeBookshelfView = BookshelfView.STANDARD
@@ -99,7 +94,6 @@ class ServerSettings {
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
 
-    this.coverAspectRatio = !isNaN(settings.coverAspectRatio) ? settings.coverAspectRatio : BookCoverAspectRatio.SQUARE
     this.homeBookshelfView = settings.homeBookshelfView || BookshelfView.STANDARD
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
@@ -152,7 +146,6 @@ class ServerSettings {
       backupMetadataCovers: this.backupMetadataCovers,
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
-      coverAspectRatio: this.coverAspectRatio,
       homeBookshelfView: this.homeBookshelfView,
       bookshelfView: this.bookshelfView,
       sortingIgnorePrefix: this.sortingIgnorePrefix,
