@@ -21,7 +21,7 @@ const BookCoverAspectRatio = {
 
 const BookshelfView = {
   STANDARD: 0,
-  TITLES: 1,
+  DETAIL: 1,
   AUTHOR: 2 // Books shown on author page
 }
 

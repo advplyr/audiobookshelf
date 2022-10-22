@@ -40,7 +40,7 @@ class ServerSettings {
 
     // Bookshelf Display
     this.homeBookshelfView = BookshelfView.STANDARD
-    this.bookshelfView = BookshelfView.STANDARD
+    this.bookshelfView = BookshelfView.DETAIL
 
     // Podcasts
     this.podcastEpisodeSchedule = '0 * * * *' // Every hour

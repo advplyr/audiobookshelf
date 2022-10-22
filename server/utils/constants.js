@@ -13,7 +13,7 @@ module.exports.BookCoverAspectRatio = {
 
 module.exports.BookshelfView = {
   STANDARD: 0,
-  TITLES: 1
+  DETAIL: 1
 }
 
 module.exports.LogLevel = {

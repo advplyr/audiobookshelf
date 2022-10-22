@@ -477,7 +477,7 @@ export default {
     },
     isAlternativeBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
-      return this.bookshelfView === constants.BookshelfView.TITLES
+      return this.bookshelfView === constants.BookshelfView.DETAIL
     },
     isAuthorBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants

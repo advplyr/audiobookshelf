@@ -107,7 +107,7 @@ export default {
     },
     isAlternativeBookshelfView() {
       const constants = this.$constants || this.$nuxt.$constants
-      return this.bookshelfView == constants.BookshelfView.TITLES
+      return this.bookshelfView == constants.BookshelfView.DETAIL
     }
   },
   methods: {

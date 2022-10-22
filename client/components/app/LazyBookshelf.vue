@@ -123,7 +123,7 @@ export default {
       return this.$store.getters['getBookshelfView']
     },
     isAlternativeBookshelfView() {
-      return this.bookshelfView === this.$constants.BookshelfView.TITLES
+      return this.bookshelfView === this.$constants.BookshelfView.DETAIL
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'

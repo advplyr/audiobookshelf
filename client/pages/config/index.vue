@@ -53,20 +53,20 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="homeUseAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateHomeAlternativeBookshelfView" />
+            <ui-toggle-switch v-model="homepageUseBookshelfView" :disabled="updatingServerSettings" @input="updateHomeUseBookshelfView" />
             <ui-tooltip :text="tooltips.bookshelfView">
               <p class="pl-4">
-                Alternative bookshelf view for home page
+                Home page use bookshelf view
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="useAlternativeBookshelfView" :disabled="updatingServerSettings" @input="updateAlternativeBookshelfView" />
+            <ui-toggle-switch v-model="useBookshelfView" :disabled="updatingServerSettings" @input="updateUseBookshelfView" />
             <ui-tooltip :text="tooltips.bookshelfView">
               <p class="pl-4">
-                Alternative bookshelf view
+                Library use bookshelf view
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -272,8 +272,8 @@ export default {
     return {
       isResettingLibraryItems: false,
       updatingServerSettings: false,
-      homeUseAlternativeBookshelfView: false,
-      useAlternativeBookshelfView: false,
+      homepageUseBookshelfView: false,
+      useBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
       tooltips: {
@@ -285,7 +285,7 @@ export default {
         scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
         sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
         scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
-        bookshelfView: 'Alternative view without wooden bookshelf',
+        bookshelfView: 'Skeumorphic design with wooden shelves',
         storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
         storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
         enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
@@ -358,14 +358,14 @@ export default {
         scannerCoverProvider: val
       })
     },
-    updateHomeAlternativeBookshelfView(val) {
+    updateHomeUseBookshelfView(val) {
       this.updateServerSettings({
-        homeBookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+        homeBookshelfView: !val ? this.$constants.BookshelfView.DETAIL : this.$constants.BookshelfView.STANDARD
       })
     },
-    updateAlternativeBookshelfView(val) {
+    updateUseBookshelfView(val) {
       this.updateServerSettings({
-        bookshelfView: val ? this.$constants.BookshelfView.TITLES : this.$constants.BookshelfView.STANDARD
+        bookshelfView: !val ? this.$constants.BookshelfView.DETAIL : this.$constants.BookshelfView.STANDARD
       })
     },
     updateSettingsKey(key, val) {
@@ -392,8 +392,8 @@ export default {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}
       this.newServerSettings.sortingPrefixes = [...(this.newServerSettings.sortingPrefixes || [])]
 
-      this.homeUseAlternativeBookshelfView = this.newServerSettings.homeBookshelfView === this.$constants.BookshelfView.TITLES
-      this.useAlternativeBookshelfView = this.newServerSettings.bookshelfView === this.$constants.BookshelfView.TITLES
+      this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
+      this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
     },
     resetLibraryItems() {
       if (confirm('WARNING! This action will remove all library items from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
