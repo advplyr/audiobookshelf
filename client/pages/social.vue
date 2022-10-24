@@ -23,12 +23,9 @@
                   <covers-book-cover class="absolute left-0 right-0" :library-item="user.latest.item" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </ui-tooltip>
               </nuxt-link>
-              <p class="text-lg px-2 font-book text-white">{{ user.username }}&nbsp;</p>
-              <p class="text-xs text-white text-opacity-50">{{ "Last listened " + $dateDistanceFromNow(user.latest.progress.lastUpdate) }}</p>
+              <p class="text-xs pl-2 text-white text-opacity-50">{{ "Last listened to " + user.latest.item.media.metadata.title + " " + $dateDistanceFromNow(user.latest.progress.lastUpdate) + " for " + $elapsedPrettyExtended(user.latest.progress.duration) }}</p>
               <div class="flex-grow" />
-              <div class="w-30 pl-4 text-right">
-                <p class="text-sm font-bold">{{ "Has listened for " + $elapsedPrettyExtended(user.minutesListened) }}</p>
-              </div>
+              <p class="text-lg pl-2 font-book text-white">{{ user.username }}</p>
               <widgets-online-indicator class="mx-2" :value="!!usersOnline[user.id]" />
             </div>
             <div v-if="num+1 < users.length" class="flex border-t border-white border-opacity-10 my-3"/>
@@ -67,7 +64,7 @@ export default {
       var usermap = {}
       this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, session: u.session }))
       return usermap
-    },
+    }
   },
   methods: {
     init() {

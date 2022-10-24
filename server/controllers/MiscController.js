@@ -275,6 +275,7 @@ class MiscController {
       }
       var session = {
         username: user.username,
+        id: user.id,
         lastSeen: user.lastSeen,
         latest: {'progress': latestProgress, 'item': latestItem} || null,
         minutesListened: listeningStats.totalTime || 0,
