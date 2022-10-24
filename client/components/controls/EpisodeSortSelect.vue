@@ -1,6 +1,6 @@
 <template>
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
-    <button type="button" class="relative w-full h-full bg-fg border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
+    <button type="button" class="relative w-full h-full border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
       <span class="flex items-center justify-between">
         <span class="block truncate text-xs" :class="!selectedText ? 'text-gray-300' : ''">{{ selectedText }}</span>
         <span class="material-icons text-lg text-yellow-400">{{ descending ? 'expand_more' : 'expand_less' }}</span>

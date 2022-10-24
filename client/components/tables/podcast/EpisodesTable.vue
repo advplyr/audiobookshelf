@@ -10,7 +10,10 @@
         <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">Remove {{ selectedEpisodes.length }} episode{{ selectedEpisodes.length > 1 ? 's' : '' }}</ui-btn>
         <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">Cancel</ui-btn>
       </template>
-      <controls-episode-sort-select v-else v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+      <template v-else>
+        <controls-episode-filter-select v-model="filterKey" class="w-36 md:w-36 h-9 ml-1 sm:ml-4" />
+        <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+      </template>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
     <template v-for="episode in episodesSorted">
@@ -32,6 +35,7 @@ export default {
   data() {
     return {
       episodesCopy: [],
+      filterKey: 'incomplete',
       sortKey: 'publishedAt',
       sortDesc: true,
       selectedEpisode: null,
@@ -63,12 +67,20 @@ export default {
       return this.media.episodes || []
     },
     episodesSorted() {
-      return this.episodesCopy.sort((a, b) => {
-        if (this.sortDesc) {
-          return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
-        }
-        return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
-      })
+      return this.episodesCopy
+        .filter((ep) => {
+          if (this.filterKey === 'all') return true
+          const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
+          if (this.filterKey === 'incomplete') return !episodeProgress || !episodeProgress.isFinished
+          if (this.filterKey === 'complete') return episodeProgress && episodeProgress.isFinished
+          return episodeProgress && !episodeProgress.isFinished
+        })
+        .sort((a, b) => {
+          if (this.sortDesc) {
+            return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+          }
+          return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+        })
     },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
