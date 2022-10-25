@@ -53,6 +53,7 @@
 <script>
 import Path from 'path'
 import { Archive } from 'libarchive.js/main.js'
+import { CompressedFile } from 'libarchive.js/src/compressed-file'
 
 Archive.init({
   workerUrl: '/libarchive/worker-bundle.js'
@@ -150,7 +151,11 @@ export default {
         responseType: 'blob'
       })
       const archive = await Archive.open(buff)
-      this.filesObject = await archive.getFilesObject()
+      const originalFilesObject = await archive.getFilesObject()
+      // to support images in subfolders we need to flatten the object
+      //   ref: https://github.com/advplyr/audiobookshelf/issues/811
+      this.filesObject = this.flattenFilesObject(originalFilesObject)
+      console.log('Extracted files object', this.filesObject)
       var filenames = Object.keys(this.filesObject)
       this.parseFilenames(filenames)
 
@@ -167,6 +172,26 @@ export default {
         this.$toast.error('Unable to extract pages')
         this.loading = false
       }
+    },
+    flattenFilesObject(filesObject) {
+      const flattenObject = (obj, prefix = '') => {
+        var _obj = {}
+        for (const key in obj) {
+          const newKey = prefix ? prefix + '/' + key : key
+          if (obj[key] instanceof CompressedFile) {
+            _obj[newKey] = obj[key]
+          } else if (!key.startsWith('_') && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+            _obj = {
+              ..._obj,
+              ...flattenObject(obj[key], newKey)
+            }
+          } else {
+            _obj[newKey] = obj[key]
+          }
+        }
+        return _obj
+      }
+      return flattenObject(filesObject)
     },
     async extractXmlFile(filename) {
       console.log('extracting xml filename', filename)
