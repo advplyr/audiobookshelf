@@ -49,8 +49,8 @@ add_group() {
 install_ffmpeg() {
   echo "Starting FFMPEG Install"
 
-  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
-  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.1.1/tone-0.1.1-linux-x64.tar.gz"
+  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz --output-document=ffmpeg-git-amd64-static.tar.xz"
+  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.1.1/tone-0.1.1-linux-x64.tar.gz --output-document=tone-0.1.1-linux-x64.tar.gz"
 
   if ! cd "$FFMPEG_INSTALL_DIR"; then
     echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
