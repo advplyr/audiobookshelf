@@ -21,6 +21,7 @@ class Podcast {
     this.autoDownloadSchedule = null
     this.lastEpisodeCheck = 0
     this.maxEpisodesToKeep = 0
+    this.maxNewEpisodesToDownload = 3
 
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
@@ -44,6 +45,7 @@ class Podcast {
     this.autoDownloadSchedule = podcast.autoDownloadSchedule || '0 * * * *' // Added in 2.1.3 so default to hourly
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
     this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
+    this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload || 3
   }
 
   toJSON() {
@@ -56,7 +58,8 @@ class Podcast {
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
-      maxEpisodesToKeep: this.maxEpisodesToKeep
+      maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
     }
   }
 
@@ -70,6 +73,7 @@ class Podcast {
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
       size: this.size
     }
   }
@@ -85,6 +89,7 @@ class Podcast {
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
       size: this.size
     }
   }

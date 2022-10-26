@@ -204,7 +204,7 @@ class PodcastManager {
     const dateToCheckForEpisodesAfter = latestEpisodePublishedAt || lastEpisodeCheckDate
     Logger.debug(`[PodcastManager] runEpisodeCheck: "${libraryItem.media.metadata.title}" checking for episodes after ${new Date(dateToCheckForEpisodesAfter)}`)
 
-    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter)
+    var newEpisodes = await this.checkPodcastForNewEpisodes(libraryItem, dateToCheckForEpisodesAfter, libraryItem.media.maxNewEpisodesToDownload)
     Logger.debug(`[PodcastManager] runEpisodeCheck: ${newEpisodes ? newEpisodes.length : 'N/A'} episodes found`)
 
     if (!newEpisodes) { // Failed

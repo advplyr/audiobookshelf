@@ -19,6 +19,15 @@
             </p>
           </ui-tooltip>
         </div>
+        <div v-if="enableAutoDownloadEpisodes" class="flex items-center py-2">
+          <ui-text-input ref="maxEpisodesInput" type="number" v-model="newMaxNewEpisodesToDownload" no-spinner :padding-x="1" text-center class="w-10 text-base" @change="updateMaxNewEpisodesToDownload" />
+          <ui-tooltip text="Value of 0 sets no max limit. When checking for new episodes this is the max number of episodes that will be downloaded.">
+            <p class="pl-4 text-base">
+              Max new episodes to download per check
+              <span class="material-icons icon-text text-sm">info_outlined</span>
+            </p>
+          </ui-tooltip>
+        </div>
 
         <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoDownloadEpisodes" v-model="cronExpression" />
       </template>
@@ -46,7 +55,8 @@ export default {
     return {
       enableAutoDownloadEpisodes: false,
       cronExpression: null,
-      newMaxEpisodesToKeep: 0
+      newMaxEpisodesToKeep: 0,
+      newMaxNewEpisodesToDownload: 0
     }
   },
   computed: {
@@ -82,8 +92,11 @@ export default {
     maxEpisodesToKeep() {
       return this.media.maxEpisodesToKeep
     },
+    maxNewEpisodesToDownload() {
+      return this.media.maxNewEpisodesToDownload
+    },
     isUpdated() {
-      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep)
+      return this.autoDownloadSchedule !== this.cronExpression || this.autoDownloadEpisodes !== this.enableAutoDownloadEpisodes || this.maxEpisodesToKeep !== Number(this.newMaxEpisodesToKeep) || this.maxNewEpisodesToDownload !== Number(this.newMaxNewEpisodesToDownload)
     }
   },
   methods: {
@@ -92,6 +105,13 @@ export default {
         this.newMaxEpisodesToKeep = 0
       } else {
         this.newMaxEpisodesToKeep = Number(this.newMaxEpisodesToKeep)
+      }
+    },
+    updateMaxNewEpisodesToDownload() {
+      if (isNaN(this.newMaxNewEpisodesToDownload) || this.newMaxNewEpisodesToDownload < 0) {
+        this.newMaxNewEpisodesToDownload = 0
+      } else {
+        this.newMaxNewEpisodesToDownload = Number(this.newMaxNewEpisodesToDownload)
       }
     },
     save() {
@@ -114,6 +134,9 @@ export default {
       }
       if (this.newMaxEpisodesToKeep !== this.maxEpisodesToKeep) {
         updatePayload.maxEpisodesToKeep = this.newMaxEpisodesToKeep
+      }
+      if (this.newMaxNewEpisodesToDownload !== this.maxNewEpisodesToDownload) {
+        updatePayload.maxNewEpisodesToDownload = this.newMaxNewEpisodesToDownload
       }
 
       this.updateDetails(updatePayload)
@@ -139,6 +162,7 @@ export default {
       this.enableAutoDownloadEpisodes = this.autoDownloadEpisodes
       this.cronExpression = this.autoDownloadSchedule
       this.newMaxEpisodesToKeep = this.maxEpisodesToKeep
+      this.newMaxNewEpisodesToDownload = this.maxNewEpisodesToDownload
     }
   },
   mounted() {
