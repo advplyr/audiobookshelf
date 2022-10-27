@@ -47,7 +47,7 @@ class ServerSettings {
 
     // Sorting
     this.sortingIgnorePrefix = false
-    this.sortingPrefixes = ['the', 'a']
+    this.sortingPrefixes = ['the']
 
     // Misc Flags
     this.chromecastEnabled = false
@@ -98,7 +98,7 @@ class ServerSettings {
     this.bookshelfView = settings.bookshelfView || BookshelfView.STANDARD
 
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
-    this.sortingPrefixes = settings.sortingPrefixes || ['the', 'a']
+    this.sortingPrefixes = settings.sortingPrefixes || ['the']
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
