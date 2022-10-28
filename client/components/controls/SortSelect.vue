@@ -26,29 +26,15 @@
 export default {
   props: {
     value: String,
-    descending: Boolean
+    descending: Boolean,
+    items: {
+      type: Array,
+      default: () => []
+    }
   },
   data() {
     return {
-      showMenu: false,
-      items: [
-        {
-          text: 'Pub Date',
-          value: 'publishedAt'
-        },
-        {
-          text: 'Title',
-          value: 'title'
-        },
-        {
-          text: 'Season',
-          value: 'season'
-        },
-        {
-          text: 'Episode',
-          value: 'episode'
-        }
-      ]
+      showMenu: false
     }
   },
   computed: {

@@ -98,6 +98,12 @@ export default {
       if (!this.page) return 'books'
       return this.page
     },
+    seriesSortBy() {
+      return this.$store.state.libraries.seriesSort
+    },
+    seriesSortDesc() {
+      return this.$store.state.libraries.seriesSortDesc
+    },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
     },
@@ -417,12 +423,15 @@ export default {
       this.$nextTick(this.remountEntities)
     },
     buildSearchParams() {
-      if (this.page === 'search' || this.page === 'series' || this.page === 'collections') {
+      if (this.page === 'search' || this.page === 'collections') {
         return ''
       }
 
       let searchParams = new URLSearchParams()
-      if (this.page === 'series-books') {
+      if (this.page === 'series') {
+        searchParams.set('sort', this.seriesSortBy)
+        searchParams.set('desc', this.seriesSortDesc ? 1 : 0)
+      } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
@@ -458,6 +467,12 @@ export default {
 
       return false
     },
+    seriesSortUpdated() {
+      var wasUpdated = this.checkUpdateSearchParams()
+      if (wasUpdated) {
+        this.resetEntities()
+      }
+    },
     settingsUpdated(settings) {
       var wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
@@ -469,10 +484,7 @@ export default {
     scroll(e) {
       if (!e || !e.target) return
       var { scrollTop } = e.target
-      // clearTimeout(this.scrollTimeout)
-      // this.scrollTimeout = setTimeout(() => {
       this.handleScroll(scrollTop)
-      // }, 250)
     },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)
@@ -604,7 +616,8 @@ export default {
         }
       })
 
-      this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
+      this.$eventBus.$on('series-sort-updated', this.seriesSortUpdated)
+      this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
 
       this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
@@ -628,7 +641,9 @@ export default {
       if (bookshelf) {
         bookshelf.removeEventListener('scroll', this.scroll)
       }
-      this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
+
+      this.$eventBus.$off('series-sort-updated', this.seriesSortUpdated)
+      this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
 
       this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')

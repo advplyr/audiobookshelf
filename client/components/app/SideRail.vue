@@ -64,7 +64,7 @@
     </nuxt-link>
 
     <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-      <icons-podcast-svg class="w-6 h-6" />
+      <span class="abs-icons icon-podcast text-xl"></span>
 
       <p class="font-book pt-1.5" style="font-size: 0.9rem">Search</p>
 

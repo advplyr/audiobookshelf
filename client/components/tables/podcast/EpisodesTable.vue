@@ -12,7 +12,7 @@
       </template>
       <template v-else>
         <controls-episode-filter-select v-model="filterKey" class="w-36 md:w-36 h-9 ml-1 sm:ml-4" />
-        <controls-episode-sort-select v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
       </template>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
@@ -42,7 +42,25 @@ export default {
       showPodcastRemoveModal: false,
       selectedEpisodes: [],
       episodesToRemove: [],
-      processing: false
+      processing: false,
+      sortItems: [
+        {
+          text: 'Pub Date',
+          value: 'publishedAt'
+        },
+        {
+          text: 'Title',
+          value: 'title'
+        },
+        {
+          text: 'Season',
+          value: 'season'
+        },
+        {
+          text: 'Episode',
+          value: 'episode'
+        }
+      ]
     }
   },
   watch: {

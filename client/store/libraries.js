@@ -8,7 +8,9 @@ export const state = () => ({
   folders: [],
   issues: 0,
   folderLastUpdate: 0,
-  filterData: null
+  filterData: null,
+  seriesSort: 'name',
+  seriesSortDesc: false
 })
 
 export const getters = {
@@ -289,5 +291,9 @@ export const mutations = {
         state.filterData.languages.sort((a, b) => a.localeCompare(b))
       }
     }
+  },
+  setSeriesSort(state, { sort, desc }) {
+    state.seriesSort = sort
+    state.seriesSortDesc = desc
   }
 }

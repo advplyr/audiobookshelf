@@ -153,7 +153,7 @@ export default {
     cancelSelectionMode() {
       if (this.processingBatchDelete) return
       this.$store.commit('setSelectedLibraryItems', [])
-      this.$eventBus.$emit('bookshelf-clear-selection')
+      this.$eventBus.$emit('bookshelf_clear_selection')
       this.isAllSelected = false
     },
     toggleBatchRead() {
@@ -172,7 +172,7 @@ export default {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)
           this.$store.commit('setSelectedLibraryItems', [])
-          this.$eventBus.$emit('bookshelf-clear-selection')
+          this.$eventBus.$emit('bookshelf_clear_selection')
         })
         .catch((error) => {
           this.$toast.error('Batch update failed')
@@ -195,7 +195,7 @@ export default {
             this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
             this.$store.commit('setSelectedLibraryItems', [])
-            this.$eventBus.$emit('bookshelf-clear-selection')
+            this.$eventBus.$emit('bookshelf_clear_selection')
           })
           .catch((error) => {
             this.$toast.error('Batch delete failed')

@@ -474,7 +474,7 @@ export default {
       if (this.$store.getters['getNumLibraryItemsSelected'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
         this.$store.commit('setSelectedLibraryItems', [])
-        this.$eventBus.$emit('bookshelf-clear-selection')
+        this.$eventBus.$emit('bookshelf_clear_selection')
         e.preventDefault()
         return
       }

@@ -1,16 +1,16 @@
 <template>
   <div class="w-full h-20 md:h-10 relative">
     <div class="flex md:hidden h-10 items-center">
-      <nuxt-link :to="`/library/${currentLibraryId}`" class="flex-grow h-full flex justify-center items-center" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+      <nuxt-link :to="`/library/${currentLibraryId}`" class="flex-grow h-full flex justify-center items-center" :class="isHomePage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p class="text-sm">Home</p>
       </nuxt-link>
-      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="flex-grow h-full flex justify-center items-center" :class="showLibrary ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="flex-grow h-full flex justify-center items-center" :class="isLibraryPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p class="text-sm">Library</p>
       </nuxt-link>
-      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'series' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="isSeriesPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p class="text-sm">Series</p>
       </nuxt-link>
-      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
         <p class="text-sm">Collections</p>
       </nuxt-link>
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="flex-grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
@@ -42,9 +42,10 @@
         </div>
         <div class="flex-grow hidden sm:inline-block" />
 
-        <ui-checkbox v-show="showSortFilters && !isPodcast" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
-        <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
-        <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <controls-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+        <controls-order-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <controls-sort-select v-if="isSeriesPage" v-model="seriesSort" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
         <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
@@ -81,11 +82,29 @@ export default {
       settings: {},
       hasInit: false,
       totalEntities: 0,
-      keywordFilter: null,
-      keywordTimeout: null,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false
+      processingAuthors: false,
+      seriesSort: 'name',
+      seriesSortDesc: false,
+      seriesSortItems: [
+        {
+          text: 'Name',
+          value: 'name'
+        },
+        {
+          text: '# of Books',
+          value: 'numBooks'
+        },
+        {
+          text: 'Added At',
+          value: 'addedAt'
+        },
+        {
+          text: 'Total Duration',
+          value: 'totalDuration'
+        }
+      ]
     }
   },
   computed: {
@@ -98,25 +117,6 @@ export default {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
-    isPodcast() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
-    },
-    showSortFilters() {
-      return this.page === ''
-    },
-    numShowing() {
-      return this.totalEntities
-    },
-    entityName() {
-      if (this.isPodcast) return 'Podcasts'
-      if (!this.page) return 'Books'
-      if (this.page === 'series') return 'Series'
-      if (this.page === 'collections') return 'Collections'
-      return ''
-    },
-    paramId() {
-      return this.$route.params ? this.$route.params.id || '' : ''
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -126,14 +126,30 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    homePage() {
+    isLibraryPage() {
+      return this.page === ''
+    },
+    isSeriesPage() {
+      return this.page === 'series'
+    },
+    isCollectionsPage() {
+      return this.page === 'collections'
+    },
+    isHomePage() {
       return this.$route.name === 'library-library'
     },
-    libraryBookshelfPage() {
-      return this.$route.name === 'library-library-bookshelf-id'
+    isPodcastSearchPage() {
+      return this.$route.name === 'library-library-podcast-search'
     },
-    showLibrary() {
-      return this.libraryBookshelfPage && this.paramId === '' && !this.showingIssues
+    numShowing() {
+      return this.totalEntities
+    },
+    entityName() {
+      if (this.isPodcastLibrary) return 'Podcasts'
+      if (!this.page) return 'Books'
+      if (this.isSeriesPage) return 'Series'
+      if (this.isCollectionsPage) return 'Collections'
+      return ''
     },
     seriesName() {
       return this.selectedSeries ? this.selectedSeries.name : null
@@ -153,9 +169,6 @@ export default {
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
-    },
-    isPodcastSearchPage() {
-      return this.$route.name === 'library-library-podcast-search'
     }
   },
   methods: {
@@ -235,6 +248,10 @@ export default {
     updateFilter() {
       this.saveSettings()
     },
+    updateSeriesSort() {
+      this.$store.commit('libraries/setSeriesSort', { sort: this.seriesSort, desc: this.seriesSortDesc })
+      this.$eventBus.$emit('series-sort-updated')
+    },
     updateCollapseSeries() {
       this.saveSettings()
     },
@@ -251,15 +268,6 @@ export default {
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
-    },
-    keywordFilterInput() {
-      clearTimeout(this.keywordTimeout)
-      this.keywordTimeout = setTimeout(() => {
-        this.keywordUpdated(this.keywordFilter)
-      }, 1000)
-    },
-    keywordUpdated() {
-      this.$eventBus.$emit('bookshelf-keyword-filter', this.keywordFilter)
     }
   },
   mounted() {

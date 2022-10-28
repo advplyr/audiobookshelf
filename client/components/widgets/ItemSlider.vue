@@ -130,11 +130,11 @@ export default {
     this.setScrollVars()
   },
   mounted() {
-    this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$on('item-selected', this.itemSelectedEvt)
   },
   beforeDestroy() {
-    this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }
