@@ -1,7 +1,7 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar :page="id || ''" :view-mode.sync="viewMode"/>
-    <app-lazy-bookshelf :page="id || ''" :view-mode="viewMode" />
+    <app-book-shelf-toolbar :page="id || ''" />
+    <app-lazy-bookshelf :page="id || ''" />
   </div>
 </template>
 
@@ -31,9 +31,7 @@ export default {
     }
   },
   data() {
-    return {
-      viewMode: 'grid'
-    }
+    return {}
   },
   computed: {
     streamLibraryItem() {

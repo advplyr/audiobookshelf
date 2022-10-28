@@ -45,14 +45,6 @@
         <ui-checkbox v-show="showSortFilters && !isPodcast" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
         <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
-        <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
-          <div class="h-full px-2 text-white flex items-center rounded-l-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'grid')">
-            <span class="material-icons" style="font-size: 1.4rem">view_module</span>
-          </div>
-          <div class="h-full px-2 text-white flex items-center rounded-r-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="!isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'list')">
-            <span class="material-icons" style="font-size: 1.4rem">view_list</span>
-          </div>
-        </div> -->
 
         <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
@@ -79,7 +71,6 @@ export default {
       default: () => null
     },
     searchQuery: String,
-    viewMode: String,
     authors: {
       type: Array,
       default: () => []
@@ -109,9 +100,6 @@ export default {
     },
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
-    },
-    isGridMode() {
-      return this.viewMode === 'grid'
     },
     showSortFilters() {
       return this.page === ''
