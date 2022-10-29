@@ -29,9 +29,10 @@
     <div v-else-if="loadingFolders" class="py-12 text-center">
       <p>Loading folders...</p>
     </div>
-    <div v-else class="py-12 text-center">
+    <div v-else class="py-12 text-center max-w-sm mx-auto">
       <p class="text-lg mb-2">No Folders Available</p>
-      <p class="text-gray-300">Note: folders already mapped will not be shown</p>
+      <p class="text-gray-300 mb-2">Note: folders already mapped will not be shown</p>
+      <p v-if="isDebian" class="text-red-400">Note: Folder picker for the debian install is not fully implemented. You should enter the path to your library directly.</p>
     </div>
 
     <div class="w-full py-2">
@@ -88,6 +89,12 @@ export default {
           ...d
         }
       })
+    },
+    isDebian() {
+      return this.Source == 'debian'
+    },
+    Source() {
+      return this.$store.state.Source
     }
   },
   methods: {
