@@ -59,6 +59,8 @@ export default {
       if (this.entityName === 'books') {
         props.filterBy = this.filterBy
         props.orderBy = this.orderBy
+      } else if (this.entityName === 'series') {
+        props.orderBy = this.seriesSortBy
       }
 
       var _this = this

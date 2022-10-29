@@ -9,7 +9,7 @@ export const state = () => ({
   issues: 0,
   folderLastUpdate: 0,
   filterData: null,
-  seriesSort: 'name',
+  seriesSortBy: 'name',
   seriesSortDesc: false
 })
 
@@ -292,8 +292,10 @@ export const mutations = {
       }
     }
   },
-  setSeriesSort(state, { sort, desc }) {
-    state.seriesSort = sort
-    state.seriesSortDesc = desc
+  setSeriesSortBy(state, sortBy) {
+    state.seriesSortBy = sortBy
+  },
+  setSeriesSortDesc(state, sortDesc) {
+    state.seriesSortDesc = sortDesc
   }
 }

@@ -14,8 +14,13 @@ export default {
       return redirect('/oops?message=Library not found')
     }
 
+    // Set series sort by
+    if (query.sort && params.id === 'series') {
+      store.commit('libraries/setSeriesSortBy', query.sort)
+      store.commit('libraries/setSeriesSortDesc', !!query.desc)
+    }
     // Set filter by
-    if (query.filter) {
+    if (query.filter && params.id !== 'series') {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
 

@@ -45,7 +45,7 @@
         <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
         <controls-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
         <controls-order-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
-        <controls-sort-select v-if="isSeriesPage" v-model="seriesSort" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
+        <controls-sort-select v-if="isSeriesPage" v-model="seriesSortBy" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
         <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
@@ -85,19 +85,17 @@ export default {
       processingSeries: false,
       processingIssues: false,
       processingAuthors: false,
-      seriesSort: 'name',
-      seriesSortDesc: false,
       seriesSortItems: [
         {
           text: 'Name',
           value: 'name'
         },
         {
-          text: '# of Books',
+          text: 'Number of Books',
           value: 'numBooks'
         },
         {
-          text: 'Added At',
+          text: 'Date Added',
           value: 'addedAt'
         },
         {
@@ -169,6 +167,22 @@ export default {
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
+    },
+    seriesSortBy: {
+      get() {
+        return this.$store.state.libraries.seriesSortBy
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesSortBy', val)
+      }
+    },
+    seriesSortDesc: {
+      get() {
+        return this.$store.state.libraries.seriesSortDesc
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesSortDesc', val)
+      }
     }
   },
   methods: {
@@ -249,7 +263,6 @@ export default {
       this.saveSettings()
     },
     updateSeriesSort() {
-      this.$store.commit('libraries/setSeriesSort', { sort: this.seriesSort, desc: this.seriesSortDesc })
       this.$eventBus.$emit('series-sort-updated')
     },
     updateCollapseSeries() {

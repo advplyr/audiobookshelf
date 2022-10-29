@@ -99,7 +99,7 @@ export default {
       return this.page
     },
     seriesSortBy() {
-      return this.$store.state.libraries.seriesSort
+      return this.$store.state.libraries.seriesSortBy
     },
     seriesSortDesc() {
       return this.$store.state.libraries.seriesSortDesc

@@ -1,5 +1,5 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
-const { getTitleIgnorePrefix } = require('../utils/index')
+const { getTitleIgnorePrefix, isNullOrNaN } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -114,23 +114,29 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, minified = false) {
-    var _series = {}
+  getSeriesFromBooks(books, allSeries, minified = false) {
+    const _series = {}
     books.forEach((libraryItem) => {
-      var bookSeries = libraryItem.media.metadata.series || []
-      bookSeries.forEach((series) => {
-        var abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
-        abJson.sequence = series.sequence
-        if (!_series[series.id]) {
-          _series[series.id] = {
-            id: series.id,
-            name: series.name,
-            nameIgnorePrefix: getTitleIgnorePrefix(series.name),
+      const bookSeries = libraryItem.media.metadata.series || []
+      bookSeries.forEach((bookSeriesObj) => {
+        const series = allSeries.find(se => se.id === bookSeriesObj.id)
+
+        const abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
+        abJson.sequence = bookSeriesObj.sequence
+        if (!_series[bookSeriesObj.id]) {
+          _series[bookSeriesObj.id] = {
+            id: bookSeriesObj.id,
+            name: bookSeriesObj.name,
+            nameIgnorePrefix: getTitleIgnorePrefix(bookSeriesObj.name),
             type: 'series',
-            books: [abJson]
+            books: [abJson],
+            addedAt: series ? series.addedAt : 0,
+            totalDuration: isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
           }
+
         } else {
-          _series[series.id].books.push(abJson)
+          _series[bookSeriesObj.id].books.push(abJson)
+          _series[bookSeriesObj.id].totalDuration += isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
         }
       })
     })
@@ -209,8 +215,8 @@ module.exports = {
     return totalSize
   },
 
-  collapseBookSeries(libraryItems) {
-    var seriesObjects = this.getSeriesFromBooks(libraryItems, true)
+  collapseBookSeries(libraryItems, series) {
+    var seriesObjects = this.getSeriesFromBooks(libraryItems, series, true)
     var seriesToUse = {}
     var libraryItemIdsToHide = []
     seriesObjects.forEach((series) => {

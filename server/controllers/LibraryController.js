@@ -222,7 +222,7 @@ class LibraryController {
     }
 
     if (payload.collapseseries) {
-      libraryItems = libraryHelpers.collapseBookSeries(libraryItems)
+      libraryItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series)
       payload.total = libraryItems.length
     } else if (filterSeries) {
       // Book media when filtering series will include series object on media metadata
@@ -275,10 +275,24 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(libraryItems, payload.minified)
-    series = sort(series).asc(s => {
-      return this.db.serverSettings.sortingIgnorePrefix ? s.nameIgnorePrefix : s.name
-    })
+    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, payload.minified)
+    const direction = payload.sortDesc ? 'desc' : 'asc'
+    series = naturalSort(series).by([
+      {
+        [direction]: (se) => {
+          if (payload.sortBy === 'numBooks') {
+            return se.books.length
+          } else if (payload.sortBy === 'totalDuration') {
+            return se.totalDuration
+          } else if (payload.sortBy === 'addedAt') {
+            return se.addedAt
+          } else { // sort by name
+            return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefix : se.name
+          }
+        }
+      }
+    ])
+
     payload.total = series.length
 
     if (payload.limit) {

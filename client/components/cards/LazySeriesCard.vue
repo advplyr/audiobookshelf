@@ -20,6 +20,7 @@
     </div>
     <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
       <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
+      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
   </div>
 </template>
@@ -40,7 +41,8 @@ export default {
       type: Object,
       default: () => null
     },
-    sortingIgnorePrefix: Boolean
+    sortingIgnorePrefix: Boolean,
+    orderBy: String
   },
   data() {
     return {
@@ -52,6 +54,9 @@ export default {
     }
   },
   computed: {
+    dateFormat() {
+      return this.store.state.serverSettings.dateFormat
+    },
     labelFontSize() {
       if (this.width < 160) return 0.75
       return 0.875
@@ -73,11 +78,23 @@ export default {
       if (this.sortingIgnorePrefix) return this.nameIgnorePrefix || this.title
       return this.title
     },
+    displaySortLine() {
+      if (this.orderBy === 'addedAt') {
+        // return this.addedAt
+        return 'Added ' + this.$formatDate(this.addedAt, this.dateFormat)
+      } else if (this.orderBy === 'totalDuration') {
+        return 'Duration: ' + this.$elapsedPrettyExtended(this.totalDuration, false)
+      }
+      return null
+    },
     books() {
       return this.series ? this.series.books || [] : []
     },
     addedAt() {
       return this.series ? this.series.addedAt : 0
+    },
+    totalDuration() {
+      return this.series ? this.series.totalDuration : 0
     },
     seriesBookProgress() {
       return this.books
