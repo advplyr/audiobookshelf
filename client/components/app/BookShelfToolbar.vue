@@ -43,8 +43,9 @@
         <div class="flex-grow hidden sm:inline-block" />
 
         <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
-        <controls-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
-        <controls-order-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <controls-library-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+        <controls-library-sort-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <controls-library-filter-select v-if="isSeriesPage" v-model="seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
         <controls-sort-select v-if="isSeriesPage" v-model="seriesSortBy" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
         <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
@@ -183,6 +184,14 @@ export default {
       set(val) {
         this.$store.commit('libraries/setSeriesSortDesc', val)
       }
+    },
+    seriesFilterBy: {
+      get() {
+        return this.$store.state.libraries.seriesFilterBy
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesFilterBy', val)
+      }
     }
   },
   methods: {
@@ -263,6 +272,9 @@ export default {
       this.saveSettings()
     },
     updateSeriesSort() {
+      this.$eventBus.$emit('series-sort-updated')
+    },
+    updateSeriesFilter() {
       this.$eventBus.$emit('series-sort-updated')
     },
     updateCollapseSeries() {

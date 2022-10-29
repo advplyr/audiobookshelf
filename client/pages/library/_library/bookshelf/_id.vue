@@ -15,12 +15,17 @@ export default {
     }
 
     // Set series sort by
-    if (query.sort && params.id === 'series') {
-      store.commit('libraries/setSeriesSortBy', query.sort)
-      store.commit('libraries/setSeriesSortDesc', !!query.desc)
-    }
-    // Set filter by
-    if (query.filter && params.id !== 'series') {
+    if (params.id === 'series') {
+      console.log('Series page', query)
+      if (query.sort) {
+        store.commit('libraries/setSeriesSortBy', query.sort)
+        store.commit('libraries/setSeriesSortDesc', !!query.desc)
+      }
+      if (query.filter) {
+        console.log('has filter', query.filter)
+        store.commit('libraries/setSeriesFilterBy', query.filter)
+      }
+    } else if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
 

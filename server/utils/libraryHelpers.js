@@ -67,6 +67,45 @@ module.exports = {
     return filtered
   },
 
+  // Returns false if should be filtered out
+  checkFilterForSeriesLibraryItem(libraryItem, filterBy) {
+    var searchGroups = ['genres', 'tags', 'authors', 'progress', 'narrators', 'languages']
+    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    if (group) {
+      var filterVal = filterBy.replace(`${group}.`, '')
+      var filter = this.decode(filterVal)
+
+      if (group === 'genres') return libraryItem.media.metadata && libraryItem.media.metadata.genres.includes(filter)
+      else if (group === 'tags') return libraryItem.media.tags.includes(filter)
+      else if (group === 'authors') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasAuthor(filter)
+      else if (group === 'narrators') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasNarrator(filter)
+      else if (group === 'languages') {
+        return libraryItem.media.metadata && libraryItem.media.metadata.language === filter
+      }
+    }
+    return true
+  },
+
+  // Return false to filter out series
+  checkSeriesProgressFilter(series, filterBy, user) {
+    const filter = this.decode(filterBy.split('.')[1])
+
+    var numBooksStartedOrFinished = 0
+    for (const libraryItem of series.books) {
+      const itemProgress = user.getMediaProgress(libraryItem.id)
+      if (filter === 'Finished' && (!itemProgress || !itemProgress.isFinished)) return false
+      if (filter === 'Not Started' && itemProgress) return false
+      if (itemProgress) numBooksStartedOrFinished++
+    }
+
+    if (numBooksStartedOrFinished === series.books.length) { // Completely finished series
+      if (filter === 'Not Finished') return false
+    } else if (numBooksStartedOrFinished === 0 && filter === 'In Progress') { // Series not started
+      return false
+    }
+    return true
+  },
+
   getDistinctFilterDataNew(libraryItems) {
     var data = {
       authors: [],
@@ -114,10 +153,27 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, allSeries, minified = false) {
+  getSeriesFromBooks(books, allSeries, filterBy, user, minified = false) {
     const _series = {}
+    const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
-      const bookSeries = libraryItem.media.metadata.series || []
+      // get all book series for item that is not already filtered out
+      const bookSeries = (libraryItem.media.metadata.series || []).filter(se => !seriesToFilterOut[se.id])
+      if (!bookSeries.length) return
+
+      if (filterBy && user && !filterBy.startsWith('progress.')) { // Series progress filters are evaluated after grouping
+        // If a single book in a series is filtered out then filter out the entire series
+        if (!this.checkFilterForSeriesLibraryItem(libraryItem, filterBy)) {
+          // filter out this library item
+          bookSeries.forEach((bookSeriesObj) => {
+            // flag series to filter it out
+            seriesToFilterOut[bookSeriesObj.id] = true
+            delete _series[bookSeriesObj.id]
+          })
+          return
+        }
+      }
+
       bookSeries.forEach((bookSeriesObj) => {
         const series = allSeries.find(se => se.id === bookSeriesObj.id)
 
@@ -140,7 +196,15 @@ module.exports = {
         }
       })
     })
-    return Object.values(_series).map((series) => {
+
+    var seriesItems = Object.values(_series)
+
+    // check progress filter
+    if (filterBy && filterBy.startsWith('progress.') && user) {
+      seriesItems = seriesItems.filter(se => this.checkSeriesProgressFilter(se, filterBy, user))
+    }
+
+    return seriesItems.map((series) => {
       series.books = naturalSort(series.books).asc(li => li.sequence)
       return series
     })
@@ -216,7 +280,7 @@ module.exports = {
   },
 
   collapseBookSeries(libraryItems, series) {
-    var seriesObjects = this.getSeriesFromBooks(libraryItems, series, true)
+    var seriesObjects = this.getSeriesFromBooks(libraryItems, series, null, null, true)
     var seriesToUse = {}
     var libraryItemIdsToHide = []
     seriesObjects.forEach((series) => {

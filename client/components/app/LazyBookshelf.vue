@@ -104,6 +104,9 @@ export default {
     seriesSortDesc() {
       return this.$store.state.libraries.seriesSortDesc
     },
+    seriesFilterBy() {
+      return this.$store.state.libraries.seriesFilterBy
+    },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
     },
@@ -431,6 +434,7 @@ export default {
       if (this.page === 'series') {
         searchParams.set('sort', this.seriesSortBy)
         searchParams.set('desc', this.seriesSortDesc ? 1 : 0)
+        searchParams.set('filter', this.seriesFilterBy)
       } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
       } else {

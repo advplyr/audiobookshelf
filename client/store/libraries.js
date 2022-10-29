@@ -10,7 +10,8 @@ export const state = () => ({
   folderLastUpdate: 0,
   filterData: null,
   seriesSortBy: 'name',
-  seriesSortDesc: false
+  seriesSortDesc: false,
+  seriesFilterBy: 'all'
 })
 
 export const getters = {
@@ -297,5 +298,8 @@ export const mutations = {
   },
   setSeriesSortDesc(state, sortDesc) {
     state.seriesSortDesc = sortDesc
+  },
+  setSeriesFilterBy(state, filterBy) {
+    state.seriesFilterBy = filterBy
   }
 }

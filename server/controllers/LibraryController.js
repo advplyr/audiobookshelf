@@ -275,7 +275,8 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, payload.minified)
+    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, payload.filterBy, req.user, payload.minified)
+
     const direction = payload.sortDesc ? 'desc' : 'asc'
     series = naturalSort(series).by([
       {

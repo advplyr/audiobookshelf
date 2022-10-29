@@ -11,8 +11,8 @@
         <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">Cancel</ui-btn>
       </template>
       <template v-else>
-        <controls-episode-filter-select v-model="filterKey" class="w-36 md:w-36 h-9 ml-1 sm:ml-4" />
-        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-32 md:w-36 h-9 ml-1 sm:ml-4" />
+        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-32 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
       </template>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
@@ -59,6 +59,24 @@ export default {
         {
           text: 'Episode',
           value: 'episode'
+        }
+      ],
+      filterItems: [
+        {
+          value: 'all',
+          text: 'Show All'
+        },
+        {
+          value: 'incomplete',
+          text: 'Incomplete'
+        },
+        {
+          value: 'complete',
+          text: 'Complete'
+        },
+        {
+          value: 'in_progress',
+          text: 'In Progress'
         }
       ]
     }

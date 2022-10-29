@@ -4,6 +4,6 @@ export default function ({ store, redirect, route, app }) {
     if (route.name === 'batch' || route.name === 'index') {
       return redirect('/login')
     }
-    return redirect(`/login?redirect=${route.fullPath}`)
+    return redirect(`/login?redirect=${encodeURIComponent(route.fullPath)}`)
   }
 }
