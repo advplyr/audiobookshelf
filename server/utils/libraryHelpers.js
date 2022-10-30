@@ -283,32 +283,31 @@ module.exports = {
   collapseBookSeries(libraryItems, series) {
     var seriesObjects = this.getSeriesFromBooks(libraryItems, series, null, null, true)
     var seriesToUse = {}
-    var libraryItemIdsToHide = []
-    seriesObjects.forEach((series) => {
-      series.firstBook = series.books.find(b => !seriesToUse[b.id]) // Find first book not already used
-      if (series.firstBook) {
-        seriesToUse[series.firstBook.id] = series
-        libraryItemIdsToHide = libraryItemIdsToHide.concat(series.books.filter(b => !seriesToUse[b.id]).map(b => b.id))
-      }
-    })
+    var collapsedLibraryItems = []
 
-    return libraryItems.map((li) => {
+    libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
-      var libraryItemJson = li.toJSONMinified()
-      if (libraryItemIdsToHide.includes(li.id)) {
-        return null
-      }
-      if (seriesToUse[li.id]) {
+
+      // Handle when this is the first book in a series
+      seriesObjects.filter(s => s.books[0].id == li.id).forEach(series => {
+        let libraryItemJson = li.toJSONMinified()
         libraryItemJson.collapsedSeries = {
-          id: seriesToUse[li.id].id,
-          name: seriesToUse[li.id].name,
-          nameIgnorePrefix: seriesToUse[li.id].nameIgnorePrefix,
-          libraryItemIds: seriesToUse[li.id].books.map(b => b.id),
-          numBooks: seriesToUse[li.id].books.length
+          id: series.id,
+          name: series.name,
+          nameIgnorePrefix: series.nameIgnorePrefix,
+          libraryItemIds: series.books.map(b => b.id),
+          numBooks: series.books.length
         }
-      }
-      return libraryItemJson
-    }).filter(li => li)
+        collapsedLibraryItems.push(libraryItemJson);
+      });
+
+      // Ignore books contained in series
+      if (li.media.metadata.series.length) return
+
+      collapsedLibraryItems.push(li.toJSONMinified())
+    });
+
+    return collapsedLibraryItems
   },
 
   buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
