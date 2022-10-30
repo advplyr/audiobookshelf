@@ -160,15 +160,28 @@ class LibraryController {
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1'
     }
+    var mediaIsBook = payload.mediaType === 'book'
 
     var filterSeries = null
     if (payload.filterBy) {
       // If filtering by series, will include seriesName and seriesSequence on media metadata
-      filterSeries = (payload.mediaType == 'book' && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
+      filterSeries = (mediaIsBook && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
       if (filterSeries === 'No Series') filterSeries = null
 
       libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
       payload.total = libraryItems.length
+    }
+
+    if (payload.collapseseries) {
+      libraryItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series, filterSeries)
+      payload.total = libraryItems.length
+    }
+
+
+    var sortArray = []
+    if (filterSeries) {
+      // Book media when filtering series will sort by the series sequence
+      sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
     }
 
     if (payload.sortBy) {
@@ -186,29 +199,37 @@ class LibraryController {
         sortKey += 'IgnorePrefix'
       }
 
-      // Start sort
-      var direction = payload.sortDesc ? 'desc' : 'asc'
-      var sortArray = [
-        {
-          [direction]: (li) => {
-            // When collapsing by series and sorting by title use the series name instead of the book title
-            if (payload.mediaType === 'book' && payload.collapseseries && li.media.metadata.seriesName) {
-              if (sortByTitle) {
-                return this.db.serverSettings.sortingIgnorePrefix ? li.media.metadata.seriesNameIgnorePrefix : li.media.metadata.seriesName
-              } else {
-                // When not sorting by title always show the collapsed series at the end
-                return direction === 'desc' ? -1 : 'zzzz'
-              }
+      // If series are collapsed and not sorting by title, sort all collapsed series to the end in alphabetical order
+      if (payload.collapseseries && !sortByTitle) {
+        sortArray.push({
+          asc: (li) => {
+            if (li.collapsedSeries) {
+              return this.db.serverSettings.sortingIgnorePrefix ?
+                li.collapsedSeries.nameIgnorePrefix :
+                li.collapsedSeries.name
+            } else {
+              return ''
             }
+          }
+        })
+      }
 
+      var direction = payload.sortDesc ? 'desc' : 'asc'
+      sortArray.push({
+        [direction]: (li) => {
+          if (mediaIsBook && sortByTitle && li.collapsedSeries) {
+            return this.db.serverSettings.sortingIgnorePrefix ?
+              li.collapsedSeries.nameIgnorePrefix :
+              li.collapsedSeries.name
+          } else {
             // Supports dot notation strings i.e. "media.metadata.title"
             return sortKey.split('.').reduce((a, b) => a[b], li)
           }
         }
-      ]
+      })
 
       // Secondary sort when sorting by book author use series sort title
-      if (payload.mediaType === 'book' && payload.sortBy.includes('author')) {
+      if (mediaIsBook && payload.sortBy.includes('author')) {
         sortArray.push({
           asc: (li) => {
             if (li.media.metadata.series && li.media.metadata.series.length) {
@@ -218,30 +239,31 @@ class LibraryController {
           }
         })
       }
+    }
+
+    // Sort the items
+    if (sortArray.length) {
       libraryItems = naturalSort(libraryItems).by(sortArray)
     }
 
-    if (payload.collapseseries) {
-      libraryItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series)
-      payload.total = libraryItems.length
-    } else if (filterSeries) {
-      // Book media when filtering series will include series object on media metadata
-      libraryItems = libraryItems.map(li => {
-        var series = li.media.metadata.getSeries(filterSeries)
-        var liJson = payload.minified ? li.toJSONMinified() : li.toJSON()
-        liJson.media.metadata.series = series
-        return liJson
-      })
-      libraryItems = naturalSort(libraryItems).asc(li => li.media.metadata.series.sequence)
-    } else {
-      libraryItems = libraryItems.map(li => payload.minified ? li.toJSONMinified() : li.toJSON())
-    }
+    payload.results = libraryItems.map(li => {
+      let json = payload.minified ? li.toJSONMinified() : li.toJSON()
 
-    if (payload.limit) {
-      var startIndex = payload.page * payload.limit
-      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
-    }
-    payload.results = libraryItems
+      if (li.collapsedSeries) {
+        json.collapsedSeries = {
+          id: li.collapsedSeries.id,
+          name: li.collapsedSeries.name,
+          nameIgnorePrefix: li.collapsedSeries.nameIgnorePrefix,
+          libraryItemIds: li.collapsedSeries.books.map(b => b.id),
+          numBooks: li.collapsedSeries.books.length
+        }
+      } else if (filterSeries) {
+        json.media.metadata.series = li.media.metadata.getSeries(filterSeries)
+      }
+
+      return json
+    })
+
     res.json(payload)
   }
 

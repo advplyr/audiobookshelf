@@ -280,34 +280,34 @@ module.exports = {
     return totalSize
   },
 
-  collapseBookSeries(libraryItems, series) {
-    var seriesObjects = this.getSeriesFromBooks(libraryItems, series, null, null, true)
-    var seriesToUse = {}
-    var collapsedLibraryItems = []
+
+  collapseBookSeries(libraryItems, series, filterSeries) {
+    // Get series from the library items. If this list is being collapsed after filtering for a series,
+    // don't collapse that series, only books that are in other series.
+    var seriesObjects = this
+      .getSeriesFromBooks(libraryItems, series, null, null, true)
+      .filter(s => s.id != filterSeries)
+
+    var filteredLibraryItems = []
 
     libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
 
       // Handle when this is the first book in a series
       seriesObjects.filter(s => s.books[0].id == li.id).forEach(series => {
-        let libraryItemJson = li.toJSONMinified()
-        libraryItemJson.collapsedSeries = {
-          id: series.id,
-          name: series.name,
-          nameIgnorePrefix: series.nameIgnorePrefix,
-          libraryItemIds: series.books.map(b => b.id),
-          numBooks: series.books.length
-        }
-        collapsedLibraryItems.push(libraryItemJson);
+        // Clone the library item as we need to attach data to it, but don't
+        // want to change the global copy of the library item
+        filteredLibraryItems.push(Object.assign(
+          Object.create(Object.getPrototypeOf(li)),
+          li, { collapsedSeries: series }))
       });
 
-      // Ignore books contained in series
-      if (li.media.metadata.series.length) return
-
-      collapsedLibraryItems.push(li.toJSONMinified())
+      // Only included books not contained in series
+      if (!seriesObjects.some(s => s.books.some(b => b.id == li.id)))
+        filteredLibraryItems.push(li)
     });
 
-    return collapsedLibraryItems
+    return filteredLibraryItems
   },
 
   buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
