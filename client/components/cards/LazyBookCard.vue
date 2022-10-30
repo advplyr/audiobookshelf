@@ -1,106 +1,160 @@
 <template>
-  <div ref="card" :id="`book-card-${index}`" :style="{ minWidth: width + 'px', maxWidth: width + 'px', height: height + 'px' }" class="rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
+  <div ref="card" :id="`book-card-${index}`"
+    :style="{ minWidth: width + 'px', maxWidth: width + 'px', height: height + 'px' }"
+    class="rounded-sm z-10 bg-primary cursor-pointer box-shadow-book" @mousedown.prevent @mouseup.prevent
+    @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <!-- When cover image does not fill -->
     <div v-show="showCoverBg" class="absolute top-0 left-0 w-full h-full overflow-hidden rounded-sm bg-primary">
       <div class="absolute cover-bg" ref="coverBg" />
     </div>
 
     <!-- Alternative bookshelf title/author/sort -->
-    <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
+    <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full"
+      :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
         {{ displayTitle }}
       </p>
-      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
-      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo ||
+          '&nbsp;'
+      }}</p>
+      <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{
+          displaySortLine
+      }}</p>
     </div>
 
-    <div v-if="booksInSeries" class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ booksInSeries }}</div>
+    <div v-if="seriesSequenceList"
+      class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center bg-black bg-opacity-90 box-shadow-md"
+      style="background-color: #78350f">#{{ seriesSequenceList }}</div>
+    <div v-else-if="booksInSeries"
+      class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center"
+      style="background-color: #cd9d49dd">{{ booksInSeries }}</div>
 
     <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
-      <div v-show="libraryItem && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
-        <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}</p>
+      <div v-show="libraryItem && !imageReady"
+        class="absolute top-0 left-0 w-full h-full flex items-center justify-center"
+        :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
+        <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }" class="font-book text-gray-300 text-center">{{ title }}
+        </p>
       </div>
 
       <!-- Cover Image -->
-      <img v-show="libraryItem" ref="cover" :src="bookCoverSrc" class="w-full h-full transition-opacity duration-300" :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded" :style="{ opacity: imageReady ? 1 : 0 }" />
+      <img v-show="libraryItem" ref="cover" :src="bookCoverSrc" class="w-full h-full transition-opacity duration-300"
+        :class="showCoverBg ? 'object-contain' : 'object-fill'" @load="imageLoaded"
+        :style="{ opacity: imageReady ? 1 : 0 }" />
 
       <!-- Placeholder Cover Title & Author -->
-      <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
+      <div v-if="!hasCover"
+        class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center"
+        :style="{ padding: placeholderCoverPadding + 'rem' }">
         <div>
-          <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
+          <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">
+            {{ titleCleaned }}</p>
         </div>
       </div>
-      <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
-        <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
+      <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center"
+        :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
+        <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75"
+          :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
       </div>
     </div>
 
     <!-- No progress shown for collapsed series in library and podcasts (unless showing podcast episode) -->
-    <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <div v-if="!booksInSeries && (!isPodcast || episodeProgress)"
+      class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b"
+      :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }">
+    </div>
     <!-- Finished progress bar for collapsed series -->
-    <div v-else-if="booksInSeries && seriesIsFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <div v-else-if="booksInSeries && seriesIsFinished"
+      class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success"
+      :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
-    <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
+    <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing"
+      class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block"
+      :class="overlayWrapperClasslist">
       <div v-show="showPlayButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="play">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto"
+          @click.stop.prevent="play">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">play_circle_filled</span>
         </div>
       </div>
 
       <div v-show="showReadButton" class="h-full flex items-center justify-center pointer-events-none">
-        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto" @click.stop.prevent="clickReadEBook">
+        <div class="hover:text-white text-gray-200 hover:scale-110 transform duration-200 pointer-events-auto"
+          @click.stop.prevent="clickReadEBook">
           <span class="material-icons" :style="{ fontSize: playIconFontSize + 'rem' }">auto_stories</span>
         </div>
       </div>
 
-      <div v-if="userCanUpdate" v-show="!isSelectionMode" class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
+      <div v-if="userCanUpdate" v-show="!isSelectionMode"
+        class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-150 top-0 right-0"
+        :style="{ padding: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="editClick">
         <span class="material-icons" :style="{ fontSize: sizeMultiplier + 'rem' }">edit</span>
       </div>
 
-      <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100" :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="selectBtnClick">
-        <span class="material-icons" :class="selected ? 'text-yellow-400' : ''" :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' : 'radio_button_unchecked' }}</span>
+      <div class="absolute cursor-pointer hover:text-yellow-300 hover:scale-125 transform duration-100"
+        :style="{ top: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }"
+        @click.stop.prevent="selectBtnClick">
+        <span class="material-icons" :class="selected ? 'text-yellow-400' : ''"
+          :style="{ fontSize: 1.25 * sizeMultiplier + 'rem' }">{{ selected ? 'radio_button_checked' :
+              'radio_button_unchecked'
+          }}</span>
       </div>
 
       <!-- More Menu Icon -->
-      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+      <div ref="moreIcon" v-show="!isSelectionMode"
+        class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150"
+        :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }"
+        @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
 
     <!-- Processing/loading spinner overlay -->
-    <div v-if="processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
+    <div v-if="processing"
+      class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 rounded flex items-center justify-center">
       <widgets-loading-spinner size="la-lg" />
     </div>
 
     <!-- Series name overlay -->
-    <div v-if="booksInSeries && libraryItem && isHovering" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center" :style="{ padding: sizeMultiplier + 'rem' }">
+    <div v-if="booksInSeries && libraryItem && isHovering"
+      class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-60 rounded flex items-center justify-center"
+      :style="{ padding: sizeMultiplier + 'rem' }">
       <p class="text-gray-200 text-center" :style="{ fontSize: 1.1 * sizeMultiplier + 'rem' }">{{ series }}</p>
     </div>
 
     <!-- Error widget -->
     <ui-tooltip v-if="showError" :text="errorText" class="absolute bottom-4 left-0 z-10">
-      <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }" class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
-        <span class="material-icons text-red-100 pr-1" :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
+      <div :style="{ height: 1.5 * sizeMultiplier + 'rem', width: 2.5 * sizeMultiplier + 'rem' }"
+        class="bg-error rounded-r-full shadow-md flex items-center justify-end border-r border-b border-red-300">
+        <span class="material-icons text-red-100 pr-1"
+          :style="{ fontSize: 0.875 * sizeMultiplier + 'rem' }">priority_high</span>
       </div>
     </ui-tooltip>
 
-    <div v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10" :style="{ padding: 0.375 * sizeMultiplier + 'rem' }">
+    <div v-if="rssFeed && !isSelectionMode && !isHovering" class="absolute text-success top-0 left-0 z-10"
+      :style="{ padding: 0.375 * sizeMultiplier + 'rem' }">
       <span class="material-icons" :style="{ fontSize: sizeMultiplier * 1.5 + 'rem' }">rss_feed</span>
     </div>
 
     <!-- Series sequence -->
-    <div v-if="seriesSequence && !isHovering && !isSelectionMode" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+    <div v-if="seriesSequence && !isHovering && !isSelectionMode"
+      class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10"
+      :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequence }}</p>
     </div>
 
     <!-- Podcast Episode # -->
-    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing"
+      class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10"
+      :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
     </div>
 
     <!-- Podcast Num Episodes -->
-    <div v-else-if="numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
+    <div v-else-if="numEpisodes && !isHovering && !isSelectionMode"
+      class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center"
+      :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodes }}</p>
     </div>
   </div>
@@ -235,6 +289,9 @@ export default {
     booksInSeries() {
       // Only added to item object when collapseSeries is enabled
       return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
+    },
+    seriesSequenceList() {
+      return this.collapsedSeries ? this.collapsedSeries.seriesSequenceList : null
     },
     libraryItemIdsInSeries() {
       // Only added to item object when collapseSeries is enabled
@@ -515,7 +572,7 @@ export default {
           }
         }
         var mediaMetadata = libraryItem.media.metadata
-        if (mediaMetadata.series) {
+        if (mediaMetadata.series && Array.isArray(mediaMetadata.series)) {
           var newSeries = mediaMetadata.series.find((se) => se.id === this.series.id)
           if (newSeries) {
             // update selected series

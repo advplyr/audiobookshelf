@@ -153,7 +153,7 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, allSeries, filterBy, user, minified = false) {
+  getSeriesFromBooks(books, allSeries, filterSeries, filterBy, user, minified = false) {
     const _series = {}
     const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
@@ -179,6 +179,9 @@ module.exports = {
 
         const abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
         abJson.sequence = bookSeriesObj.sequence
+        if (filterSeries) {
+          abJson.filterSeriesSequence = libraryItem.media.metadata.getSeries(filterSeries).sequence
+        }
         if (!_series[bookSeriesObj.id]) {
           _series[bookSeriesObj.id] = {
             id: bookSeriesObj.id,
@@ -285,7 +288,7 @@ module.exports = {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
     var seriesObjects = this
-      .getSeriesFromBooks(libraryItems, series, null, null, true)
+      .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true)
       .filter(s => s.id != filterSeries)
 
     var filteredLibraryItems = []
