@@ -134,10 +134,14 @@
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
             <p>
-              Duration found: <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span>
+              Duration found: <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span
+              ><br />
+              <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapterData.chapters.length }}</span> chapters found
             </p>
             <p>
-              Your audiobook duration: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span>
+              Your audiobook duration: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span
+              ><br />
+              Your audiobook has <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapters.length }}</span> chapters
             </p>
           </div>
           <widgets-alert v-if="chapterData.runtimeLengthSec > mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is shorter than duration found </widgets-alert>
