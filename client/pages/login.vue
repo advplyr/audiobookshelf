@@ -137,6 +137,34 @@ export default {
       this.$store.commit('libraries/setCurrentLibrary', userDefaultLibraryId)
       this.$store.commit('user/setUser', user)
     },
+    /**
+     * Checks for forward proxy authentication
+     */
+    async checkForwardAuth() {
+      this.processing = true;
+      this.error = null;
+
+      var authRes = await this.$axios.$post('/forwardauth').catch((error) => {
+        console.error('Failed', error.response)
+        if (error.response) this.error = error.response.data
+        else this.error = 'Unknown Error'
+        return false
+      });
+
+      if (authRes && authRes.disabled) {
+        // disabled == true - proxy auth has not been configured on the server, nothing further to do.
+        this.processing = false;
+        return false;
+      }
+
+      if (authRes && authRes.error) {
+        this.error = authRes.error
+      } else if (authRes) {
+        this.setUser(authRes)
+      }
+      this.processing = false
+
+    },
     async submitForm() {
       this.error = null
       this.processing = true
@@ -202,6 +230,10 @@ export default {
     }
   },
   async mounted() {
+
+    // Check for proxy auth
+    this.checkForwardAuth();
+
     if (localStorage.getItem('token')) {
       var userfound = await this.checkAuth()
       if (userfound) return // if valid user no need to check status

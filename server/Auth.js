@@ -1,6 +1,9 @@
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
 const Logger = require('./Logger')
+const User = require('./objects/user/User')
+const { getId } = require('./utils/index')
+const { parseBool } = require('./utils/parseBool')
 
 class Auth {
   constructor(db) {
@@ -168,6 +171,65 @@ class Auth {
       Logger.error('[Auth] Failed to lock user', user.username, error)
       return false
     })
+  }
+
+  /**
+   * Checks for an environment variable of PROXY_FORWARD_AUTH_ENABLED and if enabled
+   * will authenticate the user from the proxy headers.
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} feeds
+   * @returns 
+   */
+  async getUserFromProxyAuth(req, res, feeds) {
+    var username = null;
+    var user = null;
+
+    // Check if $PROXY_FORWARD_AUTH_ENABLED is defined
+    if (!parseBool(process.env.PROXY_FORWARD_AUTH_ENABLED)) {
+      Logger.debug("$PROXY_FORWARD_AUTH_ENABLED not set.");
+      // Respond with disabled: true - client will check for it and ignore forward auth
+      return res.json({ disabled: true });
+    }
+
+    // Check that the proxy username header is set
+    if (!process.env.PROXY_FORWARD_AUTH_USERNAME) {
+      Logger.info("$PROXY_FORWARD_AUTH_ENABLED is set, but $PROXY_FORWARD_AUTH_USERNAME has not been defined. Forward Authentication will not proceed.");
+      return res.json({ disabled: true });
+    }
+
+    Logger.debug('Found $PROXY_FORWARD_AUTH_USERNAME header:', process.env.PROXY_FORWARD_AUTH_USERNAME);
+    username = req.headers[process.env.PROXY_FORWARD_AUTH_USERNAME.toLowerCase()];
+    Logger.debug('Found Forwarded Username ', username);
+
+    if (!username)
+      return res.status(401).send(`Username not found in headers (Header: ${process.env.PROXY_FORWARD_AUTH_USERNAME}`);
+
+    var user = this.users.find(u => u.username.toLowerCase() === username)
+
+    // If the user doesn't exist and PROXY_FORWARD AUTH_CREATE is enabled, create the user
+    if (!user && parseBool(process.env.PROXY_FORWARD_AUTH_CREATE)) {
+      Logger.debug('User not found, creating user', username);
+      // TODO - user type:
+      //   this could come from the proxy (eg a user attribute), or could be configurable from an environment variable
+      var account = {
+        id: getId('usr'),
+        username: username,
+        createdAt: Date.now(),
+        type: 'user'
+      };
+      account.token = await this.generateAccessToken({ userId: account.id, username: account.username });
+      user = new User(account);
+      var success = await this.db.insertEntity('user', user);
+      if (!success)
+        return res.status(500).send("Could not create user.");
+    }
+
+    if (!user)
+      return res.status(401).send(`User "${username}" not found`);
+
+    return res.json(this.getUserLoginResponsePayload(user, feeds))
+
   }
 
   comparePassword(password, user) {
