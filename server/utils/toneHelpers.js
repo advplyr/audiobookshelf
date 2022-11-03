@@ -72,10 +72,9 @@ module.exports.getToneMetadataObject = (libraryItem, chaptersFile) => {
   return metadataObject
 }
 
-module.exports.writeToneMetadataJsonFile = (libraryItem, filePath) => {
+module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath) => {
   const bookMetadata = libraryItem.media.metadata
   const coverPath = libraryItem.media.coverPath
-  const chapters = libraryItem.media.chapters
 
   const metadataObject = {
     'album': bookMetadata.title || '',
@@ -139,7 +138,6 @@ module.exports.writeToneMetadataJsonFile = (libraryItem, filePath) => {
 
 module.exports.tagAudioFile = (filePath, payload) => {
   return tone.tag(filePath, payload).then((data) => {
-    Logger.info('Tone results: ', data)
     return true
   }).catch((error) => {
     Logger.error(`[toneHelpers] tagAudioFile: Failed for "${filePath}"`, error)

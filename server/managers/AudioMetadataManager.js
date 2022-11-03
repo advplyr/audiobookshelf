@@ -49,7 +49,7 @@ class AudioMetadataMangaer {
 
     try {
       toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, toneJsonPath)
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, audioFiles.length == 1 && libraryItem.media.chapters, toneJsonPath)
     } catch (error) {
       Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
       toneJsonPath = null
