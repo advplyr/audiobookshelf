@@ -72,6 +72,71 @@ module.exports.getToneMetadataObject = (libraryItem, chaptersFile) => {
   return metadataObject
 }
 
+module.exports.writeToneMetadataJsonFile = (libraryItem, filePath) => {
+  const bookMetadata = libraryItem.media.metadata
+  const coverPath = libraryItem.media.coverPath
+  const chapters = libraryItem.media.chapters
+
+  const metadataObject = {
+    'album': bookMetadata.title || '',
+    'title': bookMetadata.title || '',
+    'trackTotal': libraryItem.media.tracks.length,
+    'additionalFields': {}
+  }
+  if (bookMetadata.subtitle) {
+    metadataObject['subtitle'] = bookMetadata.subtitle
+  }
+  if (bookMetadata.authorName) {
+    metadataObject['artist'] = bookMetadata.authorName
+    metadataObject['albumArtist'] = bookMetadata.authorName
+  }
+  if (bookMetadata.description) {
+    metadataObject['comment'] = bookMetadata.description
+    metadataObject['description'] = bookMetadata.description
+  }
+  if (bookMetadata.narratorName) {
+    metadataObject['narrator'] = bookMetadata.narratorName
+    metadataObject['composer'] = bookMetadata.narratorName
+  }
+  if (bookMetadata.firstSeriesName) {
+    metadataObject['movementName'] = bookMetadata.firstSeriesName
+  }
+  if (bookMetadata.firstSeriesSequence) {
+    metadataObject['movement'] = bookMetadata.firstSeriesSequence
+  }
+  if (bookMetadata.genres.length) {
+    metadataObject['genre'] = bookMetadata.genres.join('/')
+  }
+  if (bookMetadata.publisher) {
+    metadataObject['publisher'] = bookMetadata.publisher
+  }
+  if (bookMetadata.asin) {
+    metadataObject.additionalFields['asin'] = bookMetadata.asin
+  }
+  if (bookMetadata.isbn) {
+    metadataObject.additionalFields['isbn'] = bookMetadata.isbn
+  }
+  if (coverPath) {
+    metadataObject['coverFile'] = coverPath
+  }
+  if (parsePublishedYear(bookMetadata.publishedYear)) {
+    metadataObject['publishingDate'] = parsePublishedYear(bookMetadata.publishedYear)
+  }
+  if (chapters && chapters.length > 0) {
+    let metadataChapters = []
+    for (const chapter of chapters) {
+      metadataChapters.push({
+        start: chapter.start,
+        length: chapter.end - chapter.start,
+        title: chapter.title,
+      })
+    }
+    metadataObject['chapters'] = chaptersFile
+  }
+
+  return fs.writeFile(filePath, JSON.stringify({ metadata: metadataObject }))
+}
+
 module.exports.tagAudioFile = (filePath, payload) => {
   return tone.tag(filePath, payload).then((data) => {
     return true

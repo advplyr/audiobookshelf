@@ -43,22 +43,17 @@ class AudioMetadataMangaer {
     this.emitter('audio_metadata_started', itemAudioMetadataPayload)
 
     // Write chapters file
-    var chaptersFilePath = null
+    var toneJsonPath = null
     const itemCacheDir = Path.join(global.MetadataPath, `cache/items/${libraryItem.id}`)
     await fs.ensureDir(itemCacheDir)
 
-    if (libraryItem.media.chapters.length) {
-      chaptersFilePath = Path.join(itemCacheDir, 'chapters.txt')
-      try {
-        await toneHelpers.writeToneChaptersFile(libraryItem.media.chapters, chaptersFilePath)
-      } catch (error) {
-        Logger.error(`[AudioMetadataManager] Write chapters.txt failed`, error)
-        chaptersFilePath = null
-      }
+    try {
+      toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, toneJsonPath)
+    } catch (error) {
+      Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
+      toneJsonPath = null
     }
-
-    const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
-    Logger.debug(`[AudioMetadataManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
 
     const results = []
     for (const af of audioFiles) {
@@ -74,7 +69,7 @@ class AudioMetadataMangaer {
     this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
-  async updateAudioFileMetadataWithTone(libraryItemId, audioFile, toneMetadataObject, itemCacheDir) {
+  async updateAudioFileMetadataWithTone(libraryItemId, audioFile, toneJsonPath, itemCacheDir) {
     const resultPayload = {
       libraryItemId,
       index: audioFile.index,
@@ -93,8 +88,8 @@ class AudioMetadataMangaer {
     }
 
     const _toneMetadataObject = {
-      ...toneMetadataObject,
-      'TrackNumber': audioFile.index
+      'ToneJsonFile': toneJsonPath,
+      'TrackNumber': audioFile.index,
     }
 
     resultPayload.success = await toneHelpers.tagAudioFile(audioFile.metadata.path, _toneMetadataObject)

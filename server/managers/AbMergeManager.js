@@ -120,20 +120,22 @@ class AbMergeManager {
       }
     }
 
-    var chaptersFilePath = null
-    if (libraryItem.media.chapters.length) {
-      chaptersFilePath = Path.join(task.data.itemCachePath, 'chapters.txt')
-      try {
-        await toneHelpers.writeToneChaptersFile(libraryItem.media.chapters, chaptersFilePath)
-      } catch (error) {
-        Logger.error(`[AbMergeManager] Write chapters.txt failed`, error)
-        chaptersFilePath = null
-      }
+    var toneJsonPath = null
+    try {
+      toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, toneJsonPath)
+    } catch (error) {
+      Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
+      toneJsonPath = null
     }
 
     const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
     toneMetadataObject.TrackNumber = 1
     task.data.toneMetadataObject = toneMetadataObject
+    task.data.toneJsonObject = {
+      'ToneJsonFile': toneJsonPath,
+      'TrackNumber': 1,
+    }
 
     Logger.debug(`[AbMergeManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
 
@@ -190,7 +192,7 @@ class AbMergeManager {
     }
 
     // Write metadata to merged file
-    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneMetadataObject)
+    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneJsonObject)
     if (!success) {
       Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
       task.setFailed('Failed to write metadata to m4b file')
