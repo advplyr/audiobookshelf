@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
 class VideoMetadata {
   constructor(metadata) {
@@ -32,7 +32,7 @@ class VideoMetadata {
   toJSONMinified() {
     return {
       title: this.title,
-      titleIgnorePrefix: this.titleIgnorePrefix,
+      titleIgnorePrefix: this.titlePrefixAtEnd,
       description: this.description,
       explicit: this.explicit,
       language: this.language
@@ -48,15 +48,11 @@ class VideoMetadata {
   }
 
   get titleIgnorePrefix() {
-    if (!this.title) return ''
-    var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
-    for (const prefix of prefixesToIgnore) {
-      // e.g. for prefix "the". If title is "The Book Title" return "Book Title, The"
-      if (this.title.toLowerCase().startsWith(`${prefix} `)) {
-        return this.title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
-      }
-    }
-    return this.title
+    return getTitleIgnorePrefix(this.title)
+  }
+
+  get titlePrefixAtEnd() {
+    return getTitlePrefixAtEnd(this.title)
   }
 
   searchQuery(query) { // Returns key if match is found
