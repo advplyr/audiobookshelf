@@ -181,7 +181,7 @@ class LibraryController {
 
       if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
         libraryItems = collapsedItems
-        payload.total = collapsedItems.length
+        payload.total = libraryItems.length
       }
     }
 
@@ -207,8 +207,10 @@ class LibraryController {
         sortKey += 'IgnorePrefix'
       }
 
-      // If series are collapsed and not sorting by title, sort all collapsed series to the end in alphabetical order
-      if (payload.collapseseries && !sortByTitle) {
+      // If series are collapsed and not sorting by title or sequence, 
+      // sort all collapsed series to the end in alphabetical order
+      const sortBySequence = filterSeries && (sortKey === 'sequence')
+      if (payload.collapseseries && !(sortByTitle || sortBySequence)) {
         sortArray.push({
           asc: (li) => {
             if (li.collapsedSeries) {
@@ -222,10 +224,13 @@ class LibraryController {
         })
       }
 
+      // Sort series based on the sortBy attribute
       var direction = payload.sortDesc ? 'desc' : 'asc'
       sortArray.push({
         [direction]: (li) => {
-          if (mediaIsBook && sortByTitle && li.collapsedSeries) {
+          if (mediaIsBook && sortBySequence) {
+            return li.media.metadata.getSeries(filterSeries).sequence
+          } else if (mediaIsBook && sortByTitle && li.collapsedSeries) {
             return this.db.serverSettings.sortingIgnorePrefix ?
               li.collapsedSeries.nameIgnorePrefix :
               li.collapsedSeries.name
@@ -269,24 +274,24 @@ class LibraryController {
         // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
         // series represents in the filtered series
         if (filterSeries) {
-          json.collapsedSeries.seriesSequenceList = li.collapsedSeries.books
-            .map(b => parseFloat(b.filterSeriesSequence))
-            .filter(s => s)
-            .sort((a, b) => a - b)
-            .reduce((ranges, currentSequence) => {
-              let lastRange = ranges.at(-1)
+          json.collapsedSeries.seriesSequenceList =
+            naturalSort(li.collapsedSeries.books.map(b => b.filterSeriesSequence)).asc()
+              .reduce((ranges, currentSequence) => {
+                let lastRange = ranges.at(-1)
+                let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
+                if (isNumber) currentSequence = parseFloat(currentSequence)
 
-              if (lastRange && ((lastRange.end + 1) == currentSequence)) {
-                lastRange.end = currentSequence
-              }
-              else {
-                ranges.push({ start: currentSequence, end: currentSequence })
-              }
+                if (lastRange && isNumber && lastRange.isNumber && ((lastRange.end + 1) == currentSequence)) {
+                  lastRange.end = currentSequence
+                }
+                else {
+                  ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNaN(currentSequence) })
+                }
 
-              return ranges
-            }, [])
-            .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
-            .join(', ')
+                return ranges
+              }, [])
+              .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
+              .join(', ')
         }
       } else if (filterSeries) {
         // If filtering by series, make sure to include the series metadata

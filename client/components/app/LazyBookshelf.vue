@@ -122,6 +122,9 @@ export default {
     collapseSeries() {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
     },
+    collapseBookSeries() {
+      return this.$store.getters['user/getUserSetting']('collapseBookSeries')
+    },
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
@@ -452,6 +455,9 @@ export default {
         searchParams.set('filter', this.seriesFilterBy)
       } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
+        if (this.collapseBookSeries) {
+          searchParams.set('collapseseries', 1)
+        }
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -467,8 +473,6 @@ export default {
       return searchParams.toString()
     },
     checkUpdateSearchParams() {
-      if (this.page === 'series-books') return false
-
       var newSearchParams = this.buildSearchParams()
       var currentQueryString = window.location.search
       if (currentQueryString && currentQueryString.startsWith('?')) currentQueryString = currentQueryString.slice(1)
