@@ -126,19 +126,20 @@ module.exports.writeToneMetadataJsonFile = (libraryItem, filePath) => {
     let metadataChapters = []
     for (const chapter of chapters) {
       metadataChapters.push({
-        start: chapter.start,
-        length: chapter.end - chapter.start,
+        start: Math.round(chapter.start * 1000),
+        length: Math.round((chapter.end - chapter.start) * 1000),
         title: chapter.title,
       })
     }
-    metadataObject['chapters'] = chaptersFile
+    metadataObject['chapters'] = metadataChapters
   }
 
-  return fs.writeFile(filePath, JSON.stringify({ metadata: metadataObject }))
+  return fs.writeFile(filePath, JSON.stringify({ meta: metadataObject }))
 }
 
 module.exports.tagAudioFile = (filePath, payload) => {
   return tone.tag(filePath, payload).then((data) => {
+    Logger.info('Tone results: ', data)
     return true
   }).catch((error) => {
     Logger.error(`[toneHelpers] tagAudioFile: Failed for "${filePath}"`, error)

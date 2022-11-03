@@ -57,7 +57,7 @@ class AudioMetadataMangaer {
 
     const results = []
     for (const af of audioFiles) {
-      const result = await this.updateAudioFileMetadataWithTone(libraryItem.id, af, toneMetadataObject, itemCacheDir)
+      const result = await this.updateAudioFileMetadataWithTone(libraryItem.id, af, toneJsonPath, itemCacheDir)
       results.push(result)
     }
 
