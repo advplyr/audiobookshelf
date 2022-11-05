@@ -15,9 +15,9 @@ class AudioMetadataMangaer {
     this.clientEmitter = clientEmitter
   }
 
-  updateMetadataForItem(user, libraryItem, useTone = true) {
+  updateMetadataForItem(user, libraryItem, useTone, forceEmbedChapters) {
     if (useTone) {
-      this.updateMetadataForItemWithTone(user, libraryItem)
+      this.updateMetadataForItemWithTone(user, libraryItem, forceEmbedChapters)
     } else {
       this.updateMetadataForItemWithFfmpeg(user, libraryItem)
     }
@@ -30,7 +30,7 @@ class AudioMetadataMangaer {
     return toneHelpers.getToneMetadataObject(libraryItem)
   }
 
-  async updateMetadataForItemWithTone(user, libraryItem) {
+  async updateMetadataForItemWithTone(user, libraryItem, forceEmbedChapters) {
     var audioFiles = libraryItem.media.includedAudioFiles
 
     const itemAudioMetadataPayload = {
@@ -49,7 +49,8 @@ class AudioMetadataMangaer {
 
     try {
       toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, audioFiles.length == 1 && libraryItem.media.chapters, toneJsonPath)
+      const chapters = (audioFiles.length == 1 || forceEmbedChapters) ? libraryItem.media.chapters : null
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, chapters, toneJsonPath, audioFiles.length)
     } catch (error) {
       Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
       toneJsonPath = null

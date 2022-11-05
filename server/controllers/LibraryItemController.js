@@ -398,7 +398,8 @@ class LibraryItemController {
     }
 
     const useTone = req.query.tone === '1'
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone)
+    const forceEmbedChapters = req.query.forceEmbedChapters === '1'
+    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone, forceEmbedChapters)
     res.sendStatus(200)
   }
 

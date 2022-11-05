@@ -72,14 +72,14 @@ module.exports.getToneMetadataObject = (libraryItem, chaptersFile) => {
   return metadataObject
 }
 
-module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath) => {
+module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath, trackTotal) => {
   const bookMetadata = libraryItem.media.metadata
   const coverPath = libraryItem.media.coverPath
 
   const metadataObject = {
     'album': bookMetadata.title || '',
     'title': bookMetadata.title || '',
-    'trackTotal': libraryItem.media.tracks.length,
+    'trackTotal': trackTotal,
     'additionalFields': {}
   }
   if (bookMetadata.subtitle) {
@@ -133,7 +133,7 @@ module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath) => 
     metadataObject['chapters'] = metadataChapters
   }
 
-  return fs.writeFile(filePath, JSON.stringify({ meta: metadataObject }))
+  return fs.writeFile(filePath, JSON.stringify({ meta: metadataObject }, null, 2))
 }
 
 module.exports.tagAudioFile = (filePath, payload) => {

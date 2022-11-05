@@ -62,7 +62,7 @@ class AbMergeManager {
       targetFilename,
       targetFilepath: Path.join(libraryItem.path, targetFilename),
       itemCachePath,
-      toneMetadataObject: null
+      toneJsonObject: null
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
     task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
@@ -122,22 +122,17 @@ class AbMergeManager {
 
     var toneJsonPath = null
     try {
-      toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath)
+      toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1)
     } catch (error) {
-      Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
+      Logger.error(`[AbMergeManager] Write metadata.json failed`, error)
       toneJsonPath = null
     }
 
-    const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
-    toneMetadataObject.TrackNumber = 1
-    task.data.toneMetadataObject = toneMetadataObject
     task.data.toneJsonObject = {
       'ToneJsonFile': toneJsonPath,
       'TrackNumber': 1,
     }
-
-    Logger.debug(`[AbMergeManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
 
     var workerData = {
       inputs: ffmpegInputs,
