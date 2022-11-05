@@ -62,7 +62,7 @@ class AbMergeManager {
       targetFilename,
       targetFilepath: Path.join(libraryItem.path, targetFilename),
       itemCachePath,
-      toneMetadataObject: null
+      toneJsonObject: null
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
     task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
@@ -120,22 +120,19 @@ class AbMergeManager {
       }
     }
 
-    var chaptersFilePath = null
-    if (libraryItem.media.chapters.length) {
-      chaptersFilePath = Path.join(task.data.itemCachePath, 'chapters.txt')
-      try {
-        await toneHelpers.writeToneChaptersFile(libraryItem.media.chapters, chaptersFilePath)
-      } catch (error) {
-        Logger.error(`[AbMergeManager] Write chapters.txt failed`, error)
-        chaptersFilePath = null
-      }
+    var toneJsonPath = null
+    try {
+      toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1)
+    } catch (error) {
+      Logger.error(`[AbMergeManager] Write metadata.json failed`, error)
+      toneJsonPath = null
     }
 
-    const toneMetadataObject = toneHelpers.getToneMetadataObject(libraryItem, chaptersFilePath)
-    toneMetadataObject.TrackNumber = 1
-    task.data.toneMetadataObject = toneMetadataObject
-
-    Logger.debug(`[AbMergeManager] Book "${libraryItem.media.metadata.title}" tone metadata object=`, toneMetadataObject)
+    task.data.toneJsonObject = {
+      'ToneJsonFile': toneJsonPath,
+      'TrackNumber': 1,
+    }
 
     var workerData = {
       inputs: ffmpegInputs,
@@ -190,7 +187,7 @@ class AbMergeManager {
     }
 
     // Write metadata to merged file
-    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneMetadataObject)
+    const success = await toneHelpers.tagAudioFile(task.data.tempFilepath, task.data.toneJsonObject)
     if (!success) {
       Logger.error(`[AbMergeManager] Failed to write metadata to file "${task.data.tempFilepath}"`)
       task.setFailed('Failed to write metadata to m4b file')
