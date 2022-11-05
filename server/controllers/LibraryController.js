@@ -288,7 +288,7 @@ class LibraryController {
           } else if (payload.sortBy === 'addedAt') {
             return se.addedAt
           } else { // sort by name
-            return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefix : se.name
+            return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
           }
         }
       }
