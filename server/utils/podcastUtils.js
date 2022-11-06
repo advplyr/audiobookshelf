@@ -96,13 +96,11 @@ function extractEpisodeData(item) {
   }
 
   if (item['pubDate']) {
-    if (typeof item['pubDate'] === 'string') {
-      episode.pubDate = item['pubDate']
-    } else if (Array.isArray(item['pubDate'])) {
-      const pubDateObj = extractFirstArrayItem(item, 'pubDate')
-      if (pubDateObj && typeof pubDateObj._ === 'string') {
-        episode.pubDate = pubDateObj._
-      }
+    const pubDate = extractFirstArrayItem(item, 'pubDate')
+    if (typeof pubDate === 'string') {
+      episode.pubDate = pubDate
+    } else if (pubDate && typeof pubDate._ === 'string') {
+      episode.pubDate = pubDate._
     } else {
       Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
     }
