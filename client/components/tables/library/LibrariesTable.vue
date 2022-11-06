@@ -1,7 +1,7 @@
 <template>
   <div id="librariesTable" class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
     <div class="flex items-center mb-2">
-      <h1 class="text-xl">Libraries</h1>
+      <h1 class="text-xl">{{ $strings.HeaderLibraries }}</h1>
       <div class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clickAddLibrary">
         <span class="material-icons" style="font-size: 1.4rem">add</span>
       </div>

@@ -1,7 +1,7 @@
 <template>
   <div class="sm:w-80 w-full relative">
     <form @submit.prevent="submitSearch">
-      <ui-text-input ref="input" v-model="search" placeholder="Search.." @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
+      <ui-text-input ref="input" v-model="search" :placeholder="$strings.SearchPlaceholder" @input="inputUpdate" @focus="focussed" @blur="blurred" class="w-full h-8 text-sm" />
     </form>
     <div class="absolute top-0 right-0 bottom-0 h-full flex items-center px-2 text-gray-400 cursor-pointer" @click="clickClear">
       <span v-if="!search" class="material-icons" style="font-size: 1.2rem">search</span>
