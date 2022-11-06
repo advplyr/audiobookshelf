@@ -14,7 +14,7 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
-    "deploy": "node dist/autodeploy"
+    "deploy-linux": "node deploy/linux"
   },
   "bin": "prod.js",
   "pkg": {
