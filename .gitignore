@@ -11,6 +11,7 @@ test/
 /client/.nuxt/
 /client/dist/
 /dist/
+/deploy/
 
 sw.*
 .DS_STORE
