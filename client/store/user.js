@@ -6,7 +6,8 @@ export const state = () => ({
     filterBy: 'all',
     playbackRate: 1,
     bookshelfCoverSize: 120,
-    collapseSeries: false
+    collapseSeries: false,
+    collapseBookSeries: false
   },
   settingsListeners: [],
   collections: [],
