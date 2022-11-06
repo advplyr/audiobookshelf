@@ -1,12 +1,15 @@
 <template>
   <div id="bookshelf" class="w-full overflow-y-auto">
     <template v-for="shelf in totalShelves">
-      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative" :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
-        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20" :class="`h-${shelfDividerHeightIndex}`" />
+      <div :key="shelf" :id="`shelf-${shelf - 1}`" class="w-full px-4 sm:px-8 relative"
+        :class="{ bookshelfRow: !isAlternativeBookshelfView }" :style="{ height: shelfHeight + 'px' }">
+        <div v-if="!isAlternativeBookshelfView" class="bookshelfDivider w-full absolute bottom-0 left-0 right-0 z-20"
+          :class="`h-${shelfDividerHeightIndex}`" />
       </div>
     </template>
 
-    <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
+    <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'"
+      class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
@@ -118,6 +121,9 @@ export default {
     },
     collapseSeries() {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
+    },
+    collapseBookSeries() {
+      return this.$store.getters['user/getUserSetting']('collapseBookSeries')
     },
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -319,7 +325,6 @@ export default {
           this.totalEntities = payload.total
           this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
           this.entities = new Array(this.totalEntities)
-          this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
         }
 
         for (let i = 0; i < payload.results.length; i++) {
@@ -329,7 +334,20 @@ export default {
             this.entityComponentRefs[index].setEntity(this.entities[index])
           }
         }
+
+        this.$eventBus.$emit('bookshelf-total-entities', this.getEntitiesCount())
       }
+    },
+    getEntitiesCount() {
+      let uniqueEntities = new Set()
+      this.entities.forEach(entity => {
+        if (entity.collapsedSeries) {
+          entity.collapsedSeries.libraryItemIds.forEach(uniqueEntities.add, uniqueEntities)
+        } else {
+          uniqueEntities.add(entity.id)
+        }
+      });
+      return uniqueEntities.size
     },
     loadPage(page) {
       this.pagesLoaded[page] = true
@@ -437,6 +455,9 @@ export default {
         searchParams.set('filter', this.seriesFilterBy)
       } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
+        if (this.collapseBookSeries) {
+          searchParams.set('collapseseries', 1)
+        }
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -452,8 +473,6 @@ export default {
       return searchParams.toString()
     },
     checkUpdateSearchParams() {
-      if (this.page === 'series-books') return false
-
       var newSearchParams = this.buildSearchParams()
       var currentQueryString = window.location.search
       if (currentQueryString && currentQueryString.startsWith('?')) currentQueryString = currentQueryString.slice(1)
@@ -513,7 +532,7 @@ export default {
         if (indexOf >= 0) {
           this.entities = this.entities.filter((ent) => ent.id !== libraryItem.id)
           this.totalEntities = this.entities.length
-          this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+          this.$eventBus.$emit('bookshelf-total-entities', this.getEntitiesCount())
           this.executeRebuild()
         }
       }
@@ -551,7 +570,7 @@ export default {
       if (indexOf >= 0) {
         this.entities = this.entities.filter((ent) => ent.id !== collection.id)
         this.totalEntities = this.entities.length
-        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.$eventBus.$emit('bookshelf-total-entities', this.getEntitiesCount())
         this.executeRebuild()
       }
     },
@@ -715,6 +734,7 @@ export default {
 .bookshelfRow {
   background-image: var(--bookshelf-texture-img);
 }
+
 .bookshelfDivider {
   background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);

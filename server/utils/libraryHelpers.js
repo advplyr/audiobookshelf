@@ -153,7 +153,7 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, allSeries, filterBy, user, minified = false) {
+  getSeriesFromBooks(books, allSeries, filterSeries, filterBy, user, minified = false) {
     const _series = {}
     const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
@@ -179,6 +179,9 @@ module.exports = {
 
         const abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
         abJson.sequence = bookSeriesObj.sequence
+        if (filterSeries) {
+          abJson.filterSeriesSequence = libraryItem.media.metadata.getSeries(filterSeries).sequence
+        }
         if (!_series[bookSeriesObj.id]) {
           _series[bookSeriesObj.id] = {
             id: bookSeriesObj.id,
@@ -280,35 +283,34 @@ module.exports = {
     return totalSize
   },
 
-  collapseBookSeries(libraryItems, series) {
-    var seriesObjects = this.getSeriesFromBooks(libraryItems, series, null, null, true)
-    var seriesToUse = {}
-    var libraryItemIdsToHide = []
-    seriesObjects.forEach((series) => {
-      series.firstBook = series.books.find(b => !seriesToUse[b.id]) // Find first book not already used
-      if (series.firstBook) {
-        seriesToUse[series.firstBook.id] = series
-        libraryItemIdsToHide = libraryItemIdsToHide.concat(series.books.filter(b => !seriesToUse[b.id]).map(b => b.id))
-      }
-    })
 
-    return libraryItems.map((li) => {
+  collapseBookSeries(libraryItems, series, filterSeries) {
+    // Get series from the library items. If this list is being collapsed after filtering for a series,
+    // don't collapse that series, only books that are in other series.
+    var seriesObjects = this
+      .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true)
+      .filter(s => s.id != filterSeries)
+
+    var filteredLibraryItems = []
+
+    libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
-      var libraryItemJson = li.toJSONMinified()
-      if (libraryItemIdsToHide.includes(li.id)) {
-        return null
-      }
-      if (seriesToUse[li.id]) {
-        libraryItemJson.collapsedSeries = {
-          id: seriesToUse[li.id].id,
-          name: seriesToUse[li.id].name,
-          nameIgnorePrefix: seriesToUse[li.id].nameIgnorePrefix,
-          libraryItemIds: seriesToUse[li.id].books.map(b => b.id),
-          numBooks: seriesToUse[li.id].books.length
-        }
-      }
-      return libraryItemJson
-    }).filter(li => li)
+
+      // Handle when this is the first book in a series
+      seriesObjects.filter(s => s.books[0].id == li.id).forEach(series => {
+        // Clone the library item as we need to attach data to it, but don't
+        // want to change the global copy of the library item
+        filteredLibraryItems.push(Object.assign(
+          Object.create(Object.getPrototypeOf(li)),
+          li, { collapsedSeries: series }))
+      });
+
+      // Only included books not contained in series
+      if (!seriesObjects.some(s => s.books.some(b => b.id == li.id)))
+        filteredLibraryItems.push(li)
+    });
+
+    return filteredLibraryItems
   },
 
   buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {

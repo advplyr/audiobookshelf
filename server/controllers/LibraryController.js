@@ -160,21 +160,42 @@ class LibraryController {
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1'
     }
+    var mediaIsBook = payload.mediaType === 'book'
 
+    // Step 1 - Filter the retrieved library items
     var filterSeries = null
     if (payload.filterBy) {
-      // If filtering by series, will include seriesName and seriesSequence on media metadata
-      filterSeries = (payload.mediaType == 'book' && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
-      if (filterSeries === 'No Series') filterSeries = null
-
       libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
       payload.total = libraryItems.length
+
+      // Determining if we are filtering titles by a series, and if so, which series
+      filterSeries = (mediaIsBook && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
+      if (filterSeries === 'No Series') filterSeries = null
+    }
+
+    // Step 2 - If selected, collapse library items by the series they belong to.
+    // If also filtering by series, will not collapse the filtered series as this would lead
+    // to series having a collapsed series that is just that series.
+    if (payload.collapseseries) {
+      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series, filterSeries)
+
+      if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
+        libraryItems = collapsedItems
+        payload.total = libraryItems.length
+      }
+    }
+
+    // Step 3 - Sort the retrieved library items.
+    var sortArray = []
+
+    // When on the series page, sort by sequence only
+    if (filterSeries && !payload.sortBy) {
+      sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
     }
 
     if (payload.sortBy) {
-      var sortKey = payload.sortBy
-
       // old sort key TODO: should be mutated in dbMigration
+      var sortKey = payload.sortBy
       if (sortKey.startsWith('book.')) {
         sortKey = sortKey.replace('book.', 'media.metadata.')
       }
@@ -186,29 +207,42 @@ class LibraryController {
         sortKey += 'IgnorePrefix'
       }
 
-      // Start sort
-      var direction = payload.sortDesc ? 'desc' : 'asc'
-      var sortArray = [
-        {
-          [direction]: (li) => {
-            // When collapsing by series and sorting by title use the series name instead of the book title
-            if (payload.mediaType === 'book' && payload.collapseseries && li.media.metadata.seriesName) {
-              if (sortByTitle) {
-                return this.db.serverSettings.sortingIgnorePrefix ? li.media.metadata.seriesNameIgnorePrefix : li.media.metadata.seriesName
-              } else {
-                // When not sorting by title always show the collapsed series at the end
-                return direction === 'desc' ? -1 : 'zzzz'
-              }
+      // If series are collapsed and not sorting by title or sequence, 
+      // sort all collapsed series to the end in alphabetical order
+      const sortBySequence = filterSeries && (sortKey === 'sequence')
+      if (payload.collapseseries && !(sortByTitle || sortBySequence)) {
+        sortArray.push({
+          asc: (li) => {
+            if (li.collapsedSeries) {
+              return this.db.serverSettings.sortingIgnorePrefix ?
+                li.collapsedSeries.nameIgnorePrefix :
+                li.collapsedSeries.name
+            } else {
+              return ''
             }
+          }
+        })
+      }
 
+      // Sort series based on the sortBy attribute
+      var direction = payload.sortDesc ? 'desc' : 'asc'
+      sortArray.push({
+        [direction]: (li) => {
+          if (mediaIsBook && sortBySequence) {
+            return li.media.metadata.getSeries(filterSeries).sequence
+          } else if (mediaIsBook && sortByTitle && li.collapsedSeries) {
+            return this.db.serverSettings.sortingIgnorePrefix ?
+              li.collapsedSeries.nameIgnorePrefix :
+              li.collapsedSeries.name
+          } else {
             // Supports dot notation strings i.e. "media.metadata.title"
             return sortKey.split('.').reduce((a, b) => a[b], li)
           }
         }
-      ]
+      })
 
       // Secondary sort when sorting by book author use series sort title
-      if (payload.mediaType === 'book' && payload.sortBy.includes('author')) {
+      if (mediaIsBook && payload.sortBy.includes('author')) {
         sortArray.push({
           asc: (li) => {
             if (li.media.metadata.series && li.media.metadata.series.length) {
@@ -218,30 +252,55 @@ class LibraryController {
           }
         })
       }
+    }
+
+    if (sortArray.length) {
       libraryItems = naturalSort(libraryItems).by(sortArray)
     }
 
-    if (payload.collapseseries) {
-      libraryItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series)
-      payload.total = libraryItems.length
-    } else if (filterSeries) {
-      // Book media when filtering series will include series object on media metadata
-      libraryItems = libraryItems.map(li => {
-        var series = li.media.metadata.getSeries(filterSeries)
-        var liJson = payload.minified ? li.toJSONMinified() : li.toJSON()
-        liJson.media.metadata.series = series
-        return liJson
-      })
-      libraryItems = naturalSort(libraryItems).asc(li => li.media.metadata.series.sequence)
-    } else {
-      libraryItems = libraryItems.map(li => payload.minified ? li.toJSONMinified() : li.toJSON())
-    }
+    // Step 4 - Transform the items to pass to the client side
+    payload.results = libraryItems.map(li => {
+      let json = payload.minified ? li.toJSONMinified() : li.toJSON()
 
-    if (payload.limit) {
-      var startIndex = payload.page * payload.limit
-      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
-    }
-    payload.results = libraryItems
+      if (li.collapsedSeries) {
+        json.collapsedSeries = {
+          id: li.collapsedSeries.id,
+          name: li.collapsedSeries.name,
+          nameIgnorePrefix: li.collapsedSeries.nameIgnorePrefix,
+          libraryItemIds: li.collapsedSeries.books.map(b => b.id),
+          numBooks: li.collapsedSeries.books.length
+        }
+
+        // If collapsing by series and filtering by a series, generate the list of sequences the collapsed
+        // series represents in the filtered series
+        if (filterSeries) {
+          json.collapsedSeries.seriesSequenceList =
+            naturalSort(li.collapsedSeries.books.map(b => b.filterSeriesSequence)).asc()
+              .reduce((ranges, currentSequence) => {
+                let lastRange = ranges.at(-1)
+                let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
+                if (isNumber) currentSequence = parseFloat(currentSequence)
+
+                if (lastRange && isNumber && lastRange.isNumber && ((lastRange.end + 1) == currentSequence)) {
+                  lastRange.end = currentSequence
+                }
+                else {
+                  ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNaN(currentSequence) })
+                }
+
+                return ranges
+              }, [])
+              .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
+              .join(', ')
+        }
+      } else if (filterSeries) {
+        // If filtering by series, make sure to include the series metadata
+        json.media.metadata.series = li.media.metadata.getSeries(filterSeries)
+      }
+
+      return json
+    })
+
     res.json(payload)
   }
 
@@ -275,7 +334,7 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, payload.filterBy, req.user, payload.minified)
+    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified)
 
     const direction = payload.sortDesc ? 'desc' : 'asc'
     series = naturalSort(series).by([
