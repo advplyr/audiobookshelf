@@ -3,8 +3,8 @@
     <div class="w-full mb-4">
       <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" keep-open />
       <div v-if="!chapters.length" class="py-4 text-center">
-        <p class="mb-8 text-xl">No Chapters</p>
-        <ui-btn v-if="userCanUpdate" :to="`/audiobook/${libraryItem.id}/chapters`">Add Chapters</ui-btn>
+        <p class="mb-8 text-xl">{{ $strings.MessageNoChapters }}</p>
+        <ui-btn v-if="userCanUpdate" :to="`/audiobook/${libraryItem.id}/chapters`">{{ $strings.ButtonAddChapters }}</ui-btn>
       </div>
     </div>
   </div>

@@ -36,23 +36,6 @@ export default {
     return {
       processing: false,
       selectedTab: 'details',
-      tabs: [
-        {
-          id: 'details',
-          title: 'Details',
-          component: 'modals-libraries-edit-library'
-        },
-        {
-          id: 'settings',
-          title: 'Settings',
-          component: 'modals-libraries-library-settings'
-        },
-        {
-          id: 'schedule',
-          title: 'Schedule',
-          component: 'modals-libraries-schedule-scan'
-        }
-      ],
       libraryCopy: null
     }
   },
@@ -66,10 +49,29 @@ export default {
       }
     },
     title() {
-      return this.library ? 'Update Library' : 'New Library'
+      return this.library ? this.$strings.HeaderUpdateLibrary : this.$strings.HeaderNewLibrary
     },
     buttonText() {
-      return this.library ? 'Update Library' : 'Create New Library'
+      return this.library ? this.$strings.ButtonSave : this.$strings.ButtonCreate
+    },
+    tabs() {
+      return [
+        {
+          id: 'details',
+          title: this.$strings.HeaderDetails,
+          component: 'modals-libraries-edit-library'
+        },
+        {
+          id: 'settings',
+          title: this.$strings.HeaderSettings,
+          component: 'modals-libraries-library-settings'
+        },
+        {
+          id: 'schedule',
+          title: this.$strings.HeaderSchedule,
+          component: 'modals-libraries-schedule-scan'
+        }
+      ]
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)

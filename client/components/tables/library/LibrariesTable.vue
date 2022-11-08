@@ -14,12 +14,16 @@
       </template>
     </draggable>
     <div v-if="!libraries.length" class="pb-4">
-      <ui-btn @click="clickAddLibrary">Add your first library</ui-btn>
+      <ui-btn @click="clickAddLibrary">{{ $strings.ButtonAddYourFirstLibrary }}</ui-btn>
     </div>
 
-    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
+    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">
+      *<strong>{{ $strings.ButtonForceReScan }}</strong> {{ $strings.MessageForceReScanDescription }}
+    </p>
 
-    <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">**<strong>Match Books</strong> will attempt to match books in library with a book from the selected search provider and fill in empty details and cover art. Does not overwrite details.</p>
+    <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">
+      **<strong>{{ $strings.ButtonMatchBooks }}</strong> {{ $strings.MessageMatchBooksDescription }}
+    </p>
   </div>
 </template>
 

@@ -2,8 +2,25 @@ import Vue from "vue"
 
 const defaultCode = 'en-us'
 
+function supplant(str, subs) {
+  // source: http://crockford.com/javascript/remedial.html
+  return str.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = subs[b]
+      return typeof r === 'string' || typeof r === 'number' ? r : a
+    }
+  )
+}
+
 Vue.prototype.$i18nCode = ''
 Vue.prototype.$strings = {}
+Vue.prototype.$getString = (key, subs) => {
+  if (!Vue.prototype.$strings[key]) return ''
+  if (subs && Array.isArray(subs) && subs.length) {
+    return supplant(Vue.prototype.$strings[key], subs)
+  }
+  return Vue.prototype.$strings[key]
+}
 
 var translations = {}
 

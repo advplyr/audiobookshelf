@@ -10,28 +10,28 @@
         <div class="w-full p-8">
           <div class="flex py-2">
             <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-model="newUser.username" label="Username" />
+              <ui-text-input-with-label v-model="newUser.username" :label="$strings.LabelUsername" />
             </div>
             <div class="w-1/2 px-2">
-              <ui-text-input-with-label v-if="!isEditingRoot" v-model="newUser.password" :label="isNew ? 'Password' : 'Change Password'" type="password" />
+              <ui-text-input-with-label v-if="!isEditingRoot" v-model="newUser.password" :label="isNew ? $strings.LabelPassword : $strings.LabelChangePassword" type="password" />
             </div>
           </div>
           <div v-show="!isEditingRoot" class="flex py-2">
             <div class="px-2 w-52">
-              <ui-dropdown v-model="newUser.type" label="Account Type" :disabled="isEditingRoot" :items="accountTypes" @input="userTypeUpdated" />
+              <ui-dropdown v-model="newUser.type" :label="$strings.LabelAccountType" :disabled="isEditingRoot" :items="accountTypes" @input="userTypeUpdated" />
             </div>
             <div class="flex-grow" />
             <div class="flex items-center pt-4 px-2">
-              <p class="px-3 font-semibold" :class="isEditingRoot ? 'text-gray-300' : ''">Is Active</p>
+              <p class="px-3 font-semibold" :class="isEditingRoot ? 'text-gray-300' : ''">{{ $strings.LabelEnable }}</p>
               <ui-toggle-switch v-model="newUser.isActive" :disabled="isEditingRoot" />
             </div>
           </div>
 
           <div v-if="!isEditingRoot && newUser.permissions" class="w-full border-t border-b border-black-200 py-2 px-3 mt-4">
-            <p class="text-lg mb-2 font-semibold">Permissions</p>
+            <p class="text-lg mb-2 font-semibold">{{ $strings.HeaderPermissions }}</p>
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Download</p>
+                <p>{{ $strings.LabelPermissionsDownload }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.download" />
@@ -40,7 +40,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Update</p>
+                <p>{{ $strings.LabelPermissionsUpdate }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.update" />
@@ -49,7 +49,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Delete</p>
+                <p>{{ $strings.LabelPermissionsDelete }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.delete" />
@@ -58,7 +58,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Upload</p>
+                <p>{{ $strings.LabelPermissionsUpload }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.upload" />
@@ -67,7 +67,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Access Explicit Content</p>
+                <p>{{ $strings.LabelPermissionsAccessExplicitContent }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.accessExplicitContent" />
@@ -76,7 +76,7 @@
 
             <div class="flex items-center my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Access All Libraries</p>
+                <p>{{ $strings.LabelPermissionsAccessAllLibraries }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.accessAllLibraries" @input="accessAllLibrariesToggled" />
@@ -84,26 +84,26 @@
             </div>
 
             <div v-if="!newUser.permissions.accessAllLibraries" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" label="Libraries Accessible to User" />
+              <ui-multi-select-dropdown v-model="newUser.librariesAccessible" :items="libraryItems" :label="$strings.LabelLibrariesAccessibleToUser" />
             </div>
 
             <div class="flex items-cen~ter my-2 max-w-md">
               <div class="w-1/2">
-                <p>Can Access All Tags</p>
+                <p>{{ $strings.LabelPermissionsAccessAllTags }}</p>
               </div>
               <div class="w-1/2">
                 <ui-toggle-switch v-model="newUser.permissions.accessAllTags" @input="accessAllTagsToggled" />
               </div>
             </div>
             <div v-if="!newUser.permissions.accessAllTags" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" label="Tags Accessible to User" />
+              <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" :label="$strings.LabelTagsAccessibleToUser" />
             </div>
           </div>
 
           <div class="flex pt-4 px-2">
-            <ui-btn v-if="isEditingRoot" to="/account">Change Root Password</ui-btn>
+            <ui-btn v-if="isEditingRoot" to="/account">{{ $strings.ButtonChangeRootPassword }}</ui-btn>
             <div class="flex-grow" />
-            <ui-btn color="success" type="submit">Submit</ui-btn>
+            <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </div>
       </div>
@@ -165,7 +165,7 @@ export default {
       return this.$store.state.user.user
     },
     title() {
-      return this.isNew ? 'Add New Account' : `Update ${(this.account || {}).username}`
+      return this.isNew ? this.$strings.HeaderNewAccount : this.$strings.HeaderUpdateAccount
     },
     isEditingRoot() {
       return this.account && this.account.type === 'root'

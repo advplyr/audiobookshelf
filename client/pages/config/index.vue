@@ -109,9 +109,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
+            <ui-tooltip :text="$strings.LabelSettingsOverdriveMediaMarkersHelp">
               <p class="pl-4">
-                Use Overdrive Media Markers for chapters
+                {{ $strings.LabelSettingsOverdriveMediaMarkers }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -119,9 +119,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferAudioMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferAudioMetadataHelp">
               <p class="pl-4">
-                Prefer audio metadata
+                {{ $strings.LabelSettingsPreferAudioMetadata }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -129,9 +129,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferOpfMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferOPFMetadataHelp">
               <p class="pl-4">
-                Prefer OPF metadata
+                {{ $strings.LabelSettingsPreferOPFMetadata }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -139,9 +139,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferMatchedMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferMatchedMetadataHelp">
               <p class="pl-4">
-                Prefer matched metadata
+                {{ $strings.LabelSettingsPreferMatchedMetadata }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -149,23 +149,13 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
-            <ui-tooltip :text="tooltips.scannerDisableWatcher">
+            <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
               <p class="pl-4">
-                Disable Watcher
+                {{ $strings.LabelSettingsDisableWatcher }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
-
-          <!-- <div class="flex items-center py-2">
-            <ui-text-input type="number" v-model="newServerSettings.scannerMaxThreads" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateScannerMaxThreads" />
-            <ui-tooltip :text="tooltips.scannerMaxThreads">
-              <p class="pl-4">
-                Max # of threads to use
-                <span class="material-icons icon-text text-sm">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div> -->
 
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
@@ -173,9 +163,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="tooltips.experimentalFeatures">
+            <ui-tooltip :text="$strings.LabelSettingsExperimentalFeaturesHelp">
               <p class="pl-4">
-                Experimental features
+                {{ $strings.LabelSettingsExperimentalFeatures }}
                 <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
                   <span class="material-icons icon-text text-sm">info_outlined</span>
                 </a>
@@ -185,9 +175,9 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
-            <ui-tooltip :text="tooltips.enableEReader">
+            <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
               <p class="pl-4">
-                Enable e-reader for all users
+                {{ $strings.LabelSettingsEnableEReader }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -228,7 +218,7 @@
         </svg>
       </a>
       <p class="pl-4 pr-2 text-sm font-book text-yellow-400">
-        Join us on
+        {{ $strings.MessageJoinUsOn }}
         <a class="underline" href="https://discord.gg/pJsjuNCKRq" target="_blank">discord</a>
       </p>
       <a href="https://discord.gg/pJsjuNCKRq" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
@@ -276,17 +266,6 @@ export default {
       useBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
-      tooltips: {
-        experimentalFeatures: 'Features in development that could use your feedback and help testing. Click to open github discussion.',
-        scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
-        scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
-        scannerPreferMatchedMetadata: 'Matched data will overide book details when using Quick Match',
-        scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
-        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
-        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
-        scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
-        scannerMaxThreads: 'Number of concurrent media files to scan at a time. Value of 1 will be a slower scan but less CPU usage. <br><br>Value of 0 defaults to # of CPU cores for this server times 2 (i.e. 4-core CPU will be 8)'
-      },
       showConfirmPurgeCache: false
     }
   },
@@ -317,26 +296,6 @@ export default {
     }
   },
   methods: {
-    updateScannerMaxThreads(val) {
-      if (!val || isNaN(val)) {
-        this.$toast.error('Invalid max threads must be a number')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      if (Number(val) < 0) {
-        this.$toast.error('Max threads must be >= 0')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      if (Math.round(Number(val)) !== Number(val)) {
-        this.$toast.error('Max threads must be an integer')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      this.updateServerSettings({
-        scannerMaxThreads: Number(val)
-      })
-    },
     updateSortingPrefixes(val) {
       if (!val || !val.length) {
         this.$toast.error('Must have at least 1 prefix')
@@ -390,7 +349,7 @@ export default {
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
     },
     resetLibraryItems() {
-      if (confirm('WARNING! This action will remove all library items from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
+      if (confirm(this.$strings.MessageRemoveAllItemsWarning)) {
         this.isResettingLibraryItems = true
         this.$axios
           .$delete('/api/items/all')

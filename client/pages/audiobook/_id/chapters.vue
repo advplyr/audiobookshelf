@@ -8,23 +8,23 @@
         <span class="material-icons text-base">edit</span>
       </button>
       <div class="flex-grow" />
-      <p class="text-base">Duration:</p>
+      <p class="text-base">{{ $strings.LabelDuration }}:</p>
       <p class="text-base font-mono ml-8">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
     <div class="flex flex-wrap-reverse justify-center py-4">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
-          <p class="text-lg mb-4 font-semibold">Audiobook Chapters</p>
+          <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
           <div class="flex-grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
           <div class="w-40" />
         </div>
         <div class="flex items-center mb-3 py-1">
           <div class="flex-grow" />
-          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" small @click="showShiftTimes = !showShiftTimes">Shift Times</ui-btn>
-          <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">Lookup</ui-btn>
-          <ui-btn color="success" small @click="saveChapters">Save</ui-btn>
+          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
+          <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
+          <ui-btn color="success" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
           <div class="w-40" />
         </div>
 
@@ -34,13 +34,13 @@
               <div class="w-12"></div>
               <div class="flex-grow">
                 <div class="flex items-center">
-                  <p class="text-sm mb-1 font-semibold pr-2">Time to shift in seconds</p>
+                  <p class="text-sm mb-1 font-semibold pr-2">{{ $strings.LabelTimeToShift }}</p>
                   <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
-                  <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">Add</ui-btn>
+                  <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
                   <div class="flex-grow" />
                   <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">close</span>
                 </div>
-                <p class="text-xs py-1.5 text-gray-300 max-w-md">Note: First chapter start time must remain at 0:00 and the last chapter start time cannot exceed this audiobooks duration.</p>
+                <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
               </div>
               <div class="w-40"></div>
             </div>
@@ -49,8 +49,8 @@
 
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="w-12"></div>
-          <div class="w-32 px-2">Start</div>
-          <div class="flex-grow px-2">Title</div>
+          <div class="w-32 px-2">{{ $strings.LabelStart }}</div>
+          <div class="flex-grow px-2">{{ $strings.LabelTitle }}</div>
           <div class="w-40"></div>
         </div>
         <template v-for="chapter in newChapters">
@@ -69,7 +69,7 @@
                   <span class="material-icons-outlined text-base">remove</span>
                 </button>
 
-                <ui-tooltip text="Insert chapter below" direction="bottom">
+                <ui-tooltip :text="$strings.MessageInsertChapterBelow" direction="bottom">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150" @click="addChapter(chapter)">
                     <span class="material-icons text-lg">add</span>
                   </button>
@@ -93,11 +93,11 @@
       </div>
 
       <div class="w-full max-w-xl py-4">
-        <p class="text-lg mb-4 font-semibold py-1">Audio Tracks</p>
+        <p class="text-lg mb-4 font-semibold py-1">{{ $strings.HeaderAudioTracks }}</p>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
-          <div class="flex-grow">Filename</div>
-          <div class="w-20">Duration</div>
-          <div class="w-20 text-center">Chapters</div>
+          <div class="flex-grow">{{ $strings.LabelFilename }}</div>
+          <div class="w-20">{{ $strings.LabelDuration }}</div>
+          <div class="w-20 text-center">{{ $strings.HeaderChapters }}</div>
         </div>
         <template v-for="track in audioTracks">
           <div :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success bg-opacity-10' : ''">
@@ -122,14 +122,14 @@
     <modals-modal v-model="showFindChaptersModal" name="edit-book" :width="500" :processing="findingChapters">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-          <p class="font-book text-3xl text-white truncate pointer-events-none">Find Chapters</p>
+          <p class="font-book text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderFindChapters }}</p>
         </div>
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">
         <div v-if="!chapterData" class="flex p-20">
           <ui-text-input-with-label v-model="asinInput" label="ASIN" />
-          <ui-dropdown v-model="regionInput" label="Region" small :items="audibleRegions" class="w-32 mx-1" />
-          <ui-btn small color="primary" class="mt-5" @click="findChapters">Find</ui-btn>
+          <ui-dropdown v-model="regionInput" :label="$strings.LabelRegion" small :items="audibleRegions" class="w-32 mx-1" />
+          <ui-btn small color="primary" class="mt-5" @click="findChapters">{{ $strings.ButtonSearch }}</ui-btn>
         </div>
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
@@ -148,8 +148,8 @@
           <widgets-alert v-else-if="chapterData.runtimeLengthSec < mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is longer than the duration found </widgets-alert>
 
           <div class="flex py-0.5 text-xs font-semibold uppercase text-gray-300 mb-1">
-            <div class="w-24 px-2">Start</div>
-            <div class="flex-grow px-2">Title</div>
+            <div class="w-24 px-2">{{ $strings.LabelStart }}</div>
+            <div class="flex-grow px-2">{{ $strings.LabelTitle }}</div>
           </div>
           <div class="w-full max-h-80 overflow-y-auto my-2">
             <div v-for="(chapter, index) in chapterData.chapters" :key="index" class="flex py-0.5 text-xs" :class="chapter.startOffsetSec > mediaDuration ? 'bg-error bg-opacity-20' : chapter.startOffsetSec + chapter.lengthMs / 1000 > mediaDuration ? 'bg-warning bg-opacity-20' : index % 2 === 0 ? 'bg-primary bg-opacity-30' : ''">
@@ -172,12 +172,12 @@
             </div>
           </div>
           <div class="flex items-center pt-2">
-            <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">Map Chapter Titles</ui-btn>
-            <ui-tooltip text="Map chapter titles to your existing audiobook chapters without adjusting timestamps" direction="top">
+            <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
+            <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top">
               <span class="material-icons-outlined">info</span>
             </ui-tooltip>
             <div class="flex-grow" />
-            <ui-btn small color="success" @click="applyChapterData">Apply Chapters</ui-btn>
+            <ui-btn small color="success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
           </div>
         </div>
       </div>

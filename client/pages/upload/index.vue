@@ -4,13 +4,13 @@
       <!-- Library & folder picker -->
       <div class="flex my-6 -mx-2">
         <div class="w-1/5 px-2">
-          <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" label="Library" :disabled="!!items.length" @input="libraryChanged" />
+          <ui-dropdown v-model="selectedLibraryId" :items="libraryItems" :label="$strings.LabelLibrary" :disabled="!!items.length" @input="libraryChanged" />
         </div>
         <div class="w-3/5 px-2">
-          <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId || !!items.length" label="Folder" />
+          <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="!selectedLibraryId || !!items.length" :label="$strings.LabelFolder" />
         </div>
         <div class="w-1/5 px-2">
-          <ui-text-input-with-label :value="selectedLibraryMediaType" readonly label="Media Type" />
+          <ui-text-input-with-label :value="selectedLibraryMediaType" readonly :label="$strings.LabelMediaType" />
         </div>
       </div>
 
@@ -20,18 +20,22 @@
 
       <!-- Picker display -->
       <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
-        <p class="text-2xl text-center">{{ isDragging ? 'Drop files' : "Drag n' drop files or folders" }}</p>
+        <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : $strings.LabelUploaderDragAndDrop }}</p>
         <p class="text-center text-sm my-5">or</p>
         <div class="w-full max-w-xl mx-auto">
           <div class="flex">
-            <ui-btn class="w-full mx-1" @click="openFilePicker">Choose files</ui-btn>
-            <ui-btn class="w-full mx-1" @click="openFolderPicker">Choose a folder</ui-btn>
+            <ui-btn class="w-full mx-1" @click="openFilePicker">{{ $strings.ButtonChooseFiles }}</ui-btn>
+            <ui-btn class="w-full mx-1" @click="openFolderPicker">{{ $strings.ButtonChooseAFolder }}</ui-btn>
           </div>
         </div>
         <div class="pt-8 text-center">
-          <p class="text-xs text-white text-opacity-50 font-mono mb-4"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
+          <p class="text-xs text-white text-opacity-50 font-mono mb-4">
+            <strong>{{ $strings.LabelSupportedFileTypes }}: </strong>{{ inputAccept.join(', ') }}
+          </p>
 
-          <p class="text-sm text-white text-opacity-70">Folders with media files will be treated as separate library items. <span v-if="selectedLibraryMediaType === 'book'">If uploading only audio files then each audio file will be treated as a separate audiobook.</span></p>
+          <p class="text-sm text-white text-opacity-70">
+            {{ $strings.NoteUploaderFoldersWithMediaFiles }} <span v-if="selectedLibraryMediaType === 'book'">{{ $strings.NoteUploaderOnlyAudioFiles }}</span>
+          </p>
         </div>
       </div>
       <!-- Item list header -->
@@ -39,18 +43,20 @@
         <p class="text-lg">{{ items.length }} item{{ items.length === 1 ? '' : 's' }}</p>
         <p v-if="ignoredFiles.length" class="text-lg">&nbsp;|&nbsp;{{ ignoredFiles.length }} file{{ ignoredFiles.length === 1 ? '' : 's' }} ignored</p>
         <div class="flex-grow" />
-        <ui-btn :disabled="processing" small @click="reset">Reset</ui-btn>
+        <ui-btn :disabled="processing" small @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
 
       <!-- Alerts -->
       <widgets-alert v-if="!items.length && !uploadReady" type="error" class="my-4">
-        <p class="text-lg">No items found</p>
+        <p class="text-lg">{{ $strings.MessageNoItemsFound }}</p>
       </widgets-alert>
       <widgets-alert v-if="ignoredFiles.length" type="warning" class="my-4">
         <div class="w-full pr-12">
-          <p class="text-base mb-1">Unsupported files are ignored. When choosing or dropping a folder, other files that are not in an item folder are ignored.</p>
-          <tables-uploaded-files-table :files="ignoredFiles" title="Ignored Files" class="text-white" />
-          <p class="text-xs text-white text-opacity-50 font-mono pt-1"><strong>Supported File Types: </strong>{{ inputAccept.join(', ') }}</p>
+          <p class="text-base mb-1">{{ $strings.NoteUploaderUnsupportedFiles }}</p>
+          <tables-uploaded-files-table :files="ignoredFiles" :title="$strings.HeaderIgnoredFiles" class="text-white" />
+          <p class="text-xs text-white text-opacity-50 font-mono pt-1">
+            <strong>{{ $strings.LabelSupportedFileTypes }}: </strong>{{ inputAccept.join(', ') }}
+          </p>
         </div>
       </widgets-alert>
 
@@ -61,8 +67,8 @@
 
       <!-- Upload/Reset btns -->
       <div v-show="items.length" class="flex justify-end pb-8 pt-4">
-        <ui-btn v-if="!uploadFinished" color="success" :loading="processing" @click="submit">Upload</ui-btn>
-        <ui-btn v-else @click="reset">Reset</ui-btn>
+        <ui-btn v-if="!uploadFinished" color="success" :loading="processing" @click="submit">{{ $strings.ButtonUpload }}</ui-btn>
+        <ui-btn v-else @click="reset">{{ $strings.ButtonReset }}</ui-btn>
       </div>
     </div>
 

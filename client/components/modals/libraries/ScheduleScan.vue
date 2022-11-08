@@ -1,8 +1,8 @@
 <template>
   <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
     <div class="flex items-center justify-between mb-4">
-      <p class="text-base md:text-xl font-semibold">Schedule Automatic Library Scans</p>
-      <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" label="Enable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
+      <p class="text-base md:text-xl font-semibold">{{ $strings.HeaderScheduleLibraryScans }}</p>
+      <ui-checkbox v-model="enableAutoScan" @input="toggleEnableAutoScan" :label="$strings.LabelEnable" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" />
     </div>
     <widgets-cron-expression-builder ref="cronExpressionBuilder" v-if="enableAutoScan" v-model="cronExpression" @input="updatedCron" />
   </div>

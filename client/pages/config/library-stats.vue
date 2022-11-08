@@ -1,12 +1,12 @@
 <template>
   <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-    <h1 class="text-xl">Stats for library {{ currentLibraryName }}</h1>
+    <h1 class="text-xl">{{ $strings.HeaderLibraryStats }}: {{ currentLibraryName }}</h1>
     <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
 
     <div class="flex lg:flex-row flex-wrap justify-between flex-col mt-8">
       <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Top 5 Genres</h1>
-        <p v-if="!top5Genres.length">No Genres</p>
+        <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsTop5Genres }}</h1>
+        <p v-if="!top5Genres.length">{{ $strings.MessageNoGenres }}</p>
         <template v-for="genre in top5Genres">
           <div :key="genre.genre" class="w-full py-2">
             <div class="flex items-end mb-1">
@@ -23,8 +23,8 @@
         </template>
       </div>
       <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Top 10 Authors</h1>
-        <p v-if="!top10Authors.length">No Authors</p>
+        <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsTop10Authors }}</h1>
+        <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
         <template v-for="(author, index) in top10Authors">
           <div :key="author.id" class="w-full py-2">
             <div class="flex items-center mb-1">
@@ -42,8 +42,8 @@
         </template>
       </div>
       <div class="w-80 my-6 mx-auto">
-        <h1 class="text-2xl mb-4 font-book">Longest Items (hrs)</h1>
-        <p v-if="!top10LongestItems.length">No Items</p>
+        <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsLongestItems }}</h1>
+        <p v-if="!top10LongestItems.length">{{ $strings.MessageNoItems }}</p>
         <template v-for="(ab, index) in top10LongestItems">
           <div :key="index" class="w-full py-2">
             <div class="flex items-center mb-1">

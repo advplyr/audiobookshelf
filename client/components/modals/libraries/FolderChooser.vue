@@ -2,7 +2,7 @@
   <div class="w-full h-full bg-bg absolute top-0 left-0 px-4 py-4 z-10">
     <div class="flex items-center py-1 mb-2">
       <span class="material-icons text-3xl cursor-pointer hover:text-gray-300" @click="$emit('back')">arrow_back</span>
-      <p class="px-4 text-xl">Choose a Folder</p>
+      <p class="px-4 text-xl">{{ $strings.HeaderChooseAFolder }}</p>
     </div>
     <div v-if="allFolders.length" class="w-full bg-primary bg-opacity-70 py-1 px-4 mb-2">
       <p class="font-mono truncate">{{ selectedPath || '\\' }}</p>
@@ -27,16 +27,16 @@
       </div>
     </div>
     <div v-else-if="loadingFolders" class="py-12 text-center">
-      <p>Loading folders...</p>
+      <p>{{ $strings.MessageLoadingFolders }}</p>
     </div>
     <div v-else class="py-12 text-center max-w-sm mx-auto">
-      <p class="text-lg mb-2">No Folders Available</p>
-      <p class="text-gray-300 mb-2">Note: folders already mapped will not be shown</p>
-      <p v-if="isDebian" class="text-red-400">Note: Folder picker for the debian install is not fully implemented. You should enter the path to your library directly.</p>
+      <p class="text-lg mb-2">{{ $strings.MessageNoFoldersAvailable }}</p>
+      <p class="text-gray-300 mb-2">{{ $strings.NoteFolderPicker }}</p>
+      <p v-if="isDebian" class="text-red-400">{{ $strings.NoteFolderPickerDebian }}</p>
     </div>
 
     <div class="w-full py-2">
-      <ui-btn :disabled="!selectedPath" color="primary" class="w-full mt-2" @click="selectFolder">Select Folder Path</ui-btn>
+      <ui-btn :disabled="!selectedPath" color="primary" class="w-full mt-2" @click="selectFolder">{{ $strings.ButtonSelectFolderPath }}</ui-btn>
     </div>
   </div>
 </template>

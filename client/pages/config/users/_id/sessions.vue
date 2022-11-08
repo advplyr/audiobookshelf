@@ -6,7 +6,7 @@
           <div class="h-10 w-10 flex items-center justify-center">
             <span class="material-icons text-2xl">arrow_back</span>
           </div>
-          <p class="pl-1">Back to User</p>
+          <p class="pl-1">{{ $strings.LabelBackToUser }}</p>
         </div>
       </nuxt-link>
       <div class="flex items-center mb-2 mt-4 px-2 sm:px-0">
@@ -17,16 +17,16 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-2" />
 
       <div class="py-2">
-        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">Listening Sessions</h1>
+        <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderListeningSessions }}</h1>
         <div v-if="listeningSessions.length">
           <table class="userSessionsTable">
             <tr class="bg-primary bg-opacity-40">
-              <th class="w-48 min-w-48 text-left">Item</th>
-              <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
-              <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
-              <th class="w-32 min-w-32">Listened</th>
-              <th class="w-16 min-w-16">Last Time</th>
-              <th class="flex-grow hidden sm:table-cell">Last Update</th>
+              <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+              <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+              <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+              <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
+              <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+              <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
             </tr>
             <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
               <td class="py-1 max-w-48">
@@ -121,7 +121,7 @@ export default {
       }
 
       const payload = {
-        message: `Start playback for "${session.displayTitle}" at ${this.$secondsToTimestamp(session.currentTime)}?`,
+        message: this.$getString('MessageStartPlaybackAtTime', [session.displayTitle, this.$secondsToTimestamp(session.currentTime)]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$eventBus.$emit('play-item', {

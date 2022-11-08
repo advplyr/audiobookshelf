@@ -1,6 +1,6 @@
 <template>
   <div class="w-full h-full overflow-hidden overflow-y-auto px-4 py-6">
-    <p class="text-xl font-semibold mb-2">Audiobook File Management Tools</p>
+    <p class="text-xl font-semibold mb-2">{{ $strings.HeaderAudiobookTools }}</p>
 
     <!-- Merge to m4b -->
     <div v-if="showM4bDownload" class="w-full border border-black-200 p-4 my-8">
@@ -12,7 +12,7 @@
         <div class="flex-grow" />
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=m4b`" class="flex items-center"
-            >Open Manager
+            >{{ $strings.ButtonOpenManager }}
             <span class="material-icons text-lg ml-2">launch</span>
           </ui-btn>
         </div>
@@ -43,7 +43,7 @@
         <div class="flex-grow" />
         <div>
           <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=embed`" class="flex items-center"
-            >Open Manager
+            >{{ $strings.ButtonOpenManager }}
             <span class="material-icons text-lg ml-2">launch</span>
           </ui-btn>
         </div>

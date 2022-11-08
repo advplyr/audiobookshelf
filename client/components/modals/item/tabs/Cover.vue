@@ -14,11 +14,14 @@
       <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 pt-4 md:min-w-32">
-            <ui-file-input ref="fileInput" @change="fileUploadSelected"><span class="hidden md:inline-block">Upload Cover</span><span class="material-icons inline-block md:!hidden">upload</span></ui-file-input>
+            <ui-file-input ref="fileInput" @change="fileUploadSelected"
+              ><span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span
+              ><span class="material-icons inline-block md:!hidden">upload</span></ui-file-input
+            >
           </div>
           <form @submit.prevent="submitForm" class="flex flex-grow">
-            <ui-text-input-with-label v-model="imageUrl" label="Cover Image URL" />
-            <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-2 sm:ml-3 w-24">Update</ui-btn>
+            <ui-text-input-with-label v-model="imageUrl" :label="$strings.LabelCoverImageURL" />
+            <ui-btn color="success" type="submit" :padding-x="4" class="mt-5 ml-2 sm:ml-3 w-24">{{ $strings.ButtonSave }}</ui-btn>
           </form>
         </div>
 
@@ -26,7 +29,7 @@
           <div class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
             <div class="flex-grow" />
-            <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? 'Hide' : 'Show' }}</ui-btn>
+            <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
           <div v-if="showLocalCovers" class="flex items-center justify-center">
@@ -44,19 +47,19 @@
     <form @submit.prevent="submitSearchForm">
       <div class="flex items-center justify-start -mx-1 h-20">
         <div class="w-40 px-1">
-          <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
+          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 px-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" placeholder="Search" />
+          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
         <div v-show="provider != 'itunes'" class="w-72 px-1">
-          <ui-text-input-with-label v-model="searchAuthor" label="Author" />
+          <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
+        <ui-btn class="mt-5 ml-1" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
     <div v-if="hasSearched" class="flex items-center flex-wrap justify-center max-h-80 overflow-y-scroll mt-2 max-w-full">
-      <p v-if="!coversFound.length">No Covers Found</p>
+      <p v-if="!coversFound.length">{{ $strings.MessageNoCoversFound }}</p>
       <template v-for="cover in coversFound">
         <div :key="cover" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover === imageUrl ? 'border-yellow-300' : ''" @click="updateCover(cover)">
           <covers-preview-cover :src="cover" :width="80" show-open-new-tab :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -65,14 +68,14 @@
     </div>
 
     <div v-if="previewUpload" class="absolute top-0 left-0 w-full h-full z-10 bg-bg p-8">
-      <p class="text-lg">Preview Cover</p>
+      <p class="text-lg">{{ $strings.HeaderPreviewCover }}</p>
       <span class="absolute top-4 right-4 material-icons text-2xl cursor-pointer" @click="resetCoverPreview">close</span>
       <div class="flex justify-center py-4">
         <covers-preview-cover :src="previewUpload" :width="240" :book-cover-aspect-ratio="bookCoverAspectRatio" />
       </div>
       <div class="absolute bottom-0 right-0 flex py-4 px-5">
-        <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">Clear</ui-btn>
-        <ui-btn :loading="processingUpload" color="success" @click="submitCoverUpload">Upload</ui-btn>
+        <ui-btn :disabled="processingUpload" class="mx-2" @click="resetCoverPreview">{{ $strings.ButtonReset }}</ui-btn>
+        <ui-btn :loading="processingUpload" color="success" @click="submitCoverUpload">{{ $strings.ButtonUpload }}</ui-btn>
       </div>
     </div>
   </div>
@@ -125,9 +128,9 @@ export default {
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
-      if (this.provider.startsWith('audible')) return 'Search Title or ASIN'
-      else if (this.provider == 'itunes') return 'Search Term'
-      return 'Search Title'
+      if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
+      else if (this.provider == 'itunes') return this.$strings.LabelSearchTerm
+      return this.$strings.LabelSearchTitle
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']

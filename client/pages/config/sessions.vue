@@ -2,23 +2,23 @@
   <div class="w-full h-full">
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
       <div class="flex items-center mb-2">
-        <h1 class="text-xl">Listening Sessions</h1>
+        <h1 class="text-xl">{{ $strings.HeaderListeningSessions }}</h1>
       </div>
 
       <div class="flex justify-end mb-2">
-        <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
+        <ui-dropdown v-model="selectedUser" :items="userItems" :label="$strings.LabelFilterByUser" small class="max-w-48" @input="updateUserFilter" />
       </div>
 
       <div v-if="listeningSessions.length" class="block max-w-full">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
-            <th class="w-48 min-w-48 text-left">Item</th>
-            <th class="w-20 min-w-20 text-left hidden md:table-cell">User</th>
-            <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
-            <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
-            <th class="w-32 min-w-32">Listened</th>
-            <th class="w-16 min-w-16">Last Time</th>
-            <th class="flex-grow hidden sm:table-cell">Last Update</th>
+            <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+            <th class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
+            <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+            <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+            <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
+            <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+            <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
           </tr>
 
           <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
@@ -55,7 +55,7 @@
           <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
         </div>
       </div>
-      <p v-else class="text-white text-opacity-50">No sessions yet...</p>
+      <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
     </div>
 
     <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" @removedSession="removedSession" />
@@ -134,7 +134,7 @@ export default {
       }
 
       const payload = {
-        message: `Start playback for "${session.displayTitle}" at ${this.$secondsToTimestamp(session.currentTime)}?`,
+        message: this.$getString('MessageStartPlaybackAtTime', [session.displayTitle, this.$secondsToTimestamp(session.currentTime)]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$eventBus.$emit('play-item', {

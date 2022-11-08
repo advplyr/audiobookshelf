@@ -7,10 +7,10 @@
     </svg>
     <p class="text-xl font-book pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
     <div class="flex-grow" />
-    <ui-btn v-show="isHovering && !libraryScan" class="hidden md:block" small color="success" @click.stop="scan">Scan</ui-btn>
-    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2 hidden md:block" @click.stop="forceScan">Force Re-Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" class="hidden md:block" small color="success" @click.stop="scan">{{ $strings.ButtonScan }}</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2 hidden md:block" @click.stop="forceScan">{{ $strings.ButtonForceReScan }}</ui-btn>
 
-    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2 hidden md:block" @click.stop="matchAll">Match Books</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2 hidden md:block" @click.stop="matchAll">{{ $strings.ButtonMatchBooks }}</ui-btn>
 
     <span v-if="isHovering && !libraryScan" class="!hidden md:!block material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
     <span v-if="!libraryScan && isHovering && !isDeleting" class="!hidden md:!block material-icons text-xl text-gray-300 ml-3 hover:text-gray-50 cursor-pointer" @click.stop="deleteClick">delete</span>

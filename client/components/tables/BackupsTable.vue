@@ -1,16 +1,16 @@
 <template>
   <div class="text-center mt-4">
     <div class="flex py-4">
-      <ui-file-input ref="fileInput" class="mr-2" accept=".audiobookshelf" @change="backupUploaded">Upload Backup</ui-file-input>
+      <ui-file-input ref="fileInput" class="mr-2" accept=".audiobookshelf" @change="backupUploaded">{{ $strings.ButtonUploadBackup }}</ui-file-input>
       <div class="flex-grow" />
-      <ui-btn :loading="isBackingUp" @click="clickCreateBackup">Create Backup</ui-btn>
+      <ui-btn :loading="isBackingUp" @click="clickCreateBackup">{{ $strings.ButtonCreateBackup }}</ui-btn>
     </div>
     <div class="relative">
       <table id="backups">
         <tr>
-          <th>File</th>
-          <th class="hidden sm:table-cell w-32 md:w-56">Datetime</th>
-          <th class="hidden sm:table-cell w-20 md:w-28">Size</th>
+          <th>{{ $strings.LabelFile }}</th>
+          <th class="hidden sm:table-cell w-32 md:w-56">{{ $strings.LabelDatetime }}</th>
+          <th class="hidden sm:table-cell w-20 md:w-28">{{ $strings.LabelSize }}</th>
           <th class="w-36"></th>
         </tr>
         <tr v-for="backup in backups" :key="backup.id" :class="!backup.serverVersion ? 'bg-error bg-opacity-10' : ''">
@@ -21,7 +21,7 @@
           <td class="hidden sm:table-cell font-mono md:text-sm text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
             <div class="w-full flex flex-row items-center justify-center">
-              <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">Restore</ui-btn>
+              <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">{{ $strings.ButtonRestore }}</ui-btn>
 
               <a v-if="backup.serverVersion" :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
@@ -43,16 +43,14 @@
 
     <prompt-dialog v-model="showConfirmApply" :width="675">
       <div v-if="selectedBackup" class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
-        <p class="text-error text-lg font-semibold">Important Notice!</p>
-        <p class="text-base py-1">Applying a backup will overwrite users, user progress, book details, settings, and covers stored in metadata with the backed up data.</p>
-        <p class="text-base py-1">Backups <strong>do not</strong> modify any files in your library folders, only data in the audiobookshelf created <span class="font-mono">/config</span> and <span class="font-mono">/metadata</span> directories. If you have enabled server settings to store cover art and metadata in your library folders then those are not backed up or overwritten.</p>
-        <p class="text-base py-1">All clients using your server will be automatically refreshed.</p>
+        <p class="text-error text-lg font-semibold">{{ $strings.MessageImportantNotice }}</p>
+        <p class="text-base py-1" v-html="$strings.MessageRestoreBackupWarning" />
 
-        <p class="text-lg text-center my-8">Are you sure you want to apply the backup created on {{ selectedBackup.datePretty }}?</p>
+        <p class="text-lg text-center my-8">{{ $strings.MessageRestoreBackupConfirm }} {{ selectedBackup.datePretty }}?</p>
         <div class="flex px-1 items-center">
-          <ui-btn color="primary" @click="showConfirmApply = false">Nevermind</ui-btn>
+          <ui-btn color="primary" @click="showConfirmApply = false">{{ $strings.ButtonNevermind }}</ui-btn>
           <div class="flex-grow" />
-          <ui-btn color="success" @click="confirm">Apply Backup</ui-btn>
+          <ui-btn color="success" @click="confirm">{{ $strings.ButtonRestore }}</ui-btn>
         </div>
       </div>
     </prompt-dialog>

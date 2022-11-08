@@ -7,22 +7,24 @@
 
     <div class="absolute bottom-0 left-0 w-full py-2 md:py-4 bg-bg" :class="isScrollable ? 'box-shadow-md-up' : 'border-t border-white border-opacity-5'">
       <div class="flex items-center px-4">
-        <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8 hidden md:block" :padding-x="3" small @click.stop.prevent="removeItem">Remove</ui-btn>
+        <ui-btn v-if="userCanDelete" color="error" type="button" class="h-8 hidden md:block" :padding-x="3" small @click.stop.prevent="removeItem">{{ $strings.ButtonRemove }}</ui-btn>
         <ui-icon-btn bg-color="error" icon="delete" class="md:hidden" :size="7" icon-font-size="1rem" @click.stop.prevent="removeItem" />
 
         <div class="flex-grow" />
 
-        <ui-tooltip :disabled="!!quickMatching" :text="`Populate empty ${mediaType} details & cover with first ${mediaType} result from '${libraryProvider}'. Does not overwrite details unless 'Prefer matched metadata' server setting is enabled.`" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">Quick Match</ui-btn>
+        <ui-tooltip :disabled="!!quickMatching" :text="$getString('MessageQuickMatchDescription', [libraryProvider])" direction="bottom" class="mr-2 md:mr-4">
+          <ui-btn v-if="userIsAdminOrUp" :loading="quickMatching" color="bg" type="button" class="h-full" small @click.stop.prevent="quickMatch">{{ $strings.ButtonQuickMatch }}</ui-btn>
         </ui-tooltip>
 
         <ui-tooltip :disabled="!!libraryScan" text="Rescan library item including metadata" direction="bottom" class="mr-2 md:mr-4">
-          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">Re-Scan</ui-btn>
+          <ui-btn v-if="userIsAdminOrUp && !isFile" :loading="rescanning" :disabled="!!libraryScan" color="bg" type="button" class="h-full" small @click.stop.prevent="rescan">{{ $strings.ButtonReScan }}</ui-btn>
         </ui-tooltip>
 
-        <ui-btn @click="save" class="mx-2 hidden md:block">Save</ui-btn>
-
-        <ui-btn @click="saveAndClose">Save<span class="hidden md:inline-block">&nbsp;& Close</span></ui-btn>
+        <!-- desktop -->
+        <ui-btn @click="save" class="mx-2 hidden md:block">{{ $strings.ButtonSave }}</ui-btn>
+        <ui-btn @click="saveAndClose" class="mx-2 hidden md:block">{{ $strings.ButtonSaveAndClose }}</ui-btn>
+        <!-- mobile -->
+        <ui-btn @click="saveAndClose" class="mx-2 md:hidden">{{ $strings.ButtonSave }}</ui-btn>
       </div>
     </div>
   </div>

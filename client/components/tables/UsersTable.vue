@@ -6,15 +6,15 @@
         <span class="material-icons" style="font-size: 1.4rem">add</span>
       </div>
     </div>
-    <!-- <div class="h-0.5 bg-primary bg-opacity-50 w-full" /> -->
+
     <div class="text-center">
       <table id="accounts">
         <tr>
-          <th>Username</th>
-          <th class="w-20">Type</th>
-          <th class="hidden lg:table-cell">Activity</th>
-          <th class="w-32 hidden sm:table-cell">Last Seen</th>
-          <th class="w-32 hidden sm:table-cell">Created</th>
+          <th>{{ $strings.LabelUsername }}</th>
+          <th class="w-20">{{ $strings.LabelAccountType }}</th>
+          <th class="hidden lg:table-cell">{{ $strings.LabelActivity }}</th>
+          <th class="w-32 hidden sm:table-cell">{{ $strings.LabelLastSeen }}</th>
+          <th class="w-32 hidden sm:table-cell">{{ $strings.LabelCreatedAt }}</th>
           <th class="w-32"></th>
         </tr>
         <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : 'bg-error bg-opacity-20'" @click="$router.push(`/config/users/${user.id}`)">
@@ -88,7 +88,7 @@ export default {
   methods: {
     deleteUserClick(user) {
       if (this.isDeletingUser) return
-      if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
+      if (confirm(this.$getString('MessageRemoveUserWarning', [user.username]))) {
         this.isDeletingUser = true
         this.$axios
           .$delete(`/api/users/${user.id}`)

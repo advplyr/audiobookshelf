@@ -5,10 +5,10 @@
       <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
         <p class="text-lg mb-8 mt-2 px-1" v-html="message" />
         <div class="flex px-1 items-center">
-          <ui-btn v-if="isYesNo" color="primary" @click="nevermind">Cancel</ui-btn>
+          <ui-btn v-if="isYesNo" color="primary" @click="nevermind">{{ $strings.ButtonCancel }}</ui-btn>
           <div class="flex-grow" />
-          <ui-btn v-if="isYesNo" color="success" @click="confirm">Yes</ui-btn>
-          <ui-btn v-else color="primary" @click="confirm">Ok</ui-btn>
+          <ui-btn v-if="isYesNo" color="success" @click="confirm">{{ $strings.ButtonYes }}</ui-btn>
+          <ui-btn v-else color="primary" @click="confirm">{{ $strings.ButtonOk }}</ui-btn>
         </div>
       </div>
     </div>

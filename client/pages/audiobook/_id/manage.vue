@@ -2,7 +2,7 @@
   <div id="page-wrapper" class="bg-bg page p-8 overflow-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="flex items-center justify-center mb-6">
       <div class="w-full max-w-2xl">
-        <p class="text-2xl mb-2">Audiobook File Management Tools</p>
+        <p class="text-2xl mb-2">{{ $strings.HeaderAudiobookTools }}</p>
       </div>
       <div class="w-full max-w-2xl">
         <div class="flex justify-end">
