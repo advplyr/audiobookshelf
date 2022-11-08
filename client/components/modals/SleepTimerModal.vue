@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="sleep-timer" :width="350" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-        <p class="font-book text-3xl text-white truncate pointer-events-none">Sleep Timer</p>
+        <p class="font-book text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderSleepTimer }}</p>
       </div>
     </template>
 
@@ -32,7 +32,7 @@
             <span class="pl-1 text-base font-mono">30m</span>
           </ui-btn>
         </div>
-        <ui-btn class="w-full" @click="$emit('cancel')">Cancel</ui-btn>
+        <ui-btn class="w-full" @click="$emit('cancel')">{{ $strings.ButtonCancel }}</ui-btn>
       </div>
     </div>
   </modals-modal>

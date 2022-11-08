@@ -85,10 +85,10 @@ export default {
       this.$axios
         .$delete(`/api/me/item/${this.libraryItemId}/bookmark/${bm.time}`)
         .then(() => {
-          this.$toast.success('Bookmark removed')
+          this.$toast.success(this.$strings.ToastBookmarkRemoveSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to remove bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkRemoveFailed)
           console.error(error)
         })
       this.show = false
@@ -101,10 +101,10 @@ export default {
       this.$axios
         .$patch(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
         .then(() => {
-          this.$toast.success('Bookmark updated')
+          this.$toast.success(this.$strings.ToastBookmarkUpdateSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to update bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkUpdateFailed)
           console.error(error)
         })
       this.show = false
@@ -120,10 +120,10 @@ export default {
       this.$axios
         .$post(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
         .then(() => {
-          this.$toast.success('Bookmark added')
+          this.$toast.success(this.$strings.ToastBookmarkCreateSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to create bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkCreateFailed)
           console.error(error)
         })
 

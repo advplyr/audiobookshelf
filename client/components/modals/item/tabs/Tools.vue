@@ -50,7 +50,7 @@
       </div>
     </div>
 
-    <p v-if="!mediaTracks.length" class="text-lg text-center my-8">No audio tracks</p>
+    <p v-if="!mediaTracks.length" class="text-lg text-center my-8">{{ $strings.MessageNoAudioTracks }}</p>
   </div>
 </template>
 

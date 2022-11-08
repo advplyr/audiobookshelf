@@ -31,7 +31,7 @@
         </template>
         <li v-if="!itemsToShow.length" class="text-gray-50 select-none relative py-2 pr-9" role="option">
           <div class="flex items-center justify-center">
-            <span class="font-normal">No items</span>
+            <span class="font-normal">{{ $strings.MessageNoItems }}</span>
           </div>
         </li>
       </ul>

@@ -42,43 +42,7 @@ export default {
       showPodcastRemoveModal: false,
       selectedEpisodes: [],
       episodesToRemove: [],
-      processing: false,
-      sortItems: [
-        {
-          text: 'Pub Date',
-          value: 'publishedAt'
-        },
-        {
-          text: 'Title',
-          value: 'title'
-        },
-        {
-          text: 'Season',
-          value: 'season'
-        },
-        {
-          text: 'Episode',
-          value: 'episode'
-        }
-      ],
-      filterItems: [
-        {
-          value: 'all',
-          text: 'Show All'
-        },
-        {
-          value: 'incomplete',
-          text: 'Incomplete'
-        },
-        {
-          value: 'complete',
-          text: 'Complete'
-        },
-        {
-          value: 'in_progress',
-          text: 'In Progress'
-        }
-      ]
+      processing: false
     }
   },
   watch: {
@@ -87,6 +51,46 @@ export default {
     }
   },
   computed: {
+    sortItems() {
+      return [
+        {
+          text: this.$strings.LabelPubDate,
+          value: 'publishedAt'
+        },
+        {
+          text: this.$strings.LabelTitle,
+          value: 'title'
+        },
+        {
+          text: this.$strings.LabelSeason,
+          value: 'season'
+        },
+        {
+          text: this.$strings.LabelEpisode,
+          value: 'episode'
+        }
+      ]
+    },
+    filterItems() {
+      return [
+        {
+          value: 'all',
+          text: this.$strings.LabelShowAll
+        },
+        {
+          value: 'incomplete',
+          text: this.$strings.LabelIncomplete
+        },
+        {
+          value: 'complete',
+          text: this.$strings.LabelComplete
+        },
+        {
+          value: 'in_progress',
+          text: this.$strings.LabelInProgress
+        }
+      ]
+    },
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
     },
@@ -141,12 +145,12 @@ export default {
       this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
-          this.$toast.success('Batch update success!')
+          this.$toast.success(this.$strings.ToastBatchUpdateSuccess)
           this.processing = false
           this.clearSelected()
         })
         .catch((error) => {
-          this.$toast.error('Batch update failed')
+          this.$toast.error(this.$strings.ToastBatchUpdateFailed)
           console.error('Failed to batch update read/not read', error)
           this.processing = false
         })

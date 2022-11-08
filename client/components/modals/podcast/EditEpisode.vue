@@ -26,12 +26,12 @@ export default {
       tabs: [
         {
           id: 'details',
-          title: 'Details',
+          title: this.$strings.HeaderDetails,
           component: 'modals-podcast-tabs-episode-details'
         },
         {
           id: 'match',
-          title: 'Match',
+          title: this.$strings.HeaderMatch,
           component: 'modals-podcast-tabs-episode-match'
         }
       ]

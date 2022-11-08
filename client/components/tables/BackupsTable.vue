@@ -33,7 +33,7 @@
           </td>
         </tr>
         <tr v-if="!backups.length" class="staticrow">
-          <td colspan="4" class="text-lg">No Backups</td>
+          <td colspan="4" class="text-lg">{{ $strings.MessageNoBackups }}</td>
         </tr>
       </table>
       <div v-show="processing" class="absolute top-0 left-0 w-full h-full bg-black bg-opacity-25 flex items-center justify-center">
@@ -88,23 +88,23 @@ export default {
         .catch((error) => {
           this.isBackingUp = false
           console.error('Failed', error)
-          this.$toast.error('Failed to apply backup')
+          this.$toast.error(this.$strings.ToastBackupRestoreFailed)
         })
     },
     deleteBackupClick(backup) {
-      if (confirm(`Are you sure you want to delete backup for ${backup.datePretty}?`)) {
+      if (confirm(this.$getString('MessageConfirmDeleteBackup', [backup.datePretty]))) {
         this.processing = true
         this.$axios
           .$delete(`/api/backups/${backup.id}`)
           .then((backups) => {
             console.log('Backup deleted', backups)
             this.$store.commit('setBackups', backups)
-            this.$toast.success(`Backup deleted`)
+            this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
             this.processing = false
           })
           .catch((error) => {
             console.error(error)
-            this.$toast.error('Failed to delete backup')
+            this.$toast.error(this.$strings.ToastBackupDeleteFailed)
             this.processing = false
           })
       }
@@ -119,13 +119,13 @@ export default {
         .$post('/api/backups')
         .then((backups) => {
           this.isBackingUp = false
-          this.$toast.success('Backup Successful')
+          this.$toast.success(this.$strings.ToastBackupCreateSuccess)
           this.$store.commit('setBackups', backups)
         })
         .catch((error) => {
           this.isBackingUp = false
           console.error('Failed', error)
-          this.$toast.error('Backup Failed')
+          this.$toast.error(this.$strings.ToastBackupCreateFailed)
         })
     },
     backupUploaded(file) {
@@ -139,12 +139,12 @@ export default {
         .then((result) => {
           console.log('Upload backup result', result)
           this.$store.commit('setBackups', result)
-          this.$toast.success('Backup upload success')
+          this.$toast.success(this.$strings.ToastBackupUploadSuccess)
           this.processing = false
         })
         .catch((error) => {
           console.error(error)
-          var errorMessage = error.response && error.response.data ? error.response.data : 'Failed to upload backup'
+          var errorMessage = error.response && error.response.data ? error.response.data : this.$strings.ToastBackupUploadFailed
           this.$toast.error(errorMessage)
           this.processing = false
         })

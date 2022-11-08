@@ -17,16 +17,16 @@
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
         <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
         <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-episode-slider>
         <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-series-slider>
         <widgets-authors-slider v-else-if="shelf.type === 'authors'" :key="index + '.'" :items="shelf.entities" :height="192 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-authors-slider>
       </template>
     </div>
@@ -180,6 +180,7 @@ export default {
         shelves.push({
           id: 'books',
           label: 'Books',
+          labelStringKey: 'LabelBooks',
           type: 'book',
           entities: this.results.books.map((res) => res.libraryItem)
         })
@@ -189,6 +190,7 @@ export default {
         shelves.push({
           id: 'podcasts',
           label: 'Podcasts',
+          labelStringKey: 'LabelPodcasts',
           type: 'podcast',
           entities: this.results.podcasts.map((res) => res.libraryItem)
         })
@@ -198,6 +200,7 @@ export default {
         shelves.push({
           id: 'series',
           label: 'Series',
+          labelStringKey: 'LabelSeries',
           type: 'series',
           entities: this.results.series.map((seriesObj) => {
             return {
@@ -212,6 +215,7 @@ export default {
         shelves.push({
           id: 'tags',
           label: 'Tags',
+          labelStringKey: 'LabelTags',
           type: 'tags',
           entities: this.results.tags.map((tagObj) => {
             return {
@@ -226,6 +230,7 @@ export default {
         shelves.push({
           id: 'authors',
           label: 'Authors',
+          labelStringKey: 'LabelAuthors',
           type: 'authors',
           entities: this.results.authors.map((a) => {
             return {

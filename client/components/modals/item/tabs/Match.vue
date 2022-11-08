@@ -474,9 +474,9 @@ export default {
           return false
         })
         if (success) {
-          this.$toast.success('Item Cover Updated')
+          this.$toast.success(this.$strings.ToastItemCoverUpdateSuccess)
         } else {
-          this.$toast.error('Item Cover Failed to Update')
+          this.$toast.error(this.$strings.ToastItemCoverUpdateFailed)
         }
         console.log('Updated cover')
         delete updatePayload.metadata.cover
@@ -490,14 +490,14 @@ export default {
         })
         if (updateResult) {
           if (updateResult.updated) {
-            this.$toast.success('Item details updated')
+            this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           } else {
-            this.$toast.info('No detail updates were necessary')
+            this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
           }
           this.clearSelectedMatch()
           this.$emit('selectTab', 'details')
         } else {
-          this.$toast.error('Item Details Failed to Update')
+          this.$toast.error(this.$strings.ToastItemDetailsUpdateFailed)
         }
       } else {
         this.clearSelectedMatch()

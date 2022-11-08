@@ -1,4 +1,5 @@
 import Vue from "vue"
+import enUsStrings from '../strings/en-us.json'
 
 const defaultCode = 'en-us'
 
@@ -13,7 +14,7 @@ function supplant(str, subs) {
 }
 
 Vue.prototype.$i18nCode = ''
-Vue.prototype.$strings = {}
+Vue.prototype.$strings = enUsStrings
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs && Array.isArray(subs) && subs.length) {
@@ -22,7 +23,9 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
-var translations = {}
+var translations = {
+  [defaultCode]: enUsStrings
+}
 
 function loadTranslationStrings(code) {
   return new Promise((resolve) => {
@@ -30,7 +33,7 @@ function loadTranslationStrings(code) {
       resolve(fileContents.default)
     }).catch((error) => {
       console.error('Failed to load i18n strings', code, error)
-      resolve({})
+      resolve(null)
     })
   })
 }
@@ -40,18 +43,14 @@ async function loadi18n(code) {
     // already set
     return
   }
-
-  const currentCode = Vue.prototype.$i18nCode
   const strings = translations[code] || await loadTranslationStrings(code)
+  if (!strings) {
+    console.warn(`Invalid lang code ${code}`)
+    return
+  }
 
   translations[code] = strings
   Vue.prototype.$i18nCode = code
-
-  if (!currentCode) {
-    // first load
-    Vue.prototype.$strings = strings
-    return
-  }
 
   for (const key in Vue.prototype.$strings) {
     Vue.prototype.$strings[key] = strings[key] || translations[defaultCode][key]
@@ -61,4 +60,7 @@ async function loadi18n(code) {
 
 Vue.prototype.$i18nUpdate = loadi18n
 
-loadi18n(defaultCode)
+const localLanguage = localStorage.getItem('lang')
+if (localLanguage !== defaultCode) {
+  loadi18n(localLanguage)
+}

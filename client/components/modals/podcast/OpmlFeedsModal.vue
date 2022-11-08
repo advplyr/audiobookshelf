@@ -9,14 +9,14 @@
       <div class="w-full p-4">
         <div class="flex items-center -mx-2 mb-2">
           <div class="w-full md:w-2/3 p-2">
-            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" label="Folder" />
+            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" :label="$strings.LabelFolder" />
           </div>
           <div class="w-full md:w-1/3 p-2 pt-6">
-            <ui-checkbox v-model="autoDownloadEpisodes" label="Auto Download New Episodes" checkbox-bg="primary" border-color="gray-600" label-class="text-sm font-semibold pl-2" />
+            <ui-checkbox v-model="autoDownloadEpisodes" :label="$strings.LabelAutoDownloadEpisodes" checkbox-bg="primary" border-color="gray-600" label-class="text-sm font-semibold pl-2" />
           </div>
         </div>
 
-        <p class="text-lg font-semibold mb-2">Podcasts to Add</p>
+        <p class="text-lg font-semibold mb-2">{{ $strings.HeaderPodcastsToAdd }}</p>
 
         <div class="w-full overflow-y-auto" style="max-height: 50vh">
           <template v-for="(feed, index) in feedMetadata">
@@ -26,7 +26,7 @@
       </div>
       <div class="flex items-center py-4">
         <div class="flex-grow" />
-        <ui-btn color="success" @click="submit">Add Podcasts</ui-btn>
+        <ui-btn color="success" @click="submit">{{ $strings.ButtonAddPodcasts }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -141,10 +141,10 @@ export default {
         await this.$axios
           .$post('/api/podcasts', podcastPayload)
           .then(() => {
-            this.$toast.success(`${podcastPayload.media.metadata.title}: Podcast created successfully`)
+            this.$toast.success(`${podcastPayload.media.metadata.title}: ${this.$strings.ToastPodcastCreateSuccess}`)
           })
           .catch((error) => {
-            var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to create podcast'
+            var errorMsg = error.response && error.response.data ? error.response.data : this.$strings.ToastPodcastCreateFailed
             console.error('Failed to create podcast', podcastPayload, error)
             this.$toast.error(`${podcastPayload.media.metadata.title}: ${errorMsg}`)
           })

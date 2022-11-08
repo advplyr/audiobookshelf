@@ -16,7 +16,7 @@
             </button>
           </div>
 
-          <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">Description</p>
+          <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
           <p class="text-white max-w-3xl text-sm leading-5">{{ author.description }}</p>
         </div>
       </div>
@@ -24,7 +24,7 @@
       <div class="py-4">
         <widgets-item-slider :items="libraryItems" :bookshelf-view="$constants.BookshelfView.AUTHOR">
           <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">
-            <h2 class="text-lg">{{ libraryItems.length }} Books</h2>
+            <h2 class="text-lg">{{ libraryItems.length }} {{ $strings.LabelBooks }}</h2>
           </nuxt-link>
         </widgets-item-slider>
       </div>
@@ -34,7 +34,7 @@
           <nuxt-link :to="`/library/${currentLibraryId}/series/${series.id}`" class="hover:underline">
             <h2 class="text-lg">{{ series.name }}</h2>
           </nuxt-link>
-          <p class="text-white text-opacity-40 text-base px-2">Series</p>
+          <p class="text-white text-opacity-40 text-base px-2">{{ $strings.LabelSeries }}</p>
         </widgets-item-slider>
       </div>
     </div>

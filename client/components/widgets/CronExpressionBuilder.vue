@@ -12,7 +12,7 @@
       <template v-if="!showAdvancedView">
         <ui-dropdown v-model="selectedInterval" @input="updateCron" :label="$strings.LabelInterval" :items="intervalOptions" class="mb-2" />
 
-        <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" :label="$string.LabelWeekdaysToRun" :items="weekdays" />
+        <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" :label="$strings.LabelWeekdaysToRun" :items="weekdays" />
 
         <div v-if="(selectedWeekdays.length && selectedInterval === 'custom') || selectedInterval === 'daily'" class="flex items-center py-2">
           <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" :label="$strings.LabelHour" class="max-w-20" />

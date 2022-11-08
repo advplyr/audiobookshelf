@@ -192,14 +192,14 @@ export default {
         .then((res) => {
           this.processing = false
           this.show = false
-          this.$toast.success(`Library "${res.name}" updated successfully`)
+          this.$toast.success(this.$getString('ToastLibraryUpdateSuccess', [res.name]))
         })
         .catch((error) => {
           console.error(error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Failed to update library')
+            this.$toast.error(this.$strings.ToastLibraryUpdateFailed)
           }
           this.processing = false
         })
@@ -211,7 +211,7 @@ export default {
         .then((res) => {
           this.processing = false
           this.show = false
-          this.$toast.success(`Library "${res.name}" created successfully`)
+          this.$toast.success(this.$getString('ToastLibraryCreateSuccess', [res.name]))
           if (!this.$store.state.libraries.currentLibraryId) {
             console.log('Setting initially library id', res.id)
             // First library added
@@ -223,7 +223,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Failed to create library')
+            this.$toast.error(this.$strings.ToastLibraryCreateFailed)
           }
           this.processing = false
         })

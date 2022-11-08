@@ -395,17 +395,17 @@ export default {
         const items = [
           {
             func: 'editPodcast',
-            text: 'Edit Podcast'
+            text: this.$strings.ButtonEditPodcast
           },
           {
             func: 'toggleFinished',
-            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+            text: this.itemIsFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished
           }
         ]
         if (this.continueListeningShelf) {
           items.push({
             func: 'removeFromContinueListening',
-            text: 'Remove from Continue Listening'
+            text: this.$strings.ButtonRemoveFromContinueListening
           })
         }
         return items
@@ -416,42 +416,42 @@ export default {
         items = [
           {
             func: 'toggleFinished',
-            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+            text: this.itemIsFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished
           }
         ]
         if (this.userCanUpdate) {
           items.push({
             func: 'openCollections',
-            text: 'Add to Collection'
+            text: this.$strings.LabelAddToCollection
           })
         }
       }
       if (this.userCanUpdate) {
         items.push({
           func: 'showEditModalFiles',
-          text: 'Files'
+          text: this.$strings.HeaderFiles
         })
         items.push({
           func: 'showEditModalMatch',
-          text: 'Match'
+          text: this.$strings.HeaderMatch
         })
       }
       if (this.userIsAdminOrUp && !this.isFile) {
         items.push({
           func: 'rescan',
-          text: 'Re-Scan'
+          text: this.$strings.ButtonReScan
         })
       }
       if (this.series && this.bookMount) {
         items.push({
           func: 'removeSeriesFromContinueListening',
-          text: 'Remove Series from Continue Series'
+          text: this.$strings.ButtonRemoveSeriesFromContinueSeries
         })
       }
       if (this.continueListeningShelf) {
         items.push({
           func: 'removeFromContinueListening',
-          text: 'Remove from Continue Listening'
+          text: this.$strings.ButtonRemoveFromContinueListening
         })
       }
       return items
@@ -587,12 +587,12 @@ export default {
         .$patch(apiEndpoint, updatePayload)
         .then(() => {
           this.processing = false
-          toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.processing = false
-          toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     editPodcast() {

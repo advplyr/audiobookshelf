@@ -97,12 +97,12 @@ export default {
             if (data.error) {
               this.$toast.error(data.error)
             } else {
-              this.$toast.success('User deleted')
+              this.$toast.success(this.$strings.ToastUserDeleteSuccess)
             }
           })
           .catch((error) => {
             console.error('Failed to delete user', error)
-            this.$toast.error('Failed to delete user')
+            this.$toast.error(this.$strings.ToastUserDeleteFailed)
             this.isDeletingUser = false
           })
       }

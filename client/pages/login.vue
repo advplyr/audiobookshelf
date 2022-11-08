@@ -2,7 +2,7 @@
   <div class="w-full h-screen bg-bg">
     <div class="w-full flex h-full items-center justify-center">
       <div v-if="criticalError" class="w-full max-w-md rounded border border-error border-opacity-25 bg-error bg-opacity-10 p-4">
-        <p class="text-center text-lg font-semibold">Server could not be reached</p>
+        <p class="text-center text-lg font-semibold">{{ $strings.MessageServerCouldNotBeReached }}</p>
       </div>
       <div v-else-if="showInitScreen" class="w-full max-w-lg px-4 md:px-8 pb-8 pt-4">
         <p class="text-3xl text-white text-center mb-4">Initial Server Setup</p>
@@ -19,22 +19,22 @@
           <ui-text-input-with-label v-model="MetadataPath" label="Metadata Path" disabled class="w-full mb-3 text-sm" />
 
           <div class="w-full flex justify-end py-3">
-            <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Initializing...' : 'Submit' }}</ui-btn>
+            <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Initializing...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>
       <div v-else-if="isInit" class="w-full max-w-md px-8 pb-8 pt-4 -mt-40">
-        <p class="text-3xl text-white text-center mb-4">Login</p>
+        <p class="text-3xl text-white text-center mb-4">{{ $strings.HeaderLogin }}</p>
         <div class="w-full h-px bg-white bg-opacity-10 my-4" />
         <p v-if="error" class="text-error text-center py-2">{{ error }}</p>
         <form @submit.prevent="submitForm">
-          <label class="text-xs text-gray-300 uppercase">Username</label>
+          <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelUsername }}</label>
           <ui-text-input v-model="username" :disabled="processing" class="mb-3 w-full" />
 
-          <label class="text-xs text-gray-300 uppercase">Password</label>
+          <label class="text-xs text-gray-300 uppercase">{{ $strings.LabelPassword }}</label>
           <ui-text-input v-model="password" type="password" :disabled="processing" class="w-full mb-3" />
           <div class="w-full flex justify-end py-3">
-            <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : 'Submit' }}</ui-btn>
+            <ui-btn type="submit" :disabled="processing" color="primary" class="leading-none">{{ processing ? 'Checking...' : $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>

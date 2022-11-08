@@ -134,18 +134,18 @@
         <div v-else class="w-full p-4">
           <div class="flex justify-between mb-4">
             <p>
-              Duration found: <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span
+              {{ $strings.LabelDurationFound }} <span class="font-semibold">{{ $secondsToTimestamp(chapterData.runtimeLengthSec) }}</span
               ><br />
-              <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapterData.chapters.length }}</span> chapters found
+              <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapterData.chapters.length }}</span> {{ $strings.LabelChaptersFound }}
             </p>
             <p>
-              Your audiobook duration: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span
+              {{ $strings.LabelYourAudiobookDuration }}: <span class="font-semibold">{{ $secondsToTimestamp(mediaDurationRounded) }}</span
               ><br />
               Your audiobook has <span class="font-semibold" :class="{ 'text-warning': chapters.length !== chapterData.chapters.length }">{{ chapters.length }}</span> chapters
             </p>
           </div>
-          <widgets-alert v-if="chapterData.runtimeLengthSec > mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is shorter than duration found </widgets-alert>
-          <widgets-alert v-else-if="chapterData.runtimeLengthSec < mediaDurationRounded" type="warning" class="mb-2"> Your audiobook duration is longer than the duration found </widgets-alert>
+          <widgets-alert v-if="chapterData.runtimeLengthSec > mediaDurationRounded" type="warning" class="mb-2"> {{ $strings.MessageYourAudiobookDurationIsShorter }} </widgets-alert>
+          <widgets-alert v-else-if="chapterData.runtimeLengthSec < mediaDurationRounded" type="warning" class="mb-2"> {{ $strings.MessageYourAudiobookDurationIsLonger }} </widgets-alert>
 
           <div class="flex py-0.5 text-xs font-semibold uppercase text-gray-300 mb-1">
             <div class="w-24 px-2">{{ $strings.LabelStart }}</div>
@@ -164,11 +164,11 @@
           <div v-if="chapterData.runtimeLengthSec > mediaDurationRounded" class="w-full pt-2">
             <div class="flex items-center">
               <div class="w-2 h-2 bg-warning bg-opacity-50" />
-              <p class="pl-2">Chapter end is after the end of your audiobook</p>
+              <p class="pl-2">{{ $strings.MessageChapterEndIsAfter }}</p>
             </div>
             <div class="flex items-center">
               <div class="w-2 h-2 bg-error bg-opacity-50" />
-              <p class="pl-2">Chapter start is after the end of your audiobook</p>
+              <p class="pl-2">{{ $strings.MessageChapterStartIsAfter }}</p>
             </div>
           </div>
           <div class="flex items-center pt-2">
@@ -442,7 +442,7 @@ export default {
               this.$router.push(`/item/${this.libraryItem.id}`)
             }
           } else {
-            this.$toast.info('No changes needed updating')
+            this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
           }
         })
         .catch((error) => {

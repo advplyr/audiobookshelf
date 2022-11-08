@@ -23,7 +23,7 @@
           <div class="flex items-center py-2">
             <p v-if="isRoot" class="text-error py-2 text-xs">* {{ $strings.NoteChangeRootPassword }}</p>
             <div class="flex-grow" />
-            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonChangePasswordSubmit }}</ui-btn>
+            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>

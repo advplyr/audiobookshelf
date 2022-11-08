@@ -96,20 +96,19 @@ export default {
       this.newCollectionDescription = this.collection.description || ''
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove collection "${this.collectionName}"?`)) {
+      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
         this.processing = true
-        var collectionName = this.collectionName
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
             this.processing = false
             this.show = false
-            this.$toast.success(`Collection "${collectionName}" Removed`)
+            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
           })
           .catch((error) => {
             console.error('Failed to remove collection', error)
             this.processing = false
-            this.$toast.error(`Failed to remove collection`)
+            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
           })
       }
     },
@@ -133,12 +132,12 @@ export default {
           console.log('Collection Updated', collection)
           this.processing = false
           this.show = false
-          this.$toast.success(`Collection "${collection.name}" Updated`)
+          this.$toast.success(this.$strings.ToastCollectionUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to update collection', error)
           this.processing = false
-          this.$toast.error(`Failed to update collection`)
+          this.$toast.error(this.$strings.ToastCollectionUpdateFailed)
         })
     }
   },

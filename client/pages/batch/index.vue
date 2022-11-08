@@ -11,47 +11,47 @@
           <div v-if="openMapOptions" class="flex flex-wrap">
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.subtitle" />
-              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" label="Subtitle" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" :label="$strings.LabelSubtitle" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.authors" />
               <!-- Authors filter only contains authors in this library, use query input to query all authors -->
-              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" label="Authors" endpoint="authors/search" class="mb-4 ml-4" />
+              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" :label="$strings.LabelAuthors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
-              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" label="Publish Year" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" :label="$strings.LabelPublishYear" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
-              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" :label="$strings.LabelSeries" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.genres" />
-              <ui-multi-select ref="genresSelect" v-model="batchDetails.genres" :disabled="!selectedBatchUsage.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="genresSelect" v-model="batchDetails.genres" :disabled="!selectedBatchUsage.genres" :label="$strings.LabelGenres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.tags" />
-              <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" :label="$strings.LabelTags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.narrators" />
-              <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" label="Narrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" :label="$strings.LabelNarrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
-              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" label="Publisher" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" :label="$strings.LabelPublisher" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.language" />
-              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" label="Language" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" :label="$strings.LabelLanguage" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.explicit" />
               <div class="ml-4">
                 <ui-checkbox
                   v-model="batchDetails.explicit"
-                  label="Explicit"
+                  :label="$strings.LabelExplicit"
                   :disabled="!selectedBatchUsage.explicit"
                   :checkbox-bg="!selectedBatchUsage.explicit ? 'bg' : 'primary'"
                   :check-color="!selectedBatchUsage.explicit ? 'gray-600' : 'green-500'"
@@ -62,7 +62,7 @@
             </div>
 
             <div class="w-full flex items-center justify-end p-4">
-              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">Apply</ui-btn>
+              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">{{ $strings.ButtonApply }}</ui-btn>
             </div>
           </div>
         </transition>
@@ -83,7 +83,7 @@
 
     <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamLibraryItem ? '165px' : '0px' }">
       <div class="flex-grow" />
-      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">Save</ui-btn>
+      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
     </div>
   </div>
 </template>
@@ -342,7 +342,7 @@ export default {
             this.$toast.success(`Successfully updated ${data.updates} items`)
             this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
-            this.$toast.warning('No updates were necessary')
+            this.$toast.warning(this.$strings.MessageNoUpdatesWereNecessary)
           }
         })
         .catch((error) => {

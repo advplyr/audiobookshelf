@@ -9,8 +9,8 @@
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
-          <h1 v-if="!showBatchUserCollectionModal" class="text-2xl">Add to Collection</h1>
-          <h1 v-else class="text-2xl">Add {{ selectedBookIds.length }} Books to Collection</h1>
+          <h1 v-if="!showBatchUserCollectionModal" class="text-2xl">{{ $strings.LabelAddToCollection }}</h1>
+          <h1 v-else class="text-2xl">{{ $getString('LabelAddToCollectionBatch', [selectedBookIds.length]) }}</h1>
         </div>
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
@@ -20,15 +20,15 @@
           </transition-group>
         </div>
         <div v-if="!collections.length" class="flex h-32 items-center justify-center">
-          <p class="text-xl">No Collections</p>
+          <p class="text-xl">{{ $strings.MessageNoCollections }}</p>
         </div>
         <div class="w-full h-px bg-white bg-opacity-10" />
         <form @submit.prevent="submitCreateCollection">
           <div class="flex px-4 py-2 items-center text-center border-b border-white border-opacity-10 text-white text-opacity-80">
             <div class="flex-grow px-2">
-              <ui-text-input v-model="newCollectionName" placeholder="New Collection" class="w-full" />
+              <ui-text-input v-model="newCollectionName" :placeholder="$strings.PlaceholderNewCollection" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10">Create</ui-btn>
+            <ui-btn type="submit" color="success" :padding-x="4" class="h-10">{{ $strings.ButtonCreate }}</ui-btn>
           </div>
         </form>
       </div>
@@ -65,7 +65,7 @@ export default {
     },
     title() {
       if (this.showBatchUserCollectionModal) {
-        return `${this.selectedBookIds.length} Items Selected`
+        return this.$getString('MessageItemsSelected', [this.selectedBookIds.length])
       }
       return this.selectedLibraryItem ? this.selectedLibraryItem.media.metadata.title : ''
     },
@@ -124,12 +124,12 @@ export default {
           .$post(`/api/collections/${collection.id}/batch/remove`, { books: this.selectedBookIds })
           .then((updatedCollection) => {
             console.log(`Books removed from collection`, updatedCollection)
-            this.$toast.success('Books removed from collection')
+            this.$toast.success(this.$strings.ToastCollectionItemsRemoveSuccess)
             this.processing = false
           })
           .catch((error) => {
             console.error('Failed to remove books from collection', error)
-            this.$toast.error('Failed to remove books from collection')
+            this.$toast.error(this.$strings.ToastCollectionItemsRemoveFailed)
             this.processing = false
           })
       } else {
@@ -138,12 +138,12 @@ export default {
           .$delete(`/api/collections/${collection.id}/book/${this.selectedLibraryItemId}`)
           .then((updatedCollection) => {
             console.log(`Book removed from collection`, updatedCollection)
-            this.$toast.success('Book removed from collection')
+            this.$toast.success(this.$strings.ToastCollectionItemsRemoveSuccess)
             this.processing = false
           })
           .catch((error) => {
             console.error('Failed to remove book from collection', error)
-            this.$toast.error('Failed to remove book from collection')
+            this.$toast.error(this.$strings.ToastCollectionItemsRemoveFailed)
             this.processing = false
           })
       }

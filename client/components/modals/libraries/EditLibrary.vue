@@ -53,20 +53,22 @@ export default {
       folders: [],
       showDirectoryPicker: false,
       newFolderPath: '',
-      mediaType: null,
-      mediaTypes: [
-        {
-          value: 'book',
-          text: 'Books'
-        },
-        {
-          value: 'podcast',
-          text: 'Podcasts'
-        }
-      ]
+      mediaType: null
     }
   },
   computed: {
+    mediaTypes() {
+      return [
+        {
+          value: 'book',
+          text: this.$strings.LabelBooks
+        },
+        {
+          value: 'podcast',
+          text: this.$strings.LabelPodcasts
+        }
+      ]
+    },
     folderPaths() {
       return this.folders.map((f) => f.fullPath)
     },

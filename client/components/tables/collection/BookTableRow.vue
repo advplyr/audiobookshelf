@@ -31,7 +31,7 @@
     </div>
     <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : translateDistance">
       <div class="flex h-full items-center">
-        <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+        <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
           <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
         </ui-tooltip>
         <div v-if="userCanUpdate" class="mx-1" :class="isHovering ? '' : 'ml-6'">
@@ -153,12 +153,12 @@ export default {
         .$patch(`/api/me/progress/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     removeClick() {
@@ -168,12 +168,12 @@ export default {
         .$delete(`/api/collections/${this.collectionId}/book/${this.book.id}`)
         .then((updatedCollection) => {
           console.log(`Book removed from collection`, updatedCollection)
-          this.$toast.success('Book removed from collection')
+          this.$toast.success(this.$strings.ToastRemoveItemFromCollectionSuccess)
           this.processingRemove = false
         })
         .catch((error) => {
           console.error('Failed to remove book from collection', error)
-          this.$toast.error('Failed to remove book from collection')
+          this.$toast.error(this.$strings.ToastRemoveItemFromCollectionFailed)
           this.processingRemove = false
         })
     }
