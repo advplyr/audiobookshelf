@@ -285,7 +285,7 @@ class LibraryController {
                   lastRange.end = currentSequence
                 }
                 else {
-                  ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNaN(currentSequence) })
+                  ranges.push({ start: currentSequence, end: currentSequence, isNumber: isNumber })
                 }
 
                 return ranges
