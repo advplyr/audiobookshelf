@@ -128,6 +128,7 @@ export default {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
       this.$store.commit('feeds/setFeeds', feeds)
+      this.$setServerLanguageCode(serverSettings.language)
 
       if (serverSettings.chromecastEnabled) {
         console.log('Chromecast enabled import script')
@@ -189,6 +190,7 @@ export default {
           this.processing = false
           this.isInit = res.isInit
           this.showInitScreen = !res.isInit
+          this.$setServerLanguageCode(res.language)
           if (this.showInitScreen) {
             this.ConfigPath = res.ConfigPath || ''
             this.MetadataPath = res.MetadataPath || ''

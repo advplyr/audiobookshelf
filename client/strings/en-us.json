@@ -204,6 +204,7 @@
   "LabelInvalidParts": "Invalid Parts",
   "LabelItem": "Item",
   "LabelLanguage": "Language",
+  "LabelLanguageDefaultServer": "Default Server Language",
   "LabelLastSeen": "Last Seen",
   "LabelLastTime": "Last Time",
   "LabelLastUpdate": "Last Update",
