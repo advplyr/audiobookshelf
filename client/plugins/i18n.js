@@ -1,19 +1,31 @@
 import Vue from "vue"
+import enUsStrings from '../strings/en-us.json'
+import { supplant } from './utils'
 
 const defaultCode = 'en-us'
 
-function supplant(str, subs) {
-  // source: http://crockford.com/javascript/remedial.html
-  return str.replace(/{([^{}]*)}/g,
-    function (a, b) {
-      var r = subs[b]
-      return typeof r === 'string' || typeof r === 'number' ? r : a
-    }
-  )
+const languageCodeMap = {
+  'en-us': 'English',
+  'es': 'Español',
+  'it': 'Italiano',
+  'pl': 'Polski',
+  'zh-cn': '汉语 (简化字)'
+}
+Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
+  return {
+    text: languageCodeMap[code],
+    value: code
+  }
+})
+
+Vue.prototype.$languageCodes = {
+  default: defaultCode,
+  current: defaultCode,
+  local: null,
+  server: null
 }
 
-Vue.prototype.$i18nCode = ''
-Vue.prototype.$strings = {}
+Vue.prototype.$strings = { ...enUsStrings }
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs && Array.isArray(subs) && subs.length) {
@@ -22,7 +34,9 @@ Vue.prototype.$getString = (key, subs) => {
   return Vue.prototype.$strings[key]
 }
 
-var translations = {}
+var translations = {
+  [defaultCode]: enUsStrings
+}
 
 function loadTranslationStrings(code) {
   return new Promise((resolve) => {
@@ -30,35 +44,64 @@ function loadTranslationStrings(code) {
       resolve(fileContents.default)
     }).catch((error) => {
       console.error('Failed to load i18n strings', code, error)
-      resolve({})
+      resolve(null)
     })
   })
 }
 
 async function loadi18n(code) {
-  if (Vue.prototype.$i18nCode == code) {
+  if (!code) return false
+  if (Vue.prototype.$languageCodes.current == code) {
     // already set
-    return
+    return false
   }
 
-  const currentCode = Vue.prototype.$i18nCode
   const strings = translations[code] || await loadTranslationStrings(code)
+  if (!strings) {
+    console.warn(`Invalid lang code ${code}`)
+    return false
+  }
 
   translations[code] = strings
-  Vue.prototype.$i18nCode = code
-
-  if (!currentCode) {
-    // first load
-    Vue.prototype.$strings = strings
-    return
-  }
+  Vue.prototype.$languageCodes.current = code
+  localStorage.setItem('lang', code)
 
   for (const key in Vue.prototype.$strings) {
     Vue.prototype.$strings[key] = strings[key] || translations[defaultCode][key]
   }
+
   console.log('i18n strings=', Vue.prototype.$strings)
+  return true
 }
 
-Vue.prototype.$i18nUpdate = loadi18n
+Vue.prototype.$setLanguageCode = loadi18n
 
-loadi18n(defaultCode)
+// Set the servers default language code, does not override users local language code
+Vue.prototype.$setServerLanguageCode = (code) => {
+  if (!code) return
+
+  if (!languageCodeMap[code]) {
+    console.warn('invalid server language in', code)
+  } else {
+    Vue.prototype.$languageCodes.server = code
+    if (!Vue.prototype.$languageCodes.local && code !== defaultCode) {
+      loadi18n(code)
+    }
+  }
+}
+
+// Initialize with language code in localStorage if valid
+async function initialize() {
+  const localLanguage = localStorage.getItem('lang')
+  if (!localLanguage) return
+
+  if (!languageCodeMap[localLanguage]) {
+    console.warn('Invalid local language code', localLanguage)
+    localStorage.setItem('lang', defaultCode)
+  } else if (localLanguage !== defaultCode) {
+    Vue.prototype.$languageCodes.local = localLanguage
+    loadi18n(localLanguage)
+  }
+}
+initialize()
+

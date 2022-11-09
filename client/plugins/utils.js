@@ -135,3 +135,13 @@ Vue.prototype.$parseCronExpression = (expression) => {
     description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
   }
 }
+
+export function supplant(str, subs) {
+  // source: http://crockford.com/javascript/remedial.html
+  return str.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = subs[b]
+      return typeof r === 'string' || typeof r === 'number' ? r : a
+    }
+  )
+}

@@ -72,9 +72,14 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
-            <p class="pr-4">{{ $strings.LabelSettingsDateFormat }}</p>
-            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-40" @input="(val) => updateSettingsKey('dateFormat', val)" />
+          <div class="py-2">
+            <p class="px-1 text-sm font-semibold">{{ $strings.LabelSettingsDateFormat }}</p>
+            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-48" @input="(val) => updateSettingsKey('dateFormat', val)" />
+          </div>
+
+          <div class="py-2">
+            <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguageDefaultServer }}</p>
+            <ui-dropdown v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-48" @input="updateServerLanguage" />
           </div>
         </div>
 
@@ -320,6 +325,10 @@ export default {
       this.updateServerSettings({
         bookshelfView: !val ? this.$constants.BookshelfView.DETAIL : this.$constants.BookshelfView.STANDARD
       })
+    },
+    updateServerLanguage(val) {
+      this.$setLanguageCode(val)
+      this.updateSettingsKey('language', val)
     },
     updateSettingsKey(key, val) {
       this.updateServerSettings({

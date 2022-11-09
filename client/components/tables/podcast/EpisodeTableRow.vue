@@ -20,7 +20,7 @@
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
 
-          <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+          <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
 
@@ -159,12 +159,12 @@ export default {
         .$patch(`/api/me/progress/${this.libraryItemId}/${this.episode.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     removeClick() {

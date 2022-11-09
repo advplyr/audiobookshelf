@@ -5,14 +5,14 @@
         <div class="w-full h-16 bg-primary">
           <img v-if="image" :src="image" class="w-full h-full object-cover" />
         </div>
-        <p class="text-gray-400 text-xxs pt-1 text-center">{{ numEpisodes }} Episodes</p>
+        <p class="text-gray-400 text-xxs pt-1 text-center">{{ numEpisodes }} {{ $strings.HeaderEpisodes }}</p>
       </div>
       <div class="flex-grow pl-2" :style="{ maxWidth: detailsWidth + 'px' }">
         <p class="mb-1">{{ title }}</p>
         <p class="text-xs mb-1 text-gray-300">{{ author }}</p>
         <p class="text-xs mb-2 text-gray-200">{{ description }}</p>
         <p class="text-xs truncate text-blue-200">
-          Folder: <span class="font-mono">{{ folderPath }}</span>
+          {{ $strings.LabelFolder }}: <span class="font-mono">{{ folderPath }}</span>
         </p>
       </div>
     </div>

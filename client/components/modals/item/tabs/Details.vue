@@ -179,7 +179,7 @@ export default {
           this.$toast.success('Item details updated')
           return true
         } else {
-          this.$toast.info('No updates were necessary')
+          this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
         }
       }
       return false

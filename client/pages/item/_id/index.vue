@@ -42,7 +42,7 @@
 
               <div v-if="narrator" class="flex py-0.5 mt-4">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Narrated By</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
                 </div>
                 <div>
                   <template v-for="(narrator, index) in narrators">
@@ -53,7 +53,7 @@
               </div>
               <div v-if="publishedYear" class="flex py-0.5">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Publish Year</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
                 </div>
                 <div>
                   {{ publishedYear }}
@@ -61,7 +61,7 @@
               </div>
               <div class="flex py-0.5" v-if="genres.length">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Genres</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
                 </div>
                 <div>
                   <template v-for="(genre, index) in genres">
@@ -72,7 +72,7 @@
               </div>
               <div v-if="tracks.length" class="flex py-0.5">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Duration</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
                 </div>
                 <div>
                   {{ durationPretty }}
@@ -80,7 +80,7 @@
               </div>
               <div class="flex py-0.5">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Size</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
                 </div>
                 <div>
                   {{ sizePretty }}
@@ -100,7 +100,7 @@
           <!-- Podcast episode downloads queue -->
           <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
-              <p class="text-sm py-1">{{ episodeDownloadsQueued.length }} Episode{{ episodeDownloadsQueued.length === 1 ? '' : 's' }} queued for download</p>
+              <p class="text-sm py-1">{{ $getString('MessageEpisodesQueuedForDownload', [episodeDownloadsQueued.length]) }}</p>
 
               <span v-if="userIsAdminOrUp" class="material-icons hover:text-error text-xl ml-3 cursor-pointer" @click="clearDownloadQueue">close</span>
             </div>
@@ -110,16 +110,16 @@
           <div v-if="episodesDownloading.length" class="px-4 py-2 mt-4 bg-success bg-opacity-20 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div v-for="episode in episodesDownloading" :key="episode.id" class="flex items-center">
               <widgets-loading-spinner />
-              <p class="text-sm py-1 pl-4">Downloading episode "{{ episode.episodeDisplayTitle }}"</p>
+              <p class="text-sm py-1 pl-4">{{ $strings.MessageDownloadingEpisode }} "{{ episode.episodeDisplayTitle }}"</p>
             </div>
           </div>
 
           <!-- Progress -->
           <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
-            <p v-if="progressPercent < 1" class="leading-6">Your Progress: {{ Math.round(progressPercent * 100) }}%</p>
-            <p v-else class="text-xs">Finished {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
-            <p v-if="progressPercent < 1" class="text-gray-200 text-xs">{{ $elapsedPretty(userTimeRemaining) }} remaining</p>
-            <p class="text-gray-400 text-xs pt-1">Started {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
+            <p v-if="progressPercent < 1" class="leading-6">{{ $strings.LabelYourProgress }}: {{ Math.round(progressPercent * 100) }}%</p>
+            <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
+            <p v-if="progressPercent < 1" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
+            <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
               <span class="material-icons text-sm">close</span>
@@ -130,41 +130,41 @@
           <div class="flex items-center justify-center md:justify-start pt-4">
             <ui-btn v-if="showPlayButton" :disabled="isStreaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playItem">
               <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ isStreaming ? 'Playing' : 'Play' }}
+              {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span v-show="!isStreaming" class="material-icons -ml-2 pr-1 text-white">error</span>
-              {{ isMissing ? 'Missing' : 'Incomplete' }}
+              {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
-              Read
+              {{ $strings.ButtonRead }}
             </ui-btn>
 
             <ui-tooltip v-if="userCanUpdate" text="Edit" direction="top">
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast && userCanUpdate" text="Collections" direction="top">
+            <ui-tooltip v-if="!isPodcast && userCanUpdate" :text="$strings.LabelCollections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
             <!-- Only admin or root user can download new episodes -->
-            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" text="Find Episodes" direction="top">
+            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="bookmarks.length" text="Your Bookmarks" direction="top">
+            <ui-tooltip v-if="bookmarks.length" :text="$strings.LabelYourBookmarks" direction="top">
               <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
             </ui-tooltip>
 
             <!-- RSS feed -->
-            <ui-tooltip v-if="showRssFeedBtn" text="Open RSS Feed" direction="top">
+            <ui-tooltip v-if="showRssFeedBtn" :text="$strings.LabelOpenRSSFeed" direction="top">
               <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeedUrl ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
           </div>
@@ -507,12 +507,12 @@ export default {
         .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     playItem(startTime = null) {

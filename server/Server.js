@@ -254,7 +254,8 @@ class Server {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
-        isInit: this.db.hasRootUser
+        isInit: this.db.hasRootUser,
+        language: this.db.serverSettings.language
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath

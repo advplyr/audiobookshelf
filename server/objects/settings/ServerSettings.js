@@ -53,6 +53,7 @@ class ServerSettings {
     this.chromecastEnabled = false
     this.enableEReader = false
     this.dateFormat = 'MM/dd/yyyy'
+    this.language = 'en-us'
 
     this.logLevel = Logger.logLevel
 
@@ -102,6 +103,7 @@ class ServerSettings {
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
+    this.language = settings.language || 'en-us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
 
@@ -153,6 +155,7 @@ class ServerSettings {
       chromecastEnabled: this.chromecastEnabled,
       enableEReader: this.enableEReader,
       dateFormat: this.dateFormat,
+      language: this.language,
       logLevel: this.logLevel,
       version: this.version
     }

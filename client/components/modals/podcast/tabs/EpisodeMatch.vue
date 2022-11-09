@@ -2,18 +2,18 @@
   <div style="min-height: 200px">
     <template v-if="!podcastFeedUrl">
       <div class="py-8">
-        <widgets-alert type="error">Podcast has no RSS feed url to use for matching</widgets-alert>
+        <widgets-alert type="error">{{ $strings.MessagePodcastHasNoRSSFeedForMatching }}</widgets-alert>
       </div>
     </template>
     <template v-else>
       <form @submit.prevent="submitForm">
         <div class="flex mb-2">
-          <ui-text-input-with-label v-model="episodeTitle" :disabled="isProcessing" label="Episode Title" class="pr-1" />
-          <ui-btn class="mt-5 ml-1" :loading="isProcessing" type="submit">Search</ui-btn>
+          <ui-text-input-with-label v-model="episodeTitle" :disabled="isProcessing" :label="$strings.LabelEpisodeTitle" class="pr-1" />
+          <ui-btn class="mt-5 ml-1" :loading="isProcessing" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
         </div>
       </form>
       <div v-if="!isProcessing && searchedTitle && !episodesFound.length" class="w-full py-8">
-        <p class="text-center text-lg">No episode matches found</p>
+        <p class="text-center text-lg">{{ $strings.MessageNoEpisodeMatchesFound }}</p>
       </div>
       <div v-for="(episode, index) in episodesFound" :key="index" class="w-full py-4 border-b border-white border-opacity-5 hover:bg-gray-300 hover:bg-opacity-10 cursor-pointer px-2" @click.stop="selectEpisode(episode)">
         <p v-if="episode.episode" class="font-semibold text-gray-200">#{{ episode.episode }}</p>

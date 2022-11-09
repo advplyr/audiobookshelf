@@ -7,9 +7,9 @@
       </div>
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
-      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
+      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <nuxt-link v-if="userCanUpdate && !isFile" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
-        <ui-btn small color="primary">Manage Tracks</ui-btn>
+        <ui-btn small color="primary">{{ $strings.ButtonManageTracks }}</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
@@ -20,10 +20,10 @@
         <table class="text-sm tracksTable">
           <tr class="font-book">
             <th class="w-10">#</th>
-            <th class="text-left">Filename</th>
-            <th class="text-left w-20">Size</th>
-            <th class="text-left w-20">Duration</th>
-            <th v-if="userCanDownload" class="text-center w-20">Download</th>
+            <th class="text-left">{{ $strings.LabelFilename }}</th>
+            <th class="text-left w-20">{{ $strings.LabelSize }}</th>
+            <th class="text-left w-20">{{ $strings.LabelDuration }}</th>
+            <th v-if="userCanDownload" class="text-center w-20">{{ $strings.LabelDownload }}</th>
             <th v-if="showExperimentalFeatures" class="text-center w-20">
               <div class="flex items-center">
                 <p>Tone</p>

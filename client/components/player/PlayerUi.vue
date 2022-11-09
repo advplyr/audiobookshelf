@@ -22,7 +22,7 @@
           <span class="material-icons text-2xl sm:text-3xl">format_list_bulleted</span>
         </div>
 
-        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? 'Use full track' : 'Use chapter track'">
+        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
           <div class="cursor-pointer text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
             <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
           </div>

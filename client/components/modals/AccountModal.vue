@@ -125,20 +125,6 @@ export default {
       processing: false,
       newUser: {},
       isNew: true,
-      accountTypes: [
-        {
-          text: 'Guest',
-          value: 'guest'
-        },
-        {
-          text: 'User',
-          value: 'user'
-        },
-        {
-          text: 'Admin',
-          value: 'admin'
-        }
-      ],
       tags: [],
       loadingTags: false
     }
@@ -160,6 +146,22 @@ export default {
       set(val) {
         this.$emit('input', val)
       }
+    },
+    accountTypes() {
+      return [
+        {
+          text: this.$strings.LabelAccountTypeGuest,
+          value: 'guest'
+        },
+        {
+          text: this.$strings.LabelAccountTypeUser,
+          value: 'user'
+        },
+        {
+          text: this.$strings.LabelAccountTypeAdmin,
+          value: 'admin'
+        }
+      ]
     },
     user() {
       return this.$store.state.user.user
@@ -249,7 +251,7 @@ export default {
         .then((data) => {
           this.processing = false
           if (data.error) {
-            this.$toast.error(`Failed to update account: ${data.error}`)
+            this.$toast.error(`${this.$strings.ToastAccountUpdateFailed}: ${data.error}`)
           } else {
             console.log('Account updated', data.user)
 
@@ -258,7 +260,7 @@ export default {
               this.$store.commit('user/setUserToken', data.user.token)
             }
 
-            this.$toast.success('Account updated')
+            this.$toast.success(this.$strings.ToastAccountUpdateSuccess)
             this.show = false
           }
         })

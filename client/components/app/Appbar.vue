@@ -45,17 +45,16 @@
           </span>
         </nuxt-link>
       </div>
-
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
-        <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
+        <h1 class="text-2xl px-4">{{ $getString('MessageItemsSelected', [numLibraryItemsSelected]) }}</h1>
         <div class="flex-grow" />
-        <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" text="Quick Match Selected" direction="bottom">
+        <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="!isPodcastLibrary" :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+        <ui-tooltip v-if="!isPodcastLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" text="Add to Collection" direction="bottom">
+        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
@@ -63,10 +62,10 @@
             <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
         </template>
-        <ui-tooltip v-if="userCanDelete" text="Delete" direction="bottom">
+        <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
           <ui-icon-btn :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
-        <ui-tooltip text="Deselect All" direction="bottom">
+        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom">
           <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>

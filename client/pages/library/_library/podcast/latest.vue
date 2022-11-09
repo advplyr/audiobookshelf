@@ -4,8 +4,8 @@
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-3xl mx-auto py-4">
-        <p class="text-xl mb-2 font-semibold">Latest episodes</p>
-        <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">No podcasts found</p>
+        <p class="text-xl mb-2 font-semibold">{{ $strings.HeaderLatestEpisodes }}</p>
+        <p v-if="!recentEpisodes.length && !processing" class="text-center text-xl">{{ $strings.MessageNoEpisodes }}</p>
         <template v-for="(episode, index) in episodesMapped">
           <div :key="episode.id" class="flex py-5 cursor-pointer relative" @click.stop="clickEpisode(episode)">
             <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" />
@@ -25,7 +25,7 @@
               </button>
             </div>
 
-             <div v-if="episode.progress" class="absolute bottom-0 left-0 h-0.5 pointer-events-none bg-warning" :style="{ width: episode.progress.progress * 100 + '%' }" />
+            <div v-if="episode.progress" class="absolute bottom-0 left-0 h-0.5 pointer-events-none bg-warning" :style="{ width: episode.progress.progress * 100 + '%' }" />
           </div>
           <div :key="index" v-if="index !== recentEpisodes.length" class="w-full h-px bg-white bg-opacity-10" />
         </template>

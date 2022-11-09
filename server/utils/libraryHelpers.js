@@ -320,6 +320,7 @@ module.exports = {
       {
         id: 'continue-listening',
         label: 'Continue Listening',
+        labelStringKey: 'LabelContinueListening',
         type: isPodcastLibrary ? 'episode' : mediaType,
         entities: [],
         category: 'recentlyListened'
@@ -327,6 +328,7 @@ module.exports = {
       {
         id: 'continue-series',
         label: 'Continue Series',
+        labelStringKey: 'LabelContinueSeries',
         type: mediaType,
         entities: [],
         category: 'continueSeries'
@@ -334,6 +336,7 @@ module.exports = {
       {
         id: 'recently-added',
         label: 'Recently Added',
+        labelStringKey: 'LabelRecentlyAdded',
         type: mediaType,
         entities: [],
         category: 'newestItems'
@@ -341,6 +344,7 @@ module.exports = {
       {
         id: 'listen-again',
         label: 'Listen Again',
+        labelStringKey: 'LabelListenAgain',
         type: isPodcastLibrary ? 'episode' : mediaType,
         entities: [],
         category: 'recentlyFinished'
@@ -348,6 +352,7 @@ module.exports = {
       {
         id: 'recent-series',
         label: 'Recent Series',
+        labelStringKey: 'LabelRecentSeries',
         type: 'series',
         entities: [],
         category: 'newestSeries'
@@ -355,6 +360,7 @@ module.exports = {
       {
         id: 'newest-authors',
         label: 'Newest Authors',
+        labelStringKey: 'LabelNewestAuthors',
         type: 'authors',
         entities: [],
         category: 'newestAuthors'
@@ -362,6 +368,7 @@ module.exports = {
       {
         id: 'episodes-recently-added',
         label: 'Newest Episodes',
+        labelStringKey: 'LabelNewestEpisodes',
         type: 'episode',
         entities: [],
         category: 'newestEpisodes'
