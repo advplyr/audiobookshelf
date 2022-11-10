@@ -246,6 +246,7 @@ class LibraryItem {
 
   setLastScan() {
     this.lastScan = Date.now()
+    this.updatedAt = Date.now()
     this.scanVersion = version
   }
 
