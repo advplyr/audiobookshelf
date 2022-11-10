@@ -11,7 +11,7 @@ const languageCodeMap = {
   // 'es': 'Español',
   // 'it': 'Italiano',
   // 'pl': 'Polski',
-  'zh-cn': '汉语 (简化字)'
+  'zh-cn': '简体中文 (Simplified Chinese)'
 }
 Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
   return {
