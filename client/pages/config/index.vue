@@ -79,7 +79,7 @@
 
           <div class="py-2">
             <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguageDefaultServer }}</p>
-            <ui-dropdown v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-48" @input="updateServerLanguage" />
+            <ui-dropdown ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-48" @input="updateServerLanguage" />
           </div>
         </div>
 
@@ -327,7 +327,6 @@ export default {
       })
     },
     updateServerLanguage(val) {
-      this.$setLanguageCode(val)
       this.updateSettingsKey('language', val)
     },
     updateSettingsKey(key, val) {
@@ -343,6 +342,11 @@ export default {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false
           this.$toast.success('Server settings updated')
+
+          if (payload.language) {
+            // Updating language after save allows for re-rendering
+            this.$setLanguageCode(payload.language)
+          }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)

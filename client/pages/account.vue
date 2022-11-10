@@ -12,8 +12,12 @@
             <ui-text-input-with-label disabled :value="usertype" :label="$strings.LabelAccountType" />
           </div>
         </div>
+        <div class="py-4">
+          <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguage }}</p>
+          <ui-dropdown v-model="selectedLanguage" :items="$languageCodeOptions" small class="max-w-48" @input="updateLocalLanguage" />
+        </div>
 
-        <div class="w-full h-px bg-primary my-4" />
+        <div class="w-full h-px bg-white/10 my-4" />
 
         <p v-if="!isGuest" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
         <form v-if="!isGuest" @submit.prevent="submitChangePassword">
@@ -42,7 +46,8 @@ export default {
       password: null,
       newPassword: null,
       confirmPassword: null,
-      changingPassword: false
+      changingPassword: false,
+      selectedLanguage: ''
     }
   },
   computed: {
@@ -66,6 +71,9 @@ export default {
     }
   },
   methods: {
+    updateLocalLanguage(lang) {
+      this.$setLanguageCode(lang)
+    },
     logout() {
       var rootSocket = this.$root.socket || {}
       const logoutPayload = {
@@ -113,6 +121,8 @@ export default {
         })
     }
   },
-  mounted() {}
+  mounted() {
+    this.selectedLanguage = this.$languageCodes.current
+  }
 }
 </script>

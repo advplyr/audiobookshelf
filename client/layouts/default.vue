@@ -4,7 +4,7 @@
 
     <app-side-rail v-if="isShowingSideRail" class="hidden md:block" />
     <div id="app-content" class="h-full" :class="{ 'has-siderail': isShowingSideRail }">
-      <Nuxt />
+      <Nuxt :key="currentLang" />
     </div>
 
     <app-stream-container ref="streamContainer" />
@@ -31,7 +31,8 @@ export default {
       socket: null,
       isSocketConnected: false,
       isFirstSocketConnection: true,
-      socketConnectionToastId: null
+      socketConnectionToastId: null,
+      currentLang: null
     }
   },
   watch: {
@@ -519,6 +520,10 @@ export default {
         .catch((error) => {
           console.error('Failed to load tasks', error)
         })
+    },
+    changeLanguage(code) {
+      console.log('Changed lang', code)
+      this.currentLang = code
     }
   },
   beforeMount() {
@@ -527,6 +532,7 @@ export default {
   mounted() {
     this.updateBodyClass()
     this.resize()
+    this.$eventBus.$on('change-lang', this.changeLanguage)
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
 
@@ -544,6 +550,7 @@ export default {
     }
   },
   beforeDestroy() {
+    this.$eventBus.$off('change-lang', this.changeLanguage)
     window.removeEventListener('resize', this.resize)
     window.removeEventListener('keydown', this.keyDown)
   }

@@ -1,14 +1,16 @@
+import { getElementsByTagType } from "domutils"
 import Vue from "vue"
 import enUsStrings from '../strings/en-us.json'
+import itStrings from '../strings/it.json'
 import { supplant } from './utils'
 
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
   'en-us': 'English',
-  'es': 'Español',
-  'it': 'Italiano',
-  'pl': 'Polski',
+  // 'es': 'Español',
+  // 'it': 'Italiano',
+  // 'pl': 'Polski',
   'zh-cn': '汉语 (简化字)'
 }
 Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
@@ -26,6 +28,7 @@ Vue.prototype.$languageCodes = {
 }
 
 Vue.prototype.$strings = { ...enUsStrings }
+
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
   if (subs && Array.isArray(subs) && subs.length) {
@@ -71,6 +74,7 @@ async function loadi18n(code) {
   }
 
   console.log('i18n strings=', Vue.prototype.$strings)
+  Vue.prototype.$eventBus.$emit('change-lang', code)
   return true
 }
 
@@ -98,7 +102,7 @@ async function initialize() {
   if (!languageCodeMap[localLanguage]) {
     console.warn('Invalid local language code', localLanguage)
     localStorage.setItem('lang', defaultCode)
-  } else if (localLanguage !== defaultCode) {
+  } else {
     Vue.prototype.$languageCodes.local = localLanguage
     loadi18n(localLanguage)
   }
