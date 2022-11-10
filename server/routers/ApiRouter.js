@@ -26,7 +26,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, getUsersOnline, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -42,6 +42,7 @@ class ApiRouter {
     this.cronManager = cronManager
     this.notificationManager = notificationManager
     this.taskManager = taskManager
+    this.getUsersOnline = getUsersOnline
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -113,6 +114,7 @@ class ApiRouter {
     //
     this.router.post('/users', UserController.middleware.bind(this), UserController.create.bind(this))
     this.router.get('/users', UserController.middleware.bind(this), UserController.findAll.bind(this))
+    this.router.get('/users/online', UserController.getOnlineUsers.bind(this))
     this.router.get('/users/:id', UserController.middleware.bind(this), UserController.findOne.bind(this))
     this.router.patch('/users/:id', UserController.middleware.bind(this), UserController.update.bind(this))
     this.router.delete('/users/:id', UserController.middleware.bind(this), UserController.delete.bind(this))
