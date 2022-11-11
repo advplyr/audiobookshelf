@@ -582,7 +582,7 @@ export default {
     },
     collectionsClick() {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
-      this.$store.commit('globals/setShowUserCollectionsModal', true)
+      this.$store.commit('globals/setShowCollectionsModal', true)
     },
     clickRSSFeed() {
       this.showRssFeedModal = true

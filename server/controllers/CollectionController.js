@@ -1,11 +1,11 @@
 const Logger = require('../Logger')
-const UserCollection = require('../objects/UserCollection')
+const Collection = require('../objects/Collection')
 
 class CollectionController {
   constructor() { }
 
   async create(req, res) {
-    var newCollection = new UserCollection()
+    var newCollection = new Collection()
     req.body.userId = req.user.id
     var success = newCollection.setData(req.body)
     if (!success) {

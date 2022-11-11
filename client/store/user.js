@@ -114,7 +114,7 @@ export const actions = {
       return false
     })
   },
-  loadUserCollections({ state, commit }) {
+  loadCollections({ state, commit }) {
     if (state.collectionsLoaded) {
       console.log('Collections already loaded')
       return state.collections

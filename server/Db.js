@@ -4,7 +4,7 @@ const Logger = require('./Logger')
 const { version } = require('../package.json')
 const LibraryItem = require('./objects/LibraryItem')
 const User = require('./objects/user/User')
-const UserCollection = require('./objects/UserCollection')
+const Collection = require('./objects/Collection')
 const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
@@ -180,7 +180,7 @@ class Db {
       }
     })
     var p5 = this.collectionsDb.select(() => true).then((results) => {
-      this.collections = results.data.map(l => new UserCollection(l))
+      this.collections = results.data.map(l => new Collection(l))
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
     var p6 = this.authorsDb.select(() => true).then((results) => {

@@ -105,13 +105,6 @@ class UserController {
     }
     var user = req.reqUser
 
-    // delete user collections
-    var userCollections = this.db.collections.filter(c => c.userId === user.id)
-    var collectionsToRemove = userCollections.map(uc => uc.id)
-    for (let i = 0; i < collectionsToRemove.length; i++) {
-      await this.db.removeEntity('collection', collectionsToRemove[i])
-    }
-
     // Todo: check if user is logged in and cancel streams
 
     var userJson = user.toJSONForBrowser()

@@ -1,8 +1,8 @@
 export const state = () => ({
   isMobile: false,
   isMobileLandscape: false,
-  showBatchUserCollectionModal: false,
-  showUserCollectionsModal: false,
+  showBatchCollectionModal: false,
+  showCollectionsModal: false,
   showEditCollectionModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
@@ -68,13 +68,13 @@ export const mutations = {
     state.isMobile = width < 640 || height < 640
     state.isMobileLandscape = state.isMobile && height > width
   },
-  setShowUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = false
-    state.showUserCollectionsModal = val
+  setShowCollectionsModal(state, val) {
+    state.showBatchCollectionModal = false
+    state.showCollectionsModal = val
   },
-  setShowBatchUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = true
-    state.showUserCollectionsModal = val
+  setShowBatchCollectionsModal(state, val) {
+    state.showBatchCollectionModal = true
+    state.showCollectionsModal = val
   },
   setShowEditCollectionModal(state, val) {
     state.showEditCollectionModal = val

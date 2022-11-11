@@ -208,7 +208,7 @@ export default {
       this.$router.push('/batch')
     },
     batchAddToCollectionClick() {
-      this.$store.commit('globals/setShowBatchUserCollectionsModal', true)
+      this.$store.commit('globals/setShowBatchCollectionsModal', true)
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities

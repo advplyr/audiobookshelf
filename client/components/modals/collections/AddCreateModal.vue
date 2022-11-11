@@ -9,7 +9,7 @@
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="show" class="w-full h-full">
         <div class="py-4 px-4">
-          <h1 v-if="!showBatchUserCollectionModal" class="text-2xl">{{ $strings.LabelAddToCollection }}</h1>
+          <h1 v-if="!showBatchCollectionModal" class="text-2xl">{{ $strings.LabelAddToCollection }}</h1>
           <h1 v-else class="text-2xl">{{ $getString('LabelAddToCollectionBatch', [selectedBookIds.length]) }}</h1>
         </div>
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
@@ -57,14 +57,14 @@ export default {
   computed: {
     show: {
       get() {
-        return this.$store.state.globals.showUserCollectionsModal
+        return this.$store.state.globals.showCollectionsModal
       },
       set(val) {
-        this.$store.commit('globals/setShowUserCollectionsModal', val)
+        this.$store.commit('globals/setShowCollectionsModal', val)
       }
     },
     title() {
-      if (this.showBatchUserCollectionModal) {
+      if (this.showBatchCollectionModal) {
         return this.$getString('MessageItemsSelected', [this.selectedBookIds.length])
       }
       return this.selectedLibraryItem ? this.selectedLibraryItem.media.metadata.title : ''
@@ -85,7 +85,7 @@ export default {
       return this.collections
         .map((c) => {
           var includesBook = false
-          if (this.showBatchUserCollectionModal) {
+          if (this.showBatchCollectionModal) {
             // Only show collection added if all books are in the collection
             var collectionBookIds = c.books.map((b) => b.id)
             includesBook = !this.selectedBookIds.find((id) => !collectionBookIds.includes(id))
@@ -100,8 +100,8 @@ export default {
         })
         .sort((a, b) => (a.isBookIncluded ? -1 : 1))
     },
-    showBatchUserCollectionModal() {
-      return this.$store.state.globals.showBatchUserCollectionModal
+    showBatchCollectionModal() {
+      return this.$store.state.globals.showBatchCollectionModal
     },
     selectedBookIds() {
       return this.$store.state.selectedLibraryItems || []
@@ -112,13 +112,13 @@ export default {
   },
   methods: {
     loadCollections() {
-      this.$store.dispatch('user/loadUserCollections')
+      this.$store.dispatch('user/loadCollections')
     },
     removeFromCollection(collection) {
       if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return
       this.processing = true
 
-      if (this.showBatchUserCollectionModal) {
+      if (this.showBatchCollectionModal) {
         // BATCH Remove books
         this.$axios
           .$post(`/api/collections/${collection.id}/batch/remove`, { books: this.selectedBookIds })
@@ -152,7 +152,7 @@ export default {
       if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return
       this.processing = true
 
-      if (this.showBatchUserCollectionModal) {
+      if (this.showBatchCollectionModal) {
         // BATCH Remove books
         this.$axios
           .$post(`/api/collections/${collection.id}/batch/add`, { books: this.selectedBookIds })
@@ -189,7 +189,7 @@ export default {
       }
       this.processing = true
 
-      var books = this.showBatchUserCollectionModal ? this.selectedBookIds : [this.selectedLibraryItemId]
+      var books = this.showBatchCollectionModal ? this.selectedBookIds : [this.selectedLibraryItemId]
       var newCollection = {
         books: books,
         libraryId: this.currentLibraryId,

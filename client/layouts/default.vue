@@ -10,7 +10,7 @@
     <app-stream-container ref="streamContainer" />
 
     <modals-item-edit-modal />
-    <modals-user-collections-modal />
+    <modals-collections-add-create-modal />
     <modals-edit-collection-modal />
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
