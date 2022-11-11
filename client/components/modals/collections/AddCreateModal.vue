@@ -41,7 +41,8 @@ export default {
   data() {
     return {
       newCollectionName: '',
-      processing: false
+      processing: false,
+      collections: []
     }
   },
   watch: {
@@ -78,9 +79,6 @@ export default {
     selectedLibraryItemId() {
       return this.selectedLibraryItem ? this.selectedLibraryItem.id : null
     },
-    collections() {
-      return this.$store.state.user.collections || []
-    },
     sortedCollections() {
       return this.collections
         .map((c) => {
@@ -112,7 +110,19 @@ export default {
   },
   methods: {
     loadCollections() {
-      this.$store.dispatch('user/loadCollections')
+      this.processing = true
+      this.$axios
+        .$get(`/api/libraries/${this.currentLibraryId}/collections`)
+        .then((data) => {
+          this.collections = data.results || []
+        })
+        .catch((error) => {
+          console.error('Failed to get collections', error)
+          this.$toast.error('Failed to load collections')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     removeFromCollection(collection) {
       if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return

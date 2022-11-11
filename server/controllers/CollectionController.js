@@ -18,8 +18,7 @@ class CollectionController {
   }
 
   findAll(req, res) {
-    var collections = this.db.collections.filter(c => c.userId === req.user.id)
-    var expandedCollections = collections.map(c => c.toJSONExpanded(this.db.libraryItems))
+    var expandedCollections = this.db.collections.map(c => c.toJSONExpanded(this.db.libraryItems))
     res.json(expandedCollections)
   }
 
