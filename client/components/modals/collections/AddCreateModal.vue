@@ -1,7 +1,7 @@
 <template>
   <modals-modal v-model="show" name="collections" :processing="processing" :width="500" :height="'unset'">
     <template #outer>
-      <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
+      <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
         <p class="font-book text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
@@ -41,8 +41,7 @@ export default {
   data() {
     return {
       newCollectionName: '',
-      processing: false,
-      collections: []
+      processing: false
     }
   },
   watch: {
@@ -69,6 +68,9 @@ export default {
         return this.$getString('MessageItemsSelected', [this.selectedBookIds.length])
       }
       return this.selectedLibraryItem ? this.selectedLibraryItem.media.metadata.title : ''
+    },
+    collections() {
+      return this.$store.state.libraries.collections || []
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -110,19 +112,23 @@ export default {
   },
   methods: {
     loadCollections() {
-      this.processing = true
-      this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/collections`)
-        .then((data) => {
-          this.collections = data.results || []
-        })
-        .catch((error) => {
-          console.error('Failed to get collections', error)
-          this.$toast.error('Failed to load collections')
-        })
-        .finally(() => {
-          this.processing = false
-        })
+      if (!this.collections.length) {
+        this.processing = true
+        this.$axios
+          .$get(`/api/libraries/${this.currentLibraryId}/collections`)
+          .then((data) => {
+            if (data.results) {
+              this.$store.commit('libraries/setCollections', data.results || [])
+            }
+          })
+          .catch((error) => {
+            console.error('Failed to get collections', error)
+            this.$toast.error('Failed to load collections')
+          })
+          .finally(() => {
+            this.processing = false
+          })
+      }
     },
     removeFromCollection(collection) {
       if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return

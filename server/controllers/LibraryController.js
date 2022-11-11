@@ -131,6 +131,13 @@ class LibraryController {
     // Remove library watcher
     this.watcher.removeLibrary(library)
 
+    // Remove collections for library
+    var collections = this.db.collections.filter(c => c.libraryId === library.id)
+    for (const collection of collections) {
+      Logger.info(`[Server] deleting collection "${collection.name}" for library "${library.name}"`)
+      await this.db.removeEntity('collection', collection.id)
+    }
+
     // Remove items in this library
     var libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
     Logger.info(`[Server] deleting library "${library.name}" with ${libraryItems.length} items"`)

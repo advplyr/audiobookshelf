@@ -52,7 +52,7 @@ export default {
       return redirect('/')
     }
 
-    store.commit('user/addUpdateCollection', collection)
+    store.commit('libraries/addUpdateCollection', collection)
     return {
       collectionId: collection.id
     }
@@ -80,7 +80,7 @@ export default {
       return this.collection.description || ''
     },
     collection() {
-      return this.$store.getters['user/getCollection'](this.collectionId)
+      return this.$store.getters['libraries/getCollection'](this.collectionId) || {}
     },
     playableBooks() {
       return this.bookItems.filter((book) => {

@@ -298,10 +298,10 @@ export default {
       this.$store.commit('user/updateMediaProgress', payload)
     },
     collectionAdded(collection) {
-      this.$store.commit('user/addUpdateCollection', collection)
+      this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionUpdated(collection) {
-      this.$store.commit('user/addUpdateCollection', collection)
+      this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionRemoved(collection) {
       if (this.$route.name.startsWith('collection')) {
@@ -309,7 +309,7 @@ export default {
           this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/collections`)
         }
       }
-      this.$store.commit('user/removeCollection', collection)
+      this.$store.commit('libraries/removeCollection', collection)
     },
     rssFeedOpen(data) {
       this.$store.commit('feeds/addFeed', data)

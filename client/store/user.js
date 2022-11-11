@@ -9,8 +9,7 @@ export const state = () => ({
     collapseSeries: false,
     collapseBookSeries: false
   },
-  settingsListeners: [],
-  collections: []
+  settingsListeners: []
 })
 
 export const getters = {
@@ -57,9 +56,6 @@ export const getters = {
     if (!state.user) return false
     if (getters.getUserCanAccessAllLibraries) return true
     return getters.getLibrariesAccessible.includes(libraryId)
-  },
-  getCollection: state => id => {
-    return state.collections.find(c => c.id === id)
   }
 }
 
@@ -163,16 +159,5 @@ export const mutations = {
   },
   removeSettingsListener(state, listenerId) {
     state.settingsListeners = state.settingsListeners.filter(l => l.id !== listenerId)
-  },
-  addUpdateCollection(state, collection) {
-    var index = state.collections.findIndex(c => c.id === collection.id)
-    if (index >= 0) {
-      state.collections.splice(index, 1, collection)
-    } else {
-      state.collections.push(collection)
-    }
-  },
-  removeCollection(state, collection) {
-    state.collections = state.collections.filter(c => c.id !== collection.id)
   }
 }
