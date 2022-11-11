@@ -1,12 +1,11 @@
-import { getElementsByTagType } from "domutils"
 import Vue from "vue"
 import enUsStrings from '../strings/en-us.json'
-import itStrings from '../strings/it.json'
 import { supplant } from './utils'
 
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
+  'de': 'Deutsch',
   'en-us': 'English',
   // 'es': 'Español',
   // 'it': 'Italiano',

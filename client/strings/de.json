@@ -150,7 +150,7 @@
   "LabelBackupsMaxBackupSize": "Maximale Sicherungsgröße (in GB)",
   "LabelBackupsMaxBackupSizeHelp": "Zum Schutz vor Fehlkonfigurationen schlagen Sicherungen fehl, wenn sie die konfigurierte Größe überschreiten.",
   "LabelBackupsNumberToKeep": "Anzahl der aufzubewahrenden Sicherungen",
-  "LabelBackupsNumberToKeepHelp": "Es wird immer nur 1 Sicherung auf einmal entfernt. Wenn Sie bereits mehrere Sicherungen als die definierte max. Anzahl haben, sollten Sie diese manuell entfernen."
+  "LabelBackupsNumberToKeepHelp": "Es wird immer nur 1 Sicherung auf einmal entfernt. Wenn Sie bereits mehrere Sicherungen als die definierte max. Anzahl haben, sollten Sie diese manuell entfernen.",
   "LabelBooks": "Bücher",
   "LabelChangePassword": "Passwort ändern",
   "LabelChaptersFound": "gefundene Kapitel",
