@@ -776,9 +776,14 @@ class Scanner {
     for (const key in matchDataTransformed) {
       if (matchDataTransformed[key]) {
         if (key === 'genres') {
-          if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
-            // TODO: Genres array or string?
-            updatePayload.metadata[key] = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+          if ((!libraryItem.media.metadata.genres.length || options.overrideDetails)) {
+            var genresArray = []
+            if (Array.isArray(matchDataTransformed[key])) genresArray = [...matchDataTransformed[key]]
+            else { // Genres should always be passed in as an array but just incase handle a string
+              Logger.warn(`[Scanner] quickMatch genres is not an array ${matchDataTransformed[key]}`)
+              genresArray = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+            }
+            updatePayload.metadata[key] = genresArray
           }
         } else if (libraryItem.media.metadata[key] !== matchDataTransformed[key] && (!libraryItem.media.metadata[key] || options.overrideDetails)) {
           updatePayload.metadata[key] = matchDataTransformed[key]

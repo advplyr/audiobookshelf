@@ -183,6 +183,19 @@ class UserController {
     res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
   }
 
+  // POST: api/users/online (admin)
+  async getOnlineUsers(req, res) {
+    if (!req.user.isAdminOrUp) {
+      return res.sendStatus(404)
+    }
+    const usersOnline = this.getUsersOnline()
+
+    res.json({
+      usersOnline,
+      openSessions: this.playbackSessionManager.sessions
+    })
+  }
+
   middleware(req, res, next) {
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)

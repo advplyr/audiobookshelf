@@ -83,7 +83,7 @@ class Server {
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.taskManager, this.getUsersOnline.bind(this), this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 
@@ -95,8 +95,7 @@ class Server {
     this.clients = {}
   }
 
-  get usersOnline() {
-    // TODO: Map open user sessions
+  getUsersOnline() {
     return Object.values(this.clients).filter(c => c.user).map(client => {
       return client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems)
     })
@@ -481,7 +480,7 @@ class Server {
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }
     if (user.type === 'root') {
-      initialPayload.usersOnline = this.usersOnline
+      initialPayload.usersOnline = this.getUsersOnline()
     }
     client.socket.emit('init', initialPayload)
   }
