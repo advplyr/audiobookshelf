@@ -24,7 +24,7 @@
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderListeningStats }}</h1>
         <div class="flex items-center">
-          <p class="text-sm text-gray-300">{{ this.listeningSessions.total }} {{ $strings.HeaderListeningSessions }}</p>
+          <p class="text-sm text-gray-300">{{ listeningSessions.total }} {{ $strings.HeaderListeningSessions }}</p>
           <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs mx-2" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
         </div>
         <p class="text-sm text-gray-300">
@@ -110,8 +110,7 @@ export default {
   },
   data() {
     return {
-      listeningSessions: [],
-      totalSessions: 0,
+      listeningSessions: {},
       listeningStats: {},
       purgingMediaProgress: false
     }
