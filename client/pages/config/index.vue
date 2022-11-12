@@ -74,12 +74,12 @@
 
           <div class="py-2">
             <p class="px-1 text-sm font-semibold">{{ $strings.LabelSettingsDateFormat }}</p>
-            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-48" @input="(val) => updateSettingsKey('dateFormat', val)" />
+            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
           </div>
 
           <div class="py-2">
             <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguageDefaultServer }}</p>
-            <ui-dropdown ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-48" @input="updateServerLanguage" />
+            <ui-dropdown ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
         </div>
 
