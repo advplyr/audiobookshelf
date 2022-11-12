@@ -17,7 +17,7 @@
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
@@ -131,6 +131,19 @@ export default {
     }
   },
   methods: {
+    addEpisodeToQueue(episode) {
+      const queueItem = {
+        libraryItemId: this.libraryItem.id,
+        libraryId: this.libraryItem.libraryId,
+        episodeId: episode.id,
+        title: episode.title,
+        subtitle: this.mediaMetadata.title,
+        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+        duration: episode.audioFile.duration || null,
+        coverPath: this.media.coverPath || null
+      }
+      this.$store.commit('addItemToQueue', queueItem)
+    },
     toggleBatchFinished() {
       this.processing = true
       var newIsFinished = !this.selectedIsFinished
@@ -189,6 +202,7 @@ export default {
         if (!podcastProgress || !podcastProgress.isFinished) {
           queueItems.push({
             libraryItemId: this.libraryItem.id,
+            libraryId: this.libraryItem.libraryId,
             episodeId: episode.id,
             title: episode.title,
             subtitle: this.mediaMetadata.title,

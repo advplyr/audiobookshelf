@@ -20,6 +20,10 @@
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
 
+          <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="isQueued ? 'text-success' : ''" @click.stop="queueBtnClick">
+            <span class="material-icons-outlined">{{ isQueued ? 'playlist_add_check' : 'playlist_add' }}</span>
+          </button>
+
           <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
@@ -83,8 +87,17 @@ export default {
     duration() {
       return this.$secondsToTimestamp(this.episode.duration)
     },
+    libraryItemIdStreaming() {
+      return this.$store.getters['getLibraryItemIdStreaming']
+    },
+    isStreamingFromDifferentLibrary() {
+      return this.$store.getters['getIsStreamingFromDifferentLibrary']
+    },
     isStreaming() {
       return this.$store.getters['getIsMediaStreaming'](this.libraryItemId, this.episode.id)
+    },
+    isQueued() {
+      return this.$store.getters['getIsMediaQueued'](this.libraryItemId, this.episode.id)
     },
     streamIsPlaying() {
       return this.$store.state.streamIsPlaying && this.isStreaming
@@ -169,6 +182,15 @@ export default {
     },
     removeClick() {
       this.$emit('remove', this.episode)
+    },
+    queueBtnClick() {
+      if (this.isQueued) {
+        // Remove from queue
+        this.$store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId, episodeId: this.episode.id })
+      } else {
+        // Add to queue
+        this.$emit('addToQueue', this.episode)
+      }
     }
   }
 }

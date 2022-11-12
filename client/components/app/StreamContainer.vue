@@ -159,8 +159,8 @@ export default {
         return i.libraryItemId === libraryItemId
       })
       if (currentQueueIndex < 0) {
-        console.error('Media finished not found in queue', this.playerQueueItems)
-        return
+        console.error('Media finished not found in queue - using first in queue', this.playerQueueItems)
+        currentQueueIndex = -1
       }
       if (currentQueueIndex === this.playerQueueItems.length - 1) {
         console.log('Finished last item in queue')

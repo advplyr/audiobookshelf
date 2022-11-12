@@ -602,6 +602,7 @@ class LibraryController {
         const ep = _ep.toJSONExpanded()
         ep.podcast = libraryItem.media.toJSONMinified()
         ep.libraryItemId = libraryItem.id
+        ep.libraryId = libraryItem.libraryId
         return ep
       })
       allUnfinishedEpisodes.push(...unfinishedEpisodes)

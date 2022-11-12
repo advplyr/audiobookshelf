@@ -42,6 +42,8 @@
   "ButtonPurgeAllCache": "Purge All Cache",
   "ButtonPurgeItemsCache": "Purge Items Cache",
   "ButtonPurgeMediaProgress": "Purge Media Progress",
+  "ButtonQueueAddItem": "Add to queue",
+  "ButtonQueueRemoveItem": "Remove from queue",
   "ButtonQuickMatch": "Quick Match",
   "ButtonRead": "Read",
   "ButtonRemove": "Remove",

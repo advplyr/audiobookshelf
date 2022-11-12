@@ -324,8 +324,18 @@ export default {
       if (this.recentEpisode) return false // Dont show podcast error on episode card
       return this.numInvalidAudioFiles || this.numMissingParts || this.isMissing || this.isInvalid
     },
+    libraryItemIdStreaming() {
+      return this.store.getters['getLibraryItemIdStreaming']
+    },
     isStreaming() {
-      return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
+      return this.libraryItemIdStreaming === this.libraryItemId
+    },
+    isQueued() {
+      const episodeId = this.recentEpisode ? this.recentEpisode.id : null
+      return this.store.getters['getIsMediaQueued'](this.libraryItemId, episodeId)
+    },
+    isStreamingFromDifferentLibrary() {
+      return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
       return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
@@ -407,6 +417,19 @@ export default {
             func: 'removeFromContinueListening',
             text: this.$strings.ButtonRemoveFromContinueListening
           })
+        }
+        if (this.libraryItemIdStreaming && !this.isStreamingFromDifferentLibrary) {
+          if (!this.isQueued) {
+            items.push({
+              func: 'addToQueue',
+              text: this.$strings.ButtonQueueAddItem
+            })
+          } else if (!this.isStreaming) {
+            items.push({
+              func: 'removeFromQueue',
+              text: this.$strings.ButtonQueueRemoveItem
+            })
+          }
         }
         return items
       }
@@ -666,6 +689,25 @@ export default {
           this.processing = false
         })
     },
+    addToQueue() {
+      if (this.recentEpisode) {
+        const queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: this.recentEpisode.id,
+          title: this.recentEpisode.title,
+          subtitle: this.mediaMetadata.title,
+          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          duration: this.recentEpisode.audioFile.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+        this.store.commit('addItemToQueue', queueItem)
+      }
+    },
+    removeFromQueue() {
+      const episodeId = this.recentEpisode ? this.recentEpisode.id : null
+      this.store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId, episodeId })
+    },
     openCollections() {
       this.store.commit('setSelectedLibraryItem', this.libraryItem)
       this.store.commit('globals/setShowCollectionsModal', true)
@@ -761,6 +803,7 @@ export default {
               if (!podcastProgress || !podcastProgress.isFinished) {
                 queueItems.push({
                   libraryItemId: this.libraryItemId,
+                  libraryId: this.libraryId,
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,

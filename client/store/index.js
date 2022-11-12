@@ -41,10 +41,20 @@ export const getters = {
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
   },
+  getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
+    if (!state.streamLibraryItem) return false
+    return state.streamLibraryItem.libraryId !== rootState.libraries.currentLibraryId
+  },
   getIsMediaStreaming: state => (libraryItemId, episodeId) => {
     if (!state.streamLibraryItem) return null
     if (!episodeId) return state.streamLibraryItem.id == libraryItemId
     return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
+  },
+  getIsMediaQueued: state => (libraryItemId, episodeId) => {
+    return state.playerQueueItems.some(i => {
+      if (!episodeId) return i.libraryItemId === libraryItemId
+      return i.libraryItemId === libraryItemId && i.episodeId === episodeId
+    })
   },
   getBookshelfView: state => {
     if (!state.serverSettings || isNaN(state.serverSettings.bookshelfView)) return Constants.BookshelfView.STANDARD
@@ -158,6 +168,21 @@ export const mutations = {
   },
   setPlayerQueueItems(state, items) {
     state.playerQueueItems = items || []
+  },
+  removeItemFromQueue(state, item) {
+    state.playerQueueItems = state.playerQueueItems.filter((i) => {
+      if (!i.episodeId) return i.libraryItemId !== item.libraryItemId
+      return i.libraryItemId !== item.libraryItemId || i.episodeId !== item.episodeId
+    })
+  },
+  addItemToQueue(state, item) {
+    const exists = state.playerQueueItems.some(i => {
+      if (!i.episodeId) return i.libraryItemId === item.libraryItemId
+      return i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId
+    })
+    if (!exists) {
+      state.playerQueueItems.push(item)
+    }
   },
   setPlayerQueueAutoPlay(state, autoPlay) {
     state.playerQueueAutoPlay = !!autoPlay

@@ -1,5 +1,5 @@
 <template>
-  <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
+  <div class="page" :class="libraryItemIdStreaming ? 'streaming' : ''">
     <app-book-shelf-toolbar page="recent-episodes" />
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
@@ -18,11 +18,17 @@
 
               <p class="text-sm text-gray-200 mb-4">{{ episode.subtitle }}</p>
 
-              <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
-                <span v-if="episodeIdStreaming === episode.id" class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
-                <span v-else class="material-icons text-success">play_arrow</span>
-                <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
-              </button>
+              <div class="flex items-center">
+                <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="episode.progress && episode.progress.isFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick(episode)">
+                  <span v-if="episodeIdStreaming === episode.id" class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+                  <span v-else class="material-icons text-success">play_arrow</span>
+                  <p class="pl-2 pr-1 text-sm font-semibold">{{ getButtonText(episode) }}</p>
+                </button>
+
+                <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="playerQueueEpisodeIdMap[episode.id] ? 'text-success' : ''" @click.stop="queueBtnClick(episode)">
+                  <span class="material-icons-outlined">{{ playerQueueEpisodeIdMap[episode.id] ? 'playlist_add_check' : 'playlist_add' }}</span>
+                </button>
+              </div>
             </div>
 
             <div v-if="episode.progress" class="absolute bottom-0 left-0 h-0.5 pointer-events-none bg-warning" :style="{ width: episode.progress.progress * 100 + '%' }" />
@@ -63,9 +69,6 @@ export default {
     }
   },
   computed: {
-    streamLibraryItem() {
-      return this.$store.state.streamLibraryItem
-    },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
@@ -78,6 +81,9 @@ export default {
     streamIsPlaying() {
       return this.$store.state.streamIsPlaying
     },
+    isStreamingFromDifferentLibrary() {
+      return this.$store.getters['getIsStreamingFromDifferentLibrary']
+    },
     episodesMapped() {
       return this.recentEpisodes.map((ep) => {
         return {
@@ -85,6 +91,16 @@ export default {
           progress: this.$store.getters['user/getUserMediaProgress'](ep.libraryItemId, ep.id)
         }
       })
+    },
+    playerQueueItems() {
+      return this.$store.state.playerQueueItems || []
+    },
+    playerQueueEpisodeIdMap() {
+      const episodeIds = {}
+      this.playerQueueItems.forEach((i) => {
+        if (i.episodeId) episodeIds[i.episodeId] = true
+      })
+      return episodeIds
     }
   },
   methods: {
@@ -124,6 +140,7 @@ export default {
         if (!episode.progress || !episode.isFinished) {
           queueItems.push({
             libraryItemId: episode.libraryItemId,
+            libraryId: episode.libraryId,
             episodeId: episode.id,
             title: episode.title,
             subtitle: episode.podcast.metadata.title,
@@ -152,6 +169,25 @@ export default {
       this.recentEpisodes = episodePayload.episodes || []
       this.totalEpisodes = episodePayload.total
       this.currentPage = page
+    },
+    queueBtnClick(episode) {
+      if (this.playerQueueEpisodeIdMap[episode.id]) {
+        // Remove from queue
+        this.$store.commit('removeItemFromQueue', { libraryItemId: episode.libraryItemId, episodeId: episode.id })
+      } else {
+        // Add to queue
+        const queueItem = {
+          libraryItemId: episode.libraryItemId,
+          libraryId: episode.libraryId,
+          episodeId: episode.id,
+          title: episode.title,
+          subtitle: episode.podcast.metadata.title,
+          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          duration: episode.duration || null,
+          coverPath: episode.podcast.coverPath || null
+        }
+        this.$store.commit('addItemToQueue', queueItem)
+      }
     }
   },
   mounted() {

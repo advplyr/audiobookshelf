@@ -29,7 +29,7 @@
         </ui-tooltip>
 
         <button v-if="playerQueueItems.length" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
-          <span class="material-icons text-2xl sm:text-3xl">playlist_play</span>
+          <span class="material-icons text-2xl sm:text-3xl">queue_music</span>
         </button>
       </div>
 

@@ -59,11 +59,7 @@ export default {
       this.show = false
     },
     removeItem(item) {
-      const updatedQueue = this.playerQueueItems.filter((i) => {
-        if (!i.episodeId) return i.libraryItemId !== item.libraryItemId
-        return i.libraryItemId !== item.libraryItemId || i.episodeId !== item.episodeId
-      })
-      this.$store.commit('setPlayerQueueItems', updatedQueue)
+      this.$store.commit('removeItemFromQueue', item)
     }
   }
 }
