@@ -63,7 +63,7 @@ class Collection {
     if (!data.userId || !data.libraryId || !data.name) {
       return false
     }
-    this.id = getId('usr')
+    this.id = getId('col')
     this.userId = data.userId
     this.libraryId = data.libraryId
     this.name = data.name
