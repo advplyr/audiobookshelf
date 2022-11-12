@@ -8,7 +8,7 @@ const languageCodeMap = {
   'de': 'Deutsch',
   'en-us': 'English',
   // 'es': 'Español',
-  // 'it': 'Italiano',
+  'it': 'Italiano',
   // 'pl': 'Polski',
   'zh-cn': '简体中文 (Simplified Chinese)'
 }
