@@ -16,7 +16,7 @@
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
         <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
