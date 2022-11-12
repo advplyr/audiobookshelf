@@ -24,7 +24,7 @@
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderListeningStats }}</h1>
         <div class="flex items-center">
-          <p class="text-sm text-gray-300">{{ listeningSessions.length }} {{ $strings.HeaderListeningSessions }}</p>
+          <p class="text-sm text-gray-300">{{ listeningSessions.total }} {{ $strings.HeaderListeningSessions }}</p>
           <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs mx-2" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
         </div>
         <p class="text-sm text-gray-300">
@@ -110,7 +110,7 @@ export default {
   },
   data() {
     return {
-      listeningSessions: [],
+      listeningSessions: {},
       listeningStats: {},
       purgingMediaProgress: false
     }
@@ -147,8 +147,8 @@ export default {
       return this.listeningStats.today || 0
     },
     latestSession() {
-      if (!this.listeningSessions.length) return null
-      return this.listeningSessions[0]
+      if (!this.listeningSessions.sessions || !this.listeningSessions.sessions.length) return null
+      return this.listeningSessions.sessions[0]
     }
   },
   methods: {
@@ -159,11 +159,11 @@ export default {
       this.listeningSessions = await this.$axios
         .$get(`/api/users/${this.user.id}/listening-sessions?page=0&itemsPerPage=10`)
         .then((data) => {
-          return data.sessions || []
+          return data || {}
         })
         .catch((err) => {
           console.error('Failed to load listening sesions', err)
-          return []
+          return {}
         })
       this.listeningStats = await this.$axios.$get(`/api/users/${this.user.id}/listening-stats`).catch((err) => {
         console.error('Failed to load listening sesions', err)
