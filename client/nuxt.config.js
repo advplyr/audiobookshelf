@@ -113,15 +113,7 @@ module.exports = {
       icons: [
         {
           src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "64x64"
-        },
-        {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "192x192"
-        },
-        {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "512x512"
+          sizes: "any"
         }
       ]
     },
