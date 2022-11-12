@@ -22,15 +22,15 @@
           <span class="material-icons text-2xl sm:text-3xl">format_list_bulleted</span>
         </div>
 
+        <button v-if="playerQueueItems.length" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
+          <span class="material-icons text-2xl sm:text-3xl">queue_music</span>
+        </button>
+
         <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
           <div class="cursor-pointer text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
             <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
           </div>
         </ui-tooltip>
-
-        <button v-if="playerQueueItems.length" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
-          <span class="material-icons text-2xl sm:text-3xl">queue_music</span>
-        </button>
       </div>
 
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />

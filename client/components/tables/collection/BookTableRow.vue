@@ -137,8 +137,22 @@ export default {
       this.isHovering = false
     },
     playClick() {
+      const queueItems = [
+        {
+          libraryItemId: this.book.id,
+          libraryId: this.book.libraryId,
+          episodeId: null,
+          title: this.bookTitle,
+          subtitle: this.bookAuthors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+      ]
+
       this.$eventBus.$emit('play-item', {
-        libraryItemId: this.book.id
+        libraryItemId: this.book.id,
+        queueItems
       })
     },
     clickEdit() {

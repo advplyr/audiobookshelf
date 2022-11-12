@@ -114,10 +114,36 @@ export default {
         this.processingGoToTimestamp = false
         return
       }
-      if (session.episodeId && !libraryItem.media.episodes.find((ep) => ep.id === session.episodeId)) {
+      if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
         this.$toast.error('Failed to get podcast episode')
         this.processingGoToTimestamp = false
         return
+      }
+
+      var queueItem = {}
+      if (session.episodeId) {
+        var episode = libraryItem.media.episodes.find((ep) => ep.id === session.episodeId)
+        queueItem = {
+          libraryItemId: libraryItem.id,
+          libraryId: libraryItem.libraryId,
+          episodeId: episode.id,
+          title: episode.title,
+          subtitle: libraryItem.media.metadata.title,
+          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          duration: episode.audioFile.duration || null,
+          coverPath: libraryItem.media.coverPath || null
+        }
+      } else {
+        queueItem = {
+          libraryItemId: libraryItem.id,
+          libraryId: libraryItem.libraryId,
+          episodeId: null,
+          title: libraryItem.media.metadata.title,
+          subtitle: libraryItem.media.metadata.authors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: libraryItem.media.duration || null,
+          coverPath: libraryItem.media.coverPath || null
+        }
       }
 
       const payload = {
@@ -127,7 +153,8 @@ export default {
             this.$eventBus.$emit('play-item', {
               libraryItemId: libraryItem.id,
               episodeId: session.episodeId || null,
-              startTime: session.currentTime
+              startTime: session.currentTime,
+              queueItems: [queueItem]
             })
           }
           this.processingGoToTimestamp = false

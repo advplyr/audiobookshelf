@@ -72,11 +72,23 @@ export default {
       this.expanded = !this.expanded
     },
     goToTimestamp(time) {
+      const queueItem = {
+        libraryItemId: this.libraryItemId,
+        libraryId: this.libraryItem.libraryId,
+        episodeId: null,
+        title: this.metadata.title,
+        subtitle: this.metadata.authors.map((au) => au.name).join(', '),
+        caption: '',
+        duration: this.media.duration || null,
+        coverPath: this.media.coverPath || null
+      }
+
       if (this.$store.getters['getIsMediaStreaming'](this.libraryItemId)) {
         this.$eventBus.$emit('play-item', {
           libraryItemId: this.libraryItemId,
           episodeId: null,
-          startTime: time
+          startTime: time,
+          queueItems: [queueItem]
         })
       } else {
         const payload = {
@@ -86,7 +98,8 @@ export default {
               this.$eventBus.$emit('play-item', {
                 libraryItemId: this.libraryItemId,
                 episodeId: null,
-                startTime: time
+                startTime: time,
+                queueItems: [queueItem]
               })
             }
           },

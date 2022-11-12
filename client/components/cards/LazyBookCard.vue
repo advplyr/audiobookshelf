@@ -477,6 +477,21 @@ export default {
           text: this.$strings.ButtonRemoveFromContinueListening
         })
       }
+      if (!this.isPodcast) {
+        if (this.libraryItemIdStreaming && !this.isStreamingFromDifferentLibrary) {
+          if (!this.isQueued) {
+            items.push({
+              func: 'addToQueue',
+              text: this.$strings.ButtonQueueAddItem
+            })
+          } else if (!this.isStreaming) {
+            items.push({
+              func: 'removeFromQueue',
+              text: this.$strings.ButtonQueueRemoveItem
+            })
+          }
+        }
+      }
       return items
     },
     _socket() {
@@ -690,8 +705,9 @@ export default {
         })
     },
     addToQueue() {
+      var queueItem = {}
       if (this.recentEpisode) {
-        const queueItem = {
+        queueItem = {
           libraryItemId: this.libraryItemId,
           libraryId: this.libraryId,
           episodeId: this.recentEpisode.id,
@@ -701,8 +717,19 @@ export default {
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
-        this.store.commit('addItemToQueue', queueItem)
+      } else {
+        queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.author,
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
       }
+      this.store.commit('addItemToQueue', queueItem)
     },
     removeFromQueue() {
       const episodeId = this.recentEpisode ? this.recentEpisode.id : null
@@ -815,6 +842,18 @@ export default {
             }
           }
         }
+      } else {
+        const queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.author,
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+        queueItems.push(queueItem)
       }
 
       eventBus.$emit('play-item', {

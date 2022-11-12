@@ -137,12 +137,16 @@
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
             </ui-btn>
 
+            <ui-tooltip v-if="showQueueBtn" :text="isQueued ? $strings.ButtonQueueRemoveItem : $strings.ButtonQueueAddItem" direction="top">
+              <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_add'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
+            </ui-tooltip>
+
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
               <span class="material-icons -ml-2 pr-2 text-white">auto_stories</span>
               {{ $strings.ButtonRead }}
             </ui-btn>
 
-            <ui-tooltip v-if="userCanUpdate" text="Edit" direction="top">
+            <ui-tooltip v-if="userCanUpdate" :text="$strings.LabelEdit" direction="top">
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
@@ -398,6 +402,9 @@ export default {
     isStreaming() {
       return this.streamLibraryItem && this.streamLibraryItem.id === this.libraryItemId
     },
+    isQueued() {
+      return this.$store.getters['getIsMediaQueued'](this.libraryItemId)
+    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
@@ -412,6 +419,10 @@ export default {
 
       // If rss feed is open then show feed url to users otherwise just show to admins
       return this.userIsAdminOrUp || this.rssFeedUrl
+    },
+    showQueueBtn() {
+      if (this.isPodcast || this.isVideo) return false
+      return !this.$store.getters['getIsStreamingFromDifferentLibrary'] && this.streamLibraryItem
     }
   },
   methods: {
@@ -536,6 +547,7 @@ export default {
           if (!podcastProgress || !podcastProgress.isFinished) {
             queueItems.push({
               libraryItemId: this.libraryItemId,
+              libraryId: this.libraryId,
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
@@ -545,6 +557,18 @@ export default {
             })
           }
         }
+      } else {
+        const queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.authors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: this.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+        queueItems.push(queueItem)
       }
 
       this.$eventBus.$emit('play-item', {
@@ -614,6 +638,26 @@ export default {
       if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Closed', data)
         this.rssFeedUrl = null
+      }
+    },
+    queueBtnClick() {
+      if (this.isQueued) {
+        // Remove from queue
+        this.$store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId })
+      } else {
+        // Add to queue
+
+        const queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.authors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: this.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+        this.$store.commit('addItemToQueue', queueItem)
       }
     }
   },
