@@ -437,7 +437,7 @@ class LibraryItemController {
   async openRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to open RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     const feedData = await this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
@@ -457,7 +457,7 @@ class LibraryItemController {
   async closeRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to close RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     await this.rssFeedManager.closeFeedForItem(req.params.id)
