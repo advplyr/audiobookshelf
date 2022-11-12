@@ -147,7 +147,7 @@ export default {
       return this.listeningStats.today || 0
     },
     latestSession() {
-      if (!this.listeningSessions.sessions.length) return null
+      if (!this.listeningSessions.sessions || !this.listeningSessions.sessions.length) return null
       return this.listeningSessions.sessions[0]
     }
   },
