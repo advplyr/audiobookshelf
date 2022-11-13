@@ -179,7 +179,7 @@ class UserController {
   // POST: api/users/online (admin)
   async getOnlineUsers(req, res) {
     if (!req.user.isAdminOrUp) {
-      return res.sendStatus(404)
+      return res.sendStatus(403)
     }
     const usersOnline = this.getUsersOnline()
 
