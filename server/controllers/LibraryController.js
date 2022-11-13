@@ -188,7 +188,17 @@ class LibraryController {
 
       if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
         libraryItems = collapsedItems
-        payload.total = libraryItems.length
+
+        // Get accurate total entities
+        let uniqueEntities = new Set()
+        libraryItems.forEach((item) => {
+          if (item.collapsedSeries) {
+            item.collapsedSeries.books.forEach(book => uniqueEntities.add(book.id))
+          } else {
+            uniqueEntities.add(item.id)
+          }
+        })
+        payload.total = uniqueEntities.size
       }
     }
 
@@ -263,6 +273,12 @@ class LibraryController {
 
     if (sortArray.length) {
       libraryItems = naturalSort(libraryItems).by(sortArray)
+    }
+
+    // Step 3.5: Limit items
+    if (payload.limit) {
+      var startIndex = payload.page * payload.limit
+      libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
     }
 
     // Step 4 - Transform the items to pass to the client side
