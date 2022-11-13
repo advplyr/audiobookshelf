@@ -9,7 +9,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
       </svg>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonHome }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonHome }}</p>
 
       <div v-show="homePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -17,7 +17,7 @@
     <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <span class="material-icons">format_list_bulleted</span>
 
-      <p class="font-book pt-1" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
+      <p class="font-book pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
 
       <div v-show="isPodcastLatestPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -27,7 +27,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
       </svg>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonLibrary }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLibrary }}</p>
 
       <div v-show="showLibrary" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -37,7 +37,7 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
       </svg>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonSeries }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonSeries }}</p>
 
       <div v-show="isSeriesPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -45,7 +45,7 @@
     <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <span class="material-icons-outlined">collections_bookmark</span>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
 
       <div v-show="paramId === 'collections'" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -58,7 +58,7 @@
         />
       </svg>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonAuthors }}</p>
+      <p class="font-book pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonAuthors }}</p>
 
       <div v-show="isAuthorsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -66,7 +66,7 @@
     <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <span class="abs-icons icon-podcast text-xl"></span>
 
-      <p class="font-book pt-1.5" style="font-size: 0.9rem">{{ $strings.ButtonSearch }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonSearch }}</p>
 
       <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
@@ -74,7 +74,7 @@
     <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">
       <span class="material-icons text-2xl">warning</span>
 
-      <p class="font-book pt-1.5" style="font-size: 1rem">{{ $strings.ButtonIssues }}</p>
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 1rem">{{ $strings.ButtonIssues }}</p>
 
       <div v-show="showingIssues" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       <div class="absolute top-1 right-1 w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
