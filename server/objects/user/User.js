@@ -266,16 +266,42 @@ class User {
     return firstAccessibleLibrary.id
   }
 
+  // Returns most recent media progress w/ `media` object and optionally an `episode` object
   getMostRecentItemProgress(libraryItems) {
     if (!this.mediaProgress.length) return null
-    var lip = this.mediaProgress.map(lip => lip.toJSON())
-    lip.sort((a, b) => b.lastUpdate - a.lastUpdate)
-    var mostRecentWithLip = lip.find(li => libraryItems.find(_li => _li.id === li.id))
-    if (!mostRecentWithLip) return null
-    var libraryItem = libraryItems.find(li => li.id === mostRecentWithLip.id)
+    var mediaProgressObjects = this.mediaProgress.map(lip => lip.toJSON())
+    mediaProgressObjects.sort((a, b) => b.lastUpdate - a.lastUpdate)
+
+    var libraryItemMedia = null
+    var progressEpisode = null
+    // Find the most recent progress that still has a libraryItem and episode
+    var mostRecentProgress = mediaProgressObjects.find((progress) => {
+      const libraryItem = libraryItems.find(li => li.id === progress.libraryItemId)
+      if (!libraryItem) {
+        Logger.warn('[User] Library item not found for users progress ' + progress.libraryItemId)
+        return false
+      } else if (progress.episodeId) {
+        const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(progress.episodeId) : null
+        if (!episode) {
+          Logger.warn(`[User] Episode ${progress.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
+          return false
+        } else {
+          libraryItemMedia = libraryItem.media.toJSONExpanded()
+          progressEpisode = episode.toJSON()
+          return true
+        }
+      } else {
+        libraryItemMedia = libraryItem.media.toJSONExpanded()
+        return true
+      }
+    })
+
+    if (!mostRecentProgress) return null
+
     return {
-      ...mostRecentWithLip,
-      media: libraryItem.media.toJSONExpanded()
+      ...mostRecentProgress,
+      media: libraryItemMedia,
+      episode: progressEpisode
     }
   }
 
