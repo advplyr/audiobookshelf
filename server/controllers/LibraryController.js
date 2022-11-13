@@ -190,15 +190,15 @@ class LibraryController {
         libraryItems = collapsedItems
 
         // Get accurate total entities
-        let uniqueEntities = new Set()
-        libraryItems.forEach((item) => {
-          if (item.collapsedSeries) {
-            item.collapsedSeries.books.forEach(book => uniqueEntities.add(book.id))
-          } else {
-            uniqueEntities.add(item.id)
-          }
-        })
-        payload.total = uniqueEntities.size
+        // let uniqueEntities = new Set()
+        // libraryItems.forEach((item) => {
+        //   if (item.collapsedSeries) {
+        //     item.collapsedSeries.books.forEach(book => uniqueEntities.add(book.id))
+        //   } else {
+        //     uniqueEntities.add(item.id)
+        //   }
+        // })
+        payload.total = libraryItems.length
       }
     }
 
