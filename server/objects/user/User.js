@@ -130,8 +130,8 @@ class User {
   toJSONForPublic(sessions, libraryItems) {
     var userSession = sessions ? sessions.find(s => s.userId === this.id) : null
     var session = null
-    if (session) {
-      var libraryItem = libraryItems.find(li => li.id === session.libraryItemId)
+    if (userSession) {
+      var libraryItem = libraryItems.find(li => li.id === userSession.libraryItemId)
       if (libraryItem) {
         session = userSession.toJSONForClient(libraryItem)
       }
