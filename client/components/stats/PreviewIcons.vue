@@ -14,7 +14,7 @@
       <span class="material-icons text-7xl">show_chart</span>
       <div class="px-1">
         <p class="text-4xl md:text-5xl font-bold">{{ totalTime }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsOverall }} {{ useOverallHours ? $strings.LabelStatsHours : $strings.LabelStatsDays }}</p>
+        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ useOverallHours ? $strings.LabelStatsOverallHours : $strings.LabelStatsOverallDays }}</p>
       </div>
     </div>
 
