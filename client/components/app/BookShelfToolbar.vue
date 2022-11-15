@@ -39,6 +39,7 @@
           </div>
           <span class="pl-2"> {{ $strings.LabelMarkSeries }} {{ isSeriesFinished ? $strings.LabelNotFinished : $strings.LabelFinished }}</span>
         </ui-btn>
+        <ui-btn v-if="isSeriesRemovedFromContinueListening" small :loading="processingSeries" @click="reAddSeriesToContinueListening" class="hidden md:block ml-2"> Re-Add Series to Continue Listening </ui-btn>
       </template>
       <!-- library & collections page -->
       <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
@@ -156,6 +157,9 @@ export default {
       if (this.isCollectionsPage) return this.$strings.LabelCollections
       return ''
     },
+    seriesId() {
+      return this.selectedSeries ? this.selectedSeries.id : null
+    },
     seriesName() {
       return this.selectedSeries ? this.selectedSeries.name : null
     },
@@ -168,6 +172,10 @@ export default {
     },
     isSeriesFinished() {
       return this.seriesProgress && !!this.seriesProgress.isFinished
+    },
+    isSeriesRemovedFromContinueListening() {
+      if (!this.seriesId) return false
+      return this.$store.getters['user/getIsSeriesRemovedFromContinueListening'](this.seriesId)
     },
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
@@ -201,6 +209,21 @@ export default {
     }
   },
   methods: {
+    reAddSeriesToContinueListening() {
+      this.processingSeries = true
+      this.$axios
+        .$get(`/api/me/series/${this.seriesId}/readd-to-continue-listening`)
+        .then(() => {
+          this.$toast.success('Series re-added to continue listening')
+        })
+        .catch((error) => {
+          console.error('Failed to re-add series to continue listening', error)
+          this.$toast.error('Failed to re-add series to continue listening')
+        })
+        .finally(() => {
+          this.processingSeries = false
+        })
+    },
     async matchAllAuthors() {
       this.processingAuthors = true
 
@@ -238,12 +261,13 @@ export default {
           .then(() => {
             this.$toast.success('Removed library items with issues')
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
-            this.processingIssues = false
             this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
             this.$toast.error('Failed to remove library items with issues')
+          })
+          .finally(() => {
             this.processingIssues = false
           })
       }

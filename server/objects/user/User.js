@@ -434,6 +434,12 @@ class User {
     return true
   }
 
+  removeSeriesFromHideFromContinueListening(seriesId) {
+    if (!this.seriesHideFromContinueListening.includes(seriesId)) return false
+    this.seriesHideFromContinueListening = this.seriesHideFromContinueListening.filter(sid => sid !== seriesId)
+    return true
+  }
+
   removeProgressFromContinueListening(progressId) {
     const progress = this.mediaProgress.find(mp => mp.id === progressId)
     if (!progress) return false

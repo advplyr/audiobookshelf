@@ -56,6 +56,10 @@ export const getters = {
     if (!state.user) return false
     if (getters.getUserCanAccessAllLibraries) return true
     return getters.getLibrariesAccessible.includes(libraryId)
+  },
+  getIsSeriesRemovedFromContinueListening: (state) => (seriesId) => {
+    if (!state.user || !state.user.seriesHideFromContinueListening || !state.user.seriesHideFromContinueListening.length) return false
+    return state.user.seriesHideFromContinueListening.includes(seriesId)
   }
 }
 
