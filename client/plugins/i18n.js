@@ -8,6 +8,7 @@ const languageCodeMap = {
   'de': 'Deutsch',
   'en-us': 'English',
   // 'es': 'Español',
+  'fr': 'Français',
   'hr': 'Hrvatski',
   'it': 'Italiano',
   'pl': 'Polski',
