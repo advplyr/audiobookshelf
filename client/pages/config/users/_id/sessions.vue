@@ -86,6 +86,7 @@ export default {
       numPages: 0,
       total: 0,
       currentPage: 0,
+      itemsPerPage: 10,
       processingGoToTimestamp: false
     }
   },
@@ -99,6 +100,16 @@ export default {
   },
   methods: {
     removedSession() {
+      // If on last page and this was the last session then load prev page
+      if (this.currentPage == this.numPages - 1) {
+        const newTotal = this.total - 1
+        const newNumPages = Math.ceil(newTotal / this.itemsPerPage)
+        if (newNumPages < this.numPages) {
+          this.prevPage()
+          return
+        }
+      }
+
       this.loadSessions(this.currentPage)
     },
     async clickCurrentTime(session) {
@@ -191,7 +202,7 @@ export default {
       return 'Unknown'
     },
     async loadSessions(page) {
-      const data = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=${page}&itemsPerPage=10`).catch((err) => {
+      const data = await this.$axios.$get(`/api/users/${this.user.id}/listening-sessions?page=${page}&itemsPerPage=${this.itemsPerPage}`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return null
       })
