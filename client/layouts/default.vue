@@ -87,19 +87,19 @@ export default {
       this.socket.emit('auth', token)
 
       if (!this.isFirstSocketConnection || this.socketConnectionToastId !== null) {
-        this.updateSocketConnectionToast('Socket Connected', 'success', 5000)
+        this.updateSocketConnectionToast(this.$strings.ToastSocketConnected, 'success', 5000)
       }
       this.isFirstSocketConnection = false
       this.isSocketConnected = true
     },
     connectError() {
       console.error('[SOCKET] connect error')
-      this.updateSocketConnectionToast('Socket Failed to Connect', 'error', null)
+      this.updateSocketConnectionToast(this.$strings.ToastSocketFailedToConnect, 'error', null)
     },
     disconnect() {
       console.log('[SOCKET] Disconnected')
       this.isSocketConnected = false
-      this.updateSocketConnectionToast('Socket Disconnected', 'error', null)
+      this.updateSocketConnectionToast(this.$strings.ToastSocketDisconnected, 'error', null)
     },
     reconnect() {
       console.error('[SOCKET] reconnected')

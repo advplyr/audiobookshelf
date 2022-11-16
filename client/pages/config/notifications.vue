@@ -2,10 +2,7 @@
   <div>
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-3 md:p-8 mb-2 max-w-3xl mx-auto">
       <h2 class="text-xl font-semibold mb-4">{{ $strings.HeaderAppriseNotificationSettings }}</h2>
-      <p class="mb-6 text-gray-200">
-        In order to use this feature you will need to have an instance of <a href="https://github.com/caronc/apprise-api" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">Apprise API</a> running or an api that will handle those same requests. <br />The Apprise API Url should be the full URL path to send the notification, e.g., if your API instance is served at
-        <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">http://192.168.1.1:8337</span> then you would put <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">http://192.168.1.1:8337/notify</span>.
-      </p>
+      <p id="appriseDescription" class="mb-6 text-gray-200" v-html="$strings.MessageAppriseDescription" />
 
       <form @submit.prevent="submitForm">
         <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" class="mb-2" />
@@ -174,3 +171,20 @@ export default {
   }
 }
 </script>
+
+<style>
+#appriseDescription a {
+  color: rgb(96 165 250);
+}
+#appriseDescription a:hover {
+  color: rgb(147 197 253);
+  text-decoration-line: underline;
+}
+#appriseDescription code {
+  font-size: 0.875rem;
+  border-radius: 6px;
+  background-color: rgb(82, 82, 82);
+  color: white;
+  padding: 2px 4px;
+}
+</style>

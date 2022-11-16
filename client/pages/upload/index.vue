@@ -21,7 +21,7 @@
       <!-- Picker display -->
       <div v-if="!items.length && !ignoredFiles.length" class="w-full mx-auto border border-white border-opacity-20 px-12 pt-12 pb-4 my-12 relative" :class="isDragging ? 'bg-primary bg-opacity-40' : 'border-dashed'">
         <p class="text-2xl text-center">{{ isDragging ? $strings.LabelUploaderDropFiles : $strings.LabelUploaderDragAndDrop }}</p>
-        <p class="text-center text-sm my-5">or</p>
+        <p class="text-center text-sm my-5">{{ $strings.MessageOr }}</p>
         <div class="w-full max-w-xl mx-auto">
           <div class="flex">
             <ui-btn class="w-full mx-1" @click="openFilePicker">{{ $strings.ButtonChooseFiles }}</ui-btn>
