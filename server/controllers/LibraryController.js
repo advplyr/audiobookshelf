@@ -206,6 +206,7 @@ class LibraryController {
     var sortArray = []
 
     // When on the series page, sort by sequence only
+    if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
     if (filterSeries && !payload.sortBy) {
       sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
     }
