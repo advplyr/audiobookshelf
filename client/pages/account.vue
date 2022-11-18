@@ -1,19 +1,23 @@
 <template>
   <div id="page-wrapper" class="page p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="w-full max-w-xl mx-auto">
-      <h1 class="text-2xl">Account</h1>
+      <h1 class="text-2xl">{{ $strings.HeaderAccount }}</h1>
 
       <div class="my-4">
         <div class="flex -mx-2">
           <div class="w-2/3 px-2">
-            <ui-text-input-with-label disabled :value="username" label="Username" />
+            <ui-text-input-with-label disabled :value="username" :label="$strings.LabelUsername" />
           </div>
           <div class="w-1/3 px-2">
-            <ui-text-input-with-label disabled :value="usertype" label="Account Type" />
+            <ui-text-input-with-label disabled :value="usertype" :label="$strings.LabelAccountType" />
           </div>
         </div>
+        <div class="py-4">
+          <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguage }}</p>
+          <ui-dropdown v-model="selectedLanguage" :items="$languageCodeOptions" small class="max-w-48" @input="updateLocalLanguage" />
+        </div>
 
-        <div class="w-full h-px bg-primary my-4" />
+        <div class="w-full h-px bg-white/10 my-4" />
 
         <div v-if="isGlobalSharing" class="flex items-center py-1">
           <ui-toggle-switch v-model="isUserSharing" @input="changeSharingSetting" />
@@ -27,21 +31,21 @@
 
         <div v-if="isGlobalSharing" class="w-full h-px bg-primary my-4" />
 
-        <p v-if="!isGuest" class="mb-4 text-lg">Change Password</p>
+        <p v-if="!isGuest" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
         <form v-if="!isGuest" @submit.prevent="submitChangePassword">
-          <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" label="Password" class="my-2" />
-          <ui-text-input-with-label v-model="newPassword" :disabled="changingPassword" type="password" label="New Password" class="my-2" />
-          <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" label="Confirm Password" class="my-2" />
+          <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" :label="$strings.LabelPassword" class="my-2" />
+          <ui-text-input-with-label v-model="newPassword" :disabled="changingPassword" type="password" :label="$strings.LabelNewPassword" class="my-2" />
+          <ui-text-input-with-label v-model="confirmPassword" :disabled="changingPassword" type="password" :label="$strings.LabelConfirmPassword" class="my-2" />
           <div class="flex items-center py-2">
-            <p v-if="isRoot" class="text-error py-2 text-xs">* Root user is the only user that can have an empty password</p>
+            <p v-if="isRoot" class="text-error py-2 text-xs">* {{ $strings.NoteChangeRootPassword }}</p>
             <div class="flex-grow" />
-            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">Submit</ui-btn>
+            <ui-btn v-show="(password && newPassword && confirmPassword) || isRoot" type="submit" :loading="changingPassword" color="success">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </form>
       </div>
 
       <div class="py-4 mt-8 flex">
-        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-icons mr-4 icon-text">logout</span>Logout</ui-btn>
+        <ui-btn color="primary flex items-center text-lg" @click="logout"><span class="material-icons mr-4 icon-text">logout</span>{{ $strings.ButtonLogout }}</ui-btn>
       </div>
     </div>
   </div>
@@ -55,7 +59,8 @@ export default {
       newPassword: null,
       confirmPassword: null,
       changingPassword: false,
-      isUserSharing: null 
+      isUserSharing: null,
+      selectedLanguage: ''
     }
   },
   computed: {
@@ -84,6 +89,9 @@ export default {
   methods: {
     init() {
       this.isUserSharing = this.$store.getters['user/getUserSetting']('shareListeningActivity')
+    },
+    updateLocalLanguage(lang) {
+      this.$setLanguageCode(lang)
     },
     logout() {
       var rootSocket = this.$root.socket || {}
@@ -137,6 +145,7 @@ export default {
   },
   mounted() {
     this.init()
+    this.selectedLanguage = this.$languageCodes.current
   }
 }
 </script>

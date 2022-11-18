@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
-const { xmlToJSON } = require('./index')
+const axios = require('axios')
+const { xmlToJSON, levenshteinDistance } = require('./index')
 const htmlSanitizer = require('../utils/htmlSanitizer')
 
 function extractFirstArrayItem(json, key) {
@@ -94,7 +95,18 @@ function extractEpisodeData(item) {
     episode.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
-  var arrayFields = ['title', 'pubDate', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  if (item['pubDate']) {
+    const pubDate = extractFirstArrayItem(item, 'pubDate')
+    if (typeof pubDate === 'string') {
+      episode.pubDate = pubDate
+    } else if (pubDate && typeof pubDate._ === 'string') {
+      episode.pubDate = pubDate._
+    } else {
+      Logger.error(`[podcastUtils] Invalid pubDate ${item['pubDate']} for ${episode.enclosure.url}`)
+    }
+  }
+
+  var arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
     var cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)
@@ -103,6 +115,8 @@ function extractEpisodeData(item) {
 }
 
 function cleanEpisodeData(data) {
+  const pubJsDate = data.pubDate ? new Date(data.pubDate) : null
+  const publishedAt = pubJsDate && !isNaN(pubJsDate) ? pubJsDate.valueOf() : null
   return {
     title: data.title,
     subtitle: data.subtitle || '',
@@ -115,7 +129,7 @@ function cleanEpisodeData(data) {
     author: data.author || '',
     duration: data.duration || '',
     explicit: data.explicit || '',
-    publishedAt: (new Date(data.pubDate)).valueOf(),
+    publishedAt,
     enclosure: data.enclosure
   }
 }
@@ -173,4 +187,65 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
       podcast
     }
   }
+}
+
+module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
+  Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
+  return axios.get(feedUrl, { timeout: 6000 }).then(async (data) => {
+    if (!data || !data.data) {
+      Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
+      return false
+    }
+    Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}" success - parsing xml`)
+    var payload = await this.parsePodcastRssFeedXml(data.data, excludeEpisodeMetadata)
+    if (!payload) {
+      return false
+    }
+
+    // RSS feed may be a private RSS feed
+    payload.podcast.metadata.feedUrl = feedUrl
+
+    return payload.podcast
+  }).catch((error) => {
+    Logger.error('[podcastUtils] getPodcastFeed Error', error)
+    return false
+  })
+}
+
+// Return array of episodes ordered by closest match (Levenshtein distance of 6 or less)
+module.exports.findMatchingEpisodes = async (feedUrl, searchTitle) => {
+  const feed = await this.getPodcastFeed(feedUrl).catch(() => {
+    return null
+  })
+
+  return this.findMatchingEpisodesInFeed(feed, searchTitle)
+}
+
+module.exports.findMatchingEpisodesInFeed = (feed, searchTitle) => {
+  searchTitle = searchTitle.toLowerCase().trim()
+  if (!feed || !feed.episodes) {
+    return null
+  }
+
+  const matches = []
+  feed.episodes.forEach(ep => {
+    if (!ep.title) return
+
+    const epTitle = ep.title.toLowerCase().trim()
+    if (epTitle === searchTitle) {
+      matches.push({
+        episode: ep,
+        levenshtein: 0
+      })
+    } else {
+      const levenshtein = levenshteinDistance(searchTitle, epTitle, true)
+      if (levenshtein <= 6 && epTitle.length > levenshtein) {
+        matches.push({
+          episode: ep,
+          levenshtein
+        })
+      }
+    }
+  })
+  return matches.sort((a, b) => a.levenshtein - b.levenshtein)
 }

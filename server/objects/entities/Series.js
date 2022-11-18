@@ -47,6 +47,19 @@ class Series {
     this.updatedAt = Date.now()
   }
 
+  update(series) {
+    if (!series) return false
+    const keysToUpdate = ['name', 'description']
+    var hasUpdated = false
+    for (const key of keysToUpdate) {
+      if (series[key] !== undefined && series[key] !== this[key]) {
+        this[key] = series[key]
+        hasUpdated = true
+      }
+    }
+    return hasUpdated
+  }
+
   checkNameEquals(name) {
     if (!name || !this.name) return false
     return this.name.toLowerCase() == name.toLowerCase().trim()

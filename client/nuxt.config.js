@@ -6,13 +6,14 @@ module.exports = {
   target: 'static',
   dev: process.env.NODE_ENV !== 'production',
   env: {
-    serverUrl: process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3333',
+    serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH || '' : 'http://localhost:3333',
     chromecastReceiver: 'FD1F76C5'
   },
   telemetry: false,
 
   publicRuntimeConfig: {
-    version: pkg.version
+    version: pkg.version,
+    routerBasePath: process.env.ROUTER_BASE_PATH || ''
   },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -28,15 +29,17 @@ module.exports = {
     ],
     script: [
       {
-        src: '/libs/sortable.js'
+        src: (process.env.ROUTER_BASE_PATH || '') + '/libs/sortable.js'
       }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
     ]
   },
 
-  router: {},
+  router: {
+    base: process.env.ROUTER_BASE_PATH || ''
+  },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
   css: [
@@ -49,7 +52,8 @@ module.exports = {
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
     '@/plugins/toast.js',
-    '@/plugins/utils.js'
+    '@/plugins/utils.js',
+    '@/plugins/i18n.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -73,8 +77,7 @@ module.exports = {
   proxy: {
     '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } },
     '/ebook/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/metadata/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
+    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' + process.env : '/' },
   },
 
   io: {
@@ -89,7 +92,7 @@ module.exports = {
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {
-    baseURL: process.env.serverUrl || ''
+    baseURL: process.env.ROUTER_BASE_PATH || ''
   },
 
   // nuxt/pwa https://pwa.nuxtjs.org
@@ -109,16 +112,8 @@ module.exports = {
       background_color: '#373838',
       icons: [
         {
-          src: '/icon.svg',
-          sizes: "64x64"
-        },
-        {
-          src: '/icon.svg',
-          sizes: "192x192"
-        },
-        {
-          src: '/icon.svg',
-          sizes: "512x512"
+          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
+          sizes: "any"
         }
       ]
     },

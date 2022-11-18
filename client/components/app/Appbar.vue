@@ -3,11 +3,11 @@
     <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-50">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="/icon.svg" class="w-8 min-w-8 h-8 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
+          <img src="~static/icon.svg" class="w-8 min-w-8 h-8 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf</h1>
+          <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf <span v-if="showExperimentalFeatures" class="material-icons text-lg text-warning pr-1">logo_dev</span></h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />
@@ -15,7 +15,7 @@
         <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
         <div class="flex-grow" />
 
-        <span v-if="showExperimentalFeatures" class="material-icons text-2xl md:text-4xl text-warning pr-0 sm:pr-2 md:pr-4">logo_dev</span>
+        <widgets-notification-widget class="hidden md:block" />
 
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
           <span class="material-icons-outlined text-warning text-opacity-50"> cast </span>
@@ -45,14 +45,16 @@
           </span>
         </nuxt-link>
       </div>
-
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
-        <h1 class="text-2xl px-4">{{ numLibraryItemsSelected }} Selected</h1>
+        <h1 class="text-2xl px-4">{{ $getString('MessageItemsSelected', [numLibraryItemsSelected]) }}</h1>
         <div class="flex-grow" />
-        <ui-tooltip v-if="!isPodcastLibrary" :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+        <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
+          <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
+        </ui-tooltip>
+        <ui-tooltip v-if="!isPodcastLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" text="Add to Collection" direction="bottom">
+        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
@@ -60,10 +62,10 @@
             <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
         </template>
-        <ui-tooltip v-if="userCanDelete" text="Delete" direction="bottom">
+        <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
           <ui-icon-btn :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
-        <ui-tooltip text="Deselect All" direction="bottom">
+        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom">
           <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>
@@ -150,7 +152,7 @@ export default {
     cancelSelectionMode() {
       if (this.processingBatchDelete) return
       this.$store.commit('setSelectedLibraryItems', [])
-      this.$eventBus.$emit('bookshelf-clear-selection')
+      this.$eventBus.$emit('bookshelf_clear_selection')
       this.isAllSelected = false
     },
     toggleBatchRead() {
@@ -169,7 +171,7 @@ export default {
           this.$toast.success('Batch update success!')
           this.$store.commit('setProcessingBatch', false)
           this.$store.commit('setSelectedLibraryItems', [])
-          this.$eventBus.$emit('bookshelf-clear-selection')
+          this.$eventBus.$emit('bookshelf_clear_selection')
         })
         .catch((error) => {
           this.$toast.error('Batch update failed')
@@ -192,7 +194,7 @@ export default {
             this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
             this.$store.commit('setSelectedLibraryItems', [])
-            this.$eventBus.$emit('bookshelf-clear-selection')
+            this.$eventBus.$emit('bookshelf_clear_selection')
           })
           .catch((error) => {
             this.$toast.error('Batch delete failed')
@@ -206,10 +208,13 @@ export default {
       this.$router.push('/batch')
     },
     batchAddToCollectionClick() {
-      this.$store.commit('globals/setShowBatchUserCollectionsModal', true)
+      this.$store.commit('globals/setShowBatchCollectionsModal', true)
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
+    },
+    batchAutoMatchClick() {
+      this.$store.commit('globals/setShowBatchQuickMatchModal', true)
     }
   },
   mounted() {

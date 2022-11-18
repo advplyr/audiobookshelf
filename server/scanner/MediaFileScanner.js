@@ -3,9 +3,8 @@ const Path = require('path')
 const AudioFile = require('../objects/files/AudioFile')
 const VideoFile = require('../objects/files/VideoFile')
 
-const MediaProbePool = require('./MediaProbePool')
-
 const prober = require('../utils/prober')
+const toneProber = require('../utils/toneProber')
 const Logger = require('../Logger')
 const { LogLevel } = require('../utils/constants')
 
@@ -59,7 +58,16 @@ class MediaFileScanner {
 
   async scan(mediaType, libraryFile, mediaMetadataFromScan, verbose = false) {
     var probeStart = Date.now()
-    var probeData = await prober.probe(libraryFile.metadata.path, verbose)
+
+    var probeData = null
+    // TODO: Temp not using tone for probing until more testing can be done
+    // if (global.ServerSettings.scannerUseTone) {
+    //   Logger.debug(`[MediaFileScanner] using tone to probe audio file "${libraryFile.metadata.path}"`)
+    //   probeData = await toneProber.probe(libraryFile.metadata.path, true)
+    // } else {
+    probeData = await prober.probe(libraryFile.metadata.path, verbose)
+    // }
+
     if (probeData.error) {
       Logger.error(`[MediaFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
       return null
@@ -105,35 +113,18 @@ class MediaFileScanner {
   async executeMediaFileScans(libraryItem, mediaLibraryFiles, scanData) {
     const mediaType = libraryItem.mediaType
 
-    if (!global.ServerSettings.scannerUseSingleThreadedProber) { // New multi-threaded scanner
-      var scanStart = Date.now()
-      const probeResults = await new Promise((resolve) => {
-        // const probePool = new MediaProbePool(mediaType, mediaLibraryFiles, scanData, global.ServerSettings.scannerMaxThreads)
-        const itemBatch = MediaProbePool.initBatch(libraryItem, mediaLibraryFiles, scanData)
-        itemBatch.on('done', resolve)
-        MediaProbePool.runBatch(itemBatch)
-      })
-
-      return {
-        audioFiles: probeResults.audioFiles || [],
-        videoFiles: probeResults.videoFiles || [],
-        elapsed: Date.now() - scanStart,
-        averageScanDuration: probeResults.averageTimePerMb
-      }
-    } else { // Old single threaded scanner
-      var scanStart = Date.now()
-      var mediaMetadataFromScan = scanData.media.metadata || null
-      var proms = []
-      for (let i = 0; i < mediaLibraryFiles.length; i++) {
-        proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadataFromScan))
-      }
-      var results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
-      return {
-        audioFiles: results.filter(r => r.audioFile).map(r => r.audioFile),
-        videoFiles: results.filter(r => r.videoFile).map(r => r.videoFile),
-        elapsed: Date.now() - scanStart,
-        averageScanDuration: this.getAverageScanDurationMs(results)
-      }
+    var scanStart = Date.now()
+    var mediaMetadataFromScan = scanData.media.metadata || null
+    var proms = []
+    for (let i = 0; i < mediaLibraryFiles.length; i++) {
+      proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadataFromScan))
+    }
+    var results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
+    return {
+      audioFiles: results.filter(r => r.audioFile).map(r => r.audioFile),
+      videoFiles: results.filter(r => r.videoFile).map(r => r.videoFile),
+      elapsed: Date.now() - scanStart,
+      averageScanDuration: this.getAverageScanDurationMs(results)
     }
   }
 
@@ -298,6 +289,11 @@ class MediaFileScanner {
     }
 
     return hasUpdated
+  }
+
+  probeAudioFileWithTone(audioFile) {
+    Logger.debug(`[MediaFileScanner] using tone to probe audio file "${audioFile.metadata.path}"`)
+    return toneProber.rawProbe(audioFile.metadata.path)
   }
 }
 module.exports = new MediaFileScanner()

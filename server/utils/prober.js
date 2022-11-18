@@ -74,7 +74,7 @@ function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
     var value = stream.tags[tags[i]] || stream.tags[tags[i].toUpperCase()]
-    if (value) return value
+    if (value && value.trim()) return value.trim()
   }
   return null
 }
@@ -177,8 +177,8 @@ function parseTags(format, verbose) {
     file_tag_comment: tryGrabTags(format, 'comment', 'comm', 'com'),
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
-    file_tag_series: tryGrabTags(format, 'series', 'show'),
-    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id'),
+    file_tag_series: tryGrabTags(format, 'series', 'show', 'mvin'),
+    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvnm'),
     file_tag_isbn: tryGrabTags(format, 'isbn'),
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
     file_tag_asin: tryGrabTags(format, 'asin'),
@@ -200,12 +200,6 @@ function parseTags(format, verbose) {
     }
   }
 
-  // var keysToLookOutFor = ['file_tag_genre1', 'file_tag_genre2', 'file_tag_series', 'file_tag_seriespart', 'file_tag_movement', 'file_tag_movementname', 'file_tag_wwwaudiofile', 'file_tag_contentgroup', 'file_tag_releasetime', 'file_tag_isbn']
-  // keysToLookOutFor.forEach((key) => {
-  //   if (tags[key]) {
-  //     Logger.debug(`Notable! ${key} => ${tags[key]}`)
-  //   }
-  // })
   return tags
 }
 

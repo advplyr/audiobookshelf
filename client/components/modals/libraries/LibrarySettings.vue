@@ -2,9 +2,9 @@
   <div class="w-full h-full px-1 md:px-4 py-1 mb-4">
     <div class="flex items-center py-2">
       <ui-toggle-switch v-model="useSquareBookCovers" @input="formUpdated" />
-      <ui-tooltip :text="tooltips.coverAspectRatio">
+      <ui-tooltip :text="$strings.LabelSettingsSquareBookCoversHelp">
         <p class="pl-4 text-base">
-          Use square book covers
+          {{ $strings.LabelSettingsSquareBookCovers }}
           <span class="material-icons icon-text text-sm">info_outlined</span>
         </p>
       </ui-tooltip>
@@ -13,20 +13,20 @@
       <div class="flex items-center">
         <ui-toggle-switch v-if="!globalWatcherDisabled" v-model="disableWatcher" @input="formUpdated" />
         <ui-toggle-switch v-else disabled :value="false" />
-        <p class="pl-4 text-base">Disable folder watcher for library</p>
+        <p class="pl-4 text-base">{{ $strings.LabelSettingsDisableWatcherForLibrary }}</p>
       </div>
-      <p v-if="globalWatcherDisabled" class="text-xs text-warning">*Watcher is disabled globally in server settings</p>
+      <p v-if="globalWatcherDisabled" class="text-xs text-warning">*{{ $strings.MessageWatcherIsDisabledGlobally }}</p>
     </div>
     <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithAsin" @input="formUpdated" />
-        <p class="pl-4 text-base">Skip matching books that already have an ASIN</p>
+        <p class="pl-4 text-base">{{ $strings.LabelSettingsSkipMatchingBooksWithASIN }}</p>
       </div>
     </div>
     <div v-if="mediaType == 'book'" class="py-3">
       <div class="flex items-center">
         <ui-toggle-switch v-model="skipMatchingMediaWithIsbn" @input="formUpdated" />
-        <p class="pl-4 text-base">Skip matching books that already have an ISBN</p>
+        <p class="pl-4 text-base">{{ $strings.LabelSettingsSkipMatchingBooksWithISBN }}</p>
       </div>
     </div>
   </div>
@@ -47,10 +47,7 @@ export default {
       useSquareBookCovers: false,
       disableWatcher: false,
       skipMatchingMediaWithAsin: false,
-      skipMatchingMediaWithIsbn: false,
-      tooltips: {
-        coverAspectRatio: 'Prefer to use square covers over standard 1.6:1 book covers'
-      }
+      skipMatchingMediaWithIsbn: false
     }
   },
   computed: {

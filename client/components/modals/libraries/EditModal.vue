@@ -36,23 +36,6 @@ export default {
     return {
       processing: false,
       selectedTab: 'details',
-      tabs: [
-        {
-          id: 'details',
-          title: 'Details',
-          component: 'modals-libraries-edit-library'
-        },
-        {
-          id: 'settings',
-          title: 'Settings',
-          component: 'modals-libraries-library-settings'
-        },
-        {
-          id: 'schedule',
-          title: 'Schedule',
-          component: 'modals-libraries-schedule-scan'
-        }
-      ],
       libraryCopy: null
     }
   },
@@ -66,10 +49,29 @@ export default {
       }
     },
     title() {
-      return this.library ? 'Update Library' : 'New Library'
+      return this.library ? this.$strings.HeaderUpdateLibrary : this.$strings.HeaderNewLibrary
     },
     buttonText() {
-      return this.library ? 'Update Library' : 'Create New Library'
+      return this.library ? this.$strings.ButtonSave : this.$strings.ButtonCreate
+    },
+    tabs() {
+      return [
+        {
+          id: 'details',
+          title: this.$strings.HeaderDetails,
+          component: 'modals-libraries-edit-library'
+        },
+        {
+          id: 'settings',
+          title: this.$strings.HeaderSettings,
+          component: 'modals-libraries-library-settings'
+        },
+        {
+          id: 'schedule',
+          title: this.$strings.HeaderSchedule,
+          component: 'modals-libraries-schedule-scan'
+        }
+      ]
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
@@ -190,14 +192,14 @@ export default {
         .then((res) => {
           this.processing = false
           this.show = false
-          this.$toast.success(`Library "${res.name}" updated successfully`)
+          this.$toast.success(this.$getString('ToastLibraryUpdateSuccess', [res.name]))
         })
         .catch((error) => {
           console.error(error)
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Failed to update library')
+            this.$toast.error(this.$strings.ToastLibraryUpdateFailed)
           }
           this.processing = false
         })
@@ -209,7 +211,7 @@ export default {
         .then((res) => {
           this.processing = false
           this.show = false
-          this.$toast.success(`Library "${res.name}" created successfully`)
+          this.$toast.success(this.$getString('ToastLibraryCreateSuccess', [res.name]))
           if (!this.$store.state.libraries.currentLibraryId) {
             console.log('Setting initially library id', res.id)
             // First library added
@@ -221,7 +223,7 @@ export default {
           if (error.response && error.response.data) {
             this.$toast.error(error.response.data)
           } else {
-            this.$toast.error('Failed to create library')
+            this.$toast.error(this.$strings.ToastLibraryCreateFailed)
           }
           this.processing = false
         })

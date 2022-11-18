@@ -6,12 +6,10 @@ export const state = () => ({
     filterBy: 'all',
     playbackRate: 1,
     bookshelfCoverSize: 120,
-    collapseSeries: false
+    collapseSeries: false,
+    collapseBookSeries: false
   },
-  settingsListeners: [],
-  collections: [],
-  collectionsLoaded: false,
-  collectionsListeners: []
+  settingsListeners: []
 })
 
 export const getters = {
@@ -59,8 +57,9 @@ export const getters = {
     if (getters.getUserCanAccessAllLibraries) return true
     return getters.getLibrariesAccessible.includes(libraryId)
   },
-  getCollection: state => id => {
-    return state.collections.find(c => c.id === id)
+  getIsSeriesRemovedFromContinueListening: (state) => (seriesId) => {
+    if (!state.user || !state.user.seriesHideFromContinueListening || !state.user.seriesHideFromContinueListening.length) return false
+    return state.user.seriesHideFromContinueListening.includes(seriesId)
   }
 }
 
@@ -111,20 +110,6 @@ export const actions = {
     }).catch((error) => {
       console.error('Failed to update settings', error)
       return false
-    })
-  },
-  loadUserCollections({ state, commit }) {
-    if (state.collectionsLoaded) {
-      console.log('Collections already loaded')
-      return state.collections
-    }
-
-    return this.$axios.$get('/api/collections').then((collections) => {
-      commit('setCollections', collections)
-      return collections
-    }).catch((error) => {
-      console.error('Failed to get collections', error)
-      return []
     })
   }
 }
@@ -178,31 +163,5 @@ export const mutations = {
   },
   removeSettingsListener(state, listenerId) {
     state.settingsListeners = state.settingsListeners.filter(l => l.id !== listenerId)
-  },
-  setCollections(state, collections) {
-    state.collectionsLoaded = true
-    state.collections = collections
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  addUpdateCollection(state, collection) {
-    var index = state.collections.findIndex(c => c.id === collection.id)
-    if (index >= 0) {
-      state.collections.splice(index, 1, collection)
-    } else {
-      state.collections.push(collection)
-    }
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  removeCollection(state, collection) {
-    state.collections = state.collections.filter(c => c.id !== collection.id)
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  addCollectionsListener(state, listener) {
-    var index = state.collectionsListeners.findIndex(l => l.id === listener.id)
-    if (index >= 0) state.collectionsListeners.splice(index, 1, listener)
-    else state.collectionsListeners.push(listener)
-  },
-  removeCollectionsListener(state, listenerId) {
-    state.collectionsListeners = state.collectionsListeners.filter(l => l.id !== listenerId)
-  },
+  }
 }

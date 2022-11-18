@@ -1,0 +1,20 @@
+{
+  "vetur.format.defaultFormatterOptions": {
+    "prettier": {
+      "semi": false,
+      "singleQuote": true,
+      "printWidth": 400,
+      "proseWrap": "never",
+      "trailingComma": "none"
+    },
+    "prettyhtml": {
+      "printWidth": 400,
+      "singleQuote": false,
+      "wrapAttributes": false,
+      "sortAttributes": false
+    }
+  },
+  "editor.formatOnSave": true,
+  "editor.detectIndentation": true,
+  "editor.tabSize": 2
+}

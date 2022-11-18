@@ -4,17 +4,18 @@
 
     <app-side-rail v-if="isShowingSideRail" class="hidden md:block" />
     <div id="app-content" class="h-full" :class="{ 'has-siderail': isShowingSideRail }">
-      <Nuxt />
+      <Nuxt :key="currentLang" />
     </div>
 
     <app-stream-container ref="streamContainer" />
 
     <modals-item-edit-modal />
-    <modals-user-collections-modal />
+    <modals-collections-add-create-modal />
     <modals-edit-collection-modal />
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
+    <modals-batch-quick-match-model />
     <prompt-confirm />
     <readers-reader />
   </div>
@@ -30,7 +31,8 @@ export default {
       socket: null,
       isSocketConnected: false,
       isFirstSocketConnection: true,
-      socketConnectionToastId: null
+      socketConnectionToastId: null,
+      currentLang: null
     }
   },
   watch: {
@@ -85,19 +87,19 @@ export default {
       this.socket.emit('auth', token)
 
       if (!this.isFirstSocketConnection || this.socketConnectionToastId !== null) {
-        this.updateSocketConnectionToast('Socket Connected', 'success', 5000)
+        this.updateSocketConnectionToast(this.$strings.ToastSocketConnected, 'success', 5000)
       }
       this.isFirstSocketConnection = false
       this.isSocketConnected = true
     },
     connectError() {
       console.error('[SOCKET] connect error')
-      this.updateSocketConnectionToast('Socket Failed to Connect', 'error', null)
+      this.updateSocketConnectionToast(this.$strings.ToastSocketFailedToConnect, 'error', null)
     },
     disconnect() {
       console.log('[SOCKET] Disconnected')
       this.isSocketConnected = false
-      this.updateSocketConnectionToast('Socket Disconnected', 'error', null)
+      this.updateSocketConnectionToast(this.$strings.ToastSocketDisconnected, 'error', null)
     },
     reconnect() {
       console.error('[SOCKET] reconnected')
@@ -269,6 +271,14 @@ export default {
 
       this.$store.commit('scanners/addUpdate', data)
     },
+    taskStarted(task) {
+      console.log('Task started', task)
+      this.$store.commit('tasks/addUpdateTask', task)
+    },
+    taskFinished(task) {
+      console.log('Task finished', task)
+      this.$store.commit('tasks/addUpdateTask', task)
+    },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
         this.$store.commit('user/setUser', user)
@@ -288,10 +298,10 @@ export default {
       this.$store.commit('user/updateMediaProgress', payload)
     },
     collectionAdded(collection) {
-      this.$store.commit('user/addUpdateCollection', collection)
+      this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionUpdated(collection) {
-      this.$store.commit('user/addUpdateCollection', collection)
+      this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionRemoved(collection) {
       if (this.$route.name.startsWith('collection')) {
@@ -299,54 +309,7 @@ export default {
           this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/collections`)
         }
       }
-      this.$store.commit('user/removeCollection', collection)
-    },
-    abmergeStarted(download) {
-      download.status = this.$constants.DownloadStatus.PENDING
-      download.toastId = this.$toast(`Preparing download "${download.filename}"`, { timeout: false, draggable: false, closeOnClick: false })
-      this.$store.commit('downloads/addUpdateDownload', download)
-    },
-    abmergeReady(download) {
-      download.status = this.$constants.DownloadStatus.READY
-      var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
-
-      if (existingDownload && existingDownload.toastId !== undefined) {
-        download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" is ready!`, options: { timeout: 5000, type: 'success' } }, true)
-      } else {
-        this.$toast.success(`Download "${download.filename}" is ready!`)
-      }
-      this.$store.commit('downloads/addUpdateDownload', download)
-    },
-    abmergeFailed(download) {
-      download.status = this.$constants.DownloadStatus.FAILED
-      var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
-
-      var failedMsg = download.isTimedOut ? 'timed out' : 'failed'
-
-      if (existingDownload && existingDownload.toastId !== undefined) {
-        download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" ${failedMsg}`, options: { timeout: 5000, type: 'error' } }, true)
-      } else {
-        console.warn('Download failed no existing download', existingDownload)
-        this.$toast.error(`Download "${download.filename}" ${failedMsg}`)
-      }
-      this.$store.commit('downloads/addUpdateDownload', download)
-    },
-    abmergeKilled(download) {
-      var existingDownload = this.$store.getters['downloads/getDownload'](download.id)
-      if (existingDownload && existingDownload.toastId !== undefined) {
-        download.toastId = existingDownload.toastId
-        this.$toast.update(existingDownload.toastId, { content: `Download "${download.filename}" was terminated`, options: { timeout: 5000, type: 'error' } }, true)
-      } else {
-        console.warn('Download killed no existing download found', existingDownload)
-        this.$toast.error(`Download "${download.filename}" was terminated`)
-      }
-      this.$store.commit('downloads/removeDownload', download)
-    },
-    abmergeExpired(download) {
-      download.status = this.$constants.DownloadStatus.EXPIRED
-      this.$store.commit('downloads/addUpdateDownload', download)
+      this.$store.commit('libraries/removeCollection', collection)
     },
     rssFeedOpen(data) {
       this.$store.commit('feeds/addFeed', data)
@@ -357,6 +320,18 @@ export default {
     backupApplied() {
       // Force refresh
       location.reload()
+    },
+    batchQuickMatchComplete(result) {
+      var success = result.success || false
+      var toast = 'Batch quick match complete!\n' + result.updates + ' Updated'
+      if (result.unmatched && result.unmatched > 0) {
+        toast += '\n' + result.unmatched + ' with no matches'
+      }
+      if (success) {
+        this.$toast.success(toast)
+      } else {
+        this.$toast.info(toast)
+      }
     },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
@@ -417,18 +392,17 @@ export default {
       this.socket.on('scan_complete', this.scanComplete)
       this.socket.on('scan_progress', this.scanProgress)
 
-      // Download Listeners
-      this.socket.on('abmerge_started', this.abmergeStarted)
-      this.socket.on('abmerge_ready', this.abmergeReady)
-      this.socket.on('abmerge_failed', this.abmergeFailed)
-      this.socket.on('abmerge_killed', this.abmergeKilled)
-      this.socket.on('abmerge_expired', this.abmergeExpired)
+      // Task Listeners
+      this.socket.on('task_started', this.taskStarted)
+      this.socket.on('task_finished', this.taskFinished)
 
       // Feed Listeners
       this.socket.on('rss_feed_open', this.rssFeedOpen)
       this.socket.on('rss_feed_closed', this.rssFeedClosed)
 
       this.socket.on('backup_applied', this.backupApplied)
+
+      this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')
@@ -501,7 +475,7 @@ export default {
       if (this.$store.getters['getNumLibraryItemsSelected'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
         this.$store.commit('setSelectedLibraryItems', [])
-        this.$eventBus.$emit('bookshelf-clear-selection')
+        this.$eventBus.$emit('bookshelf_clear_selection')
         e.preventDefault()
         return
       }
@@ -533,6 +507,23 @@ export default {
       // Queue auto play
       var playerQueueAutoPlay = localStorage.getItem('playerQueueAutoPlay')
       this.$store.commit('setPlayerQueueAutoPlay', playerQueueAutoPlay !== '0')
+    },
+    loadTasks() {
+      this.$axios
+        .$get('/api/tasks')
+        .then((payload) => {
+          console.log('Fetched tasks', payload)
+          if (payload.tasks) {
+            this.$store.commit('tasks/setTasks', payload.tasks)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to load tasks', error)
+        })
+    },
+    changeLanguage(code) {
+      console.log('Changed lang', code)
+      this.currentLang = code
     }
   },
   beforeMount() {
@@ -541,6 +532,7 @@ export default {
   mounted() {
     this.updateBodyClass()
     this.resize()
+    this.$eventBus.$on('change-lang', this.changeLanguage)
     window.addEventListener('resize', this.resize)
     window.addEventListener('keydown', this.keyDown)
 
@@ -550,12 +542,15 @@ export default {
 
     this.checkVersionUpdate()
 
+    this.loadTasks()
+
     if (this.$route.query.error) {
       this.$toast.error(this.$route.query.error)
       this.$router.replace(this.$route.path)
     }
   },
   beforeDestroy() {
+    this.$eventBus.$off('change-lang', this.changeLanguage)
     window.removeEventListener('resize', this.resize)
     window.removeEventListener('keydown', this.keyDown)
   }

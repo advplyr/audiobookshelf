@@ -66,15 +66,20 @@ class MediaProbeData {
     this.sampleRate = audioStream.sample_rate
     this.chapters = data.chapters || []
 
-    var metatags = {}
-    for (const key in data) {
-      if (data[key] && key.startsWith('file_tag')) {
-        metatags[key] = data[key]
+    if (data.tags) { // New for tone library data (toneProber.js)
+      this.audioFileMetadata = new AudioFileMetadata()
+      this.audioFileMetadata.setDataFromTone(data.tags)
+    } else { // Data from ffprobe (prober.js)
+      var metatags = {}
+      for (const key in data) {
+        if (data[key] && key.startsWith('file_tag')) {
+          metatags[key] = data[key]
+        }
       }
-    }
 
-    this.audioFileMetadata = new AudioFileMetadata()
-    this.audioFileMetadata.setData(metatags)
+      this.audioFileMetadata = new AudioFileMetadata()
+      this.audioFileMetadata.setData(metatags)
+    }
 
     // Track ID3 tag might be "3/10" or just "3"
     if (this.audioFileMetadata.tagTrack) {

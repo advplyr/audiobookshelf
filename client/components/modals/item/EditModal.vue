@@ -31,55 +31,7 @@ export default {
       processing: false,
       libraryItem: null,
       availableHeight: 0,
-      marginTop: 0,
-      tabs: [
-        {
-          id: 'details',
-          title: 'Details',
-          component: 'modals-item-tabs-details'
-        },
-        {
-          id: 'cover',
-          title: 'Cover',
-          component: 'modals-item-tabs-cover'
-        },
-        {
-          id: 'chapters',
-          title: 'Chapters',
-          component: 'modals-item-tabs-chapters',
-          mediaType: 'book'
-        },
-        {
-          id: 'episodes',
-          title: 'Episodes',
-          component: 'modals-item-tabs-episodes',
-          mediaType: 'podcast'
-        },
-        {
-          id: 'files',
-          title: 'Files',
-          component: 'modals-item-tabs-files'
-        },
-        {
-          id: 'match',
-          title: 'Match',
-          component: 'modals-item-tabs-match'
-        },
-        {
-          id: 'manage',
-          title: 'Manage',
-          component: 'modals-item-tabs-manage',
-          mediaType: 'book',
-          admin: true
-        },
-        {
-          id: 'schedule',
-          title: 'Schedule',
-          component: 'modals-item-tabs-schedule',
-          mediaType: 'podcast',
-          admin: true
-        }
-      ]
+      marginTop: 0
     }
   },
   watch: {
@@ -122,6 +74,56 @@ export default {
         this.$store.commit('setEditModalTab', val)
       }
     },
+    tabs() {
+      return [
+        {
+          id: 'details',
+          title: this.$strings.HeaderDetails,
+          component: 'modals-item-tabs-details'
+        },
+        {
+          id: 'cover',
+          title: this.$strings.HeaderCover,
+          component: 'modals-item-tabs-cover'
+        },
+        {
+          id: 'chapters',
+          title: this.$strings.HeaderChapters,
+          component: 'modals-item-tabs-chapters',
+          mediaType: 'book'
+        },
+        {
+          id: 'episodes',
+          title: this.$strings.HeaderEpisodes,
+          component: 'modals-item-tabs-episodes',
+          mediaType: 'podcast'
+        },
+        {
+          id: 'files',
+          title: this.$strings.HeaderFiles,
+          component: 'modals-item-tabs-files'
+        },
+        {
+          id: 'match',
+          title: this.$strings.HeaderMatch,
+          component: 'modals-item-tabs-match'
+        },
+        {
+          id: 'tools',
+          title: this.$strings.HeaderTools,
+          component: 'modals-item-tabs-tools',
+          mediaType: 'book',
+          admin: true
+        },
+        {
+          id: 'schedule',
+          title: this.$strings.HeaderSchedule,
+          component: 'modals-item-tabs-schedule',
+          mediaType: 'podcast',
+          admin: true
+        }
+      ]
+    },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
@@ -141,10 +143,10 @@ export default {
         if (tab.mediaType && this.mediaType !== tab.mediaType) return false
         if (tab.admin && !this.userIsAdminOrUp) return false
 
-        if (tab.id === 'manage' && this.isMissing) return false
+        if (tab.id === 'tools' && this.isMissing) return false
 
-        if ((tab.id === 'manage' || tab.id === 'files') && this.userCanDownload) return true
-        if (tab.id !== 'manage' && tab.id !== 'files' && this.userCanUpdate) return true
+        if ((tab.id === 'tools' || tab.id === 'files') && this.userCanDownload) return true
+        if (tab.id !== 'tools' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })
@@ -231,8 +233,10 @@ export default {
       }
     },
     selectTab(tab) {
+      if (this.selectedTab === tab) return
       if (this.availableTabs.find((t) => t.id === tab)) {
         this.selectedTab = tab
+        this.processing = false
       }
     },
     libraryItemUpdated(expandedLibraryItem) {

@@ -8,7 +8,11 @@ export const state = () => ({
   folders: [],
   issues: 0,
   folderLastUpdate: 0,
-  filterData: null
+  filterData: null,
+  seriesSortBy: 'name',
+  seriesSortDesc: false,
+  seriesFilterBy: 'all',
+  collections: []
 })
 
 export const getters = {
@@ -52,6 +56,9 @@ export const getters = {
   getBookCoverAspectRatio: (state, getters) => {
     if (!getters.getCurrentLibrarySettings || isNaN(getters.getCurrentLibrarySettings.coverAspectRatio)) return 1
     return getters.getCurrentLibrarySettings.coverAspectRatio === Constants.BookCoverAspectRatio.STANDARD ? 1.6 : 1
+  },
+  getCollection: state => id => {
+    return state.collections.find(c => c.id === id)
   }
 }
 
@@ -108,6 +115,7 @@ export const actions = {
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setCurrentLibrary', libraryId)
+        commit('setCollections', [])
         return data
       })
       .catch((error) => {
@@ -289,5 +297,28 @@ export const mutations = {
         state.filterData.languages.sort((a, b) => a.localeCompare(b))
       }
     }
+  },
+  setSeriesSortBy(state, sortBy) {
+    state.seriesSortBy = sortBy
+  },
+  setSeriesSortDesc(state, sortDesc) {
+    state.seriesSortDesc = sortDesc
+  },
+  setSeriesFilterBy(state, filterBy) {
+    state.seriesFilterBy = filterBy
+  },
+  setCollections(state, collections) {
+    state.collections = collections
+  },
+  addUpdateCollection(state, collection) {
+    var index = state.collections.findIndex(c => c.id === collection.id)
+    if (index >= 0) {
+      state.collections.splice(index, 1, collection)
+    } else {
+      state.collections.push(collection)
+    }
+  },
+  removeCollection(state, collection) {
+    state.collections = state.collections.filter(c => c.id !== collection.id)
   }
 }

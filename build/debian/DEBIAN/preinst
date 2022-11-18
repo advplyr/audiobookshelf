@@ -8,8 +8,6 @@ CONFIG_PATH="/etc/default/audiobookshelf"
 DEFAULT_PORT=13378
 DEFAULT_HOST="0.0.0.0"
 
-
-
 add_user() {
   : "${1:?'User was not defined'}"
   declare -r user="$1"
@@ -51,7 +49,8 @@ add_group() {
 install_ffmpeg() {
   echo "Starting FFMPEG Install"
 
-  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz"
+  WGET="wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz --output-document=ffmpeg-git-amd64-static.tar.xz"
+  WGET_TONE="wget https://github.com/sandreas/tone/releases/download/v0.1.2/tone-0.1.2-linux-x64.tar.gz --output-document=tone-0.1.2-linux-x64.tar.gz"
 
   if ! cd "$FFMPEG_INSTALL_DIR"; then
     echo "Creating ffmpeg install dir at $FFMPEG_INSTALL_DIR"
@@ -64,13 +63,26 @@ install_ffmpeg() {
   tar xvf ffmpeg-git-amd64-static.tar.xz --strip-components=1
   rm ffmpeg-git-amd64-static.tar.xz
 
-  echo "Good to go on Ffmpeg... hopefully"
+  # Temp downloading tone library to the ffmpeg dir
+  echo "Getting tone.."
+  $WGET_TONE
+  tar xvf tone-0.1.2-linux-x64.tar.gz --strip-components=1
+  rm tone-0.1.2-linux-x64.tar.gz
+
+  echo "Good to go on Ffmpeg (& tone)... hopefully"
 }
 
 setup_config() {
   if [ -f "$CONFIG_PATH" ]; then
     echo "Existing config found."
     cat $CONFIG_PATH
+
+    # TONE_PATH variable added in 2.1.6, if it doesnt exist then add it
+    if ! grep -q "TONE_PATH" "$CONFIG_PATH"; then
+      echo "Adding TONE_PATH to existing config"
+      echo "TONE_PATH=$FFMPEG_INSTALL_DIR/tone" >> "$CONFIG_PATH"
+    fi
+
   else
 
     if [ ! -d "$DEFAULT_DATA_DIR" ]; then
@@ -83,11 +95,12 @@ setup_config() {
     echo "Creating default config."
 
     config_text="METADATA_PATH=$DEFAULT_DATA_DIR/metadata
-  CONFIG_PATH=$DEFAULT_DATA_DIR/config
-  FFMPEG_PATH=/usr/lib/audiobookshelf-ffmpeg/ffmpeg
-  FFPROBE_PATH=/usr/lib/audiobookshelf-ffmpeg/ffprobe
-  PORT=$DEFAULT_PORT
-  HOST=$DEFAULT_HOST"
+CONFIG_PATH=$DEFAULT_DATA_DIR/config
+FFMPEG_PATH=$FFMPEG_INSTALL_DIR/ffmpeg
+FFPROBE_PATH=$FFMPEG_INSTALL_DIR/ffprobe
+TONE_PATH=$FFMPEG_INSTALL_DIR/tone
+PORT=$DEFAULT_PORT
+HOST=$DEFAULT_HOST"
 
     echo "$config_text"
 

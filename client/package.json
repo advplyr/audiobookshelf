@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf-client",
-  "version": "2.1.4",
+  "version": "2.2.4",
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
   "scripts": {
@@ -24,7 +24,7 @@
     "nuxt-socket-io": "^1.1.18",
     "trix": "^1.3.1",
     "v-click-outside": "^3.1.2",
-    "vue-pdf": "^4.3.0",
+    "vue-pdf": "^4.2.0",
     "vue-toastification": "^1.7.11",
     "vuedraggable": "^2.24.3"
   },

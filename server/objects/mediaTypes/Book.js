@@ -3,7 +3,7 @@ const Logger = require('../../Logger')
 const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
-const { overdriveMediaMarkersExist, parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
+const { parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
@@ -111,12 +111,15 @@ class Book {
   get invalidAudioFiles() {
     return this.audioFiles.filter(af => af.invalid)
   }
+  get includedAudioFiles() {
+    return this.audioFiles.filter(af => !af.exclude && !af.invalid)
+  }
   get hasIssues() {
     return this.missingParts.length || this.invalidAudioFiles.length
   }
   get tracks() {
     var startOffset = 0
-    return this.audioFiles.filter(af => !af.exclude && !af.invalid).map((af) => {
+    return this.includedAudioFiles.map((af) => {
       var audioTrack = new AudioTrack()
       audioTrack.setData(this.libraryItemId, af, startOffset)
       startOffset += audioTrack.duration
@@ -396,7 +399,7 @@ class Book {
     var newMissingParts = (this.missingParts || []).join(',') || ''
     var wasUpdated = newMissingParts !== currMissingParts
     if (wasUpdated && this.missingParts.length) {
-      Logger.info(`[Audiobook] "${this.name}" has ${missingParts.length} missing parts`)
+      Logger.info(`[Audiobook] "${this.metadata.title}" has ${missingParts.length} missing parts`)
     }
 
     return wasUpdated
@@ -405,54 +408,29 @@ class Book {
   setChapters(preferOverdriveMediaMarker = false) {
     // If 1 audio file without chapters, then no chapters will be set
     var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
+    if (!includedAudioFiles.length) return
 
     // If overdrive media markers are present and preferred, use those instead
     if (preferOverdriveMediaMarker) {
       var overdriveChapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
       if (overdriveChapters) {
         Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
-        return this.chapters = overdriveChapters
+        this.chapters = overdriveChapters
+        return
       }
     }
 
-    if (includedAudioFiles.length === 1) {
-      // 1 audio file with chapters
-      if (includedAudioFiles[0].chapters) {
-        this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
-      }
-    } else {
+    // IF first audio file has embedded chapters then use embedded chapters
+    if (includedAudioFiles[0].chapters && includedAudioFiles[0].chapters.length) {
+      Logger.debug(`[Book] setChapters: Using embedded chapters in audio file ${includedAudioFiles[0].metadata.path}`)
+      this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
+    } else if (includedAudioFiles.length > 1) {
+      // Build chapters from audio files
       this.chapters = []
       var currChapterId = 0
       var currStartTime = 0
       includedAudioFiles.forEach((file) => {
-        // If audio file has chapters use chapters
-        if (file.chapters && file.chapters.length) {
-          file.chapters.forEach((chapter) => {
-            if (currStartTime > this.duration) {
-              Logger.warn(`[Book] Invalid chapter start time > duration`)
-            } else {
-              var chapterAlreadyExists = this.chapters.find(ch => ch.start === currStartTime)
-              if (!chapterAlreadyExists) {
-                var chapterDuration = chapter.end - chapter.start
-                if (chapterDuration > 0) {
-                  var title = `Chapter ${currChapterId}`
-                  if (chapter.title) {
-                    title += ` (${chapter.title})`
-                  }
-                  var endTime = Math.min(this.duration, currStartTime + chapterDuration)
-                  this.chapters.push({
-                    id: currChapterId++,
-                    start: currStartTime,
-                    end: endTime,
-                    title
-                  })
-                  currStartTime += chapterDuration
-                }
-              }
-            }
-          })
-        } else if (file.duration) {
-          // Otherwise just use track has chapter
+        if (file.duration) {
           this.chapters.push({
             id: currChapterId++,
             start: currStartTime,

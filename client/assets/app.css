@@ -2,6 +2,7 @@
 @import './transitions.css';
 @import './draggable.css';
 @import './defaultStyles.css';
+@import './absicons.css';
 
 :root {
   --bookshelf-texture-img: url(/textures/wood_default.jpg);

@@ -14,7 +14,12 @@
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
 
-    <div v-if="booksInSeries" class="absolute z-20 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ booksInSeries }}</div>
+    <div v-if="seriesSequenceList" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20 text-right" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }" style="background-color: #78350f">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">#{{ seriesSequenceList }}</p>
+    </div>
+    <div v-else-if="booksInSeries" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-20" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }" style="background-color: #cd9d49dd">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ booksInSeries }}</p>
+    </div>
 
     <div class="w-full h-full absolute top-0 left-0 rounded overflow-hidden z-10">
       <div v-show="libraryItem && !imageReady" class="absolute top-0 left-0 w-full h-full flex items-center justify-center" :style="{ padding: sizeMultiplier * 0.5 + 'rem' }">
@@ -27,7 +32,9 @@
       <!-- Placeholder Cover Title & Author -->
       <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem' }">
         <div>
-          <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
+          <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">
+            {{ titleCleaned }}
+          </p>
         </div>
       </div>
       <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
@@ -37,6 +44,8 @@
 
     <!-- No progress shown for collapsed series in library and podcasts (unless showing podcast episode) -->
     <div v-if="!booksInSeries && (!isPodcast || episodeProgress)" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b" :class="itemIsFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: width * userProgressPercent + 'px' }"></div>
+    <!-- Finished progress bar for collapsed series -->
+    <div v-else-if="booksInSeries && seriesIsFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success" :style="{ width: width * userProgressPercent + 'px' }"></div>
 
     <!-- Overlay is not shown if collapsing series in library -->
     <div v-show="!booksInSeries && libraryItem && (isHovering || isSelectionMode || isMoreMenuOpen) && !processing" class="w-full h-full absolute top-0 left-0 z-10 bg-black rounded hidden md:block" :class="overlayWrapperClasslist">
@@ -128,7 +137,8 @@ export default {
     },
     orderBy: String,
     filterBy: String,
-    sortingIgnorePrefix: Boolean
+    sortingIgnorePrefix: Boolean,
+    continueListeningShelf: Boolean
   },
   data() {
     return {
@@ -181,7 +191,8 @@ export default {
       return this.mediaType === 'podcast'
     },
     placeholderUrl() {
-      return '/book_placeholder.jpg'
+      const config = this.$config || this.$nuxt.$config
+      return `${config.routerBasePath}/book_placeholder.jpg`
     },
     bookCoverSrc() {
       return this.store.getters['globals/getLibraryItemCoverSrc'](this._libraryItem, this.placeholderUrl)
@@ -231,6 +242,13 @@ export default {
     booksInSeries() {
       // Only added to item object when collapseSeries is enabled
       return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
+    },
+    seriesSequenceList() {
+      return this.collapsedSeries ? this.collapsedSeries.seriesSequenceList : null
+    },
+    libraryItemIdsInSeries() {
+      // Only added to item object when collapseSeries is enabled
+      return this.collapsedSeries ? this.collapsedSeries.libraryItemIds || [] : []
     },
     hasCover() {
       return !!this.media.coverPath
@@ -296,12 +314,28 @@ export default {
     itemIsFinished() {
       return this.userProgress ? !!this.userProgress.isFinished : false
     },
+    seriesIsFinished() {
+      return !this.libraryItemIdsInSeries.some((lid) => {
+        const progress = this.store.getters['user/getUserMediaProgress'](lid)
+        return !progress || !progress.isFinished
+      })
+    },
     showError() {
       if (this.recentEpisode) return false // Dont show podcast error on episode card
       return this.numInvalidAudioFiles || this.numMissingParts || this.isMissing || this.isInvalid
     },
+    libraryItemIdStreaming() {
+      return this.store.getters['getLibraryItemIdStreaming']
+    },
     isStreaming() {
-      return this.store.getters['getlibraryItemIdStreaming'] === this.libraryItemId
+      return this.libraryItemIdStreaming === this.libraryItemId
+    },
+    isQueued() {
+      const episodeId = this.recentEpisode ? this.recentEpisode.id : null
+      return this.store.getters['getIsMediaQueued'](this.libraryItemId, episodeId)
+    },
+    isStreamingFromDifferentLibrary() {
+      return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
       return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
@@ -368,16 +402,36 @@ export default {
     },
     moreMenuItems() {
       if (this.recentEpisode) {
-        return [
+        const items = [
           {
             func: 'editPodcast',
-            text: 'Edit Podcast'
+            text: this.$strings.ButtonEditPodcast
           },
           {
             func: 'toggleFinished',
-            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+            text: this.itemIsFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished
           }
         ]
+        if (this.continueListeningShelf) {
+          items.push({
+            func: 'removeFromContinueListening',
+            text: this.$strings.ButtonRemoveFromContinueListening
+          })
+        }
+        if (this.libraryItemIdStreaming && !this.isStreamingFromDifferentLibrary) {
+          if (!this.isQueued) {
+            items.push({
+              func: 'addToQueue',
+              text: this.$strings.ButtonQueueAddItem
+            })
+          } else if (!this.isStreaming) {
+            items.push({
+              func: 'removeFromQueue',
+              text: this.$strings.ButtonQueueRemoveItem
+            })
+          }
+        }
+        return items
       }
 
       var items = []
@@ -385,31 +439,58 @@ export default {
         items = [
           {
             func: 'toggleFinished',
-            text: `Mark as ${this.itemIsFinished ? 'Not Finished' : 'Finished'}`
+            text: this.itemIsFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished
           }
         ]
         if (this.userCanUpdate) {
           items.push({
             func: 'openCollections',
-            text: 'Add to Collection'
+            text: this.$strings.LabelAddToCollection
           })
         }
       }
       if (this.userCanUpdate) {
         items.push({
           func: 'showEditModalFiles',
-          text: 'Files'
+          text: this.$strings.HeaderFiles
         })
         items.push({
           func: 'showEditModalMatch',
-          text: 'Match'
+          text: this.$strings.HeaderMatch
         })
       }
       if (this.userIsAdminOrUp && !this.isFile) {
         items.push({
           func: 'rescan',
-          text: 'Re-Scan'
+          text: this.$strings.ButtonReScan
         })
+      }
+      if (this.series && this.bookMount) {
+        items.push({
+          func: 'removeSeriesFromContinueListening',
+          text: this.$strings.ButtonRemoveSeriesFromContinueSeries
+        })
+      }
+      if (this.continueListeningShelf) {
+        items.push({
+          func: 'removeFromContinueListening',
+          text: this.$strings.ButtonRemoveFromContinueListening
+        })
+      }
+      if (!this.isPodcast) {
+        if (this.libraryItemIdStreaming && !this.isStreamingFromDifferentLibrary) {
+          if (!this.isQueued) {
+            items.push({
+              func: 'addToQueue',
+              text: this.$strings.ButtonQueueAddItem
+            })
+          } else if (!this.isStreaming) {
+            items.push({
+              func: 'removeFromQueue',
+              text: this.$strings.ButtonQueueRemoveItem
+            })
+          }
+        }
       }
       return items
     },
@@ -444,7 +525,7 @@ export default {
     },
     isAlternativeBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
-      return this.bookshelfView === constants.BookshelfView.TITLES
+      return this.bookshelfView === constants.BookshelfView.DETAIL
     },
     isAuthorBookshelfView() {
       var constants = this.$constants || this.$nuxt.$constants
@@ -482,7 +563,7 @@ export default {
           }
         }
         var mediaMetadata = libraryItem.media.metadata
-        if (mediaMetadata.series) {
+        if (mediaMetadata.series && Array.isArray(mediaMetadata.series)) {
           var newSeries = mediaMetadata.series.find((se) => se.id === this.series.id)
           if (newSeries) {
             // update selected series
@@ -500,7 +581,7 @@ export default {
       if (this.isSelectionMode) {
         e.stopPropagation()
         e.preventDefault()
-        this.selectBtnClick()
+        this.selectBtnClick(e)
       } else {
         var router = this.$router || this.$nuxt.$router
         if (router) {
@@ -544,12 +625,12 @@ export default {
         .$patch(apiEndpoint, updatePayload)
         .then(() => {
           this.processing = false
-          toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.processing = false
-          toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     editPodcast() {
@@ -572,11 +653,12 @@ export default {
           } else if (result === 'REMOVED') {
             this.$toast.error(`Re-Scan complete item was removed`)
           }
-          this.processing = false
         })
         .catch((error) => {
           console.error('Failed to scan library item', error)
           this.$toast.error('Failed to scan library item')
+        })
+        .finally(() => {
           this.processing = false
         })
     },
@@ -588,9 +670,74 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
+    removeSeriesFromContinueListening() {
+      const axios = this.$axios || this.$nuxt.$axios
+      this.processing = true
+      axios
+        .$get(`/api/me/series/${this.series.id}/remove-from-continue-listening`)
+        .then((data) => {
+          console.log('User updated', data)
+        })
+        .catch((error) => {
+          console.error('Failed to remove series from home', error)
+          this.$toast.error('Failed to update user')
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
+    removeFromContinueListening() {
+      if (!this.userProgress) return
+
+      const axios = this.$axios || this.$nuxt.$axios
+      this.processing = true
+      axios
+        .$get(`/api/me/progress/${this.userProgress.id}/remove-from-continue-listening`)
+        .then((data) => {
+          console.log('User updated', data)
+        })
+        .catch((error) => {
+          console.error('Failed to hide item from home', error)
+          this.$toast.error('Failed to update user')
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
+    addToQueue() {
+      var queueItem = {}
+      if (this.recentEpisode) {
+        queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: this.recentEpisode.id,
+          title: this.recentEpisode.title,
+          subtitle: this.mediaMetadata.title,
+          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          duration: this.recentEpisode.audioFile.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+      } else {
+        queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.author,
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+      }
+      this.store.commit('addItemToQueue', queueItem)
+    },
+    removeFromQueue() {
+      const episodeId = this.recentEpisode ? this.recentEpisode.id : null
+      this.store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId, episodeId })
+    },
     openCollections() {
       this.store.commit('setSelectedLibraryItem', this.libraryItem)
-      this.store.commit('globals/setShowUserCollectionsModal', true)
+      this.store.commit('globals/setShowCollectionsModal', true)
     },
     createMoreMenu() {
       if (!this.$refs.moreIcon) return
@@ -651,10 +798,10 @@ export default {
       console.log('Got library itemn', libraryItem)
       this.store.commit('showEReader', libraryItem)
     },
-    selectBtnClick() {
+    selectBtnClick(evt) {
       if (this.processingBatch) return
       this.selected = !this.selected
-      this.$emit('select', this.libraryItem)
+      this.$emit('select', { entity: this.libraryItem, shiftKey: evt.shiftKey })
     },
     async play() {
       var eventBus = this.$eventBus || this.$nuxt.$eventBus
@@ -683,6 +830,7 @@ export default {
               if (!podcastProgress || !podcastProgress.isFinished) {
                 queueItems.push({
                   libraryItemId: this.libraryItemId,
+                  libraryId: this.libraryId,
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
@@ -694,6 +842,18 @@ export default {
             }
           }
         }
+      } else {
+        const queueItem = {
+          libraryItemId: this.libraryItemId,
+          libraryId: this.libraryId,
+          episodeId: null,
+          title: this.title,
+          subtitle: this.author,
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+        queueItems.push(queueItem)
       }
 
       eventBus.$emit('play-item', {

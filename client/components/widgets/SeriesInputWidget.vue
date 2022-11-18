@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ui-multi-select-query-input v-model="seriesItems" text-key="displayName" label="Series" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
+    <ui-multi-select-query-input v-model="seriesItems" text-key="displayName" :label="$strings.LabelSeries" :disabled="disabled" readonly show-edit @edit="editSeriesItem" @add="addNewSeries" />
 
     <modals-edit-series-input-inner-modal v-model="showSeriesForm" :selected-series="selectedSeries" :existing-series-names="existingSeriesNames" @submit="submitSeriesForm" />
   </div>
@@ -12,7 +12,8 @@ export default {
     value: {
       type: Array,
       default: () => []
-    }
+    },
+    disabled: Boolean
   },
   data() {
     return {

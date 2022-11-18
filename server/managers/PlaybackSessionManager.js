@@ -61,13 +61,13 @@ class PlaybackSessionManager {
   async syncLocalSessionRequest(user, sessionJson, res) {
     if (this.localSessionLock[sessionJson.id]) {
       Logger.debug(`[PlaybackSessionManager] syncLocalSessionRequest: Local session is locked and already syncing`)
-      return res.sendStatus(200)
+      return res.status(500).send('Local session is locked and already syncing')
     }
 
     var libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Library item not found for session "${sessionJson.libraryItemId}"`)
-      return res.sendStatus(200)
+      return res.status(500).send('Library item not found')
     }
 
     this.localSessionLock[sessionJson.id] = true // Lock local session

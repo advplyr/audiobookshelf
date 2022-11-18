@@ -103,9 +103,8 @@ class PodcastEpisode {
     return this.audioFile.duration
   }
   get size() { return this.audioFile.metadata.size }
-  get bestFilename() {
-    if (this.episode) return `${this.episode} - ${this.title}`
-    return this.title
+  get enclosureUrl() {
+    return this.enclosure ? this.enclosure.url : null
   }
 
   setData(data, index = 1) {

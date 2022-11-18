@@ -15,7 +15,7 @@
           <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
-          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">Unknown</p>
+          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</p>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -159,8 +159,8 @@ export default {
         return i.libraryItemId === libraryItemId
       })
       if (currentQueueIndex < 0) {
-        console.error('Media finished not found in queue', this.playerQueueItems)
-        return
+        console.error('Media finished not found in queue - using first in queue', this.playerQueueItems)
+        currentQueueIndex = -1
       }
       if (currentQueueIndex === this.playerQueueItems.length - 1) {
         console.log('Finished last item in queue')

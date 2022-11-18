@@ -96,7 +96,9 @@ export default {
       if (itemRelPath.startsWith('/')) itemRelPath = itemRelPath.slice(1)
       var relPath = this.ebookFile.metadata.relPath
       if (relPath.startsWith('/')) relPath = relPath.slice(1)
-      return `/ebook/${this.libraryId}/${this.folderId}/${itemRelPath}/${relPath}`
+
+      const relRelPath = this.$encodeUriPath(`${itemRelPath}/${relPath}`)
+      return `/ebook/${this.libraryId}/${this.folderId}/${relRelPath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']

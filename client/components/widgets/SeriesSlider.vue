@@ -13,7 +13,7 @@
     <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
       <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <cards-lazy-series-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :series-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="$constants.BookshelfView.TITLES" class="relative mx-2" @hook:updated="setScrollVars" />
+          <cards-lazy-series-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :series-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="$constants.BookshelfView.DETAIL" class="relative mx-2" @hook:updated="setScrollVars" />
         </template>
       </div>
     </div>

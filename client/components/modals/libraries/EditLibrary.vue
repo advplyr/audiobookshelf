@@ -3,21 +3,21 @@
     <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
       <div class="flex flex-wrap md:flex-nowrap -mx-1">
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
-          <ui-dropdown v-model="mediaType" :items="mediaTypes" label="Media Type" :disabled="!isNew" small @input="changedMediaType" />
+          <ui-dropdown v-model="mediaType" :items="mediaTypes" :label="$strings.LabelMediaType" :disabled="!isNew" small @input="changedMediaType" />
         </div>
         <div class="w-full md:flex-grow px-1 py-1 md:py-0">
-          <ui-text-input-with-label v-model="name" label="Library Name" @blur="nameBlurred" />
+          <ui-text-input-with-label v-model="name" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
         </div>
         <div class="w-1/5 md:w-18 px-1 py-1 md:py-0">
-          <ui-media-icon-picker v-model="icon" @input="iconChanged" />
+          <ui-media-icon-picker v-model="icon" :label="$strings.LabelIcon" @input="iconChanged" />
         </div>
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
-          <ui-dropdown v-model="provider" :items="providers" label="Metadata Provider" small @input="formUpdated" />
+          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelMetadataProvider" small @input="formUpdated" />
         </div>
       </div>
 
       <div class="w-full py-4">
-        <p class="px-1 text-sm font-semibold">Folders</p>
+        <p class="px-1 text-sm font-semibold">{{ $strings.LabelFolders }}</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
           <ui-editable-text v-model="folder.fullPath" readonly type="text" class="w-full" />
@@ -25,10 +25,10 @@
         </div>
         <div class="flex py-1 px-2 items-center w-full">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
-          <ui-editable-text v-model="newFolderPath" placeholder="New folder path" type="text" class="w-full" @blur="newFolderInputBlurred" />
+          <ui-editable-text v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 
-        <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">Browse for Folder</ui-btn>
+        <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>
       </div>
     </div>
     <modals-libraries-folder-chooser v-else :paths="folderPaths" @back="showDirectoryPicker = false" @select="selectFolder" />
@@ -53,20 +53,22 @@ export default {
       folders: [],
       showDirectoryPicker: false,
       newFolderPath: '',
-      mediaType: null,
-      mediaTypes: [
-        {
-          value: 'book',
-          text: 'Books'
-        },
-        {
-          value: 'podcast',
-          text: 'Podcasts'
-        }
-      ]
+      mediaType: null
     }
   },
   computed: {
+    mediaTypes() {
+      return [
+        {
+          value: 'book',
+          text: this.$strings.LabelBooks
+        },
+        {
+          value: 'podcast',
+          text: this.$strings.LabelPodcasts
+        }
+      ]
+    },
     folderPaths() {
       return this.folders.map((f) => f.fullPath)
     },

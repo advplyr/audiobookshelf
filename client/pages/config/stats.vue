@@ -1,6 +1,6 @@
 <template>
   <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-    <h1 class="text-xl">Stats for {{ username }}</h1>
+    <h1 class="text-xl">{{ $strings.HeaderYourStats }}</h1>
 
     <div class="flex justify-center">
       <div class="flex p-2">
@@ -12,7 +12,7 @@
         </svg>
         <div class="px-3">
           <p class="text-4xl md:text-5xl font-bold">{{ userItemsFinished.length }}</p>
-          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Items Finished</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsItemsFinished }}</p>
         </div>
       </div>
 
@@ -22,7 +22,7 @@
         </div>
         <div class="px-1">
           <p class="text-4xl md:text-5xl font-bold">{{ totalDaysListened }}</p>
-          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Days Listened</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsDaysListened }}</p>
         </div>
       </div>
 
@@ -32,7 +32,7 @@
         </div>
         <div class="px-1">
           <p class="text-4xl md:text-5xl font-bold">{{ totalMinutesListening }}</p>
-          <p class="font-book text-xs md:text-sm text-white text-opacity-80">Minutes Listening</p>
+          <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsMinutesListening }}</p>
         </div>
       </div>
     </div>
@@ -40,11 +40,11 @@
       <stats-daily-listening-chart :listening-stats="listeningStats" class="origin-top-left transform scale-75 lg:scale-100" />
       <div class="w-80 my-6 mx-auto">
         <div class="flex mb-4 items-center">
-          <h1 class="text-2xl font-book">Recent Sessions</h1>
+          <h1 class="text-2xl font-book">{{ $strings.HeaderStatsRecentSessions }}</h1>
           <div class="flex-grow" />
-          <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">View All</ui-btn>
+          <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
         </div>
-        <p v-if="!mostRecentListeningSessions.length">No Listening Sessions</p>
+        <p v-if="!mostRecentListeningSessions.length">{{ $strings.MessageNoListeningSessions }}</p>
         <template v-for="(item, index) in mostRecentListeningSessions">
           <div :key="item.id" class="w-full py-0.5">
             <div class="flex items-center mb-1">

@@ -1,51 +1,51 @@
 <template>
   <modals-modal v-model="show" name="new-podcast-modal" :width="1000" :height="'unset'" :processing="processing">
     <template #outer>
-      <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">{{ title }}</p>
+      <div class="absolute top-0 left-0 p-5 w-3/4 overflow-hidden">
+        <p class="font-book text-xl md:text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
-    <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
-      <div class="w-full p-4">
-        <p class="text-lg font-semibold mb-2">Details</p>
+    <div ref="wrapper" id="podcast-wrapper" class="p-2 md:p-8 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
+      <div class="w-full">
+        <p class="text-lg font-semibold mb-2 px-2">{{ $strings.HeaderDetails }}</p>
 
-        <div v-if="podcast.imageUrl" class="p-1 w-full">
+        <div v-if="podcast.imageUrl" class="p-2 w-full">
           <img :src="podcast.imageUrl" class="h-16 w-16 object-contain" />
         </div>
-        <div class="flex">
+        <div class="flex flex-wrap">
           <div class="w-full md:w-1/2 p-2">
-            <ui-text-input-with-label v-model="podcast.title" label="Title" @input="titleUpdated" />
+            <ui-text-input-with-label v-model="podcast.title" :label="$strings.LabelTitle" @input="titleUpdated" />
           </div>
           <div class="w-full md:w-1/2 p-2">
-            <ui-text-input-with-label v-model="podcast.author" label="Author" />
+            <ui-text-input-with-label v-model="podcast.author" :label="$strings.LabelAuthor" />
           </div>
         </div>
-        <div class="flex">
+        <div class="flex flex-wrap">
           <div class="w-full md:w-1/2 p-2">
-            <ui-text-input-with-label v-model="podcast.feedUrl" label="Feed URL" readonly />
+            <ui-text-input-with-label v-model="podcast.feedUrl" :label="$strings.LabelFeedURL" readonly />
           </div>
           <div class="w-full md:w-1/2 p-2">
-            <ui-multi-select v-model="podcast.genres" :items="podcast.genres" label="Genres" />
+            <ui-multi-select v-model="podcast.genres" :items="podcast.genres" :label="$strings.LabelGenres" />
           </div>
         </div>
         <div class="p-2 w-full">
-          <ui-textarea-with-label v-model="podcast.description" label="Description" :rows="3" />
+          <ui-textarea-with-label v-model="podcast.description" :label="$strings.LabelDescription" :rows="3" />
         </div>
-        <div class="flex">
+        <div class="flex flex-wrap">
           <div class="w-full md:w-1/2 p-2">
-            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" label="Folder" @input="folderUpdated" />
+            <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" :label="$strings.LabelFolder" @input="folderUpdated" />
           </div>
           <div class="w-full md:w-1/2 p-2">
-            <ui-text-input-with-label v-model="fullPath" label="Podcast Path" readonly />
+            <ui-text-input-with-label v-model="fullPath" :label="`${$strings.LabelPodcast} ${$strings.LabelPath}`" input-class="h-10" readonly />
           </div>
         </div>
       </div>
-      <div class="flex items-center py-4">
+      <div class="flex items-center py-4 px-2">
         <div class="flex-grow" />
         <div class="px-4">
-          <ui-checkbox v-model="podcast.autoDownloadEpisodes" label="Auto Download Episodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+          <ui-checkbox v-model="podcast.autoDownloadEpisodes" :label="$strings.LabelAutoDownloadEpisodes" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-sm md:text-base font-semibold" />
         </div>
-        <ui-btn color="success" @click="submit">Add Podcast</ui-btn>
+        <ui-btn color="success" @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -182,12 +182,12 @@ export default {
         .$post('/api/podcasts', podcastPayload)
         .then((libraryItem) => {
           this.processing = false
-          this.$toast.success('Podcast created successfully')
+          this.$toast.success(this.$strings.ToastPodcastCreateSuccess)
           this.show = false
           this.$router.push(`/item/${libraryItem.id}`)
         })
         .catch((error) => {
-          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to create podcast'
+          var errorMsg = error.response && error.response.data ? error.response.data : this.$strings.ToastPodcastCreateFailed
           console.error('Failed to create podcast', error)
           this.processing = false
           this.$toast.error(errorMsg)

@@ -27,18 +27,27 @@ Vue.prototype.$elapsedPretty = (seconds, useFullNames = false) => {
   return `${hours} ${useFullNames ? `hour${hours === 1 ? '' : 's'}` : 'hr'} ${minutes} ${useFullNames ? `minute${minutes === 1 ? '' : 's'}` : 'min'}`
 }
 
-Vue.prototype.$secondsToTimestamp = (seconds) => {
-  if (!seconds) return '0:00'
+Vue.prototype.$secondsToTimestamp = (seconds, includeMs = false, alwaysIncludeHours = false) => {
+  if (!seconds) {
+    return alwaysIncludeHours ? '00:00:00' : '0:00'
+  }
   var _seconds = seconds
   var _minutes = Math.floor(seconds / 60)
   _seconds -= _minutes * 60
   var _hours = Math.floor(_minutes / 60)
   _minutes -= _hours * 60
+
+  var ms = _seconds - Math.floor(seconds)
   _seconds = Math.floor(_seconds)
-  if (!_hours) {
-    return `${_minutes}:${_seconds.toString().padStart(2, '0')}`
+
+  var msString = includeMs ? '.' + ms.toFixed(3).split('.')[1] : ''
+  if (alwaysIncludeHours) {
+    return `${_hours.toString().padStart(2, '0')}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}${msString}`
   }
-  return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}`
+  if (!_hours) {
+    return `${_minutes}:${_seconds.toString().padStart(2, '0')}${msString}`
+  }
+  return `${_hours}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}${msString}`
 }
 
 Vue.prototype.$elapsedPrettyExtended = (seconds, useDays = true) => {
@@ -125,4 +134,14 @@ Vue.prototype.$parseCronExpression = (expression) => {
   return {
     description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
   }
+}
+
+export function supplant(str, subs) {
+  // source: http://crockford.com/javascript/remedial.html
+  return str.replace(/{([^{}]*)}/g,
+    function (a, b) {
+      var r = subs[b]
+      return typeof r === 'string' || typeof r === 'number' ? r : a
+    }
+  )
 }

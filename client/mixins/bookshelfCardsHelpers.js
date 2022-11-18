@@ -59,6 +59,8 @@ export default {
       if (this.entityName === 'books') {
         props.filterBy = this.filterBy
         props.orderBy = this.orderBy
+      } else if (this.entityName === 'series') {
+        props.orderBy = this.seriesSortBy
       }
 
       var _this = this
@@ -68,8 +70,8 @@ export default {
           this.$on('edit', (entity) => {
             if (_this.editEntity) _this.editEntity(entity)
           })
-          this.$on('select', (entity) => {
-            if (_this.selectEntity) _this.selectEntity(entity)
+          this.$on('select', ({ entity, shiftKey }) => {
+            if (_this.selectEntity) _this.selectEntity(entity, shiftKey)
           })
         }
       })

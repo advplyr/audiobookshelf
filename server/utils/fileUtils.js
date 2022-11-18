@@ -136,7 +136,7 @@ async function recurseFiles(path, relPathToReplace = null) {
     return true
   }).filter(item => {
     // Filter out items in ignore directories
-    if (directoriesToIgnore.includes(Path.dirname(item.fullname))) {
+    if (directoriesToIgnore.some(dir => item.fullname.startsWith(dir))) {
       Logger.debug(`[fileUtils] Ignoring path in dir with .ignore "${item.fullname}"`)
       return false
     }
@@ -168,7 +168,8 @@ module.exports.downloadFile = async (url, filepath) => {
   const response = await axios({
     url,
     method: 'GET',
-    responseType: 'stream'
+    responseType: 'stream',
+    timeout: 30000
   })
   response.data.pipe(writer)
   return new Promise((resolve, reject) => {

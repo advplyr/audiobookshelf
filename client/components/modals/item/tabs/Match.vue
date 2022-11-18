@@ -3,171 +3,170 @@
     <form @submit.prevent="submitSearch">
       <div class="flex flex-wrap md:flex-nowrap items-center justify-start -mx-1">
         <div class="w-36 px-1">
-          <ui-dropdown v-model="provider" :items="providers" label="Provider" small />
+          <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="flex-grow md:w-72 px-1">
-          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" placeholder="Search" />
+          <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
         <div v-show="provider != 'itunes'" class="w-60 md:w-72 px-1">
-          <ui-text-input-with-label v-model="searchAuthor" label="Author" />
+          <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
-        <ui-btn class="mt-5 ml-1" type="submit">Search</ui-btn>
+        <ui-btn class="mt-5 ml-1" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
       </div>
     </form>
     <div v-show="processing" class="flex h-full items-center justify-center">
-      <p>Loading...</p>
+      <p>{{ $strings.MessageLoading }}</p>
     </div>
     <div v-show="!processing && !searchResults.length && hasSearched" class="flex h-full items-center justify-center">
-      <p>No Results</p>
+      <p>{{ $strings.MessageNoResults }}</p>
     </div>
     <div v-show="!processing" class="w-full max-h-full overflow-y-auto overflow-x-hidden matchListWrapper mt-4">
       <template v-for="(res, index) in searchResults">
         <cards-book-match-card :key="index" :book="res" :is-podcast="isPodcast" :book-cover-aspect-ratio="bookCoverAspectRatio" @select="selectMatch" />
       </template>
     </div>
-    <div v-if="selectedMatch" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
+    <div v-if="selectedMatchOrig" class="absolute top-0 left-0 w-full bg-bg h-full px-2 py-6 md:p-8 max-h-full overflow-y-auto overflow-x-hidden">
       <div class="flex mb-4">
-        <div class="w-8 h-8 rounded-full hover:bg-white hover:bg-opacity-10 flex items-center justify-center cursor-pointer" @click="selectedMatch = null">
+        <div class="w-8 h-8 rounded-full hover:bg-white hover:bg-opacity-10 flex items-center justify-center cursor-pointer" @click="clearSelectedMatch">
           <span class="material-icons text-3xl">arrow_back</span>
         </div>
-        <p class="text-xl pl-3">Update Book Details</p>
+        <p class="text-xl pl-3">{{ $strings.HeaderUpdateDetails }}</p>
       </div>
       <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
-        <div v-if="selectedMatch.cover" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.cover" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
-          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly label="Cover" class="flex-grow mx-4" />
+          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
           <div class="min-w-12 max-w-12 md:min-w-16 md:max-w-16">
             <a :href="selectedMatch.cover" target="_blank" class="w-full bg-primary">
               <img :src="selectedMatch.cover" class="h-full w-full object-contain" />
             </a>
           </div>
         </div>
-        <div v-if="selectedMatch.title" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.title" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.title" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" label="Title" />
-            <p v-if="mediaMetadata.title" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.title || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.title" :disabled="!selectedMatchUsage.title" :label="$strings.LabelTitle" />
+            <p v-if="mediaMetadata.title" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.title || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.subtitle" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.subtitle" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.subtitle" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" label="Subtitle" />
-            <p v-if="mediaMetadata.subtitle" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.subtitle || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.subtitle" :disabled="!selectedMatchUsage.subtitle" :label="$strings.LabelSubtitle" />
+            <p v-if="mediaMetadata.subtitle" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.subtitle || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.author" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.author" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.author" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" label="Author" />
-            <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.authorName || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.author" :disabled="!selectedMatchUsage.author" :label="$strings.LabelAuthor" />
+            <p v-if="mediaMetadata.authorName" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.authorName || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.narrator" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.narrator" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.narrator" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" label="Narrator" />
-            <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.narratorName || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.narrator" :disabled="!selectedMatchUsage.narrator" :label="$strings.LabelNarrators" />
+            <p v-if="mediaMetadata.narratorName" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.narratorName || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.description" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.description" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.description" checkbox-bg="bg" @input="checkboxToggled" />
-          <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" label="Description" class="flex-grow ml-4" />
+          <div class="flex-grow ml-4">
+            <ui-textarea-with-label v-model="selectedMatch.description" :rows="3" :disabled="!selectedMatchUsage.description" :label="$strings.LabelDescription" />
+            <p v-if="mediaMetadata.description" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.description.substr(0, 100) + (mediaMetadata.description.length > 100 ? '...' : '') }}</p>
+          </div>
         </div>
-        <div v-if="selectedMatch.publisher" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.publisher" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publisher" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" label="Publisher" />
-            <p v-if="mediaMetadata.publisher" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.publisher || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.publisher" :disabled="!selectedMatchUsage.publisher" :label="$strings.LabelPublisher" />
+            <p v-if="mediaMetadata.publisher" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.publisher || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.publishedYear" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.publishedYear" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.publishedYear" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" label="Published Year" />
-            <p v-if="mediaMetadata.publishedYear" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.publishedYear || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.publishedYear" :disabled="!selectedMatchUsage.publishedYear" :label="$strings.LabelPublishYear" />
+            <p v-if="mediaMetadata.publishedYear" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.publishedYear || '' }}</p>
           </div>
         </div>
 
-        <div v-if="selectedMatch.series" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.series" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.series" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <widgets-series-input-widget v-model="selectedMatch.series" />
-            <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.seriesName || '' }}</p>
+            <widgets-series-input-widget v-model="selectedMatch.series" :disabled="!selectedMatchUsage.series" />
+            <p v-if="mediaMetadata.seriesName" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.seriesName || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.volumeNumber" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.volumeNumber" @input="checkboxToggled" />
-          <ui-text-input-with-label v-model="selectedMatch.volumeNumber" :disabled="!selectedMatchUsage.volumeNumber" label="Volume Number" class="flex-grow ml-4" />
-        </div>
-        <div v-if="selectedMatch.genres" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.genres && selectedMatchOrig.genres.length" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" label="Genres" />
-            <p v-if="mediaMetadata.genresList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.genresList || '' }}</p>
+            <ui-multi-select v-model="selectedMatch.genres" :items="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" :label="$strings.LabelGenres" />
+            <p v-if="mediaMetadata.genres" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.genres.join(', ') }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.tags" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.tags" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.tags" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" label="Tags" />
-            <p v-if="mediaMetadata.tagsList" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.tagsList || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.tags" :disabled="!selectedMatchUsage.tags" :label="$strings.LabelTags" />
+            <p v-if="media.tags" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ media.tags.join(', ') }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.language" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.language" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.language" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" label="Language" />
-            <p v-if="mediaMetadata.language" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.language || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.language" :disabled="!selectedMatchUsage.language" :label="$strings.LabelLanguage" />
+            <p v-if="mediaMetadata.language" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.language || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.isbn" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.isbn" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.isbn" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.isbn" :disabled="!selectedMatchUsage.isbn" label="ISBN" />
-            <p v-if="mediaMetadata.isbn" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.isbn || '' }}</p>
+            <p v-if="mediaMetadata.isbn" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.isbn || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.asin" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.asin" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.asin" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.asin" :disabled="!selectedMatchUsage.asin" label="ASIN" />
-            <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.asin || '' }}</p>
+            <p v-if="mediaMetadata.asin" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.asin || '' }}</p>
           </div>
         </div>
 
-        <div v-if="selectedMatch.itunesId" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.itunesId" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.itunesId" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.itunesId" type="number" :disabled="!selectedMatchUsage.itunesId" label="iTunes ID" />
-            <p v-if="mediaMetadata.itunesId" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesId || '' }}</p>
+            <p v-if="mediaMetadata.itunesId" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.itunesId || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.feedUrl" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.feedUrl" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.feedUrl" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.feedUrl" :disabled="!selectedMatchUsage.feedUrl" label="RSS Feed URL" />
-            <p v-if="mediaMetadata.feedUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.feedUrl || '' }}</p>
+            <p v-if="mediaMetadata.feedUrl" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.feedUrl || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.itunesPageUrl" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.itunesPageUrl" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.itunesPageUrl" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
             <ui-text-input-with-label v-model="selectedMatch.itunesPageUrl" :disabled="!selectedMatchUsage.itunesPageUrl" label="iTunes Page URL" />
-            <p v-if="mediaMetadata.itunesPageUrl" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.itunesPageUrl || '' }}</p>
+            <p v-if="mediaMetadata.itunesPageUrl" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.itunesPageUrl || '' }}</p>
           </div>
         </div>
-        <div v-if="selectedMatch.releaseDate" class="flex items-center py-2">
+        <div v-if="selectedMatchOrig.releaseDate" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.releaseDate" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-text-input-with-label v-model="selectedMatch.releaseDate" :disabled="!selectedMatchUsage.releaseDate" label="Release Date" />
-            <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">Currently: {{ mediaMetadata.releaseDate || '' }}</p>
+            <ui-text-input-with-label v-model="selectedMatch.releaseDate" :disabled="!selectedMatchUsage.releaseDate" :label="$strings.LabelReleaseDate" />
+            <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.releaseDate || '' }}</p>
           </div>
         </div>
 
         <div class="flex items-center justify-end py-2">
-          <ui-btn color="success" type="submit">Update</ui-btn>
+          <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
         </div>
       </form>
     </div>
@@ -193,6 +192,7 @@ export default {
       searchResults: [],
       hasSearched: false,
       selectedMatch: null,
+      selectedMatchOrig: null,
       selectedMatchUsage: {
         title: true,
         subtitle: true,
@@ -203,7 +203,6 @@ export default {
         publisher: true,
         publishedYear: true,
         series: true,
-        volumeNumber: true,
         genres: true,
         tags: true,
         language: true,
@@ -241,14 +240,13 @@ export default {
         return this.selectedMatch.series.map((se) => {
           return {
             id: `new-${Math.floor(Math.random() * 10000)}`,
-            displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+            displayName: se.sequence ? `${se.series} #${se.sequence}` : se.series,
             name: se.series,
-            sequence: se.volumeNumber || ''
+            sequence: se.sequence || ''
           }
         })
       },
       set(val) {
-        console.log('set series items', val)
         this.selectedMatch.series = val
       }
     },
@@ -260,9 +258,9 @@ export default {
       return this.$store.state.scanners.providers
     },
     searchTitleLabel() {
-      if (this.provider == 'audible') return 'Search Title or ASIN'
-      else if (this.provider == 'itunes') return 'Search Term'
-      return 'Search Title'
+      if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
+      else if (this.provider == 'itunes') return this.$strings.LabelSearchTerm
+      return this.$strings.LabelSearchTitle
     },
     media() {
       return this.libraryItem ? this.libraryItem.media || {} : {}
@@ -314,7 +312,7 @@ export default {
       this.isProcessing = true
       this.lastSearch = searchQuery
       var searchEntity = this.isPodcast ? 'podcast' : 'books'
-      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 10000 }).catch((error) => {
+      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })
@@ -338,7 +336,7 @@ export default {
       this.hasSearched = true
     },
     init() {
-      this.selectedMatch = null
+      this.clearSelectedMatch()
       this.selectedMatchUsage = {
         title: true,
         subtitle: true,
@@ -349,7 +347,6 @@ export default {
         publisher: true,
         publishedYear: true,
         series: true,
-        volumeNumber: true,
         genres: true,
         tags: true,
         language: true,
@@ -392,37 +389,34 @@ export default {
             match.series = match.series.map((se) => {
               return {
                 id: `new-${Math.floor(Math.random() * 10000)}`,
-                displayName: se.volumeNumber ? `${se.series} #${se.volumeNumber}` : se.series,
+                displayName: se.sequence ? `${se.series} #${se.sequence}` : se.series,
                 name: se.series,
-                sequence: se.volumeNumber || ''
+                sequence: se.sequence || ''
               }
             })
           }
         }
-        if (match.genres && Array.isArray(match.genres)) {
-          match.genres = match.genres.join(',')
+        if (match.genres && !Array.isArray(match.genres)) {
+          // match.genres = match.genres.join(',')
+          match.genres = match.genres.split(',').map((g) => g.trim())
         }
       }
 
       console.log('Select Match', match)
       this.selectedMatch = match
+      this.selectedMatchOrig = JSON.parse(JSON.stringify(match))
     },
     buildMatchUpdatePayload() {
       var updatePayload = {}
       updatePayload.metadata = {}
 
-      var volumeNumber = this.selectedMatchUsage.volumeNumber ? this.selectedMatch.volumeNumber || null : null
       for (const key in this.selectedMatchUsage) {
         if (this.selectedMatchUsage[key] && this.selectedMatch[key]) {
           if (key === 'series') {
-            var seriesPayload = []
             if (!Array.isArray(this.selectedMatch[key])) {
-              seriesPayload.push({
-                id: `new-${Math.floor(Math.random() * 10000)}`,
-                name: this.selectedMatch[key],
-                sequence: volumeNumber
-              })
+              console.error('Invalid series in selectedMatch', this.selectedMatch[key])
             } else {
+              var seriesPayload = []
               this.selectedMatch[key].forEach((seriesItem) =>
                 seriesPayload.push({
                   id: seriesItem.id,
@@ -430,9 +424,8 @@ export default {
                   sequence: seriesItem.sequence
                 })
               )
+              updatePayload.metadata.series = seriesPayload
             }
-
-            updatePayload.metadata.series = seriesPayload
           } else if (key === 'author' && !this.isPodcast) {
             var authors = this.selectedMatch[key]
             if (!Array.isArray(authors)) {
@@ -449,7 +442,8 @@ export default {
           } else if (key === 'narrator') {
             updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'genres') {
-            updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
+            // updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
+            updatePayload.metadata.genres = [...this.selectedMatch[key]]
           } else if (key === 'tags') {
             updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'itunesId') {
@@ -480,9 +474,9 @@ export default {
           return false
         })
         if (success) {
-          this.$toast.success('Item Cover Updated')
+          this.$toast.success(this.$strings.ToastItemCoverUpdateSuccess)
         } else {
-          this.$toast.error('Item Cover Failed to Update')
+          this.$toast.error(this.$strings.ToastItemCoverUpdateFailed)
         }
         console.log('Updated cover')
         delete updatePayload.metadata.cover
@@ -496,19 +490,23 @@ export default {
         })
         if (updateResult) {
           if (updateResult.updated) {
-            this.$toast.success('Item details updated')
+            this.$toast.success(this.$strings.ToastItemDetailsUpdateSuccess)
           } else {
-            this.$toast.info('No detail updates were necessary')
+            this.$toast.info(this.$strings.ToastItemDetailsUpdateUnneeded)
           }
-          this.selectedMatch = null
+          this.clearSelectedMatch()
           this.$emit('selectTab', 'details')
         } else {
-          this.$toast.error('Item Details Failed to Update')
+          this.$toast.error(this.$strings.ToastItemDetailsUpdateFailed)
         }
       } else {
-        this.selectedMatch = null
+        this.clearSelectedMatch()
       }
       this.isProcessing = false
+    },
+    clearSelectedMatch() {
+      this.selectedMatch = null
+      this.selectedMatchOrig = null
     }
   }
 }

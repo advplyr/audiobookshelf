@@ -4,13 +4,13 @@ const Logger = require('./Logger')
 const { version } = require('../package.json')
 const LibraryItem = require('./objects/LibraryItem')
 const User = require('./objects/user/User')
-const UserCollection = require('./objects/UserCollection')
+const Collection = require('./objects/Collection')
 const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/settings/ServerSettings')
+const NotificationSettings = require('./objects/settings/NotificationSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
-const Feed = require('./objects/Feed')
 
 class Db {
   constructor() {
@@ -24,15 +24,16 @@ class Db {
     this.SeriesPath = Path.join(global.ConfigPath, 'series')
     this.FeedsPath = Path.join(global.ConfigPath, 'feeds')
 
-    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
-    this.usersDb = new njodb.Database(this.UsersPath)
-    this.sessionsDb = new njodb.Database(this.SessionsPath)
-    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
-    this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
-    this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
-    this.authorsDb = new njodb.Database(this.AuthorsPath)
-    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
-    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2 })
+    const staleTime = 1000 * 60 * 2
+    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath, { lockoptions: { stale: staleTime } })
+    this.usersDb = new njodb.Database(this.UsersPath, { lockoptions: { stale: staleTime } })
+    this.sessionsDb = new njodb.Database(this.SessionsPath, { lockoptions: { stale: staleTime } })
+    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.authorsDb = new njodb.Database(this.AuthorsPath, { lockoptions: { stale: staleTime } })
+    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2, lockoptions: { stale: staleTime } })
 
     this.libraryItems = []
     this.users = []
@@ -43,6 +44,7 @@ class Db {
     this.series = []
 
     this.serverSettings = null
+    this.notificationSettings = null
 
     // Stores previous version only if upgraded
     this.previousVersion = null
@@ -125,6 +127,10 @@ class Db {
       this.serverSettings = new ServerSettings()
       await this.insertEntity('settings', this.serverSettings)
     }
+    if (!this.notificationSettings) {
+      this.notificationSettings = new NotificationSettings()
+      await this.insertEntity('settings', this.notificationSettings)
+    }
     global.ServerSettings = this.serverSettings.toJSON()
   }
 
@@ -166,10 +172,15 @@ class Db {
             }
           }
         }
+
+        var notificationSettings = this.settings.find(s => s.id === 'notification-settings')
+        if (notificationSettings) {
+          this.notificationSettings = new NotificationSettings(notificationSettings)
+        }
       }
     })
     var p5 = this.collectionsDb.select(() => true).then((results) => {
-      this.collections = results.data.map(l => new UserCollection(l))
+      this.collections = results.data.map(l => new Collection(l))
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
     var p6 = this.authorsDb.select(() => true).then((results) => {

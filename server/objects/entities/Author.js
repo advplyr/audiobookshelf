@@ -1,5 +1,6 @@
 const Logger = require('../../Logger')
 const { getId } = require('../../utils/index')
+const { checkNamesAreEqual } = require('../../utils/parsers/parseNameString')
 
 class Author {
   constructor(author) {
@@ -86,7 +87,7 @@ class Author {
       Logger.error(`[Author] Author name is null (${this.id})`)
       return false
     }
-    return this.name.toLowerCase() == name.toLowerCase().trim()
+    return checkNamesAreEqual(this.name, name)
   }
 }
 module.exports = Author

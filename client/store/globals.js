@@ -1,8 +1,8 @@
 export const state = () => ({
   isMobile: false,
   isMobileLandscape: false,
-  showBatchUserCollectionModal: false,
-  showUserCollectionsModal: false,
+  showBatchCollectionModal: false,
+  showCollectionsModal: false,
   showEditCollectionModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
@@ -14,6 +14,7 @@ export const state = () => ({
   selectedAuthor: null,
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loaded
+  showBatchQuickMatchModal: false,
   dateFormats: [
     {
       text: 'MM/DD/YYYY',
@@ -27,11 +28,13 @@ export const state = () => ({
       text: 'YYYY-MM-DD',
       value: 'yyyy-MM-dd'
     }
-  ]
+  ],
+  libraryIcons: ['database', 'audiobookshelf', 'books-1', 'books-2', 'book-1', 'microphone-1', 'microphone-3', 'radio', 'podcast', 'rss', 'headphones', 'music', 'file-picture', 'rocket', 'power', 'star', 'heart']
 })
 
 export const getters = {
-  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = '/book_placeholder.jpg') => {
+  getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null) => {
+    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItem) return placeholder
     var media = libraryItem.media
     if (!media || !media.coverPath || media.coverPath === placeholder) return placeholder
@@ -39,21 +42,24 @@ export const getters = {
     // Absolute URL covers (should no longer be used)
     if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
 
-    var userToken = rootGetters['user/getToken']
-    var lastUpdate = libraryItem.updatedAt || Date.now()
+    const userToken = rootGetters['user/getToken']
+    const lastUpdate = libraryItem.updatedAt || Date.now()
+    const libraryItemId = libraryItem.libraryItemId || libraryItem.id // Workaround for /users/:id page showing media progress covers
 
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333/api/items/${libraryItem.id}/cover?token=${userToken}&ts=${lastUpdate}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
     }
-    return `/api/items/${libraryItem.id}/cover?token=${userToken}&ts=${lastUpdate}`
+
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
   },
-  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = '/book_placeholder.jpg') => {
+  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = null) => {
+    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItemId) return placeholder
     var userToken = rootGetters['user/getToken']
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333/api/items/${libraryItemId}/cover?token=${userToken}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
     }
-    return `/api/items/${libraryItemId}/cover?token=${userToken}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
   }
 }
 
@@ -62,13 +68,13 @@ export const mutations = {
     state.isMobile = width < 640 || height < 640
     state.isMobileLandscape = state.isMobile && height > width
   },
-  setShowUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = false
-    state.showUserCollectionsModal = val
+  setShowCollectionsModal(state, val) {
+    state.showBatchCollectionModal = false
+    state.showCollectionsModal = val
   },
-  setShowBatchUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = true
-    state.showUserCollectionsModal = val
+  setShowBatchCollectionsModal(state, val) {
+    state.showBatchCollectionModal = true
+    state.showCollectionsModal = val
   },
   setShowEditCollectionModal(state, val) {
     state.showEditCollectionModal = val
@@ -108,5 +114,8 @@ export const mutations = {
   },
   setCasting(state, val) {
     state.isCasting = val
+  },
+  setShowBatchQuickMatchModal(state, val) {
+    state.showBatchQuickMatchModal = val
   }
 }

@@ -54,7 +54,7 @@ export default {
         return
       }
       e.preventDefault()
-      this.$emit('click')
+      this.$emit('click', e)
       e.stopPropagation()
     }
   },

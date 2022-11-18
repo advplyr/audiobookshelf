@@ -12,9 +12,9 @@
       <div class="w-full" v-show="expand">
         <table class="text-sm tracksTable">
           <tr class="font-book">
-            <th class="text-left">Filename</th>
-            <th class="text-left">Size</th>
-            <th class="text-left">Type</th>
+            <th class="text-left">{{ $strings.LabelFilename }}</th>
+            <th class="text-left">{{ $strings.LabelSize }}</th>
+            <th class="text-left">{{ $strings.LabelType }}</th>
           </tr>
           <template v-for="file in files">
             <tr :key="file.path">

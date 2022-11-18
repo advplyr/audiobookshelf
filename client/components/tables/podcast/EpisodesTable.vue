@@ -1,20 +1,23 @@
 <template>
   <div class="w-full py-6">
     <div class="flex items-center mb-4">
-      <p class="text-lg mb-0 font-semibold">Episodes</p>
+      <p class="text-lg mb-0 font-semibold">{{ $strings.HeaderEpisodes }}</p>
       <div class="flex-grow" />
       <template v-if="isSelectionMode">
-        <ui-tooltip :text="`Mark as ${selectedIsFinished ? 'Not Finished' : 'Finished'}`" direction="bottom">
+        <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
         </ui-tooltip>
-        <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">Remove {{ selectedEpisodes.length }} episode{{ selectedEpisodes.length > 1 ? 's' : '' }}</ui-btn>
-        <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">Cancel</ui-btn>
+        <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
+        <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
       </template>
-      <controls-episode-sort-select v-else v-model="sortKey" :descending.sync="sortDesc" class="w-36 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+      <template v-else>
+        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-32 md:w-36 h-9 ml-1 sm:ml-4" />
+        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-32 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+      </template>
     </div>
-    <p v-if="!episodes.length" class="py-4 text-center text-lg">No Episodes</p>
+    <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
@@ -32,6 +35,7 @@ export default {
   data() {
     return {
       episodesCopy: [],
+      filterKey: 'incomplete',
       sortKey: 'publishedAt',
       sortDesc: true,
       selectedEpisode: null,
@@ -47,6 +51,46 @@ export default {
     }
   },
   computed: {
+    sortItems() {
+      return [
+        {
+          text: this.$strings.LabelPubDate,
+          value: 'publishedAt'
+        },
+        {
+          text: this.$strings.LabelTitle,
+          value: 'title'
+        },
+        {
+          text: this.$strings.LabelSeason,
+          value: 'season'
+        },
+        {
+          text: this.$strings.LabelEpisode,
+          value: 'episode'
+        }
+      ]
+    },
+    filterItems() {
+      return [
+        {
+          value: 'all',
+          text: this.$strings.LabelShowAll
+        },
+        {
+          value: 'incomplete',
+          text: this.$strings.LabelIncomplete
+        },
+        {
+          value: 'complete',
+          text: this.$strings.LabelComplete
+        },
+        {
+          value: 'in_progress',
+          text: this.$strings.LabelInProgress
+        }
+      ]
+    },
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
     },
@@ -63,12 +107,20 @@ export default {
       return this.media.episodes || []
     },
     episodesSorted() {
-      return this.episodesCopy.sort((a, b) => {
-        if (this.sortDesc) {
-          return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
-        }
-        return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
-      })
+      return this.episodesCopy
+        .filter((ep) => {
+          if (this.filterKey === 'all') return true
+          const episodeProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, ep.id)
+          if (this.filterKey === 'incomplete') return !episodeProgress || !episodeProgress.isFinished
+          if (this.filterKey === 'complete') return episodeProgress && episodeProgress.isFinished
+          return episodeProgress && !episodeProgress.isFinished
+        })
+        .sort((a, b) => {
+          if (this.sortDesc) {
+            return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+          }
+          return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+        })
     },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
@@ -79,6 +131,19 @@ export default {
     }
   },
   methods: {
+    addEpisodeToQueue(episode) {
+      const queueItem = {
+        libraryItemId: this.libraryItem.id,
+        libraryId: this.libraryItem.libraryId,
+        episodeId: episode.id,
+        title: episode.title,
+        subtitle: this.mediaMetadata.title,
+        caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+        duration: episode.audioFile.duration || null,
+        coverPath: this.media.coverPath || null
+      }
+      this.$store.commit('addItemToQueue', queueItem)
+    },
     toggleBatchFinished() {
       this.processing = true
       var newIsFinished = !this.selectedIsFinished
@@ -93,12 +158,12 @@ export default {
       this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
-          this.$toast.success('Batch update success!')
+          this.$toast.success(this.$strings.ToastBatchUpdateSuccess)
           this.processing = false
           this.clearSelected()
         })
         .catch((error) => {
-          this.$toast.error('Batch update failed')
+          this.$toast.error(this.$strings.ToastBatchUpdateFailed)
           console.error('Failed to batch update read/not read', error)
           this.processing = false
         })
@@ -137,6 +202,7 @@ export default {
         if (!podcastProgress || !podcastProgress.isFinished) {
           queueItems.push({
             libraryItemId: this.libraryItem.id,
+            libraryId: this.libraryItem.libraryId,
             episodeId: episode.id,
             title: episode.title,
             subtitle: this.mediaMetadata.title,

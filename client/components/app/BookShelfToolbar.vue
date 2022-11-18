@@ -1,75 +1,92 @@
 <template>
   <div class="w-full h-20 md:h-10 relative">
     <div class="flex md:hidden h-10 items-center">
-      <nuxt-link :to="`/library/${currentLibraryId}`" class="flex-grow h-full flex justify-center items-center" :class="homePage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">Home</p>
+      <nuxt-link :to="`/library/${currentLibraryId}`" class="flex-grow h-full flex justify-center items-center" :class="isHomePage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isHomePage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonHome }}</p>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
       </nuxt-link>
-      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="flex-grow h-full flex justify-center items-center" :class="showLibrary ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">Library</p>
+      <nuxt-link :to="`/library/${currentLibraryId}/bookshelf`" class="flex-grow h-full flex justify-center items-center" :class="isLibraryPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isLibraryPage || isPodcastLibrary" class="text-sm">{{ $strings.ButtonLibrary }}</p>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
       </nuxt-link>
-      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'series' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">Series</p>
+      <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="flex-grow h-full flex justify-center items-center" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p class="text-sm">{{ $strings.ButtonLatest }}</p>
       </nuxt-link>
-      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">Collections</p>
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/series`" class="flex-grow h-full flex justify-center items-center" :class="isSeriesPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isSeriesPage" class="text-sm">{{ $strings.ButtonSeries }}</p>
+        <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        </svg>
+      </nuxt-link>
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="flex-grow h-full flex justify-center items-center" :class="isCollectionsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isCollectionsPage" class="text-sm">{{ $strings.ButtonCollections }}</p>
+        <span v-else class="material-icons-outlined text-lg">collections_bookmark</span>
+      </nuxt-link>
+      <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/authors`" class="flex-grow h-full flex justify-center items-center" :class="isAuthorsPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
+        <p v-if="isAuthorsPage" class="text-sm">{{ $strings.ButtonAuthors }}</p>
+        <svg v-else class="w-5 h-5" viewBox="0 0 24 24">
+          <path
+            fill="currentColor"
+            d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25M0,20V18.5C0,17.11 1.89,15.94 4.45,15.6C3.86,16.28 3.5,17.22 3.5,18.25V20H0M24,20H20.5V18.25C20.5,17.22 20.14,16.28 19.55,15.6C22.11,15.94 24,17.11 24,18.5V20Z"
+          />
+        </svg>
       </nuxt-link>
       <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/search`" class="flex-grow h-full flex justify-center items-center" :class="isPodcastSearchPage ? 'bg-primary bg-opacity-80' : 'bg-primary bg-opacity-40'">
-        <p class="text-sm">Search</p>
+        <p class="text-sm">{{ $strings.ButtonSearch }}</p>
       </nuxt-link>
     </div>
     <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-30 flex items-center justify-end md:justify-start px-2 md:px-8">
-      <template v-if="page !== 'search' && page !== 'podcast-search' && !isHome">
-        <p v-if="!selectedSeries" class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
-        <div v-else class="items-center hidden md:flex w-full">
-          <div @click="seriesBackArrow" class="rounded-full h-9 w-9 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
-            <span class="material-icons text-2xl text-white">west</span>
-          </div>
-          <p class="pl-4 font-book text-lg">
-            {{ seriesName }}
-          </p>
-          <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
-            <span class="font-mono">{{ numShowing }}</span>
-          </div>
-          <div class="flex-grow" />
-          <ui-btn color="primary" small :loading="processingSeries" class="flex items-center" @click="markSeriesFinished">
-            <div class="h-5 w-5">
-              <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
-                <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z" />
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-7 19.6l-7-4.66V3h14v12.93l-7 4.67zm-2.01-7.42l-2.58-2.59L6 12l4 4 8-8-1.42-1.42z" />
-              </svg>
-            </div>
-            <span class="pl-2"> Mark Series {{ isSeriesFinished ? 'Not Finished' : 'Finished' }}</span></ui-btn
-          >
+      <!-- Series books page -->
+      <template v-if="selectedSeries">
+        <p class="pl-2 font-book text-base md:text-lg">
+          {{ seriesName }}
+        </p>
+        <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
+          <span class="font-mono">{{ numShowing }}</span>
         </div>
+        <div class="flex-grow" />
+        <ui-checkbox v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
+        <ui-btn color="primary" small :loading="processingSeries" class="items-center ml-1 sm:ml-4 hidden md:flex" @click="markSeriesFinished">
+          <div class="h-5 w-5">
+            <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
+              <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z" />
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-7 19.6l-7-4.66V3h14v12.93l-7 4.67zm-2.01-7.42l-2.58-2.59L6 12l4 4 8-8-1.42-1.42z" />
+            </svg>
+          </div>
+          <span class="pl-2"> {{ $strings.LabelMarkSeries }} {{ isSeriesFinished ? $strings.LabelNotFinished : $strings.LabelFinished }}</span>
+        </ui-btn>
+        <ui-btn v-if="isSeriesRemovedFromContinueListening" small :loading="processingSeries" @click="reAddSeriesToContinueListening" class="hidden md:block ml-2"> Re-Add Series to Continue Listening </ui-btn>
+      </template>
+      <!-- library & collections page -->
+      <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
+        <p class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
+
         <div class="flex-grow hidden sm:inline-block" />
 
-        <ui-checkbox v-show="showSortFilters && !isPodcast" v-model="settings.collapseSeries" label="Collapse Series" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
-        <controls-filter-select v-show="showSortFilters" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
-        <controls-order-select v-show="showSortFilters" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
-        <!-- <div v-show="showSortFilters" class="h-7 ml-4 flex border border-white border-opacity-25 rounded-md">
-          <div class="h-full px-2 text-white flex items-center rounded-l-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'grid')">
-            <span class="material-icons" style="font-size: 1.4rem">view_module</span>
-          </div>
-          <div class="h-full px-2 text-white flex items-center rounded-r-md hover:bg-primary hover:bg-opacity-75 cursor-pointer" :class="!isGridMode ? 'bg-primary' : 'text-opacity-70'" @click="$emit('update:viewMode', 'list')">
-            <span class="material-icons" style="font-size: 1.4rem">view_list</span>
-          </div>
-        </div> -->
+        <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <controls-library-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+        <controls-library-sort-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <controls-library-filter-select v-if="isSeriesPage" v-model="seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
+        <controls-sort-select v-if="isSeriesPage" v-model="seriesSortBy" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
-        <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">Remove All {{ numShowing }} {{ entityName }}</ui-btn>
+        <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
+      <!-- search page -->
       <template v-else-if="page === 'search'">
-        <div @click="searchBackArrow" class="rounded-full h-10 w-10 flex items-center justify-center hover:bg-white hover:bg-opacity-10 cursor-pointer">
-          <span class="material-icons text-3xl text-white">west</span>
-        </div>
         <div class="flex-grow" />
-        <p>Search results for "{{ searchQuery }}"</p>
+        <p>{{ $strings.MessageSearchResultsFor }} "{{ searchQuery }}"</p>
         <div class="flex-grow" />
       </template>
+      <!-- authors page -->
       <template v-else-if="page === 'authors'">
         <div class="flex-grow" />
-        <ui-btn v-if="userCanUpdate && authors && authors.length" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">Match All Authors</ui-btn>
+        <ui-btn v-if="userCanUpdate && authors && authors.length" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
       </template>
     </div>
   </div>
@@ -85,22 +102,37 @@ export default {
       default: () => null
     },
     searchQuery: String,
-    viewMode: String,
     authors: {
       type: Array,
       default: () => []
-    },
+    }
   },
   data() {
     return {
       settings: {},
       hasInit: false,
       totalEntities: 0,
-      keywordFilter: null,
-      keywordTimeout: null,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false
+      processingAuthors: false,
+      seriesSortItems: [
+        {
+          text: 'Name',
+          value: 'name'
+        },
+        {
+          text: 'Number of Books',
+          value: 'numBooks'
+        },
+        {
+          text: 'Date Added',
+          value: 'addedAt'
+        },
+        {
+          text: 'Total Duration',
+          value: 'totalDuration'
+        }
+      ]
     }
   },
   computed: {
@@ -113,28 +145,6 @@ export default {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
-    isPodcast() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
-    },
-    isGridMode() {
-      return this.viewMode === 'grid'
-    },
-    showSortFilters() {
-      return this.page === ''
-    },
-    numShowing() {
-      return this.totalEntities
-    },
-    entityName() {
-      if (this.isPodcast) return 'Podcasts'
-      if (!this.page) return 'Books'
-      if (this.page === 'series') return 'Series'
-      if (this.page === 'collections') return 'Collections'
-      return ''
-    },
-    paramId() {
-      return this.$route.params ? this.$route.params.id || '' : ''
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -144,14 +154,39 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
-    homePage() {
+    isLibraryPage() {
+      return this.page === ''
+    },
+    isSeriesPage() {
+      return this.page === 'series'
+    },
+    isCollectionsPage() {
+      return this.page === 'collections'
+    },
+    isHomePage() {
       return this.$route.name === 'library-library'
     },
-    libraryBookshelfPage() {
-      return this.$route.name === 'library-library-bookshelf-id'
+    isPodcastSearchPage() {
+      return this.$route.name === 'library-library-podcast-search'
     },
-    showLibrary() {
-      return this.libraryBookshelfPage && this.paramId === '' && !this.showingIssues
+    isPodcastLatestPage() {
+      return this.$route.name === 'library-library-podcast-latest'
+    },
+    isAuthorsPage() {
+      return this.$route.name === 'library-library-authors'
+    },
+    numShowing() {
+      return this.totalEntities
+    },
+    entityName() {
+      if (this.isPodcastLibrary) return this.$strings.LabelPodcasts
+      if (!this.page) return this.$strings.LabelBooks
+      if (this.isSeriesPage) return this.$strings.LabelSeries
+      if (this.isCollectionsPage) return this.$strings.LabelCollections
+      return ''
+    },
+    seriesId() {
+      return this.selectedSeries ? this.selectedSeries.id : null
     },
     seriesName() {
       return this.selectedSeries ? this.selectedSeries.name : null
@@ -166,17 +201,57 @@ export default {
     isSeriesFinished() {
       return this.seriesProgress && !!this.seriesProgress.isFinished
     },
+    isSeriesRemovedFromContinueListening() {
+      if (!this.seriesId) return false
+      return this.$store.getters['user/getIsSeriesRemovedFromContinueListening'](this.seriesId)
+    },
     filterBy() {
       return this.$store.getters['user/getUserSetting']('filterBy')
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
     },
-    isPodcastSearchPage() {
-      return this.$route.name === 'library-library-podcast-search'
+    seriesSortBy: {
+      get() {
+        return this.$store.state.libraries.seriesSortBy
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesSortBy', val)
+      }
+    },
+    seriesSortDesc: {
+      get() {
+        return this.$store.state.libraries.seriesSortDesc
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesSortDesc', val)
+      }
+    },
+    seriesFilterBy: {
+      get() {
+        return this.$store.state.libraries.seriesFilterBy
+      },
+      set(val) {
+        this.$store.commit('libraries/setSeriesFilterBy', val)
+      }
     }
   },
   methods: {
+    reAddSeriesToContinueListening() {
+      this.processingSeries = true
+      this.$axios
+        .$get(`/api/me/series/${this.seriesId}/readd-to-continue-listening`)
+        .then(() => {
+          this.$toast.success('Series re-added to continue listening')
+        })
+        .catch((error) => {
+          console.error('Failed to re-add series to continue listening', error)
+          this.$toast.error('Failed to re-add series to continue listening')
+        })
+        .finally(() => {
+          this.processingSeries = false
+        })
+    },
     async matchAllAuthors() {
       this.processingAuthors = true
 
@@ -214,12 +289,13 @@ export default {
           .then(() => {
             this.$toast.success('Removed library items with issues')
             this.$router.push(`/library/${this.currentLibraryId}/bookshelf`)
-            this.processingIssues = false
             this.$store.dispatch('libraries/fetch', this.currentLibraryId)
           })
           .catch((error) => {
             console.error('Failed to remove library items with issues', error)
             this.$toast.error('Failed to remove library items with issues')
+          })
+          .finally(() => {
             this.processingIssues = false
           })
       }
@@ -247,19 +323,22 @@ export default {
           this.processingSeries = false
         })
     },
-    searchBackArrow() {
-      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
-    },
-    seriesBackArrow() {
-      this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/series`)
-    },
     updateOrder() {
       this.saveSettings()
     },
     updateFilter() {
       this.saveSettings()
     },
+    updateSeriesSort() {
+      this.$eventBus.$emit('series-sort-updated')
+    },
+    updateSeriesFilter() {
+      this.$eventBus.$emit('series-sort-updated')
+    },
     updateCollapseSeries() {
+      this.saveSettings()
+    },
+    updateCollapseBookSeries() {
       this.saveSettings()
     },
     saveSettings() {
@@ -275,15 +354,6 @@ export default {
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
-    },
-    keywordFilterInput() {
-      clearTimeout(this.keywordTimeout)
-      this.keywordTimeout = setTimeout(() => {
-        this.keywordUpdated(this.keywordFilter)
-      }, 1000)
-    },
-    keywordUpdated() {
-      this.$eventBus.$emit('bookshelf-keyword-filter', this.keywordFilter)
     }
   },
   mounted() {

@@ -276,5 +276,47 @@ class MeController {
       libraryItems: itemsInProgress
     })
   }
+
+  // GET: api/me/series/:id/remove-from-continue-listening
+  async removeSeriesFromContinueListening(req, res) {
+    const series = this.db.series.find(se => se.id === req.params.id)
+    if (!series) {
+      Logger.error(`[MeController] removeSeriesFromContinueListening: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const hasUpdated = req.user.addSeriesToHideFromContinueListening(req.params.id)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.json(req.user.toJSONForBrowser())
+  }
+
+  // GET: api/me/series/:id/readd-to-continue-listening
+  async readdSeriesFromContinueListening(req, res) {
+    const series = this.db.series.find(se => se.id === req.params.id)
+    if (!series) {
+      Logger.error(`[MeController] readdSeriesFromContinueListening: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const hasUpdated = req.user.removeSeriesFromHideFromContinueListening(req.params.id)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.json(req.user.toJSONForBrowser())
+  }
+
+  // GET: api/me/progress/:id/remove-from-continue-listening
+  async removeItemFromContinueListening(req, res) {
+    const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.json(req.user.toJSONForBrowser())
+  }
 }
 module.exports = new MeController()

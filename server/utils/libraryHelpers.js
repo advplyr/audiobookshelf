@@ -1,5 +1,5 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
-const { getTitleIgnorePrefix } = require('../utils/index')
+const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
@@ -67,6 +67,45 @@ module.exports = {
     return filtered
   },
 
+  // Returns false if should be filtered out
+  checkFilterForSeriesLibraryItem(libraryItem, filterBy) {
+    var searchGroups = ['genres', 'tags', 'authors', 'progress', 'narrators', 'languages']
+    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    if (group) {
+      var filterVal = filterBy.replace(`${group}.`, '')
+      var filter = this.decode(filterVal)
+
+      if (group === 'genres') return libraryItem.media.metadata && libraryItem.media.metadata.genres.includes(filter)
+      else if (group === 'tags') return libraryItem.media.tags.includes(filter)
+      else if (group === 'authors') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasAuthor(filter)
+      else if (group === 'narrators') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasNarrator(filter)
+      else if (group === 'languages') {
+        return libraryItem.media.metadata && libraryItem.media.metadata.language === filter
+      }
+    }
+    return true
+  },
+
+  // Return false to filter out series
+  checkSeriesProgressFilter(series, filterBy, user) {
+    const filter = this.decode(filterBy.split('.')[1])
+
+    var numBooksStartedOrFinished = 0
+    for (const libraryItem of series.books) {
+      const itemProgress = user.getMediaProgress(libraryItem.id)
+      if (filter === 'Finished' && (!itemProgress || !itemProgress.isFinished)) return false
+      if (filter === 'Not Started' && itemProgress) return false
+      if (itemProgress) numBooksStartedOrFinished++
+    }
+
+    if (numBooksStartedOrFinished === series.books.length) { // Completely finished series
+      if (filter === 'Not Finished') return false
+    } else if (numBooksStartedOrFinished === 0 && filter === 'In Progress') { // Series not started
+      return false
+    }
+    return true
+  },
+
   getDistinctFilterDataNew(libraryItems) {
     var data = {
       authors: [],
@@ -114,27 +153,62 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, minified = false) {
-    var _series = {}
+  getSeriesFromBooks(books, allSeries, filterSeries, filterBy, user, minified = false) {
+    const _series = {}
+    const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
-      var bookSeries = libraryItem.media.metadata.series || []
-      bookSeries.forEach((series) => {
-        var abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
-        abJson.sequence = series.sequence
-        if (!_series[series.id]) {
-          _series[series.id] = {
-            id: series.id,
-            name: series.name,
-            nameIgnorePrefix: getTitleIgnorePrefix(series.name),
+      // get all book series for item that is not already filtered out
+      const bookSeries = (libraryItem.media.metadata.series || []).filter(se => !seriesToFilterOut[se.id])
+      if (!bookSeries.length) return
+
+      if (filterBy && user && !filterBy.startsWith('progress.')) { // Series progress filters are evaluated after grouping
+        // If a single book in a series is filtered out then filter out the entire series
+        if (!this.checkFilterForSeriesLibraryItem(libraryItem, filterBy)) {
+          // filter out this library item
+          bookSeries.forEach((bookSeriesObj) => {
+            // flag series to filter it out
+            seriesToFilterOut[bookSeriesObj.id] = true
+            delete _series[bookSeriesObj.id]
+          })
+          return
+        }
+      }
+
+      bookSeries.forEach((bookSeriesObj) => {
+        const series = allSeries.find(se => se.id === bookSeriesObj.id)
+
+        const abJson = minified ? libraryItem.toJSONMinified() : libraryItem.toJSONExpanded()
+        abJson.sequence = bookSeriesObj.sequence
+        if (filterSeries) {
+          abJson.filterSeriesSequence = libraryItem.media.metadata.getSeries(filterSeries).sequence
+        }
+        if (!_series[bookSeriesObj.id]) {
+          _series[bookSeriesObj.id] = {
+            id: bookSeriesObj.id,
+            name: bookSeriesObj.name,
+            nameIgnorePrefix: getTitlePrefixAtEnd(bookSeriesObj.name),
+            nameIgnorePrefixSort: getTitleIgnorePrefix(bookSeriesObj.name),
             type: 'series',
-            books: [abJson]
+            books: [abJson],
+            addedAt: series ? series.addedAt : 0,
+            totalDuration: isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
           }
+
         } else {
-          _series[series.id].books.push(abJson)
+          _series[bookSeriesObj.id].books.push(abJson)
+          _series[bookSeriesObj.id].totalDuration += isNullOrNaN(abJson.media.duration) ? 0 : Number(abJson.media.duration)
         }
       })
     })
-    return Object.values(_series).map((series) => {
+
+    var seriesItems = Object.values(_series)
+
+    // check progress filter
+    if (filterBy && filterBy.startsWith('progress.') && user) {
+      seriesItems = seriesItems.filter(se => this.checkSeriesProgressFilter(se, filterBy, user))
+    }
+
+    return seriesItems.map((series) => {
       series.books = naturalSort(series.books).asc(li => li.sequence)
       return series
     })
@@ -209,34 +283,34 @@ module.exports = {
     return totalSize
   },
 
-  collapseBookSeries(libraryItems) {
-    var seriesObjects = this.getSeriesFromBooks(libraryItems, true)
-    var seriesToUse = {}
-    var libraryItemIdsToHide = []
-    seriesObjects.forEach((series) => {
-      series.firstBook = series.books.find(b => !seriesToUse[b.id]) // Find first book not already used
-      if (series.firstBook) {
-        seriesToUse[series.firstBook.id] = series
-        libraryItemIdsToHide = libraryItemIdsToHide.concat(series.books.filter(b => !seriesToUse[b.id]).map(b => b.id))
-      }
-    })
 
-    return libraryItems.map((li) => {
+  collapseBookSeries(libraryItems, series, filterSeries) {
+    // Get series from the library items. If this list is being collapsed after filtering for a series,
+    // don't collapse that series, only books that are in other series.
+    var seriesObjects = this
+      .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true)
+      .filter(s => s.id != filterSeries)
+
+    var filteredLibraryItems = []
+
+    libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
-      var libraryItemJson = li.toJSONMinified()
-      if (libraryItemIdsToHide.includes(li.id)) {
-        return null
-      }
-      if (seriesToUse[li.id]) {
-        libraryItemJson.collapsedSeries = {
-          id: seriesToUse[li.id].id,
-          name: seriesToUse[li.id].name,
-          nameIgnorePrefix: seriesToUse[li.id].nameIgnorePrefix,
-          numBooks: seriesToUse[li.id].books.length
-        }
-      }
-      return libraryItemJson
-    }).filter(li => li)
+
+      // Handle when this is the first book in a series
+      seriesObjects.filter(s => s.books[0].id == li.id).forEach(series => {
+        // Clone the library item as we need to attach data to it, but don't
+        // want to change the global copy of the library item
+        filteredLibraryItems.push(Object.assign(
+          Object.create(Object.getPrototypeOf(li)),
+          li, { collapsedSeries: series }))
+      });
+
+      // Only included books not contained in series
+      if (!seriesObjects.some(s => s.books.some(b => b.id == li.id)))
+        filteredLibraryItems.push(li)
+    });
+
+    return filteredLibraryItems
   },
 
   buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
@@ -246,6 +320,7 @@ module.exports = {
       {
         id: 'continue-listening',
         label: 'Continue Listening',
+        labelStringKey: 'LabelContinueListening',
         type: isPodcastLibrary ? 'episode' : mediaType,
         entities: [],
         category: 'recentlyListened'
@@ -253,6 +328,7 @@ module.exports = {
       {
         id: 'continue-series',
         label: 'Continue Series',
+        labelStringKey: 'LabelContinueSeries',
         type: mediaType,
         entities: [],
         category: 'continueSeries'
@@ -260,6 +336,7 @@ module.exports = {
       {
         id: 'recently-added',
         label: 'Recently Added',
+        labelStringKey: 'LabelRecentlyAdded',
         type: mediaType,
         entities: [],
         category: 'newestItems'
@@ -267,6 +344,7 @@ module.exports = {
       {
         id: 'listen-again',
         label: 'Listen Again',
+        labelStringKey: 'LabelListenAgain',
         type: isPodcastLibrary ? 'episode' : mediaType,
         entities: [],
         category: 'recentlyFinished'
@@ -274,6 +352,7 @@ module.exports = {
       {
         id: 'recent-series',
         label: 'Recent Series',
+        labelStringKey: 'LabelRecentSeries',
         type: 'series',
         entities: [],
         category: 'newestSeries'
@@ -281,6 +360,7 @@ module.exports = {
       {
         id: 'newest-authors',
         label: 'Newest Authors',
+        labelStringKey: 'LabelNewestAuthors',
         type: 'authors',
         entities: [],
         category: 'newestAuthors'
@@ -288,6 +368,7 @@ module.exports = {
       {
         id: 'episodes-recently-added',
         label: 'Newest Episodes',
+        labelStringKey: 'LabelNewestEpisodes',
         type: 'episode',
         entities: [],
         category: 'newestEpisodes'
@@ -378,7 +459,7 @@ module.exports = {
                 }
                 categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
               }
-            } else if (mediaProgress.progress > 0) { // Handle most recently listened
+            } else if (mediaProgress.inProgress && !mediaProgress.hideFromContinueListening) { // Handle most recently listened
               if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
                 const libraryItemWithEpisode = {
                   ...libraryItem.toJSONMinified(),
@@ -415,6 +496,8 @@ module.exports = {
             const libraryItemJson = libraryItem.toJSONMinified()
             libraryItemJson.seriesSequence = librarySeries.sequence
 
+            const hideFromContinueListening = user.checkShouldHideSeriesFromContinueListening(librarySeries.id)
+
             if (!seriesMap[librarySeries.id]) {
               const seriesObj = allSeries.find(se => se.id === librarySeries.id)
               if (seriesObj) {
@@ -422,6 +505,7 @@ module.exports = {
                   ...seriesObj.toJSON(),
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
+                  hideFromContinueListening,
                   bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
                   firstBookUnread: bookInProgress ? null : libraryItemJson
                 }
@@ -528,7 +612,7 @@ module.exports = {
               }
               categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
             }
-          } else if (mediaProgress.inProgress) { // Handle most recently listened
+          } else if (mediaProgress.inProgress && !mediaProgress.hideFromContinueListening) { // Handle most recently listened
             if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
               const libraryItemObj = {
                 ...libraryItem.toJSONMinified(),
@@ -555,7 +639,7 @@ module.exports = {
 
     // For Continue Series - Find next book in series for series that are in progress
     for (const seriesId in seriesMap) {
-      if (seriesMap[seriesId].inProgress) {
+      if (seriesMap[seriesId].inProgress && !seriesMap[seriesId].hideFromContinueListening) {
         seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
 
         // NEW implementation takes the first book unread with the smallest series sequence

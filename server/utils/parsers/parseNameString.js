@@ -92,3 +92,12 @@ module.exports.parse = (nameString) => {
     names: namesArray // Array of first last
   }
 }
+
+module.exports.checkNamesAreEqual = (name1, name2) => {
+  if (!name1 || !name2) return false
+
+  // e.g. John H. Smith will be equal to John H Smith
+  name1 = String(name1).toLowerCase().trim().replace(/\./g, '')
+  name2 = String(name2).toLowerCase().trim().replace(/\./g, '')
+  return name1 === name2
+}

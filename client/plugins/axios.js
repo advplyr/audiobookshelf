@@ -1,4 +1,4 @@
-export default function ({ $axios, store }) {
+export default function ({ $axios, store, $config }) {
   $axios.onRequest(config => {
     if (!config.url) {
       console.error('Axios request invalid config', config)

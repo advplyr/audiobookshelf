@@ -3,7 +3,20 @@ const htmlSanitizer = require('../utils/htmlSanitizer')
 const Logger = require('../Logger')
 
 class Audible {
-    constructor() { }
+    constructor() {
+        this.regionMap = {
+            'us': '.com',
+            'ca': '.ca',
+            'uk': '.co.uk',
+            'au': '.co.au',
+            'fr': '.fr',
+            'de': '.de',
+            'jp': '.co.jp',
+            'it': '.it',
+            'in': '.co.in',
+            'es': '.es'
+        }
+    }
 
     cleanResult(item) {
         var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin } = item
@@ -12,8 +25,8 @@ class Audible {
         if (seriesPrimary) series.push(seriesPrimary)
         if (seriesSecondary) series.push(seriesSecondary)
 
-        var genresFiltered = genres ? genres.filter(g => g.type == "genre") : []
-        var tagsFiltered = genres ? genres.filter(g => g.type == "tag") : []
+        const genresFiltered = genres ? genres.filter(g => g.type == "genre").map(g => g.name) : []
+        const tagsFiltered = genres ? genres.filter(g => g.type == "tag").map(g => g.name) : []
 
         return {
             title,
@@ -25,11 +38,13 @@ class Audible {
             description: summary ? htmlSanitizer.stripAllTags(summary) : null,
             cover: image,
             asin,
-            genres: genresFiltered.length > 0 ? genresFiltered.map(({ name }) => name).join(', ') : null,
-            tags: tagsFiltered.length > 0 ? tagsFiltered.map(({ name }) => name).join(', ') : null,
-            series: series != [] ? series.map(({ name, position }) => ({ series: name, volumeNumber: position })) : null,
+            genres: genresFiltered.length ? genresFiltered : null,
+            tags: tagsFiltered.length ? tagsFiltered.join(', ') : null,
+            series: series != [] ? series.map(({ name, position }) => ({ series: name, sequence: position })) : null,
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
-            duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0
+            duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
+            region: item.region || null,
+            rating: item.rating || null
         }
     }
 
@@ -37,9 +52,10 @@ class Audible {
         return /^[0-9A-Z]{10}$/.test(title)
     }
 
-    asinSearch(asin) {
+    asinSearch(asin, region) {
         asin = encodeURIComponent(asin);
-        var url = `https://api.audnex.us/books/${asin}`
+        var regionQuery = region ? `?region=${region}` : ''
+        var url = `https://api.audnex.us/books/${asin}${regionQuery}`
         Logger.debug(`[Audible] ASIN url: ${url}`)
         return axios.get(url).then((res) => {
             if (!res || !res.data || !res.data.asin) return null
@@ -50,14 +66,19 @@ class Audible {
         })
     }
 
-    async search(title, author, asin) {
+    async search(title, author, asin, region) {
+        if (region && !this.regionMap[region]) {
+            Logger.error(`[Audible] search: Invalid region ${region}`)
+            region = ''
+        }
+
         var items
         if (asin) {
-            items = [await this.asinSearch(asin)]
+            items = [await this.asinSearch(asin, region)]
         }
 
         if (!items && this.isProbablyAsin(title)) {
-            items = [await this.asinSearch(title)]
+            items = [await this.asinSearch(title, region)]
         }
 
         if (!items) {
@@ -65,14 +86,15 @@ class Audible {
                 num_results: '10',
                 products_sort_by: 'Relevance',
                 title: title
-            };
+            }
             if (author) queryObj.author = author
-            var queryString = (new URLSearchParams(queryObj)).toString();
-            var url = `https://api.audible.com/1.0/catalog/products?${queryString}`
+            const queryString = (new URLSearchParams(queryObj)).toString()
+            const tld = region ? this.regionMap[region] : '.com'
+            const url = `https://api.audible${tld}/1.0/catalog/products?${queryString}`
             Logger.debug(`[Audible] Search url: ${url}`)
             items = await axios.get(url).then((res) => {
                 if (!res || !res.data || !res.data.products) return null
-                return Promise.all(res.data.products.map(result => this.asinSearch(result.asin)))
+                return Promise.all(res.data.products.map(result => this.asinSearch(result.asin, region)))
             }).catch(error => {
                 Logger.error('[Audible] query search error', error)
                 return []

@@ -34,6 +34,15 @@ class SeriesController {
     res.json(series)
   }
 
+  async update(req, res) {
+    const hasUpdated = req.series.update(req.body)
+    if (hasUpdated) {
+      await this.db.updateEntity('series', req.series)
+      this.emitter('series_updated', req.series)
+    }
+    res.json(req.series)
+  }
+
   middleware(req, res, next) {
     var series = this.db.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)

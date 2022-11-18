@@ -18,7 +18,7 @@
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
     </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version"/>
+    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
   </div>
 </template>
 
@@ -47,7 +47,7 @@ export default {
         return [
           {
             id: 'config-stats',
-            title: 'Your Stats',
+            title: this.$strings.HeaderYourStats,
             path: '/config/stats'
           }
         ]
@@ -55,45 +55,50 @@ export default {
       const configRoutes = [
         {
           id: 'config',
-          title: 'Settings',
+          title: this.$strings.HeaderSettings,
           path: '/config'
         },
         {
           id: 'config-libraries',
-          title: 'Libraries',
+          title: this.$strings.HeaderLibraries,
           path: '/config/libraries'
         },
         {
           id: 'config-users',
-          title: 'Users',
+          title: this.$strings.HeaderUsers,
           path: '/config/users'
         },
         {
           id: 'config-sessions',
-          title: 'Listening Sessions',
+          title: this.$strings.HeaderListeningSessions,
           path: '/config/sessions'
         },
         {
           id: 'config-backups',
-          title: 'Backups',
+          title: this.$strings.HeaderBackups,
           path: '/config/backups'
         },
         {
           id: 'config-log',
-          title: 'Logs',
+          title: this.$strings.HeaderLogs,
           path: '/config/log'
+        },
+        {
+          id: 'config-notifications',
+          title: this.$strings.HeaderNotifications,
+          path: '/config/notifications'
         }
       ]
 
       if (this.currentLibraryId) {
         configRoutes.push({
           id: 'config-library-stats',
-          title: 'Library Stats',
+          title: this.$strings.HeaderLibraryStats,
           path: '/config/library-stats'
         })
         configRoutes.push({
           id: 'config-stats',
-          title: 'Your Stats',
+          title: this.$strings.HeaderYourStats,
           path: '/config/stats'
         })
       }
@@ -141,7 +146,7 @@ export default {
     }
   },
   methods: {
-    clickChangelog(){
+    clickChangelog() {
       this.showChangelogModal = true
     },
     clickOutside() {
@@ -150,7 +155,7 @@ export default {
     },
     closeDrawer() {
       this.$emit('update:isOpen', false)
-    },
+    }
   }
 }
 </script>

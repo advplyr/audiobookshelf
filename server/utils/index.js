@@ -80,7 +80,7 @@ function elapsedPretty(seconds) {
 }
 module.exports.elapsedPretty = elapsedPretty
 
-function secondsToTimestamp(seconds, includeMs = false) {
+function secondsToTimestamp(seconds, includeMs = false, alwaysIncludeHours = false) {
   var _seconds = seconds
   var _minutes = Math.floor(seconds / 60)
   _seconds -= _minutes * 60
@@ -91,6 +91,9 @@ function secondsToTimestamp(seconds, includeMs = false) {
   _seconds = Math.floor(_seconds)
 
   var msString = '.' + (includeMs ? ms.toFixed(3) : '0.0').split('.')[1]
+  if (alwaysIncludeHours) {
+    return `${_hours.toString().padStart(2, '0')}:${_minutes.toString().padStart(2, '0')}:${_seconds.toString().padStart(2, '0')}${msString}`
+  }
   if (!_hours) {
     return `${_minutes}:${_seconds.toString().padStart(2, '0')}${msString}`
   }
@@ -137,14 +140,24 @@ module.exports.cleanStringForSearch = (str) => {
   return str.toLowerCase().replace(/[\'\.\`\",]/g, '').trim()
 }
 
-module.exports.getTitleIgnorePrefix = (title) => {
-  if (!title) return ''
+const getTitleParts = (title) => {
+  if (!title) return ['', null]
   var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
+  prefixes = []
   for (const prefix of prefixesToIgnore) {
     // e.g. for prefix "the". If title is "The Book" return "Book, The"
     if (title.toLowerCase().startsWith(`${prefix} `)) {
-      return title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
+      return [title.substr(prefix.length + 1), `${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`]
     }
   }
-  return title
+  return [title, null]
+}
+
+module.exports.getTitleIgnorePrefix = (title) => {
+  return getTitleParts(title)[0]
+}
+
+module.exports.getTitlePrefixAtEnd = (title) => {
+  let [sort, prefix] = getTitleParts(title)
+  return prefix ? `${sort}, ${prefix}` : title
 }

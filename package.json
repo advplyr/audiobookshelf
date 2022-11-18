@@ -1,10 +1,10 @@
 {
   "name": "audiobookshelf",
-  "version": "2.1.4",
+  "version": "2.2.4",
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js",
+    "dev": "nodemon --watch server index.js",
     "start": "node index.js",
     "client": "cd client && npm ci && npm run generate",
     "prod": "npm run client && npm ci && node prod.js",
@@ -14,7 +14,7 @@
     "docker-amd64-local": "docker buildx build --platform linux/amd64 --load .  -t advplyr/audiobookshelf-amd64-local",
     "docker-arm64-local": "docker buildx build --platform linux/arm64 --load .  -t advplyr/audiobookshelf-arm64-local",
     "docker-armv7-local": "docker buildx build --platform linux/arm/v7 --load .  -t advplyr/audiobookshelf-armv7-local",
-    "deploy": "node dist/autodeploy"
+    "deploy-linux": "node deploy/linux"
   },
   "bin": "prod.js",
   "pkg": {
@@ -34,7 +34,11 @@
     "express": "^4.17.1",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
+    "node-tone": "^1.0.1",
     "socket.io": "^4.4.1",
     "xml2js": "^0.4.23"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
   }
 }

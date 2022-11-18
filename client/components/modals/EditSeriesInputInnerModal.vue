@@ -8,14 +8,14 @@
         <div class="bg-bg rounded-lg px-2 py-6 sm:p-6 md:p-8" @click.stop>
           <div class="flex">
             <div class="flex-grow p-1 min-w-48 sm:min-w-64 md:min-w-80">
-              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!isNewSeries" label="Series Name" />
+              <ui-input-dropdown ref="newSeriesSelect" v-model="selectedSeries.name" :items="existingSeriesNames" :disabled="!isNewSeries" :label="$strings.LabelSeriesName" />
             </div>
             <div class="w-24 sm:w-28 md:w-40 p-1">
-              <ui-text-input-with-label ref="sequenceInput" v-model="selectedSeries.sequence" label="Sequence" />
+              <ui-text-input-with-label ref="sequenceInput" v-model="selectedSeries.sequence" :label="$strings.LabelSequence" />
             </div>
           </div>
           <div class="flex justify-end mt-2 p-1">
-            <ui-btn type="submit">Save</ui-btn>
+            <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
           </div>
         </div>
       </form>

@@ -16,25 +16,25 @@
             </button>
           </div>
 
-          <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">Description</p>
+          <p v-if="author.description" class="text-white text-opacity-60 uppercase text-xs mb-2">{{ $strings.LabelDescription }}</p>
           <p class="text-white max-w-3xl text-sm leading-5">{{ author.description }}</p>
         </div>
       </div>
 
       <div class="py-4">
-        <widgets-item-slider :items="libraryItems" :bookshelf-view="$constants.BookshelfView.AUTHOR">
+        <widgets-item-slider :items="libraryItems" shelf-id="author-books" :bookshelf-view="$constants.BookshelfView.AUTHOR">
           <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">
-            <h2 class="text-lg">{{ libraryItems.length }} Books</h2>
+            <h2 class="text-lg">{{ libraryItems.length }} {{ $strings.LabelBooks }}</h2>
           </nuxt-link>
         </widgets-item-slider>
       </div>
 
       <div v-for="series in authorSeries" :key="series.id" class="py-4">
-        <widgets-item-slider :items="series.items" :bookshelf-view="$constants.BookshelfView.AUTHOR">
+        <widgets-item-slider :items="series.items" :shelf-id="series.id" :bookshelf-view="$constants.BookshelfView.AUTHOR">
           <nuxt-link :to="`/library/${currentLibraryId}/series/${series.id}`" class="hover:underline">
             <h2 class="text-lg">{{ series.name }}</h2>
           </nuxt-link>
-          <p class="text-white text-opacity-40 text-base px-2">Series</p>
+          <p class="text-white text-opacity-40 text-base px-2">{{ $strings.LabelSeries }}</p>
         </widgets-item-slider>
       </div>
     </div>
@@ -44,7 +44,7 @@
 <script>
 export default {
   async asyncData({ store, app, params, redirect }) {
-    const author = await app.$axios.$get(`/api/authors/${params.id}?include=items,series`).catch((error) => {
+    const author = await app.$axios.$get(`/api/authors/${params.id}?library=${store.state.libraries.currentLibraryId}&include=items,series`).catch((error) => {
       console.error('Failed to get author', error)
       return null
     })

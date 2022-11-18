@@ -23,6 +23,7 @@ const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
+const NotificationManager = require('./managers/NotificationManager')
 const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -33,9 +34,10 @@ const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
+const TaskManager = require('./managers/TaskManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -43,6 +45,7 @@ class Server {
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
+    global.RouterBasePath = ROUTER_BASE_PATH
 
     // Fix backslash if not on Windows
     if (process.platform !== 'win32') {
@@ -64,21 +67,23 @@ class Server {
     this.auth = new Auth(this.db)
 
     // Managers
+    this.taskManager = new TaskManager(this.emitter.bind(this))
+    this.notificationManager = new NotificationManager(this.db, this.emitter.bind(this))
     this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
-    this.abMergeManager = new AbMergeManager(this.db, this.clientEmitter.bind(this))
+    this.abMergeManager = new AbMergeManager(this.db, this.taskManager, this.clientEmitter.bind(this))
     this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this))
-    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this), this.notificationManager)
+    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
     this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
 
     this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.taskManager, this.getUsersOnline.bind(this), this.emitter.bind(this), this.clientEmitter.bind(this))
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
     this.staticRouter = new StaticRouter(this.db)
 
@@ -90,8 +95,7 @@ class Server {
     this.clients = {}
   }
 
-  get usersOnline() {
-    // TODO: Map open user sessions
+  getUsersOnline() {
     return Object.values(this.clients).filter(c => c.user).map(client => {
       return client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems)
     })
@@ -124,7 +128,6 @@ class Server {
 
   async init() {
     Logger.info('[Server] Init v' + version)
-    await this.abMergeManager.removeOrphanDownloads()
     await this.playbackSessionManager.removeOrphanStreams()
 
     var previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
@@ -143,7 +146,7 @@ class Server {
       await this.auth.initTokenSecret()
     }
 
-    await this.checkUserMediaProgress() // Remove invalid user item progress
+    await this.cleanUserData() // Remove invalid user item progress
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
@@ -168,29 +171,32 @@ class Server {
     await this.init()
 
     const app = express()
+    const router = express.Router()
+    app.use(global.RouterBasePath, router)
+
     this.server = http.createServer(app)
 
-    app.use(this.auth.cors)
-    app.use(fileUpload())
-    app.use(express.urlencoded({ extended: true, limit: "5mb" }));
-    app.use(express.json({ limit: "5mb" }))
+    router.use(this.auth.cors)
+    router.use(fileUpload())
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
     const distPath = Path.join(global.appRoot, '/client/dist')
-    app.use(express.static(distPath))
+    router.use(express.static(distPath))
 
     // Metadata folder static path
-    app.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
+    router.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
 
     // Static folder
-    app.use(express.static(Path.join(global.appRoot, 'static')))
+    router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    app.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
-    app.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-    app.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
+    router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
+    router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+    router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
-    app.get('/ebook/:library/:folder/*', (req, res) => {
+    router.get('/ebook/:library/:folder/*', (req, res) => {
       var library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
       var folder = library.folders.find(fol => fol.id === req.params.folder)
@@ -202,14 +208,14 @@ class Server {
     })
 
     // RSS Feed temp route
-    app.get('/feed/:id', (req, res) => {
+    router.get('/feed/:id', (req, res) => {
       Logger.info(`[Server] Requesting rss feed ${req.params.id}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    app.get('/feed/:id/cover', (req, res) => {
+    router.get('/feed/:id/cover', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
-    app.get('/feed/:id/item/:episodeId/*', (req, res) => {
+    router.get('/feed/:id/item/:episodeId/*', (req, res) => {
       Logger.debug(`[Server] Requesting rss feed episode ${req.params.id}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
@@ -217,35 +223,38 @@ class Server {
     // Client dynamic routes
     const dyanimicRoutes = [
       '/item/:id',
-      '/item/:id/manage',
       '/author/:id',
       '/audiobook/:id/chapters',
       '/audiobook/:id/edit',
+      '/audiobook/:id/manage',
       '/library/:library',
       '/library/:library/search',
       '/library/:library/bookshelf/:id?',
       '/library/:library/authors',
       '/library/:library/series/:id?',
+      '/library/:library/podcast/search',
+      '/library/:library/podcast/latest',
       '/config/users/:id',
       '/config/users/:id/sessions',
       '/collection/:id'
     ]
-    dyanimicRoutes.forEach((route) => app.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
+    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    app.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
-    app.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
-    app.post('/init', (req, res) => {
+    router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res, this.rssFeedManager.feedsArray))
+    router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    router.post('/init', (req, res) => {
       if (this.db.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
         return res.sendStatus(500)
       }
       this.initializeServer(req, res)
     })
-    app.get('/status', (req, res) => {
+    router.get('/status', (req, res) => {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
-        isInit: this.db.hasRootUser
+        isInit: this.db.hasRootUser,
+        language: this.db.serverSettings.language
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath
@@ -253,7 +262,7 @@ class Server {
       }
       res.json(payload)
     })
-    app.get('/ping', (req, res) => {
+    router.get('/ping', (req, res) => {
       Logger.info('Received ping')
       res.json({ success: true })
     })
@@ -364,20 +373,36 @@ class Server {
     return purged
   }
 
-  // Remove user media progress entries that dont have a library item
-  // TODO: Check podcast episode exists still
-  async checkUserMediaProgress() {
+  // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
+  async cleanUserData() {
     for (let i = 0; i < this.db.users.length; i++) {
       var _user = this.db.users[i]
-      if (_user.mediaProgress) {
-        var itemProgressIdsToRemove = _user.mediaProgress.map(lip => lip.id).filter(lipId => !this.db.libraryItems.find(_li => _li.id == lipId))
-        if (itemProgressIdsToRemove.length) {
-          Logger.debug(`[Server] Found ${itemProgressIdsToRemove.length} media progress data to remove from user ${_user.username}`)
-          for (const lipId of itemProgressIdsToRemove) {
-            _user.removeMediaProgress(lipId)
-          }
-          await this.db.updateEntity('user', _user)
+      var hasUpdated = false
+      if (_user.mediaProgress.length) {
+        const lengthBefore = _user.mediaProgress.length
+        _user.mediaProgress = _user.mediaProgress.filter(mp => {
+          const libraryItem = this.db.libraryItems.find(li => li.id === mp.libraryItemId)
+          if (!libraryItem) return false
+          if (mp.episodeId && (libraryItem.mediaType !== 'podcast' || !libraryItem.media.checkHasEpisode(mp.episodeId))) return false // Episode not found
+          return true
+        })
+
+        if (lengthBefore > _user.mediaProgress.length) {
+          Logger.debug(`[Server] Removing ${_user.mediaProgress.length - lengthBefore} media progress data from user ${_user.username}`)
+          hasUpdated = true
         }
+      }
+      if (_user.seriesHideFromContinueListening.length) {
+        _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {
+          if (!this.db.series.some(se => se.id === seriesId)) { // Series removed
+            hasUpdated = true
+            return false
+          }
+          return true
+        })
+      }
+      if (hasUpdated) {
+        await this.db.updateEntity('user', _user)
       }
     }
   }
@@ -455,7 +480,7 @@ class Server {
       backups: (this.backupManager.backups || []).map(b => b.toJSON())
     }
     if (user.type === 'root') {
-      initialPayload.usersOnline = this.usersOnline
+      initialPayload.usersOnline = this.getUsersOnline()
     }
     client.socket.emit('init', initialPayload)
   }

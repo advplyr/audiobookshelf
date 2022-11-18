@@ -1,10 +1,9 @@
 const axios = require('axios')
 const fs = require('../libs/fsExtra')
-const Path = require('path')
 const Logger = require('../Logger')
-const { parsePodcastRssFeedXml } = require('../utils/podcastUtils')
+const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
 const LibraryItem = require('../objects/LibraryItem')
-const { getFileTimestampsWithIno, sanitizeFilename } = require('../utils/fileUtils')
+const { getFileTimestampsWithIno } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 
 class PodcastController {
@@ -91,32 +90,17 @@ class PodcastController {
     }
   }
 
-  getPodcastFeed(req, res) {
+  async getPodcastFeed(req, res) {
     var url = req.body.rssFeed
     if (!url) {
       return res.status(400).send('Bad request')
     }
-    var includeRaw = req.query.raw == 1 // Include raw json
 
-    axios.get(url).then(async (data) => {
-      if (!data || !data.data) {
-        Logger.error('Invalid podcast feed request response')
-        return res.status(500).send('Bad response from feed request')
-      }
-      Logger.debug(`[PodcastController] Podcast feed size ${(data.data.length / 1024 / 1024).toFixed(2)}MB`)
-      var payload = await parsePodcastRssFeedXml(data.data, false, includeRaw)
-      if (!payload) {
-        return res.status(500).send('Invalid podcast RSS feed')
-      }
-
-      // RSS feed may be a private RSS feed
-      payload.podcast.metadata.feedUrl = url
-
-      res.json(payload)
-    }).catch((error) => {
-      console.error('Failed', error)
-      res.status(500).send(error)
-    })
+    const podcast = await getPodcastFeed(url)
+    if (!podcast) {
+      return res.status(404).send('Podcast RSS feed request failed or invalid response data')
+    }
+    res.json({ podcast })
   }
 
   async getOPMLFeeds(req, res) {
@@ -177,9 +161,7 @@ class PodcastController {
     if (!searchTitle) {
       return res.sendStatus(500)
     }
-    searchTitle = searchTitle.toLowerCase().trim()
-
-    const episodes = await this.podcastManager.findEpisode(rssFeedUrl, searchTitle)
+    const episodes = await findMatchingEpisodes(rssFeedUrl, searchTitle)
     res.json({
       episodes: episodes || []
     })

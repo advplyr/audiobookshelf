@@ -7,7 +7,7 @@
       <p v-if="caption" class="text-gray-400 text-xs">{{ caption }}</p>
     </div>
     <div class="w-28">
-      <p v-if="isOpenInPlayer" class="text-sm text-right text-gray-400">Streaming</p>
+      <p v-if="isOpenInPlayer" class="text-sm text-right text-gray-400">{{ $strings.ButtonPlaying }}</p>
       <div v-else-if="isHovering" class="flex items-center justify-end -mx-1">
         <button class="outline-none mx-1 flex items-center" @click.stop="playClick">
           <span class="material-icons text-success">play_arrow</span>
@@ -55,7 +55,7 @@ export default {
       return this.item.coverPath
     },
     coverUrl() {
-      if (!this.coverPath) return '/book_placeholder.jpg'
+      if (!this.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
       return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId)
     },
     bookCoverAspectRatio() {

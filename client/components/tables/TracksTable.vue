@@ -7,9 +7,9 @@
       </div>
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
-      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">Full Path</ui-btn>
+      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <nuxt-link v-if="userCanUpdate && !isFile" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
-        <ui-btn small color="primary">Manage Tracks</ui-btn>
+        <ui-btn small color="primary">{{ $strings.ButtonManageTracks }}</ui-btn>
       </nuxt-link>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showTracks ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
@@ -20,10 +20,18 @@
         <table class="text-sm tracksTable">
           <tr class="font-book">
             <th class="w-10">#</th>
-            <th class="text-left">Filename</th>
-            <th class="text-left w-20">Size</th>
-            <th class="text-left w-20">Duration</th>
-            <th v-if="userCanDownload" class="text-center w-20">Download</th>
+            <th class="text-left">{{ $strings.LabelFilename }}</th>
+            <th class="text-left w-20">{{ $strings.LabelSize }}</th>
+            <th class="text-left w-20">{{ $strings.LabelDuration }}</th>
+            <th v-if="userCanDownload" class="text-center w-20">{{ $strings.LabelDownload }}</th>
+            <th v-if="showExperimentalFeatures" class="text-center w-20">
+              <div class="flex items-center">
+                <p>Tone</p>
+                <ui-tooltip text="Experimental feature for testing Tone library metadata scan results. Results logged in browser console." class="ml-2 w-2" direction="left">
+                  <span class="material-icons-outlined text-sm">information</span>
+                </ui-tooltip>
+              </div>
+            </th>
           </tr>
           <template v-for="track in tracks">
             <tr :key="track.index">
@@ -38,7 +46,10 @@
                 {{ $secondsToTimestamp(track.duration) }}
               </td>
               <td v-if="userCanDownload" class="text-center">
-                <a :href="`/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text">download</span></a>
+                <a :href="`${$config.routerBasePath}/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text pt-1">download</span></a>
+              </td>
+              <td v-if="showExperimentalFeatures" class="text-center">
+                <ui-icon-btn borderless :loading="toneProbing" icon="search" @click="toneProbe(track.index)" />
               </td>
             </tr>
           </template>
@@ -65,7 +76,8 @@ export default {
   data() {
     return {
       showTracks: false,
-      showFullPath: false
+      showFullPath: false,
+      toneProbing: false
     }
   },
   computed: {
@@ -77,11 +89,35 @@ export default {
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
+    },
+    showExperimentalFeatures() {
+      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks
+    },
+    toneProbe(index) {
+      this.toneProbing = true
+
+      this.$axios
+        .$post(`/api/items/${this.libraryItemId}/tone-scan/${index}`)
+        .then((data) => {
+          console.log('Tone probe data', data)
+          if (data.error) {
+            this.$toast.error('Tone probe error: ' + data.error)
+          } else {
+            this.$toast.success('Tone probe successful! Check browser console')
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to tone probe', error)
+          this.$toast.error('Tone probe failed')
+        })
+        .finally(() => {
+          this.toneProbing = false
+        })
     }
   },
   mounted() {}

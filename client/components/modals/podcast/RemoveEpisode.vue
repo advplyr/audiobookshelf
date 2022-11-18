@@ -8,14 +8,13 @@
     <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div class="mb-4">
         <p v-if="episode" class="text-lg text-gray-200 mb-4">
-          Are you sure you want to remove episode<br /><span class="text-base">{{ episodeTitle }}</span
-          >?
+          {{ $getString('MessageConfirmRemoveEpisode', [episodeTitle]) }}
         </p>
-        <p v-else class="text-lg text-gray-200 mb-4">Are you sure you want to remove {{ episodes.length }} episodes?</p>
+        <p v-else class="text-lg text-gray-200 mb-4">{{ $getString('MessageConfirmRemoveEpisodes', [episodes.length]) }}</p>
         <p class="text-xs font-semibold text-warning text-opacity-90">Note: This does not delete the audio file unless toggling "Hard delete file"</p>
       </div>
       <div class="flex justify-between items-center pt-4">
-        <ui-checkbox v-model="hardDeleteFile" label="Hard delete file" check-color="error" checkbox-bg="bg" small label-class="text-base text-gray-200 pl-3" />
+        <ui-checkbox v-model="hardDeleteFile" :label="$strings.LabelHardDeleteFile" check-color="error" checkbox-bg="bg" small label-class="text-base text-gray-200 pl-3" />
 
         <ui-btn @click="submit">{{ btnText }}</ui-btn>
       </div>
@@ -61,12 +60,11 @@ export default {
       return null
     },
     title() {
-      if (this.episodes.length > 1) return `Remove ${this.episodes.length} episodes`
-      return 'Remove Episode'
+      if (this.episodes.length > 1) return this.$getString('HeaderRemoveEpisodes', [this.episodes.length])
+      return this.$strings.HeaderRemoveEpisode
     },
     btnText() {
-      if (this.episodes.length > 1) return this.hardDeleteFile ? `Delete ${this.episodes.length} episodes` : `Remove ${this.episodes.length} episodes`
-      return this.hardDeleteFile ? 'Delete episode' : 'Remove episode'
+      return this.hardDeleteFile ? this.$strings.ButtonDelete : this.$strings.ButtonRemove
     },
     episodeTitle() {
       return this.episode ? this.episode.title : null

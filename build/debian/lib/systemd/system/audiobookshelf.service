@@ -10,6 +10,7 @@ ExecStart=/usr/share/audiobookshelf/audiobookshelf
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 User=audiobookshelf
+Group=audiobookshelf
 PermissionsStartOnly=true
 
 [Install]

@@ -6,7 +6,9 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
+FROM sandreas/tone:v0.1.2 AS tone
 FROM node:16-alpine
+
 ENV NODE_ENV=production
 RUN apk update && \
     apk add --no-cache --update \
@@ -14,6 +16,7 @@ RUN apk update && \
     tzdata \
     ffmpeg
 
+COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
 COPY index.js package* /
 COPY server server

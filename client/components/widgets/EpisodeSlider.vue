@@ -13,7 +13,22 @@
     <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
       <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <cards-lazy-book-card :key="item.recentEpisode.id" :ref="`slider-episode-${item.recentEpisode.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" class="relative mx-2" @edit="editEpisode" @editPodcast="editPodcast" @select="selectItem" @hook:updated="setScrollVars" />
+          <cards-lazy-book-card
+            :key="item.recentEpisode.id"
+            :ref="`slider-episode-${item.recentEpisode.id}`"
+            :index="index"
+            :book-mount="item"
+            :height="cardHeight"
+            :width="cardWidth"
+            :book-cover-aspect-ratio="bookCoverAspectRatio"
+            :bookshelf-view="bookshelfView"
+            :continue-listening-shelf="continueListeningShelf"
+            class="relative mx-2"
+            @edit="editEpisode"
+            @editPodcast="editPodcast"
+            @select="selectItem"
+            @hook:updated="setScrollVars"
+          />
         </template>
       </div>
     </div>
@@ -34,7 +49,8 @@ export default {
     bookshelfView: {
       type: Number,
       default: 1
-    }
+    },
+    continueListeningShelf: Boolean
   },
   data() {
     return {
@@ -78,11 +94,8 @@ export default {
       this.$store.commit('setBookshelfBookIds', itemIds)
       this.$store.commit('showEditModal', libraryItem)
     },
-    selectItem(libraryItem) {
-      this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
-      this.$nextTick(() => {
-        this.$eventBus.$emit('item-selected', libraryItem)
-      })
+    selectItem(payload) {
+      this.$emit('selectEntity', payload)
     },
     itemSelectedEvt() {
       this.updateSelectionMode(this.isSelectionMode)
@@ -137,11 +150,11 @@ export default {
     this.setScrollVars()
   },
   mounted() {
-    this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$on('item-selected', this.itemSelectedEvt)
   },
   beforeDestroy() {
-    this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }

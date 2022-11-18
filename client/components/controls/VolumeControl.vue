@@ -37,6 +37,11 @@ export default {
         return this.value
       },
       set(val) {
+        try {
+          localStorage.setItem("volume", val);
+        } catch(error) {
+          console.error('Failed to store volume', err)
+        }
         this.$emit('input', val)
       }
     },
@@ -140,6 +145,10 @@ export default {
   mounted() {
     if (this.value === 0) {
       this.isMute = true
+    }
+    const storageVolume = localStorage.getItem("volume")
+    if (storageVolume) {
+      this.volume = parseFloat(storageVolume)
     }
   },
   beforeDestroy() {

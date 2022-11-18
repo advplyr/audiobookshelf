@@ -82,26 +82,26 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  // GET: api/audiobook-merge/:id
-  async mergeAudiobook(req, res) {
-    if (!req.user.canDownload) {
-      Logger.error('User attempting to download without permission', req.user)
+  // GET: api/encode-m4b/:id
+  async encodeM4b(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[MiscController] encodeM4b: Non-admin user attempting to make m4b', req.user)
       return res.sendStatus(403)
     }
 
     var libraryItem = this.db.getLibraryItem(req.params.id)
     if (!libraryItem || libraryItem.isMissing || libraryItem.isInvalid) {
-      Logger.error(`[MiscController] mergeAudiboook: library item not found or invalid ${req.params.id}`)
+      Logger.error(`[MiscController] encodeM4b: library item not found or invalid ${req.params.id}`)
       return res.status(404).send('Audiobook not found')
     }
 
     if (libraryItem.mediaType !== 'book') {
-      Logger.error(`[MiscController] mergeAudiboook: Invalid library item ${req.params.id}: not a book`)
+      Logger.error(`[MiscController] encodeM4b: Invalid library item ${req.params.id}: not a book`)
       return res.status(500).send('Invalid library item: not a book')
     }
 
     if (libraryItem.media.tracks.length <= 0) {
-      Logger.error(`[MiscController] mergeAudiboook: Invalid audiobook ${req.params.id}: no audio tracks`)
+      Logger.error(`[MiscController] encodeM4b: Invalid audiobook ${req.params.id}: no audio tracks`)
       return res.status(500).send('Invalid audiobook: no audio tracks')
     }
 
@@ -110,53 +110,26 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  // GET: api/download/:id
-  async getDownload(req, res) {
-    if (!req.user.canDownload) {
-      Logger.error('User attempting to download without permission', req.user)
+  // POST: api/encode-m4b/:id/cancel
+  async cancelM4bEncode(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[MiscController] cancelM4bEncode: Non-admin user attempting to cancel m4b encode', req.user)
       return res.sendStatus(403)
     }
-    var downloadId = req.params.id
-    Logger.info('Download Request', downloadId)
-    var download = this.abMergeManager.getDownload(downloadId)
-    if (!download) {
-      Logger.error('Download request not found', downloadId)
-      return res.sendStatus(404)
-    }
 
-    var options = {
-      headers: {
-        'Content-Type': download.mimeType
-      }
-    }
-    res.download(download.path, download.filename, options, (err) => {
-      if (err) {
-        Logger.error('Download Error', err)
-      }
-    })
-  }
+    const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
+    if (!workerTask) return res.sendStatus(404)
 
-  // DELETE: api/download/:id
-  async removeDownload(req, res) {
-    if (!req.user.canDownload || !req.user.canDelete) {
-      Logger.error('User attempting to remove download without permission', req.user.username)
-      return res.sendStatus(403)
-    }
-    this.abMergeManager.removeDownloadById(req.params.id)
+    this.abMergeManager.cancelEncode(workerTask.task)
+
     res.sendStatus(200)
   }
 
-  // GET: api/downloads
-  async getDownloads(req, res) {
-    if (!req.user.canDownload) {
-      Logger.error('User attempting to get downloads without permission', req.user.username)
-      return res.sendStatus(403)
-    }
-    var downloads = {
-      downloads: this.abMergeManager.downloads,
-      pendingDownloads: this.abMergeManager.pendingDownloads
-    }
-    res.json(downloads)
+  // GET: api/tasks
+  getTasks(req, res) {
+    res.json({
+      tasks: this.taskManager.tasks.map(t => t.toJSON())
+    })
   }
 
   // PATCH: api/settings (admin)
@@ -185,13 +158,23 @@ class MiscController {
     })
   }
 
-  // POST: api/purgecache (admin)
+  // POST: api/cache/purge (admin)
   async purgeCache(req, res) {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    Logger.info(`[ApiRouter] Purging all cache`)
+    Logger.info(`[MiscController] Purging all cache`)
     await this.cacheManager.purgeAll()
+    res.sendStatus(200)
+  }
+
+  // POST: api/cache/items/purge
+  async purgeItemsCache(req, res) {
+    if (!req.user.isAdminOrUp) {
+      return res.sendStatus(403)
+    }
+    Logger.info(`[MiscController] Purging items cache`)
+    await this.cacheManager.purgeItems()
     res.sendStatus(200)
   }
 
@@ -227,7 +210,8 @@ class MiscController {
 
   async findChapters(req, res) {
     var asin = req.query.asin
-    var chapterData = await this.bookFinder.findChapters(asin)
+    var region = (req.query.region || 'us').toLowerCase()
+    var chapterData = await this.bookFinder.findChapters(asin, region)
     if (!chapterData) {
       return res.json({ error: 'Chapters not found' })
     }

@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const { reqSupportsWebp } = require('../utils/index')
+const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
 class LibraryItemController {
@@ -305,6 +305,42 @@ class LibraryItemController {
     res.json(libraryItems)
   }
 
+  // POST: api/items/batch/quickmatch
+  async batchQuickMatch(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.warn('User other than admin attempted to batch quick match library items', req.user)
+      return res.sendStatus(403)
+    }
+
+    var itemsUpdated = 0
+    var itemsUnmatched = 0
+
+    var matchData = req.body
+    var options = matchData.options || {}
+    var items = matchData.libraryItemIds
+    if (!items || !items.length) {
+      return res.sendStatus(500)
+    }
+    res.sendStatus(200)
+
+    for (let i = 0; i < items.length; i++) {
+      var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
+      var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+      if (matchResult.updated) {
+        itemsUpdated++
+      } else if (matchResult.warning) {
+        itemsUnmatched++
+      }
+    }
+
+    var result = {
+      success: itemsUpdated > 0,
+      updates: itemsUpdated,
+      unmatched: itemsUnmatched
+    }
+    this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
+  }
+
   // DELETE: api/items/all
   async deleteAll(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -335,6 +371,20 @@ class LibraryItemController {
     })
   }
 
+  getToneMetadataObject(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-root user attempted to get tone metadata object`, req.user)
+      return res.sendStatus(403)
+    }
+
+    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
+      Logger.error(`[LibraryItemController] Invalid library item`)
+      return res.sendStatus(500)
+    }
+
+    res.json(this.audioMetadataManager.getToneMetadataObjectForApi(req.libraryItem))
+  }
+
   // GET: api/items/:id/audio-metadata
   async updateAudioFileMetadata(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -347,7 +397,9 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    this.audioMetadataManager.updateAudioFileMetadataForItem(req.user, req.libraryItem)
+    const useTone = req.query.tone === '1'
+    const forceEmbedChapters = req.query.forceEmbedChapters === '1'
+    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone, forceEmbedChapters)
     res.sendStatus(200)
   }
 
@@ -385,7 +437,7 @@ class LibraryItemController {
   async openRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to open RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     const feedData = await this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
@@ -405,12 +457,28 @@ class LibraryItemController {
   async closeRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to close RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     await this.rssFeedManager.closeFeedForItem(req.params.id)
 
     res.sendStatus(200)
+  }
+
+  async toneScan(req, res) {
+    if (!req.libraryItem.media.audioFiles.length) {
+      return res.sendStatus(404)
+    }
+
+    const audioFileIndex = isNullOrNaN(req.params.index) ? 1 : Number(req.params.index)
+    const audioFile = req.libraryItem.media.audioFiles.find(af => af.index === audioFileIndex)
+    if (!audioFile) {
+      Logger.error(`[LibraryItemController] toneScan: Audio file not found with index ${audioFileIndex}`)
+      return res.sendStatus(404)
+    }
+
+    const toneData = await this.scanner.probeAudioFileWithTone(audioFile)
+    res.json(toneData)
   }
 
   middleware(req, res, next) {

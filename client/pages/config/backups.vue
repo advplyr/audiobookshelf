@@ -2,15 +2,16 @@
   <div class="w-full h-full">
     <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
       <div class="flex items-center mb-2">
-        <h1 class="text-xl">Backups</h1>
+        <h1 class="text-xl">{{ $strings.HeaderBackups }}</h1>
       </div>
 
-      <p class="text-base mb-4 text-gray-300">Backups include users, user progress, library item details, server settings, and images stored in <span class="font-mono text-gray-100">/metadata/items</span> & <span class="font-mono text-gray-100">/metadata/authors</span>. <br />Backups <strong>do not</strong> include any files stored in your library folders.</p>
+      <p class="text-base mb-2 text-gray-300">{{ $strings.MessageBackupsDescription }} <span class="font-mono text-gray-100">/metadata/items</span> & <span class="font-mono text-gray-100">/metadata/authors</span>.</p>
+      <p class="text-base mb-4 text-gray-300">{{ $strings.MessageBackupsNote }}</p>
 
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="enableBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
-        <ui-tooltip :text="backupsTooltip">
-          <p class="pl-4 text-lg">Enable automatic backups <span class="material-icons icon-text">info_outlined</span></p>
+        <ui-tooltip :text="$strings.LabelBackupsEnableAutomaticBackupsHelp">
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsEnableAutomaticBackups }} <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
 
@@ -25,14 +26,16 @@
       <div class="flex items-center py-2">
         <ui-text-input type="number" v-model="backupsToKeep" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
-        <p class="pl-4 text-lg">Number of backups to keep</p>
+        <ui-tooltip :text="$strings.LabelBackupsNumberToKeepHelp">
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsNumberToKeep }} <span class="material-icons icon-text">info_outlined</span></p>
+        </ui-tooltip>
       </div>
 
       <div class="flex items-center py-2">
         <ui-text-input type="number" v-model="maxBackupSize" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateBackupsSettings" />
 
-        <ui-tooltip :text="maxBackupSizeTooltip">
-          <p class="pl-4 text-lg">Maximum backup size (in GB) <span class="material-icons icon-text">info_outlined</span></p>
+        <ui-tooltip :text="$strings.LabelBackupsMaxBackupSizeHelp">
+          <p class="pl-4 text-lg">{{ $strings.LabelBackupsMaxBackupSize }} <span class="material-icons icon-text">info_outlined</span></p>
         </ui-tooltip>
       </div>
 
@@ -65,12 +68,6 @@ export default {
     }
   },
   computed: {
-    backupsTooltip() {
-      return 'Backups saved in /metadata/backups'
-    },
-    maxBackupSizeTooltip() {
-      return 'As a safeguard against misconfiguration, backups will fail if they exceed the configured size.'
-    },
     serverSettings() {
       return this.$store.state.serverSettings
     },

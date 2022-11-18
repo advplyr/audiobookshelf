@@ -35,7 +35,7 @@ class Audnexus {
     return {
       asin: author.asin,
       description: author.description,
-      image: author.image,
+      image: author.image || null,
       name: author.name
     }
   }
@@ -54,17 +54,17 @@ class Audnexus {
     return {
       asin: author.asin,
       description: author.description,
-      image: author.image,
+      image: author.image || null,
       name: author.name
     }
   }
 
-  async getChaptersByASIN(asin) {
-    Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}`)
-    return axios.get(`${this.baseUrl}/books/${asin}/chapters`).then((res) => {
+  getChaptersByASIN(asin, region) {
+    Logger.debug(`[Audnexus] Get chapters for ASIN ${asin}/${region}`)
+    return axios.get(`${this.baseUrl}/books/${asin}/chapters?region=${region}`).then((res) => {
       return res.data
     }).catch((error) => {
-      Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}`, error)
+      Logger.error(`[Audnexus] Chapter ASIN request failed for ${asin}/${region}`, error)
       return null
     })
   }

@@ -87,6 +87,10 @@ class AudioMetaTags {
     this.tagOverdriveMediaMarker = payload.file_tag_overdrive_media_marker || null
   }
 
+  setDataFromTone(tags) {
+    // TODO: Implement
+  }
+
   updateData(payload) {
     const dataMap = {
       tagAlbum: payload.file_tag_album || null,

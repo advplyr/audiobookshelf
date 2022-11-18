@@ -14,6 +14,7 @@ const SeriesController = require('../controllers/SeriesController')
 const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
+const NotificationController = require('../controllers/NotificationController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -25,7 +26,7 @@ const Series = require('../objects/entities/Series')
 const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, emitter, clientEmitter) {
+  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, getUsersOnline, emitter, clientEmitter) {
     this.db = db
     this.auth = auth
     this.scanner = scanner
@@ -39,6 +40,9 @@ class ApiRouter {
     this.audioMetadataManager = audioMetadataManager
     this.rssFeedManager = rssFeedManager
     this.cronManager = cronManager
+    this.notificationManager = notificationManager
+    this.taskManager = taskManager
+    this.getUsersOnline = getUsersOnline
     this.emitter = emitter
     this.clientEmitter = clientEmitter
 
@@ -70,7 +74,8 @@ class ApiRouter {
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
     this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
-    this.router.get('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this)) // Root only
+    this.router.get('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
+    this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
 
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
@@ -92,26 +97,31 @@ class ApiRouter {
     this.router.post('/items/:id/play/:episodeId', LibraryItemController.middleware.bind(this), LibraryItemController.startEpisodePlaybackSession.bind(this))
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
+    this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
     this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/open-feed', LibraryItemController.middleware.bind(this), LibraryItemController.openRSSFeed.bind(this))
     this.router.post('/items/:id/close-feed', LibraryItemController.middleware.bind(this), LibraryItemController.closeRSSFeed.bind(this))
+    this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
     this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
+    this.router.post('/items/batch/quickmatch', LibraryItemController.batchQuickMatch.bind(this))
 
     //
     // User Routes
     //
-    this.router.post('/users', UserController.create.bind(this))
-    this.router.get('/users', UserController.findAll.bind(this))
-    this.router.get('/users/:id', UserController.findOne.bind(this))
-    this.router.patch('/users/:id', UserController.update.bind(this))
-    this.router.delete('/users/:id', UserController.delete.bind(this))
+    this.router.post('/users', UserController.middleware.bind(this), UserController.create.bind(this))
+    this.router.get('/users', UserController.middleware.bind(this), UserController.findAll.bind(this))
+    this.router.get('/users/online', UserController.getOnlineUsers.bind(this))
+    this.router.get('/users/:id', UserController.middleware.bind(this), UserController.findOne.bind(this))
+    this.router.patch('/users/:id', UserController.middleware.bind(this), UserController.update.bind(this))
+    this.router.delete('/users/:id', UserController.middleware.bind(this), UserController.delete.bind(this))
 
-    this.router.get('/users/:id/listening-sessions', UserController.getListeningSessions.bind(this))
-    this.router.get('/users/:id/listening-stats', UserController.getListeningStats.bind(this))
+    this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
+    this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
+    this.router.post('/users/:id/purge-media-progress', UserController.middleware.bind(this), UserController.purgeMediaProgress.bind(this))
 
     //
     // Collection Routes
@@ -132,6 +142,7 @@ class ApiRouter {
     //
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
+    this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
     this.router.get('/me/progress/:id/:episodeId?', MeController.getMediaProgress.bind(this))
     this.router.patch('/me/progress/batch/update', MeController.batchUpdateMediaProgress.bind(this))
     this.router.patch('/me/progress/:id', MeController.createUpdateMediaProgress.bind(this))
@@ -144,6 +155,8 @@ class ApiRouter {
     this.router.patch('/me/settings', MeController.updateSettings.bind(this))
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
+    this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
+    this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
 
     //
     // Backup Routes
@@ -172,6 +185,7 @@ class ApiRouter {
     //
     this.router.get('/series/search', SeriesController.search.bind(this))
     this.router.get('/series/:id', SeriesController.middleware.bind(this), SeriesController.findOne.bind(this))
+    this.router.patch('/series/:id', SeriesController.middleware.bind(this), SeriesController.update.bind(this))
 
     //
     // Playback Session Routes
@@ -199,15 +213,27 @@ class ApiRouter {
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
 
     //
+    // Notification Routes
+    //
+    this.router.get('/notifications', NotificationController.middleware.bind(this), NotificationController.get.bind(this))
+    this.router.patch('/notifications', NotificationController.middleware.bind(this), NotificationController.update.bind(this))
+    this.router.get('/notificationdata', NotificationController.middleware.bind(this), NotificationController.getData.bind(this))
+    this.router.get('/notifications/test', NotificationController.middleware.bind(this), NotificationController.fireTestEvent.bind(this))
+    this.router.post('/notifications', NotificationController.middleware.bind(this), NotificationController.createNotification.bind(this))
+    this.router.delete('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.deleteNotification.bind(this))
+    this.router.patch('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.updateNotification.bind(this))
+    this.router.get('/notifications/:id/test', NotificationController.middleware.bind(this), NotificationController.sendNotificationTest.bind(this))
+
+    //
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
-    this.router.get('/audiobook-merge/:id', MiscController.mergeAudiobook.bind(this))
-    this.router.get('/download/:id', MiscController.getDownload.bind(this))
-    this.router.delete('/download/:id', MiscController.removeDownload.bind(this))
-    this.router.get('/downloads', MiscController.getDownloads.bind(this))
-    this.router.patch('/settings', MiscController.updateServerSettings.bind(this)) // Root only
-    this.router.post('/purgecache', MiscController.purgeCache.bind(this)) // Root only
+    this.router.get('/encode-m4b/:id', MiscController.encodeM4b.bind(this))
+    this.router.post('/encode-m4b/:id/cancel', MiscController.cancelM4bEncode.bind(this))
+    this.router.get('/tasks', MiscController.getTasks.bind(this))
+    this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
+    this.router.post('/cache/purge', MiscController.purgeCache.bind(this))
+    this.router.post('/cache/items/purge', MiscController.purgeItemsCache.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
     this.router.get('/search/covers', MiscController.findCovers.bind(this))
     this.router.get('/search/books', MiscController.findBooks.bind(this))
@@ -258,12 +284,24 @@ class ApiRouter {
     }
 
     json.mediaProgress = json.mediaProgress.map(lip => {
-      var libraryItem = this.db.libraryItems.find(li => li.id === lip.id)
+      var libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
       if (!libraryItem) {
-        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.id)
-        return null
+        Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
+        lip.media = null
+      } else {
+        if (lip.episodeId) {
+          const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(lip.episodeId) : null
+          if (!episode) {
+            Logger.warn(`[ApiRouter] Episode ${lip.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
+            lip.media = null
+          } else {
+            lip.media = libraryItem.media.toJSONExpanded()
+            lip.episode = episode.toJSON()
+          }
+        } else {
+          lip.media = libraryItem.media.toJSONExpanded()
+        }
       }
-      lip.media = libraryItem.media.toJSONExpanded()
       return lip
     }).filter(lip => !!lip)
 
@@ -274,7 +312,7 @@ class ApiRouter {
     // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
       var user = this.db.users[i]
-      var madeUpdates = user.removeMediaProgress(libraryItem.id)
+      var madeUpdates = user.removeMediaProgressForLibraryItem(libraryItem.id)
       if (madeUpdates) {
         await this.db.updateEntity('user', user)
       }

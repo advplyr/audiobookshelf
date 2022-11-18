@@ -6,7 +6,7 @@
           <span class="material-icons drag-handle text-lg md:text-xl">menu</span>
         </div>
       </div>
-      <div class="h-full relative" :style="{ width: coverWidth + 'px', minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }">
+      <div class="h-full relative flex items-center" :style="{ width: coverWidth + 'px', minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }">
         <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
         <div class="absolute top-0 left-0 bg-black bg-opacity-50 flex items-center justify-center h-full w-full z-10" v-show="isHovering && showPlayBtn">
           <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
@@ -14,22 +14,24 @@
           </div>
         </div>
       </div>
-      <div class="flex-grow max-w-md h-full px-2 flex items-center">
-        <div class="truncate px-1">
-          <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline">{{ bookTitle }}</nuxt-link>
+      <div class="flex-grow overflow-hidden max-w-48 md:max-w-md h-full flex items-center px-2 md:px-3">
+        <div>
+          <div class="truncate max-w-48 md:max-w-md">
+            <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline text-sm md:text-base">{{ bookTitle }}</nuxt-link>
+          </div>
+          <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
+            <template v-for="(author, index) in bookAuthors">
+              <nuxt-link :key="author.id" :to="`/author/${author.id}`" class="truncate hover:underline">{{ author.name }}</nuxt-link
+              ><span :key="author.id + '-comma'" v-if="index < bookAuthors.length - 1">,&nbsp;</span>
+            </template>
+          </div>
+          <p class="text-xs md:text-sm text-gray-400">{{ bookDuration }}</p>
         </div>
       </div>
-      <div class="w-20 flex items-center">
-        <p class="font-mono text-sm">{{ bookDuration }}</p>
-      </div>
-
-      <!-- <div class="w-12 flex items-center justify-center">
-        <span class="material-icons text-lg text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">radio_button_unchecked</span>
-      </div> -->
     </div>
     <div class="w-40 absolute top-0 -right-24 h-full transform transition-transform" :class="!isHovering ? 'translate-x-0' : translateDistance">
       <div class="flex h-full items-center">
-        <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+        <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
           <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
         </ui-tooltip>
         <div v-if="userCanUpdate" class="mx-1" :class="isHovering ? '' : 'ml-6'">
@@ -88,11 +90,11 @@ export default {
     bookTitle() {
       return this.mediaMetadata.title || ''
     },
-    bookAuthor() {
-      return (this.mediaMetadata.authors || []).map((au) => au.name).join(', ')
+    bookAuthors() {
+      return this.mediaMetadata.authors || []
     },
     bookDuration() {
-      return this.$secondsToTimestamp(this.media.duration)
+      return this.$elapsedPretty(this.media.duration)
     },
     isMissing() {
       return this.book.isMissing
@@ -113,7 +115,7 @@ export default {
       return this.itemProgress ? !!this.itemProgress.isFinished : false
     },
     coverSize() {
-      return this.$store.state.globals.isMobile ? 40 : 50
+      return this.$store.state.globals.isMobile ? 30 : 50
     },
     coverWidth() {
       if (this.bookCoverAspectRatio === 1) return this.coverSize * 1.6
@@ -135,8 +137,22 @@ export default {
       this.isHovering = false
     },
     playClick() {
+      const queueItems = [
+        {
+          libraryItemId: this.book.id,
+          libraryId: this.book.libraryId,
+          episodeId: null,
+          title: this.bookTitle,
+          subtitle: this.bookAuthors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: this.media.duration || null,
+          coverPath: this.media.coverPath || null
+        }
+      ]
+
       this.$eventBus.$emit('play-item', {
-        libraryItemId: this.book.id
+        libraryItemId: this.book.id,
+        queueItems
       })
     },
     clickEdit() {
@@ -151,12 +167,12 @@ export default {
         .$patch(`/api/me/progress/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     removeClick() {
@@ -166,12 +182,12 @@ export default {
         .$delete(`/api/collections/${this.collectionId}/book/${this.book.id}`)
         .then((updatedCollection) => {
           console.log(`Book removed from collection`, updatedCollection)
-          this.$toast.success('Book removed from collection')
+          this.$toast.success(this.$strings.ToastRemoveItemFromCollectionSuccess)
           this.processingRemove = false
         })
         .catch((error) => {
           console.error('Failed to remove book from collection', error)
-          this.$toast.error('Failed to remove book from collection')
+          this.$toast.error(this.$strings.ToastRemoveItemFromCollectionFailed)
           this.processingRemove = false
         })
     }

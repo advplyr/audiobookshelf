@@ -2,21 +2,21 @@
   <div class="w-full">
     <div v-if="missingParts.length" class="bg-error border-red-800 shadow-md p-4">
       <p class="text-sm mb-2">
-        Missing Parts <span class="text-sm">({{ missingParts.length }})</span>
+        {{ $strings.LabelMissingParts }} <span class="text-sm">({{ missingParts.length }})</span>
       </p>
       <p class="text-sm font-mono">{{ missingPartChunks.join(', ') }}</p>
     </div>
 
     <div v-if="invalidParts.length" class="bg-error border-red-800 shadow-md p-4">
       <p class="text-sm mb-2">
-        Invalid Parts <span class="text-sm">({{ invalidParts.length }})</span>
+        {{ $strings.LabelInvalidParts }} <span class="text-sm">({{ invalidParts.length }})</span>
       </p>
       <div>
         <p v-for="part in invalidParts" :key="part.filename" class="text-sm font-mono">{{ part.filename }}: {{ part.error }}</p>
       </div>
     </div>
 
-    <tables-tracks-table :title="`Audiobook Tracks`" :tracks="media.tracks" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
+    <tables-tracks-table :title="$strings.LabelStatsAudioTracks" :tracks="media.tracks" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
   </div>
 </template>
 

@@ -1,7 +1,7 @@
 <template>
   <div class="page" :class="streamLibraryItem ? 'streaming' : ''">
-    <app-book-shelf-toolbar :page="id || ''" :view-mode.sync="viewMode"/>
-    <app-lazy-bookshelf :page="id || ''" :view-mode="viewMode" />
+    <app-book-shelf-toolbar :page="id || ''" />
+    <app-lazy-bookshelf :page="id || ''" />
   </div>
 </template>
 
@@ -14,8 +14,18 @@ export default {
       return redirect('/oops?message=Library not found')
     }
 
-    // Set filter by
-    if (query.filter) {
+    // Set series sort by
+    if (params.id === 'series') {
+      console.log('Series page', query)
+      if (query.sort) {
+        store.commit('libraries/setSeriesSortBy', query.sort)
+        store.commit('libraries/setSeriesSortDesc', !!query.desc)
+      }
+      if (query.filter) {
+        console.log('has filter', query.filter)
+        store.commit('libraries/setSeriesFilterBy', query.filter)
+      }
+    } else if (query.filter) {
       store.dispatch('user/updateUserSettings', { filterBy: query.filter })
     }
 
@@ -31,9 +41,7 @@ export default {
     }
   },
   data() {
-    return {
-      viewMode: 'grid'
-    }
+    return {}
   },
   computed: {
     streamLibraryItem() {

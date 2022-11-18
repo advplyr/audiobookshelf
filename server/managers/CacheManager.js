@@ -10,6 +10,7 @@ class CacheManager {
     this.CachePath = Path.join(global.MetadataPath, 'cache')
     this.CoverCachePath = Path.join(this.CachePath, 'covers')
     this.ImageCachePath = Path.join(this.CachePath, 'images')
+    this.ItemCachePath = Path.join(this.CachePath, 'items')
   }
 
   async ensureCachePaths() { // Creates cache paths if necessary and sets owner and permissions
@@ -26,6 +27,11 @@ class CacheManager {
 
     if (!(await fs.pathExists(this.ImageCachePath))) {
       await fs.mkdir(this.ImageCachePath)
+      pathsCreated = true
+    }
+
+    if (!(await fs.pathExists(this.ItemCachePath))) {
+      await fs.mkdir(this.ItemCachePath)
       pathsCreated = true
     }
 
@@ -50,18 +56,18 @@ class CacheManager {
       stream.pipeline(r, ps, (err) => {
         if (err) {
           console.log(err)
-          return res.sendStatus(400)
+          return res.sendStatus(500)
         }
       })
       return ps.pipe(res)
     }
 
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      return res.sendStatus(404)
+      return res.sendStatus(500)
     }
 
     let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
-    if (!writtenFile) return res.sendStatus(400)
+    if (!writtenFile) return res.sendStatus(500)
 
     // Set owner and permissions of cache image
     await filePerms.setDefault(path)
@@ -108,6 +114,15 @@ class CacheManager {
     await this.ensureCachePaths()
   }
 
+  async purgeItems() {
+    if (await fs.pathExists(this.ItemCachePath)) {
+      await fs.remove(this.ItemCachePath).catch((error) => {
+        Logger.error(`[CacheManager] Failed to remove items cache dir "${this.ItemCachePath}"`, error)
+      })
+    }
+    await this.ensureCachePaths()
+  }
+
   async handleAuthorCache(res, author, options = {}) {
     const format = options.format || 'webp'
     const width = options.width || 400
@@ -124,14 +139,14 @@ class CacheManager {
       stream.pipeline(r, ps, (err) => {
         if (err) {
           console.log(err)
-          return res.sendStatus(400)
+          return res.sendStatus(500)
         }
       })
       return ps.pipe(res)
     }
 
     let writtenFile = await resizeImage(author.imagePath, path, width, height)
-    if (!writtenFile) return res.sendStatus(400)
+    if (!writtenFile) return res.sendStatus(500)
 
     // Set owner and permissions of cache image
     await filePerms.setDefault(path)

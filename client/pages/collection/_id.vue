@@ -16,7 +16,7 @@
 
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
               <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ streaming ? 'Streaming' : 'Play' }}
+              {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
             <ui-icon-btn v-if="userCanUpdate" icon="edit" class="mx-0.5" @click="editClick" />
@@ -52,7 +52,7 @@ export default {
       return redirect('/')
     }
 
-    store.commit('user/addUpdateCollection', collection)
+    store.commit('libraries/addUpdateCollection', collection)
     return {
       collectionId: collection.id
     }
@@ -80,7 +80,7 @@ export default {
       return this.collection.description || ''
     },
     collection() {
-      return this.$store.getters['user/getCollection'](this.collectionId)
+      return this.$store.getters['libraries/getCollection'](this.collectionId) || {}
     },
     playableBooks() {
       return this.bookItems.filter((book) => {
@@ -122,13 +122,42 @@ export default {
       }
     },
     clickPlay() {
-      var nextBookNotRead = this.playableBooks.find((pb) => {
-        var prog = this.$store.getters['user/getUserMediaProgress'](pb.id)
-        return !prog || !prog.isFinished
+      const queueItems = []
+
+      // Collection queue will start at the first unfinished book
+      //   if all books are finished then entire collection is queued
+      const itemsWithProgress = this.playableBooks.map((item) => {
+        return {
+          ...item,
+          progress: this.$store.getters['user/getUserMediaProgress'](item.id)
+        }
       })
-      if (nextBookNotRead) {
+
+      const hasUnfinishedItems = itemsWithProgress.some((i) => !i.progress || !i.progress.isFinished)
+      if (!hasUnfinishedItems) {
+        console.warn('All items in collection are finished - starting at first item')
+      }
+
+      for (let i = 0; i < itemsWithProgress.length; i++) {
+        const libraryItem = itemsWithProgress[i]
+        if (!hasUnfinishedItems || !libraryItem.progress || !libraryItem.progress.isFinished) {
+          queueItems.push({
+            libraryItemId: libraryItem.id,
+            libraryId: libraryItem.libraryId,
+            episodeId: null,
+            title: libraryItem.media.metadata.title,
+            subtitle: libraryItem.media.metadata.authors.map((au) => au.name).join(', '),
+            caption: '',
+            duration: libraryItem.media.duration || null,
+            coverPath: libraryItem.media.coverPath || null
+          })
+        }
+      }
+
+      if (queueItems.length >= 0) {
         this.$eventBus.$emit('play-item', {
-          libraryItemId: nextBookNotRead.id
+          libraryItemId: queueItems[0].libraryItemId,
+          queueItems
         })
       }
     }

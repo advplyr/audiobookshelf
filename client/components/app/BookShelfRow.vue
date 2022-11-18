@@ -4,12 +4,26 @@
       <div class="w-full h-full pt-6">
         <div v-if="shelf.type === 'book' || shelf.type === 'podcast'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editItem" />
+            <cards-lazy-book-card :key="entity.id" :ref="`shelf-book-${entity.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @edit="editItem" />
           </template>
         </div>
         <div v-if="shelf.type === 'episode'" class="flex items-center">
           <template v-for="(entity, index) in shelf.entities">
-            <cards-lazy-book-card :key="entity.recentEpisode.id" :ref="`shelf-episode-${entity.recentEpisode.id}`" :index="index" :width="bookCoverWidth" :height="bookCoverHeight" :book-cover-aspect-ratio="bookCoverAspectRatio" :book-mount="entity" class="relative mx-2" @hook:updated="updatedBookCard" @select="selectItem" @editPodcast="editItem" @edit="editEpisode" />
+            <cards-lazy-book-card
+              :key="entity.recentEpisode.id"
+              :ref="`shelf-episode-${entity.recentEpisode.id}`"
+              :index="index"
+              :width="bookCoverWidth"
+              :height="bookCoverHeight"
+              :book-cover-aspect-ratio="bookCoverAspectRatio"
+              :book-mount="entity"
+              :continue-listening-shelf="continueListeningShelf"
+              class="relative mx-2"
+              @hook:updated="updatedBookCard"
+              @select="selectItem"
+              @editPodcast="editItem"
+              @edit="editEpisode"
+            />
           </template>
         </div>
         <div v-if="shelf.type === 'series'" class="flex items-center">
@@ -32,7 +46,7 @@
 
     <div class="absolute text-center categoryPlacard font-book transform z-30 bottom-px left-4 md:left-8 w-44 rounded-md" style="height: 22px">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border">
-        <p class="transform text-sm">{{ shelf.label }}</p>
+        <p class="transform text-sm">{{ $strings[shelf.labelStringKey] }}</p>
       </div>
     </div>
 
@@ -57,7 +71,8 @@ export default {
     },
     sizeMultiplier: Number,
     bookCoverWidth: Number,
-    bookCoverAspectRatio: Number
+    bookCoverAspectRatio: Number,
+    continueListeningShelf: Boolean
   },
   data() {
     return {
@@ -123,11 +138,8 @@ export default {
         })
       }
     },
-    selectItem(libraryItem) {
-      this.$store.commit('toggleLibraryItemSelected', libraryItem.id)
-      this.$nextTick(() => {
-        this.$eventBus.$emit('item-selected', libraryItem)
-      })
+    selectItem(payload) {
+      this.$emit('selectEntity', payload)
     },
     itemSelectedEvt() {
       this.updateSelectionMode(this.isSelectionMode)
@@ -176,11 +188,11 @@ export default {
     }
   },
   mounted() {
-    this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$on('item-selected', this.itemSelectedEvt)
   },
   beforeDestroy() {
-    this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
+    this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
     this.$eventBus.$off('item-selected', this.itemSelectedEvt)
   }
 }

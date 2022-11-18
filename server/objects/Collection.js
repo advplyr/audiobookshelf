@@ -1,7 +1,7 @@
 const Logger = require('../Logger')
 const { getId } = require('../utils/index')
 
-class UserCollection {
+class Collection {
   constructor(collection) {
     this.id = null
     this.libraryId = null
@@ -63,7 +63,7 @@ class UserCollection {
     if (!data.userId || !data.libraryId || !data.name) {
       return false
     }
-    this.id = getId('usr')
+    this.id = getId('col')
     this.userId = data.userId
     this.libraryId = data.libraryId
     this.name = data.name
@@ -105,4 +105,4 @@ class UserCollection {
     return hasUpdates
   }
 }
-module.exports = UserCollection
+module.exports = Collection

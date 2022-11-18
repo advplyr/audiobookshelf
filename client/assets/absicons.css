@@ -1,0 +1,106 @@
+@font-face {
+  font-family: 'absicons';
+  src: url('~static/fonts/absicons/absicons.eot?2jfq33');
+  src: url('~static/fonts/absicons/absicons.eot?2jfq33#iefix') format('embedded-opentype'),
+    url('~static/fonts/absicons/absicons.ttf?2jfq33') format('truetype'),
+    url('~static/fonts/absicons/absicons.woff?2jfq33') format('woff'),
+    url('~static/fonts/absicons/absicons.svg?2jfq33#absicons') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.abs-icons {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'absicons' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-books-1:before {
+  content: "\e905";
+}
+
+.icon-microphone-1:before {
+  content: "\e902";
+}
+
+.icon-radio:before {
+  content: "\e903";
+}
+
+.icon-podcast:before {
+  content: "\e904";
+}
+
+.icon-audiobookshelf:before {
+  content: "\e900";
+}
+
+.icon-database:before {
+  content: "\e906";
+}
+
+.icon-microphone-2:before {
+  content: "\e901";
+}
+
+.icon-headphones:before {
+  content: "\e910";
+}
+
+.icon-music:before {
+  content: "\e911";
+}
+
+.icon-video:before {
+  content: "\e914";
+}
+
+.icon-microphone-3:before {
+  content: "\e91e";
+}
+
+.icon-book-1:before {
+  content: "\e91f";
+}
+
+.icon-books-2:before {
+  content: "\e920";
+}
+
+.icon-file-picture:before {
+  content: "\e927";
+}
+
+.icon-database-1:before {
+  content: "\e964";
+}
+
+.icon-rocket:before {
+  content: "\e9a5";
+}
+
+.icon-power:before {
+  content: "\e9b5";
+}
+
+.icon-star:before {
+  content: "\e9d9";
+}
+
+.icon-heart:before {
+  content: "\e9da";
+}
+
+.icon-rss:before {
+  content: "\ea9b";
+}

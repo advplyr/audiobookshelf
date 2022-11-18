@@ -61,7 +61,8 @@ export default {
       keywordFilter: null,
       currScrollTop: 0,
       resizeTimeout: null,
-      mountWindowWidth: 0
+      mountWindowWidth: 0,
+      lastItemIndexSelected: -1
     }
   },
   watch: {
@@ -97,6 +98,15 @@ export default {
       if (!this.page) return 'books'
       return this.page
     },
+    seriesSortBy() {
+      return this.$store.state.libraries.seriesSortBy
+    },
+    seriesSortDesc() {
+      return this.$store.state.libraries.seriesSortDesc
+    },
+    seriesFilterBy() {
+      return this.$store.state.libraries.seriesFilterBy
+    },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
     },
@@ -108,6 +118,9 @@ export default {
     },
     collapseSeries() {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
+    },
+    collapseBookSeries() {
+      return this.$store.getters['user/getUserSetting']('collapseBookSeries')
     },
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -122,7 +135,7 @@ export default {
       return this.$store.getters['getBookshelfView']
     },
     isAlternativeBookshelfView() {
-      return this.bookshelfView === this.$constants.BookshelfView.TITLES
+      return this.bookshelfView === this.$constants.BookshelfView.DETAIL
     },
     hasFilter() {
       return this.filterBy && this.filterBy !== 'all'
@@ -212,9 +225,55 @@ export default {
       this.updateBookSelectionMode(false)
       this.isSelectionMode = false
     },
-    selectEntity(entity) {
+    selectEntity(entity, shiftKey) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
-        this.$store.commit('toggleLibraryItemSelected', entity.id)
+        var indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
+        const lastLastItemIndexSelected = this.lastItemIndexSelected
+        if (!this.selectedLibraryItems.includes(entity.id)) {
+          this.lastItemIndexSelected = indexOf
+        } else {
+          this.lastItemIndexSelected = -1
+        }
+
+        if (shiftKey && lastLastItemIndexSelected >= 0) {
+          var loopStart = indexOf
+          var loopEnd = lastLastItemIndexSelected
+          if (indexOf > lastLastItemIndexSelected) {
+            loopStart = lastLastItemIndexSelected
+            loopEnd = indexOf
+          }
+
+          var isSelecting = false
+          // If any items in this range is not selected then select all otherwise unselect all
+          for (let i = loopStart; i <= loopEnd; i++) {
+            const thisEntity = this.entities[i]
+            if (thisEntity && !thisEntity.collapsedSeries) {
+              if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+                isSelecting = true
+                break
+              }
+            }
+          }
+          if (isSelecting) this.lastItemIndexSelected = indexOf
+
+          for (let i = loopStart; i <= loopEnd; i++) {
+            const thisEntity = this.entities[i]
+            if (thisEntity.collapsedSeries) {
+              console.warn('Ignoring collapsed series')
+              continue
+            }
+
+            const entityComponentRef = this.entityComponentRefs[i]
+            if (thisEntity && entityComponentRef) {
+              entityComponentRef.selected = isSelecting
+              this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+            } else {
+              console.error('Invalid entity index', i)
+            }
+          }
+        } else {
+          this.$store.commit('toggleLibraryItemSelected', entity.id)
+        }
 
         var newIsSelectionMode = !!this.selectedLibraryItems.length
         if (this.isSelectionMode !== newIsSelectionMode) {
@@ -228,6 +287,9 @@ export default {
         if (this.entityIndexesMounted.includes(Number(key))) {
           this.entityComponentRefs[key].setSelectionMode(isSelectionMode)
         }
+      }
+      if (!isSelectionMode) {
+        this.lastItemIndexSelected = -1
       }
     },
     async fetchEntites(page = 0) {
@@ -260,7 +322,6 @@ export default {
           this.totalEntities = payload.total
           this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
           this.entities = new Array(this.totalEntities)
-          this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
         }
 
         for (let i = 0; i < payload.results.length; i++) {
@@ -270,6 +331,8 @@ export default {
             this.entityComponentRefs[index].setEntity(this.entities[index])
           }
         }
+
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
       }
     },
     loadPage(page) {
@@ -367,13 +430,20 @@ export default {
       this.$nextTick(this.remountEntities)
     },
     buildSearchParams() {
-      if (this.page === 'search' || this.page === 'series' || this.page === 'collections') {
+      if (this.page === 'search' || this.page === 'collections') {
         return ''
       }
 
       let searchParams = new URLSearchParams()
-      if (this.page === 'series-books') {
+      if (this.page === 'series') {
+        searchParams.set('sort', this.seriesSortBy)
+        searchParams.set('desc', this.seriesSortDesc ? 1 : 0)
+        searchParams.set('filter', this.seriesFilterBy)
+      } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
+        if (this.collapseBookSeries) {
+          searchParams.set('collapseseries', 1)
+        }
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -389,8 +459,6 @@ export default {
       return searchParams.toString()
     },
     checkUpdateSearchParams() {
-      if (this.page === 'series-books') return false
-
       var newSearchParams = this.buildSearchParams()
       var currentQueryString = window.location.search
       if (currentQueryString && currentQueryString.startsWith('?')) currentQueryString = currentQueryString.slice(1)
@@ -408,6 +476,12 @@ export default {
 
       return false
     },
+    seriesSortUpdated() {
+      var wasUpdated = this.checkUpdateSearchParams()
+      if (wasUpdated) {
+        this.resetEntities()
+      }
+    },
     settingsUpdated(settings) {
       var wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
@@ -419,10 +493,7 @@ export default {
     scroll(e) {
       if (!e || !e.target) return
       var { scrollTop } = e.target
-      // clearTimeout(this.scrollTimeout)
-      // this.scrollTimeout = setTimeout(() => {
       this.handleScroll(scrollTop)
-      // }, 250)
     },
     libraryItemAdded(libraryItem) {
       console.log('libraryItem added', libraryItem)
@@ -446,7 +517,7 @@ export default {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
           this.entities = this.entities.filter((ent) => ent.id !== libraryItem.id)
-          this.totalEntities = this.entities.length
+          this.totalEntities--
           this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
           this.executeRebuild()
         }
@@ -484,7 +555,7 @@ export default {
       var indexOf = this.entities.findIndex((ent) => ent && ent.id === collection.id)
       if (indexOf >= 0) {
         this.entities = this.entities.filter((ent) => ent.id !== collection.id)
-        this.totalEntities = this.entities.length
+        this.totalEntities--
         this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
         this.executeRebuild()
       }
@@ -554,7 +625,8 @@ export default {
         }
       })
 
-      this.$eventBus.$on('bookshelf-clear-selection', this.clearSelectedEntities)
+      this.$eventBus.$on('series-sort-updated', this.seriesSortUpdated)
+      this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
 
       this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
@@ -578,7 +650,9 @@ export default {
       if (bookshelf) {
         bookshelf.removeEventListener('scroll', this.scroll)
       }
-      this.$eventBus.$off('bookshelf-clear-selection', this.clearSelectedEntities)
+
+      this.$eventBus.$off('series-sort-updated', this.seriesSortUpdated)
+      this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
 
       this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')
@@ -646,6 +720,7 @@ export default {
 .bookshelfRow {
   background-image: var(--bookshelf-texture-img);
 }
+
 .bookshelfDivider {
   background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);
