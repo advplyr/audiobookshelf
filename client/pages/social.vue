@@ -3,11 +3,11 @@
     <div v-if="this.listeningStats" class="flex flex-col md:flex-row">
       <div class="w-200 my-6 mx-auto">
         <div class="grid grid-cols-2 content-between">
-          <h1 class="text-2xl mb-4 font-book">Social</h1>
+          <h1 class="text-2xl mb-4 font-book">{{ $strings.Social }}</h1>
           <div class="flex py-1 justify-end">
-            <ui-tooltip text="Share your latest listening activity with other users in the social tab">
+            <ui-tooltip :text="$strings.ShareStatsHelp">
               <p class="pl-4">
-                Share Listening Activity
+                {{ $strings.ShareStats }}
                 <span class="material-icons icon-text text-sm">info_outlined</span>
               </p>
             </ui-tooltip>

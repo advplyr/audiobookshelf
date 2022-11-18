@@ -21,9 +21,9 @@
 
         <div v-if="isGlobalSharing" class="flex items-center py-1">
           <ui-toggle-switch v-model="isUserSharing" @input="changeSharingSetting" />
-          <ui-tooltip text="Share your latest listening activity with other users in the social tab">
+          <ui-tooltip :text="$strings.ShareStatsHelp">
             <p class="pl-4">
-              Share Listening Activity
+              {{ $strings.ShareStats }}
               <span class="material-icons icon-text text-sm">info_outlined</span>
             </p>
           </ui-tooltip>
