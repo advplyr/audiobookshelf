@@ -56,31 +56,31 @@ export default {
     podcastItems() {
       return [
         {
-          text: 'Title',
+          text: this.$strings.LabelTitle,
           value: 'media.metadata.title'
         },
         {
-          text: 'Author',
+          text: this.$strings.LabelAuthor,
           value: 'media.metadata.author'
         },
         {
-          text: 'Added At',
+          text: this.$strings.LabelAddedAt,
           value: 'addedAt'
         },
         {
-          text: 'Size',
+          text: this.$strings.LabelSize,
           value: 'size'
         },
         {
-          text: '# of Episodes',
+          text: this.$strings.LabelNumberOfEpisodes,
           value: 'media.numTracks'
         },
         {
-          text: 'File Birthtime',
+          text: this.$strings.LabelFileBirthtime,
           value: 'birthtimeMs'
         },
         {
-          text: 'File Modified',
+          text: this.$strings.LabelFileModified,
           value: 'mtimeMs'
         }
       ]
@@ -92,35 +92,35 @@ export default {
           value: 'media.metadata.title'
         },
         {
-          text: 'Author (First Last)',
+          text: this.$strings.LabelAuthorFirstLast,
           value: 'media.metadata.authorName'
         },
         {
-          text: 'Author (Last, First)',
+          text: this.$strings.LabelAuthorLastFirst,
           value: 'media.metadata.authorNameLF'
         },
         {
-          text: 'Published Year',
+          text: this.$strings.LabelPublishYear,
           value: 'media.metadata.publishedYear'
         },
         {
-          text: 'Added At',
+          text: this.$strings.LabelAddedAt,
           value: 'addedAt'
         },
         {
-          text: 'Size',
+          text: this.$strings.LabelSize,
           value: 'size'
         },
         {
-          text: 'Duration',
+          text: this.$strings.LabelDuration,
           value: 'media.duration'
         },
         {
-          text: 'File Birthtime',
+          text: this.$strings.LabelFileBirthtime,
           value: 'birthtimeMs'
         },
         {
-          text: 'File Modified',
+          text: this.$strings.LabelFileModified,
           value: 'mtimeMs'
         }
       ]
@@ -129,7 +129,7 @@ export default {
       return [
         ...this.bookItems,
         {
-          text: 'Sequence',
+          text: this.$strings.LabelSequence,
           value: 'sequence'
         }
       ]

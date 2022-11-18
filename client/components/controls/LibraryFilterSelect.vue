@@ -67,120 +67,7 @@ export default {
   data() {
     return {
       showMenu: false,
-      sublist: null,
-      seriesItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Authors',
-          value: 'authors',
-          sublist: true
-        },
-        {
-          text: 'Narrator',
-          value: 'narrators',
-          sublist: true
-        },
-        {
-          text: 'Language',
-          value: 'languages',
-          sublist: true
-        },
-        {
-          text: 'Series Progress',
-          value: 'progress',
-          sublist: true
-        }
-      ],
-      bookItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Series',
-          value: 'series',
-          sublist: true
-        },
-        {
-          text: 'Authors',
-          value: 'authors',
-          sublist: true
-        },
-        {
-          text: 'Narrator',
-          value: 'narrators',
-          sublist: true
-        },
-        {
-          text: 'Language',
-          value: 'languages',
-          sublist: true
-        },
-        {
-          text: 'Progress',
-          value: 'progress',
-          sublist: true
-        },
-        {
-          text: 'Missing',
-          value: 'missing',
-          sublist: true
-        },
-        {
-          text: 'Issues',
-          value: 'issues',
-          sublist: false
-        },
-        {
-          text: 'RSS Feed Open',
-          value: 'feed-open',
-          sublist: false
-        }
-      ],
-      podcastItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Issues',
-          value: 'issues',
-          sublist: false
-        }
-      ]
+      sublist: null
     }
   },
   watch: {
@@ -202,6 +89,125 @@ export default {
     },
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
+    seriesItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelAuthor,
+          value: 'authors',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelNarrator,
+          value: 'narrators',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelLanguage,
+          value: 'languages',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelSeriesProgress,
+          value: 'progress',
+          sublist: true
+        }
+      ]
+    },
+    bookItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelSeries,
+          value: 'series',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelAuthor,
+          value: 'authors',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelNarrator,
+          value: 'narrators',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelLanguage,
+          value: 'languages',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelProgress,
+          value: 'progress',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelMissing,
+          value: 'missing',
+          sublist: true
+        },
+        {
+          text: this.$strings.ButtonIssues,
+          value: 'issues',
+          sublist: false
+        },
+        {
+          text: this.$strings.LabelRSSFeedOpen,
+          value: 'feed-open',
+          sublist: false
+        }
+      ]
+    },
+    podcastItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.ButtonIssues,
+          value: 'issues',
+          sublist: false
+        }
+      ]
     },
     selectItems() {
       if (this.isSeries) return this.seriesItems
