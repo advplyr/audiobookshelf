@@ -49,8 +49,8 @@
           <span class="font-mono">{{ numShowing }}</span>
         </div>
         <div class="flex-grow" />
-        <ui-checkbox v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
-        <ui-btn color="primary" small :loading="processingSeries" class="items-center ml-1 sm:ml-4 hidden md:flex" @click="markSeriesFinished">
+        <ui-checkbox v-if="!isBatchSelecting" v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
+        <ui-btn v-if="!isBatchSelecting" color="primary" small :loading="processingSeries" class="items-center ml-1 sm:ml-4 hidden md:flex" @click="markSeriesFinished">
           <div class="h-5 w-5">
             <svg v-if="isSeriesFinished" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgb(63, 181, 68)">
               <path d="M19 1H5c-1.1 0-1.99.9-1.99 2L3 15.93c0 .69.35 1.3.88 1.66L12 23l8.11-5.41c.53-.36.88-.97.88-1.66L21 3c0-1.1-.9-2-2-2zm-9 15l-5-5 1.41-1.41L10 13.17l7.59-7.59L19 7l-9 9z" />
@@ -61,7 +61,7 @@
           </div>
           <span class="pl-2"> {{ $strings.LabelMarkSeries }} {{ isSeriesFinished ? $strings.LabelNotFinished : $strings.LabelFinished }}</span>
         </ui-btn>
-        <ui-btn v-if="isSeriesRemovedFromContinueListening" small :loading="processingSeries" @click="reAddSeriesToContinueListening" class="hidden md:block ml-2"> Re-Add Series to Continue Listening </ui-btn>
+        <ui-btn v-if="isSeriesRemovedFromContinueListening && !isBatchSelecting" small :loading="processingSeries" @click="reAddSeriesToContinueListening" class="hidden md:block ml-2"> Re-Add Series to Continue Listening </ui-btn>
       </template>
       <!-- library & collections page -->
       <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
@@ -69,13 +69,13 @@
 
         <div class="flex-grow hidden sm:inline-block" />
 
-        <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
-        <controls-library-filter-select v-if="isLibraryPage" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
-        <controls-library-sort-select v-if="isLibraryPage" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
-        <controls-library-filter-select v-if="isSeriesPage" v-model="seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
-        <controls-sort-select v-if="isSeriesPage" v-model="seriesSortBy" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
+        <ui-checkbox v-if="isLibraryPage && !isPodcastLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+        <controls-library-filter-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+        <controls-library-sort-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+        <controls-library-filter-select v-if="isSeriesPage && !isBatchSelecting" v-model="seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
+        <controls-sort-select v-if="isSeriesPage && !isBatchSelecting" v-model="seriesSortBy" :descending.sync="seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
-        <ui-btn v-if="isIssuesFilter && userCanDelete" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
+        <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
@@ -86,7 +86,7 @@
       <!-- authors page -->
       <template v-else-if="page === 'authors'">
         <div class="flex-grow" />
-        <ui-btn v-if="userCanUpdate && authors && authors.length" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
+        <ui-btn v-if="userCanUpdate && authors && authors.length && !isBatchSelecting" :loading="processingAuthors" color="primary" small @click="matchAllAuthors">{{ $strings.ButtonMatchAllAuthors }}</ui-btn>
       </template>
     </div>
   </div>
@@ -197,6 +197,9 @@ export default {
     seriesLibraryItemIds() {
       if (!this.seriesProgress) return []
       return this.seriesProgress.libraryItemIds || []
+    },
+    isBatchSelecting() {
+      return this.$store.state.selectedLibraryItems.length
     },
     isSeriesFinished() {
       return this.seriesProgress && !!this.seriesProgress.isFinished
