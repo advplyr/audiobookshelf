@@ -263,10 +263,10 @@ export default {
       return this.filterData.languages || []
     },
     progress() {
-      return ['Finished', 'In Progress', 'Not Started', 'Not Finished']
+      return [this.$strings.LabelFinished, this.$strings.LabelInProgress, this.$strings.LabelNotStarted, this.$strings.LabelNotFinished]
     },
     missing() {
-      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
+      return ['ASIN', 'ISBN', this.$strings.LabelSubtitle, this.$strings.LabelAuthor, this.$strings.LabelPublishYear, this.$strings.LabelSeries, this.$strings.LabelDescription, this.$strings.LabelGenres, this.$strings.LabelTags, this.$strings.LabelNarrator, this.$strings.LabelPublisher, this.$strings.LabelLanguage]
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {

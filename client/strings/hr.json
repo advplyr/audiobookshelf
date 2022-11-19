@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Maksimalna veličina queuea za notification events",
   "LabelNotificationsMaxQueueSizeHelp": "Samo 1 event po sekundi može biti pokrenut. Eventi će biti ignorirani ako je queue na maksimalnoj veličini. To spriječava spammanje s obavijestima.",
   "LabelNotificationTitleTemplate": "Title Template",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# of Episodes",
   "LabelOpenRSSFeed": "Otvori RSS Feed",
   "LabelPassword": "Lozinka",

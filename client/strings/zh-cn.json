@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "通知事件的最大队列大小",
   "LabelNotificationsMaxQueueSizeHelp": "通知事件被限制为每秒触发 1 个. 如果队列处于最大大小, 则将忽略事件. 这可以防止通知垃圾邮件.",
   "LabelNotificationTitleTemplate": "标题模板",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# 集",
   "LabelOpenRSSFeed": "打开 RSS 源",
   "LabelPassword": "密码",

@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Nombres de notifications maximum à mettre en attente",
   "LabelNotificationsMaxQueueSizeHelp": "La limite de notification est de un évènement par seconde. Le notification seront ignorées si la file d'attente est à son maximum. Cela empêche un flot trop important.",
   "LabelNotificationTitleTemplate": "Modèle de Titre",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "Nombre d'Episodes",
   "LabelOpenRSSFeed": "Ouvrir le flux RSS",
   "LabelPassword": "Mot de Passe",

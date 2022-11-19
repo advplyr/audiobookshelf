@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Coda Massima di notifiche eventi",
   "LabelNotificationsMaxQueueSizeHelp": "Le notifiche sono limitate per 1 al secondo, per evitare lo spamming le notifiche verrano ignorare se superano la coda",
   "LabelNotificationTitleTemplate": "Title Template",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# of Episodes",
   "LabelOpenRSSFeed": "Apri RSS Feed",
   "LabelPassword": "Password",

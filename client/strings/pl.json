@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Maksymalny rozmiar kolejki dla powiadomień",
   "LabelNotificationsMaxQueueSizeHelp": "Zdarzenia są ograniczone do 1 na sekundę. Zdarzenia będą ignorowane jeśli kolejka ma maksymalny rozmiar. Zapobiega to spamowaniu powiadomieniami.",
   "LabelNotificationTitleTemplate": "Szablon tytułu powiadmienia",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# of Episodes",
   "LabelOpenRSSFeed": "Otwórz kanał RSS",
   "LabelPassword": "Hasło",

@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Maximale Größe der Warteschlange für die Benachrichtigungsereignisse",
   "LabelNotificationsMaxQueueSizeHelp": "Es wird nur 1 Ereignis pro Sekunde ausgelöst. Ereignisse werden ignoriert, wenn die Warteschlange die maximale Größe erreicht hat. Dies verhindert Benachrichtigungsspamming.",
   "LabelNotificationTitleTemplate": "Titelvorlage",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# of Episodes",
   "LabelOpenRSSFeed": "Öffne RSS Feed",
   "LabelPassword": "Passwort",

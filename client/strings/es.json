@@ -253,6 +253,7 @@
   "LabelNotificationsMaxQueueSize": "Max queue size for notification events",
   "LabelNotificationsMaxQueueSizeHelp": "Events are limited to firing 1 per second. Events will be ignored if the queue is at max size. This prevents notification spamming.",
   "LabelNotificationTitleTemplate": "Title Template",
+  "LabelNotStarted": "Not Started",
   "LabelNumberOfEpisodes": "# of Episodes",
   "LabelOpenRSSFeed": "Open RSS Feed",
   "LabelPassword": "Password",
