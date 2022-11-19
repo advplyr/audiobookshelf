@@ -61,7 +61,7 @@
         <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
-        <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
+        <template v-if="userCanUpdate">
           <ui-tooltip text="Edit" direction="bottom">
             <ui-icon-btn :disabled="processingBatch" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
