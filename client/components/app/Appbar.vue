@@ -41,7 +41,7 @@
             <span class="block truncate">{{ username }}</span>
           </span>
           <span class="h-full md:ml-3 md:absolute inset-y-0 md:right-0 flex items-center justify-center md:pr-2 pointer-events-none">
-            <span class="material-icons text-gray-100">person</span>
+            <span class="material-icons text-xl text-gray-100">person</span>
           </span>
         </nuxt-link>
       </div>
