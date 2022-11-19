@@ -224,14 +224,16 @@ class AbMergeManager {
     const pendingDl = this.pendingTasks.find(d => d.id === task.id)
     if (pendingDl) {
       this.pendingTasks = this.pendingTasks.filter(d => d.id !== task.id)
-      Logger.warn(`[AbMergeManager] Removing download in progress - stopping worker`)
       if (pendingDl.worker) {
+        Logger.warn(`[AbMergeManager] Removing download in progress - stopping worker`)
         try {
           pendingDl.worker.postMessage('STOP')
           return
         } catch (error) {
           Logger.error('[AbMergeManager] Error posting stop message to worker', error)
         }
+      } else {
+        Logger.debug(`[AbMergeManager] Removing download in progress - no worker`)
       }
     }
 

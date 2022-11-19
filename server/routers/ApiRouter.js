@@ -11,10 +11,14 @@ const MeController = require('../controllers/MeController')
 const BackupController = require('../controllers/BackupController')
 const LibraryItemController = require('../controllers/LibraryItemController')
 const SeriesController = require('../controllers/SeriesController')
+const FileSystemController = require('../controllers/FileSystemController')
 const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
 const NotificationController = require('../controllers/NotificationController')
+const SearchController = require('../controllers/SearchController')
+const CacheController = require('../controllers/CacheController')
+const ToolsController = require('../controllers/ToolsController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -23,7 +27,6 @@ const PodcastFinder = require('../finders/PodcastFinder')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
-const FileSystemController = require('../controllers/FileSystemController')
 
 class ApiRouter {
   constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, getUsersOnline, emitter, clientEmitter) {
@@ -98,7 +101,6 @@ class ApiRouter {
     this.router.patch('/items/:id/tracks', LibraryItemController.middleware.bind(this), LibraryItemController.updateTracks.bind(this))
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
     this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
-    this.router.get('/items/:id/audio-metadata', LibraryItemController.middleware.bind(this), LibraryItemController.updateAudioFileMetadata.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/open-feed', LibraryItemController.middleware.bind(this), LibraryItemController.openRSSFeed.bind(this))
     this.router.post('/items/:id/close-feed', LibraryItemController.middleware.bind(this), LibraryItemController.closeRSSFeed.bind(this))
@@ -225,21 +227,34 @@ class ApiRouter {
     this.router.get('/notifications/:id/test', NotificationController.middleware.bind(this), NotificationController.sendNotificationTest.bind(this))
 
     //
+    // Search Routes
+    //
+    this.router.get('/search/covers', SearchController.findCovers.bind(this))
+    this.router.get('/search/books', SearchController.findBooks.bind(this))
+    this.router.get('/search/podcast', SearchController.findPodcasts.bind(this))
+    this.router.get('/search/authors', SearchController.findAuthor.bind(this))
+    this.router.get('/search/chapters', SearchController.findChapters.bind(this))
+
+    //
+    // Cache Routes
+    //
+    this.router.post('/cache/purge', CacheController.purgeCache.bind(this))
+    this.router.post('/cache/items/purge', CacheController.purgeItemsCache.bind(this))
+
+    //
+    // Tools Routes
+    //
+    this.router.post('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.encodeM4b.bind(this))
+    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
+    this.router.post('/tools/item/:id/embed-metadata', ToolsController.itemMiddleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+
+    //
     // Misc Routes
     //
     this.router.post('/upload', MiscController.handleUpload.bind(this))
-    this.router.get('/encode-m4b/:id', MiscController.encodeM4b.bind(this))
-    this.router.post('/encode-m4b/:id/cancel', MiscController.cancelM4bEncode.bind(this))
     this.router.get('/tasks', MiscController.getTasks.bind(this))
     this.router.patch('/settings', MiscController.updateServerSettings.bind(this))
-    this.router.post('/cache/purge', MiscController.purgeCache.bind(this))
-    this.router.post('/cache/items/purge', MiscController.purgeItemsCache.bind(this))
     this.router.post('/authorize', MiscController.authorize.bind(this))
-    this.router.get('/search/covers', MiscController.findCovers.bind(this))
-    this.router.get('/search/books', MiscController.findBooks.bind(this))
-    this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
-    this.router.get('/search/authors', MiscController.findAuthor.bind(this))
-    this.router.get('/search/chapters', MiscController.findChapters.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
   }

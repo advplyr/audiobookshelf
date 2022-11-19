@@ -247,7 +247,7 @@ export default {
     cancelEncodeClick() {
       this.isCancelingEncode = true
       this.$axios
-        .$post(`/api/encode-m4b/${this.libraryItemId}/cancel`)
+        .$delete(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
         .then(() => {
           this.$toast.success('Encode canceled')
         })
@@ -262,7 +262,7 @@ export default {
     encodeM4bClick() {
       this.processing = true
       this.$axios
-        .$get(`/api/encode-m4b/${this.libraryItemId}`)
+        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
         .then(() => {
           console.log('Ab m4b merge started')
         })
@@ -287,7 +287,7 @@ export default {
     updateAudioFileMetadata() {
       this.processing = true
       this.$axios
-        .$get(`/api/items/${this.libraryItemId}/audio-metadata?tone=1`)
+        .$post(`/api/tools/item/${this.libraryItemId}/embed-metadata?tone=1`)
         .then(() => {
           console.log('Audio metadata encode started')
         })

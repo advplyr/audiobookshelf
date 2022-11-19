@@ -389,24 +389,6 @@ class LibraryItemController {
     res.json(this.audioMetadataManager.getToneMetadataObjectForApi(req.libraryItem))
   }
 
-  // GET: api/items/:id/audio-metadata
-  async updateAudioFileMetadata(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to update audio metadata`, req.user)
-      return res.sendStatus(403)
-    }
-
-    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
-      Logger.error(`[LibraryItemController] Invalid library item`)
-      return res.sendStatus(500)
-    }
-
-    const useTone = req.query.tone === '1'
-    const forceEmbedChapters = req.query.forceEmbedChapters === '1'
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone, forceEmbedChapters)
-    res.sendStatus(200)
-  }
-
   // POST: api/items/:id/chapters
   async updateMediaChapters(req, res) {
     if (!req.user.canUpdate) {
