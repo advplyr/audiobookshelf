@@ -46,8 +46,12 @@
         </nuxt-link>
       </div>
       <div v-show="numLibraryItemsSelected" class="absolute top-0 left-0 w-full h-full px-4 bg-primary flex items-center">
-        <h1 class="text-2xl px-4">{{ $getString('MessageItemsSelected', [numLibraryItemsSelected]) }}</h1>
+        <h1 class="text-lg md:text-2xl px-4">{{ $getString('MessageItemsSelected', [numLibraryItemsSelected]) }}</h1>
         <div class="flex-grow" />
+        <ui-btn v-if="!isPodcastLibrary" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="playSelectedItems">
+          <span class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
+          {{ $strings.ButtonPlay }}
+        </ui-btn>
         <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
         </ui-tooltip>
@@ -59,14 +63,14 @@
         </ui-tooltip>
         <template v-if="userCanUpdate && numLibraryItemsSelected < 50">
           <ui-tooltip text="Edit" direction="bottom">
-            <ui-icon-btn v-show="!processingBatchDelete" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
+            <ui-icon-btn :disabled="processingBatch" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
         </template>
         <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
-          <ui-icon-btn :disabled="processingBatchDelete" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
+          <ui-icon-btn :disabled="processingBatch" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
         <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom">
-          <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatchDelete ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+          <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>
     </div>
@@ -77,9 +81,7 @@
 export default {
   data() {
     return {
-      processingBatchDelete: false,
-      totalEntities: 0,
-      isAllSelected: false
+      totalEntities: 0
     }
   },
   computed: {
@@ -149,11 +151,47 @@ export default {
     }
   },
   methods: {
-    cancelSelectionMode() {
-      if (this.processingBatchDelete) return
+    async playSelectedItems() {
+      this.$store.commit('setProcessingBatch', true)
+
+      var libraryItems = await this.$axios.$post(`/api/items/batch/get`, { libraryItemIds: this.selectedLibraryItems }).catch((error) => {
+        var errorMsg = error.response.data || 'Failed to get items'
+        console.error(errorMsg, error)
+        this.$toast.error(errorMsg)
+        return []
+      })
+
+      if (!libraryItems.length) {
+        this.$store.commit('setProcessingBatch', false)
+        return
+      }
+
+      const queueItems = []
+      libraryItems.forEach((item) => {
+        queueItems.push({
+          libraryItemId: item.id,
+          libraryId: item.libraryId,
+          episodeId: null,
+          title: item.media.metadata.title,
+          subtitle: item.media.metadata.authors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: item.media.duration || null,
+          coverPath: item.media.coverPath || null
+        })
+      })
+
+      this.$eventBus.$emit('play-item', {
+        libraryItemId: queueItems[0].libraryItemId,
+        queueItems
+      })
+      this.$store.commit('setProcessingBatch', false)
       this.$store.commit('setSelectedLibraryItems', [])
       this.$eventBus.$emit('bookshelf_clear_selection')
-      this.isAllSelected = false
+    },
+    cancelSelectionMode() {
+      if (this.processingBatch) return
+      this.$store.commit('setSelectedLibraryItems', [])
+      this.$eventBus.$emit('bookshelf_clear_selection')
     },
     toggleBatchRead() {
       this.$store.commit('setProcessingBatch', true)
@@ -183,7 +221,6 @@ export default {
       var audiobookText = this.numLibraryItemsSelected > 1 ? `these ${this.numLibraryItemsSelected} items` : 'this item'
       var confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the items from Audiobookshelf`
       if (confirm(confirmMsg)) {
-        this.processingBatchDelete = true
         this.$store.commit('setProcessingBatch', true)
         this.$axios
           .$post(`/api/items/batch/delete`, {
@@ -191,7 +228,6 @@ export default {
           })
           .then(() => {
             this.$toast.success('Batch delete success!')
-            this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
             this.$store.commit('setSelectedLibraryItems', [])
             this.$eventBus.$emit('bookshelf_clear_selection')
@@ -199,7 +235,6 @@ export default {
           .catch((error) => {
             this.$toast.error('Batch delete failed')
             console.error('Failed to batch delete', error)
-            this.processingBatchDelete = false
             this.$store.commit('setProcessingBatch', false)
           })
       }

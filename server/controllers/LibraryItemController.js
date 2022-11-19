@@ -301,7 +301,11 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    var libraryItems = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id)).map((li) => li.toJSONExpanded())
+    var libraryItems = []
+    libraryItemIds.forEach((lid) => {
+      const li = this.db.libraryItems.find(_li => _li.id === lid)
+      if (li) libraryItems.push(li.toJSONExpanded())
+    })
     res.json(libraryItems)
   }
 

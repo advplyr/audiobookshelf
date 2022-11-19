@@ -34,7 +34,7 @@
 
               <template v-if="!isVideo">
                 <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
-                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">
+                <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
                   by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
@@ -44,7 +44,7 @@
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
                 </div>
-                <div>
+                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
                   <template v-for="(narrator, index) in narrators">
                     <nuxt-link :key="narrator" :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link
                     ><span :key="index" v-if="index < narrators.length - 1">,&nbsp;</span>
@@ -63,7 +63,7 @@
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
                 </div>
-                <div>
+                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
                   <template v-for="(genre, index) in genres">
                     <nuxt-link :key="genre" :to="`/library/${libraryId}/bookshelf?filter=genres.${$encode(genre)}`" class="hover:underline">{{ genre }}</nuxt-link
                     ><span :key="index" v-if="index < genres.length - 1">,&nbsp;</span>

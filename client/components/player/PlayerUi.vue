@@ -7,7 +7,7 @@
         <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
 
         <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
-          <span v-if="!sleepTimerSet" class="material-icons text-2xl sm:text-2.5xl">snooze</span>
+          <span v-if="!sleepTimerSet" class="material-icons text-2xl">snooze</span>
           <div v-else class="flex items-center">
             <span class="material-icons text-lg text-warning">snooze</span>
             <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
@@ -15,15 +15,15 @@
         </div>
 
         <div v-if="!isPodcast" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
-          <span class="material-icons text-2xl sm:text-2.5xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+          <span class="material-icons text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
         </div>
 
         <div v-if="chapters.length" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
-          <span class="material-icons text-2xl sm:text-3xl">format_list_bulleted</span>
+          <span class="material-icons text-2xl">format_list_bulleted</span>
         </div>
 
         <button v-if="playerQueueItems.length" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
-          <span class="material-icons text-2xl sm:text-3xl">queue_music</span>
+          <span class="material-icons text-2.5xl sm:text-3xl">queue_music</span>
         </button>
 
         <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
