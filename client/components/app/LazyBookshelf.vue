@@ -7,17 +7,17 @@
     </template>
 
     <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
+      <p class="text-center text-2xl font-book mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
+        <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
+        <ui-btn color="success" class="w-52" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
       </div>
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
       <!-- Clear filter only available on Library bookshelf -->
       <div v-if="entityName === 'books'" class="flex justify-center mt-2">
-        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">Clear Filter</ui-btn>
+        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
       </div>
     </div>
 
@@ -85,14 +85,15 @@ export default {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
     },
     emptyMessage() {
-      if (this.page === 'series') return 'You have no series'
-      if (this.page === 'collections') return "You haven't made any collections yet"
+      if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
+      if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollections
       if (this.hasFilter) {
-        if (this.filterName === 'Issues') return 'No Issues'
-        else if (this.filterName === 'Feed-open') return 'No RSS feeds are open'
-        return `No Results for filter "${this.filterName}: ${this.filterValue}"`
+        if (this.filterName === 'Issues') return this.$strings.MessageNoIssues
+        else if (this.filterName === 'Feed-open') return this.$strings.MessageBookshelfNoRSSFeeds
+        return this.$getString('MessageBookshelfNoResultsForFilter', [this.filterName, this.filterValue])
+        // return `No Results for filter "${this.filterName}: ${this.filterValue}"`
       }
-      return 'No results'
+      return this.$strings.MessageNoResults
     },
     entityName() {
       if (!this.page) return 'books'
