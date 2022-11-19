@@ -19,6 +19,18 @@
 
         <div class="w-full h-px bg-white/10 my-4" />
 
+        <div v-if="isGlobalSharing" class="flex items-center py-1">
+          <ui-toggle-switch v-model="isUserSharing" @input="changeSharingSetting" />
+          <ui-tooltip :text="$strings.ShareStatsHelp">
+            <p class="pl-4">
+              {{ $strings.ShareStats }}
+              <span class="material-icons icon-text text-sm">info_outlined</span>
+            </p>
+          </ui-tooltip>
+        </div>
+
+        <div v-if="isGlobalSharing" class="w-full h-px bg-primary my-4" />
+
         <p v-if="!isGuest" class="mb-4 text-lg">{{ $strings.HeaderChangePassword }}</p>
         <form v-if="!isGuest" @submit.prevent="submitChangePassword">
           <ui-text-input-with-label v-model="password" :disabled="changingPassword" type="password" :label="$strings.LabelPassword" class="my-2" />
@@ -47,6 +59,7 @@ export default {
       newPassword: null,
       confirmPassword: null,
       changingPassword: false,
+      isUserSharing: null,
       selectedLanguage: ''
     }
   },
@@ -68,9 +81,15 @@ export default {
     },
     isGuest() {
       return this.usertype === 'guest'
+    },
+    isGlobalSharing() {
+      return this.$store.getters['getServerSetting']('sharedListeningStats')
     }
   },
   methods: {
+    init() {
+      this.isUserSharing = this.$store.getters['user/getUserSetting']('shareListeningActivity')
+    },
     updateLocalLanguage(lang) {
       this.$setLanguageCode(lang)
     },
@@ -119,9 +138,13 @@ export default {
           this.$toast.error('Api call failed')
           this.changingPassword = false
         })
+    },
+    changeSharingSetting() {
+      this.$store.dispatch('user/updateUserSettings', { shareListeningActivity: this.isUserSharing})
     }
   },
   mounted() {
+    this.init()
     this.selectedLanguage = this.$languageCodes.current
   }
 }

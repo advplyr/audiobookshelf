@@ -48,6 +48,16 @@
             <p class="pl-4">{{ $strings.LabelSettingsChromecastSupport }}</p>
           </div>
 
+          <div class="flex items-center py-2">
+            <ui-toggle-switch v-model="newServerSettings.sharedListeningStats" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sharedListeningStats', val)" />
+            <ui-tooltip :text="$strings.EnableSharedStatsHelp">
+              <p class="pl-4">
+                {{ $strings.EnableSharedStats}}
+                <span class="material-icons icon-text text-sm">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsDisplay }}</h2>
           </div>

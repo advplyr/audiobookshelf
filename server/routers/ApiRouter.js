@@ -240,6 +240,7 @@ class ApiRouter {
     this.router.get('/search/podcast', MiscController.findPodcasts.bind(this))
     this.router.get('/search/authors', MiscController.findAuthor.bind(this))
     this.router.get('/search/chapters', MiscController.findChapters.bind(this))
+    this.router.get('/social', MiscController.getSocialStats.bind(this))
     this.router.get('/tags', MiscController.getAllTags.bind(this))
     this.router.post('/validate-cron', MiscController.validateCronExpression.bind(this))
   }

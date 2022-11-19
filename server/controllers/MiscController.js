@@ -242,6 +242,34 @@ class MiscController {
     })
     res.json(tags)
   }
+  // GET: api/social
+  async getSocialStats(req, res) {
+    if (!this.db.serverSettings.sharedListeningStats) {
+      return res.sendStatus(404)
+    }
+    var filteredUsers = this.db.users.filter(c => c.settings.shareListeningActivity == true)
+    var userData = []
+    for (let i = 0; i < filteredUsers.length; i++) {
+      var user = filteredUsers[i]
+      var listeningStats = await this.getUserListeningStatsHelpers(user.id)
+      var latestItem = user.mediaProgress.sort(p => p.lastUpdate)
+      var latestProgress = latestItem[latestItem.length - 1]
+      if (latestProgress) {
+        var latestItem = this.db.getLibraryItem(latestProgress.id)
+      }
+      var session = {
+        username: user.username,
+        id: user.id,
+        lastSeen: user.lastSeen,
+        latest: {'progress': latestProgress, 'item': latestItem} || null,
+        minutesListened: listeningStats.totalTime || 0,
+      }
+      if (session.minutesListened && session.latest) {
+        userData.push(session)
+      }
+    }
+    res.json(userData)
+  }
 
   validateCronExpression(req, res) {
     const expression = req.body.expression

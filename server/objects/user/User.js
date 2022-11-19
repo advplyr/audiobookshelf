@@ -69,7 +69,8 @@ class User {
       filterBy: 'all',
       playbackRate: 1,
       bookshelfCoverSize: 120,
-      collapseSeries: false
+      collapseSeries: false,
+      shareListeningActivity: false
     }
   }
 

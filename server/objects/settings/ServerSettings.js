@@ -51,6 +51,7 @@ class ServerSettings {
 
     // Misc Flags
     this.chromecastEnabled = false
+    this.sharedListeningStats = false
     this.enableEReader = false
     this.dateFormat = 'MM/dd/yyyy'
     this.language = 'en-us'
@@ -101,6 +102,7 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.sharedListeningStats = !!settings.sharedListeningStats
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.language = settings.language || 'en-us'
@@ -153,6 +155,7 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      sharedListeningStats: this.sharedListeningStats,
       enableEReader: this.enableEReader,
       dateFormat: this.dateFormat,
       language: this.language,
