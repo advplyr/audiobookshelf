@@ -101,35 +101,35 @@ export default {
     intervalOptions() {
       return [
         {
-          text: 'Custom daily/weekly',
+          text: this.$strings.LabelIntervalCustomDailyWeekly,
           value: 'custom'
         },
         {
-          text: 'Every day',
+          text: this.$strings.LabelIntervalEveryDay,
           value: 'daily'
         },
         {
-          text: 'Every 12 hours',
+          text: this.$strings.LabelIntervalEvery12Hours,
           value: '0 */12 * * *'
         },
         {
-          text: 'Every 6 hours',
+          text: this.$strings.LabelIntervalEvery6Hours,
           value: '0 */6 * * *'
         },
         {
-          text: 'Every 2 hours',
+          text: this.$strings.LabelIntervalEvery2Hours,
           value: '0 */2 * * *'
         },
         {
-          text: 'Every hour',
+          text: this.$strings.LabelIntervalEveryHour,
           value: '0 * * * *'
         },
         {
-          text: 'Every 30 minutes',
+          text: this.$strings.LabelIntervalEvery30Minutes,
           value: '*/30 * * * *'
         },
         {
-          text: 'Every 15 minutes',
+          text: this.$strings.LabelIntervalEvery15Minutes,
           value: '*/15 * * * *'
         }
       ]

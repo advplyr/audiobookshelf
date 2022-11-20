@@ -114,28 +114,30 @@ export default {
       totalEntities: 0,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false,
-      seriesSortItems: [
-        {
-          text: 'Name',
-          value: 'name'
-        },
-        {
-          text: 'Number of Books',
-          value: 'numBooks'
-        },
-        {
-          text: 'Date Added',
-          value: 'addedAt'
-        },
-        {
-          text: 'Total Duration',
-          value: 'totalDuration'
-        }
-      ]
+      processingAuthors: false
     }
   },
   computed: {
+    seriesSortItems() {
+      return [
+        {
+          text: this.$strings.LabelName,
+          value: 'name'
+        },
+        {
+          text: this.$strings.LabelNumberOfBooks,
+          value: 'numBooks'
+        },
+        {
+          text: this.$strings.LabelAddedAt,
+          value: 'addedAt'
+        },
+        {
+          text: this.$strings.LabelTotalDuration,
+          value: 'totalDuration'
+        }
+      ]
+    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },

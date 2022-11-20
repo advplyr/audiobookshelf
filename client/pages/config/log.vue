@@ -38,20 +38,6 @@ export default {
       searchText: null,
       newServerSettings: {},
       logColors: ['yellow-200', 'gray-400', 'info', 'warning', 'error', 'red-800', 'blue-400'],
-      logLevels: [
-        {
-          value: 1,
-          text: 'Debug'
-        },
-        {
-          value: 2,
-          text: 'Info'
-        },
-        {
-          value: 3,
-          text: 'Warn'
-        }
-      ],
       loadedLogs: []
     }
   },
@@ -66,6 +52,22 @@ export default {
     }
   },
   computed: {
+    logLevels() {
+      return [
+        {
+          value: 1,
+          text: this.$strings.LabelLogLevelDebug
+        },
+        {
+          value: 2,
+          text: this.$strings.LabelLogLevelInfo
+        },
+        {
+          value: 3,
+          text: this.$strings.LabelLogLevelWarn
+        }
+      ]
+    },
     logLevelItems() {
       if (process.env.NODE_ENV === 'production') return this.logLevels
       this.logLevels.unshift({ text: 'Trace', value: 0 })

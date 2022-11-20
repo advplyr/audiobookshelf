@@ -102,7 +102,7 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     userItems() {
-      var userItems = [{ value: '', text: 'All Users' }]
+      var userItems = [{ value: '', text: this.$strings.LabelAllUsers }]
       return userItems.concat(this.users.map((u) => ({ value: u.id, text: u.username })))
     },
     filteredUserUsername() {
