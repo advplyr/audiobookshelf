@@ -26,7 +26,7 @@ export const state = () => ({
       value: 'audible.uk'
     },
     {
-      text: 'Audible.co.au',
+      text: 'Audible.com.au',
       value: 'audible.au'
     },
     {
