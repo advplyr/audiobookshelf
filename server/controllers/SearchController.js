@@ -1,3 +1,5 @@
+const Logger = require("../Logger")
+
 class SearchController {
   constructor() { }
 
@@ -11,11 +13,16 @@ class SearchController {
 
   async findCovers(req, res) {
     var query = req.query
-    var podcast = query.podcast == 1
+    const podcast = query.podcast == 1
+
+    if (!query.title) {
+      Logger.error(`[SearchController] findCovers: No title sent in query`)
+      return res.sendStatus(400)
+    }
 
     var result = null
     if (podcast) result = await this.podcastFinder.findCovers(query.title)
-    else result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
+    else result = await this.bookFinder.findCovers(query.provider || 'google', query.title, query.author || null)
     res.json(result)
   }
 
