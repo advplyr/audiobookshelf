@@ -21,7 +21,8 @@ export default {
     return {
       tooltip: null,
       tooltipId: null,
-      isShowing: false
+      isShowing: false,
+      hideTimeout: null
     }
   },
   watch: {
@@ -46,10 +47,12 @@ export default {
       var tooltip = document.createElement('div')
       this.tooltipId = String(Math.floor(Math.random() * 10000))
       tooltip.id = this.tooltipId
-      tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white pointer-events-none text-xs rounded shadow-lg max-w-xs text-center hidden sm:block'
+      tooltip.className = 'tooltip-wrapper absolute px-2 py-1 text-white text-xs rounded shadow-lg max-w-xs text-center hidden sm:block'
       tooltip.style.zIndex = 100
       tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
       tooltip.innerHTML = this.text
+      tooltip.addEventListener('mouseover', this.cancelHide);
+      tooltip.addEventListener('mouseleave', this.hideTooltip);
 
       this.setTooltipPosition(tooltip)
 
@@ -95,6 +98,7 @@ export default {
       } catch (error) {
         console.error(error)
       }
+
       this.isShowing = true
     },
     hideTooltip() {
@@ -102,11 +106,16 @@ export default {
       this.tooltip.remove()
       this.isShowing = false
     },
+    cancelHide() {
+      if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    },
     mouseover() {
       if (!this.isShowing) this.showTooltip()
     },
     mouseleave() {
-      if (this.isShowing) this.hideTooltip()
+      if (this.isShowing) {
+        this.hideTimeout = setTimeout(this.hideTooltip, 100)
+      }
     }
   },
   beforeDestroy() {
