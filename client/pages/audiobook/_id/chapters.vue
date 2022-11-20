@@ -65,9 +65,11 @@
             </div>
             <div class="w-40 px-2 py-1">
               <div class="flex items-center">
-                <button v-if="newChapters.length > 1" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-error transform hover:scale-110 duration-150" @click="removeChapter(chapter)">
-                  <span class="material-icons-outlined text-base">remove</span>
-                </button>
+                <ui-tooltip :text="$strings.MessageRemoveChapter" direction="bottom">
+                  <button v-if="newChapters.length > 1" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-error transform hover:scale-110 duration-150" @click="removeChapter(chapter)">
+                    <span class="material-icons-outlined text-base">remove</span>
+                  </button>
+                </ui-tooltip>
 
                 <ui-tooltip :text="$strings.MessageInsertChapterBelow" direction="bottom">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-success transform hover:scale-110 duration-150" @click="addChapter(chapter)">
@@ -75,11 +77,13 @@
                   </button>
                 </ui-tooltip>
 
-                <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
-                  <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
-                  <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-icons-outlined text-base">pause</span>
-                  <span v-else class="material-icons-outlined text-base">play_arrow</span>
-                </button>
+                <ui-tooltip :text="selectedChapterId === chapter.id && isPlayingChapter ? $strings.MessagePauseChapter : $strings.MessagePlayChapter" direction="bottom">
+                  <button class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-white transform hover:scale-110 duration-150" @click="playChapter(chapter)">
+                    <widgets-loading-spinner v-if="selectedChapterId === chapter.id && isLoadingChapter" />
+                    <span v-else-if="selectedChapterId === chapter.id && isPlayingChapter" class="material-icons-outlined text-base">pause</span>
+                    <span v-else class="material-icons-outlined text-base">play_arrow</span>
+                  </button>
+                </ui-tooltip>
 
                 <ui-tooltip v-if="chapter.error" :text="chapter.error" direction="left">
                   <button class="w-7 h-7 rounded-full flex items-center justify-center text-error">
