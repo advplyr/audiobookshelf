@@ -7,7 +7,9 @@
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
           <div class="p-1 absolute top-1 right-1 text-red-500 rounded-full w-8 h-8 cursor-pointer hover:text-red-400 shadow-sm" @click="removeCover">
-            <span class="material-icons">delete</span>
+            <ui-tooltip direction="top" :text="$strings.LabelRemoveCover">
+              <span class="material-icons">delete</span>
+            </ui-tooltip>
           </div>
         </div>
       </div>
