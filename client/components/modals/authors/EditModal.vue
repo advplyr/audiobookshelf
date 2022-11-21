@@ -136,6 +136,7 @@ export default {
       })
       if (result && result.updated) {
         this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
+        this.$store.commit('globals/showEditAuthorModal', result.author)
       }
       this.processing = false
     },
@@ -157,7 +158,10 @@ export default {
       if (!response) {
         this.$toast.error('Author not found')
       } else if (response.updated) {
-        if (response.author.imagePath) this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+        if (response.author.imagePath) {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+          this.$store.commit('globals/showEditAuthorModal', response.author)
+        }
         else this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
       } else {
         this.$toast.info('No updates were made for Author')
