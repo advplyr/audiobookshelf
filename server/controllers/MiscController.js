@@ -26,11 +26,11 @@ class MiscController {
 
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
-      return res.status(500).send(`Library not found with id ${libraryId}`)
+      return res.status(404).send(`Library not found with id ${libraryId}`)
     }
     var folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
-      return res.status(500).send(`Folder not found with id ${folderId} in library ${library.name}`)
+      return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
 
     if (!files.length || !title) {
@@ -111,7 +111,7 @@ class MiscController {
     }
     return res.json({
       success: true,
-      serverSettings: this.db.serverSettings
+      serverSettings: this.db.serverSettings.toJSONForBrowser()
     })
   }
 
