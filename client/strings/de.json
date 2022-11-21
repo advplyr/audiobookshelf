@@ -561,7 +561,7 @@
   "ToastSessionDeleteSuccess": "Sitzung gelöscht",
   "ToastSocketConnected": "Verbindung zum WebSocket hergestellt",
   "ToastSocketDisconnected": "Verbindung zum WebSocket verloren",
-  "ToastSocketFailedToConnect": "Verbindung zum Server fehlgeschlagen",
+  "ToastSocketFailedToConnect": "Verbindung zum WebSocket fehlgeschlagen",
   "ToastUserDeleteFailed": "Benutzer konnte nicht gelöscht werden",
   "ToastUserDeleteSuccess": "Benutzer gelöscht",
   "WeekdayFriday": "Freitag",
