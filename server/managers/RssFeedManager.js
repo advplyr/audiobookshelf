@@ -33,7 +33,7 @@ class RssFeedManager {
   async getFeed(req, res) {
     var feed = this.feeds[req.params.id]
     if (!feed) {
-      Logger.error(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
     }
