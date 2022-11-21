@@ -15,7 +15,7 @@
             <ui-tooltip :text="$strings.LabelSettingsStoreCoversWithItemHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsStoreCoversWithItem }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -25,7 +25,7 @@
             <ui-tooltip :text="$strings.LabelSettingsStoreMetadataWithItemHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsStoreMetadataWithItem }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -35,7 +35,7 @@
             <ui-tooltip :text="$strings.LabelSettingsSortingIgnorePrefixesHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsSortingIgnorePrefixes }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -57,7 +57,7 @@
             <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsHomePageBookshelfView }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -67,7 +67,7 @@
             <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsLibraryBookshelfView }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -93,7 +93,7 @@
             <ui-tooltip :text="$strings.LabelSettingsParseSubtitlesHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsParseSubtitles }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -103,7 +103,7 @@
             <ui-tooltip :text="$strings.LabelSettingsFindCoversHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsFindCovers }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
             <div class="flex-grow" />
@@ -117,7 +117,7 @@
             <ui-tooltip :text="$strings.LabelSettingsOverdriveMediaMarkersHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsOverdriveMediaMarkers }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -127,7 +127,7 @@
             <ui-tooltip :text="$strings.LabelSettingsPreferAudioMetadataHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsPreferAudioMetadata }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -137,7 +137,7 @@
             <ui-tooltip :text="$strings.LabelSettingsPreferOPFMetadataHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsPreferOPFMetadata }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -147,7 +147,7 @@
             <ui-tooltip :text="$strings.LabelSettingsPreferMatchedMetadataHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsPreferMatchedMetadata }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -157,7 +157,7 @@
             <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsDisableWatcher }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -172,7 +172,7 @@
               <p class="pl-4">
                 {{ $strings.LabelSettingsExperimentalFeatures }}
                 <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
-                  <span class="material-icons icon-text text-sm">info_outlined</span>
+                  <span class="material-icons icon-text">info_outlined</span>
                 </a>
               </p>
             </ui-tooltip>
@@ -183,7 +183,7 @@
             <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
               <p class="pl-4">
                 {{ $strings.LabelSettingsEnableEReader }}
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -193,7 +193,7 @@
             <ui-tooltip text="Tone library for metadata">
               <p class="pl-4">
                 Use Tone library for metadata
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div> -->

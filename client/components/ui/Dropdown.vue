@@ -8,7 +8,7 @@
         <span v-if="selectedSubtext" class="font-normal block truncate font-sans text-sm text-gray-400">{{ selectedSubtext }}</span>
       </span>
       <span class="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-        <span class="material-icons">expand_more</span>
+        <span class="material-icons text-2xl">expand_more</span>
       </span>
     </button>
 

@@ -25,7 +25,7 @@
 
               <a v-if="backup.serverVersion" :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
-                <span class="material-icons-outlined text-error">error_outline</span>
+                <span class="material-icons-outlined text-2xl text-error">error_outline</span>
               </ui-tooltip>
 
               <span class="material-icons text-xl hover:text-error hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="deleteBackupClick(backup)">delete</span>

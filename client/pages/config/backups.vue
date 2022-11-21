@@ -17,7 +17,7 @@
 
       <div v-if="enableBackups" class="mb-6">
         <div class="flex items-center pl-6">
-          <span class="material-icons-outlined text-black-50">schedule</span>
+          <span class="material-icons-outlined text-2xl text-black-50">schedule</span>
           <p class="text-gray-100 px-2">{{ scheduleDescription }}</p>
           <span class="material-icons text-lg text-black-50 hover:text-yellow-500 cursor-pointer" @click="showCronBuilder = !showCronBuilder">edit</span>
         </div>

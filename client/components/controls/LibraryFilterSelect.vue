@@ -22,7 +22,7 @@
               <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
-              <span class="material-icons">arrow_right</span>
+              <span class="material-icons text-2xl">arrow_right</span>
             </div>
           </li>
         </template>
@@ -30,7 +30,7 @@
       <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-black-400" role="option" @click="sublist = null">
           <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
-            <span class="material-icons">arrow_left</span>
+            <span class="material-icons text-2xl">arrow_left</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="font-normal ml-3 block truncate">Back</span>

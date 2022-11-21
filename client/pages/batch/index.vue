@@ -2,7 +2,7 @@
   <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="border border-white border-opacity-10 max-w-7xl mx-auto mb-10 mt-5">
       <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
-        <span class="material-icons">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons text-2xl">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
         <p class="ml-4 text-gray-200 text-lg">Map details</p>
       </div>

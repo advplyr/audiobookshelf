@@ -15,7 +15,7 @@
     </nuxt-link>
 
     <nuxt-link v-if="isPodcastLibrary" :to="`/library/${currentLibraryId}/podcast/latest`" class="w-full h-20 flex flex-col items-center justify-center text-white border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastLatestPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-      <span class="material-icons">format_list_bulleted</span>
+      <span class="material-icons text-2xl">format_list_bulleted</span>
 
       <p class="font-book pt-1 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonLatest }}</p>
 
@@ -43,7 +43,7 @@
     </nuxt-link>
 
     <nuxt-link v-if="!isPodcastLibrary" :to="`/library/${currentLibraryId}/bookshelf/collections`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="paramId === 'collections' ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-      <span class="material-icons-outlined">collections_bookmark</span>
+      <span class="material-icons-outlined text-2xl">collections_bookmark</span>
 
       <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonCollections }}</p>
 

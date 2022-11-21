@@ -6,7 +6,7 @@
         <div ref="inputWrapper" style="min-height: 36px" class="flex-wrap relative w-full shadow-sm flex items-center border border-gray-600 rounded px-2 py-0.5" :class="wrapperClass" @click.stop.prevent="clickWrapper" @mouseup.stop.prevent @mousedown.prevent>
           <div v-for="item in selected" :key="item.id" class="rounded-full px-2 py-0.5 m-0.5 text-xs bg-bg flex flex-nowrap whitespace-nowrap items-center justify-center relative min-w-12">
             <div v-if="!disabled" class="w-full h-full rounded-full absolute top-0 left-0 opacity-0 hover:opacity-100 px-1 bg-bg bg-opacity-75 flex items-center justify-end cursor-pointer">
-              <span v-if="showEdit" class="material-icons text-white hover:text-warning mr-1" style="font-size: 1rem" @click.stop="editItem(item)">edit</span>
+              <span v-if="showEdit" class="material-icons text-base text-white hover:text-warning mr-1" @click.stop="editItem(item)">edit</span>
               <span class="material-icons text-white hover:text-error" style="font-size: 1.1rem" @click.stop="removeItem(item.id)">close</span>
             </div>
             {{ item[textKey] }}

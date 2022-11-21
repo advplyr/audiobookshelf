@@ -3,7 +3,7 @@
     <app-config-side-nav :is-open.sync="sideDrawerOpen" />
     <div class="configContent" :class="`page-${currentPage}`">
       <div v-show="isMobile" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2">
-        <span class="material-icons cursor-pointer" @click.stop.prevent="showMore">more_vert</span>
+        <span class="material-icons text-2xl cursor-pointer" @click.stop.prevent="showMore">more_vert</span>
         <p class="pl-3 capitalize">{{ currentPage }}</p>
       </div>
       <nuxt-child />
