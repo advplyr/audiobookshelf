@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Discord
+    url: https://discord.gg/pJsjuNCKRq
+    about: Ask questions, get help troubleshooting, and join the Abs community here.
+  - name: Matrix
+    url: https://matrix.to/#/#audiobookshelf:matrix.org
+    about: Ask questions, get help troubleshooting, and join the Abs community here.
