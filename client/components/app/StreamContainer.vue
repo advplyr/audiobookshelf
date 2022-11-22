@@ -299,6 +299,16 @@ export default {
         this.playerHandler.seek(e.seekTime)
       }
     },
+    mediaSessionPreviousTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.prevChapter()
+      }
+    },
+    mediaSessionNextTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.nextChapter()
+      }
+    },
     updateMediaSessionPlaybackState() {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
@@ -332,8 +342,9 @@ export default {
         navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
         navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
         navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
-        // navigator.mediaSession.setActionHandler('previoustrack')
-        // navigator.mediaSession.setActionHandler('nexttrack')
+        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionPreviousTrack)
+        const hasNextChapter = this.$refs.audioPlayer && this.$refs.audioPlayer.hasNextChapter
+        navigator.mediaSession.setActionHandler('nexttrack', hasNextChapter ? this.mediaSessionNextTrack : null)
       } else {
         console.warn('Media session not available')
       }
