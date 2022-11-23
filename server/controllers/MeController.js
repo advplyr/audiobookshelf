@@ -91,7 +91,7 @@ class MeController {
   async batchUpdateMediaProgress(req, res) {
     var itemProgressPayloads = req.body
     if (!itemProgressPayloads || !itemProgressPayloads.length) {
-      return res.sendStatus(500)
+      return res.status(400).send('Missing request payload')
     }
 
     var shouldUpdate = false
