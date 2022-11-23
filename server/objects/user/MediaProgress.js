@@ -63,12 +63,12 @@ class MediaProgress {
     this.isFinished = !!progress.isFinished || this.progress == 1
     this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.lastUpdate = Date.now()
-    this.startedAt = Date.now()
     this.finishedAt = null
     if (this.isFinished) {
-      this.finishedAt = Date.now()
+      this.finishedAt = progress.finishedAt || Date.now()
       this.progress = 1
     }
+    this.startedAt = this.finishedAt || Date.now()
   }
 
   update(payload) {
@@ -95,7 +95,7 @@ class MediaProgress {
     // If time remaining is less than 5 seconds then mark as finished
     if ((this.progress >= 1 || (this.duration && !isNaN(timeRemaining) && timeRemaining < 5))) {
       this.isFinished = true
-      this.finishedAt = Date.now()
+      this.finishedAt = payload.finishedAt || Date.now()
       this.progress = 1
     } else if (this.progress < 1 && this.isFinished) {
       this.isFinished = false
@@ -103,7 +103,7 @@ class MediaProgress {
     }
 
     if (!this.startedAt) {
-      this.startedAt = Date.now()
+      this.startedAt = this.finishedAt || Date.now()
     }
     if (hasUpdates) {
       if (payload.hideFromContinueListening === undefined) {
