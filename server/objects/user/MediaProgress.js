@@ -68,7 +68,7 @@ class MediaProgress {
       this.finishedAt = progress.finishedAt || Date.now()
       this.progress = 1
     }
-    this.startedAt = this.finishedAt || Date.now()
+    this.startedAt = progress.startedAt || this.finishedAt || Date.now()
   }
 
   update(payload) {
