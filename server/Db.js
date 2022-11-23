@@ -5,6 +5,7 @@ const { version } = require('../package.json')
 const LibraryItem = require('./objects/LibraryItem')
 const User = require('./objects/user/User')
 const Collection = require('./objects/Collection')
+const Playlist = require('./objects/Playlist')
 const Library = require('./objects/Library')
 const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
@@ -20,6 +21,7 @@ class Db {
     this.LibrariesPath = Path.join(global.ConfigPath, 'libraries')
     this.SettingsPath = Path.join(global.ConfigPath, 'settings')
     this.CollectionsPath = Path.join(global.ConfigPath, 'collections')
+    this.PlaylistsPath = Path.join(global.ConfigPath, 'playlists')
     this.AuthorsPath = Path.join(global.ConfigPath, 'authors')
     this.SeriesPath = Path.join(global.ConfigPath, 'series')
     this.FeedsPath = Path.join(global.ConfigPath, 'feeds')
@@ -31,6 +33,7 @@ class Db {
     this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2, lockoptions: { stale: staleTime } })
     this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2, lockoptions: { stale: staleTime } })
     this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.playlistsDb = new njodb.Database(this.PlaylistsPath, { datastores: 2, lockoptions: { stale: staleTime } })
     this.authorsDb = new njodb.Database(this.AuthorsPath, { lockoptions: { stale: staleTime } })
     this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2, lockoptions: { stale: staleTime } })
     this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2, lockoptions: { stale: staleTime } })
@@ -40,6 +43,7 @@ class Db {
     this.libraries = []
     this.settings = []
     this.collections = []
+    this.playlists = []
     this.authors = []
     this.series = []
 
@@ -61,6 +65,7 @@ class Db {
     else if (entityName === 'library') return this.librariesDb
     else if (entityName === 'settings') return this.settingsDb
     else if (entityName === 'collection') return this.collectionsDb
+    else if (entityName === 'playlist') return this.playlistsDb
     else if (entityName === 'author') return this.authorsDb
     else if (entityName === 'series') return this.seriesDb
     else if (entityName === 'feed') return this.feedsDb
@@ -74,6 +79,7 @@ class Db {
     else if (entityName === 'library') return 'libraries'
     else if (entityName === 'settings') return 'settings'
     else if (entityName === 'collection') return 'collections'
+    else if (entityName === 'playlist') return 'playlists'
     else if (entityName === 'author') return 'authors'
     else if (entityName === 'series') return 'series'
     else if (entityName === 'feed') return 'feeds'
@@ -81,15 +87,17 @@ class Db {
   }
 
   reinit() {
-    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath)
-    this.usersDb = new njodb.Database(this.UsersPath)
-    this.sessionsDb = new njodb.Database(this.SessionsPath)
-    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2 })
-    this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2 })
-    this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2 })
-    this.authorsDb = new njodb.Database(this.AuthorsPath)
-    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2 })
-    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2 })
+    const staleTime = 1000 * 60 * 2
+    this.libraryItemsDb = new njodb.Database(this.LibraryItemsPath, { lockoptions: { stale: staleTime } })
+    this.usersDb = new njodb.Database(this.UsersPath, { lockoptions: { stale: staleTime } })
+    this.sessionsDb = new njodb.Database(this.SessionsPath, { lockoptions: { stale: staleTime } })
+    this.librariesDb = new njodb.Database(this.LibrariesPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.settingsDb = new njodb.Database(this.SettingsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.collectionsDb = new njodb.Database(this.CollectionsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.playlistsDb = new njodb.Database(this.PlaylistsPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.authorsDb = new njodb.Database(this.AuthorsPath, { lockoptions: { stale: staleTime } })
+    this.seriesDb = new njodb.Database(this.SeriesPath, { datastores: 2, lockoptions: { stale: staleTime } })
+    this.feedsDb = new njodb.Database(this.FeedsPath, { datastores: 2, lockoptions: { stale: staleTime } })
     return this.init()
   }
 
@@ -135,20 +143,20 @@ class Db {
   }
 
   async load() {
-    var p1 = this.libraryItemsDb.select(() => true).then((results) => {
+    const p1 = this.libraryItemsDb.select(() => true).then((results) => {
       this.libraryItems = results.data.map(a => new LibraryItem(a))
       Logger.info(`[DB] ${this.libraryItems.length} Library Items Loaded`)
     })
-    var p2 = this.usersDb.select(() => true).then((results) => {
+    const p2 = this.usersDb.select(() => true).then((results) => {
       this.users = results.data.map(u => new User(u))
       Logger.info(`[DB] ${this.users.length} Users Loaded`)
     })
-    var p3 = this.librariesDb.select(() => true).then((results) => {
+    const p3 = this.librariesDb.select(() => true).then((results) => {
       this.libraries = results.data.map(l => new Library(l))
       this.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
       Logger.info(`[DB] ${this.libraries.length} Libraries Loaded`)
     })
-    var p4 = this.settingsDb.select(() => true).then(async (results) => {
+    const p4 = this.settingsDb.select(() => true).then(async (results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
         var serverSettings = this.settings.find(s => s.id === 'server-settings')
@@ -179,19 +187,23 @@ class Db {
         }
       }
     })
-    var p5 = this.collectionsDb.select(() => true).then((results) => {
+    const p5 = this.collectionsDb.select(() => true).then((results) => {
       this.collections = results.data.map(l => new Collection(l))
       Logger.info(`[DB] ${this.collections.length} Collections Loaded`)
     })
-    var p6 = this.authorsDb.select(() => true).then((results) => {
+    const p6 = this.playlistsDb.select(() => true).then((results) => {
+      this.playlists = results.data.map(l => new Playlist(l))
+      Logger.info(`[DB] ${this.playlists.length} Playlists Loaded`)
+    })
+    const p7 = this.authorsDb.select(() => true).then((results) => {
       this.authors = results.data.map(l => new Author(l))
       Logger.info(`[DB] ${this.authors.length} Authors Loaded`)
     })
-    var p7 = this.seriesDb.select(() => true).then((results) => {
+    const p8 = this.seriesDb.select(() => true).then((results) => {
       this.series = results.data.map(l => new Series(l))
       Logger.info(`[DB] ${this.series.length} Series Loaded`)
     })
-    await Promise.all([p1, p2, p3, p4, p5, p6, p7])
+    await Promise.all([p1, p2, p3, p4, p5, p6, p7, p8])
 
     // Update server version in server settings
     if (this.previousVersion) {
