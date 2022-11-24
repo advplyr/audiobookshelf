@@ -330,6 +330,9 @@ export default {
         this.$toast.info(toast)
       }
     },
+    adminMessageEvt(message) {
+      this.$toast.info(message)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -400,6 +403,8 @@ export default {
       this.socket.on('backup_applied', this.backupApplied)
 
       this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
+
+      this.socket.on('admin_message', this.adminMessageEvt)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

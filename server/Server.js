@@ -95,10 +95,21 @@ class Server {
     this.clients = {}
   }
 
+  // returns an array of User.toJSONForPublic with `connections` for the # of socket connections
+  //  a user can have many socket connections
   getUsersOnline() {
-    return Object.values(this.clients).filter(c => c.user).map(client => {
-      return client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems)
+    const onlineUsersMap = {}
+    Object.values(this.clients).filter(c => c.user).forEach(client => {
+      if (onlineUsersMap[client.user.id]) {
+        onlineUsersMap[client.user.id].connections++
+      } else {
+        onlineUsersMap[client.user.id] = {
+          ...client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems),
+          connections: 1
+        }
+      }
     })
+    return Object.values(onlineUsersMap)
   }
 
   getClientsForUser(userId) {
@@ -288,6 +299,7 @@ class Server {
 
       Logger.info('[Server] Socket Connected', socket.id)
 
+      // Required for associating a User with a socket
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
 
       // Scanning
@@ -298,17 +310,29 @@ class Server {
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
       socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
 
+      // Events for testing
+      socket.on('message_all_users', (payload) => {
+        // admin user can send a message to all authenticated users
+        //   displays on the web app as a toast
+        const client = this.clients[socket.id] || {}
+        if (client.user && client.user.isAdminOrUp) {
+          this.emitter('admin_message', payload.message || '')
+        } else {
+          Logger.error(`[Server] Non-admin user sent the message_all_users event`)
+        }
+      })
       socket.on('ping', () => {
-        var client = this.clients[socket.id] || {}
-        var user = client.user || {}
+        const client = this.clients[socket.id] || {}
+        const user = client.user || {}
         Logger.debug(`[Server] Received ping from socket ${user.username || 'No User'}`)
         socket.emit('pong')
       })
 
+      // Sent automatically from socket.io clients
       socket.on('disconnect', (reason) => {
         Logger.removeSocketListener(socket.id)
 
-        var _client = this.clients[socket.id]
+        const _client = this.clients[socket.id]
         if (!_client) {
           Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
         } else if (!_client.user) {
@@ -446,13 +470,15 @@ class Server {
     res.sendStatus(200)
   }
 
+  // When setting up a socket connection the user needs to be associated with a socket id
+  //  for this the client will send a 'auth' event that includes the users API token
   async authenticateSocket(socket, token) {
-    var user = await this.auth.authenticateUser(token)
+    const user = await this.auth.authenticateUser(token)
     if (!user) {
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
     }
-    var client = this.clients[socket.id]
+    const client = this.clients[socket.id]
 
     if (client.user !== undefined) {
       Logger.debug(`[Server] Authenticating socket client already has user`, client.user.username)
@@ -467,6 +493,7 @@ class Server {
 
     Logger.debug(`[Server] User Online ${client.user.username}`)
 
+    // TODO: Send to authenticated clients only
     this.io.emit('user_online', client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
 
     user.lastSeen = Date.now()
