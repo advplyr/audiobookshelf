@@ -133,10 +133,7 @@ export default {
       })
 
       if (payload.usersOnline) {
-        this.$store.commit('users/resetUsers')
-        payload.usersOnline.forEach((user) => {
-          this.$store.commit('users/updateUser', user)
-        })
+        this.$store.commit('users/setUsersOnline', payload.usersOnline)
       }
 
       this.$eventBus.$emit('socket_init')
@@ -283,13 +280,13 @@ export default {
       }
     },
     userOnline(user) {
-      this.$store.commit('users/updateUser', user)
+      this.$store.commit('users/updateUserOnline', user)
     },
     userOffline(user) {
-      this.$store.commit('users/removeUser', user)
+      this.$store.commit('users/removeUserOnline', user)
     },
     userStreamUpdate(user) {
-      this.$store.commit('users/updateUser', user)
+      this.$store.commit('users/updateUserOnline', user)
     },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
