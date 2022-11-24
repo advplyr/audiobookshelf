@@ -118,6 +118,35 @@ class FeedEpisode {
     this.fullPath = audioTrack.metadata.path
   }
 
+  setFromSingleAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta) {
+    // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
+    const audiobookPubDate = date.format(new Date(libraryItem.addedAt), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+
+    const contentUrl = `/feed/${slug}/item/${audioTrack.index}/${audioTrack.metadata.filename}`
+    const media = libraryItem.media
+    const mediaMetadata = media.metadata
+
+    var title = libraryItem.media.metadata.title
+
+    this.id = String(audioTrack.index)
+    this.title = title
+    this.description = mediaMetadata.description || ''
+    this.enclosure = {
+      url: `${serverAddress}${contentUrl}`,
+      type: audioTrack.mimeType,
+      size: audioTrack.metadata.size
+    }
+    this.pubDate = audiobookPubDate
+    this.link = meta.link
+    this.author = meta.author
+    this.explicit = mediaMetadata.explicit
+    this.duration = audioTrack.duration
+    this.libraryItemId = libraryItem.id
+    this.episodeId = null
+    this.trackIndex = audioTrack.index
+    this.fullPath = audioTrack.metadata.path
+  }
+
   getRSSData() {
     return {
       title: this.title,

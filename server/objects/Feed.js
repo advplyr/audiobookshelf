@@ -101,7 +101,11 @@ class Feed {
         feedEpisode.setFromPodcastEpisode(libraryItem, serverAddress, slug, episode, this.meta)
         this.episodes.push(feedEpisode)
       })
-    } else { // AUDIOBOOK EPISODES
+    } else if (media.tracks.length == 1) { // SINGLE FILE AUDIOBOOKS
+      var feedEpisode = new FeedEpisode()
+      feedEpisode.setFromSingleAudiobookTrack(libraryItem, serverAddress, slug, media.tracks[0], this.meta)
+      this.episodes.push(feedEpisode)
+    } else { // MULTI-FILE AUDIOBOOKS
       media.tracks.forEach((audioTrack) => {
         var feedEpisode = new FeedEpisode()
         feedEpisode.setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, this.meta)
