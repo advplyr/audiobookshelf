@@ -473,15 +473,14 @@ class Server {
     await this.db.updateEntity('user', user)
 
     const initialPayload = {
-      metadataPath: global.MetadataPath,
-      configPath: global.ConfigPath,
-      user: client.user.toJSONForBrowser(),
-      librariesScanning: this.scanner.librariesScanning,
-      backups: (this.backupManager.backups || []).map(b => b.toJSON())
+      userId: client.user.id,
+      username: client.user.username,
+      librariesScanning: this.scanner.librariesScanning
     }
-    if (user.type === 'root') {
+    if (user.isAdminOrUp) {
       initialPayload.usersOnline = this.getUsersOnline()
     }
+
     client.socket.emit('init', initialPayload)
   }
 

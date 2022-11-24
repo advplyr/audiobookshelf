@@ -106,13 +106,20 @@ class BackupManager {
       this.backups.push(backup)
     }
 
-    return res.json(this.backups.map(b => b.toJSON()))
+    res.json({
+      backups: this.backups.map(b => b.toJSON())
+    })
   }
 
   async requestCreateBackup(res) {
     var backupSuccess = await this.runBackup()
-    if (backupSuccess) res.json(this.backups.map(b => b.toJSON()))
-    else res.sendStatus(500)
+    if (backupSuccess) {
+      res.json({
+        backups: this.backups.map(b => b.toJSON())
+      })
+    } else {
+      res.sendStatus(500)
+    }
   }
 
   async requestApplyBackup(backup) {

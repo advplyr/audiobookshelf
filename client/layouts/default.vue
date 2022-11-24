@@ -132,9 +132,6 @@ export default {
         }
       })
 
-      if (payload.backups && payload.backups.length) {
-        this.$store.commit('setBackups', payload.backups)
-      }
       if (payload.usersOnline) {
         this.$store.commit('users/resetUsers')
         payload.usersOnline.forEach((user) => {
