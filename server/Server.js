@@ -100,7 +100,7 @@ class Server {
     Logger.info('[Server] Init v' + version)
     await this.playbackSessionManager.removeOrphanStreams()
 
-    var previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
+    const previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
     if (previousVersion) {
       Logger.debug(`[Server] Upgraded from previous version ${previousVersion}`)
     }
@@ -167,13 +167,13 @@ class Server {
 
     // EBook static file routes
     router.get('/ebook/:library/:folder/*', (req, res) => {
-      var library = this.db.libraries.find(lib => lib.id === req.params.library)
+      const library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
-      var folder = library.folders.find(fol => fol.id === req.params.folder)
+      const folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
 
-      var remainingPath = req.params['0']
-      var fullPath = Path.join(folder.fullPath, remainingPath)
+      const remainingPath = req.params['0']
+      const fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })
 
@@ -264,15 +264,15 @@ class Server {
 
   // Remove unused /metadata/items/{id} folders
   async purgeMetadata() {
-    var itemsMetadata = Path.join(global.MetadataPath, 'items')
+    const itemsMetadata = Path.join(global.MetadataPath, 'items')
     if (!(await fs.pathExists(itemsMetadata))) return
-    var foldersInItemsMetadata = await fs.readdir(itemsMetadata)
+    const foldersInItemsMetadata = await fs.readdir(itemsMetadata)
 
-    var purged = 0
+    let purged = 0
     await Promise.all(foldersInItemsMetadata.map(async foldername => {
-      var hasMatchingItem = this.db.libraryItems.find(ab => ab.id === foldername)
+      const hasMatchingItem = this.db.libraryItems.find(ab => ab.id === foldername)
       if (!hasMatchingItem) {
-        var folderPath = Path.join(itemsMetadata, foldername)
+        const folderPath = Path.join(itemsMetadata, foldername)
         Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
 
         await fs.remove(folderPath).then(() => {
@@ -291,8 +291,8 @@ class Server {
   // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
   async cleanUserData() {
     for (let i = 0; i < this.db.users.length; i++) {
-      var _user = this.db.users[i]
-      var hasUpdated = false
+      const _user = this.db.users[i]
+      let hasUpdated = false
       if (_user.mediaProgress.length) {
         const lengthBefore = _user.mediaProgress.length
         _user.mediaProgress = _user.mediaProgress.filter(mp => {
@@ -338,9 +338,10 @@ class Server {
   }
 
   logout(req, res) {
-    var { socketId } = req.body
-    Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
-    SocketAuthority.logout(socketId)
+    if (req.body.socketId) {
+      Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${req.body.socketId}`)
+      SocketAuthority.logout(req.body.socketId)
+    }
 
     res.sendStatus(200)
   }

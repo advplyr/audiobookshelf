@@ -30,22 +30,35 @@ class SocketAuthority {
     return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
   }
 
+  // Emits event to all authorized clients
   emitter(evt, data) {
     for (const socketId in this.clients) {
-      this.clients[socketId].socket.emit(evt, data)
+      if (this.clients[socketId].user) {
+        this.clients[socketId].socket.emit(evt, data)
+      }
     }
   }
 
-  clientEmitter(userId, ev, data) {
-    var clients = this.getClientsForUser(userId)
+  // Emits event to all clients for a specific user
+  clientEmitter(userId, evt, data) {
+    const clients = this.getClientsForUser(userId)
     if (!clients.length) {
       return Logger.debug(`[Server] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
       if (client.socket) {
-        client.socket.emit(ev, data)
+        client.socket.emit(evt, data)
       }
     })
+  }
+
+  // Emits event to all admin user clients
+  adminEmitter(evt, data) {
+    for (const socketId in this.clients) {
+      if (this.clients[socketId].user && this.clients[socketId].user.isAdminOrUp) {
+        this.clients[socketId].socket.emit(evt, data)
+      }
+    }
   }
 
   initialize(Server) {
@@ -78,7 +91,29 @@ class SocketAuthority {
       socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
       socket.on('fetch_daily_logs', () => this.Server.logManager.socketRequestDailyLogs(socket))
 
+      // Sent automatically from socket.io clients
+      socket.on('disconnect', (reason) => {
+        Logger.removeSocketListener(socket.id)
+
+        const _client = this.clients[socket.id]
+        if (!_client) {
+          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
+        } else if (!_client.user) {
+          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
+          delete this.clients[socket.id]
+        } else {
+          Logger.debug('[Server] User Offline ' + _client.user.username)
+          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
+
+          const disconnectTime = Date.now() - _client.connected_at
+          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
+          delete this.clients[socket.id]
+        }
+      })
+
+      //
       // Events for testing
+      //
       socket.on('message_all_users', (payload) => {
         // admin user can send a message to all authenticated users
         //   displays on the web app as a toast
@@ -94,26 +129,6 @@ class SocketAuthority {
         const user = client.user || {}
         Logger.debug(`[Server] Received ping from socket ${user.username || 'No User'}`)
         socket.emit('pong')
-      })
-
-      // Sent automatically from socket.io clients
-      socket.on('disconnect', (reason) => {
-        Logger.removeSocketListener(socket.id)
-
-        const _client = this.clients[socket.id]
-        if (!_client) {
-          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
-        } else if (!_client.user) {
-          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
-          delete this.clients[socket.id]
-        } else {
-          Logger.debug('[Server] User Offline ' + _client.user.username)
-          this.io.emit('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
-
-          const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
-          delete this.clients[socket.id]
-        }
       })
     })
   }
@@ -141,9 +156,9 @@ class SocketAuthority {
 
     Logger.debug(`[Server] User Online ${client.user.username}`)
 
-    // TODO: Send to authenticated clients only
-    this.io.emit('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
+    this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
 
+    // Update user lastSeen
     user.lastSeen = Date.now()
     await this.Server.db.updateEntity('user', user)
 
@@ -155,20 +170,19 @@ class SocketAuthority {
     if (user.isAdminOrUp) {
       initialPayload.usersOnline = this.getUsersOnline()
     }
-
     client.socket.emit('init', initialPayload)
   }
 
   logout(socketId) {
     // Strip user and client from client and client socket
     if (socketId && this.clients[socketId]) {
-      var client = this.clients[socketId]
-      var clientSocket = client.socket
+      const client = this.clients[socketId]
+      const clientSocket = client.socket
       Logger.debug(`[Server] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
 
       if (client.user) {
         Logger.debug('[Server] User Offline ' + client.user.username)
-        this.io.emit('user_offline', client.user.toJSONForPublic(null, this.Server.db.libraryItems))
+        this.adminEmitter('user_offline', client.user.toJSONForPublic(null, this.Server.db.libraryItems))
       }
 
       delete this.clients[socketId].user

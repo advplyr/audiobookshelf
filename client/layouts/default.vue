@@ -342,6 +342,7 @@ export default {
       this.$root.socket = this.socket
       console.log('Socket initialized')
 
+      // Pre-defined socket events
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)
       this.socket.on('disconnect', this.disconnect)
@@ -350,6 +351,7 @@ export default {
       this.socket.io.on('reconnect_error', this.reconnectError)
       this.socket.io.on('reconnect_failed', this.reconnectFailed)
 
+      // Event received after authorizing socket
       this.socket.on('init', this.init)
 
       // Stream Listeners

@@ -378,7 +378,7 @@ export default {
       }
     },
     streamReady() {
-      console.log(`[STREAM-CONTAINER] Stream Ready`)
+      console.log(`[StreamContainer] Stream Ready`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setStreamReady()
       } else {
