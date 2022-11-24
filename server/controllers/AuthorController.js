@@ -1,4 +1,6 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const { reqSupportsWebp } = require('../utils/index')
 const { createNewSortInstance } = require('../libs/fastSort')
 
@@ -93,18 +95,18 @@ class AuthorController {
       })
       if (itemsWithAuthor.length) {
         await this.db.updateLibraryItems(itemsWithAuthor)
-        this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+        SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
       }
 
       // Remove old author
       await this.db.removeEntity('author', req.author.id)
-      this.emitter('author_removed', req.author.toJSON())
+      SocketAuthority.emitter('author_removed', req.author.toJSON())
 
       // Send updated num books for merged author
       var numBooks = this.db.libraryItems.filter(li => {
         return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(existingAuthor.id)
       }).length
-      this.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
+      SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
 
       res.json({
         author: existingAuthor.toJSON(),
@@ -121,7 +123,7 @@ class AuthorController {
           })
           if (itemsWithAuthor.length) {
             await this.db.updateLibraryItems(itemsWithAuthor)
-            this.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
+            SocketAuthority.emitter('items_updated', itemsWithAuthor.map(li => li.toJSONExpanded()))
           }
         }
 
@@ -129,7 +131,7 @@ class AuthorController {
         var numBooks = this.db.libraryItems.filter(li => {
           return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
         }).length
-        this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
       }
 
       res.json({
@@ -190,7 +192,7 @@ class AuthorController {
       var numBooks = this.db.libraryItems.filter(li => {
         return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
       }).length
-      this.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+      SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
 
     res.json({

@@ -2,6 +2,7 @@ const Path = require('path')
 const fs = require('../libs/fsExtra')
 const filePerms = require('../utils/filePerms')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
 const { sort, createNewSortInstance } = require('../libs/fastSort')
@@ -43,7 +44,7 @@ class LibraryController {
     library.setData(newLibraryPayload)
     await this.db.insertEntity('library', library)
     // TODO: Only emit to users that have access
-    this.emitter('library_added', library.toJSON())
+    SocketAuthority.emitter('library_added', library.toJSON())
 
     // Add library watcher
     this.watcher.addLibrary(library)
@@ -120,7 +121,7 @@ class LibraryController {
         }
       }
       await this.db.updateEntity('library', library)
-      this.emitter('library_updated', library.toJSON())
+      SocketAuthority.emitter('library_updated', library.toJSON())
     }
     return res.json(library.toJSON())
   }
@@ -147,7 +148,7 @@ class LibraryController {
 
     var libraryJson = library.toJSON()
     await this.db.removeEntity('library', library.id)
-    this.emitter('library_removed', libraryJson)
+    SocketAuthority.emitter('library_removed', libraryJson)
     return res.json(libraryJson)
   }
 

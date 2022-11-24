@@ -1,4 +1,6 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
@@ -53,7 +55,7 @@ class LibraryItemController {
     if (hasUpdates) {
       Logger.debug(`[LibraryItemController] Updated now saving`)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json(libraryItem.toJSON())
   }
@@ -97,7 +99,7 @@ class LibraryItemController {
 
       Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json({
       updated: hasUpdates,
@@ -132,7 +134,7 @@ class LibraryItemController {
     }
 
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json({
       success: true,
       cover: result.cover
@@ -152,7 +154,7 @@ class LibraryItemController {
     }
     if (validationResult.updated) {
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json({
       success: true,
@@ -168,7 +170,7 @@ class LibraryItemController {
       libraryItem.updateMediaCover('')
       await this.cacheManager.purgeCoverCache(libraryItem.id)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     res.sendStatus(200)
@@ -228,7 +230,7 @@ class LibraryItemController {
     }
     libraryItem.media.updateAudioTracks(orderedFileData)
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())
   }
 
@@ -284,7 +286,7 @@ class LibraryItemController {
       if (hasUpdates) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
         await this.db.updateLibraryItem(libraryItem)
-        this.emitter('item_updated', libraryItem.toJSONExpanded())
+        SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
         itemsUpdated++
       }
     }
@@ -342,7 +344,7 @@ class LibraryItemController {
       updates: itemsUpdated,
       unmatched: itemsUnmatched
     }
-    this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
+    SocketAuthority.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
   }
 
   // DELETE: api/items/all
@@ -410,7 +412,7 @@ class LibraryItemController {
     const wasUpdated = req.libraryItem.media.updateChapters(chapters)
     if (wasUpdated) {
       await this.db.updateLibraryItem(req.libraryItem)
-      this.emitter('item_updated', req.libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
     }
 
     res.json({

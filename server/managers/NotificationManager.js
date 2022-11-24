@@ -1,11 +1,11 @@
 const axios = require('axios')
 const Logger = require("../Logger")
+const SocketAuthority = require('../SocketAuthority')
 const { notificationData } = require('../utils/notifications')
 
 class NotificationManager {
-  constructor(db, emitter) {
+  constructor(db) {
     this.db = db
-    this.emitter = emitter
 
     this.sendingNotification = false
     this.notificationQueue = []
@@ -58,7 +58,7 @@ class NotificationManager {
     }
 
     await this.db.updateEntity('settings', this.db.notificationSettings)
-    this.emitter('notifications_updated', this.db.notificationSettings)
+    SocketAuthority.emitter('notifications_updated', this.db.notificationSettings)
 
     this.notificationFinished()
   }

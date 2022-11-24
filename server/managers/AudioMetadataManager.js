@@ -1,18 +1,20 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
 const workerThreads = require('worker_threads')
+
+const SocketAuthority = require('../SocketAuthority')
 const Logger = require('../Logger')
+
+const fs = require('../libs/fsExtra')
+
 const filePerms = require('../utils/filePerms')
 const { secondsToTimestamp } = require('../utils/index')
 const { writeMetadataFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
 class AudioMetadataMangaer {
-  constructor(db, taskManager, emitter, clientEmitter) {
+  constructor(db, taskManager) {
     this.db = db
     this.taskManager = taskManager
-    this.emitter = emitter
-    this.clientEmitter = clientEmitter
   }
 
   updateMetadataForItem(user, libraryItem, useTone, forceEmbedChapters) {
@@ -40,7 +42,7 @@ class AudioMetadataMangaer {
       audioFiles: audioFiles.map(af => ({ index: af.index, ino: af.ino, filename: af.metadata.filename }))
     }
 
-    this.emitter('audio_metadata_started', itemAudioMetadataPayload)
+    SocketAuthority.emitter('audio_metadata_started', itemAudioMetadataPayload)
 
     // Write chapters file
     var toneJsonPath = null
@@ -67,7 +69,7 @@ class AudioMetadataMangaer {
     itemAudioMetadataPayload.results = results
     itemAudioMetadataPayload.elapsed = elapsed
     itemAudioMetadataPayload.finishedAt = Date.now()
-    this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
+    SocketAuthority.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
   async updateAudioFileMetadataWithTone(libraryItemId, audioFile, toneJsonPath, itemCacheDir) {
@@ -77,7 +79,7 @@ class AudioMetadataMangaer {
       ino: audioFile.ino,
       filename: audioFile.metadata.filename
     }
-    this.emitter('audiofile_metadata_started', resultPayload)
+    SocketAuthority.emitter('audiofile_metadata_started', resultPayload)
 
     // Backup audio file
     try {
@@ -98,7 +100,7 @@ class AudioMetadataMangaer {
       Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${audioFile.metadata.path}"`)
     }
 
-    this.emitter('audiofile_metadata_finished', resultPayload)
+    SocketAuthority.emitter('audiofile_metadata_finished', resultPayload)
     return resultPayload
   }
 
@@ -115,7 +117,7 @@ class AudioMetadataMangaer {
       audioFiles: audioFiles.map(af => ({ index: af.index, ino: af.ino, filename: af.metadata.filename }))
     }
 
-    this.emitter('audio_metadata_started', itemAudioMetadataPayload)
+    SocketAuthority.emitter('audio_metadata_started', itemAudioMetadataPayload)
 
     var downloadsPath = Path.join(global.MetadataPath, 'downloads')
     var outputDir = Path.join(downloadsPath, libraryItem.id)
@@ -143,7 +145,7 @@ class AudioMetadataMangaer {
     itemAudioMetadataPayload.results = results
     itemAudioMetadataPayload.elapsed = elapsed
     itemAudioMetadataPayload.finishedAt = Date.now()
-    this.emitter('audio_metadata_finished', itemAudioMetadataPayload)
+    SocketAuthority.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
   updateAudioFileMetadataWithFfmpeg(libraryItemId, audioFile, outputDir, metadataFilePath, coverPath = '') {
@@ -154,7 +156,7 @@ class AudioMetadataMangaer {
         ino: audioFile.ino,
         filename: audioFile.metadata.filename
       }
-      this.emitter('audiofile_metadata_started', resultPayload)
+      SocketAuthority.emitter('audiofile_metadata_started', resultPayload)
 
       Logger.debug(`[AudioFileMetadataManager] Starting audio file metadata encode for "${audioFile.metadata.filename}"`)
 
@@ -229,19 +231,19 @@ class AudioMetadataMangaer {
                 Logger.debug(`[AudioFileMetadataManager] Audio file replaced successfully "${inputPath}"`)
 
                 resultPayload.success = true
-                this.emitter('audiofile_metadata_finished', resultPayload)
+                SocketAuthority.emitter('audiofile_metadata_finished', resultPayload)
                 resolve(resultPayload)
               }).catch((error) => {
                 Logger.error(`[AudioFileMetadataManager] Audio file failed to move "${inputPath}"`, error)
                 resultPayload.success = false
-                this.emitter('audiofile_metadata_finished', resultPayload)
+                SocketAuthority.emitter('audiofile_metadata_finished', resultPayload)
                 resolve(resultPayload)
               })
             } else {
               Logger.debug(`[AudioFileMetadataManager] Metadata encode FAILED for "${audioFile.metadata.filename}"`)
 
               resultPayload.success = false
-              this.emitter('audiofile_metadata_finished', resultPayload)
+              SocketAuthority.emitter('audiofile_metadata_finished', resultPayload)
               resolve(resultPayload)
             }
           } else if (message.type === 'FFMPEG') {

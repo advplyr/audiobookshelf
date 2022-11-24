@@ -1,8 +1,11 @@
 const express = require('express')
 const Path = require('path')
+
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
-const Logger = require('../Logger')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -29,25 +32,22 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, getUsersOnline, emitter, clientEmitter) {
-    this.db = db
-    this.auth = auth
-    this.scanner = scanner
-    this.playbackSessionManager = playbackSessionManager
-    this.abMergeManager = abMergeManager
-    this.backupManager = backupManager
-    this.coverManager = coverManager
-    this.watcher = watcher
-    this.cacheManager = cacheManager
-    this.podcastManager = podcastManager
-    this.audioMetadataManager = audioMetadataManager
-    this.rssFeedManager = rssFeedManager
-    this.cronManager = cronManager
-    this.notificationManager = notificationManager
-    this.taskManager = taskManager
-    this.getUsersOnline = getUsersOnline
-    this.emitter = emitter
-    this.clientEmitter = clientEmitter
+  constructor(Server) {
+    this.db = Server.db
+    this.auth = Server.auth
+    this.scanner = Server.scanner
+    this.playbackSessionManager = Server.playbackSessionManager
+    this.abMergeManager = Server.abMergeManager
+    this.backupManager = Server.backupManager
+    this.coverManager = Server.coverManager
+    this.watcher = Server.watcher
+    this.cacheManager = Server.cacheManager
+    this.podcastManager = Server.podcastManager
+    this.audioMetadataManager = Server.audioMetadataManager
+    this.rssFeedManager = Server.rssFeedManager
+    this.cronManager = Server.cronManager
+    this.notificationManager = Server.notificationManager
+    this.taskManager = Server.taskManager
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
@@ -353,7 +353,7 @@ class ApiRouter {
       var collection = collectionsWithBook[i]
       collection.removeBook(libraryItem.id)
       await this.db.updateEntity('collection', collection)
-      this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      SocketAuthority.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
 
     // purge cover cache
@@ -363,7 +363,7 @@ class ApiRouter {
 
     var json = libraryItem.toJSONExpanded()
     await this.db.removeLibraryItem(libraryItem.id)
-    this.emitter('item_removed', json)
+    SocketAuthority.emitter('item_removed', json)
   }
 
   async getUserListeningSessionsHelper(userId) {
@@ -454,7 +454,7 @@ class ApiRouter {
         }
         if (newAuthors.length) {
           await this.db.insertEntities('author', newAuthors)
-          this.emitter('authors_added', newAuthors)
+          SocketAuthority.emitter('authors_added', newAuthors)
         }
       }
 
@@ -478,7 +478,7 @@ class ApiRouter {
         }
         if (newSeries.length) {
           await this.db.insertEntities('series', newSeries)
-          this.emitter('authors_added', newSeries)
+          SocketAuthority.emitter('authors_added', newSeries)
         }
       }
     }

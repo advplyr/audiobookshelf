@@ -1,23 +1,24 @@
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const Logger = require('../Logger')
-
 const { downloadFile, removeFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
+
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
 
 class PodcastManager {
-  constructor(db, watcher, emitter, notificationManager) {
+  constructor(db, watcher, notificationManager) {
     this.db = db
     this.watcher = watcher
-    this.emitter = emitter
     this.notificationManager = notificationManager
 
     this.downloadQueue = []
@@ -63,11 +64,11 @@ class PodcastManager {
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
-      this.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
+      SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
       return
     }
 
-    this.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
+    SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
 
     // Ignores all added files to this dir
@@ -97,7 +98,7 @@ class PodcastManager {
       this.currentDownload.setFinished(false)
     }
 
-    this.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
+    SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
 
     this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
@@ -141,7 +142,7 @@ class PodcastManager {
 
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
 
     if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
       this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
@@ -230,7 +231,7 @@ class PodcastManager {
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     return libraryItem.media.autoDownloadEpisodes
   }
 
@@ -269,7 +270,7 @@ class PodcastManager {
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
 
     return newEpisodes
   }

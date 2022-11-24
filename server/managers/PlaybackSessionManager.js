@@ -1,22 +1,24 @@
 const Path = require('path')
-const date = require('../libs/dateAndTime')
 const serverVersion = require('../../package.json').version
-const { PlayMethod } = require('../utils/constants')
-const PlaybackSession = require('../objects/PlaybackSession')
-const DeviceInfo = require('../objects/DeviceInfo')
-const Stream = require('../objects/Stream')
 const Logger = require('../Logger')
-const fs = require('../libs/fsExtra')
+const SocketAuthority = require('../SocketAuthority')
 
+const date = require('../libs/dateAndTime')
+const fs = require('../libs/fsExtra')
 const uaParserJs = require('../libs/uaParser')
 const requestIp = require('../libs/requestIp')
 
+const { PlayMethod } = require('../utils/constants')
+
+const PlaybackSession = require('../objects/PlaybackSession')
+const DeviceInfo = require('../objects/DeviceInfo')
+const Stream = require('../objects/Stream')
+
+
 class PlaybackSessionManager {
-  constructor(db, emitter, clientEmitter) {
+  constructor(db) {
     this.db = db
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
-    this.emitter = emitter
-    this.clientEmitter = clientEmitter
 
     this.sessions = []
     this.localSessionLock = {}
@@ -98,7 +100,7 @@ class PlaybackSessionManager {
     if (wasUpdated) {
       await this.db.updateEntity('user', user)
       var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      this.clientEmitter(user.id, 'user_item_progress_updated', {
+      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()
       })
@@ -147,7 +149,7 @@ class PlaybackSessionManager {
         newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       } else {
         Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
-        var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime, this.clientEmitter.bind(this))
+        var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
         await stream.generatePlaylist()
         stream.start() // Start transcode
 
@@ -167,7 +169,7 @@ class PlaybackSessionManager {
     user.currentSessionId = newPlaybackSession.id
 
     this.sessions.push(newPlaybackSession)
-    this.emitter('user_stream_update', user.toJSONForPublic(this.sessions, this.db.libraryItems))
+    SocketAuthority.emitter('user_stream_update', user.toJSONForPublic(this.sessions, this.db.libraryItems))
 
     return newPlaybackSession
   }
@@ -193,7 +195,7 @@ class PlaybackSessionManager {
 
       await this.db.updateEntity('user', user)
       var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      this.clientEmitter(user.id, 'user_item_progress_updated', {
+      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()
       })
@@ -211,7 +213,7 @@ class PlaybackSessionManager {
       await this.saveSession(session)
     }
     Logger.debug(`[PlaybackSessionManager] closeSession "${session.id}"`)
-    this.emitter('user_stream_update', user.toJSONForPublic(this.sessions, this.db.libraryItems))
+    SocketAuthority.emitter('user_stream_update', user.toJSONForPublic(this.sessions, this.db.libraryItems))
     return this.removeSession(session.id)
   }
 
