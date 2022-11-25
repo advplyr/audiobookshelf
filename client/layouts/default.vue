@@ -132,14 +132,8 @@ export default {
         }
       })
 
-      if (payload.backups && payload.backups.length) {
-        this.$store.commit('setBackups', payload.backups)
-      }
       if (payload.usersOnline) {
-        this.$store.commit('users/resetUsers')
-        payload.usersOnline.forEach((user) => {
-          this.$store.commit('users/updateUser', user)
-        })
+        this.$store.commit('users/setUsersOnline', payload.usersOnline)
       }
 
       this.$eventBus.$emit('socket_init')
@@ -286,13 +280,13 @@ export default {
       }
     },
     userOnline(user) {
-      this.$store.commit('users/updateUser', user)
+      this.$store.commit('users/updateUserOnline', user)
     },
     userOffline(user) {
-      this.$store.commit('users/removeUser', user)
+      this.$store.commit('users/removeUserOnline', user)
     },
     userStreamUpdate(user) {
-      this.$store.commit('users/updateUser', user)
+      this.$store.commit('users/updateUserOnline', user)
     },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
@@ -333,6 +327,9 @@ export default {
         this.$toast.info(toast)
       }
     },
+    adminMessageEvt(message) {
+      this.$toast.info(message)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -345,6 +342,7 @@ export default {
       this.$root.socket = this.socket
       console.log('Socket initialized')
 
+      // Pre-defined socket events
       this.socket.on('connect', this.connect)
       this.socket.on('connect_error', this.connectError)
       this.socket.on('disconnect', this.disconnect)
@@ -353,6 +351,7 @@ export default {
       this.socket.io.on('reconnect_error', this.reconnectError)
       this.socket.io.on('reconnect_failed', this.reconnectFailed)
 
+      // Event received after authorizing socket
       this.socket.on('init', this.init)
 
       // Stream Listeners
@@ -403,6 +402,8 @@ export default {
       this.socket.on('backup_applied', this.backupApplied)
 
       this.socket.on('batch_quickmatch_complete', this.batchQuickMatchComplete)
+
+      this.socket.on('admin_message', this.adminMessageEvt)
     },
     showUpdateToast(versionData) {
       var ignoreVersion = localStorage.getItem('ignoreVersion')

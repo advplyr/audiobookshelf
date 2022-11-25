@@ -1,10 +1,13 @@
-const axios = require('axios')
-const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
+const fs = require('../libs/fsExtra')
+
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const LibraryItem = require('../objects/LibraryItem')
 const { getFileTimestampsWithIno } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
+
+const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastController {
 
@@ -75,7 +78,7 @@ class PodcastController {
     }
 
     await this.db.insertLibraryItem(libraryItem)
-    this.emitter('item_added', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
 
     res.json(libraryItem.toJSONExpanded())
 
@@ -194,7 +197,7 @@ class PodcastController {
     var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)
     if (wasUpdated) {
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     res.json(libraryItem.toJSONExpanded())
@@ -229,7 +232,7 @@ class PodcastController {
     }
 
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())
   }
 

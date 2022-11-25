@@ -21,7 +21,6 @@ export const state = () => ({
   processingBatch: false,
   previousPath: '/',
   showExperimentalFeatures: false,
-  backups: [],
   bookshelfBookIds: [],
   openModal: null,
   innerModalOpen: false,
@@ -244,9 +243,6 @@ export const mutations = {
   setExperimentalFeatures(state, val) {
     state.showExperimentalFeatures = val
     localStorage.setItem('experimental', val ? 1 : 0)
-  },
-  setBackups(state, val) {
-    state.backups = val.sort((a, b) => b.createdAt - a.createdAt)
   },
   setOpenModal(state, val) {
     state.openModal = val

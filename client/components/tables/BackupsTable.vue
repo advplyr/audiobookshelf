@@ -64,13 +64,11 @@ export default {
       showConfirmApply: false,
       selectedBackup: null,
       isBackingUp: false,
-      processing: false
+      processing: false,
+      backups: []
     }
   },
   computed: {
-    backups() {
-      return this.$store.state.backups || []
-    },
     userToken() {
       return this.$store.getters['user/getToken']
     }
@@ -96,9 +94,8 @@ export default {
         this.processing = true
         this.$axios
           .$delete(`/api/backups/${backup.id}`)
-          .then((backups) => {
-            console.log('Backup deleted', backups)
-            this.$store.commit('setBackups', backups)
+          .then((data) => {
+            this.setBackups(data.backups || [])
             this.$toast.success(this.$strings.ToastBackupDeleteSuccess)
             this.processing = false
           })
@@ -117,10 +114,10 @@ export default {
       this.isBackingUp = true
       this.$axios
         .$post('/api/backups')
-        .then((backups) => {
+        .then((data) => {
           this.isBackingUp = false
           this.$toast.success(this.$strings.ToastBackupCreateSuccess)
-          this.$store.commit('setBackups', backups)
+          this.setBackups(data.backups || [])
         })
         .catch((error) => {
           this.isBackingUp = false
@@ -136,9 +133,8 @@ export default {
 
       this.$axios
         .$post('/api/backups/upload', form)
-        .then((result) => {
-          console.log('Upload backup result', result)
-          this.$store.commit('setBackups', result)
+        .then((data) => {
+          this.setBackups(data.backups || [])
           this.$toast.success(this.$strings.ToastBackupUploadSuccess)
           this.processing = false
         })
@@ -148,9 +144,29 @@ export default {
           this.$toast.error(errorMessage)
           this.processing = false
         })
+    },
+    setBackups(backups) {
+      backups.sort((a, b) => b.createdAt - a.createdAt)
+      this.backups = backups
+    },
+    loadBackups() {
+      this.processing = true
+      this.$axios
+        .$get('/api/backups')
+        .then((data) => {
+          this.setBackups(data.backups || [])
+        })
+        .catch((error) => {
+          console.error('Failed to load backups', error)
+          this.$toast.error('Failed to load backups')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     }
   },
   mounted() {
+    this.loadBackups()
     if (this.$route.query.backup) {
       this.$toast.success('Backup applied successfully')
       this.$router.replace('/config')

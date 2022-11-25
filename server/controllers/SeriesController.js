@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 
 class SeriesController {
   constructor() { }
@@ -38,7 +39,7 @@ class SeriesController {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
       await this.db.updateEntity('series', req.series)
-      this.emitter('series_updated', req.series)
+      SocketAuthority.emitter('series_updated', req.series)
     }
     res.json(req.series)
   }

@@ -1,4 +1,6 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const User = require('../objects/user/User')
 
 const { getId, toNumber } = require('../utils/index')
@@ -44,7 +46,7 @@ class UserController {
     var newUser = new User(account)
     var success = await this.db.insertEntity('user', newUser)
     if (success) {
-      this.clientEmitter(req.user.id, 'user_added', newUser)
+      SocketAuthority.clientEmitter(req.user.id, 'user_added', newUser)
       res.json({
         user: newUser.toJSONForBrowser()
       })
@@ -85,7 +87,7 @@ class UserController {
         Logger.info(`[UserController] User ${user.username} was generated a new api token`)
       }
       await this.db.updateEntity('user', user)
-      this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     }
 
     res.json({
@@ -109,7 +111,7 @@ class UserController {
 
     var userJson = user.toJSONForBrowser()
     await this.db.removeEntity('user', user.id)
-    this.clientEmitter(req.user.id, 'user_removed', userJson)
+    SocketAuthority.clientEmitter(req.user.id, 'user_removed', userJson)
     res.json({
       success: true
     })
@@ -170,7 +172,7 @@ class UserController {
     if (progressPurged) {
       Logger.info(`[UserController] Purged ${progressPurged} media progress for user ${user.username}`)
       await this.db.updateEntity('user', user)
-      this.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     }
 
     res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
@@ -181,10 +183,9 @@ class UserController {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    const usersOnline = this.getUsersOnline()
 
     res.json({
-      usersOnline,
+      usersOnline: SocketAuthority.getUsersOnline(),
       openSessions: this.playbackSessionManager.sessions
     })
   }

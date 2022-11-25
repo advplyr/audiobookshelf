@@ -1,4 +1,6 @@
 const Path = require('path')
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 
 const cron = require('../libs/nodeCron')
 const fs = require('../libs/fsExtra')
@@ -8,18 +10,16 @@ const StreamZip = require('../libs/nodeStreamZip')
 // Utils
 const { getFileSize } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
-const Logger = require('../Logger')
 
 const Backup = require('../objects/Backup')
 
 class BackupManager {
-  constructor(db, emitter) {
+  constructor(db) {
     this.BackupPath = Path.join(global.MetadataPath, 'backups')
     this.ItemsMetadataPath = Path.join(global.MetadataPath, 'items')
     this.AuthorsMetadataPath = Path.join(global.MetadataPath, 'authors')
 
     this.db = db
-    this.emitter = emitter
 
     this.scheduleTask = null
 
@@ -106,13 +106,20 @@ class BackupManager {
       this.backups.push(backup)
     }
 
-    return res.json(this.backups.map(b => b.toJSON()))
+    res.json({
+      backups: this.backups.map(b => b.toJSON())
+    })
   }
 
   async requestCreateBackup(res) {
     var backupSuccess = await this.runBackup()
-    if (backupSuccess) res.json(this.backups.map(b => b.toJSON()))
-    else res.sendStatus(500)
+    if (backupSuccess) {
+      res.json({
+        backups: this.backups.map(b => b.toJSON())
+      })
+    } else {
+      res.sendStatus(500)
+    }
   }
 
   async requestApplyBackup(backup) {
@@ -123,7 +130,7 @@ class BackupManager {
       await zip.extract('metadata-authors/', this.AuthorsMetadataPath)
     }
     await this.db.reinit()
-    this.emitter('backup_applied')
+    SocketAuthority.emitter('backup_applied')
   }
 
   async loadBackups() {

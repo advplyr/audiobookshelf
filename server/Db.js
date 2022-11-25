@@ -258,23 +258,6 @@ class Db {
     })
   }
 
-  updateUserStream(userId, streamId) {
-    return this.usersDb.update((record) => record.id === userId, (user) => {
-      user.stream = streamId
-      return user
-    }).then((results) => {
-      Logger.debug(`[DB] Updated user ${results.updated}`)
-      this.users = this.users.map(u => {
-        if (u.id === userId) {
-          u.stream = streamId
-        }
-        return u
-      })
-    }).catch((error) => {
-      Logger.error(`[DB] Update user Failed ${error}`)
-    })
-  }
-
   updateServerSettings() {
     global.ServerSettings = this.serverSettings.toJSON()
     return this.updateEntity('settings', this.serverSettings)
