@@ -51,6 +51,11 @@ class CacheManager {
 
     // Cache exists
     if (await fs.pathExists(path)) {
+      if (global.XAccel) {
+        Logger.debug(`Use X-Accel to serve static file ${path}`)
+        return res.status(204).header({'X-Accel-Redirect': global.XAccel + path}).send()
+      }
+
       const r = fs.createReadStream(path)
       const ps = new stream.PassThrough()
       stream.pipeline(r, ps, (err) => {
@@ -71,6 +76,11 @@ class CacheManager {
 
     // Set owner and permissions of cache image
     await filePerms.setDefault(path)
+
+    if (global.XAccel) {
+      Logger.debug(`Use X-Accel to serve static file ${writtenFile}`)
+      return res.status(204).header({'X-Accel-Redirect': global.XAccel + writtenFile}).send()
+    }
 
     var readStream = fs.createReadStream(writtenFile)
     readStream.pipe(res)

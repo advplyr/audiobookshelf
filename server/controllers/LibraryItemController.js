@@ -201,6 +201,10 @@ class LibraryItemController {
         return res.sendStatus(404)
       }
 
+      if (global.XAccel) {
+        Logger.debug(`Use X-Accel to serve static file ${libraryItem.media.coverPath}`)
+        return res.status(204).header({'X-Accel-Redirect': global.XAccel + libraryItem.media.coverPath}).send()
+      }
       return res.sendFile(libraryItem.media.coverPath)
     }
 
