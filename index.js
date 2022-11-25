@@ -22,8 +22,9 @@ const UID = process.env.AUDIOBOOKSHELF_UID || 99
 const GID = process.env.AUDIOBOOKSHELF_GID || 100
 const SOURCE = process.env.SOURCE || 'docker'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
+const MEDIA_BASE_PATH = process.env.MEDIA_BASE_PATH || ''
 
 console.log('Config', CONFIG_PATH, METADATA_PATH)
 
-const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH)
+const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, MEDIA_BASE_PATH)
 Server.start()

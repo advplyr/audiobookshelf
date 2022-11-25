@@ -27,15 +27,20 @@ class LibraryController {
       return f
     })
     for (const folder of newLibraryPayload.folders) {
+      const path = folder.fullPath
+      if (!path.startsWith(global.MediaBasePath)) {
+        Logger.warn(`${path} is not in media base directory`)
+        return res.status(400).send(`${path} is not in media base directory`)
+      }
       try {
-        const direxists = await fs.pathExists(folder.fullPath)
+        const direxists = await fs.pathExists(path)
         if (!direxists) { // If folder does not exist try to make it and set file permissions/owner
-          await fs.mkdir(folder.fullPath)
-          await filePerms.setDefault(folder.fullPath)
+          await fs.mkdir(path)
+          await filePerms.setDefault(path)
         }
       } catch (error) {
-        Logger.error(`[LibraryController] Failed to ensure folder dir "${folder.fullPath}"`, error)
-        return res.status(400).send(`Invalid folder directory "${folder.fullPath}"`)
+        Logger.error(`Failed to ensure folder dir "${path}"`, error)
+        return res.status(400).send(`Invalid folder directory "${path}"`)
       }
     }
 
@@ -97,6 +102,10 @@ class LibraryController {
         return f
       })
       for (const path of newFolderPaths) {
+        if (!path.startsWith(global.MediaBasePath)) {
+          Logger.warn(`${path} is not in media base directory`)
+          return res.status(400).send(`${path} is not in media base directory`)
+        }
         const pathExists = await fs.pathExists(path)
         if (!pathExists) {
           // Ensure dir will recursively create directories which might be preferred over mkdir
