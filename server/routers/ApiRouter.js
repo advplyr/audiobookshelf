@@ -1,8 +1,11 @@
 const express = require('express')
 const Path = require('path')
+
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
-const Logger = require('../Logger')
 
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
@@ -29,25 +32,22 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class ApiRouter {
-  constructor(db, auth, scanner, playbackSessionManager, abMergeManager, coverManager, backupManager, watcher, cacheManager, podcastManager, audioMetadataManager, rssFeedManager, cronManager, notificationManager, taskManager, getUsersOnline, emitter, clientEmitter) {
-    this.db = db
-    this.auth = auth
-    this.scanner = scanner
-    this.playbackSessionManager = playbackSessionManager
-    this.abMergeManager = abMergeManager
-    this.backupManager = backupManager
-    this.coverManager = coverManager
-    this.watcher = watcher
-    this.cacheManager = cacheManager
-    this.podcastManager = podcastManager
-    this.audioMetadataManager = audioMetadataManager
-    this.rssFeedManager = rssFeedManager
-    this.cronManager = cronManager
-    this.notificationManager = notificationManager
-    this.taskManager = taskManager
-    this.getUsersOnline = getUsersOnline
-    this.emitter = emitter
-    this.clientEmitter = clientEmitter
+  constructor(Server) {
+    this.db = Server.db
+    this.auth = Server.auth
+    this.scanner = Server.scanner
+    this.playbackSessionManager = Server.playbackSessionManager
+    this.abMergeManager = Server.abMergeManager
+    this.backupManager = Server.backupManager
+    this.coverManager = Server.coverManager
+    this.watcher = Server.watcher
+    this.cacheManager = Server.cacheManager
+    this.podcastManager = Server.podcastManager
+    this.audioMetadataManager = Server.audioMetadataManager
+    this.rssFeedManager = Server.rssFeedManager
+    this.cronManager = Server.cronManager
+    this.notificationManager = Server.notificationManager
+    this.taskManager = Server.taskManager
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
@@ -163,10 +163,11 @@ class ApiRouter {
     //
     // Backup Routes
     //
-    this.router.post('/backups', BackupController.create.bind(this))
-    this.router.delete('/backups/:id', BackupController.delete.bind(this))
-    this.router.get('/backups/:id/apply', BackupController.apply.bind(this))
-    this.router.post('/backups/upload', BackupController.upload.bind(this))
+    this.router.get('/backups', BackupController.middleware.bind(this), BackupController.getAll.bind(this))
+    this.router.post('/backups', BackupController.middleware.bind(this), BackupController.create.bind(this))
+    this.router.delete('/backups/:id', BackupController.middleware.bind(this), BackupController.delete.bind(this))
+    this.router.get('/backups/:id/apply', BackupController.middleware.bind(this), BackupController.apply.bind(this))
+    this.router.post('/backups/upload', BackupController.middleware.bind(this), BackupController.upload.bind(this))
 
     //
     // File System Routes
@@ -261,13 +262,13 @@ class ApiRouter {
 
   async getDirectories(dir, relpath, excludedDirs, level = 0) {
     try {
-      var paths = await fs.readdir(dir)
+      const paths = await fs.readdir(dir)
 
-      var dirs = await Promise.all(paths.map(async dirname => {
-        var fullPath = Path.join(dir, dirname)
-        var path = Path.join(relpath, dirname)
+      let dirs = await Promise.all(paths.map(async dirname => {
+        const fullPath = Path.join(dir, dirname)
+        const path = Path.join(relpath, dirname)
 
-        var isDir = (await fs.lstat(fullPath)).isDirectory()
+        const isDir = (await fs.lstat(fullPath)).isDirectory()
         if (isDir && !excludedDirs.includes(path) && dirname !== 'node_modules') {
           return {
             path,
@@ -292,13 +293,13 @@ class ApiRouter {
   // Helper Methods
   //
   userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    var json = user.toJSONForBrowser()
+    const json = user.toJSONForBrowser()
     if (json.type === 'root' && hideRootToken) {
       json.token = ''
     }
 
     json.mediaProgress = json.mediaProgress.map(lip => {
-      var libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
+      const libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
       if (!libraryItem) {
         Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
         lip.media = null
@@ -325,34 +326,21 @@ class ApiRouter {
   async handleDeleteLibraryItem(libraryItem) {
     // Remove libraryItem from users
     for (let i = 0; i < this.db.users.length; i++) {
-      var user = this.db.users[i]
-      var madeUpdates = user.removeMediaProgressForLibraryItem(libraryItem.id)
-      if (madeUpdates) {
+      const user = this.db.users[i]
+      if (user.removeMediaProgressForLibraryItem(libraryItem.id)) {
         await this.db.updateEntity('user', user)
       }
     }
 
-    // remove any streams open for this audiobook
-    // TODO: Change to PlaybackSessionManager to remove open sessions for user
-    // var streams = this.streamManager.streams.filter(stream => stream.audiobookId === libraryItem.id)
-    // for (let i = 0; i < streams.length; i++) {
-    //   var stream = streams[i]
-    //   var client = stream.client
-    //   await stream.close()
-    //   if (client && client.user) {
-    //     client.user.stream = null
-    //     client.stream = null
-    //     this.db.updateUserStream(client.user.id, null)
-    //   }
-    // }
+    // TODO: Remove open sessions for library item
 
     // remove book from collections
-    var collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
+    const collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
     for (let i = 0; i < collectionsWithBook.length; i++) {
-      var collection = collectionsWithBook[i]
+      const collection = collectionsWithBook[i]
       collection.removeBook(libraryItem.id)
       await this.db.updateEntity('collection', collection)
-      this.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      SocketAuthority.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
 
     // purge cover cache
@@ -360,34 +348,32 @@ class ApiRouter {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
-    var json = libraryItem.toJSONExpanded()
     await this.db.removeLibraryItem(libraryItem.id)
-    this.emitter('item_removed', json)
+    SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
   }
 
   async getUserListeningSessionsHelper(userId) {
-    var userSessions = await this.db.selectUserSessions(userId)
+    const userSessions = await this.db.selectUserSessions(userId)
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
   async getAllSessionsWithUserData() {
-    var sessions = await this.db.getAllSessions()
+    const sessions = await this.db.getAllSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
     return sessions.map(se => {
-      var user = this.db.users.find(u => u.id === se.userId)
-      var _se = {
+      const user = this.db.users.find(u => u.id === se.userId)
+      return {
         ...se,
         user: user ? { id: user.id, username: user.username } : null
       }
-      return _se
     })
   }
 
   async getUserListeningStatsHelpers(userId) {
     const today = date.format(new Date(), 'YYYY-MM-DD')
 
-    var listeningSessions = await this.getUserListeningSessionsHelper(userId)
-    var listeningStats = {
+    const listeningSessions = await this.getUserListeningSessionsHelper(userId)
+    const listeningStats = {
       totalTime: 0,
       items: {},
       days: {},
@@ -396,7 +382,7 @@ class ApiRouter {
       recentSessions: listeningSessions.slice(0, 10)
     }
     listeningSessions.forEach((s) => {
-      var sessionTimeListening = s.timeListening
+      let sessionTimeListening = s.timeListening
       if (typeof sessionTimeListening == 'string') {
         sessionTimeListening = Number(sessionTimeListening)
       }
@@ -431,15 +417,15 @@ class ApiRouter {
 
   async createAuthorsAndSeriesForItemUpdate(mediaPayload) {
     if (mediaPayload.metadata) {
-      var mediaMetadata = mediaPayload.metadata
+      const mediaMetadata = mediaPayload.metadata
 
       // Create new authors if in payload
       if (mediaMetadata.authors && mediaMetadata.authors.length) {
         // TODO: validate authors
-        var newAuthors = []
+        const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
           if (mediaMetadata.authors[i].id.startsWith('new')) {
-            var author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
+            let author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
@@ -453,17 +439,17 @@ class ApiRouter {
         }
         if (newAuthors.length) {
           await this.db.insertEntities('author', newAuthors)
-          this.emitter('authors_added', newAuthors)
+          SocketAuthority.emitter('authors_added', newAuthors)
         }
       }
 
       // Create new series if in payload
       if (mediaMetadata.series && mediaMetadata.series.length) {
         // TODO: validate series
-        var newSeries = []
+        const newSeries = []
         for (let i = 0; i < mediaMetadata.series.length; i++) {
           if (mediaMetadata.series[i].id.startsWith('new')) {
-            var seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
+            let seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])
@@ -477,7 +463,7 @@ class ApiRouter {
         }
         if (newSeries.length) {
           await this.db.insertEntities('series', newSeries)
-          this.emitter('authors_added', newSeries)
+          SocketAuthority.emitter('authors_added', newSeries)
         }
       }
     }

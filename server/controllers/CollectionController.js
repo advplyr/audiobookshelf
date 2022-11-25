@@ -1,4 +1,6 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const Collection = require('../objects/Collection')
 
 class CollectionController {
@@ -13,7 +15,7 @@ class CollectionController {
     }
     var jsonExpanded = newCollection.toJSONExpanded(this.db.libraryItems)
     await this.db.insertEntity('collection', newCollection)
-    this.emitter('collection_added', jsonExpanded)
+    SocketAuthority.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -32,7 +34,7 @@ class CollectionController {
     var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     if (wasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', jsonExpanded)
+      SocketAuthority.emitter('collection_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
@@ -41,7 +43,7 @@ class CollectionController {
     const collection = req.collection
     var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     await this.db.removeEntity('collection', collection.id)
-    this.emitter('collection_removed', jsonExpanded)
+    SocketAuthority.emitter('collection_removed', jsonExpanded)
     res.sendStatus(200)
   }
 
@@ -60,7 +62,7 @@ class CollectionController {
     collection.addBook(req.body.id)
     var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
     await this.db.updateEntity('collection', collection)
-    this.emitter('collection_updated', jsonExpanded)
+    SocketAuthority.emitter('collection_updated', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -71,7 +73,7 @@ class CollectionController {
       collection.removeBook(req.params.bookId)
       var jsonExpanded = collection.toJSONExpanded(this.db.libraryItems)
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', jsonExpanded)
+      SocketAuthority.emitter('collection_updated', jsonExpanded)
     }
     res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
@@ -92,7 +94,7 @@ class CollectionController {
     }
     if (hasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
     res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
@@ -113,7 +115,7 @@ class CollectionController {
     }
     if (hasUpdated) {
       await this.db.updateEntity('collection', collection)
-      this.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
     }
     res.json(collection.toJSONExpanded(this.db.libraryItems))
   }
