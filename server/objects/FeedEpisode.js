@@ -92,41 +92,16 @@ class FeedEpisode {
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
-    var title = audioTrack.title
-    if (libraryItem.media.chapters.length) {
-      // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
-      var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
-      if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+    if (libraryItem.media.tracks.length == 1) { // If audiobook is a single file, use book title instead of chapter/file title
+      var title = libraryItem.media.metadata.title
+    } else {
+      var title = audioTrack.title
+      if (libraryItem.media.chapters.length) {
+        // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
+        var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+        if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+      }
     }
-
-    this.id = String(audioTrack.index)
-    this.title = title
-    this.description = mediaMetadata.description || ''
-    this.enclosure = {
-      url: `${serverAddress}${contentUrl}`,
-      type: audioTrack.mimeType,
-      size: audioTrack.metadata.size
-    }
-    this.pubDate = audiobookPubDate
-    this.link = meta.link
-    this.author = meta.author
-    this.explicit = mediaMetadata.explicit
-    this.duration = audioTrack.duration
-    this.libraryItemId = libraryItem.id
-    this.episodeId = null
-    this.trackIndex = audioTrack.index
-    this.fullPath = audioTrack.metadata.path
-  }
-
-  setFromSingleAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta) {
-    // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
-    const audiobookPubDate = date.format(new Date(libraryItem.addedAt), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
-
-    const contentUrl = `/feed/${slug}/item/${audioTrack.index}/${audioTrack.metadata.filename}`
-    const media = libraryItem.media
-    const mediaMetadata = media.metadata
-
-    var title = libraryItem.media.metadata.title
 
     this.id = String(audioTrack.index)
     this.title = title
