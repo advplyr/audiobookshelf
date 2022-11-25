@@ -1,7 +1,9 @@
 <template>
   <div>
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-3 md:p-8 mb-2 max-w-3xl mx-auto">
-      <h2 class="text-xl font-semibold mb-4">{{ $strings.HeaderAppriseNotificationSettings }}</h2>
+    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
+      <div class="flex items-center mb-2">
+        <h1 class="text-xl">{{ $strings.HeaderAppriseNotificationSettings }}</h1>
+      </div>
       <p id="appriseDescription" class="mb-6 text-gray-200" v-html="$strings.MessageAppriseDescription" />
 
       <form @submit.prevent="submitForm">
