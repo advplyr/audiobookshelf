@@ -92,11 +92,15 @@ class FeedEpisode {
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
-    var title = audioTrack.title
-    if (libraryItem.media.chapters.length) {
-      // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
-      var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
-      if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+    let title = audioTrack.title
+    if (libraryItem.media.tracks.length == 1) { // If audiobook is a single file, use book title instead of chapter/file title
+      title = libraryItem.media.metadata.title
+    } else {
+      if (libraryItem.media.chapters.length) {
+        // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
+        var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+        if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+      }
     }
 
     this.id = String(audioTrack.index)
