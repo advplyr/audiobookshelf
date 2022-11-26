@@ -1,11 +1,6 @@
 <template>
   <div>
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">{{ $strings.HeaderAppriseNotificationSettings }}</h1>
-      </div>
-      <p id="appriseDescription" class="mb-6 text-gray-200" v-html="$strings.MessageAppriseDescription" />
-
+    <app-settings-content :header-text="$strings.HeaderAppriseNotificationSettings" :description="$strings.MessageAppriseDescription">
       <form @submit.prevent="submitForm">
         <ui-text-input-with-label ref="apiUrlInput" v-model="appriseApiUrl" :disabled="savingSettings" label="Apprise API Url" class="mb-2" />
 
@@ -43,7 +38,7 @@
       <template v-for="notification in notifications">
         <cards-notification-card :key="notification.id" :notification="notification" @update="updateSettings" @edit="editNotification" />
       </template>
-    </div>
+    </app-settings-content>
 
     <modals-notification-edit-modal v-model="showEditModal" :notification="selectedNotification" :notification-data="notificationData" @update="updateSettings" />
   </div>
@@ -173,20 +168,3 @@ export default {
   }
 }
 </script>
-
-<style>
-#appriseDescription a {
-  color: rgb(96 165 250);
-}
-#appriseDescription a:hover {
-  color: rgb(147 197 253);
-  text-decoration-line: underline;
-}
-#appriseDescription code {
-  font-size: 0.875rem;
-  border-radius: 6px;
-  background-color: rgb(82, 82, 82);
-  color: white;
-  padding: 2px 4px;
-}
-</style>
