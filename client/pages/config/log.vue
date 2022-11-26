@@ -1,9 +1,6 @@
 <template>
-  <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">{{ $strings.HeaderLogs }}</h1>
-      </div>
+  <div>
+    <app-settings-content :header-text="$strings.HeaderLogs">
       <div class="flex justify-between mb-2 place-items-end">
         <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
@@ -25,7 +22,7 @@
           <p class="text-xl text-gray-200 mb-2">{{ $strings.MessageNoLogs }}</p>
         </div>
       </div>
-    </div>
+    </app-settings-content>
   </div>
 </template>
 
