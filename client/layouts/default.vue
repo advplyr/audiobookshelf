@@ -306,6 +306,23 @@ export default {
       }
       this.$store.commit('libraries/removeCollection', collection)
     },
+    playlistAdded(playlist) {
+      if (playlist.userId !== this.user.id) return
+      this.$store.commit('user/addUpdatePlaylist', playlist)
+    },
+    playlistUpdated(playlist) {
+      if (playlist.userId !== this.user.id) return
+      this.$store.commit('user/addUpdatePlaylist', playlist)
+    },
+    playlistRemoved(playlist) {
+      if (playlist.userId !== this.user.id) return
+      if (this.$route.name.startsWith('playlist')) {
+        if (this.$route.params.id === playlist.id) {
+          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/playlists`)
+        }
+      }
+      this.$store.commit('user/removePlaylist', playlist)
+    },
     rssFeedOpen(data) {
       this.$store.commit('feeds/addFeed', data)
     },
@@ -382,10 +399,15 @@ export default {
       this.socket.on('user_stream_update', this.userStreamUpdate)
       this.socket.on('user_item_progress_updated', this.userMediaProgressUpdate)
 
-      // User Collection Listeners
+      // Collection Listeners
       this.socket.on('collection_added', this.collectionAdded)
       this.socket.on('collection_updated', this.collectionUpdated)
       this.socket.on('collection_removed', this.collectionRemoved)
+
+      // User Playlist Listeners
+      this.socket.on('playlist_added', this.playlistAdded)
+      this.socket.on('playlist_updated', this.playlistUpdated)
+      this.socket.on('playlist_removed', this.playlistRemoved)
 
       // Scan Listeners
       this.socket.on('scan_start', this.scanStart)

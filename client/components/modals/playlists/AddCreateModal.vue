@@ -83,9 +83,7 @@ export default {
     sortedPlaylists() {
       return this.playlists
         .map((playlist) => {
-          const includesItem = !this.selectedPlaylistItems.some((item) => {
-            return !this.checkIsItemInPlaylist(playlist, item)
-          })
+          const includesItem = !this.selectedPlaylistItems.some((item) => !this.checkIsItemInPlaylist(playlist, item))
 
           return {
             isItemIncluded: includesItem,
@@ -137,7 +135,7 @@ export default {
         .$post(`/api/playlists/${playlist.id}/batch/remove`, { items: itemObjects })
         .then((updatedPlaylist) => {
           console.log(`Items removed from playlist`, updatedPlaylist)
-          this.$toast.success('Playlist item(s) added')
+          this.$toast.success('Playlist item(s) removed')
           this.processing = false
         })
         .catch((error) => {

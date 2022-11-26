@@ -145,7 +145,7 @@ class PlaylistController {
         return res.status(400).send('Item does not have libraryItemId')
       }
       if (playlist.containsItem(item)) {
-        playlist.removeItem(item)
+        playlist.removeItem(item.libraryItemId, item.episodeId)
         hasUpdated = true
       }
     }

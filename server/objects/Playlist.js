@@ -57,11 +57,16 @@ class Playlist {
           return null
         }
 
-        const episodeJson = episode.toJSONExpanded()
-        episodeJson.libraryItem = libraryItem.toJSONMinified()
-        return episodeJson
+        return {
+          ...item,
+          episode: episode.toJSONExpanded(),
+          libraryItem: libraryItem.toJSONMinified()
+        }
       } else {
-        return libraryItem.toJSONExpanded()
+        return {
+          ...item,
+          libraryItem: libraryItem.toJSONExpanded()
+        }
       }
     }).filter(i => i)
     return json
@@ -105,7 +110,7 @@ class Playlist {
 
   removeItem(libraryItemId, episodeId = null) {
     if (episodeId) this.items = this.items.filter(i => i.libraryItemId !== libraryItemId || i.episodeId !== episodeId)
-    else this.items = this.items.filter(i => i !== i.libraryItemId !== libraryItemId)
+    else this.items = this.items.filter(i => i.libraryItemId !== libraryItemId)
     this.lastUpdate = Date.now()
   }
 
