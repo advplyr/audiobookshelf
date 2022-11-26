@@ -1,11 +1,5 @@
 <template>
-  <div id="librariesTable" class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-    <div class="flex items-center mb-2">
-      <h1 class="text-xl">{{ $strings.HeaderLibraries }}</h1>
-      <div class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clickAddLibrary">
-        <span class="material-icons" style="font-size: 1.4rem">add</span>
-      </div>
-    </div>
+  <div id="librariesTable">
     <draggable v-if="libraryCopies.length" :list="libraryCopies" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">

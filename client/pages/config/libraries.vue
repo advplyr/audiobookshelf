@@ -1,7 +1,8 @@
 <template>
   <div>
-    <tables-library-libraries-table @showLibraryModal="setShowLibraryModal" />
-
+    <app-settings-content :headerText="$strings.HeaderLibraries" showAddButton=true @clicked="setShowLibraryModal">
+      <tables-library-libraries-table @showLibraryModal="setShowLibraryModal" />
+    </app-settings-content>
     <modals-libraries-edit-modal v-model="showLibraryModal" :library="selectedLibrary" />
   </div>
 </template>
