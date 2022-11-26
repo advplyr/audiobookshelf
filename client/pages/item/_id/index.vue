@@ -138,7 +138,7 @@
             </ui-btn>
 
             <ui-tooltip v-if="showQueueBtn" :text="isQueued ? $strings.ButtonQueueRemoveItem : $strings.ButtonQueueAddItem" direction="top">
-              <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_add'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
+              <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" :bg-color="isQueued ? 'primary' : 'success bg-opacity-60'" class="mx-0.5" :class="isQueued ? 'text-success' : ''" @click="queueBtnClick" />
             </ui-tooltip>
 
             <ui-btn v-if="showReadButton" color="info" :padding-x="4" small class="flex items-center h-9 mr-2" @click="openEbook">
@@ -156,6 +156,10 @@
 
             <ui-tooltip v-if="!isPodcast && userCanUpdate" :text="$strings.LabelCollections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
+            </ui-tooltip>
+
+            <ui-tooltip v-if="!isPodcast" :text="$strings.LabelPlaylists" direction="top">
+              <ui-icon-btn icon="playlist_add" class="mx-0.5" outlined @click="playlistsClick" />
             </ui-tooltip>
 
             <!-- Only admin or root user can download new episodes -->
@@ -607,6 +611,10 @@ export default {
     collectionsClick() {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setShowCollectionsModal', true)
+    },
+    playlistsClick() {
+      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem }])
+      this.$store.commit('globals/setShowPlaylistsModal', true)
     },
     clickRSSFeed() {
       this.showRssFeedModal = true

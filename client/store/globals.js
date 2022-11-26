@@ -4,12 +4,14 @@ export const state = () => ({
   showBatchCollectionModal: false,
   showCollectionsModal: false,
   showEditCollectionModal: false,
+  showPlaylistsModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
   showConfirmPrompt: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
   selectedEpisode: null,
+  selectedPlaylistItems: null,
   selectedCollection: null,
   selectedAuthor: null,
   isCasting: false, // Actively casting
@@ -79,6 +81,9 @@ export const mutations = {
   setShowEditCollectionModal(state, val) {
     state.showEditCollectionModal = val
   },
+  setShowPlaylistsModal(state, val) {
+    state.showPlaylistsModal = val
+  },
   setShowEditPodcastEpisodeModal(state, val) {
     state.showEditPodcastEpisode = val
   },
@@ -98,6 +103,9 @@ export const mutations = {
   },
   setSelectedEpisode(state, episode) {
     state.selectedEpisode = episode
+  },
+  setSelectedPlaylistItems(state, items) {
+    state.selectedPlaylistItems = items
   },
   showEditAuthorModal(state, author) {
     state.selectedAuthor = author

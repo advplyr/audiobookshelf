@@ -9,7 +9,8 @@ export const state = () => ({
     collapseSeries: false,
     collapseBookSeries: false
   },
-  settingsListeners: []
+  settingsListeners: [],
+  playlists: []
 })
 
 export const getters = {
@@ -163,5 +164,19 @@ export const mutations = {
   },
   removeSettingsListener(state, listenerId) {
     state.settingsListeners = state.settingsListeners.filter(l => l.id !== listenerId)
+  },
+  setPlaylists(state, playlists) {
+    state.playlists = playlists
+  },
+  addUpdatePlaylist(state, playlist) {
+    const indexOf = state.playlists.findIndex(p => p.id == playlist.id)
+    if (indexOf >= 0) {
+      state.playlists.splice(indexOf, 1, playlist)
+    } else {
+      state.playlists.push(playlist)
+    }
+  },
+  removePlaylist(state, playlist) {
+    state.playlists = state.playlists.filter(p => p.id !== playlist.id)
   }
 }
