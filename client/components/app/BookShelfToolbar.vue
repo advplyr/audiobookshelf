@@ -165,6 +165,9 @@ export default {
     isCollectionsPage() {
       return this.page === 'collections'
     },
+    isPlaylistsPage() {
+      return this.page === 'playlists'
+    },
     isHomePage() {
       return this.$route.name === 'library-library'
     },
@@ -185,6 +188,7 @@ export default {
       if (!this.page) return this.$strings.LabelBooks
       if (this.isSeriesPage) return this.$strings.LabelSeries
       if (this.isCollectionsPage) return this.$strings.LabelCollections
+      if (this.isPlaylistsPage) return this.$strings.LabelPlaylists
       return ''
     },
     seriesId() {

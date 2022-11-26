@@ -54,9 +54,12 @@ export default {
     isCasting() {
       return this.$store.state.globals.isCasting
     },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
     isShowingSideRail() {
       if (!this.$route.name) return false
-      return !this.$route.name.startsWith('config') && this.$store.state.libraries.currentLibraryId
+      return !this.$route.name.startsWith('config') && this.currentLibraryId
     },
     isShowingToolbar() {
       return this.isShowingSideRail && this.$route.name !== 'upload' && this.$route.name !== 'account'
@@ -169,7 +172,7 @@ export default {
       this.$store.commit('libraries/remove', library)
 
       // When removed currently selected library then set next accessible library
-      const currLibraryId = this.$store.state.libraries.currentLibraryId
+      const currLibraryId = this.currentLibraryId
       if (currLibraryId === library.id) {
         var nextLibrary = this.$store.getters['libraries/getNextAccessibleLibrary']
         if (nextLibrary) {
@@ -208,7 +211,7 @@ export default {
     libraryItemRemoved(item) {
       if (this.$route.name.startsWith('item')) {
         if (this.$route.params.id === item.id) {
-          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
+          this.$router.replace(`/library/${this.currentLibraryId}`)
         }
       }
     },
@@ -293,35 +296,39 @@ export default {
       this.$store.commit('user/updateMediaProgress', payload)
     },
     collectionAdded(collection) {
+      if (this.currentLibraryId !== collection.libraryId) return
       this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionUpdated(collection) {
+      if (this.currentLibraryId !== collection.libraryId) return
       this.$store.commit('libraries/addUpdateCollection', collection)
     },
     collectionRemoved(collection) {
+      if (this.currentLibraryId !== collection.libraryId) return
       if (this.$route.name.startsWith('collection')) {
         if (this.$route.params.id === collection.id) {
-          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/collections`)
+          this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/collections`)
         }
       }
       this.$store.commit('libraries/removeCollection', collection)
     },
     playlistAdded(playlist) {
-      if (playlist.userId !== this.user.id) return
-      this.$store.commit('user/addUpdatePlaylist', playlist)
+      if (playlist.userId !== this.user.id || this.currentLibraryId !== playlist.libraryId) return
+      this.$store.commit('libraries/addUpdateUserPlaylist', playlist)
     },
     playlistUpdated(playlist) {
-      if (playlist.userId !== this.user.id) return
-      this.$store.commit('user/addUpdatePlaylist', playlist)
+      if (playlist.userId !== this.user.id || this.currentLibraryId !== playlist.libraryId) return
+      this.$store.commit('libraries/addUpdateUserPlaylist', playlist)
     },
     playlistRemoved(playlist) {
-      if (playlist.userId !== this.user.id) return
+      if (playlist.userId !== this.user.id || this.currentLibraryId !== playlist.libraryId) return
+
       if (this.$route.name.startsWith('playlist')) {
         if (this.$route.params.id === playlist.id) {
-          this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}/bookshelf/playlists`)
+          this.$router.replace(`/library/${this.currentLibraryId}/bookshelf/playlists`)
         }
       }
-      this.$store.commit('user/removePlaylist', playlist)
+      this.$store.commit('libraries/removeUserPlaylist', playlist)
     },
     rssFeedOpen(data) {
       this.$store.commit('feeds/addFeed', data)

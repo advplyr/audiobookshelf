@@ -12,7 +12,8 @@ export const state = () => ({
   seriesSortBy: 'name',
   seriesSortDesc: false,
   seriesFilterBy: 'all',
-  collections: []
+  collections: [],
+  userPlaylists: []
 })
 
 export const getters = {
@@ -102,6 +103,8 @@ export const actions = {
       return false
     }
 
+    const libraryChanging = state.currentLibraryId !== libraryId
+
     return this.$axios
       .$get(`/api/libraries/${libraryId}?include=filterdata`)
       .then((data) => {
@@ -115,7 +118,10 @@ export const actions = {
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
         commit('setCurrentLibrary', libraryId)
-        commit('setCollections', [])
+        if (libraryChanging) {
+          commit('setCollections', [])
+          commit('setUserPlaylists', [])
+        }
         return data
       })
       .catch((error) => {
@@ -320,5 +326,19 @@ export const mutations = {
   },
   removeCollection(state, collection) {
     state.collections = state.collections.filter(c => c.id !== collection.id)
+  },
+  setUserPlaylists(state, playlists) {
+    state.userPlaylists = playlists
+  },
+  addUpdateUserPlaylist(state, playlist) {
+    const index = state.userPlaylists.findIndex(p => p.id === playlist.id)
+    if (index >= 0) {
+      state.userPlaylists.splice(index, 1, playlist)
+    } else {
+      state.userPlaylists.push(playlist)
+    }
+  },
+  removeUserPlaylist(state, playlist) {
+    state.userPlaylists = state.userPlaylists.filter(p => p.id !== playlist.id)
   }
 }

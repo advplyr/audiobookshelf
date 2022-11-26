@@ -87,11 +87,11 @@ export default {
     emptyMessage() {
       if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
       if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollections
+      if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylists
       if (this.hasFilter) {
         if (this.filterName === 'Issues') return this.$strings.MessageNoIssues
         else if (this.filterName === 'Feed-open') return this.$strings.MessageBookshelfNoRSSFeeds
         return this.$getString('MessageBookshelfNoResultsForFilter', [this.filterName, this.filterValue])
-        // return `No Results for filter "${this.filterName}: ${this.filterValue}"`
       }
       return this.$strings.MessageNoResults
     },
@@ -178,7 +178,7 @@ export default {
       return this.shelfPadding * 2
     },
     entityWidth() {
-      if (this.entityName === 'series' || this.entityName === 'collections') {
+      if (this.entityName === 'series' || this.entityName === 'collections' || this.entityName === 'playlists') {
         if (this.bookWidth * 2 > this.bookshelfWidth - this.shelfPadding) return this.bookWidth * 1.6
         return this.bookWidth * 2
       }
@@ -302,11 +302,11 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      var entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? `items` : this.entityName
-      var sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      var fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
+      const entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? 'items' : this.entityName
+      const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
+      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
 
-      var payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
+      const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch books', error)
         return null
       })

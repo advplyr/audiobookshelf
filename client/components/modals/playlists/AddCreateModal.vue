@@ -75,7 +75,7 @@ export default {
       return selectedPlaylistItem.libraryItem.media.metadata.title || ''
     },
     playlists() {
-      return this.$store.state.user.playlists || []
+      return this.$store.state.libraries.userPlaylists || []
     },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -113,9 +113,9 @@ export default {
       if (!this.playlists.length) {
         this.processing = true
         this.$axios
-          .$get(`/api/playlists`)
+          .$get(`/api/libraries/${this.currentLibraryId}/playlists`)
           .then((data) => {
-            this.$store.commit('user/setPlaylists', data.playlists || [])
+            this.$store.commit('libraries/setUserPlaylists', data.results || [])
           })
           .catch((error) => {
             console.error('Failed to get playlists', error)

@@ -422,6 +422,26 @@ class LibraryController {
     res.json(payload)
   }
 
+  // api/libraries/:id/playlists
+  async getUserPlaylistsForLibrary(req, res) {
+    let playlistsForUser = this.db.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).map(p => p.toJSONExpanded(this.db.libraryItems))
+
+    const payload = {
+      results: [],
+      total: playlistsForUser.length,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
+    }
+
+    if (payload.limit) {
+      const startIndex = payload.page * payload.limit
+      playlistsForUser = playlistsForUser.slice(startIndex, startIndex + payload.limit)
+    }
+
+    payload.results = playlistsForUser
+    res.json(payload)
+  }
+
   async getLibraryFilterData(req, res) {
     res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
   }

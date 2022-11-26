@@ -71,6 +71,14 @@
       <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
+    <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <span class="material-icons text-2.5xl">playlist_play</span>
+
+      <p class="font-book pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
+
+      <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+    </nuxt-link>
+
     <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">
       <span class="material-icons text-2xl">warning</span>
 
@@ -143,6 +151,9 @@ export default {
     isAuthorsPage() {
       return this.$route.name === 'library-library-authors'
     },
+    isPlaylistsPage() {
+      return this.paramId === 'playlists'
+    },
     libraryBookshelfPage() {
       return this.$route.name === 'library-library-bookshelf-id'
     },
@@ -173,6 +184,9 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    showPlaylists() {
+      return true
     }
   },
   methods: {

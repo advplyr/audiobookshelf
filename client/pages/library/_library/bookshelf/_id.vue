@@ -16,7 +16,6 @@ export default {
 
     // Set series sort by
     if (params.id === 'series') {
-      console.log('Series page', query)
       if (query.sort) {
         store.commit('libraries/setSeriesSortBy', query.sort)
         store.commit('libraries/setSeriesSortDesc', !!query.desc)
