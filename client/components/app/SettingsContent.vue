@@ -8,7 +8,7 @@
       </div>
     </div>
 
-    <p v-if="description" id="description" class="mb-6 text-gray-200" v-html="description" />
+    <p v-if="description" id="settings-description" class="mb-6 text-gray-200" v-html="description" />
 
     <slot></slot>
   </div>
@@ -24,21 +24,21 @@ export default {
   },
   methods: {
     clicked() {
-      this.$emit('clicked');
+      this.$emit('clicked')
     }
   }
 }
 </script>
 
 <style>
-#description a {
+#settings-description a {
   color: rgb(96 165 250);
 }
-#description a:hover {
+#settings-description a:hover {
   color: rgb(147 197 253);
   text-decoration-line: underline;
 }
-#description code {
+#settings-description code {
   font-size: 0.875rem;
   border-radius: 6px;
   background-color: rgb(82, 82, 82);

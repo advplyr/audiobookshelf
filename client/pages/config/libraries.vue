@@ -1,6 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderLibraries" showAddButton=true @clicked="setShowLibraryModal">
+    <app-settings-content :header-text="$strings.HeaderLibraries" show-add-button @clicked="setShowLibraryModal">
       <tables-library-libraries-table @showLibraryModal="setShowLibraryModal" />
     </app-settings-content>
     <modals-libraries-edit-modal v-model="showLibraryModal" :library="selectedLibrary" />

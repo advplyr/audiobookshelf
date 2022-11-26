@@ -1,6 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderUsers" showAddButton=true @clicked="setShowUserModal">
+    <app-settings-content :header-text="$strings.HeaderUsers" show-add-button @clicked="setShowUserModal">
       <tables-users-table />
     </app-settings-content>
     <modals-account-modal ref="accountModal" v-model="showAccountModal" :account="selectedAccount" />
@@ -12,7 +12,7 @@ export default {
   data() {
     return {
       selectedAccount: null,
-      showAccountModal: false,
+      showAccountModal: false
     }
   },
   computed: {},

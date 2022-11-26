@@ -1,6 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderLibraryStats + ': ' + currentLibraryName">
+    <app-settings-content :header-text="$strings.HeaderLibraryStats + ': ' + currentLibraryName">
       <stats-preview-icons v-if="totalItems" :library-stats="libraryStats" />
 
       <div class="flex lg:flex-row flex-wrap justify-between flex-col mt-8">

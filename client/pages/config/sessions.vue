@@ -1,8 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderListeningSessions">
-
-
+    <app-settings-content :header-text="$strings.HeaderListeningSessions">
       <div class="flex justify-end mb-2">
         <ui-dropdown v-model="selectedUser" :items="userItems" :label="$strings.LabelFilterByUser" small class="max-w-48" @input="updateUserFilter" />
       </div>

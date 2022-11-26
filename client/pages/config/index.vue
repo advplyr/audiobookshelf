@@ -1,6 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderSettings">
+    <app-settings-content :header-text="$strings.HeaderSettings">
       <div class="lg:flex">
         <div class="flex-1">
           <div class="pt-4">
@@ -205,7 +205,7 @@
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
       <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isResettingLibraryItems" @click="resetLibraryItems">{{ $strings.ButtonRemoveAllLibraryItems }}</ui-btn>
     </div>
-    
+
     <div class="flex items-center py-4">
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">

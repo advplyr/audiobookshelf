@@ -1,6 +1,6 @@
 <template>
   <div>
-    <app-settings-content :headerText="$strings.HeaderYourStats">
+    <app-settings-content :header-text="$strings.HeaderYourStats">
       <div class="flex justify-center">
         <div class="flex p-2">
           <svg class="hidden sm:block h-14 w-14 lg:h-18 lg:w-18" viewBox="0 0 24 24">
