@@ -12,8 +12,7 @@ class Playlist {
 
     this.coverPath = null
 
-    // Array of objects like { libraryItemId: "", episodeId: "" }
-    //  episodeId optional
+    // Array of objects like { libraryItemId: "", episodeId: "" } (episodeId optional)
     this.items = []
 
     this.lastUpdate = null
@@ -127,6 +126,11 @@ class Playlist {
       this.lastUpdate = Date.now()
     }
     return hasUpdates
+  }
+
+  containsItem(item) {
+    if (item.episodeId) return this.items.some(i => i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId)
+    return this.items.some(i => i.libraryItemId === item.libraryItemId)
   }
 }
 module.exports = Playlist

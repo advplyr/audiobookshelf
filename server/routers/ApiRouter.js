@@ -10,6 +10,7 @@ const date = require('../libs/dateAndTime')
 const LibraryController = require('../controllers/LibraryController')
 const UserController = require('../controllers/UserController')
 const CollectionController = require('../controllers/CollectionController')
+const PlaylistController = require('../controllers/PlaylistController')
 const MeController = require('../controllers/MeController')
 const BackupController = require('../controllers/BackupController')
 const LibraryItemController = require('../controllers/LibraryItemController')
@@ -133,11 +134,23 @@ class ApiRouter {
     this.router.get('/collections/:id', CollectionController.middleware.bind(this), CollectionController.findOne.bind(this))
     this.router.patch('/collections/:id', CollectionController.middleware.bind(this), CollectionController.update.bind(this))
     this.router.delete('/collections/:id', CollectionController.middleware.bind(this), CollectionController.delete.bind(this))
-
     this.router.post('/collections/:id/book', CollectionController.middleware.bind(this), CollectionController.addBook.bind(this))
     this.router.delete('/collections/:id/book/:bookId', CollectionController.middleware.bind(this), CollectionController.removeBook.bind(this))
     this.router.post('/collections/:id/batch/add', CollectionController.middleware.bind(this), CollectionController.addBatch.bind(this))
     this.router.post('/collections/:id/batch/remove', CollectionController.middleware.bind(this), CollectionController.removeBatch.bind(this))
+
+    //
+    // Playlist Routes
+    //
+    this.router.post('/playlists', PlaylistController.middleware.bind(this), PlaylistController.create.bind(this))
+    this.router.get('/playlists', PlaylistController.findAllForUser.bind(this))
+    this.router.get('/playlists/:id', PlaylistController.middleware.bind(this), PlaylistController.findOne.bind(this))
+    this.router.patch('/playlists/:id', PlaylistController.middleware.bind(this), PlaylistController.update.bind(this))
+    this.router.delete('/playlists/:id', PlaylistController.middleware.bind(this), PlaylistController.delete.bind(this))
+    this.router.post('/playlists/:id/item', PlaylistController.middleware.bind(this), PlaylistController.addItem.bind(this))
+    this.router.delete('/playlists/:id/item/:libraryItemId/:episodeId?', PlaylistController.middleware.bind(this), PlaylistController.removeItem.bind(this))
+    this.router.post('/playlists/:id/batch/add', PlaylistController.middleware.bind(this), PlaylistController.addBatch.bind(this))
+    this.router.post('/playlists/:id/batch/remove', PlaylistController.middleware.bind(this), PlaylistController.removeBatch.bind(this))
 
     //
     // Current User Routes (Me)
