@@ -60,6 +60,9 @@ export const getters = {
   },
   getCollection: state => id => {
     return state.collections.find(c => c.id === id)
+  },
+  getPlaylist: state => id => {
+    return state.userPlaylists.find(p => p.id === id)
   }
 }
 
