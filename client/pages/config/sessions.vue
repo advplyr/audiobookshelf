@@ -1,10 +1,6 @@
 <template>
-  <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">{{ $strings.HeaderListeningSessions }}</h1>
-      </div>
-
+  <div>
+    <app-settings-content :header-text="$strings.HeaderListeningSessions">
       <div class="flex justify-end mb-2">
         <ui-dropdown v-model="selectedUser" :items="userItems" :label="$strings.LabelFilterByUser" small class="max-w-48" @input="updateUserFilter" />
       </div>
@@ -56,7 +52,7 @@
         </div>
       </div>
       <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
-    </div>
+    </app-settings-content>
 
     <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" @removedSession="removedSession" />
   </div>

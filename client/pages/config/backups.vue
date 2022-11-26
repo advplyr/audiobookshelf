@@ -1,13 +1,6 @@
 <template>
-  <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">{{ $strings.HeaderBackups }}</h1>
-      </div>
-
-      <p class="text-base mb-2 text-gray-300">{{ $strings.MessageBackupsDescription }} <span class="font-mono text-gray-100">/metadata/items</span> & <span class="font-mono text-gray-100">/metadata/authors</span>.</p>
-      <p class="text-base mb-4 text-gray-300">{{ $strings.MessageBackupsNote }}</p>
-
+  <div>
+    <app-settings-content :header-text="$strings.HeaderBackups" :description="$strings.MessageBackupsDescription">
       <div class="flex items-center py-2">
         <ui-toggle-switch v-model="enableBackups" small :disabled="updatingServerSettings" @input="updateBackupsSettings" />
         <ui-tooltip :text="$strings.LabelBackupsEnableAutomaticBackupsHelp">
@@ -40,9 +33,7 @@
       </div>
 
       <tables-backups-table />
-    </div>
-
-    <modals-backup-schedule-modal v-model="showCronBuilder" :cron-expression.sync="cronExpression" />
+    </app-settings-content>
   </div>
 </template>
 
