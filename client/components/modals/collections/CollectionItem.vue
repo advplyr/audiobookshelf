@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" :class="wrapperClass" @mouseover="mouseover" @mouseleave="mouseleave">
+  <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="isBookIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
     <div class="w-20 max-w-20 text-center">
       <covers-collection-cover :book-items="books" :width="80" :height="40 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
@@ -7,7 +7,7 @@
     <div class="flex-grow overflow-hidden px-2">
       <nuxt-link :to="`/collection/${collection.id}`" class="pl-2 pr-2 truncate hover:underline cursor-pointer" @click.native="clickNuxtLink">{{ collection.name }}</nuxt-link>
     </div>
-    <div v-if="!isEditing" class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
+    <div class="h-full flex items-center justify-end transform" :class="isHovering ? 'transition-transform translate-0 w-16' : 'translate-x-40 w-0'">
       <ui-btn v-if="!isBookIncluded" color="success" :padding-x="3" small class="h-9" @click.stop="clickAdd"><span class="material-icons text-2xl pt-px">add</span></ui-btn>
       <ui-btn v-else color="error" :padding-x="3" class="h-9" small @click.stop="clickRem"><span class="material-icons text-2xl pt-px">remove</span></ui-btn>
     </div>
@@ -21,24 +21,16 @@ export default {
       type: Object,
       default: () => {}
     },
-    highlight: Boolean,
     bookCoverAspectRatio: Number
   },
   data() {
     return {
-      isHovering: false,
-      isEditing: false
+      isHovering: false
     }
   },
   computed: {
     isBookIncluded() {
       return !!this.collection.isBookIncluded
-    },
-    wrapperClass() {
-      var classes = []
-      if (this.highlight) classes.push('bg-bg bg-opacity-60')
-      if (!this.isEditing) classes.push('cursor-pointer')
-      return classes.join(' ')
     },
     books() {
       return this.collection.books || []
@@ -49,7 +41,6 @@ export default {
       this.$emit('close')
     },
     mouseover() {
-      if (this.isEditing) return
       this.isHovering = true
     },
     mouseleave() {
@@ -60,17 +51,6 @@ export default {
     },
     clickRem() {
       this.$emit('remove', this.collection)
-    },
-    deleteClick() {
-      if (this.isEditing) return
-      this.$emit('delete', this.collection)
-    },
-    editClick() {
-      this.isEditing = true
-      this.isHovering = false
-    },
-    cancelEditing() {
-      this.isEditing = false
     }
   },
   mounted() {}

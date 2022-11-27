@@ -15,7 +15,7 @@
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
             <template v-for="collection in sortedCollections">
-              <modals-collections-user-collection-item :key="collection.id" :collection="collection" :book-cover-aspect-ratio="bookCoverAspectRatio" class="list-complete-item" @add="addToCollection" @remove="removeFromCollection" @close="show = false" />
+              <modals-collections-collection-item :key="collection.id" :collection="collection" :book-cover-aspect-ratio="bookCoverAspectRatio" class="list-complete-item" @add="addToCollection" @remove="removeFromCollection" @close="show = false" />
             </template>
           </transition-group>
         </div>
