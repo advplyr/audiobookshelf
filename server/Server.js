@@ -206,7 +206,8 @@ class Server {
       '/library/:library/podcast/latest',
       '/config/users/:id',
       '/config/users/:id/sessions',
-      '/collection/:id'
+      '/collection/:id',
+      '/playlist/:id'
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
