@@ -215,13 +215,19 @@ export default {
       this.$axios
         .$delete(routepath)
         .then((updatedPlaylist) => {
-          console.log(`Item removed from playlist`, updatedPlaylist)
-          this.$toast.success('Item removed from playlist')
-          this.processingRemove = false
+          if (!updatedPlaylist.items.length) {
+            console.log(`All items removed so playlist was removed`, updatedPlaylist)
+            this.$toast.success(this.$strings.ToastPlaylistRemoveSuccess)
+          } else {
+            console.log(`Item removed from playlist`, updatedPlaylist)
+            this.$toast.success('Item removed from playlist')
+          }
         })
         .catch((error) => {
           console.error('Failed to remove item from playlist', error)
           this.$toast.error('Failed to remove item from playlist')
+        })
+        .finally(() => {
           this.processingRemove = false
         })
     }

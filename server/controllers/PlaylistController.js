@@ -100,9 +100,18 @@ class PlaylistController {
     playlist.removeItem(itemToRemove.libraryItemId, itemToRemove.episodeId)
 
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
-    await this.db.updateEntity('playlist', playlist)
-    SocketAuthority.emitter('playlist_updated', jsonExpanded)
-    res.json(playlist.toJSONExpanded(this.db.libraryItems))
+
+    // Playlist is removed when there are no items
+    if (!playlist.items.length) {
+      Logger.info(`[PlaylistController] Playlist "${playlist.name}" has no more items - removing it`)
+      await this.db.removeEntity('playlist', playlist.id)
+      SocketAuthority.emitter('playlist_removed', jsonExpanded)
+    } else {
+      await this.db.updateEntity('playlist', playlist)
+      SocketAuthority.emitter('playlist_updated', jsonExpanded)
+    }
+
+    res.json(jsonExpanded)
   }
 
   // POST: api/playlists/:id/batch/add
@@ -152,8 +161,15 @@ class PlaylistController {
 
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
     if (hasUpdated) {
-      await this.db.updateEntity('playlist', playlist)
-      SocketAuthority.emitter('playlist_updated', jsonExpanded)
+      // Playlist is removed when there are no items
+      if (!playlist.items.length) {
+        Logger.info(`[PlaylistController] Playlist "${playlist.name}" has no more items - removing it`)
+        await this.db.removeEntity('playlist', playlist.id)
+        SocketAuthority.emitter('playlist_removed', jsonExpanded)
+      } else {
+        await this.db.updateEntity('playlist', playlist)
+        SocketAuthority.emitter('playlist_updated', jsonExpanded)
+      }
     }
     res.json(jsonExpanded)
   }
