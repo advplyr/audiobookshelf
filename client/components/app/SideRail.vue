@@ -186,7 +186,7 @@ export default {
       return this.$store.state.streamLibraryItem
     },
     showPlaylists() {
-      return true
+      return this.$store.state.libraries.numUserPlaylists > 0
     }
   },
   methods: {

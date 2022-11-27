@@ -62,10 +62,12 @@ class LibraryController {
   }
 
   async findOne(req, res) {
-    if (req.query.include && req.query.include === 'filterdata') {
+    const includeArray = (req.query.include || '').split(',')
+    if (includeArray.includes('filterdata')) {
       return res.json({
         filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
         issues: req.libraryItems.filter(li => li.hasIssues).length,
+        numUserPlaylists: this.db.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).length,
         library: req.library
       })
     }
