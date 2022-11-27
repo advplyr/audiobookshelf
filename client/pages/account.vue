@@ -85,6 +85,8 @@ export default {
       if (localStorage.getItem('token')) {
         localStorage.removeItem('token')
       }
+      this.$store.commit('libraries/setUserPlaylists', [])
+      this.$store.commit('libraries/setCollections', [])
       this.$router.push('/login')
     },
     resetForm() {

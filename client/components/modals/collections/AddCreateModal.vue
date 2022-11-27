@@ -112,23 +112,21 @@ export default {
   },
   methods: {
     loadCollections() {
-      if (!this.collections.length) {
-        this.processing = true
-        this.$axios
-          .$get(`/api/libraries/${this.currentLibraryId}/collections`)
-          .then((data) => {
-            if (data.results) {
-              this.$store.commit('libraries/setCollections', data.results || [])
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to get collections', error)
-            this.$toast.error('Failed to load collections')
-          })
-          .finally(() => {
-            this.processing = false
-          })
-      }
+      this.processing = true
+      this.$axios
+        .$get(`/api/libraries/${this.currentLibraryId}/collections`)
+        .then((data) => {
+          if (data.results) {
+            this.$store.commit('libraries/setCollections', data.results || [])
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to get collections', error)
+          this.$toast.error('Failed to load collections')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     removeFromCollection(collection) {
       if (!this.selectedLibraryItemId && !this.selectedBookIds.length) return
@@ -231,19 +229,3 @@ export default {
   mounted() {}
 }
 </script>
-
-<style>
-.list-complete-item {
-  transition: all 0.8s ease;
-}
-
-.list-complete-enter-from,
-.list-complete-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-.list-complete-leave-active {
-  position: absolute;
-}
-</style>

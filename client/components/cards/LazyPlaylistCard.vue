@@ -2,7 +2,7 @@
   <div ref="card" :id="`playlist-card-${index}`" :style="{ width: width + 'px', height: height + 'px' }" class="absolute top-0 left-0 rounded-sm z-30 cursor-pointer" @mousedown.prevent @mouseup.prevent @mousemove.prevent @mouseover="mouseover" @mouseleave="mouseleave" @click="clickCard">
     <div class="absolute top-0 left-0 w-full box-shadow-book shadow-height" />
     <div class="w-full h-full bg-primary relative rounded overflow-hidden">
-      <covers-playlist-cover ref="cover" :items="items" :width="width" :height="height" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+      <covers-playlist-cover ref="cover" :items="items" :width="width" :height="height" />
     </div>
     <div v-show="isHovering && userCanUpdate" class="w-full h-full absolute top-0 left-0 z-10 bg-black bg-opacity-40 pointer-events-none">
       <div class="absolute pointer-events-auto" :style="{ top: 0.5 * sizeMultiplier + 'rem', right: 0.5 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickEdit">

@@ -15,7 +15,7 @@
         <div class="w-full overflow-y-auto overflow-x-hidden max-h-96">
           <transition-group name="list-complete" tag="div">
             <template v-for="playlist in sortedPlaylists">
-              <modals-playlists-user-playlist-item :key="playlist.id" :playlist="playlist" :book-cover-aspect-ratio="bookCoverAspectRatio" class="list-complete-item" @add="addToPlaylist" @remove="removeFromPlaylist" @close="show = false" />
+              <modals-playlists-user-playlist-item :key="playlist.id" :playlist="playlist" class="list-complete-item" @add="addToPlaylist" @remove="removeFromPlaylist" @close="show = false" />
             </template>
           </transition-group>
         </div>
@@ -77,9 +77,6 @@ export default {
     playlists() {
       return this.$store.state.libraries.userPlaylists || []
     },
-    bookCoverAspectRatio() {
-      return this.$store.getters['libraries/getBookCoverAspectRatio']
-    },
     sortedPlaylists() {
       return this.playlists
         .map((playlist) => {
@@ -110,21 +107,19 @@ export default {
       return playlist.items.some((i) => i.libraryItemId === item.libraryItem.id)
     },
     loadPlaylists() {
-      if (!this.playlists.length) {
-        this.processing = true
-        this.$axios
-          .$get(`/api/libraries/${this.currentLibraryId}/playlists`)
-          .then((data) => {
-            this.$store.commit('libraries/setUserPlaylists', data.results || [])
-          })
-          .catch((error) => {
-            console.error('Failed to get playlists', error)
-            this.$toast.error('Failed to load user playlists')
-          })
-          .finally(() => {
-            this.processing = false
-          })
-      }
+      this.processing = true
+      this.$axios
+        .$get(`/api/libraries/${this.currentLibraryId}/playlists`)
+        .then((data) => {
+          this.$store.commit('libraries/setUserPlaylists', data.results || [])
+        })
+        .catch((error) => {
+          console.error('Failed to get playlists', error)
+          this.$toast.error('Failed to load user playlists')
+        })
+        .finally(() => {
+          this.processing = false
+        })
     },
     removeFromPlaylist(playlist) {
       if (!this.selectedPlaylistItems.length) return
@@ -194,19 +189,3 @@ export default {
   mounted() {}
 }
 </script>
-
-<style>
-.list-complete-item {
-  transition: all 0.8s ease;
-}
-
-.list-complete-enter-from,
-.list-complete-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-.list-complete-leave-active {
-  position: absolute;
-}
-</style>

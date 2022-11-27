@@ -1,8 +1,8 @@
 <template>
   <div class="flex items-center px-4 py-2 justify-start relative hover:bg-bg" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="isItemIncluded" class="absolute top-0 left-0 h-full w-1 bg-success z-10" />
-    <div class="w-20 max-w-20 text-center">
-      <covers-playlist-cover :items="items" :width="80" :height="40 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+    <div class="w-16 max-w-16 text-center">
+      <covers-playlist-cover :items="items" :width="64" :height="64" />
     </div>
     <div class="flex-grow overflow-hidden px-2">
       <nuxt-link :to="`/playlist/${playlist.id}`" class="pl-2 pr-2 truncate hover:underline cursor-pointer" @click.native="clickNuxtLink">{{ playlist.name }}</nuxt-link>
@@ -20,8 +20,7 @@ export default {
     playlist: {
       type: Object,
       default: () => {}
-    },
-    bookCoverAspectRatio: Number
+    }
   },
   data() {
     return {

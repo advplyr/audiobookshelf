@@ -108,7 +108,6 @@ export const actions = {
     }
 
     const libraryChanging = state.currentLibraryId !== libraryId
-
     return this.$axios
       .$get(`/api/libraries/${libraryId}?include=filterdata`)
       .then((data) => {

@@ -9,7 +9,7 @@
       <form @submit.prevent="submitForm">
         <div class="flex">
           <div>
-            <covers-playlist-cover :items="items" :width="200" :height="100 * bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+            <covers-playlist-cover :items="items" :width="200" :height="200" />
           </div>
           <div class="flex-grow px-4">
             <ui-text-input-with-label v-model="newPlaylistName" :label="$strings.LabelName" class="mb-2" />
@@ -54,9 +54,6 @@ export default {
       set(val) {
         this.$store.commit('globals/setShowEditPlaylistModal', val)
       }
-    },
-    bookCoverAspectRatio() {
-      return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
     playlist() {
       return this.$store.state.globals.selectedPlaylist || {}
