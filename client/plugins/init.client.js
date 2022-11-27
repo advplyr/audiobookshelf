@@ -94,13 +94,11 @@ Vue.prototype.$sanitizeSlug = (str) => {
 
 Vue.prototype.$copyToClipboard = (str, ctx) => {
   return new Promise((resolve) => {
-    if (!navigator.clipboard) {
+    if (navigator.clipboard) {
       navigator.clipboard.writeText(str).then(() => {
         if (ctx) ctx.$toast.success('Copied to clipboard')
-        resolve(true)
       }, (err) => {
         console.error('Clipboard copy failed', str, err)
-        resolve(false)
       })
     } else {
       const el = document.createElement('textarea')
