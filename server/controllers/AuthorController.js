@@ -62,34 +62,33 @@ class AuthorController {
   }
 
   async update(req, res) {
-    var payload = req.body
+    const payload = req.body
+    let hasUpdated = false
 
-    // If updating or removing cover image then clear cache
-    if (payload.imagePath !== undefined && req.author.imagePath && payload.imagePath !== req.author.imagePath) {
-      this.cacheManager.purgeImageCache(req.author.id)
-
-      if (!payload.imagePath) { // If removing image then remove file
-        var currentImagePath = req.author.imagePath
-        await this.coverManager.removeFile(currentImagePath)
+    // Updating/removing cover image
+    if (payload.imagePath !== undefined && payload.imagePath !== req.author.imagePath) {
+      if (!payload.imagePath && req.author.imagePath) { // If removing image then remove file
+        await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
+        await this.coverManager.removeFile(req.author.imagePath)
       } else if (payload.imagePath.startsWith('http')) { // Check if image path is a url
-        var imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imagePath)
+        const imageData = await this.authorFinder.saveAuthorImage(req.author.id, payload.imagePath)
         if (imageData) {
-          req.author.imagePath = imageData.path
-          req.author.relImagePath = imageData.relPath
-          hasUpdated = hasUpdated || true;
-        } else {
-          req.author.imagePath = null
-          req.author.relImagePath = null
+          if (req.author.imagePath) {
+            await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
+          }
+          payload.imagePath = imageData.path
+          payload.relImagePath = imageData.relPath
+          hasUpdated = true
         }
       }
     }
 
-    var authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
+    const authorNameUpdate = payload.name !== undefined && payload.name !== req.author.name
 
     // Check if author name matches another author and merge the authors
-    var existingAuthor = authorNameUpdate ? this.db.authors.find(au => au.id !== req.author.id && payload.name === au.name) : false
+    const existingAuthor = authorNameUpdate ? this.db.authors.find(au => au.id !== req.author.id && payload.name === au.name) : false
     if (existingAuthor) {
-      var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+      const itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
       itemsWithAuthor.forEach(libraryItem => { // Replace old author with merging author for each book
         libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
       })
@@ -103,7 +102,7 @@ class AuthorController {
       SocketAuthority.emitter('author_removed', req.author.toJSON())
 
       // Send updated num books for merged author
-      var numBooks = this.db.libraryItems.filter(li => {
+      const numBooks = this.db.libraryItems.filter(li => {
         return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(existingAuthor.id)
       }).length
       SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
@@ -113,11 +112,13 @@ class AuthorController {
         merged: true
       })
     } else { // Regular author update
-      var hasUpdated = req.author.update(payload)
+      if (req.author.update(payload)) {
+        hasUpdated = true
+      }
 
       if (hasUpdated) {
         if (authorNameUpdate) { // Update author name on all books
-          var itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+          const itemsWithAuthor = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
           itemsWithAuthor.forEach(libraryItem => {
             libraryItem.media.metadata.updateAuthor(req.author)
           })
@@ -128,7 +129,7 @@ class AuthorController {
         }
 
         await this.db.updateEntity('author', req.author)
-        var numBooks = this.db.libraryItems.filter(li => {
+        const numBooks = this.db.libraryItems.filter(li => {
           return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
         }).length
         SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
