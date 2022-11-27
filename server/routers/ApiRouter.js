@@ -354,7 +354,24 @@ class ApiRouter {
       const collection = collectionsWithBook[i]
       collection.removeBook(libraryItem.id)
       await this.db.updateEntity('collection', collection)
-      SocketAuthority.clientEmitter(collection.userId, 'collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+    }
+
+    // remove item from playlists
+    const playlistsWithItem = this.db.playlists.filter(p => p.hasItemsForLibraryItem(libraryItem.id))
+    for (let i = 0; i < playlistsWithItem.length; i++) {
+      const playlist = playlistsWithItem[i]
+      playlist.removeItemsForLibraryItem(libraryItem.id)
+
+      // If playlist is now empty then remove it
+      if (!playlist.items.length) {
+        Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
+        await this.db.removeEntity('playlist', playlist.id)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(this.db.libraryItems))
+      } else {
+        await this.db.updateEntity('playlist', playlist)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(this.db.libraryItems))
+      }
     }
 
     // purge cover cache

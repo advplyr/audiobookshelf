@@ -137,5 +137,13 @@ class Playlist {
     if (item.episodeId) return this.items.some(i => i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId)
     return this.items.some(i => i.libraryItemId === item.libraryItemId)
   }
+
+  hasItemsForLibraryItem(libraryItemId) {
+    return this.items.some(i => i.libraryItemId === libraryItemId)
+  }
+
+  removeItemsForLibraryItem(libraryItemId) {
+    this.items = this.items.filter(i => i.libraryItemId !== libraryItemId)
+  }
 }
 module.exports = Playlist

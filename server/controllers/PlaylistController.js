@@ -16,7 +16,7 @@ class PlaylistController {
     }
     const jsonExpanded = newPlaylist.toJSONExpanded(this.db.libraryItems)
     await this.db.insertEntity('playlist', newPlaylist)
-    SocketAuthority.emitter('playlist_added', jsonExpanded)
+    SocketAuthority.clientEmitter(newPlaylist.userId, 'playlist_added', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -39,7 +39,7 @@ class PlaylistController {
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
     if (wasUpdated) {
       await this.db.updateEntity('playlist', playlist)
-      SocketAuthority.emitter('playlist_updated', jsonExpanded)
+      SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
@@ -49,7 +49,7 @@ class PlaylistController {
     const playlist = req.playlist
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
     await this.db.removeEntity('playlist', playlist.id)
-    SocketAuthority.emitter('playlist_removed', jsonExpanded)
+    SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
     res.sendStatus(200)
   }
 
@@ -82,7 +82,7 @@ class PlaylistController {
     playlist.addItem(itemToAdd.libraryItemId, itemToAdd.episodeId)
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
     await this.db.updateEntity('playlist', playlist)
-    SocketAuthority.emitter('playlist_updated', jsonExpanded)
+    SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
     res.json(jsonExpanded)
   }
 
@@ -105,10 +105,10 @@ class PlaylistController {
     if (!playlist.items.length) {
       Logger.info(`[PlaylistController] Playlist "${playlist.name}" has no more items - removing it`)
       await this.db.removeEntity('playlist', playlist.id)
-      SocketAuthority.emitter('playlist_removed', jsonExpanded)
+      SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
     } else {
       await this.db.updateEntity('playlist', playlist)
-      SocketAuthority.emitter('playlist_updated', jsonExpanded)
+      SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
     }
 
     res.json(jsonExpanded)
@@ -136,7 +136,7 @@ class PlaylistController {
     const jsonExpanded = playlist.toJSONExpanded(this.db.libraryItems)
     if (hasUpdated) {
       await this.db.updateEntity('playlist', playlist)
-      SocketAuthority.emitter('playlist_updated', jsonExpanded)
+      SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
     }
     res.json(jsonExpanded)
   }
@@ -165,10 +165,10 @@ class PlaylistController {
       if (!playlist.items.length) {
         Logger.info(`[PlaylistController] Playlist "${playlist.name}" has no more items - removing it`)
         await this.db.removeEntity('playlist', playlist.id)
-        SocketAuthority.emitter('playlist_removed', jsonExpanded)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
       } else {
         await this.db.updateEntity('playlist', playlist)
-        SocketAuthority.emitter('playlist_updated', jsonExpanded)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
       }
     }
     res.json(jsonExpanded)
