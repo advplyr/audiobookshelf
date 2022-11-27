@@ -10,26 +10,26 @@ module.exports = {
   },
 
   getFilteredLibraryItems(libraryItems, filterBy, user, feedsArray) {
-    var filtered = libraryItems
+    let filtered = libraryItems
 
-    var searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages']
-    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages', 'tracks']
+    const group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
-      var filterVal = filterBy.replace(`${group}.`, '')
-      var filter = this.decode(filterVal)
+      const filterVal = filterBy.replace(`${group}.`, '')
+      const filter = this.decode(filterVal)
       if (group === 'genres') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.genres.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
       else if (group === 'series') {
-        if (filter === 'No Series') filtered = filtered.filter(li => li.mediaType === 'book' && !li.media.metadata.series.length)
+        if (filter === 'No Series') filtered = filtered.filter(li => li.isBook && !li.media.metadata.series.length)
         else {
-          filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(filter))
+          filtered = filtered.filter(li => li.isBook && li.media.metadata.hasSeries(filter))
         }
       }
-      else if (group === 'authors') filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(filter))
-      else if (group === 'narrators') filtered = filtered.filter(li => li.mediaType === 'book' && li.media.metadata.hasNarrator(filter))
+      else if (group === 'authors') filtered = filtered.filter(li => li.isBook && li.media.metadata.hasAuthor(filter))
+      else if (group === 'narrators') filtered = filtered.filter(li => li.isBook && li.media.metadata.hasNarrator(filter))
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
-          var itemProgress = user.getMediaProgress(li.id)
+          const itemProgress = user.getMediaProgress(li.id)
           if (filter === 'Finished' && (itemProgress && itemProgress.isFinished)) return true
           if (filter === 'Not Started' && !itemProgress) return true
           if (filter === 'Not Finished' && (!itemProgress || !itemProgress.isFinished)) return true
@@ -38,25 +38,28 @@ module.exports = {
         })
       } else if (group == 'missing') {
         filtered = filtered.filter(li => {
-          if (li.mediaType === 'book') {
-            if (filter === 'ASIN' && li.media.metadata.asin === null) return true;
-            if (filter === 'ISBN' && li.media.metadata.isbn === null) return true;
-            if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true;
-            if (filter === 'Author' && li.media.metadata.authors.length === 0) return true;
-            if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true;
-            if (filter === 'Series' && li.media.metadata.series.length === 0) return true;
-            if (filter === 'Description' && li.media.metadata.description === null) return true;
-            if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true;
-            if (filter === 'Tags' && li.media.tags.length === 0) return true;
-            if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true;
-            if (filter === 'Publisher' && li.media.metadata.publisher === null) return true;
-            if (filter === 'Language' && li.media.metadata.language === null) return true;
+          if (li.isBook) {
+            if (filter === 'ASIN' && li.media.metadata.asin === null) return true
+            if (filter === 'ISBN' && li.media.metadata.isbn === null) return true
+            if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true
+            if (filter === 'Author' && li.media.metadata.authors.length === 0) return true
+            if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true
+            if (filter === 'Series' && li.media.metadata.series.length === 0) return true
+            if (filter === 'Description' && li.media.metadata.description === null) return true
+            if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true
+            if (filter === 'Tags' && li.media.tags.length === 0) return true
+            if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true
+            if (filter === 'Publisher' && li.media.metadata.publisher === null) return true
+            if (filter === 'Language' && li.media.metadata.language === null) return true
           } else {
             return false
           }
         })
       } else if (group === 'languages') {
         filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
+      } else if (group === 'tracks') {
+        if (filter === 'single') filtered = filtered.filter(li => li.isBook && li.media.numTracks === 1)
+        else if (filter === 'multi') filtered = filtered.filter(li => li.isBook && li.media.numTracks > 1)
       }
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(li => li.hasIssues)

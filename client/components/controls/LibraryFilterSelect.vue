@@ -175,6 +175,11 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelTracks,
+          value: 'tracks',
+          sublist: true
+        },
+        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false
@@ -264,6 +269,18 @@ export default {
     },
     progress() {
       return [this.$strings.LabelFinished, this.$strings.LabelInProgress, this.$strings.LabelNotStarted, this.$strings.LabelNotFinished]
+    },
+    tracks() {
+      return [
+        {
+          id: 'single',
+          name: this.$strings.LabelTracksSingleTrack
+        },
+        {
+          id: 'multi',
+          name: this.$strings.LabelTracksMultiTrack
+        }
+      ]
     },
     missing() {
       return ['ASIN', 'ISBN', this.$strings.LabelSubtitle, this.$strings.LabelAuthor, this.$strings.LabelPublishYear, this.$strings.LabelSeries, this.$strings.LabelDescription, this.$strings.LabelGenres, this.$strings.LabelTags, this.$strings.LabelNarrator, this.$strings.LabelPublisher, this.$strings.LabelLanguage]
