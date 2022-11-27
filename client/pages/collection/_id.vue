@@ -59,8 +59,7 @@ export default {
   },
   data() {
     return {
-      processingRemove: false,
-      collectionCopy: {}
+      processingRemove: false
     }
   },
   computed: {
@@ -105,19 +104,18 @@ export default {
       this.$store.commit('globals/setEditCollection', this.collection)
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove collection "${this.collectionName}"?`)) {
+      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
         this.processingRemove = true
-        var collectionName = this.collectionName
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
             this.processingRemove = false
-            this.$toast.success(`Collection "${collectionName}" Removed`)
+            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
           })
           .catch((error) => {
             console.error('Failed to remove collection', error)
             this.processingRemove = false
-            this.$toast.error(`Failed to remove collection`)
+            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
           })
       }
     },
