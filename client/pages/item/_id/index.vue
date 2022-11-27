@@ -158,7 +158,7 @@
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast" :text="$strings.LabelYourPlaylists" direction="top">
+            <ui-tooltip v-if="!isPodcast && tracks.length" :text="$strings.LabelYourPlaylists" direction="top">
               <ui-icon-btn icon="playlist_add" class="mx-0.5" outlined @click="playlistsClick" />
             </ui-tooltip>
 

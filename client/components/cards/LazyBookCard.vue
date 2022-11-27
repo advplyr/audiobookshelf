@@ -452,10 +452,12 @@ export default {
             text: this.$strings.LabelAddToCollection
           })
         }
-        items.push({
-          func: 'openPlaylists',
-          text: this.$strings.LabelAddToPlaylist
-        })
+        if (this.numTracks) {
+          items.push({
+            func: 'openPlaylists',
+            text: this.$strings.LabelAddToPlaylist
+          })
+        }
       }
       if (this.userCanUpdate) {
         items.push({
