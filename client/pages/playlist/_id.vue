@@ -52,6 +52,11 @@ export default {
       return redirect('/')
     }
 
+    // If playlist is a different library then set library as current
+    if (playlist.libraryId !== store.state.libraries.currentLibraryId) {
+      await store.dispatch('libraries/fetch', playlist.libraryId)
+    }
+
     store.commit('libraries/addUpdateUserPlaylist', playlist)
     return {
       playlistId: playlist.id

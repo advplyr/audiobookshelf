@@ -72,7 +72,7 @@
     </nuxt-link>
 
     <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
-      <span class="material-icons text-2.5xl">playlist_play</span>
+      <span class="material-icons text-2.5xl">queue_music</span>
 
       <p class="font-book pt-0.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonPlaylists }}</p>
 
