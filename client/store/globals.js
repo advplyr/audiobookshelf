@@ -5,6 +5,7 @@ export const state = () => ({
   showCollectionsModal: false,
   showEditCollectionModal: false,
   showPlaylistsModal: false,
+  showEditPlaylistModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
   showConfirmPrompt: false,
@@ -12,10 +13,11 @@ export const state = () => ({
   showEditAuthorModal: false,
   selectedEpisode: null,
   selectedPlaylistItems: null,
+  selectedPlaylist: null,
   selectedCollection: null,
   selectedAuthor: null,
   isCasting: false, // Actively casting
-  isChromecastInitialized: false, // Script loaded
+  isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
   dateFormats: [
     {
@@ -84,6 +86,9 @@ export const mutations = {
   setShowPlaylistsModal(state, val) {
     state.showPlaylistsModal = val
   },
+  setShowEditPlaylistModal(state, val) {
+    state.showEditPlaylistModal = val
+  },
   setShowEditPodcastEpisodeModal(state, val) {
     state.showEditPodcastEpisode = val
   },
@@ -100,6 +105,10 @@ export const mutations = {
   setEditCollection(state, collection) {
     state.selectedCollection = collection
     state.showEditCollectionModal = true
+  },
+  setEditPlaylist(state, playlist) {
+    state.selectedPlaylist = playlist
+    state.showEditPlaylistModal = true
   },
   setSelectedEpisode(state, episode) {
     state.selectedEpisode = episode

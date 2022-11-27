@@ -11,8 +11,9 @@
 
     <modals-item-edit-modal />
     <modals-collections-add-create-modal />
+    <modals-collections-edit-modal />
     <modals-playlists-add-create-modal />
-    <modals-edit-collection-modal />
+    <modals-playlists-edit-modal />
     <modals-podcast-edit-episode />
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />

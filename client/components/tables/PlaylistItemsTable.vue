@@ -45,7 +45,7 @@ export default {
     }
   },
   watch: {
-    books: {
+    items: {
       handler(newVal) {
         this.init()
       }

@@ -220,6 +220,8 @@ export default {
         this.$store.commit('showEditModal', entity)
       } else if (this.entityName === 'collections') {
         this.$store.commit('globals/setEditCollection', entity)
+      } else if (this.entityName === 'playlists') {
+        this.$store.commit('globals/setEditPlaylist', entity)
       }
     },
     clearSelectedEntities() {
