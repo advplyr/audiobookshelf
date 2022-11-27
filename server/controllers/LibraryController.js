@@ -180,7 +180,7 @@ class LibraryController {
 
       // Determining if we are filtering titles by a series, and if so, which series
       filterSeries = (mediaIsBook && payload.filterBy.startsWith('series.')) ? libraryHelpers.decode(payload.filterBy.replace('series.', '')) : null
-      if (filterSeries === 'No Series') filterSeries = null
+      if (filterSeries === 'no-series') filterSeries = null
     }
 
     // Step 2 - If selected, collapse library items by the series they belong to.

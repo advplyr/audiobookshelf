@@ -41,9 +41,9 @@
             <span class="font-normal block truncate py-2">No {{ sublist }}</span>
           </div>
         </li>
-        <li v-else-if="sublist === 'series'" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" role="option" @click="clickedSublistOption($encode('No Series'))">
+        <li v-else-if="sublist === 'series'" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" role="option" @click="clickedSublistOption($encode('no-series'))">
           <div class="flex items-center">
-            <span class="font-normal block truncate py-2 text-xs text-white text-opacity-80">No Series</span>
+            <span class="font-normal block truncate py-2 text-xs text-white text-opacity-80">{{ $strings.MessageNoSeries }}</span>
           </div>
         </li>
         <template v-for="item in sublistItems">
@@ -268,7 +268,24 @@ export default {
       return this.filterData.languages || []
     },
     progress() {
-      return [this.$strings.LabelFinished, this.$strings.LabelInProgress, this.$strings.LabelNotStarted, this.$strings.LabelNotFinished]
+      return [
+        {
+          id: 'finished',
+          name: this.$strings.LabelFinished
+        },
+        {
+          id: 'in-progress',
+          name: this.$strings.LabelInProgress
+        },
+        {
+          id: 'not-started',
+          name: this.$strings.LabelNotStarted
+        },
+        {
+          id: 'not-finished',
+          name: this.$strings.LabelNotFinished
+        }
+      ]
     },
     tracks() {
       return [
@@ -283,7 +300,56 @@ export default {
       ]
     },
     missing() {
-      return ['ASIN', 'ISBN', this.$strings.LabelSubtitle, this.$strings.LabelAuthor, this.$strings.LabelPublishYear, this.$strings.LabelSeries, this.$strings.LabelDescription, this.$strings.LabelGenres, this.$strings.LabelTags, this.$strings.LabelNarrator, this.$strings.LabelPublisher, this.$strings.LabelLanguage]
+      return [
+        {
+          id: 'asin',
+          name: 'ASIN'
+        },
+        {
+          id: 'isbn',
+          name: 'ISBN'
+        },
+        {
+          id: 'subtitle',
+          name: this.$strings.LabelSubtitle
+        },
+        {
+          id: 'authors',
+          name: this.$strings.LabelAuthor
+        },
+        {
+          id: 'publishedYear',
+          name: this.$strings.LabelPublishYear
+        },
+        {
+          id: 'series',
+          name: this.$strings.LabelSeries
+        },
+        {
+          id: 'description',
+          name: this.$strings.LabelDescription
+        },
+        {
+          id: 'genres',
+          name: this.$strings.LabelGenres
+        },
+        {
+          id: 'tags',
+          name: this.$strings.LabelTags
+        },
+        {
+          id: 'narrators',
+          name: this.$strings.LabelNarrator
+        },
+        {
+          id: 'publisher',
+          name: this.$strings.LabelPublisher
+        },
+        {
+          id: 'language',
+          name: this.$strings.LabelLanguage
+        }
+      ]
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {

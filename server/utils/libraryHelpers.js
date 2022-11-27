@@ -20,7 +20,7 @@ module.exports = {
       if (group === 'genres') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.genres.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
       else if (group === 'series') {
-        if (filter === 'No Series') filtered = filtered.filter(li => li.isBook && !li.media.metadata.series.length)
+        if (filter === 'no-series') filtered = filtered.filter(li => li.isBook && !li.media.metadata.series.length)
         else {
           filtered = filtered.filter(li => li.isBook && li.media.metadata.hasSeries(filter))
         }
@@ -30,27 +30,27 @@ module.exports = {
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
           const itemProgress = user.getMediaProgress(li.id)
-          if (filter === 'Finished' && (itemProgress && itemProgress.isFinished)) return true
-          if (filter === 'Not Started' && !itemProgress) return true
-          if (filter === 'Not Finished' && (!itemProgress || !itemProgress.isFinished)) return true
-          if (filter === 'In Progress' && (itemProgress && itemProgress.inProgress)) return true
+          if (filter === 'finished' && (itemProgress && itemProgress.isFinished)) return true
+          if (filter === 'not-started' && !itemProgress) return true
+          if (filter === 'not-finished' && (!itemProgress || !itemProgress.isFinished)) return true
+          if (filter === 'in-progress' && (itemProgress && itemProgress.inProgress)) return true
           return false
         })
       } else if (group == 'missing') {
         filtered = filtered.filter(li => {
           if (li.isBook) {
-            if (filter === 'ASIN' && li.media.metadata.asin === null) return true
-            if (filter === 'ISBN' && li.media.metadata.isbn === null) return true
-            if (filter === 'Subtitle' && li.media.metadata.subtitle === null) return true
-            if (filter === 'Author' && li.media.metadata.authors.length === 0) return true
-            if (filter === 'Publish Year' && li.media.metadata.publishedYear === null) return true
-            if (filter === 'Series' && li.media.metadata.series.length === 0) return true
-            if (filter === 'Description' && li.media.metadata.description === null) return true
-            if (filter === 'Genres' && li.media.metadata.genres.length === 0) return true
-            if (filter === 'Tags' && li.media.tags.length === 0) return true
-            if (filter === 'Narrator' && li.media.metadata.narrators.length === 0) return true
-            if (filter === 'Publisher' && li.media.metadata.publisher === null) return true
-            if (filter === 'Language' && li.media.metadata.language === null) return true
+            if (filter === 'asin' && li.media.metadata.asin === null) return true
+            if (filter === 'isbn' && li.media.metadata.isbn === null) return true
+            if (filter === 'subtitle' && li.media.metadata.subtitle === null) return true
+            if (filter === 'authors' && li.media.metadata.authors.length === 0) return true
+            if (filter === 'publishedYear' && li.media.metadata.publishedYear === null) return true
+            if (filter === 'series' && li.media.metadata.series.length === 0) return true
+            if (filter === 'description' && li.media.metadata.description === null) return true
+            if (filter === 'genres' && li.media.metadata.genres.length === 0) return true
+            if (filter === 'tags' && li.media.tags.length === 0) return true
+            if (filter === 'narrators' && li.media.metadata.narrators.length === 0) return true
+            if (filter === 'publisher' && li.media.metadata.publisher === null) return true
+            if (filter === 'language' && li.media.metadata.language === null) return true
           } else {
             return false
           }
