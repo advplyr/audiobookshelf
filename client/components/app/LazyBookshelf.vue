@@ -563,6 +563,33 @@ export default {
         this.executeRebuild()
       }
     },
+    playlistAdded(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistAdded ${playlist.id}`, playlist)
+      this.resetEntities()
+    },
+    playlistUpdated(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistUpdated ${playlist.id}`, playlist)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === playlist.id)
+      if (indexOf >= 0) {
+        this.entities[indexOf] = playlist
+        if (this.entityComponentRefs[indexOf]) {
+          this.entityComponentRefs[indexOf].setEntity(playlist)
+        }
+      }
+    },
+    playlistRemoved(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistRemoved ${playlist.id}`, playlist)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === playlist.id)
+      if (indexOf >= 0) {
+        this.entities = this.entities.filter((ent) => ent.id !== playlist.id)
+        this.totalEntities--
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.executeRebuild()
+      }
+    },
     initSizeData(_bookshelf) {
       var bookshelf = _bookshelf || document.getElementById('bookshelf')
       if (!bookshelf) {
@@ -643,6 +670,9 @@ export default {
         this.$root.socket.on('collection_added', this.collectionAdded)
         this.$root.socket.on('collection_updated', this.collectionUpdated)
         this.$root.socket.on('collection_removed', this.collectionRemoved)
+        this.$root.socket.on('playlist_added', this.playlistAdded)
+        this.$root.socket.on('playlist_updated', this.playlistUpdated)
+        this.$root.socket.on('playlist_removed', this.playlistRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -669,6 +699,9 @@ export default {
         this.$root.socket.off('collection_added', this.collectionAdded)
         this.$root.socket.off('collection_updated', this.collectionUpdated)
         this.$root.socket.off('collection_removed', this.collectionRemoved)
+        this.$root.socket.off('playlist_added', this.playlistAdded)
+        this.$root.socket.off('playlist_updated', this.playlistUpdated)
+        this.$root.socket.off('playlist_removed', this.playlistRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
