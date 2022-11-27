@@ -17,7 +17,7 @@
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" />
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @addToPlaylist="addToPlaylist" />
     </template>
 
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
@@ -131,6 +131,10 @@ export default {
     }
   },
   methods: {
+    addToPlaylist(episode) {
+      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode }])
+      this.$store.commit('globals/setShowPlaylistsModal', true)
+    },
     addEpisodeToQueue(episode) {
       const queueItem = {
         libraryItemId: this.libraryItem.id,

@@ -107,7 +107,7 @@ export default {
       return this.mediaMetadata.authors || []
     },
     itemDuration() {
-      if (this.episode) return this.episode.duration
+      if (this.episode) return this.$elapsedPretty(this.episode.duration)
       return this.$elapsedPretty(this.media.duration)
     },
     isMissing() {
