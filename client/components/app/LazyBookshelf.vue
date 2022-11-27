@@ -167,7 +167,7 @@ export default {
       return coverSize
     },
     bookHeight() {
-      if (this.isCoverSquareAspectRatio) return this.bookWidth
+      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return this.bookWidth
       return this.bookWidth * 1.6
     },
     shelfPadding() {
@@ -178,7 +178,7 @@ export default {
       return this.shelfPadding * 2
     },
     entityWidth() {
-      if (this.entityName === 'series' || this.entityName === 'collections' || this.entityName === 'playlists') {
+      if (this.entityName === 'series' || this.entityName === 'collections') {
         if (this.bookWidth * 2 > this.bookshelfWidth - this.shelfPadding) return this.bookWidth * 1.6
         return this.bookWidth * 2
       }
