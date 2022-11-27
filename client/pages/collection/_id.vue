@@ -52,6 +52,11 @@ export default {
       return redirect('/')
     }
 
+    // If collection is a different library then set library as current
+    if (collection.libraryId !== store.state.libraries.currentLibraryId) {
+      await store.dispatch('libraries/fetch', collection.libraryId)
+    }
+
     store.commit('libraries/addUpdateCollection', collection)
     return {
       collectionId: collection.id
@@ -87,7 +92,7 @@ export default {
       })
     },
     streaming() {
-      return !!this.playableBooks.find((b) => b.id === this.$store.getters['getLibraryItemIdStreaming'])
+      return !!this.playableBooks.some((b) => b.id === this.$store.getters['getLibraryItemIdStreaming'])
     },
     showPlayButton() {
       return this.playableBooks.length
@@ -109,13 +114,14 @@ export default {
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
-            this.processingRemove = false
             this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
           })
           .catch((error) => {
             console.error('Failed to remove collection', error)
-            this.processingRemove = false
             this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+          })
+          .finally(() => {
+            this.processingRemove = false
           })
       }
     },
