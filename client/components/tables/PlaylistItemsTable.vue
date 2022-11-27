@@ -12,7 +12,7 @@
     <draggable v-model="itemsCopy" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="drag = true" @end="drag = false" @update="draggableUpdate">
       <transition-group type="transition" :name="!drag ? 'playlist-item' : null">
         <template v-for="(item, index) in itemsCopy">
-          <tables-playlist-item-table-row :key="index" :is-dragging="drag" :item="item" :playlist-id="playlistId" :book-cover-aspect-ratio="bookCoverAspectRatio" class="item" :class="drag ? '' : 'playlist-item-item'" />
+          <tables-playlist-item-table-row :key="index" :is-dragging="drag" :item="item" :playlist-id="playlistId" :book-cover-aspect-ratio="bookCoverAspectRatio" class="item" :class="drag ? '' : 'playlist-item-item'" @edit="editItem" />
         </template>
       </transition-group>
     </draggable>
@@ -68,6 +68,16 @@ export default {
     }
   },
   methods: {
+    editItem(playlistItem) {
+      if (playlistItem.episode) {
+        this.$store.commit('globals/setSelectedEpisode', playlist.episode)
+        this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)
+      } else {
+        const itemIds = this.items.map((i) => i.libraryItemId)
+        this.$store.commit('setBookshelfBookIds', itemIds)
+        this.$store.commit('showEditModal', playlistItem.libraryItem)
+      }
+    },
     draggableUpdate() {
       var playlistUpdate = {
         items: this.itemsCopy.map((i) => ({ libraryItemId: i.libraryItemId, episodeId: i.episodeId }))

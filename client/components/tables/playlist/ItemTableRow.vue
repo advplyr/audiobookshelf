@@ -183,7 +183,7 @@ export default {
       })
     },
     clickEdit() {
-      // todo: edit
+      this.$emit('edit', this.item)
     },
     toggleFinished() {
       var updatePayload = {
