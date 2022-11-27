@@ -410,6 +410,10 @@ export default {
           {
             func: 'toggleFinished',
             text: this.itemIsFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished
+          },
+          {
+            func: 'openPlaylists',
+            text: this.$strings.LabelAddToPlaylist
           }
         ]
         if (this.continueListeningShelf) {
@@ -448,6 +452,10 @@ export default {
             text: this.$strings.LabelAddToCollection
           })
         }
+        items.push({
+          func: 'openPlaylists',
+          text: this.$strings.LabelAddToPlaylist
+        })
       }
       if (this.userCanUpdate) {
         items.push({
@@ -738,6 +746,10 @@ export default {
     openCollections() {
       this.store.commit('setSelectedLibraryItem', this.libraryItem)
       this.store.commit('globals/setShowCollectionsModal', true)
+    },
+    openPlaylists() {
+      this.store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode: this.recentEpisode }])
+      this.store.commit('globals/setShowPlaylistsModal', true)
     },
     createMoreMenu() {
       if (!this.$refs.moreIcon) return
