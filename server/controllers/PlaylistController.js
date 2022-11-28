@@ -187,14 +187,6 @@ class PlaylistController {
       req.playlist = playlist
     }
 
-    if (req.method == 'DELETE' && !req.user.canDelete) {
-      Logger.warn(`[PlaylistController] User attempted to delete without permission`, req.user.username)
-      return res.sendStatus(403)
-    } else if ((req.method == 'PATCH' || req.method == 'POST') && !req.user.canUpdate) {
-      Logger.warn('[PlaylistController] User attempted to update without permission', req.user.username)
-      return res.sendStatus(403)
-    }
-
     next()
   }
 }
