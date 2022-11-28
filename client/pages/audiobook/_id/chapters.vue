@@ -1,37 +1,40 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="flex items-center py-4 max-w-7xl mx-auto">
+    <div class="flex items-center py-4 px-2 md:px-0 max-w-7xl mx-auto">
       <nuxt-link :to="`/item/${libraryItem.id}`" class="hover:underline">
-        <h1 class="text-xl">{{ title }}</h1>
+        <h1 class="text-lg lg:text-xl">{{ title }}</h1>
       </nuxt-link>
       <button class="w-7 h-7 flex items-center justify-center mx-4 hover:scale-110 duration-100 transform text-gray-200 hover:text-white" @click="editItem">
         <span class="material-icons text-base">edit</span>
       </button>
-      <div class="flex-grow" />
-      <p class="text-base">{{ $strings.LabelDuration }}:</p>
-      <p class="text-base font-mono ml-8">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
+      <div class="flex-grow hidden md:block" />
+      <p class="text-base hidden md:block">{{ $strings.LabelDuration }}:</p>
+      <p class="text-base font-mono ml-4 hidden md:block">{{ $secondsToTimestamp(mediaDurationRounded) }}</p>
     </div>
 
-    <div class="flex flex-wrap-reverse justify-center py-4">
+    <div class="flex flex-wrap-reverse justify-center py-4 px-2">
       <div class="w-full max-w-3xl py-4">
         <div class="flex items-center">
+          <div class="w-12 hidden lg:block" />
           <p class="text-lg mb-4 font-semibold">{{ $strings.HeaderChapters }}</p>
           <div class="flex-grow" />
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
-          <div class="w-40" />
+          <div class="w-32 hidden lg:block" />
         </div>
         <div class="flex items-center mb-3 py-1">
-          <div class="flex-grow" />
+          <div class="w-12 hidden lg:block" />
           <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
           <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
-          <ui-btn color="success" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
-          <div class="w-40" />
+          <div class="flex-grow" />
+          <ui-btn v-if="hasChanges" small class="mx-2" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
+          <ui-btn v-if="hasChanges" color="success" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
+          <div class="w-32 hidden lg:block" />
         </div>
 
         <div class="overflow-hidden">
           <transition name="slide">
             <div v-if="showShiftTimes" class="flex mb-4">
-              <div class="w-12"></div>
+              <div class="w-12 hidden lg:block" />
               <div class="flex-grow">
                 <div class="flex items-center">
                   <p class="text-sm mb-1 font-semibold pr-2">{{ $strings.LabelTimeToShift }}</p>
@@ -42,28 +45,28 @@
                 </div>
                 <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
               </div>
-              <div class="w-40"></div>
+              <div class="w-32 hidden lg:block" />
             </div>
           </transition>
         </div>
 
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
-          <div class="w-12"></div>
-          <div class="w-32 px-2">{{ $strings.LabelStart }}</div>
+          <div class="w-8 min-w-8 md:w-12 md:min-w-12"></div>
+          <div class="w-24 min-w-24 md:w-32 md:min-w-32 px-2">{{ $strings.LabelStart }}</div>
           <div class="flex-grow px-2">{{ $strings.LabelTitle }}</div>
-          <div class="w-40"></div>
+          <div class="w-32"></div>
         </div>
         <template v-for="chapter in newChapters">
           <div :key="chapter.id" class="flex py-1">
-            <div class="w-12">#{{ chapter.id + 1 }}</div>
-            <div class="w-32 px-1">
+            <div class="w-8 min-w-8 md:w-12 md:min-w-12">#{{ chapter.id + 1 }}</div>
+            <div class="w-24 min-w-24 md:w-32 md:min-w-32 px-1">
               <ui-text-input v-if="showSecondInputs" v-model="chapter.start" type="number" class="text-xs" @change="checkChapters" />
               <ui-time-picker v-else class="text-xs" v-model="chapter.start" :show-three-digit-hour="mediaDuration >= 360000" @change="checkChapters" />
             </div>
             <div class="flex-grow px-1">
-              <ui-text-input v-model="chapter.title" class="text-xs" />
+              <ui-text-input v-model="chapter.title" @change="checkChapters" class="text-xs" />
             </div>
-            <div class="w-40 px-2 py-1">
+            <div class="w-32 min-w-32 px-2 py-1">
               <div class="flex items-center">
                 <ui-tooltip :text="$strings.MessageRemoveChapter" direction="bottom">
                   <button v-if="newChapters.length > 1" class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:text-error transform hover:scale-110 duration-150" @click="removeChapter(chapter)">
@@ -96,7 +99,7 @@
         </template>
       </div>
 
-      <div class="w-full max-w-xl py-4">
+      <div class="w-full max-w-xl py-4 px-2">
         <div class="flex items-center mb-4 py-1">
           <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
           <div class="flex-grow" />
@@ -241,7 +244,8 @@ export default {
       showFindChaptersModal: false,
       chapterData: null,
       showSecondInputs: false,
-      audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES']
+      audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
+      hasChanges: false
     }
   },
   computed: {
@@ -330,7 +334,6 @@ export default {
       this.$store.commit('showEditModal', this.libraryItem)
     },
     addChapter(chapter) {
-      console.log('Add chapter', chapter)
       const newChapter = {
         id: chapter.id + 1,
         start: chapter.start,
@@ -345,22 +348,40 @@ export default {
       this.checkChapters()
     },
     checkChapters() {
-      var previousStart = 0
+      let previousStart = 0
+      let hasChanges = this.newChapters.length !== this.chapters.length
+
       for (let i = 0; i < this.newChapters.length; i++) {
         this.newChapters[i].id = i
         this.newChapters[i].start = Number(this.newChapters[i].start)
 
         if (i === 0 && this.newChapters[i].start !== 0) {
-          this.newChapters[i].error = 'First chapter must start at 0'
+          this.newChapters[i].error = this.$strings.MessageChapterErrorFirstNotZero
         } else if (this.newChapters[i].start <= previousStart && i > 0) {
-          this.newChapters[i].error = 'Invalid start time must be >= previous chapter start time'
+          this.newChapters[i].error = this.$strings.MessageChapterErrorStartLtPrev
         } else if (this.newChapters[i].start >= this.mediaDuration) {
-          this.newChapters[i].error = 'Invalid start time must be < duration'
+          this.newChapters[i].error = this.$strings.MessageChapterErrorStartGteDuration
         } else {
           this.newChapters[i].error = null
         }
         previousStart = this.newChapters[i].start
+
+        if (hasChanges) {
+          continue
+        }
+
+        const existingChapter = this.chapters[i]
+        if (existingChapter) {
+          const { start, end, title } = this.newChapters[i]
+          if (start !== existingChapter.start || end !== existingChapter.end || title !== existingChapter.title) {
+            hasChanges = true
+          }
+        } else {
+          hasChanges = true
+        }
       }
+
+      this.hasChanges = hasChanges
     },
     playChapter(chapter) {
       console.log('Play Chapter', chapter.id)
@@ -379,8 +400,6 @@ export default {
       const audioTrack = this.tracks.find((at) => {
         return chapter.start >= at.startOffset && chapter.start < at.startOffset + at.duration
       })
-      console.log('audio track', audioTrack)
-
       this.selectedChapter = chapter
       this.isLoadingChapter = true
 
@@ -395,7 +414,6 @@ export default {
       if (this.$isDev) {
         src = `http://localhost:3333${this.$config.routerBasePath}${src}`
       }
-      console.log('src', src)
 
       audioEl.src = src
       audioEl.id = 'chapter-audio'
@@ -439,11 +457,11 @@ export default {
 
       for (let i = 0; i < this.newChapters.length; i++) {
         if (this.newChapters[i].error) {
-          this.$toast.error('Chapters have errors')
+          this.$toast.error(this.$strings.ToastChaptersHaveErrors)
           return
         }
         if (!this.newChapters[i].title) {
-          this.$toast.error('Chapters must have titles')
+          this.$toast.error(this.$strings.ToastChaptersMustHaveTitles)
           return
         }
 
@@ -539,22 +557,38 @@ export default {
           this.$toast.error('Failed to find chapters')
           this.showFindChaptersModal = false
         })
+    },
+    resetChapters() {
+      const payload = {
+        message: this.$strings.MessageResetChaptersConfirm,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.initChapters()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    initChapters() {
+      this.newChapters = this.chapters.map((c) => ({ ...c }))
+      if (!this.newChapters.length) {
+        this.newChapters = [
+          {
+            id: 0,
+            start: 0,
+            end: this.mediaDuration,
+            title: ''
+          }
+        ]
+      }
+      this.checkChapters()
     }
   },
   mounted() {
     this.regionInput = localStorage.getItem('audibleRegion') || 'US'
     this.asinInput = this.mediaMetadata.asin || null
-    this.newChapters = this.chapters.map((c) => ({ ...c }))
-    if (!this.newChapters.length) {
-      this.newChapters = [
-        {
-          id: 0,
-          start: 0,
-          end: this.mediaDuration,
-          title: ''
-        }
-      ]
-    }
+    this.initChapters()
   },
   beforeDestroy() {
     this.destroyAudioEl()
