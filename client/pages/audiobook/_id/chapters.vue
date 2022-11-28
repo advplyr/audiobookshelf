@@ -100,8 +100,8 @@
         <div class="flex items-center mb-4 py-1">
           <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
           <div class="flex-grow" />
-          <ui-btn small @click="setChaptersFromTracks">Set chapters from tracks</ui-btn>
-          <ui-tooltip :text="'Set chapters using each audio file as a chapter and chapter title as the audio file name'" direction="top" class="flex items-center mx-1 cursor-default">
+          <ui-btn small @click="setChaptersFromTracks">{{ $strings.ButtonSetChaptersFromTracks }}</ui-btn>
+          <ui-tooltip :text="$strings.MessageSetChaptersFromTracksDescription" direction="top" class="flex items-center mx-1 cursor-default">
             <span class="material-icons-outlined text-xl text-gray-200">info</span>
           </ui-tooltip>
         </div>
