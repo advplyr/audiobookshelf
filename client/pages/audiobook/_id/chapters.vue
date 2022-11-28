@@ -97,7 +97,14 @@
       </div>
 
       <div class="w-full max-w-xl py-4">
-        <p class="text-lg mb-4 font-semibold py-1">{{ $strings.HeaderAudioTracks }}</p>
+        <div class="flex items-center mb-4 py-1">
+          <p class="text-lg font-semibold">{{ $strings.HeaderAudioTracks }}</p>
+          <div class="flex-grow" />
+          <ui-btn small @click="setChaptersFromTracks">Set chapters from tracks</ui-btn>
+          <ui-tooltip :text="'Set chapters using each audio file as a chapter and chapter title as the audio file name'" direction="top" class="flex items-center mx-1 cursor-default">
+            <span class="material-icons-outlined text-xl text-gray-200">info</span>
+          </ui-tooltip>
+        </div>
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="flex-grow">{{ $strings.LabelFilename }}</div>
           <div class="w-20">{{ $strings.LabelDuration }}</div>
@@ -177,8 +184,8 @@
           </div>
           <div class="flex items-center pt-2">
             <ui-btn small color="primary" class="mr-1" @click="applyChapterNamesOnly">{{ $strings.ButtonMapChapterTitles }}</ui-btn>
-            <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top">
-              <span class="material-icons-outlined">info</span>
+            <ui-tooltip :text="$strings.MessageMapChapterTitles" direction="top" class="flex items-center">
+              <span class="material-icons-outlined text-xl text-gray-200">info</span>
             </ui-tooltip>
             <div class="flex-grow" />
             <ui-btn small color="success" @click="applyChapterData">{{ $strings.ButtonApplyChapters }}</ui-btn>
@@ -190,6 +197,8 @@
 </template>
 
 <script>
+import path from 'path'
+
 export default {
   async asyncData({ store, params, app, redirect, from }) {
     if (!store.getters['user/getUserCanUpdate']) {
@@ -274,6 +283,23 @@ export default {
     }
   },
   methods: {
+    setChaptersFromTracks() {
+      let currentStartTime = 0
+      let index = 0
+      const chapters = []
+      for (const track of this.audioTracks) {
+        chapters.push({
+          id: index++,
+          title: path.basename(track.metadata.filename, path.extname(track.metadata.filename)),
+          start: currentStartTime,
+          end: currentStartTime + track.duration
+        })
+        currentStartTime += track.duration
+      }
+      this.newChapters = chapters
+
+      this.checkChapters()
+    },
     shiftChapterTimes() {
       if (!this.shiftAmount || isNaN(this.shiftAmount) || this.newChapters.length <= 1) {
         return
