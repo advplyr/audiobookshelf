@@ -110,7 +110,6 @@ module.exports = {
       short_name: 'Audiobookshelf',
       display: 'standalone',
       background_color: '#373838',
-      start_url: '',
       icons: [
         {
           src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
