@@ -7,8 +7,9 @@ class SearchController {
     var provider = req.query.provider || 'google'
     var title = req.query.title || ''
     var author = req.query.author || ''
-    var results = await this.bookFinder.search(provider, title, author)
-    res.json(results)
+    res.json({
+      results: await this.bookFinder.search(provider, title, author)
+    })
   }
 
   async findCovers(req, res) {
@@ -23,13 +24,16 @@ class SearchController {
     var result = null
     if (podcast) result = await this.podcastFinder.findCovers(query.title)
     else result = await this.bookFinder.findCovers(query.provider || 'google', query.title, query.author || null)
-    res.json(result)
+    res.json({
+      results: result
+    })
   }
 
   async findPodcasts(req, res) {
     var term = req.query.term
-    var results = await this.podcastFinder.search(term)
-    res.json(results)
+    res.json({
+      results: await this.podcastFinder.search(term)
+    })
   }
 
   async findAuthor(req, res) {
