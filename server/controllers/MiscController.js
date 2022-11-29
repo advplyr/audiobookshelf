@@ -137,7 +137,9 @@ class MiscController {
         })
       }
     })
-    res.json(tags)
+    res.json({
+      tags: tags
+    })
   }
 
   validateCronExpression(req, res) {
