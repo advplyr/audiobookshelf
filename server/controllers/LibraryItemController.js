@@ -308,7 +308,9 @@ class LibraryItemController {
       const li = this.db.libraryItems.find(_li => _li.id === lid)
       if (li) libraryItems.push(li.toJSONExpanded())
     })
-    res.json(libraryItems)
+    res.json({
+      libraryItems: libraryItems
+    })
   }
 
   // POST: api/items/batch/quickmatch
