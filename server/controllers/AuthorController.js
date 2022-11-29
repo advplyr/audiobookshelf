@@ -148,7 +148,9 @@ class AuthorController {
     var limit = (req.query.limit && !isNaN(req.query.limit)) ? Number(req.query.limit) : 25
     var authors = this.db.authors.filter(au => au.name.toLowerCase().includes(q))
     authors = authors.slice(0, limit)
-    res.json(authors)
+    res.json({
+      results: authors
+    })
   }
 
   async match(req, res) {
