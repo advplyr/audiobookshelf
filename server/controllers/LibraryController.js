@@ -58,7 +58,9 @@ class LibraryController {
       return res.json(this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON()))
     }
 
-    res.json(this.db.libraries.map(lib => lib.toJSON()))
+    res.json({
+      libraries: this.db.libraries.map(lib => lib.toJSON())
+    })
   }
 
   async findOne(req, res) {
@@ -456,7 +458,9 @@ class LibraryController {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 10
 
     const categories = libraryHelpers.buildPersonalizedShelves(req.user, libraryItems, mediaType, this.db.series, this.db.authors, limitPerShelf)
-    res.json(categories)
+    res.json({
+      shelves: categories
+    })
   }
 
   // PATCH: Change the order of libraries
@@ -487,8 +491,9 @@ class LibraryController {
       Logger.debug(`[LibraryController] Library orders were up to date`)
     }
 
-    var libraries = this.db.libraries.map(lib => lib.toJSON())
-    res.json(libraries)
+    res.json({
+      libraries: this.db.libraries.map(lib => lib.toJSON())
+    })
   }
 
   // GET: Global library search
@@ -594,7 +599,9 @@ class LibraryController {
       }
     })
 
-    res.json(naturalSort(Object.values(authors)).asc(au => au.name))
+    res.json({
+      authors: naturalSort(Object.values(authors)).asc(au => au.name)
+    })
   }
 
   async matchAll(req, res) {
