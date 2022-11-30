@@ -77,7 +77,7 @@ export default {
       return Math.floor(this.clientWidth / (this.cardWidth + 16))
     },
     isSelectionMode() {
-      return this.$store.getters['getNumLibraryItemsSelected'] > 0
+      return this.$store.getters['globals/getIsBatchSelectingMediaItems']
     }
   },
   methods: {
@@ -101,14 +101,14 @@ export default {
       this.updateSelectionMode(this.isSelectionMode)
     },
     updateSelectionMode(val) {
-      var selectedLibraryItems = this.$store.state.selectedLibraryItems
+      const selectedMediaItems = this.$store.state.globals.selectedMediaItems
 
       this.items.forEach((ent) => {
-        var component = this.$refs[`slider-episode-${ent.recentEpisode.id}`]
+        let component = this.$refs[`slider-episode-${ent.recentEpisode.id}`]
         if (!component || !component.length) return
         component = component[0]
         component.setSelectionMode(val)
-        component.selected = selectedLibraryItems.includes(ent.id)
+        component.selected = selectedMediaItems.some((i) => i.id === ent.id)
       })
     },
     scrolled() {

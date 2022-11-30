@@ -61,7 +61,7 @@ export default {
       return Math.floor(this.clientWidth / (this.cardWidth + 16))
     },
     isSelectionMode() {
-      return this.$store.getters['getNumLibraryItemsSelected'] > 0
+      return this.$store.getters['globals/getIsBatchSelectingMediaItems']
     }
   },
   methods: {

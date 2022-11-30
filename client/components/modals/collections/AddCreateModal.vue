@@ -104,7 +104,7 @@ export default {
       return this.$store.state.globals.showBatchCollectionModal
     },
     selectedBookIds() {
-      return this.$store.state.selectedLibraryItems || []
+      return (this.$store.state.globals.selectedMediaItems || []).map((i) => i.id)
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId

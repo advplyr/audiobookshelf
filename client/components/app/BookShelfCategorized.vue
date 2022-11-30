@@ -89,8 +89,8 @@ export default {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.bookCoverWidth / baseSize
     },
-    selectedLibraryItems() {
-      return this.$store.state.selectedLibraryItems || []
+    selectedMediaItems() {
+      return this.$store.state.globals.selectedMediaItems || []
     }
   },
   methods: {
@@ -100,15 +100,15 @@ export default {
       const indexOf = shelf.shelfStartIndex + entityShelfIndex
 
       const lastLastItemIndexSelected = this.lastItemIndexSelected
-      if (!this.selectedLibraryItems.includes(entity.id)) {
+      if (!this.selectedMediaItems.some((i) => i.id === entity.id)) {
         this.lastItemIndexSelected = indexOf
       } else {
         this.lastItemIndexSelected = -1
       }
 
       if (shiftKey && lastLastItemIndexSelected >= 0) {
-        var loopStart = indexOf
-        var loopEnd = lastLastItemIndexSelected
+        let loopStart = indexOf
+        let loopEnd = lastLastItemIndexSelected
         if (indexOf > lastLastItemIndexSelected) {
           loopStart = lastLastItemIndexSelected
           loopEnd = indexOf
@@ -117,12 +117,12 @@ export default {
         const flattenedEntitiesArray = []
         this.shelves.map((s) => flattenedEntitiesArray.push(...s.entities))
 
-        var isSelecting = false
+        let isSelecting = false
         // If any items in this range is not selected then select all otherwise unselect all
         for (let i = loopStart; i <= loopEnd; i++) {
           const thisEntity = flattenedEntitiesArray[i]
           if (thisEntity) {
-            if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+            if (!this.selectedMediaItems.some((i) => i.id === thisEntity.id)) {
               isSelecting = true
               break
             }
@@ -133,13 +133,23 @@ export default {
         for (let i = loopStart; i <= loopEnd; i++) {
           const thisEntity = flattenedEntitiesArray[i]
           if (thisEntity) {
-            this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+            const mediaItem = {
+              id: thisEntity.id,
+              mediaType: thisEntity.mediaType,
+              hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+            }
+            this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
           } else {
             console.error('Invalid entity index', i)
           }
         }
       } else {
-        this.$store.commit('toggleLibraryItemSelected', entity.id)
+        const mediaItem = {
+          id: entity.id,
+          mediaType: entity.mediaType,
+          hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+        }
+        this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
       }
 
       this.$nextTick(() => {

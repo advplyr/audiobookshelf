@@ -201,8 +201,8 @@ export default {
       // Includes margin
       return this.entityWidth + 24
     },
-    selectedLibraryItems() {
-      return this.$store.state.selectedLibraryItems || []
+    selectedMediaItems() {
+      return this.$store.state.globals.selectedMediaItems || []
     },
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
@@ -232,7 +232,7 @@ export default {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
         const lastLastItemIndexSelected = this.lastItemIndexSelected
-        if (!this.selectedLibraryItems.includes(entity.id)) {
+        if (!this.selectedMediaItems.some((i) => i.id === entity.id)) {
           this.lastItemIndexSelected = indexOf
         } else {
           this.lastItemIndexSelected = -1
@@ -251,7 +251,7 @@ export default {
           for (let i = loopStart; i <= loopEnd; i++) {
             const thisEntity = this.entities[i]
             if (thisEntity && !thisEntity.collapsedSeries) {
-              if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+              if (!this.selectedMediaItems.some((i) => i.id === thisEntity.id)) {
                 isSelecting = true
                 break
               }
@@ -269,16 +269,27 @@ export default {
             const entityComponentRef = this.entityComponentRefs[i]
             if (thisEntity && entityComponentRef) {
               entityComponentRef.selected = isSelecting
-              this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+
+              const mediaItem = {
+                id: thisEntity.id,
+                mediaType: thisEntity.mediaType,
+                hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+              }
+              this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
             } else {
               console.error('Invalid entity index', i)
             }
           }
         } else {
-          this.$store.commit('toggleLibraryItemSelected', entity.id)
+          const mediaItem = {
+            id: entity.id,
+            mediaType: entity.mediaType,
+            hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+          }
+          this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
         }
 
-        var newIsSelectionMode = !!this.selectedLibraryItems.length
+        const newIsSelectionMode = !!this.selectedMediaItems.length
         if (this.isSelectionMode !== newIsSelectionMode) {
           this.isSelectionMode = newIsSelectionMode
           this.updateBookSelectionMode(newIsSelectionMode)

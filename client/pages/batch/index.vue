@@ -91,11 +91,13 @@
 <script>
 export default {
   async asyncData({ store, redirect, app }) {
-    if (!store.state.selectedLibraryItems.length) {
+    if (!store.state.globals.selectedMediaItems.length) {
       return redirect('/')
     }
-    var libraryItems = await app.$axios.$post(`/api/items/batch/get`, { libraryItemIds: store.state.selectedLibraryItems }).catch((error) => {
-      var errorMsg = error.response.data || 'Failed to get items'
+
+    const libraryItemIds = store.state.globals.selectedMediaItems.map((i) => i.id)
+    const libraryItems = await app.$axios.$post(`/api/items/batch/get`, { libraryItemIds }).catch((error) => {
+      const errorMsg = error.response.data || 'Failed to get items'
       console.error(errorMsg, error)
       return []
     })

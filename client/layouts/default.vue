@@ -42,9 +42,8 @@ export default {
       if (this.$store.state.showEditModal) {
         this.$store.commit('setShowEditModal', false)
       }
-      if (this.$store.state.selectedLibraryItems) {
-        this.$store.commit('setSelectedLibraryItems', [])
-      }
+
+      this.$store.commit('globals/resetSelectedMediaItems', [])
       this.updateBodyClass()
     }
   },
@@ -504,9 +503,9 @@ export default {
       }
 
       // Batch selecting
-      if (this.$store.getters['getNumLibraryItemsSelected'] && name === 'Escape') {
+      if (this.$store.getters['globals/getIsBatchSelectingMediaItems'] && name === 'Escape') {
         // ESCAPE key cancels batch selection
-        this.$store.commit('setSelectedLibraryItems', [])
+        this.$store.commit('globals/resetSelectedMediaItems', [])
         this.$eventBus.$emit('bookshelf_clear_selection')
         e.preventDefault()
         return
