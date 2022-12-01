@@ -508,6 +508,8 @@ export default {
 
       this.showFindChaptersModal = false
       this.chapterData = null
+
+      this.checkChapters()
     },
     applyChapterData() {
       var index = 0
@@ -524,6 +526,8 @@ export default {
         })
       this.showFindChaptersModal = false
       this.chapterData = null
+
+      this.checkChapters()
     },
     findChapters() {
       if (!this.asinInput) {
