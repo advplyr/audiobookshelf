@@ -140,26 +140,22 @@ export const mutations = {
     state.showBatchQuickMatchModal = val
   },
   resetSelectedMediaItems(state) {
-    // Vue.set(state, 'selectedMediaItems', [])
     state.selectedMediaItems = []
   },
   toggleMediaItemSelected(state, item) {
     if (state.selectedMediaItems.some(i => i.id === item.id)) {
       state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
     } else {
-      // const newSel = state.selectedMediaItems.concat([{...item}])
-      // Vue.set(state, 'selectedMediaItems', newSel)
       state.selectedMediaItems.push(item)
     }
   },
   setMediaItemSelected(state, { item, selected }) {
-    const index = state.selectedMediaItems.findIndex(i => i.id === item.id)
-    if (index && !selected) {
+    const isAlreadySelected = state.selectedMediaItems.some(i => i.id === item.id)
+    if (isAlreadySelected && !selected) {
       state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
-    } else if (selected && !index) {
-      state.selectedMediaItems.splice(index, 1, item)
-      // var newSel = state.selectedMediaItems.concat([libraryItemId])
-      // Vue.set(state, 'selectedMediaItems', newSel)
+
+    } else if (selected && !isAlreadySelected) {
+      state.selectedMediaItems.push(item)
     }
   }
 }
