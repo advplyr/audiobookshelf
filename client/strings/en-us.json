@@ -342,7 +342,7 @@
   "LabelSettingsSkipMatchingBooksWithISBN": "Skip matching books that already have an ISBN",
   "LabelSettingsSortingIgnorePrefixes": "Ignore prefixes when sorting",
   "LabelSettingsSortingIgnorePrefixesHelp": "i.e. for prefix \"the\" book title \"The Book Title\" would sort as \"Book Title, The\"",
-  "LabelSettingsSquareBookCovers": "User square book covers",
+  "LabelSettingsSquareBookCovers": "Use square book covers",
   "LabelSettingsSquareBookCoversHelp": "Prefer to use square covers over standard 1.6:1 book covers",
   "LabelSettingsStoreCoversWithItem": "Store covers with item",
   "LabelSettingsStoreCoversWithItemHelp": "By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named \"cover\" will be kept",
