@@ -163,7 +163,7 @@ export default {
     },
     bookWidth() {
       var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
-      if (this.isCoverSquareAspectRatio) return coverSize * 1.6
+      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return coverSize * 1.6
       return coverSize
     },
     bookHeight() {
