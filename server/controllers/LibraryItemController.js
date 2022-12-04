@@ -1,3 +1,4 @@
+const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 
@@ -178,7 +179,15 @@ class LibraryItemController {
 
   // GET api/items/:id/cover
   async getCover(req, res) {
-    let { query: { width, height, format }, libraryItem } = req
+    const { query: { width, height, format, raw }, libraryItem } = req
+
+    if (raw) { // any value
+      if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
+        return res.sendStatus(404)
+      }
+
+      return res.sendFile(libraryItem.media.coverPath)
+    }
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
