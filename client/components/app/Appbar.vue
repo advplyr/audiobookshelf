@@ -25,15 +25,21 @@
         </div>
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
-          <span class="material-icons text-2xl" aria-label="User Stats" role="button">equalizer</span>
+          <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom">
+            <span class="material-icons text-2xl" aria-label="User Stats" role="button">equalizer</span>
+          </ui-tooltip>
         </nuxt-link>
 
         <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
-          <span class="material-icons text-2xl" aria-label="Upload Media" role="button">upload</span>
+          <ui-tooltip :text="$strings.ButtonUpload" direction="bottom">
+            <span class="material-icons text-2xl" aria-label="Upload Media" role="button">upload</span>
+          </ui-tooltip>
         </nuxt-link>
 
         <nuxt-link v-if="userIsAdminOrUp" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
-          <span class="material-icons text-2xl" aria-label="System Settings" role="button">settings</span>
+          <ui-tooltip :text="$strings.HeaderSettings" direction="bottom">
+            <span class="material-icons text-2xl" aria-label="System Settings" role="button">settings</span>
+          </ui-tooltip>
         </nuxt-link>
 
         <nuxt-link to="/account" class="relative w-9 h-9 md:w-32 bg-fg border border-gray-500 rounded shadow-sm ml-1.5 sm:ml-3 md:ml-5 md:pl-3 md:pr-10 py-2 text-left focus:outline-none sm:text-sm cursor-pointer hover:bg-bg hover:bg-opacity-40" aria-haspopup="listbox" aria-expanded="true">
