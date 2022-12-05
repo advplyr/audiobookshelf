@@ -25,7 +25,7 @@
         </div>
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
-          <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom">
+          <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom" class="flex items-center">
             <span class="material-icons text-2xl" aria-label="User Stats" role="button">equalizer</span>
           </ui-tooltip>
         </nuxt-link>
