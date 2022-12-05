@@ -25,7 +25,7 @@ class GoogleBooks {
       publisher,
       publishedYear: publisherDate ? publisherDate.split('-')[0] : null,
       description,
-      cover: imageLinks && imageLinks.thumbnail ? imageLinks.thumbnail : null,
+      cover: imageLinks && imageLinks.extraLarge ? imageLinks.extraLarge : null,
       genres: categories && Array.isArray(categories) ? [...categories] : null,
       isbn: this.extractIsbn(industryIdentifiers)
     }
