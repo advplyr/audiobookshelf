@@ -31,7 +31,7 @@
         </nuxt-link>
 
         <nuxt-link v-if="userCanUpload && currentLibrary" to="/upload" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
-          <ui-tooltip :text="$strings.ButtonUpload" direction="bottom">
+          <ui-tooltip :text="$strings.ButtonUpload" direction="bottom" class="flex items-center">
             <span class="material-icons text-2xl" aria-label="Upload Media" role="button">upload</span>
           </ui-tooltip>
         </nuxt-link>
