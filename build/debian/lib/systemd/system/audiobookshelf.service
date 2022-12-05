@@ -11,7 +11,6 @@ ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 User=audiobookshelf
 Group=audiobookshelf
-PermissionsStartOnly=true
 
 [Install]
 WantedBy=multi-user.target
