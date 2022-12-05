@@ -37,7 +37,7 @@
         </nuxt-link>
 
         <nuxt-link v-if="userIsAdminOrUp" to="/config" class="outline-none hover:text-gray-200 cursor-pointer w-8 h-8 flex items-center justify-center mx-1">
-          <ui-tooltip :text="$strings.HeaderSettings" direction="bottom">
+          <ui-tooltip :text="$strings.HeaderSettings" direction="bottom" class="flex items-center">
             <span class="material-icons text-2xl" aria-label="System Settings" role="button">settings</span>
           </ui-tooltip>
         </nuxt-link>
