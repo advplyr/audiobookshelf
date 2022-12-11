@@ -1,12 +1,19 @@
 {
     "build": { "dockerfile": "Dockerfile" },
     "mounts": [
-        "source=abs-node-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume"
+        "source=abs-server-node_modules,target=${containerWorkspaceFolder}/node_modules,type=volume",
+        "source=abs-client-node_modules,target=${containerWorkspaceFolder}/client/node_modules,type=volume"
     ],
     "features": {
         "fish": "latest"
 	},
 	"extensions": [
 		"eamodio.gitlens"
-	]
+    ],
+    "remoteUser": "node",
+    "postStartCommand": {
+        "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+        "server": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm ci",
+        "client": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm ci && npm run generate"
+    }
 }
