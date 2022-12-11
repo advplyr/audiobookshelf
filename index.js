@@ -1,9 +1,11 @@
 const server = require('./server/Server')
+const fs = require('fs')
 global.appRoot = __dirname
 
 const isDev = process.env.NODE_ENV !== 'production'
 if (isDev) {
-  const devEnv = require('./dev').config
+  const devFile = fs.existsSync('./dev.js') ? './dev' : './dev.default'
+  const devEnv = require(devFile).config
   process.env.NODE_ENV = 'development'
   process.env.PORT = devEnv.Port
   process.env.CONFIG_PATH = devEnv.ConfigPath
