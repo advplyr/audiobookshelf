@@ -16,6 +16,7 @@ export const state = () => ({
   selectedPlaylist: null,
   selectedCollection: null,
   selectedAuthor: null,
+  selectedMediaItems: [],
   isCasting: false, // Actively casting
   isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
@@ -64,6 +65,9 @@ export const getters = {
       return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
     }
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
+  },
+  getIsBatchSelectingMediaItems: (state) => {
+    return state.selectedMediaItems.length
   }
 }
 
@@ -134,5 +138,24 @@ export const mutations = {
   },
   setShowBatchQuickMatchModal(state, val) {
     state.showBatchQuickMatchModal = val
+  },
+  resetSelectedMediaItems(state) {
+    state.selectedMediaItems = []
+  },
+  toggleMediaItemSelected(state, item) {
+    if (state.selectedMediaItems.some(i => i.id === item.id)) {
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
+    } else {
+      state.selectedMediaItems.push(item)
+    }
+  },
+  setMediaItemSelected(state, { item, selected }) {
+    const isAlreadySelected = state.selectedMediaItems.some(i => i.id === item.id)
+    if (isAlreadySelected && !selected) {
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
+
+    } else if (selected && !isAlreadySelected) {
+      state.selectedMediaItems.push(item)
+    }
   }
 }

@@ -13,7 +13,7 @@ class LibraryController {
   constructor() { }
 
   async create(req, res) {
-    var newLibraryPayload = {
+    const newLibraryPayload = {
       ...req.body
     }
     if (!newLibraryPayload.name || !newLibraryPayload.folders || !newLibraryPayload.folders.length) {
@@ -26,9 +26,9 @@ class LibraryController {
       f.fullPath = Path.resolve(f.fullPath)
       return f
     })
-    for (var folder of newLibraryPayload.folders) {
+    for (const folder of newLibraryPayload.folders) {
       try {
-        var direxists = await fs.pathExists(folder.fullPath)
+        const direxists = await fs.pathExists(folder.fullPath)
         if (!direxists) { // If folder does not exist try to make it and set file permissions/owner
           await fs.mkdir(folder.fullPath)
           await filePerms.setDefault(folder.fullPath)
@@ -39,12 +39,16 @@ class LibraryController {
       }
     }
 
-    var library = new Library()
+    const library = new Library()
     newLibraryPayload.displayOrder = this.db.libraries.length + 1
     library.setData(newLibraryPayload)
     await this.db.insertEntity('library', library)
-    // TODO: Only emit to users that have access
-    SocketAuthority.emitter('library_added', library.toJSON())
+
+    // Only emit to users with access to library
+    const userFilter = (user) => {
+      return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
+    }
+    SocketAuthority.emitter('library_added', library.toJSON(), userFilter)
 
     // Add library watcher
     this.watcher.addLibrary(library)
@@ -53,7 +57,7 @@ class LibraryController {
   }
 
   findAll(req, res) {
-    var librariesAccessible = req.user.librariesAccessible || []
+    const librariesAccessible = req.user.librariesAccessible || []
     if (librariesAccessible && librariesAccessible.length) {
       return res.json(this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON()))
     }
@@ -77,12 +81,12 @@ class LibraryController {
   }
 
   async update(req, res) {
-    var library = req.library
+    const library = req.library
 
     // Validate new folder paths exist or can be created & resolve rel paths
     //   returns 400 if a new folder fails to access
     if (req.body.folders) {
-      var newFolderPaths = []
+      const newFolderPaths = []
       req.body.folders = req.body.folders.map(f => {
         if (!f.id) {
           f.fullPath = Path.resolve(f.fullPath)
@@ -90,11 +94,11 @@ class LibraryController {
         }
         return f
       })
-      for (var path of newFolderPaths) {
-        var pathExists = await fs.pathExists(path)
+      for (const path of newFolderPaths) {
+        const pathExists = await fs.pathExists(path)
         if (!pathExists) {
           // Ensure dir will recursively create directories which might be preferred over mkdir
-          var success = await fs.ensureDir(path).then(() => true).catch((error) => {
+          const success = await fs.ensureDir(path).then(() => true).catch((error) => {
             Logger.error(`[LibraryController] Failed to ensure folder dir "${path}"`, error)
             return false
           })
@@ -107,7 +111,7 @@ class LibraryController {
       }
     }
 
-    var hasUpdates = library.update(req.body)
+    const hasUpdates = library.update(req.body)
     // TODO: Should check if this is an update to folder paths or name only
     if (hasUpdates) {
       // Update watcher
@@ -117,7 +121,7 @@ class LibraryController {
       this.cronManager.updateLibraryScanCron(library)
 
       // Remove libraryItems no longer in library
-      var itemsToRemove = this.db.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
+      const itemsToRemove = this.db.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
       if (itemsToRemove.length) {
         Logger.info(`[Scanner] Updating library, removing ${itemsToRemove.length} items`)
         for (let i = 0; i < itemsToRemove.length; i++) {
@@ -125,32 +129,37 @@ class LibraryController {
         }
       }
       await this.db.updateEntity('library', library)
-      SocketAuthority.emitter('library_updated', library.toJSON())
+
+      // Only emit to users with access to library
+      const userFilter = (user) => {
+        return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
+      }
+      SocketAuthority.emitter('library_updated', library.toJSON(), userFilter)
     }
     return res.json(library.toJSON())
   }
 
   async delete(req, res) {
-    var library = req.library
+    const library = req.library
 
     // Remove library watcher
     this.watcher.removeLibrary(library)
 
     // Remove collections for library
-    var collections = this.db.collections.filter(c => c.libraryId === library.id)
+    const collections = this.db.collections.filter(c => c.libraryId === library.id)
     for (const collection of collections) {
       Logger.info(`[Server] deleting collection "${collection.name}" for library "${library.name}"`)
       await this.db.removeEntity('collection', collection.id)
     }
 
     // Remove items in this library
-    var libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
+    const libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
     Logger.info(`[Server] deleting library "${library.name}" with ${libraryItems.length} items"`)
     for (let i = 0; i < libraryItems.length; i++) {
       await this.handleDeleteLibraryItem(libraryItems[i])
     }
 
-    var libraryJson = library.toJSON()
+    const libraryJson = library.toJSON()
     await this.db.removeEntity('library', library.id)
     SocketAuthority.emitter('library_removed', libraryJson)
     return res.json(libraryJson)
@@ -172,10 +181,10 @@ class LibraryController {
       minified: req.query.minified === '1',
       collapseseries: req.query.collapseseries === '1'
     }
-    var mediaIsBook = payload.mediaType === 'book'
+    const mediaIsBook = payload.mediaType === 'book'
 
     // Step 1 - Filter the retrieved library items
-    var filterSeries = null
+    let filterSeries = null
     if (payload.filterBy) {
       libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
       payload.total = libraryItems.length
@@ -218,7 +227,7 @@ class LibraryController {
 
     if (payload.sortBy) {
       // old sort key TODO: should be mutated in dbMigration
-      var sortKey = payload.sortBy
+      let sortKey = payload.sortBy
       if (sortKey.startsWith('book.')) {
         sortKey = sortKey.replace('book.', 'media.metadata.')
       }
@@ -248,7 +257,7 @@ class LibraryController {
       }
 
       // Sort series based on the sortBy attribute
-      var direction = payload.sortDesc ? 'desc' : 'asc'
+      const direction = payload.sortDesc ? 'desc' : 'asc'
       sortArray.push({
         [direction]: (li) => {
           if (mediaIsBook && sortBySequence) {
@@ -334,7 +343,7 @@ class LibraryController {
   }
 
   async removeLibraryItemsWithIssues(req, res) {
-    var libraryItemsWithIssues = req.libraryItems.filter(li => li.hasIssues)
+    const libraryItemsWithIssues = req.libraryItems.filter(li => li.hasIssues)
     if (!libraryItemsWithIssues.length) {
       Logger.warn(`[LibraryController] No library items have issues`)
       return res.sendStatus(200)
@@ -351,8 +360,8 @@ class LibraryController {
 
   // api/libraries/:id/series
   async getAllSeriesForLibrary(req, res) {
-    var libraryItems = req.libraryItems
-    var payload = {
+    const libraryItems = req.libraryItems
+    const payload = {
       results: [],
       total: 0,
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
@@ -363,7 +372,7 @@ class LibraryController {
       minified: req.query.minified === '1'
     }
 
-    var series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified)
+    let series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified)
 
     const direction = payload.sortDesc ? 'desc' : 'asc'
     series = naturalSort(series).by([

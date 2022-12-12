@@ -31,9 +31,13 @@ class SocketAuthority {
   }
 
   // Emits event to all authorized clients
-  emitter(evt, data) {
+  //  optional filter function to only send event to specific users
+  //  TODO: validate that filter is actually a function
+  emitter(evt, data, filter = null) {
     for (const socketId in this.clients) {
       if (this.clients[socketId].user) {
+        if (filter && !filter(this.clients[socketId].user)) continue
+
         this.clients[socketId].socket.emit(evt, data)
       }
     }

@@ -47,7 +47,7 @@ class CacheManager {
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(path)) {
@@ -66,7 +66,7 @@ class CacheManager {
       return res.sendStatus(500)
     }
 
-    let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
+    const writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
     if (!writtenFile) return res.sendStatus(500)
 
     // Set owner and permissions of cache image

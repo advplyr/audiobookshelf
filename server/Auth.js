@@ -109,7 +109,7 @@ class Auth {
           Logger.error('JWT Verify Token Failed', err)
           return resolve(null)
         }
-        var user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
+        const user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
         resolve(user || null)
       })
     })

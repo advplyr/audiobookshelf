@@ -118,6 +118,8 @@ module.exports = {
       ]
     },
     workbox: {
+      offline: false,
+      cacheAssets: false,
       preCaching: [],
       runtimeCaching: []
     }

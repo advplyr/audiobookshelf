@@ -118,18 +118,25 @@ class PlaybackSessionManager {
 
   async startSession(user, deviceInfo, libraryItem, episodeId, options) {
     // Close any sessions already open for user
-    var userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
+    const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
     for (const session of userSessions) {
       Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}"`)
       await this.closeSession(user, session, null)
     }
 
-    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
-    var mediaPlayer = options.mediaPlayer || 'unknown'
+    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
+    const mediaPlayer = options.mediaPlayer || 'unknown'
 
     const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
-    var userStartTime = 0
-    if (userProgress) userStartTime = Number.parseFloat(userProgress.currentTime) || 0
+    let userStartTime = 0
+    if (userProgress) {
+      if (userProgress.isFinished) {
+        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.metadata.title}"`)
+        // Keep userStartTime as 0 so the client restarts the media
+      } else {
+        userStartTime = Number.parseFloat(userProgress.currentTime) || 0
+      }
+    }
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, episodeId)
 

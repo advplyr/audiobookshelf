@@ -205,7 +205,7 @@ export default {
       return this.seriesProgress.libraryItemIds || []
     },
     isBatchSelecting() {
-      return this.$store.state.selectedLibraryItems.length
+      return this.$store.getters['globals/getIsBatchSelectingMediaItems']
     },
     isSeriesFinished() {
       return this.seriesProgress && !!this.seriesProgress.isFinished
