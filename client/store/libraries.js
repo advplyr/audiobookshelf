@@ -86,8 +86,8 @@ export const actions = {
       .$get('/api/filesystem')
       .then((res) => {
         console.log('Settings folders', res)
-        commit('setFolders', res)
-        return res
+        commit('setFolders', res.directories)
+        return res.directories
       })
       .catch((error) => {
         console.error('Failed to load dirs', error)
@@ -151,7 +151,7 @@ export const actions = {
     this.$axios
       .$get(`/api/libraries`)
       .then((data) => {
-        commit('set', data)
+        commit('set', data.libraries)
         commit('setLastLoad')
       })
       .catch((error) => {

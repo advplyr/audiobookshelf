@@ -467,9 +467,7 @@ class LibraryController {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 10
 
     const categories = libraryHelpers.buildPersonalizedShelves(req.user, libraryItems, mediaType, this.db.series, this.db.authors, limitPerShelf)
-    res.json({
-      shelves: categories
-    })
+    res.json(categories)
   }
 
   // PATCH: Change the order of libraries
