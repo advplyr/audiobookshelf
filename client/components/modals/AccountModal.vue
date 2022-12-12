@@ -201,8 +201,8 @@ export default {
       this.loadingTags = true
       this.$axios
         .$get(`/api/tags`)
-        .then((tags) => {
-          this.tags = tags
+        .then((res) => {
+          this.tags = res.tags
           this.loadingTags = false
         })
         .catch((error) => {

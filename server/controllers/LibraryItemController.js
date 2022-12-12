@@ -308,16 +308,18 @@ class LibraryItemController {
 
   // POST: api/items/batch/get
   async batchGet(req, res) {
-    var libraryItemIds = req.body.libraryItemIds || []
+    const libraryItemIds = req.body.libraryItemIds || []
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    var libraryItems = []
+    const libraryItems = []
     libraryItemIds.forEach((lid) => {
       const li = this.db.libraryItems.find(_li => _li.id === lid)
       if (li) libraryItems.push(li.toJSONExpanded())
     })
-    res.json(libraryItems)
+    res.json({
+      libraryItems
+    })
   }
 
   // POST: api/items/batch/quickmatch

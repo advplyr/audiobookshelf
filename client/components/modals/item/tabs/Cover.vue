@@ -303,11 +303,14 @@ export default {
       this.persistProvider()
 
       this.isProcessing = true
-      var searchQuery = this.getSearchQuery()
-      var results = await this.$axios.$get(`/api/search/covers?${searchQuery}`).catch((error) => {
-        console.error('Failed', error)
-        return []
-      })
+      const searchQuery = this.getSearchQuery()
+      const results = await this.$axios
+        .$get(`/api/search/covers?${searchQuery}`)
+        .then((res) => res.results)
+        .catch((error) => {
+          console.error('Failed', error)
+          return []
+        })
       this.coversFound = results
       this.isProcessing = false
       this.hasSearched = true

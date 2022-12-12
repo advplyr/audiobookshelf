@@ -20,8 +20,9 @@ class CollectionController {
   }
 
   findAll(req, res) {
-    var expandedCollections = this.db.collections.map(c => c.toJSONExpanded(this.db.libraryItems))
-    res.json(expandedCollections)
+    res.json({
+      collections: this.db.collections.map(c => c.toJSONExpanded(this.db.libraryItems))
+    })
   }
 
   findOne(req, res) {

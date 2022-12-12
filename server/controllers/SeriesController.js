@@ -32,7 +32,9 @@ class SeriesController {
     var limit = (req.query.limit && !isNaN(req.query.limit)) ? Number(req.query.limit) : 25
     var series = this.db.series.filter(se => se.name.toLowerCase().includes(q))
     series = series.slice(0, limit)
-    res.json(series)
+    res.json({
+      results: series
+    })
   }
 
   async update(req, res) {

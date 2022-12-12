@@ -96,11 +96,14 @@ export default {
     }
 
     const libraryItemIds = store.state.globals.selectedMediaItems.map((i) => i.id)
-    const libraryItems = await app.$axios.$post(`/api/items/batch/get`, { libraryItemIds }).catch((error) => {
-      const errorMsg = error.response.data || 'Failed to get items'
-      console.error(errorMsg, error)
-      return []
-    })
+    const libraryItems = await app.$axios
+      .$post(`/api/items/batch/get`, { libraryItemIds })
+      .then((res) => res.libraryItems)
+      .catch((error) => {
+        const errorMsg = error.response.data || 'Failed to get items'
+        console.error(errorMsg, error)
+        return []
+      })
     return {
       mediaType: libraryItems[0].mediaType,
       libraryItems

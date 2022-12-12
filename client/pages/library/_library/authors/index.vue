@@ -48,10 +48,13 @@ export default {
   },
   methods: {
     async init() {
-      this.authors = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/authors`).catch((error) => {
-        console.error('Failed to load authors', error)
-        return []
-      })
+      this.authors = await this.$axios
+        .$get(`/api/libraries/${this.currentLibraryId}/authors`)
+        .then((response) => response.authors)
+        .catch((error) => {
+          console.error('Failed to load authors', error)
+          return []
+        })
       this.loading = false
     },
     authorAdded(author) {

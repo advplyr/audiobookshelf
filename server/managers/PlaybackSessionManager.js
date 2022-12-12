@@ -31,7 +31,7 @@ class PlaybackSessionManager {
     return this.sessions.find(s => s.userId === userId)
   }
   getStream(sessionId) {
-    var session = this.getSession(sessionId)
+    const session = this.getSession(sessionId)
     return session ? session.stream : null
   }
 
@@ -54,7 +54,7 @@ class PlaybackSessionManager {
   }
 
   async syncSessionRequest(user, session, payload, res) {
-    var result = await this.syncSession(user, session, payload)
+    const result = await this.syncSession(user, session, payload)
     if (result) {
       res.json(session.toJSONForClient(result.libraryItem))
     }
@@ -66,7 +66,7 @@ class PlaybackSessionManager {
       return res.status(500).send('Local session is locked and already syncing')
     }
 
-    var libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
+    const libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Library item not found for session "${sessionJson.libraryItemId}"`)
       return res.status(500).send('Library item not found')
@@ -74,7 +74,7 @@ class PlaybackSessionManager {
 
     this.localSessionLock[sessionJson.id] = true // Lock local session
 
-    var session = await this.db.getPlaybackSession(sessionJson.id)
+    let session = await this.db.getPlaybackSession(sessionJson.id)
     if (!session) {
       // New session from local
       session = new PlaybackSession(sessionJson)
@@ -96,10 +96,10 @@ class PlaybackSessionManager {
       progress: session.progress,
       lastUpdate: session.updatedAt // Keep media progress update times the same as local
     }
-    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
+    const wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
     if (wasUpdated) {
       await this.db.updateEntity('user', user)
-      var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
+      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()
@@ -118,18 +118,25 @@ class PlaybackSessionManager {
 
   async startSession(user, deviceInfo, libraryItem, episodeId, options) {
     // Close any sessions already open for user
-    var userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
+    const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
     for (const session of userSessions) {
       Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}"`)
       await this.closeSession(user, session, null)
     }
 
-    var shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
-    var mediaPlayer = options.mediaPlayer || 'unknown'
+    const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
+    const mediaPlayer = options.mediaPlayer || 'unknown'
 
     const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
-    var userStartTime = 0
-    if (userProgress) userStartTime = Number.parseFloat(userProgress.currentTime) || 0
+    let userStartTime = 0
+    if (userProgress) {
+      if (userProgress.isFinished) {
+        Logger.info(`[PlaybackSessionManager] Starting session for user "${user.username}" and resetting progress for finished item "${libraryItem.media.metadata.title}"`)
+        // Keep userStartTime as 0 so the client restarts the media
+      } else {
+        userStartTime = Number.parseFloat(userProgress.currentTime) || 0
+      }
+    }
     const newPlaybackSession = new PlaybackSession()
     newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, episodeId)
 
@@ -142,14 +149,14 @@ class PlaybackSessionManager {
         // HLS not supported for video yet
       }
     } else {
-      var audioTracks = []
+      let audioTracks = []
       if (shouldDirectPlay) {
         Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
         audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
         newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       } else {
         Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
-        var stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
+        const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
         await stream.generatePlaylist()
         stream.start() // Start transcode
 
@@ -175,7 +182,7 @@ class PlaybackSessionManager {
   }
 
   async syncSession(user, session, syncData) {
-    var libraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
+    const libraryItem = this.db.libraryItems.find(li => li.id === session.libraryItemId)
     if (!libraryItem) {
       Logger.error(`[PlaybackSessionManager] syncSession Library Item not found "${session.libraryItemId}"`)
       return null
@@ -190,11 +197,11 @@ class PlaybackSessionManager {
       currentTime: syncData.currentTime,
       progress: session.progress
     }
-    var wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
+    const wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
     if (wasUpdated) {
 
       await this.db.updateEntity('user', user)
-      var itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
+      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
         data: itemProgress.toJSON()
@@ -229,7 +236,7 @@ class PlaybackSessionManager {
   }
 
   async removeSession(sessionId) {
-    var session = this.sessions.find(s => s.id === sessionId)
+    const session = this.sessions.find(s => s.id === sessionId)
     if (!session) return
     if (session.stream) {
       await session.stream.close()
@@ -242,13 +249,13 @@ class PlaybackSessionManager {
   async removeOrphanStreams() {
     await fs.ensureDir(this.StreamsPath)
     try {
-      var streamsInPath = await fs.readdir(this.StreamsPath)
+      const streamsInPath = await fs.readdir(this.StreamsPath)
       for (let i = 0; i < streamsInPath.length; i++) {
-        var streamId = streamsInPath[i]
+        const streamId = streamsInPath[i]
         if (streamId.startsWith('play_')) { // Make sure to only remove folders that are a stream
-          var session = this.sessions.find(se => se.id === streamId)
+          const session = this.sessions.find(se => se.id === streamId)
           if (!session) {
-            var streamPath = Path.join(this.StreamsPath, streamId)
+            const streamPath = Path.join(this.StreamsPath, streamId)
             Logger.debug(`[PlaybackSessionManager] Removing orphan stream "${streamPath}"`)
             await fs.remove(streamPath)
           }

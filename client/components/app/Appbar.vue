@@ -122,7 +122,7 @@ export default {
       return this.$store.state.globals.selectedMediaItems
     },
     selectedMediaItemsArePlayable() {
-      return !this.selectedMediaItems.some(i => !i.hasTracks)
+      return !this.selectedMediaItems.some((i) => !i.hasTracks)
     },
     userMediaProgress() {
       return this.$store.state.user.user.mediaProgress || []
@@ -164,12 +164,15 @@ export default {
       this.$store.commit('setProcessingBatch', true)
 
       const libraryItemIds = this.selectedMediaItems.map((i) => i.id)
-      const libraryItems = await this.$axios.$post(`/api/items/batch/get`, { libraryItemIds }).catch((error) => {
-        const errorMsg = error.response.data || 'Failed to get items'
-        console.error(errorMsg, error)
-        this.$toast.error(errorMsg)
-        return []
-      })
+      const libraryItems = await this.$axios
+        .$post(`/api/items/batch/get`, { libraryItemIds })
+        .then((res) => res.libraryItems)
+        .catch((error) => {
+          const errorMsg = error.response.data || 'Failed to get items'
+          console.error(errorMsg, error)
+          this.$toast.error(errorMsg)
+          return []
+        })
 
       if (!libraryItems.length) {
         this.$store.commit('setProcessingBatch', false)

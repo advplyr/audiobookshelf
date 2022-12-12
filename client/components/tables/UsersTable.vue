@@ -109,8 +109,8 @@ export default {
     loadUsers() {
       this.$axios
         .$get('/api/users')
-        .then((users) => {
-          this.users = users.sort((a, b) => {
+        .then((res) => {
+          this.users = res.users.sort((a, b) => {
             return a.createdAt - b.createdAt
           })
         })

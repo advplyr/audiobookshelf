@@ -61,10 +61,10 @@
 <script>
 export default {
   async asyncData({ params, redirect, app }) {
-    var users = await app.$axios
+    const users = await app.$axios
       .$get('/api/users')
-      .then((users) => {
-        return users.sort((a, b) => {
+      .then((res) => {
+        return res.users.sort((a, b) => {
           return a.createdAt - b.createdAt
         })
       })

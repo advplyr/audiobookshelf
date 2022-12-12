@@ -62,7 +62,9 @@ class LibraryController {
       return res.json(this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON()))
     }
 
-    res.json(this.db.libraries.map(lib => lib.toJSON()))
+    res.json({
+      libraries: this.db.libraries.map(lib => lib.toJSON())
+    })
   }
 
   async findOne(req, res) {
@@ -496,8 +498,9 @@ class LibraryController {
       Logger.debug(`[LibraryController] Library orders were up to date`)
     }
 
-    var libraries = this.db.libraries.map(lib => lib.toJSON())
-    res.json(libraries)
+    res.json({
+      libraries: this.db.libraries.map(lib => lib.toJSON())
+    })
   }
 
   // GET: Global library search
@@ -603,7 +606,9 @@ class LibraryController {
       }
     })
 
-    res.json(naturalSort(Object.values(authors)).asc(au => au.name))
+    res.json({
+      authors: naturalSort(Object.values(authors)).asc(au => au.name)
+    })
   }
 
   async matchAll(req, res) {

@@ -12,7 +12,9 @@ class UserController {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
     const users = this.db.users.map(u => this.userJsonWithItemProgressDetails(u, hideRootToken))
-    res.json(users)
+    res.json({
+      users: users
+    })
   }
 
   findOne(req, res) {
