@@ -306,13 +306,13 @@ export default {
       this.runSearch()
     },
     async runSearch() {
-      var searchQuery = this.getSearchQuery()
+      const searchQuery = this.getSearchQuery()
       if (this.lastSearch === searchQuery) return
       this.searchResults = []
       this.isProcessing = true
       this.lastSearch = searchQuery
-      var searchEntity = this.isPodcast ? 'podcast' : 'books'
-      var results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
+      const searchEntity = this.isPodcast ? 'podcast' : 'books'
+      let results = await this.$axios.$get(`/api/search/${searchEntity}?${searchQuery}`, { timeout: 20000 }).catch((error) => {
         console.error('Failed', error)
         return []
       })
