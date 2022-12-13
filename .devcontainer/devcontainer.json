@@ -11,9 +11,17 @@
 		"eamodio.gitlens"
     ],
     "remoteUser": "node",
-    "postCreateCommand": {
-        "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
-        "server install": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile",
-        "client install": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile && npm run generate"
+    // "postStartCommand": [
+    //     "git",
+    //     "config",
+    //     "--global",
+    //     "--add",
+    //     "safe.directory",
+    //     "${containerWorkspaceFolder}"
+    // ],
+    "postStartCommand": {
+        // "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+        "server": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile",
+        "client": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile && npm run generate"
     }
 }
