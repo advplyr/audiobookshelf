@@ -4,16 +4,16 @@
       <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
         <span class="material-icons text-2xl">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
-        <p class="ml-4 text-gray-200 text-lg">Map details</p>
+        <p class="ml-4 text-gray-200 text-lg">{{ $strings.HeaderMapDetails }}</p>
 
         <div class="flex-grow" />
 
         <div class="w-64 flex">
           <button class="w-32 h-8 rounded-l-md shadow-md border border-gray-600" :class="!isMapOverwrite ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'overwrite'">
-            <p class="text-sm">Overwrite</p>
+            <p class="text-sm">{{ $strings.LabelOverwrite }}</p>
           </button>
           <button class="w-32 h-8 rounded-r-md shadow-md border border-gray-600" :class="!isMapAppend ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'append'">
-            <p class="text-sm">Append</p>
+            <p class="text-sm">{{ $strings.LabelAppend }}</p>
           </button>
         </div>
       </div>
