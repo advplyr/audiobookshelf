@@ -113,10 +113,13 @@ export default {
       if (this.searching) return
       this.currentSearch = this.textInput
       this.searching = true
-      var results = await this.$axios.$get(`/api/${this.endpoint}?q=${this.currentSearch}&limit=15&token=${this.userToken}`).catch((error) => {
-        console.error('Failed to get search results', error)
-        return []
-      })
+      const results = await this.$axios
+        .$get(`/api/${this.endpoint}?q=${this.currentSearch}&limit=15&token=${this.userToken}`)
+        .then((res) => res.results || res)
+        .catch((error) => {
+          console.error('Failed to get search results', error)
+          return []
+        })
       this.items = results || []
       this.searching = false
     },

@@ -137,16 +137,33 @@ export default {
         author: (this.details.authors || []).map((au) => au.name).join(', ')
       }
     },
-    mapBatchDetails(batchDetails) {
+    mapBatchDetails(batchDetails, mapType = 'overwrite') {
       for (const key in batchDetails) {
-        if (key === 'tags') {
-          this.newTags = [...batchDetails.tags]
-        } else if (key === 'genres' || key === 'narrators') {
-          this.details[key] = [...batchDetails[key]]
-        } else if (key === 'authors' || key === 'series') {
-          this.details[key] = batchDetails[key].map((i) => ({ ...i }))
+        if (mapType === 'append') {
+          if (key === 'tags') {
+            // Concat and remove dupes
+            this.newTags = [...new Set(this.newTags.concat(batchDetails.tags))]
+          } else if (key === 'genres' || key === 'narrators') {
+            // Concat and remove dupes
+            this.details[key] = [...new Set(this.details[key].concat(batchDetails[key]))]
+          } else if (key === 'authors' || key === 'series') {
+            batchDetails[key].forEach((detail) => {
+              const existingDetail = this.details[key].find((_d) => _d.name.toLowerCase() == detail.name.toLowerCase().trim() || _d.id == detail.id)
+              if (!existingDetail) {
+                this.details[key].push({ ...detail })
+              }
+            })
+          }
         } else {
-          this.details[key] = batchDetails[key]
+          if (key === 'tags') {
+            this.newTags = [...batchDetails.tags]
+          } else if (key === 'genres' || key === 'narrators') {
+            this.details[key] = [...batchDetails[key]]
+          } else if (key === 'authors' || key === 'series') {
+            this.details[key] = batchDetails[key].map((i) => ({ ...i }))
+          } else {
+            this.details[key] = batchDetails[key]
+          }
         }
       }
     },

@@ -107,14 +107,24 @@ export default {
         author: this.details.author
       }
     },
-    mapBatchDetails(batchDetails) {
+    mapBatchDetails(batchDetails, mapType = 'overwrite') {
       for (const key in batchDetails) {
-        if (key === 'tags') {
-          this.newTags = [...batchDetails.tags]
-        } else if (key === 'genres') {
-          this.details[key] = [...batchDetails[key]]
+        if (mapType === 'append') {
+          if (key === 'tags') {
+            // Concat and remove dupes
+            this.newTags = [...new Set(this.newTags.concat(batchDetails.tags))]
+          } else if (key === 'genres') {
+            // Concat and remove dupes
+            this.details[key] = [...new Set(this.details[key].concat(batchDetails[key]))]
+          }
         } else {
-          this.details[key] = batchDetails[key]
+          if (key === 'tags') {
+            this.newTags = [...batchDetails.tags]
+          } else if (key === 'genres') {
+            this.details[key] = [...batchDetails[key]]
+          } else {
+            this.details[key] = batchDetails[key]
+          }
         }
       }
     },

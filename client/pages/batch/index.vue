@@ -5,11 +5,22 @@
         <span class="material-icons text-2xl">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
         <p class="ml-4 text-gray-200 text-lg">Map details</p>
+
+        <div class="flex-grow" />
+
+        <div class="w-64 flex">
+          <button class="w-32 h-8 rounded-l-md shadow-md border border-gray-600" :class="!isMapOverwrite ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'overwrite'">
+            <p class="text-sm">Overwrite</p>
+          </button>
+          <button class="w-32 h-8 rounded-r-md shadow-md border border-gray-600" :class="!isMapAppend ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'append'">
+            <p class="text-sm">Append</p>
+          </button>
+        </div>
       </div>
       <div class="overflow-hidden">
         <transition name="slide">
           <div v-if="openMapOptions" class="flex flex-wrap">
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.subtitle" />
               <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" :label="$strings.LabelSubtitle" class="mb-4 ml-4" />
             </div>
@@ -18,13 +29,13 @@
               <!-- Authors filter only contains authors in this library, use query input to query all authors -->
               <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" :label="$strings.LabelAuthors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
               <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" :label="$strings.LabelPublishYear" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
-              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" :label="$strings.LabelSeries" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" :label="$strings.LabelSeries" :items="existingSeriesNames" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.genres" />
@@ -38,15 +49,15 @@
               <ui-checkbox v-model="selectedBatchUsage.narrators" />
               <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" :label="$strings.LabelNarrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
             </div>
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
               <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" :label="$strings.LabelPublisher" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.language" />
               <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" :label="$strings.LabelLanguage" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.explicit" />
               <div class="ml-4">
                 <ui-checkbox
@@ -114,10 +125,10 @@ export default {
       isProcessing: false,
       libraryItemCopies: [],
       isScrollable: false,
-      newSeriesNames: [],
       newTagItems: [],
       newGenreItems: [],
       newNarratorItems: [],
+      mapDetailsType: 'overwrite',
       batchDetails: {
         subtitle: null,
         authors: null,
@@ -142,10 +153,17 @@ export default {
         language: false,
         explicit: false
       },
+      appendableKeys: ['authors', 'genres', 'tags', 'narrators', 'series'],
       openMapOptions: false
     }
   },
   computed: {
+    isMapOverwrite() {
+      return this.mapDetailsType === 'overwrite'
+    },
+    isMapAppend() {
+      return this.mapDetailsType === 'append'
+    },
     isPodcastLibrary() {
       return this.mediaType === 'podcast'
     },
@@ -157,9 +175,6 @@ export default {
     },
     tagItems() {
       return this.tags.concat(this.newTagItems)
-    },
-    seriesItems() {
-      return [...this.existingSeriesNames, ...this.newSeriesNames]
     },
     narratorItems() {
       return [...this.narrators, ...this.newNarratorItems]
@@ -219,31 +234,32 @@ export default {
     mapBatchDetails() {
       this.blurBatchForm()
 
-      var batchMapPayload = {}
+      const batchMapPayload = {}
       for (const key in this.selectedBatchUsage) {
-        if (this.selectedBatchUsage[key]) {
-          if (key === 'series') {
-            // Map string of series to series objects
-            batchMapPayload[key] = this.batchDetails[key].map((seItem) => {
-              var existingSeries = this.series.find((se) => se.name.toLowerCase() === seItem.toLowerCase().trim())
-              if (existingSeries) {
-                return existingSeries
-              } else {
-                return {
-                  id: `new-${Math.floor(Math.random() * 10000)}`,
-                  name: seItem
-                }
+        if (!this.selectedBatchUsage[key]) continue
+        if (this.isMapAppend && !this.appendableKeys.includes(key)) continue
+
+        if (key === 'series') {
+          // Map string of series to series objects
+          batchMapPayload[key] = this.batchDetails[key].map((seItem) => {
+            const existingSeries = this.series.find((se) => se.name.toLowerCase() === seItem.toLowerCase().trim())
+            if (existingSeries) {
+              return existingSeries
+            } else {
+              return {
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: seItem
               }
-            })
-          } else {
-            batchMapPayload[key] = this.batchDetails[key]
-          }
+            }
+          })
+        } else {
+          batchMapPayload[key] = this.batchDetails[key]
         }
       }
 
       this.libraryItemCopies.forEach((li) => {
-        var ref = this.getEditFormRef(li.id)
-        ref.mapBatchDetails(batchMapPayload)
+        const ref = this.getEditFormRef(li.id)
+        ref.mapBatchDetails(batchMapPayload, this.mapDetailsType)
       })
       this.$toast.success('Details mapped')
     },
