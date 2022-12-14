@@ -7,21 +7,13 @@
     "features": {
         "fish": "latest"
 	},
-	"extensions": [
-		"eamodio.gitlens"
+    "extensions": [
+        "eamodio.gitlens"
     ],
     "remoteUser": "node",
-    // "postStartCommand": [
-    //     "git",
-    //     "config",
-    //     "--global",
-    //     "--add",
-    //     "safe.directory",
-    //     "${containerWorkspaceFolder}"
-    // ],
     "postStartCommand": {
-        // "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
-        "server": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile",
-        "client": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm i --from-lockfile && npm run generate"
+        "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+        "server": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm i",
+        "client": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm i && npm run generate"
     }
 }
