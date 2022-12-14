@@ -11,7 +11,7 @@
         "eamodio.gitlens"
     ],
     "remoteUser": "node",
-    "postStartCommand": {
+    "postAttachCommand": {
         "git": "git config --global --add safe.directory ${containerWorkspaceFolder}",
         "server": "cd ${containerWorkspaceFolder} && sudo chown $(id -u):$(id -g) node_modules && npm i",
         "client": "cd ${containerWorkspaceFolder}/client && sudo chown $(id -u):$(id -g) node_modules && npm i && npm run generate"
