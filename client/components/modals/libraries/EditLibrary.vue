@@ -1,7 +1,7 @@
 <template>
-  <div class="w-full h-full px-1 md:px-4 py-2 mb-4">
-    <div v-if="!showDirectoryPicker" class="w-full h-full py-4">
-      <div class="flex flex-wrap md:flex-nowrap -mx-1">
+  <div class="w-full h-full md:px-4 py-2 mb-4">
+    <div v-if="!showDirectoryPicker" class="w-full h-full md:py-4">
+      <div class="flex flex-wrap md:flex-nowrap -mx-1 mb-2">
         <div class="w-2/5 md:w-72 px-1 py-1 md:py-0">
           <ui-dropdown v-model="mediaType" :items="mediaTypes" :label="$strings.LabelMediaType" :disabled="!isNew" small @input="changedMediaType" />
         </div>
@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <div class="w-full py-4">
+      <div class="folders-container overflow-y-auto w-full py-2 mb-2">
         <p class="px-1 text-sm font-semibold">{{ $strings.LabelFolders }}</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
@@ -140,3 +140,14 @@ export default {
   }
 }
 </script>
+
+<style>
+.folders-container {
+  max-height: calc(80vh - 192px);
+}
+@media (max-device-width: 768px) {
+  .folders-container {
+    max-height: calc(80vh - 292px);
+  }
+}
+</style>
