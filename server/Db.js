@@ -2,6 +2,7 @@ const Path = require('path')
 const njodb = require('./libs/njodb')
 const Logger = require('./Logger')
 const { version } = require('../package.json')
+const filePerms = require('./utils/filePerms')
 const LibraryItem = require('./objects/LibraryItem')
 const User = require('./objects/user/User')
 const Collection = require('./objects/Collection')
@@ -130,6 +131,9 @@ class Db {
 
   async init() {
     await this.load()
+
+    // Set file ownership for all files created by db
+    await filePerms.setDefault(global.ConfigPath, true)
 
     if (!this.serverSettings) { // Create first load server settings
       this.serverSettings = new ServerSettings()

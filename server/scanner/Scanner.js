@@ -22,8 +22,6 @@ const Series = require('../objects/entities/Series')
 
 class Scanner {
   constructor(db, coverManager) {
-    this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
-
     this.db = db
     this.coverManager = coverManager
 
@@ -165,7 +163,7 @@ class Scanner {
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
 
     if (libraryScan.totalResults) {
-      libraryScan.saveLog(this.ScanLogPath)
+      libraryScan.saveLog()
     }
   }
 
