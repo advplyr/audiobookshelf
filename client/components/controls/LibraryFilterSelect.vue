@@ -348,6 +348,10 @@ export default {
         {
           id: 'language',
           name: this.$strings.LabelLanguage
+        },
+        {
+          id: 'cover',
+          name: this.$strings.LabelCover
         }
       ]
     },

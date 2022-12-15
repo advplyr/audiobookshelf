@@ -39,18 +39,19 @@ module.exports = {
       } else if (group == 'missing') {
         filtered = filtered.filter(li => {
           if (li.isBook) {
-            if (filter === 'asin' && li.media.metadata.asin === null) return true
-            if (filter === 'isbn' && li.media.metadata.isbn === null) return true
-            if (filter === 'subtitle' && li.media.metadata.subtitle === null) return true
-            if (filter === 'authors' && li.media.metadata.authors.length === 0) return true
-            if (filter === 'publishedYear' && li.media.metadata.publishedYear === null) return true
-            if (filter === 'series' && li.media.metadata.series.length === 0) return true
-            if (filter === 'description' && li.media.metadata.description === null) return true
-            if (filter === 'genres' && li.media.metadata.genres.length === 0) return true
-            if (filter === 'tags' && li.media.tags.length === 0) return true
-            if (filter === 'narrators' && li.media.metadata.narrators.length === 0) return true
-            if (filter === 'publisher' && li.media.metadata.publisher === null) return true
-            if (filter === 'language' && li.media.metadata.language === null) return true
+            if (filter === 'asin' && !li.media.metadata.asin) return true
+            if (filter === 'isbn' && !li.media.metadata.isbn) return true
+            if (filter === 'subtitle' && !li.media.metadata.subtitle) return true
+            if (filter === 'authors' && !li.media.metadata.authors.length) return true
+            if (filter === 'publishedYear' && !li.media.metadata.publishedYear) return true
+            if (filter === 'series' && !li.media.metadata.series.length) return true
+            if (filter === 'description' && !li.media.metadata.description) return true
+            if (filter === 'genres' && !li.media.metadata.genres.length) return true
+            if (filter === 'tags' && !li.media.tags.length) return true
+            if (filter === 'narrators' && !li.media.metadata.narrators.length) return true
+            if (filter === 'publisher' && !li.media.metadata.publisher) return true
+            if (filter === 'language' && !li.media.metadata.language) return true
+            if (filter === 'cover' && !li.media.coverPath) return true
           } else {
             return false
           }
