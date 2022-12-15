@@ -354,6 +354,7 @@ export default {
       for (let i = 0; i < this.newChapters.length; i++) {
         this.newChapters[i].id = i
         this.newChapters[i].start = Number(this.newChapters[i].start)
+        this.newChapters[i].title = (this.newChapters[i].title || '').trim()
 
         if (i === 0 && this.newChapters[i].start !== 0) {
           this.newChapters[i].error = this.$strings.MessageChapterErrorFirstNotZero
@@ -512,15 +513,14 @@ export default {
       this.checkChapters()
     },
     applyChapterData() {
-      var index = 0
+      let index = 0
       this.newChapters = this.chapterData.chapters
         .filter((chap) => chap.startOffsetSec < this.mediaDuration)
         .map((chap) => {
-          var chapEnd = Math.min(this.mediaDuration, (chap.startOffsetMs + chap.lengthMs) / 1000)
           return {
             id: index++,
             start: chap.startOffsetMs / 1000,
-            end: chapEnd,
+            end: Math.min(this.mediaDuration, (chap.startOffsetMs + chap.lengthMs) / 1000),
             title: chap.title
           }
         })
