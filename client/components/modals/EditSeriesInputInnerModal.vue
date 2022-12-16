@@ -15,7 +15,7 @@
             </div>
           </div>
           <div class="flex justify-end mt-2 p-1">
-            <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
+            <ui-btn type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </div>
       </form>
