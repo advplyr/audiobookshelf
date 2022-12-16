@@ -35,7 +35,7 @@
             <div class="flex pt-2 px-2">
               <ui-btn type="button" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
               <div class="flex-grow" />
-              <ui-btn type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
+              <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
             </div>
           </div>
         </div>
