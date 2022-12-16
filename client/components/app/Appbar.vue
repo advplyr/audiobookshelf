@@ -68,7 +68,7 @@
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate">
-          <ui-tooltip text="Edit" direction="bottom">
+          <ui-tooltip :text="$strings.LabelEdit" direction="bottom">
             <ui-icon-btn :disabled="processingBatch" icon="edit" bg-color="warning" class="mx-1.5" @click="batchEditClick" />
           </ui-tooltip>
         </template>
