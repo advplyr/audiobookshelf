@@ -108,13 +108,13 @@ export default {
     contextMenuItems() {
       const items = [
         {
-          text: 'Create playlist from collection',
+          text: this.$strings.MessagePlaylistCreateFromCollection,
           action: 'create-playlist'
         }
       ]
       if (this.userCanDelete) {
         items.push({
-          text: 'Delete collection',
+          text: this.$strings.ButtonDelete,
           action: 'delete'
         })
       }
@@ -135,13 +135,13 @@ export default {
         .$post(`/api/playlists/collection/${this.collectionId}`)
         .then((playlist) => {
           if (playlist) {
-            this.$toast.success('Playlist created')
+            this.$toast.success(this.$strings.ToastPlaylistCreateSuccess)
             this.$router.push(`/playlist/${playlist.id}`)
           }
         })
         .catch((error) => {
           const errMsg = error.response ? error.response.data || '' : ''
-          this.$toast.error(errMsg || 'Failed to create playlist')
+          this.$toast.error(errMsg || this.$strings.ToastPlaylistCreateFailed)
         })
         .finally(() => {
           this.processing = false
