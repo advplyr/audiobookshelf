@@ -20,7 +20,8 @@ class GoogleBooks {
     let cover = null
     // Selects the largest cover assuming the largest is the last key in the object
     if (imageLinks && Object.keys(imageLinks).length) {
-      cover = imageLinks[Object.keys(imageLinks).pop()] || null
+      cover = imageLinks[Object.keys(imageLinks).pop()]
+      cover = cover?.replace(/^http:/, 'https:') || null
     }
 
     return {
