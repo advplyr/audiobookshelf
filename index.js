@@ -15,7 +15,7 @@ if (isDev) {
 }
 
 const PORT = process.env.PORT || 80
-const HOST = process.env.HOST || '0.0.0.0'
+const HOST = process.env.HOST
 const CONFIG_PATH = process.env.CONFIG_PATH || '/config'
 const METADATA_PATH = process.env.METADATA_PATH || '/metadata'
 const UID = process.env.AUDIOBOOKSHELF_UID || 99

@@ -240,7 +240,8 @@ class Server {
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
-      Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+      if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+      else Logger.info(`Listening on port :${this.Port}`)
     })
 
     // Start listening for socket connections
