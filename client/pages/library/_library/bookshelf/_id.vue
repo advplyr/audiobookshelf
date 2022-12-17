@@ -15,17 +15,14 @@ export default {
     }
 
     // Set series sort by
-    if (params.id === 'series') {
-      if (query.sort) {
-        store.commit('libraries/setSeriesSortBy', query.sort)
-        store.commit('libraries/setSeriesSortDesc', !!query.desc)
+    if (query.filter || query.sort || query.desc) {
+      const isSeries = params.id === 'series'
+      const settingsUpdate = {
+        [isSeries ? 'seriesFilterBy' : 'filterBy']: query.filter || undefined,
+        [isSeries ? 'seriesSortBy' : 'orderBy']: query.sort || undefined,
+        [isSeries ? 'seriesSortDesc' : 'orderDesc']: query.desc == '0' ? false : query.desc == '1' ? true : undefined
       }
-      if (query.filter) {
-        console.log('has filter', query.filter)
-        store.commit('libraries/setSeriesFilterBy', query.filter)
-      }
-    } else if (query.filter) {
-      store.dispatch('user/updateUserSettings', { filterBy: query.filter })
+      store.dispatch('user/updateUserSettings', settingsUpdate)
     }
 
     // Redirect podcast libraries

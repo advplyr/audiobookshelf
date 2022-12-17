@@ -10,9 +10,6 @@ export const state = () => ({
   folderLastUpdate: 0,
   filterData: null,
   numUserPlaylists: 0,
-  seriesSortBy: 'name',
-  seriesSortDesc: false,
-  seriesFilterBy: 'all',
   collections: [],
   userPlaylists: []
 })
@@ -311,15 +308,6 @@ export const mutations = {
         state.filterData.languages.sort((a, b) => a.localeCompare(b))
       }
     }
-  },
-  setSeriesSortBy(state, sortBy) {
-    state.seriesSortBy = sortBy
-  },
-  setSeriesSortDesc(state, sortDesc) {
-    state.seriesSortDesc = sortDesc
-  },
-  setSeriesFilterBy(state, filterBy) {
-    state.seriesFilterBy = filterBy
   },
   setCollections(state, collections) {
     state.collections = collections

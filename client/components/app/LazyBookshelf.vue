@@ -100,13 +100,13 @@ export default {
       return this.page
     },
     seriesSortBy() {
-      return this.$store.state.libraries.seriesSortBy
+      return this.$store.getters['user/getUserSetting']('seriesSortBy')
     },
     seriesSortDesc() {
-      return this.$store.state.libraries.seriesSortDesc
+      return this.$store.getters['user/getUserSetting']('seriesSortDesc')
     },
     seriesFilterBy() {
-      return this.$store.state.libraries.seriesFilterBy
+      return this.$store.getters['user/getUserSetting']('seriesFilterBy')
     },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
@@ -498,7 +498,7 @@ export default {
       }
     },
     settingsUpdated(settings) {
-      var wasUpdated = this.checkUpdateSearchParams()
+      const wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
         this.resetEntities()
       } else if (settings.bookshelfCoverSize !== this.currentBookWidth) {
@@ -667,7 +667,6 @@ export default {
         }
       })
 
-      this.$eventBus.$on('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
       this.$eventBus.$on('user-settings', this.settingsUpdated)
@@ -695,7 +694,6 @@ export default {
         bookshelf.removeEventListener('scroll', this.scroll)
       }
 
-      this.$eventBus.$off('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
       this.$eventBus.$off('user-settings', this.settingsUpdated)

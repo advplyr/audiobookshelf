@@ -8,7 +8,10 @@ export const state = () => ({
     bookshelfCoverSize: 120,
     collapseSeries: false,
     collapseBookSeries: false,
-    useChapterTrack: false
+    useChapterTrack: false,
+    seriesSortBy: 'name',
+    seriesSortDesc: false,
+    seriesFilterBy: 'all'
   }
 })
 
@@ -106,7 +109,6 @@ export const actions = {
       }
     }
     if (hasChanges) {
-      localStorage.setItem('userSettings', JSON.stringify(existingSettings))
       commit('setSettings', existingSettings)
       this.$eventBus.$emit('user-settings', state.settings)
     }
@@ -160,6 +162,7 @@ export const mutations = {
   },
   setSettings(state, settings) {
     if (!settings) return
+    localStorage.setItem('userSettings', JSON.stringify(settings))
     state.settings = settings
   }
 }
