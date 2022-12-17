@@ -367,11 +367,11 @@ export default {
   },
   mounted() {
     this.init()
-    this.$store.commit('user/addSettingsListener', { id: 'bookshelftoolbar', meth: this.settingsUpdated })
+    this.$eventBus.$on('user-settings', this.settingsUpdated)
     this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
   },
   beforeDestroy() {
-    this.$store.commit('user/removeSettingsListener', 'bookshelftoolbar')
+    this.$eventBus.$off('user-settings', this.settingsUpdated)
     this.$eventBus.$off('bookshelf-total-entities', this.setBookshelfTotalEntities)
   }
 }

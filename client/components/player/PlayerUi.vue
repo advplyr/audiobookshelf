@@ -234,13 +234,10 @@ export default {
       this.showChaptersModal = false
     },
     setUseChapterTrack() {
-      var useChapterTrack = !this.useChapterTrack
-      this.useChapterTrack = useChapterTrack
-      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(useChapterTrack)
+      this.useChapterTrack = !this.useChapterTrack
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
 
-      this.$store.dispatch('user/updateUserSettings', { useChapterTrack }).catch((err) => {
-        console.error('Failed to update settings', err)
-      })
+      this.$store.dispatch('user/updateUserSettings', { useChapterTrack: this.useChapterTrack })
       this.updateTimestamp()
     },
     checkUpdateChapterTrack() {
@@ -311,7 +308,7 @@ export default {
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
 
-      var _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
@@ -345,13 +342,14 @@ export default {
     }
   },
   mounted() {
-    this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
-    this.init()
     this.$eventBus.$on('player-hotkey', this.hotkey)
+    this.$eventBus.$on('user-settings', this.settingsUpdated)
+
+    this.init()
   },
   beforeDestroy() {
-    this.$store.commit('user/removeSettingsListener', 'audioplayer')
     this.$eventBus.$off('player-hotkey', this.hotkey)
+    this.$eventBus.$off('user-settings', this.settingsUpdated)
   }
 }
 </script>

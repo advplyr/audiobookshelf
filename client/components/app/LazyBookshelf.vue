@@ -670,8 +670,7 @@ export default {
       this.$eventBus.$on('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
-
-      this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
+      this.$eventBus.$on('user-settings', this.settingsUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -699,8 +698,7 @@ export default {
       this.$eventBus.$off('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
-
-      this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')
+      this.$eventBus.$off('user-settings', this.settingsUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.off('item_updated', this.libraryItemUpdated)

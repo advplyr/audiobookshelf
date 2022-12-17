@@ -63,13 +63,7 @@ class User {
     return {
       mobileOrderBy: 'recent',
       mobileOrderDesc: true,
-      mobileFilterBy: 'all',
-      orderBy: 'media.metadata.title',
-      orderDesc: false,
-      filterBy: 'all',
-      playbackRate: 1,
-      bookshelfCoverSize: 120,
-      collapseSeries: false
+      mobileFilterBy: 'all'
     }
   }
 

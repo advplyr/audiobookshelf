@@ -5,8 +5,6 @@ import { formatDistance, format, addDays, isDate } from 'date-fns'
 
 Vue.directive('click-outside', vClickOutside.directive)
 
-Vue.prototype.$eventBus = new Vue()
-
 Vue.prototype.$dateDistanceFromNow = (unixms) => {
   if (!unixms) return ''
   return formatDistance(unixms, Date.now(), { addSuffix: true })
@@ -159,6 +157,7 @@ export {
 export default ({ app, store }, inject) => {
   app.$decode = decode
   app.$encode = encode
+  inject('eventBus', new Vue())
   inject('isDev', process.env.NODE_ENV !== 'production')
 
   store.commit('setRouterBasePath', app.$config.routerBasePath)
