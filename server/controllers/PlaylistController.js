@@ -174,9 +174,42 @@ class PlaylistController {
     res.json(jsonExpanded)
   }
 
+  // POST: api/playlists/collection/:collectionId
+  async createFromCollection(req, res) {
+    let collection = this.db.collections.find(c => c.id === req.params.collectionId)
+    if (!collection) {
+      return res.status(404).send('Collection not found')
+    }
+    // Expand collection to get library items
+    collection = collection.toJSONExpanded(this.db.libraryItems)
+
+    // Filter out library items not accessible to user
+    const libraryItems = collection.books.filter(item => req.user.checkCanAccessLibraryItem(item))
+
+    if (!libraryItems.length) {
+      return res.status(400).send('Collection has no books accessible to user')
+    }
+
+    const newPlaylist = new Playlist()
+
+    const newPlaylistData = {
+      userId: req.user.id,
+      libraryId: collection.libraryId,
+      name: collection.name,
+      description: collection.description || null,
+      items: libraryItems.map(li => ({ libraryItemId: li.id }))
+    }
+    newPlaylist.setData(newPlaylistData)
+
+    const jsonExpanded = newPlaylist.toJSONExpanded(this.db.libraryItems)
+    await this.db.insertEntity('playlist', newPlaylist)
+    SocketAuthority.clientEmitter(newPlaylist.userId, 'playlist_added', jsonExpanded)
+    res.json(jsonExpanded)
+  }
+
   middleware(req, res, next) {
     if (req.params.id) {
-      var playlist = this.db.playlists.find(p => p.id === req.params.id)
+      const playlist = this.db.playlists.find(p => p.id === req.params.id)
       if (!playlist) {
         return res.status(404).send('Playlist not found')
       }

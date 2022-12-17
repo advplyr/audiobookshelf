@@ -38,10 +38,10 @@ class Collection {
   }
 
   toJSONExpanded(libraryItems, minifiedBooks = false) {
-    var json = this.toJSON()
+    const json = this.toJSON()
     json.books = json.books.map(bookId => {
-      var _ab = libraryItems.find(li => li.id === bookId)
-      return _ab ? minifiedBooks ? _ab.toJSONMinified() : _ab.toJSONExpanded() : null
+      const book = libraryItems.find(li => li.id === bookId)
+      return book ? minifiedBooks ? book.toJSONMinified() : book.toJSONExpanded() : null
     }).filter(b => !!b)
     return json
   }

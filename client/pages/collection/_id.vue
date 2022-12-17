@@ -19,9 +19,11 @@
               {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
-            <ui-icon-btn v-if="userCanUpdate" icon="edit" class="mx-0.5" @click="editClick" />
+            <button type="button" class="h-9 w-9 flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5 mx-px" @click.stop.prevent="editClick">
+              <span class="material-icons text-xl">edit</span>
+            </button>
 
-            <ui-icon-btn v-if="userCanDelete" icon="delete" class="mx-0.5" @click="removeClick" />
+            <ui-context-menu-dropdown :items="contextMenuItems" class="mx-px" @action="contextMenuAction" />
           </div>
 
           <div class="my-8 max-w-2xl">
@@ -32,7 +34,7 @@
         </div>
       </div>
     </div>
-    <div v-show="processingRemove" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
+    <div v-show="processing" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
       <ui-loading-indicator />
     </div>
   </div>
@@ -64,7 +66,7 @@ export default {
   },
   data() {
     return {
-      processingRemove: false
+      processing: false
     }
   },
   computed: {
@@ -102,15 +104,55 @@ export default {
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    contextMenuItems() {
+      const items = [
+        {
+          text: 'Create playlist from collection',
+          action: 'create-playlist'
+        }
+      ]
+      if (this.userCanDelete) {
+        items.push({
+          text: 'Delete collection',
+          action: 'delete'
+        })
+      }
+      return items
     }
   },
   methods: {
+    contextMenuAction(action) {
+      if (action === 'delete') {
+        this.removeClick()
+      } else if (action === 'create-playlist') {
+        this.createPlaylistFromCollection()
+      }
+    },
+    createPlaylistFromCollection() {
+      this.processing = true
+      this.$axios
+        .$post(`/api/playlists/collection/${this.collectionId}`)
+        .then((playlist) => {
+          if (playlist) {
+            this.$toast.success('Playlist created')
+            this.$router.push(`/playlist/${playlist.id}`)
+          }
+        })
+        .catch((error) => {
+          const errMsg = error.response ? error.response.data || '' : ''
+          this.$toast.error(errMsg || 'Failed to create playlist')
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
     editClick() {
       this.$store.commit('globals/setEditCollection', this.collection)
     },
     removeClick() {
       if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
-        this.processingRemove = true
+        this.processing = true
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
@@ -121,7 +163,7 @@ export default {
             this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
           })
           .finally(() => {
-            this.processingRemove = false
+            this.processing = false
           })
       }
     },

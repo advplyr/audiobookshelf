@@ -123,7 +123,7 @@ class CollectionController {
 
   middleware(req, res, next) {
     if (req.params.id) {
-      var collection = this.db.collections.find(c => c.id === req.params.id)
+      const collection = this.db.collections.find(c => c.id === req.params.id)
       if (!collection) {
         return res.status(404).send('Collection not found')
       }

@@ -143,7 +143,7 @@ class ApiRouter {
     //
     // Playlist Routes
     //
-    this.router.post('/playlists', PlaylistController.middleware.bind(this), PlaylistController.create.bind(this))
+    this.router.post('/playlists', PlaylistController.create.bind(this))
     this.router.get('/playlists', PlaylistController.findAllForUser.bind(this))
     this.router.get('/playlists/:id', PlaylistController.middleware.bind(this), PlaylistController.findOne.bind(this))
     this.router.patch('/playlists/:id', PlaylistController.middleware.bind(this), PlaylistController.update.bind(this))
@@ -152,6 +152,7 @@ class ApiRouter {
     this.router.delete('/playlists/:id/item/:libraryItemId/:episodeId?', PlaylistController.middleware.bind(this), PlaylistController.removeItem.bind(this))
     this.router.post('/playlists/:id/batch/add', PlaylistController.middleware.bind(this), PlaylistController.addBatch.bind(this))
     this.router.post('/playlists/:id/batch/remove', PlaylistController.middleware.bind(this), PlaylistController.removeBatch.bind(this))
+    this.router.post('/playlists/collection/:collectionId', PlaylistController.createFromCollection.bind(this))
 
     //
     // Current User Routes (Me)
