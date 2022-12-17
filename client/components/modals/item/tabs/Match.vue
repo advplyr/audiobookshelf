@@ -335,8 +335,7 @@ export default {
       this.isProcessing = false
       this.hasSearched = true
     },
-    init() {
-      this.clearSelectedMatch()
+    initSelectedMatchUsage() {
       this.selectedMatchUsage = {
         title: true,
         subtitle: true,
@@ -359,6 +358,27 @@ export default {
         feedUrl: true,
         releaseDate: true
       }
+
+      // Load saved selected match from local storage
+      try {
+        let savedSelectedMatchUsage = localStorage.getItem('selectedMatchUsage')
+        if (!savedSelectedMatchUsage) return
+        savedSelectedMatchUsage = JSON.parse(savedSelectedMatchUsage)
+
+        for (const key in savedSelectedMatchUsage) {
+          if (this.selectedMatchUsage[key] !== undefined) {
+            this.selectedMatchUsage[key] = !!savedSelectedMatchUsage[key]
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load saved selectedMatchUsage', error)
+      }
+
+      this.checkboxToggled()
+    },
+    init() {
+      this.clearSelectedMatch()
+      this.initSelectedMatchUsage()
 
       if (this.libraryItem.id !== this.libraryItemId) {
         this.searchResults = []
@@ -465,11 +485,14 @@ export default {
       console.log('Match payload', updatePayload)
       this.isProcessing = true
 
+      // Persist in local storage
+      localStorage.setItem('selectedMatchUsage', JSON.stringify(this.selectedMatchUsage))
+
       if (updatePayload.metadata.cover) {
-        var coverPayload = {
+        const coverPayload = {
           url: updatePayload.metadata.cover
         }
-        var success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
+        const success = await this.$axios.$post(`/api/items/${this.libraryItemId}/cover`, coverPayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
@@ -483,8 +506,8 @@ export default {
       }
 
       if (Object.keys(updatePayload).length) {
-        var mediaUpdatePayload = updatePayload
-        var updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
+        const mediaUpdatePayload = updatePayload
+        const updateResult = await this.$axios.$patch(`/api/items/${this.libraryItemId}/media`, mediaUpdatePayload).catch((error) => {
           console.error('Failed to update', error)
           return false
         })
@@ -502,6 +525,7 @@ export default {
       } else {
         this.clearSelectedMatch()
       }
+
       this.isProcessing = false
     },
     clearSelectedMatch() {
