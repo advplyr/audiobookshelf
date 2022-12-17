@@ -18,7 +18,7 @@ class User {
     this.seriesHideFromContinueListening = [] // Series IDs that should not show on home page continue listening
     this.bookmarks = []
 
-    this.settings = {}
+    this.settings = {} // TODO: Remove after mobile release v0.9.61-beta
     this.permissions = {}
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsAccessible = [] // Empty if ALL item tags accessible
@@ -59,6 +59,7 @@ class User {
     return !!this.pash && !!this.pash.length
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   getDefaultUserSettings() {
     return {
       mobileOrderBy: 'recent',
@@ -93,7 +94,7 @@ class User {
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
-      settings: this.settings,
+      settings: this.settings, // TODO: Remove after mobile release v0.9.61-beta
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
       itemTagsAccessible: [...this.itemTagsAccessible]
@@ -113,7 +114,7 @@ class User {
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
-      settings: this.settings,
+      settings: this.settings, // TODO: Remove after mobile release v0.9.61-beta
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
       itemTagsAccessible: [...this.itemTagsAccessible]
@@ -165,7 +166,7 @@ class User {
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
-    this.settings = user.settings || this.getDefaultUserSettings()
+    this.settings = user.settings || this.getDefaultUserSettings() // TODO: Remove after mobile release v0.9.61-beta
     this.permissions = user.permissions || this.getDefaultUserPermissions()
     // Upload permission added v1.1.13, make sure root user has upload permissions
     if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
@@ -342,6 +343,7 @@ class User {
     return true
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   // Returns Boolean If update was made
   updateSettings(settings) {
     if (!this.settings) {

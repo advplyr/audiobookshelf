@@ -167,6 +167,7 @@ class MeController {
     this.auth.userChangePassword(req, res)
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   // PATCH: api/me/settings
   async updateSettings(req, res) {
     var settingsUpdate = req.body
