@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-50 bg-primary px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
     <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-1 sm:left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />

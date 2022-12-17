@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-50 bg-primary text-white">
+  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-60 bg-primary text-white">
     <div class="absolute top-4 right-4 z-20">
       <span class="material-icons cursor-pointer text-4xl" @click="close">close</span>
     </div>
