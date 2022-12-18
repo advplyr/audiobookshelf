@@ -100,7 +100,7 @@ class Auth {
   }
 
   generateRandomPasswordHash() {
-    return hashPass(getId())
+    return this.hashPass(getId())
   }
 
   generateAccessToken(payload) {

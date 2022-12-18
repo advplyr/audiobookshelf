@@ -123,8 +123,7 @@ class MiscController {
 
     // When authorizing an API token and forward auth is enabled then validate user using forward auth headers
     if (global.ForwardAuth.Enabled && !this.auth.validateForwardAuthUser(req)) {
-      Logger.error(`[MiscController] Authorize token with forward auth enabled failed for user "${req.user.username}"`)
-      return res.sendStatus(403)
+      Logger.warn(`[MiscController] Authorize token with forward auth enabled failed for user "${req.user.username}"`)
     }
 
     const userResponse = this.auth.getUserLoginResponsePayload(req.user, this.rssFeedManager.feedsArray)
