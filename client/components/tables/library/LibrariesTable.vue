@@ -1,5 +1,5 @@
 <template>
-  <div id="librariesTable">
+  <div>
     <draggable v-if="libraryCopies.length" :list="libraryCopies" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
