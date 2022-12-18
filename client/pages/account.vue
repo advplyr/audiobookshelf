@@ -75,9 +75,8 @@ export default {
       this.$setLanguageCode(lang)
     },
     logout() {
-      var rootSocket = this.$root.socket || {}
       const logoutPayload = {
-        socketId: rootSocket.id
+        socketId: (this.$root.socket || {}).id
       }
       this.$axios.$post('/logout', logoutPayload).catch((error) => {
         console.error(error)
@@ -87,7 +86,13 @@ export default {
       }
       this.$store.commit('libraries/setUserPlaylists', [])
       this.$store.commit('libraries/setCollections', [])
-      this.$router.push('/login')
+
+      if (this.$store.getters['user/getForwardAuthLogoutURI']) {
+        // Redirect to forward auth logout uri
+        location.replace(this.$store.getters['user/getForwardAuthLogoutURI'])
+      } else {
+        this.$router.push('/login')
+      }
     },
     resetForm() {
       this.password = null

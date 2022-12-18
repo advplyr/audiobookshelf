@@ -10,6 +10,7 @@ const { version } = require('../package.json')
 // Utils
 const dbMigration = require('./utils/dbMigration')
 const filePerms = require('./utils/filePerms')
+const { parseBool } = require('./utils/parseBool')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -45,6 +46,12 @@ class Server {
     global.ConfigPath = Path.normalize(CONFIG_PATH)
     global.MetadataPath = Path.normalize(METADATA_PATH)
     global.RouterBasePath = ROUTER_BASE_PATH
+    global.ForwardAuth = {
+      Enabled: parseBool(process.env.PROXY_FORWARD_AUTH_ENABLED) && process.env.PROXY_FORWARD_AUTH_USERNAME,
+      UsernameHeader: (process.env.PROXY_FORWARD_AUTH_USERNAME || '').toLowerCase(),
+      CreateUser: parseBool(process.env.PROXY_FORWARD_AUTH_CREATE),
+      LogoutURI: process.env.PROXY_FORWARD_AUTH_LOGOUT_URI
+    }
 
     // Fix backslash if not on Windows
     if (process.platform !== 'win32') {
@@ -221,7 +228,7 @@ class Server {
       }
       this.initializeServer(req, res)
     })
-    router.get('/status', (req, res) => {
+    router.get('/status', async (req, res) => {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
@@ -231,7 +238,14 @@ class Server {
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath
         payload.MetadataPath = global.MetadataPath
+        return res.json(payload)
       }
+
+      // Check forward auth for user
+      if (global.ForwardAuth.Enabled) {
+        payload.forwardAuthUserResponse = await this.auth.getUserFromProxyAuth(req, this.rssFeedManager.feedsArray)
+      }
+
       res.json(payload)
     })
     router.get('/ping', (req, res) => {

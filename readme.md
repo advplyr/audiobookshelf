@@ -261,13 +261,16 @@ Middleware relating to CORS will cause the app to report Unknown Error when logg
 From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/945074590374318170) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
 <br />
 
+
 ### Forward Proxy Authentication
+
 Users can be authenticated via an external proxy such as Authentik. 
 To use forward authentication you need to set the following environment variables:
 
  * `PROXY_FORWARD_AUTH_ENABLED` - enable/disable forward authentication
  * `PROXY_FORWARD_AUTH_USERNAME` - the name of the header containing the authenticated user's username. For example, by default in Authentik the value would be `X-authentik-username`.
- * `PROXY_FORWARD_AUTH_CREATE` - automatically create users if they don't exist. 
+ * `PROXY_FORWARD_AUTH_CREATE` - automatically create users if they don't exist (with account type of `user`). 
+ * `PROXY_FORWARD_AUTH_LOGOUT_URI` - path to redirect to when logging out.
 
 # Run from source
 

@@ -1,10 +1,12 @@
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
 const requestIp = require('./libs/requestIp')
+
 const Logger = require('./Logger')
+const SocketAuthority = require('./SocketAuthority')
+
 const User = require('./objects/user/User')
 const { getId } = require('./utils/index')
-const { parseBool } = require('./utils/parseBool')
 
 class Auth {
   constructor(db) {
@@ -97,6 +99,10 @@ class Auth {
     })
   }
 
+  generateRandomPasswordHash() {
+    return hashPass(getId())
+  }
+
   generateAccessToken(payload) {
     return jwt.sign(payload, global.ServerSettings.tokenSecret);
   }
@@ -180,59 +186,83 @@ class Auth {
    * Checks for an environment variable of PROXY_FORWARD_AUTH_ENABLED and if enabled
    * will authenticate the user from the proxy headers.
    * @param {*} req 
-   * @param {*} res 
-   * @param {*} feeds
-   * @returns 
+   * @param {Array} feeds
+   * @returns {Promise<(Object|false)>} User login response payload or false
    */
-  async getUserFromProxyAuth(req, res, feeds) {
-    var username = null;
-    var user = null;
-
-    // Check if $PROXY_FORWARD_AUTH_ENABLED is defined
-    if (!parseBool(process.env.PROXY_FORWARD_AUTH_ENABLED)) {
-      Logger.debug("$PROXY_FORWARD_AUTH_ENABLED not set.");
-      // Respond with disabled: true - client will check for it and ignore forward auth
-      return res.json({ disabled: true });
+  async getUserFromProxyAuth(req, feeds) {
+    if (!global.ForwardAuth.Enabled) {
+      return false
     }
 
-    // Check that the proxy username header is set
-    if (!process.env.PROXY_FORWARD_AUTH_USERNAME) {
-      Logger.info("$PROXY_FORWARD_AUTH_ENABLED is set, but $PROXY_FORWARD_AUTH_USERNAME has not been defined. Forward Authentication will not proceed.");
-      return res.json({ disabled: true });
+    let username = req.headers[global.ForwardAuth.UsernameHeader]
+
+    if (!username) {
+      Logger.warn(`[Auth] Forward Auth username header ${global.ForwardAuth.UsernameHeader} has no username`)
+      return false
     }
 
-    Logger.debug('Found $PROXY_FORWARD_AUTH_USERNAME header:', process.env.PROXY_FORWARD_AUTH_USERNAME);
-    username = req.headers[process.env.PROXY_FORWARD_AUTH_USERNAME.toLowerCase()];
-    Logger.debug('Found Forwarded Username ', username);
-
-    if (!username)
-      return res.status(401).send(`Username not found in headers (Header: ${process.env.PROXY_FORWARD_AUTH_USERNAME}`);
-
-    var user = this.users.find(u => u.username.toLowerCase() === username)
+    let user = this.users.find(u => u.username.toLowerCase() === username)
 
     // If the user doesn't exist and PROXY_FORWARD AUTH_CREATE is enabled, create the user
-    if (!user && parseBool(process.env.PROXY_FORWARD_AUTH_CREATE)) {
-      Logger.debug('User not found, creating user', username);
-      // TODO - user type:
-      //   this could come from the proxy (eg a user attribute), or could be configurable from an environment variable
-      var account = {
+    if (!user && global.ForwardAuth.CreateUser) {
+      Logger.debug(`[Auth] Forward Auth User not found with username "${username}" - creating it`)
+
+      const newUserData = {
         id: getId('usr'),
-        username: username,
+        username,
+        pash: this.generateRandomPasswordHash(), // Random password will need to be reset by admin if wanting to use regular login
         createdAt: Date.now(),
         type: 'user'
-      };
-      account.token = await this.generateAccessToken({ userId: account.id, username: account.username });
-      user = new User(account);
-      var success = await this.db.insertEntity('user', user);
-      if (!success)
-        return res.status(500).send("Could not create user.");
+      }
+      newUserData.token = await this.generateAccessToken({ userId: newUserData.id, username: newUserData.username })
+
+      user = new User(newUserData)
+
+      const success = await this.db.insertEntity('user', user)
+      if (!success) {
+        Logger.error(`[Auth] Forward Auth failed to insert new user in DB`, user.toJSON())
+        return false
+      }
+      SocketAuthority.adminEmitter('user_added', user)
     }
 
-    if (!user)
-      return res.status(401).send(`User "${username}" not found`);
+    if (!user) {
+      Logger.error(`[Auth] Forward Auth user not found with username "${username}"`)
+      return false
+    }
 
-    return res.json(this.getUserLoginResponsePayload(user, feeds))
+    user.isForwardAuth = true
 
+    Logger.debug(`[Auth] Forward Auth success for username "${username}"`)
+    return this.getUserLoginResponsePayload(user, feeds)
+  }
+
+  /**
+  * Checks if the user in req.user is valid with forward auth headers.
+  * @param {*} req 
+  * @returns {boolean}
+  */
+  validateForwardAuthUser(req) {
+    if (!global.ForwardAuth.Enabled) {
+      return false
+    }
+
+    let username = req.headers[global.ForwardAuth.UsernameHeader]
+
+    if (!username) {
+      Logger.error(`[Auth] validate: Forward Auth username header ${global.ForwardAuth.UsernameHeader} has no username`)
+      return false
+    }
+
+    // Mismatch username in header with username from token
+    if (req.user.username.toLowerCase() !== username) {
+      Logger.error(`[Auth] validate: Forward Auth username "${username}" from header ${global.ForwardAuth.UsernameHeader} does not match username "${req.user.username.toLowerCase()}" from token`)
+      return false
+    }
+
+    req.user.isForwardAuth = true
+
+    return true
   }
 
   comparePassword(password, user) {

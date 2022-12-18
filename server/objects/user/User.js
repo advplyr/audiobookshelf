@@ -23,6 +23,9 @@ class User {
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsAccessible = [] // Empty if ALL item tags accessible
 
+    // Temporary values not persisted to the Db
+    this.isForwardAuth = false
+
     if (user) {
       this.construct(user)
     }
@@ -102,7 +105,7 @@ class User {
   }
 
   toJSONForBrowser() {
-    return {
+    const json = {
       id: this.id,
       username: this.username,
       type: this.type,
@@ -117,8 +120,15 @@ class User {
       settings: this.settings, // TODO: Remove after mobile release v0.9.61-beta
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsAccessible: [...this.itemTagsAccessible]
+      itemTagsAccessible: [...this.itemTagsAccessible],
+      isForwardAuth: this.isForwardAuth
     }
+
+    if (this.isForwardAuth) {
+      json.forwardAuthLogoutURI = global.ForwardAuth.LogoutURI || null
+    }
+
+    return json
   }
 
   // Data broadcasted

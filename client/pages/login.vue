@@ -144,20 +144,20 @@ export default {
      * Checks for forward proxy authentication
      */
     async checkForwardAuth() {
-      this.processing = true;
-      this.error = null;
+      this.processing = true
+      this.error = null
 
       var authRes = await this.$axios.$post('/forwardauth').catch((error) => {
         console.error('Failed', error.response)
         if (error.response) this.error = error.response.data
         else this.error = 'Unknown Error'
         return false
-      });
+      })
 
       if (authRes && authRes.disabled) {
         // disabled == true - proxy auth has not been configured on the server, nothing further to do.
-        this.processing = false;
-        return false;
+        this.processing = false
+        return false
       }
 
       if (authRes && authRes.error) {
@@ -166,17 +166,16 @@ export default {
         this.setUser(authRes)
       }
       this.processing = false
-
     },
     async submitForm() {
       this.error = null
       this.processing = true
 
-      var payload = {
+      const payload = {
         username: this.username,
         password: this.password || ''
       }
-      var authRes = await this.$axios.$post('/login', payload).catch((error) => {
+      const authRes = await this.$axios.$post('/login', payload).catch((error) => {
         console.error('Failed', error.response)
         if (error.response) this.error = error.response.data
         else this.error = 'Unknown Error'
@@ -190,7 +189,7 @@ export default {
       this.processing = false
     },
     checkAuth() {
-      var token = localStorage.getItem('token')
+      const token = localStorage.getItem('token')
       if (!token) return false
 
       this.processing = true
@@ -203,13 +202,14 @@ export default {
         })
         .then((res) => {
           this.setUser(res)
-          this.processing = false
           return true
         })
         .catch((error) => {
           console.error('Authorize error', error)
-          this.processing = false
           return false
+        })
+        .finally(() => {
+          this.processing = false
         })
     },
     checkStatus() {
@@ -217,29 +217,29 @@ export default {
       this.$axios
         .$get('/status')
         .then((res) => {
-          this.processing = false
           this.isInit = res.isInit
           this.showInitScreen = !res.isInit
           this.$setServerLanguageCode(res.language)
           if (this.showInitScreen) {
             this.ConfigPath = res.ConfigPath || ''
             this.MetadataPath = res.MetadataPath || ''
+          } else if (res.forwardAuthUserResponse) {
+            // User was returned from forward auth
+            this.setUser(res.forwardAuthUserResponse)
           }
         })
         .catch((error) => {
           console.error('Status check failed', error)
-          this.processing = false
           this.criticalError = 'Status check failed'
+        })
+        .finally(() => {
+          this.processing = false
         })
     }
   },
   async mounted() {
-
-    // Check for proxy auth
-    this.checkForwardAuth();
-
     if (localStorage.getItem('token')) {
-      var userfound = await this.checkAuth()
+      const userfound = await this.checkAuth()
       if (userfound) return // if valid user no need to check status
     }
     this.checkStatus()

@@ -18,6 +18,8 @@ export const state = () => ({
 export const getters = {
   getIsRoot: (state) => state.user && state.user.type === 'root',
   getIsAdminOrUp: (state) => state.user && (state.user.type === 'admin' || state.user.type === 'root'),
+  getIsForwardAuth: (state) => state.user && state.user.isForwardAuth,
+  getForwardAuthLogoutURI: (state) => state.user ? state.user.forwardAuthLogoutURI : null,
   getToken: (state) => {
     return state.user ? state.user.token : null
   },
