@@ -90,7 +90,7 @@ export default {
         },
         {
           id: 'config-item-metadata-utils',
-          title: 'Item Metadata Utils',
+          title: this.$strings.HeaderItemMetadataUtils,
           path: '/config/item-metadata-utils'
         }
       ]

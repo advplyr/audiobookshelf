@@ -5,10 +5,10 @@
         <span class="material-icons text-2xl">arrow_back</span>
       </nuxt-link>
 
-      <h1 class="text-xl mx-2">Manage Genres</h1>
+      <h1 class="text-xl mx-2">{{ $strings.HeaderManageGenres }}</h1>
     </div>
 
-    <p v-if="!genres.length && !loading" class="text-center py-8 text-lg">No Genres</p>
+    <p v-if="!genres.length && !loading" class="text-center py-8 text-lg">{{ $strings.MessageNoGenres }}</p>
 
     <div class="border border-white/10">
       <template v-for="(genre, index) in genres">
@@ -81,11 +81,11 @@ export default {
       const genreNameExists = this.genres.find((g) => g !== this.editingGenre && g === this.newGenreName)
       const genreNameExistsOfDifferentCase = !genreNameExists ? this.genres.find((g) => g !== this.editingGenre && g.toLowerCase() === this.newGenreName.toLowerCase()) : null
 
-      let message = `Are you sure you want to rename genre "${this.editingGenre}" to "${this.newGenreName}" for all items?`
+      let message = this.$getString('MessageConfirmRenameGenre', [this.editingGenre, this.newGenreName])
       if (genreNameExists) {
-        message += '<br><span class="text-sm">Note: This genre already exists so the two genres will be merged.</span>'
+        message += `<br><span class="text-sm">${this.$strings.MessageConfirmRenameGenreMergeNote}</span>`
       } else if (genreNameExistsOfDifferentCase) {
-        message += `<br><span class="text-warning text-sm">Warning! A similar genre with a different casing already exists "${genreNameExistsOfDifferentCase}".</span>`
+        message += `<br><span class="text-warning text-sm">${this.$getString('MessageConfirmRenameGenreWarning', [genreNameExistsOfDifferentCase])}</span>`
       }
 
       const payload = {
@@ -111,7 +111,7 @@ export default {
       this.$axios
         .$post('/api/genres/rename', payload)
         .then((res) => {
-          this.$toast.success(`${res.numItemsUpdated} Items Updated`)
+          this.$toast.success(this.$getString('MessageItemsUpdated', [res.numItemsUpdated]))
           if (res.genreMerged) {
             this.genres = this.genres.filter((g) => g !== _newGenreName)
           }
@@ -135,7 +135,7 @@ export default {
       this.$axios
         .$delete(`/api/genres/${this.$encode(genre)}`)
         .then((res) => {
-          this.$toast.success(`${res.numItemsUpdated} Items Updated`)
+          this.$toast.success(this.$getString('MessageItemsUpdated', [res.numItemsUpdated]))
           this.genres = this.genres.filter((g) => g !== genre)
         })
         .catch((error) => {
