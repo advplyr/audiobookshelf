@@ -213,6 +213,7 @@ class Server {
       '/library/:library/podcast/latest',
       '/config/users/:id',
       '/config/users/:id/sessions',
+      '/config/item-metadata-utils/:id',
       '/collection/:id',
       '/playlist/:id'
     ]

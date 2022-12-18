@@ -233,7 +233,7 @@ class Db {
       return null
     }))
 
-    var libraryItemIds = libraryItems.map(li => li.id)
+    const libraryItemIds = libraryItems.map(li => li.id)
     return this.libraryItemsDb.update((record) => libraryItemIds.includes(record.id), (record) => {
       return libraryItems.find(li => li.id === record.id)
     }).then((results) => {
