@@ -614,7 +614,7 @@ class Scanner {
       }
 
       // Check if a library item is a subdirectory of this dir
-      var childItem = this.db.libraryItems.find(li => li.path.startsWith(fullPath))
+      var childItem = this.db.libraryItems.find(li => (li.path + '/').startsWith(fullPath + '/'))
       if (childItem) {
         Logger.warn(`[Scanner] Files were modified in a parent directory of a library item "${childItem.media.metadata.title}" - ignoring`)
         itemGroupingResults[itemDir] = ScanResult.NOTHING
