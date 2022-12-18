@@ -151,7 +151,7 @@ export default {
       this.$axios
         .$get('/api/genres')
         .then((data) => {
-          this.genres = data.genres || []
+          this.genres = (data.genres || []).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
         })
         .catch((error) => {
           console.error('Failed to load genres', error)

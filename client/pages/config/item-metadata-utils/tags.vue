@@ -151,7 +151,7 @@ export default {
       this.$axios
         .$get('/api/tags')
         .then((data) => {
-          this.tags = data.tags || []
+          this.tags = (data.tags || []).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }))
         })
         .catch((error) => {
           console.error('Failed to load tags', error)
