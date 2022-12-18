@@ -1,8 +1,9 @@
 const fs = require('../libs/fsExtra')
 const Path = require('path')
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 
 // Utils
-const Logger = require('../Logger')
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
 const { comparePaths } = require('../utils/index')
 const { getIno } = require('../utils/fileUtils')
@@ -20,12 +21,9 @@ const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
 
 class Scanner {
-  constructor(db, coverManager, emitter) {
-    this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
-
+  constructor(db, coverManager) {
     this.db = db
     this.coverManager = coverManager
-    this.emitter = emitter
 
     this.cancelLibraryScan = {}
     this.librariesScanning = []
@@ -113,7 +111,7 @@ class Scanner {
     }
 
     if (hasUpdated) {
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
       await this.db.updateLibraryItem(libraryItem)
       return ScanResult.UPDATED
     }
@@ -139,7 +137,7 @@ class Scanner {
     libraryScan.verbose = false
     this.librariesScanning.push(libraryScan.getScanEmitData)
 
-    this.emitter('scan_start', libraryScan.getScanEmitData)
+    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
 
     Logger.info(`[Scanner] Starting library scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
@@ -158,14 +156,14 @@ class Scanner {
     if (canceled && !libraryScan.totalResults) {
       var emitData = libraryScan.getScanEmitData
       emitData.results = null
-      this.emitter('scan_complete', emitData)
+      SocketAuthority.emitter('scan_complete', emitData)
       return
     }
 
-    this.emitter('scan_complete', libraryScan.getScanEmitData)
+    SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
 
     if (libraryScan.totalResults) {
-      libraryScan.saveLog(this.ScanLogPath)
+      libraryScan.saveLog()
     }
   }
 
@@ -302,7 +300,7 @@ class Scanner {
 
   async updateLibraryItemChunk(itemsToUpdate) {
     await this.db.updateLibraryItems(itemsToUpdate)
-    this.emitter('items_updated', itemsToUpdate.map(li => li.toJSONExpanded()))
+    SocketAuthority.emitter('items_updated', itemsToUpdate.map(li => li.toJSONExpanded()))
   }
 
   async rescanLibraryItemDataChunk(itemDataToRescan, libraryScan) {
@@ -320,7 +318,7 @@ class Scanner {
     if (itemsUpdated.length) {
       libraryScan.resultsUpdated += itemsUpdated.length
       await this.db.updateLibraryItems(itemsUpdated)
-      this.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
   }
 
@@ -337,7 +335,7 @@ class Scanner {
 
     libraryScan.resultsAdded += newLibraryItems.length
     await this.db.insertLibraryItems(newLibraryItems)
-    this.emitter('items_added', newLibraryItems.map(li => li.toJSONExpanded()))
+    SocketAuthority.emitter('items_added', newLibraryItems.map(li => li.toJSONExpanded()))
   }
 
   async rescanLibraryItem(libraryItemCheckData, libraryScan) {
@@ -458,7 +456,7 @@ class Scanner {
       })
       if (newAuthors.length) {
         await this.db.insertEntities('author', newAuthors)
-        this.emitter('authors_added', newAuthors.map(au => au.toJSON()))
+        SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
       }
     }
     if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
@@ -479,7 +477,7 @@ class Scanner {
       })
       if (newSeries.length) {
         await this.db.insertEntities('series', newSeries)
-        this.emitter('series_added', newSeries.map(se => se.toJSON()))
+        SocketAuthority.emitter('series_added', newSeries.map(se => se.toJSON()))
       }
     }
   }
@@ -602,7 +600,7 @@ class Scanner {
             Logger.info(`[Scanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
             existingLibraryItem.setMissing()
             await this.db.updateLibraryItem(existingLibraryItem)
-            this.emitter('item_updated', existingLibraryItem.toJSONExpanded())
+            SocketAuthority.emitter('item_updated', existingLibraryItem.toJSONExpanded())
 
             itemGroupingResults[itemDir] = ScanResult.REMOVED
             continue;
@@ -629,7 +627,7 @@ class Scanner {
       if (newLibraryItem) {
         await this.createNewAuthorsAndSeries(newLibraryItem)
         await this.db.insertLibraryItem(newLibraryItem)
-        this.emitter('item_added', newLibraryItem.toJSONExpanded())
+        SocketAuthority.emitter('item_added', newLibraryItem.toJSONExpanded())
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
     }
@@ -747,7 +745,7 @@ class Scanner {
       }
 
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     return {
@@ -776,9 +774,14 @@ class Scanner {
     for (const key in matchDataTransformed) {
       if (matchDataTransformed[key]) {
         if (key === 'genres') {
-          if ((!libraryItem.media.metadata.genres || options.overrideDetails)) {
-            // TODO: Genres array or string?
-            updatePayload.metadata[key] = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+          if ((!libraryItem.media.metadata.genres.length || options.overrideDetails)) {
+            var genresArray = []
+            if (Array.isArray(matchDataTransformed[key])) genresArray = [...matchDataTransformed[key]]
+            else { // Genres should always be passed in as an array but just incase handle a string
+              Logger.warn(`[Scanner] quickMatch genres is not an array ${matchDataTransformed[key]}`)
+              genresArray = matchDataTransformed[key].split(',').map(v => v.trim()).filter(v => !!v)
+            }
+            updatePayload.metadata[key] = genresArray
           }
         } else if (libraryItem.media.metadata[key] !== matchDataTransformed[key] && (!libraryItem.media.metadata[key] || options.overrideDetails)) {
           updatePayload.metadata[key] = matchDataTransformed[key]
@@ -841,7 +844,7 @@ class Scanner {
           author = new Author()
           author.setData({ name: authorName })
           await this.db.insertEntity('author', author)
-          this.emitter('author_added', author)
+          SocketAuthority.emitter('author_added', author)
         }
         authorPayload.push(author.toJSONMinimal())
       }
@@ -859,7 +862,7 @@ class Scanner {
           seriesItem = new Series()
           seriesItem.setData({ name: seriesMatchItem.series })
           await this.db.insertEntity('series', seriesItem)
-          this.emitter('series_added', seriesItem)
+          SocketAuthority.emitter('series_added', seriesItem)
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))
       }
@@ -950,7 +953,7 @@ class Scanner {
     var libraryScan = new LibraryScan()
     libraryScan.setData(library, null, 'match')
     this.librariesScanning.push(libraryScan.getScanEmitData)
-    this.emitter('scan_start', libraryScan.getScanEmitData)
+    SocketAuthority.emitter('scan_start', libraryScan.getScanEmitData)
 
     Logger.info(`[Scanner] matchLibraryItems: Starting library match scan ${libraryScan.id} for ${libraryScan.libraryName}`)
 
@@ -982,14 +985,14 @@ class Scanner {
         delete this.cancelLibraryScan[libraryScan.libraryId]
         var scanData = libraryScan.getScanEmitData
         scanData.results = false
-        this.emitter('scan_complete', scanData)
+        SocketAuthority.emitter('scan_complete', scanData)
         this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
         return
       }
     }
 
     this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
-    this.emitter('scan_complete', libraryScan.getScanEmitData)
+    SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 
   probeAudioFileWithTone(audioFile) {

@@ -7,10 +7,10 @@
     </svg>
     <p class="text-xl font-book pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
     <div class="flex-grow" />
-    <ui-btn v-show="isHovering && !libraryScan" class="hidden md:block" small color="success" @click.stop="scan">Scan</ui-btn>
-    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2 hidden md:block" @click.stop="forceScan">Force Re-Scan</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" class="hidden md:block" small color="success" @click.stop="scan">{{ $strings.ButtonScan }}</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan" small color="bg" class="ml-2 hidden md:block" @click.stop="forceScan">{{ $strings.ButtonForceReScan }}</ui-btn>
 
-    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2 hidden md:block" @click.stop="matchAll">Match Books</ui-btn>
+    <ui-btn v-show="isHovering && !libraryScan && isBookLibrary" small color="bg" class="ml-2 hidden md:block" @click.stop="matchAll">{{ $strings.ButtonMatchBooks }}</ui-btn>
 
     <span v-if="isHovering && !libraryScan" class="!hidden md:!block material-icons text-xl text-gray-300 hover:text-gray-50 ml-4 cursor-pointer" @click.stop="editClick">edit</span>
     <span v-if="!libraryScan && isHovering && !isDeleting" class="!hidden md:!block material-icons text-xl text-gray-300 ml-3 hover:text-gray-50 cursor-pointer" @click.stop="deleteClick">delete</span>
@@ -66,22 +66,22 @@ export default {
     mobileMenuItems() {
       const items = [
         {
-          text: 'Scan',
+          text: this.$strings.ButtonScan,
           value: 'scan'
         },
         {
-          text: 'Force Re-Scan',
+          text: this.$strings.ButtonForceReScan,
           value: 'force-scan'
         }
       ]
       if (this.isBookLibrary) {
         items.push({
-          text: 'Match Books',
+          text: this.$strings.ButtonMatchBooks,
           value: 'match-books'
         })
       }
       items.push({
-        text: 'Delete',
+        text: this.$strings.ButtonDelete,
         value: 'delete'
       })
       return items
@@ -122,28 +122,28 @@ export default {
       this.$store
         .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id })
         .then(() => {
-          this.$toast.success('Library scan started')
+          this.$toast.success(this.$strings.ToastLibraryScanStarted)
         })
         .catch((error) => {
           console.error('Failed to start scan', error)
-          this.$toast.error('Failed to start scan')
+          this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
         })
     },
     forceScan() {
-      if (confirm(`Force Re-Scan will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed to be used for the library item.\n\nAre you sure you want to force re-scan?`)) {
+      if (confirm(this.$strings.MessageConfirmForceReScan)) {
         this.$store
           .dispatch('libraries/requestLibraryScan', { libraryId: this.library.id, force: 1 })
           .then(() => {
-            this.$toast.success('Library scan started')
+            this.$toast.success(this.$strings.ToastLibraryScanStarted)
           })
           .catch((error) => {
             console.error('Failed to start scan', error)
-            this.$toast.error('Failed to start scan')
+            this.$toast.error(this.$strings.ToastLibraryScanFailedToStart)
           })
       }
     },
     deleteClick() {
-      if (confirm(`Are you sure you want to permanently delete library "${this.library.name}"?`)) {
+      if (confirm(this.$getString('MessageConfirmDeleteLibrary', [this.library.name]))) {
         this.isDeleting = true
         this.$axios
           .$delete(`/api/libraries/${this.library.id}`)
@@ -152,12 +152,12 @@ export default {
             if (data.error) {
               this.$toast.error(data.error)
             } else {
-              this.$toast.success('Library deleted')
+              this.$toast.success(this.$strings.ToastLibraryDeleteSuccess)
             }
           })
           .catch((error) => {
             console.error('Failed to delete library', error)
-            this.$toast.error('Failed to delete library')
+            this.$toast.error(this.$strings.ToastLibraryDeleteFailed)
             this.isDeleting = false
           })
       }

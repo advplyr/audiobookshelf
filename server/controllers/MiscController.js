@@ -26,11 +26,11 @@ class MiscController {
 
     var library = this.db.libraries.find(lib => lib.id === libraryId)
     if (!library) {
-      return res.status(500).send(`Library not found with id ${libraryId}`)
+      return res.status(404).send(`Library not found with id ${libraryId}`)
     }
     var folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
-      return res.status(500).send(`Folder not found with id ${folderId} in library ${library.name}`)
+      return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
 
     if (!files.length || !title) {
@@ -82,49 +82,6 @@ class MiscController {
     res.sendStatus(200)
   }
 
-  // GET: api/encode-m4b/:id
-  async encodeM4b(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('[MiscController] encodeM4b: Non-admin user attempting to make m4b', req.user)
-      return res.sendStatus(403)
-    }
-
-    var libraryItem = this.db.getLibraryItem(req.params.id)
-    if (!libraryItem || libraryItem.isMissing || libraryItem.isInvalid) {
-      Logger.error(`[MiscController] encodeM4b: library item not found or invalid ${req.params.id}`)
-      return res.status(404).send('Audiobook not found')
-    }
-
-    if (libraryItem.mediaType !== 'book') {
-      Logger.error(`[MiscController] encodeM4b: Invalid library item ${req.params.id}: not a book`)
-      return res.status(500).send('Invalid library item: not a book')
-    }
-
-    if (libraryItem.media.tracks.length <= 0) {
-      Logger.error(`[MiscController] encodeM4b: Invalid audiobook ${req.params.id}: no audio tracks`)
-      return res.status(500).send('Invalid audiobook: no audio tracks')
-    }
-
-    this.abMergeManager.startAudiobookMerge(req.user, libraryItem)
-
-    res.sendStatus(200)
-  }
-
-  // POST: api/encode-m4b/:id/cancel
-  async cancelM4bEncode(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error('[MiscController] cancelM4bEncode: Non-admin user attempting to cancel m4b encode', req.user)
-      return res.sendStatus(403)
-    }
-
-    const workerTask = this.abMergeManager.getPendingTaskByLibraryItemId(req.params.id)
-    if (!workerTask) return res.sendStatus(404)
-
-    this.abMergeManager.cancelEncode(workerTask.task)
-
-    res.sendStatus(200)
-  }
-
   // GET: api/tasks
   getTasks(req, res) {
     res.json({
@@ -154,68 +111,8 @@ class MiscController {
     }
     return res.json({
       success: true,
-      serverSettings: this.db.serverSettings
+      serverSettings: this.db.serverSettings.toJSONForBrowser()
     })
-  }
-
-  // POST: api/cache/purge (admin)
-  async purgeCache(req, res) {
-    if (!req.user.isAdminOrUp) {
-      return res.sendStatus(403)
-    }
-    Logger.info(`[MiscController] Purging all cache`)
-    await this.cacheManager.purgeAll()
-    res.sendStatus(200)
-  }
-
-  // POST: api/cache/items/purge
-  async purgeItemsCache(req, res) {
-    if (!req.user.isAdminOrUp) {
-      return res.sendStatus(403)
-    }
-    Logger.info(`[MiscController] Purging items cache`)
-    await this.cacheManager.purgeItems()
-    res.sendStatus(200)
-  }
-
-  async findBooks(req, res) {
-    var provider = req.query.provider || 'google'
-    var title = req.query.title || ''
-    var author = req.query.author || ''
-    var results = await this.bookFinder.search(provider, title, author)
-    res.json(results)
-  }
-
-  async findCovers(req, res) {
-    var query = req.query
-    var podcast = query.podcast == 1
-
-    var result = null
-    if (podcast) result = await this.podcastFinder.findCovers(query.title)
-    else result = await this.bookFinder.findCovers(query.provider, query.title, query.author || null)
-    res.json(result)
-  }
-
-  async findPodcasts(req, res) {
-    var term = req.query.term
-    var results = await this.podcastFinder.search(term)
-    res.json(results)
-  }
-
-  async findAuthor(req, res) {
-    var query = req.query.q
-    var author = await this.authorFinder.findAuthorByName(query)
-    res.json(author)
-  }
-
-  async findChapters(req, res) {
-    var asin = req.query.asin
-    var region = (req.query.region || 'us').toLowerCase()
-    var chapterData = await this.bookFinder.findChapters(asin, region)
-    if (!chapterData) {
-      return res.json({ error: 'Chapters not found' })
-    }
-    res.json(chapterData)
   }
 
   authorize(req, res) {
@@ -240,7 +137,9 @@ class MiscController {
         })
       }
     })
-    res.json(tags)
+    res.json({
+      tags: tags
+    })
   }
 
   validateCronExpression(req, res) {

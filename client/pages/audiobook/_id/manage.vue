@@ -2,7 +2,7 @@
   <div id="page-wrapper" class="bg-bg page p-8 overflow-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="flex items-center justify-center mb-6">
       <div class="w-full max-w-2xl">
-        <p class="text-2xl mb-2">Audiobook File Management Tools</p>
+        <p class="text-2xl mb-2">{{ $strings.HeaderAudiobookTools }}</p>
       </div>
       <div class="w-full max-w-2xl">
         <div class="flex justify-end">
@@ -13,7 +13,7 @@
 
     <div class="flex justify-center">
       <div class="w-full max-w-2xl">
-        <p class="text-xl mb-1">Metadata to embed</p>
+        <p class="text-xl mb-1">{{ $strings.HeaderMetadataToEmbed }}</p>
         <p class="mb-2 text-base text-gray-300">audiobookshelf uses <a href="https://github.com/sandreas/tone" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">tone</a> to write metadata.</p>
       </div>
       <div class="w-full max-w-2xl"></div>
@@ -22,8 +22,8 @@
     <div class="flex justify-center flex-wrap">
       <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
         <div class="flex py-2 px-4">
-          <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">Meta Tag</div>
-          <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">Value</div>
+          <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
+          <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
           <template v-for="(value, key, index) in toneObject">
@@ -38,12 +38,12 @@
       </div>
       <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
         <div class="flex py-2 px-4 bg-primary bg-opacity-25">
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">Chapter Title</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">Start</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">End</div>
+          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
+          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
+          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelEnd }}</div>
         </div>
         <div class="w-full max-h-72 overflow-auto">
-          <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">No chapters</p>
+          <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">{{ $strings.MessageNoChapters }}</p>
           <template v-for="(chapter, index) in metadataChapters">
             <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary bg-opacity-25' : ''">
               <div class="flex-grow font-semibold">{{ chapter.title }}</div>
@@ -63,20 +63,20 @@
 
     <div class="w-full max-w-4xl mx-auto">
       <div v-if="selectedTool === 'embed'" class="w-full flex justify-end items-center mb-4">
-        <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">Start Metadata Embed</ui-btn>
-        <p v-else class="text-success text-lg font-semibold">Embed Finished!</p>
+        <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
       <div v-else class="w-full flex justify-end items-center mb-4">
-        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">Cancel Encode</ui-btn>
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">Start M4B Encode</ui-btn>
-        <p v-else-if="taskFailed" class="text-error text-lg font-semibold">M4B Failed! {{ taskError }}</p>
-        <p v-else class="text-success text-lg font-semibold">M4B Finished!</p>
+        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
+        <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
+        <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
 
       <div class="mb-4">
         <div v-if="selectedTool === 'embed'" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
-          <p class="text-gray-200 ml-2">Metadata will be embedded on the audio tracks inside your audiobook folder.</p>
+          <p class="text-gray-200 ml-2">Metadata will be embedded in the audio tracks inside your audiobook folder.</p>
         </div>
         <div v-else class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
@@ -90,6 +90,10 @@
           <p class="text-gray-200 ml-2">
             A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
           </p>
+        </div>
+        <div v-if="selectedTool === 'embed' && audioFiles.length > 1" class="flex items-start mb-2">
+          <span class="material-icons text-base text-warning pt-1">star</span>
+          <p class="text-gray-200 ml-2">Chapters are not embedded in multi-track audiobooks.</p>
         </div>
         <div v-if="selectedTool === 'm4b'" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
@@ -107,12 +111,12 @@
     </div>
 
     <div class="w-full max-w-4xl mx-auto">
-      <p class="mb-2 font-semibold">Audio Tracks</p>
+      <p class="mb-2 font-semibold">{{ $strings.HeaderAudioTracks }}</p>
       <div class="w-full mx-auto border border-white border-opacity-10 bg-bg">
         <div class="flex py-2 px-4 bg-primary bg-opacity-25">
           <div class="w-10 text-xs font-semibold text-gray-200">#</div>
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">Filename</div>
-          <div class="w-16 text-xs font-semibold uppercase text-gray-200">Size</div>
+          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelFilename }}</div>
+          <div class="w-16 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelSize }}</div>
           <div class="w-24"></div>
         </div>
         <template v-for="file in audioFiles">
@@ -243,7 +247,7 @@ export default {
     cancelEncodeClick() {
       this.isCancelingEncode = true
       this.$axios
-        .$post(`/api/encode-m4b/${this.libraryItemId}/cancel`)
+        .$delete(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
         .then(() => {
           this.$toast.success('Encode canceled')
         })
@@ -258,7 +262,7 @@ export default {
     encodeM4bClick() {
       this.processing = true
       this.$axios
-        .$get(`/api/encode-m4b/${this.libraryItemId}`)
+        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
         .then(() => {
           console.log('Ab m4b merge started')
         })
@@ -283,7 +287,7 @@ export default {
     updateAudioFileMetadata() {
       this.processing = true
       this.$axios
-        .$get(`/api/items/${this.libraryItemId}/audio-metadata?tone=1`)
+        .$post(`/api/tools/item/${this.libraryItemId}/embed-metadata?tone=1`)
         .then(() => {
           console.log('Audio metadata encode started')
         })

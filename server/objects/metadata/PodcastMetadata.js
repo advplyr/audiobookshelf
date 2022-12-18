@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 
 class PodcastMetadata {
   constructor(metadata) {
@@ -56,7 +56,7 @@ class PodcastMetadata {
   toJSONMinified() {
     return {
       title: this.title,
-      titleIgnorePrefix: this.titleIgnorePrefix,
+      titleIgnorePrefix: this.titlePrefixAtEnd,
       author: this.author,
       description: this.description,
       releaseDate: this.releaseDate,
@@ -80,15 +80,11 @@ class PodcastMetadata {
   }
 
   get titleIgnorePrefix() {
-    if (!this.title) return ''
-    var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
-    for (const prefix of prefixesToIgnore) {
-      // e.g. for prefix "the". If title is "The Book Title" return "Book Title, The"
-      if (this.title.toLowerCase().startsWith(`${prefix} `)) {
-        return this.title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
-      }
-    }
-    return this.title
+    return getTitleIgnorePrefix(this.title)
+  }
+
+  get titlePrefixAtEnd() {
+    return getTitlePrefixAtEnd(this.title)
   }
 
   searchQuery(query) { // Returns key if match is found

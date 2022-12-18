@@ -18,7 +18,7 @@ class User {
     this.seriesHideFromContinueListening = [] // Series IDs that should not show on home page continue listening
     this.bookmarks = []
 
-    this.settings = {}
+    this.settings = {} // TODO: Remove after mobile release v0.9.61-beta
     this.permissions = {}
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
     this.itemTagsAccessible = [] // Empty if ALL item tags accessible
@@ -59,17 +59,12 @@ class User {
     return !!this.pash && !!this.pash.length
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   getDefaultUserSettings() {
     return {
       mobileOrderBy: 'recent',
       mobileOrderDesc: true,
-      mobileFilterBy: 'all',
-      orderBy: 'media.metadata.title',
-      orderDesc: false,
-      filterBy: 'all',
-      playbackRate: 1,
-      bookshelfCoverSize: 120,
-      collapseSeries: false
+      mobileFilterBy: 'all'
     }
   }
 
@@ -99,7 +94,7 @@ class User {
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
-      settings: this.settings,
+      settings: this.settings, // TODO: Remove after mobile release v0.9.61-beta
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
       itemTagsAccessible: [...this.itemTagsAccessible]
@@ -119,7 +114,7 @@ class User {
       isLocked: this.isLocked,
       lastSeen: this.lastSeen,
       createdAt: this.createdAt,
-      settings: this.settings,
+      settings: this.settings, // TODO: Remove after mobile release v0.9.61-beta
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
       itemTagsAccessible: [...this.itemTagsAccessible]
@@ -130,8 +125,8 @@ class User {
   toJSONForPublic(sessions, libraryItems) {
     var userSession = sessions ? sessions.find(s => s.userId === this.id) : null
     var session = null
-    if (session) {
-      var libraryItem = libraryItems.find(li => li.id === session.libraryItemId)
+    if (userSession) {
+      var libraryItem = libraryItems.find(li => li.id === userSession.libraryItemId)
       if (libraryItem) {
         session = userSession.toJSONForClient(libraryItem)
       }
@@ -171,7 +166,7 @@ class User {
     this.isLocked = user.type === 'root' ? false : !!user.isLocked
     this.lastSeen = user.lastSeen || null
     this.createdAt = user.createdAt || Date.now()
-    this.settings = user.settings || this.getDefaultUserSettings()
+    this.settings = user.settings || this.getDefaultUserSettings() // TODO: Remove after mobile release v0.9.61-beta
     this.permissions = user.permissions || this.getDefaultUserPermissions()
     // Upload permission added v1.1.13, make sure root user has upload permissions
     if (this.type === 'root' && !this.permissions.upload) this.permissions.upload = true
@@ -266,16 +261,42 @@ class User {
     return firstAccessibleLibrary.id
   }
 
+  // Returns most recent media progress w/ `media` object and optionally an `episode` object
   getMostRecentItemProgress(libraryItems) {
     if (!this.mediaProgress.length) return null
-    var lip = this.mediaProgress.map(lip => lip.toJSON())
-    lip.sort((a, b) => b.lastUpdate - a.lastUpdate)
-    var mostRecentWithLip = lip.find(li => libraryItems.find(_li => _li.id === li.id))
-    if (!mostRecentWithLip) return null
-    var libraryItem = libraryItems.find(li => li.id === mostRecentWithLip.id)
+    var mediaProgressObjects = this.mediaProgress.map(lip => lip.toJSON())
+    mediaProgressObjects.sort((a, b) => b.lastUpdate - a.lastUpdate)
+
+    var libraryItemMedia = null
+    var progressEpisode = null
+    // Find the most recent progress that still has a libraryItem and episode
+    var mostRecentProgress = mediaProgressObjects.find((progress) => {
+      const libraryItem = libraryItems.find(li => li.id === progress.libraryItemId)
+      if (!libraryItem) {
+        Logger.warn('[User] Library item not found for users progress ' + progress.libraryItemId)
+        return false
+      } else if (progress.episodeId) {
+        const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(progress.episodeId) : null
+        if (!episode) {
+          Logger.warn(`[User] Episode ${progress.episodeId} not found for user media progress, podcast: ${libraryItem.media.metadata.title}`)
+          return false
+        } else {
+          libraryItemMedia = libraryItem.media.toJSONExpanded()
+          progressEpisode = episode.toJSON()
+          return true
+        }
+      } else {
+        libraryItemMedia = libraryItem.media.toJSONExpanded()
+        return true
+      }
+    })
+
+    if (!mostRecentProgress) return null
+
     return {
-      ...mostRecentWithLip,
-      media: libraryItem.media.toJSONExpanded()
+      ...mostRecentProgress,
+      media: libraryItemMedia,
+      episode: progressEpisode
     }
   }
 
@@ -322,6 +343,7 @@ class User {
     return true
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   // Returns Boolean If update was made
   updateSettings(settings) {
     if (!this.settings) {
@@ -405,6 +427,12 @@ class User {
   addSeriesToHideFromContinueListening(seriesId) {
     if (this.seriesHideFromContinueListening.includes(seriesId)) return false
     this.seriesHideFromContinueListening.push(seriesId)
+    return true
+  }
+
+  removeSeriesFromHideFromContinueListening(seriesId) {
+    if (!this.seriesHideFromContinueListening.includes(seriesId)) return false
+    this.seriesHideFromContinueListening = this.seriesHideFromContinueListening.filter(sid => sid !== seriesId)
     return true
   }
 

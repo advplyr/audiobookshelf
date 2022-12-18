@@ -15,13 +15,15 @@
             <div class="flex-grow" />
 
             <ui-btn v-if="showPlayButton" :disabled="streaming" color="success" :padding-x="4" small class="flex items-center h-9 mr-2" @click="clickPlay">
-              <span v-show="!streaming" class="material-icons -ml-2 pr-1 text-white">play_arrow</span>
-              {{ streaming ? 'Streaming' : 'Play' }}
+              <span v-show="!streaming" class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
+              {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
-            <ui-icon-btn v-if="userCanUpdate" icon="edit" class="mx-0.5" @click="editClick" />
+            <button type="button" class="h-9 w-9 flex items-center justify-center shadow-sm pl-3 pr-3 text-left focus:outline-none cursor-pointer text-gray-100 hover:text-gray-200 rounded-full hover:bg-white/5 mx-px" @click.stop.prevent="editClick">
+              <span class="material-icons text-xl">edit</span>
+            </button>
 
-            <ui-icon-btn v-if="userCanDelete" icon="delete" class="mx-0.5" @click="removeClick" />
+            <ui-context-menu-dropdown :items="contextMenuItems" class="mx-px" @action="contextMenuAction" />
           </div>
 
           <div class="my-8 max-w-2xl">
@@ -32,7 +34,7 @@
         </div>
       </div>
     </div>
-    <div v-show="processingRemove" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
+    <div v-show="processing" class="absolute top-0 left-0 w-full h-full z-10 bg-black bg-opacity-40 flex items-center justify-center">
       <ui-loading-indicator />
     </div>
   </div>
@@ -52,15 +54,19 @@ export default {
       return redirect('/')
     }
 
-    store.commit('user/addUpdateCollection', collection)
+    // If collection is a different library then set library as current
+    if (collection.libraryId !== store.state.libraries.currentLibraryId) {
+      await store.dispatch('libraries/fetch', collection.libraryId)
+    }
+
+    store.commit('libraries/addUpdateCollection', collection)
     return {
       collectionId: collection.id
     }
   },
   data() {
     return {
-      processingRemove: false,
-      collectionCopy: {}
+      processing: false
     }
   },
   computed: {
@@ -80,7 +86,7 @@ export default {
       return this.collection.description || ''
     },
     collection() {
-      return this.$store.getters['user/getCollection'](this.collectionId)
+      return this.$store.getters['libraries/getCollection'](this.collectionId) || {}
     },
     playableBooks() {
       return this.bookItems.filter((book) => {
@@ -88,7 +94,7 @@ export default {
       })
     },
     streaming() {
-      return !!this.playableBooks.find((b) => b.id === this.$store.getters['getLibraryItemIdStreaming'])
+      return !!this.playableBooks.some((b) => b.id === this.$store.getters['getLibraryItemIdStreaming'])
     },
     showPlayButton() {
       return this.playableBooks.length
@@ -98,37 +104,106 @@ export default {
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    contextMenuItems() {
+      const items = [
+        {
+          text: this.$strings.MessagePlaylistCreateFromCollection,
+          action: 'create-playlist'
+        }
+      ]
+      if (this.userCanDelete) {
+        items.push({
+          text: this.$strings.ButtonDelete,
+          action: 'delete'
+        })
+      }
+      return items
     }
   },
   methods: {
+    contextMenuAction(action) {
+      if (action === 'delete') {
+        this.removeClick()
+      } else if (action === 'create-playlist') {
+        this.createPlaylistFromCollection()
+      }
+    },
+    createPlaylistFromCollection() {
+      this.processing = true
+      this.$axios
+        .$post(`/api/playlists/collection/${this.collectionId}`)
+        .then((playlist) => {
+          if (playlist) {
+            this.$toast.success(this.$strings.ToastPlaylistCreateSuccess)
+            this.$router.push(`/playlist/${playlist.id}`)
+          }
+        })
+        .catch((error) => {
+          const errMsg = error.response ? error.response.data || '' : ''
+          this.$toast.error(errMsg || this.$strings.ToastPlaylistCreateFailed)
+        })
+        .finally(() => {
+          this.processing = false
+        })
+    },
     editClick() {
       this.$store.commit('globals/setEditCollection', this.collection)
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove collection "${this.collectionName}"?`)) {
-        this.processingRemove = true
-        var collectionName = this.collectionName
+      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
+        this.processing = true
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
-            this.processingRemove = false
-            this.$toast.success(`Collection "${collectionName}" Removed`)
+            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
           })
           .catch((error) => {
             console.error('Failed to remove collection', error)
-            this.processingRemove = false
-            this.$toast.error(`Failed to remove collection`)
+            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
+          })
+          .finally(() => {
+            this.processing = false
           })
       }
     },
     clickPlay() {
-      var nextBookNotRead = this.playableBooks.find((pb) => {
-        var prog = this.$store.getters['user/getUserMediaProgress'](pb.id)
-        return !prog || !prog.isFinished
+      const queueItems = []
+
+      // Collection queue will start at the first unfinished book
+      //   if all books are finished then entire collection is queued
+      const itemsWithProgress = this.playableBooks.map((item) => {
+        return {
+          ...item,
+          progress: this.$store.getters['user/getUserMediaProgress'](item.id)
+        }
       })
-      if (nextBookNotRead) {
+
+      const hasUnfinishedItems = itemsWithProgress.some((i) => !i.progress || !i.progress.isFinished)
+      if (!hasUnfinishedItems) {
+        console.warn('All items in collection are finished - starting at first item')
+      }
+
+      for (let i = 0; i < itemsWithProgress.length; i++) {
+        const libraryItem = itemsWithProgress[i]
+        if (!hasUnfinishedItems || !libraryItem.progress || !libraryItem.progress.isFinished) {
+          queueItems.push({
+            libraryItemId: libraryItem.id,
+            libraryId: libraryItem.libraryId,
+            episodeId: null,
+            title: libraryItem.media.metadata.title,
+            subtitle: libraryItem.media.metadata.authors.map((au) => au.name).join(', '),
+            caption: '',
+            duration: libraryItem.media.duration || null,
+            coverPath: libraryItem.media.coverPath || null
+          })
+        }
+      }
+
+      if (queueItems.length >= 0) {
         this.$eventBus.$emit('play-item', {
-          libraryItemId: nextBookNotRead.id
+          libraryItemId: queueItems[0].libraryItemId,
+          queueItems
         })
       }
     }

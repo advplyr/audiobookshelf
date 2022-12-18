@@ -19,8 +19,9 @@ class FileSystemController {
     })
 
     Logger.debug(`[Server] get file system paths, excluded: ${excludedDirs.join(', ')}`)
-    var dirs = await this.getDirectories(global.appRoot, '/', excludedDirs)
-    res.json(dirs)
+    res.json({
+      directories: await this.getDirectories(global.appRoot, '/', excludedDirs)
+    })
   }
 }
 module.exports = new FileSystemController()

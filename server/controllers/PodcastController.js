@@ -1,30 +1,33 @@
-const axios = require('axios')
-const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
+const fs = require('../libs/fsExtra')
+
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const LibraryItem = require('../objects/LibraryItem')
 const { getFileTimestampsWithIno } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
+
+const LibraryItem = require('../objects/LibraryItem')
 
 class PodcastController {
 
   async create(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user attempted to create podcast`, req.user)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
     const payload = req.body
 
     const library = this.db.libraries.find(lib => lib.id === payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
-      return res.status(400).send('Library not found')
+      return res.status(404).send('Library not found')
     }
 
     const folder = library.folders.find(fold => fold.id === payload.folderId)
     if (!folder) {
       Logger.error(`[PodcastController] Create: Folder not found "${payload.folderId}"`)
-      return res.status(400).send('Folder not found')
+      return res.status(404).send('Folder not found')
     }
 
     var podcastPath = payload.path.replace(/\\/g, '/')
@@ -75,7 +78,7 @@ class PodcastController {
     }
 
     await this.db.insertLibraryItem(libraryItem)
-    this.emitter('item_added', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
 
     res.json(libraryItem.toJSONExpanded())
 
@@ -115,7 +118,7 @@ class PodcastController {
   async checkNewEpisodes(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user attempted to check/download episodes`, req.user)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     var libraryItem = req.libraryItem
@@ -135,7 +138,7 @@ class PodcastController {
   clearEpisodeDownloadQueue(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user attempting to clear download queue "${req.user.username}"`)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
     this.podcastManager.clearDownloadQueue(req.params.id)
     res.sendStatus(200)
@@ -194,7 +197,7 @@ class PodcastController {
     var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)
     if (wasUpdated) {
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     res.json(libraryItem.toJSONExpanded())
@@ -229,7 +232,7 @@ class PodcastController {
     }
 
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())
   }
 

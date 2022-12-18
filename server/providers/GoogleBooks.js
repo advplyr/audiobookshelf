@@ -15,7 +15,14 @@ class GoogleBooks {
   cleanResult(item) {
     var { id, volumeInfo } = item
     if (!volumeInfo) return null
-    var { title, subtitle, authors, publisher, publisherDate, description, industryIdentifiers, categories, imageLinks } = volumeInfo
+    const { title, subtitle, authors, publisher, publisherDate, description, industryIdentifiers, categories, imageLinks } = volumeInfo
+
+    let cover = null
+    // Selects the largest cover assuming the largest is the last key in the object
+    if (imageLinks && Object.keys(imageLinks).length) {
+      cover = imageLinks[Object.keys(imageLinks).pop()]
+      cover = cover?.replace(/^http:/, 'https:') || null
+    }
 
     return {
       id,
@@ -25,7 +32,7 @@ class GoogleBooks {
       publisher,
       publishedYear: publisherDate ? publisherDate.split('-')[0] : null,
       description,
-      cover: imageLinks && imageLinks.thumbnail ? imageLinks.thumbnail : null,
+      cover,
       genres: categories && Array.isArray(categories) ? [...categories] : null,
       isbn: this.extractIsbn(industryIdentifiers)
     }

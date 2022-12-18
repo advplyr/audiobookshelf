@@ -86,17 +86,22 @@ class FeedEpisode {
   setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     const timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
-    const audiobookPubDate = date.format(new Date(libraryItem.addedAt - timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
+    // e.g. Track 1 will have a pub date before Track 2
+    const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 
     const contentUrl = `/feed/${slug}/item/${audioTrack.index}/${audioTrack.metadata.filename}`
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
-    var title = audioTrack.title
-    if (libraryItem.media.chapters.length) {
-      // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
-      var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
-      if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+    let title = audioTrack.title
+    if (libraryItem.media.tracks.length == 1) { // If audiobook is a single file, use book title instead of chapter/file title
+      title = libraryItem.media.metadata.title
+    } else {
+      if (libraryItem.media.chapters.length) {
+        // If audio track start and chapter start are within 1 seconds of eachother then use the chapter title
+        var matchingChapter = libraryItem.media.chapters.find(ch => Math.abs(ch.start - audioTrack.startOffset) < 1)
+        if (matchingChapter && matchingChapter.title) title = matchingChapter.title
+      }
     }
 
     this.id = String(audioTrack.index)

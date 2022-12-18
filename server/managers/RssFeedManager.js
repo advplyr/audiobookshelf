@@ -1,13 +1,15 @@
 const Path = require('path')
+
+const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
-const Logger = require('../Logger')
 
-// Not functional at the moment
 class RssFeedManager {
-  constructor(db, emitter) {
+  constructor(db) {
     this.db = db
-    this.emitter = emitter
+
     this.feeds = {}
   }
 
@@ -33,7 +35,7 @@ class RssFeedManager {
   async getFeed(req, res) {
     var feed = this.feeds[req.params.id]
     if (!feed) {
-      Logger.error(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
     }
@@ -55,7 +57,7 @@ class RssFeedManager {
   getFeedItem(req, res) {
     var feed = this.feeds[req.params.id]
     if (!feed) {
-      Logger.error(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
     }
@@ -71,7 +73,7 @@ class RssFeedManager {
   getFeedCover(req, res) {
     var feed = this.feeds[req.params.id]
     if (!feed) {
-      Logger.error(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
     }
@@ -104,7 +106,7 @@ class RssFeedManager {
 
     Logger.debug(`[RssFeedManager] Opened RSS feed ${feed.feedUrl}`)
     await this.db.insertEntity('feed', feed)
-    this.emitter('rss_feed_open', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    SocketAuthority.emitter('rss_feed_open', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
     return feed
   }
 
@@ -118,7 +120,7 @@ class RssFeedManager {
     if (!this.feeds[id]) return
     var feed = this.feeds[id]
     await this.db.removeEntity('feed', id)
-    this.emitter('rss_feed_closed', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    SocketAuthority.emitter('rss_feed_closed', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
     delete this.feeds[id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
   }

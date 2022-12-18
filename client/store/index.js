@@ -17,11 +17,9 @@ export const state = () => ({
   showEReader: false,
   selectedLibraryItem: null,
   developerMode: false,
-  selectedLibraryItems: [],
   processingBatch: false,
   previousPath: '/',
   showExperimentalFeatures: false,
-  backups: [],
   bookshelfBookIds: [],
   openModal: null,
   innerModalOpen: false,
@@ -30,21 +28,27 @@ export const state = () => ({
 })
 
 export const getters = {
-  getIsLibraryItemSelected: state => libraryItemId => {
-    return !!state.selectedLibraryItems.includes(libraryItemId)
-  },
   getServerSetting: state => key => {
     if (!state.serverSettings) return null
     return state.serverSettings[key]
   },
-  getNumLibraryItemsSelected: state => state.selectedLibraryItems.length,
   getLibraryItemIdStreaming: state => {
     return state.streamLibraryItem ? state.streamLibraryItem.id : null
+  },
+  getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
+    if (!state.streamLibraryItem) return false
+    return state.streamLibraryItem.libraryId !== rootState.libraries.currentLibraryId
   },
   getIsMediaStreaming: state => (libraryItemId, episodeId) => {
     if (!state.streamLibraryItem) return null
     if (!episodeId) return state.streamLibraryItem.id == libraryItemId
     return state.streamLibraryItem.id == libraryItemId && state.streamEpisodeId == episodeId
+  },
+  getIsMediaQueued: state => (libraryItemId, episodeId) => {
+    return state.playerQueueItems.some(i => {
+      if (!episodeId) return i.libraryItemId === libraryItemId
+      return i.libraryItemId === libraryItemId && i.episodeId === episodeId
+    })
   },
   getBookshelfView: state => {
     if (!state.serverSettings || isNaN(state.serverSettings.bookshelfView)) return Constants.BookshelfView.STANDARD
@@ -159,6 +163,21 @@ export const mutations = {
   setPlayerQueueItems(state, items) {
     state.playerQueueItems = items || []
   },
+  removeItemFromQueue(state, item) {
+    state.playerQueueItems = state.playerQueueItems.filter((i) => {
+      if (!i.episodeId) return i.libraryItemId !== item.libraryItemId
+      return i.libraryItemId !== item.libraryItemId || i.episodeId !== item.episodeId
+    })
+  },
+  addItemToQueue(state, item) {
+    const exists = state.playerQueueItems.some(i => {
+      if (!i.episodeId) return i.libraryItemId === item.libraryItemId
+      return i.libraryItemId === item.libraryItemId && i.episodeId === item.episodeId
+    })
+    if (!exists) {
+      state.playerQueueItems.push(item)
+    }
+  },
   setPlayerQueueAutoPlay(state, autoPlay) {
     state.playerQueueAutoPlay = !!autoPlay
     localStorage.setItem('playerQueueAutoPlay', !!autoPlay ? '1' : '0')
@@ -193,35 +212,12 @@ export const mutations = {
   setSelectedLibraryItem(state, val) {
     Vue.set(state, 'selectedLibraryItem', val)
   },
-  setSelectedLibraryItems(state, items) {
-    Vue.set(state, 'selectedLibraryItems', items)
-  },
-  toggleLibraryItemSelected(state, itemId) {
-    if (state.selectedLibraryItems.includes(itemId)) {
-      state.selectedLibraryItems = state.selectedLibraryItems.filter(a => a !== itemId)
-    } else {
-      var newSel = state.selectedLibraryItems.concat([itemId])
-      Vue.set(state, 'selectedLibraryItems', newSel)
-    }
-  },
-  setLibraryItemSelected(state, { libraryItemId, selected }) {
-    var isThere = state.selectedLibraryItems.includes(libraryItemId)
-    if (isThere && !selected) {
-      state.selectedLibraryItems = state.selectedLibraryItems.filter(a => a !== libraryItemId)
-    } else if (selected && !isThere) {
-      var newSel = state.selectedLibraryItems.concat([libraryItemId])
-      Vue.set(state, 'selectedLibraryItems', newSel)
-    }
-  },
   setProcessingBatch(state, val) {
     state.processingBatch = val
   },
   setExperimentalFeatures(state, val) {
     state.showExperimentalFeatures = val
     localStorage.setItem('experimental', val ? 1 : 0)
-  },
-  setBackups(state, val) {
-    state.backups = val.sort((a, b) => b.createdAt - a.createdAt)
   },
   setOpenModal(state, val) {
     state.openModal = val

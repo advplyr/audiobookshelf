@@ -2,14 +2,14 @@
   <modals-modal v-model="show" name="backup-scheduler" :width="700" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">Set Backup Schedule</p>
+        <p class="font-book text-3xl text-white truncate">{{ $strings.HeaderSetBackupSchedule }}</p>
       </div>
     </template>
     <div v-if="show && newCronExpression" class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
       <widgets-cron-expression-builder ref="expressionBuilder" v-model="newCronExpression" @input="expressionUpdated" />
 
       <div class="flex items-center justify-end">
-        <ui-btn :disabled="!isUpdated" @click="submit">{{ isUpdated ? 'Save Backup Schedule' : 'No update necessary' }}</ui-btn>
+        <ui-btn :disabled="!isUpdated" @click="submit">{{ isUpdated ? $strings.ButtonSave : $strings.MessageNoUpdateNecessary }}</ui-btn>
       </div>
     </div>
   </modals-modal>

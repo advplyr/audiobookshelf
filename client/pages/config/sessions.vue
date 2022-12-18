@@ -1,24 +1,20 @@
 <template>
-  <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">Listening Sessions</h1>
-      </div>
-
+  <div>
+    <app-settings-content :header-text="$strings.HeaderListeningSessions">
       <div class="flex justify-end mb-2">
-        <ui-dropdown v-model="selectedUser" :items="userItems" label="Filter by User" small class="max-w-48" @input="updateUserFilter" />
+        <ui-dropdown v-model="selectedUser" :items="userItems" :label="$strings.LabelFilterByUser" small class="max-w-48" @input="updateUserFilter" />
       </div>
 
       <div v-if="listeningSessions.length" class="block max-w-full">
         <table class="userSessionsTable">
           <tr class="bg-primary bg-opacity-40">
-            <th class="w-48 min-w-48 text-left">Item</th>
-            <th class="w-20 min-w-20 text-left hidden md:table-cell">User</th>
-            <th class="w-32 min-w-32 text-left hidden md:table-cell">Play Method</th>
-            <th class="w-32 min-w-32 text-left hidden sm:table-cell">Device Info</th>
-            <th class="w-32 min-w-32">Listened</th>
-            <th class="w-16 min-w-16">Last Time</th>
-            <th class="flex-grow hidden sm:table-cell">Last Update</th>
+            <th class="w-48 min-w-48 text-left">{{ $strings.LabelItem }}</th>
+            <th class="w-20 min-w-20 text-left hidden md:table-cell">{{ $strings.LabelUser }}</th>
+            <th class="w-32 min-w-32 text-left hidden md:table-cell">{{ $strings.LabelPlayMethod }}</th>
+            <th class="w-32 min-w-32 text-left hidden sm:table-cell">{{ $strings.LabelDeviceInfo }}</th>
+            <th class="w-32 min-w-32">{{ $strings.LabelTimeListened }}</th>
+            <th class="w-16 min-w-16">{{ $strings.LabelLastTime }}</th>
+            <th class="flex-grow hidden sm:table-cell">{{ $strings.LabelLastUpdate }}</th>
           </tr>
 
           <tr v-for="session in listeningSessions" :key="session.id" class="cursor-pointer" @click="showSession(session)">
@@ -55,8 +51,8 @@
           <ui-icon-btn icon="arrow_forward_ios" :size="7" icon-font-size="1rem" class="mx-1" :disabled="currentPage >= numPages - 1" @click="nextPage" />
         </div>
       </div>
-      <p v-else class="text-white text-opacity-50">No sessions yet...</p>
-    </div>
+      <p v-else class="text-white text-opacity-50">{{ $strings.MessageNoListeningSessions }}</p>
+    </app-settings-content>
 
     <modals-listening-session-modal v-model="showSessionModal" :session="selectedSession" @removedSession="removedSession" />
   </div>
@@ -65,10 +61,10 @@
 <script>
 export default {
   async asyncData({ params, redirect, app }) {
-    var users = await app.$axios
+    const users = await app.$axios
       .$get('/api/users')
-      .then((users) => {
-        return users.sort((a, b) => {
+      .then((res) => {
+        return res.users.sort((a, b) => {
           return a.createdAt - b.createdAt
         })
       })
@@ -88,6 +84,7 @@ export default {
       numPages: 0,
       total: 0,
       currentPage: 0,
+      itemsPerPage: 10,
       userFilter: null,
       selectedUser: '',
       processingGoToTimestamp: false
@@ -101,7 +98,7 @@ export default {
       return this.$store.getters['users/getIsUserOnline'](this.user.id)
     },
     userItems() {
-      var userItems = [{ value: '', text: 'All Users' }]
+      var userItems = [{ value: '', text: this.$strings.LabelAllUsers }]
       return userItems.concat(this.users.map((u) => ({ value: u.id, text: u.username })))
     },
     filteredUserUsername() {
@@ -112,6 +109,16 @@ export default {
   },
   methods: {
     removedSession() {
+      // If on last page and this was the last session then load prev page
+      if (this.currentPage == this.numPages - 1) {
+        const newTotal = this.total - 1
+        const newNumPages = Math.ceil(newTotal / this.itemsPerPage)
+        if (newNumPages < this.numPages) {
+          this.prevPage()
+          return
+        }
+      }
+
       this.loadSessions(this.currentPage)
     },
     async clickCurrentTime(session) {
@@ -127,20 +134,47 @@ export default {
         this.processingGoToTimestamp = false
         return
       }
-      if (session.episodeId && !libraryItem.media.episodes.find((ep) => ep.id === session.episodeId)) {
+      if (session.episodeId && !libraryItem.media.episodes.some((ep) => ep.id === session.episodeId)) {
         this.$toast.error('Failed to get podcast episode')
         this.processingGoToTimestamp = false
         return
       }
 
+      var queueItem = {}
+      if (session.episodeId) {
+        var episode = libraryItem.media.episodes.find((ep) => ep.id === session.episodeId)
+        queueItem = {
+          libraryItemId: libraryItem.id,
+          libraryId: libraryItem.libraryId,
+          episodeId: episode.id,
+          title: episode.title,
+          subtitle: libraryItem.media.metadata.title,
+          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          duration: episode.audioFile.duration || null,
+          coverPath: libraryItem.media.coverPath || null
+        }
+      } else {
+        queueItem = {
+          libraryItemId: libraryItem.id,
+          libraryId: libraryItem.libraryId,
+          episodeId: null,
+          title: libraryItem.media.metadata.title,
+          subtitle: libraryItem.media.metadata.authors.map((au) => au.name).join(', '),
+          caption: '',
+          duration: libraryItem.media.duration || null,
+          coverPath: libraryItem.media.coverPath || null
+        }
+      }
+
       const payload = {
-        message: `Start playback for "${session.displayTitle}" at ${this.$secondsToTimestamp(session.currentTime)}?`,
+        message: this.$getString('MessageStartPlaybackAtTime', [session.displayTitle, this.$secondsToTimestamp(session.currentTime)]),
         callback: (confirmed) => {
           if (confirmed) {
             this.$eventBus.$emit('play-item', {
               libraryItemId: libraryItem.id,
               episodeId: session.episodeId || null,
-              startTime: session.currentTime
+              startTime: session.currentTime,
+              queueItems: [queueItem]
             })
           }
           this.processingGoToTimestamp = false
@@ -181,7 +215,7 @@ export default {
     },
     async loadSessions(page) {
       var userFilterQuery = this.selectedUser ? `&user=${this.selectedUser}` : ''
-      const data = await this.$axios.$get(`/api/sessions?page=${page}&itemsPerPage=10${userFilterQuery}`).catch((err) => {
+      const data = await this.$axios.$get(`/api/sessions?page=${page}&itemsPerPage=${this.itemsPerPage}${userFilterQuery}`).catch((err) => {
         console.error('Failed to load listening sesions', err)
         return null
       })

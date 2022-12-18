@@ -5,6 +5,7 @@ const date = require('../libs/dateAndTime')
 const Logger = require('../Logger')
 const Folder = require('../objects/Folder')
 const { LogLevel } = require('../utils/constants')
+const filePerms = require('../utils/filePerms')
 const { getId, secondsToTimestamp } = require('../utils/index')
 
 class LibraryScan {
@@ -61,7 +62,7 @@ class LibraryScan {
   get totalResults() {
     return this.resultsAdded + this.resultsUpdated + this.resultsMissing
   }
-  get getLogFilename() {
+  get logFilename() {
     return date.format(new Date(), 'YYYY-MM-DD') + '_' + this.id + '.txt'
   }
 
@@ -124,14 +125,17 @@ class LibraryScan {
     this.logs.push(logObj)
   }
 
-  async saveLog(logDir) {
-    await fs.ensureDir(logDir)
-    var outputPath = Path.join(logDir, this.getLogFilename)
-    var logLines = [JSON.stringify(this.toJSON())]
+  async saveLog() {
+    await Logger.logManager.ensureScanLogDir()
+
+    const outputPath = Path.join(logDir, this.logFilename)
+    const logLines = [JSON.stringify(this.toJSON())]
     this.logs.forEach(l => {
       logLines.push(JSON.stringify(l))
     })
     await fs.writeFile(outputPath, logLines.join('\n') + '\n')
+    await filePerms.setDefault(outputPath)
+
     Logger.info(`[LibraryScan] Scan log saved "${outputPath}"`)
   }
 }

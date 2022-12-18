@@ -7,7 +7,7 @@
       </span>
     </button>
 
-    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-80 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
       <template v-for="item in selectItems">
         <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item.value)">
           <div class="flex items-center">
@@ -30,75 +30,7 @@ export default {
   },
   data() {
     return {
-      showMenu: false,
-      bookItems: [
-        {
-          text: 'Title',
-          value: 'media.metadata.title'
-        },
-        {
-          text: 'Author (First Last)',
-          value: 'media.metadata.authorName'
-        },
-        {
-          text: 'Author (Last, First)',
-          value: 'media.metadata.authorNameLF'
-        },
-        {
-          text: 'Published Year',
-          value: 'media.metadata.publishedYear'
-        },
-        {
-          text: 'Added At',
-          value: 'addedAt'
-        },
-        {
-          text: 'Size',
-          value: 'size'
-        },
-        {
-          text: 'Duration',
-          value: 'media.duration'
-        },
-        {
-          text: 'File Birthtime',
-          value: 'birthtimeMs'
-        },
-        {
-          text: 'File Modified',
-          value: 'mtimeMs'
-        }
-      ],
-      podcastItems: [
-        {
-          text: 'Title',
-          value: 'media.metadata.title'
-        },
-        {
-          text: 'Author',
-          value: 'media.metadata.author'
-        },
-        {
-          text: 'Added At',
-          value: 'addedAt'
-        },
-        {
-          text: 'Size',
-          value: 'size'
-        },
-        {
-          text: '# of Episodes',
-          value: 'media.numTracks'
-        },
-        {
-          text: 'File Birthtime',
-          value: 'birthtimeMs'
-        },
-        {
-          text: 'File Modified',
-          value: 'mtimeMs'
-        }
-      ]
+      showMenu: false
     }
   },
   computed: {
@@ -121,9 +53,103 @@ export default {
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
     },
+    podcastItems() {
+      return [
+        {
+          text: this.$strings.LabelTitle,
+          value: 'media.metadata.title'
+        },
+        {
+          text: this.$strings.LabelAuthor,
+          value: 'media.metadata.author'
+        },
+        {
+          text: this.$strings.LabelAddedAt,
+          value: 'addedAt'
+        },
+        {
+          text: this.$strings.LabelSize,
+          value: 'size'
+        },
+        {
+          text: this.$strings.LabelNumberOfEpisodes,
+          value: 'media.numTracks'
+        },
+        {
+          text: this.$strings.LabelFileBirthtime,
+          value: 'birthtimeMs'
+        },
+        {
+          text: this.$strings.LabelFileModified,
+          value: 'mtimeMs'
+        }
+      ]
+    },
+    bookItems() {
+      return [
+        {
+          text: this.$strings.LabelTitle,
+          value: 'media.metadata.title'
+        },
+        {
+          text: this.$strings.LabelAuthorFirstLast,
+          value: 'media.metadata.authorName'
+        },
+        {
+          text: this.$strings.LabelAuthorLastFirst,
+          value: 'media.metadata.authorNameLF'
+        },
+        {
+          text: this.$strings.LabelPublishYear,
+          value: 'media.metadata.publishedYear'
+        },
+        {
+          text: this.$strings.LabelAddedAt,
+          value: 'addedAt'
+        },
+        {
+          text: this.$strings.LabelSize,
+          value: 'size'
+        },
+        {
+          text: this.$strings.LabelDuration,
+          value: 'media.duration'
+        },
+        {
+          text: this.$strings.LabelFileBirthtime,
+          value: 'birthtimeMs'
+        },
+        {
+          text: this.$strings.LabelFileModified,
+          value: 'mtimeMs'
+        }
+      ]
+    },
+    seriesItems() {
+      return [
+        ...this.bookItems,
+        {
+          text: this.$strings.LabelSequence,
+          value: 'sequence'
+        }
+      ]
+    },
     selectItems() {
-      if (this.isPodcast) return this.podcastItems
-      return this.bookItems
+      let items = null
+      if (this.isPodcast) {
+        items = this.podcastItems
+      } else if (this.$store.getters['user/getUserSetting']('filterBy').startsWith('series.')) {
+        items = this.seriesItems
+      } else {
+        items = this.bookItems
+      }
+
+      if (!items.some((i) => i.value === this.selected)) {
+        this.selected = items[0].value
+        this.selectedDesc = !this.defaultsToAsc(items[0].value)
+      }
+
+      return items
     },
     selectedText() {
       var _selected = this.selected
@@ -143,12 +169,13 @@ export default {
         this.selectedDesc = !this.selectedDesc
       } else {
         this.selected = val
-        if (val == 'media.metadata.title' || val == 'media.metadata.author' || val == 'media.metadata.authorName' || val == 'media.metadata.authorNameLF') {
-          this.selectedDesc = false
-        }
+        if (this.defaultsToAsc(val)) this.selectedDesc = false
       }
       this.showMenu = false
       this.$nextTick(() => this.$emit('change', val))
+    },
+    defaultsToAsc(val) {
+      return val == 'media.metadata.title' || val == 'media.metadata.author' || val == 'media.metadata.authorName' || val == 'media.metadata.authorNameLF' || val == 'sequence'
     }
   }
 }

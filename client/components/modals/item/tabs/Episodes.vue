@@ -2,29 +2,29 @@
   <div class="w-full h-full overflow-y-auto overflow-x-hidden px-4 py-6">
     <div class="w-full mb-4">
       <div v-if="userIsAdminOrUp" class="flex items-end justify-end mb-4">
-        <ui-text-input-with-label ref="lastCheckInput" v-model="lastEpisodeCheckInput" :disabled="checkingNewEpisodes" type="datetime-local" label="Look for new episodes after this date" class="max-w-xs mr-2" />
-        <ui-text-input-with-label ref="maxEpisodesInput" v-model="maxEpisodesToDownload" :disabled="checkingNewEpisodes" type="number" label="Max episodes" class="w-16 mr-2" input-class="h-10">
+        <ui-text-input-with-label ref="lastCheckInput" v-model="lastEpisodeCheckInput" :disabled="checkingNewEpisodes" type="datetime-local" :label="$strings.LabelLookForNewEpisodesAfterDate" class="max-w-xs mr-2" />
+        <ui-text-input-with-label ref="maxEpisodesInput" v-model="maxEpisodesToDownload" :disabled="checkingNewEpisodes" type="number" :label="$strings.LabelLimit" class="w-16 mr-2" input-class="h-10">
           <div class="flex -mb-0.5">
-            <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">Limit</p>
+            <p class="px-1 text-sm font-semibold" :class="{ 'text-gray-400': checkingNewEpisodes }">{{ $strings.LabelLimit }}</p>
             <ui-tooltip direction="top" text="Max # of episodes to download. Use 0 for unlimited.">
               <span class="material-icons text-base">info_outlined</span>
             </ui-tooltip>
           </div>
         </ui-text-input-with-label>
-        <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">Check & Download New Episodes</ui-btn>
+        <ui-btn :loading="checkingNewEpisodes" @click="checkForNewEpisodes">{{ $strings.ButtonCheckAndDownloadNewEpisodes }}</ui-btn>
       </div>
 
       <div v-if="episodes.length" class="w-full p-4 bg-primary">
-        <p>Podcast Episodes</p>
+        <p>{{ $strings.HeaderEpisodes }}</p>
       </div>
-      <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">No Episodes</div>
+      <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">{{ $strings.MessageNoEpisodes }}</div>
       <table v-else class="text-sm tracksTable">
         <tr class="font-book">
           <th class="text-left">Sort #</th>
-          <th class="text-left whitespace-nowrap">Episode #</th>
-          <th class="text-left">Title</th>
-          <th class="text-center w-28">Duration</th>
-          <th class="text-center w-28">Size</th>
+          <th class="text-left whitespace-nowrap">{{ $strings.LabelEpisode }}</th>
+          <th class="text-left">{{ $strings.EpisodeTitle }}</th>
+          <th class="text-center w-28">{{ $strings.EpisodeDuration }}</th>
+          <th class="text-center w-28">{{ $strings.EpisodeSize }}</th>
         </tr>
         <tr v-for="episode in episodes" :key="episode.id">
           <td class="text-left">

@@ -7,7 +7,7 @@
     </template>
     <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
       <div v-if="currentFeedUrl" class="w-full">
-        <p class="text-lg font-semibold mb-4">Podcast RSS Feed is Open</p>
+        <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedIsOpen }}</p>
 
         <div class="w-full relative">
           <ui-text-input v-model="currentFeedUrl" readonly />
@@ -16,20 +16,20 @@
         </div>
       </div>
       <div v-else class="w-full">
-        <p class="text-lg font-semibold mb-4">Open RSS Feed</p>
+        <p class="text-lg font-semibold mb-4">{{ $strings.HeaderOpenRSSFeed }}</p>
 
         <div class="w-full relative mb-2">
-          <ui-text-input-with-label v-model="newFeedSlug" label="RSS Feed Slug" />
-          <p class="text-xs text-gray-400 py-0.5 px-1">Feed will be {{ demoFeedUrl }}</p>
+          <ui-text-input-with-label v-model="newFeedSlug" :label="$strings.LabelRSSFeedSlug" />
+          <p class="text-xs text-gray-400 py-0.5 px-1">{{ $getString('MessageFeedURLWillBe', [demoFeedUrl]) }}</p>
         </div>
 
-        <p v-if="isHttp" class="w-full pt-2 text-warning text-xs">Warning: Most podcast apps will require the RSS feed URL is using HTTPS</p>
-        <p v-if="hasEpisodesWithoutPubDate" class="w-full pt-2 text-warning text-xs">Warning: 1 or more of your episodes do not have a Pub Date. Some podcast apps require this.</p>
+        <p v-if="isHttp" class="w-full pt-2 text-warning text-xs">{{ $strings.NoteRSSFeedPodcastAppsHttps }}</p>
+        <p v-if="hasEpisodesWithoutPubDate" class="w-full pt-2 text-warning text-xs">{{ $strings.NoteRSSFeedPodcastAppsPubDate }}</p>
       </div>
       <div v-show="userIsAdminOrUp" class="flex items-center pt-6">
         <div class="flex-grow" />
-        <ui-btn v-if="currentFeedUrl" color="error" small @click="closeFeed">Close RSS Feed</ui-btn>
-        <ui-btn v-else color="success" small @click="openFeed">Open RSS Feed</ui-btn>
+        <ui-btn v-if="currentFeedUrl" color="error" small @click="closeFeed">{{ $strings.ButtonCloseFeed }}</ui-btn>
+        <ui-btn v-else color="success" small @click="openFeed">{{ $strings.ButtonOpenFeed }}</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -144,14 +144,14 @@ export default {
       this.$axios
         .$post(`/api/items/${this.libraryItem.id}/close-feed`)
         .then(() => {
-          this.$toast.success('RSS Feed Closed')
+          this.$toast.success(this.$strings.ToastRSSFeedCloseSuccess)
           this.show = false
           this.processing = false
         })
         .catch((error) => {
           console.error('Failed to close RSS feed', error)
           this.processing = false
-          this.$toast.error()
+          this.$toast.error(this.$strings.ToastRSSFeedCloseFailed)
         })
     },
     init() {

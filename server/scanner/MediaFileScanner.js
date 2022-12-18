@@ -14,7 +14,7 @@ class MediaFileScanner {
   getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, audioLibraryFile) {
     const { title, author, series, publishedYear } = mediaMetadataFromScan
     const { filename, path } = audioLibraryFile.metadata
-    var partbasename = Path.basename(filename, Path.extname(filename))
+    let partbasename = Path.basename(filename, Path.extname(filename))
 
     // Remove title, author, series, and publishedYear from filename if there
     if (title) partbasename = partbasename.replace(title, '')
@@ -23,8 +23,8 @@ class MediaFileScanner {
     if (publishedYear) partbasename = partbasename.replace(publishedYear)
 
     // Look for disc number
-    var discNumber = null
-    var discMatch = partbasename.match(/\b(disc|cd) ?(\d\d?)\b/i)
+    let discNumber = null
+    const discMatch = partbasename.match(/\b(disc|cd) ?(\d\d?)\b/i)
     if (discMatch && discMatch.length > 2 && discMatch[2]) {
       if (!isNaN(discMatch[2])) {
         discNumber = Number(discMatch[2])
@@ -35,14 +35,14 @@ class MediaFileScanner {
     }
 
     // Look for disc number in folder path e.g. /Book Title/CD01/audiofile.mp3
-    var pathdir = Path.dirname(path).split('/').pop()
+    const pathdir = Path.dirname(path).split('/').pop()
     if (pathdir && /^cd\d{1,3}$/i.test(pathdir)) {
-      var discFromFolder = Number(pathdir.replace(/cd/i, ''))
+      const discFromFolder = Number(pathdir.replace(/cd/i, ''))
       if (!isNaN(discFromFolder) && discFromFolder !== null) discNumber = discFromFolder
     }
 
-    var numbersinpath = partbasename.match(/\d{1,4}/g)
-    var trackNumber = numbersinpath && numbersinpath.length ? parseInt(numbersinpath[0]) : null
+    const numbersinpath = partbasename.match(/\d{1,4}/g)
+    const trackNumber = numbersinpath && numbersinpath.length ? parseInt(numbersinpath[0]) : null
     return {
       trackNumber,
       discNumber
@@ -51,7 +51,7 @@ class MediaFileScanner {
 
   getAverageScanDurationMs(results) {
     if (!results.length) return 0
-    var total = 0
+    let total = 0
     for (let i = 0; i < results.length; i++) total += results[i].elapsed
     return Math.floor(total / results.length)
   }

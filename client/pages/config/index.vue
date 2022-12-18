@@ -1,104 +1,105 @@
 <template>
   <div>
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-2">
-      <div class="mb-2">
-        <h1 class="text-xl">Settings</h1>
-      </div>
-
+    <app-settings-content :header-text="$strings.HeaderSettings">
       <div class="lg:flex">
         <div class="flex-1">
           <div class="pt-4">
-            <h2 class="font-semibold">General</h2>
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsGeneral }}</h2>
           </div>
           <div class="flex items-end py-2">
             <ui-toggle-switch v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
-            <ui-tooltip :text="tooltips.storeCoverWithItem">
+            <ui-tooltip :text="$strings.LabelSettingsStoreCoversWithItemHelp">
               <p class="pl-4">
-                Store covers with item
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsStoreCoversWithItem }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
-            <ui-tooltip :text="tooltips.storeMetadataWithItem">
+            <ui-tooltip :text="$strings.LabelSettingsStoreMetadataWithItemHelp">
               <p class="pl-4">
-                Store metadata with item
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsStoreMetadataWithItem }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
-            <ui-tooltip :text="tooltips.sortingIgnorePrefix">
+            <ui-tooltip :text="$strings.LabelSettingsSortingIgnorePrefixesHelp">
               <p class="pl-4">
-                Ignore prefixes when sorting
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsSortingIgnorePrefixes }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
           <div v-if="newServerSettings.sortingIgnorePrefix" class="w-72 ml-14 mb-2">
-            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" label="Prefixes to Ignore (case insensitive)" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
+            <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
-            <p class="pl-4">Chromecast support</p>
+            <p class="pl-4">{{ $strings.LabelSettingsChromecastSupport }}</p>
           </div>
 
           <div class="pt-4">
-            <h2 class="font-semibold">Display</h2>
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsDisplay }}</h2>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="homepageUseBookshelfView" :disabled="updatingServerSettings" @input="updateHomeUseBookshelfView" />
-            <ui-tooltip :text="tooltips.bookshelfView">
+            <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
-                Home page use bookshelf view
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsHomePageBookshelfView }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="useBookshelfView" :disabled="updatingServerSettings" @input="updateUseBookshelfView" />
-            <ui-tooltip :text="tooltips.bookshelfView">
+            <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
-                Library use bookshelf view
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsLibraryBookshelfView }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
-          <div class="flex items-center py-2">
-            <p class="pr-4">Date Format</p>
-            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-40" @input="(val) => updateSettingsKey('dateFormat', val)" />
+          <div class="py-2">
+            <p class="px-1 text-sm font-semibold">{{ $strings.LabelSettingsDateFormat }}</p>
+            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
+          </div>
+
+          <div class="py-2">
+            <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguageDefaultServer }}</p>
+            <ui-dropdown ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
         </div>
 
         <div class="flex-1">
           <div class="pt-4">
-            <h2 class="font-semibold">Scanner</h2>
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsScanner }}</h2>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerParseSubtitle', val)" />
-            <ui-tooltip :text="tooltips.scannerParseSubtitle">
+            <ui-tooltip :text="$strings.LabelSettingsParseSubtitlesHelp">
               <p class="pl-4">
-                Parse subtitles
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsParseSubtitles }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerFindCovers', val)" />
-            <ui-tooltip :text="tooltips.scannerFindCovers">
+            <ui-tooltip :text="$strings.LabelSettingsFindCoversHelp">
               <p class="pl-4">
-                Find covers
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsFindCovers }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
             <div class="flex-grow" />
@@ -109,75 +110,65 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferOverdriveMediaMarker">
+            <ui-tooltip :text="$strings.LabelSettingsOverdriveMediaMarkersHelp">
               <p class="pl-4">
-                Use Overdrive Media Markers for chapters
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsOverdriveMediaMarkers }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferAudioMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferAudioMetadataHelp">
               <p class="pl-4">
-                Prefer audio metadata
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsPreferAudioMetadata }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferOpfMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferOPFMetadataHelp">
               <p class="pl-4">
-                Prefer OPF metadata
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsPreferOPFMetadata }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
-            <ui-tooltip :text="tooltips.scannerPreferMatchedMetadata">
+            <ui-tooltip :text="$strings.LabelSettingsPreferMatchedMetadataHelp">
               <p class="pl-4">
-                Prefer matched metadata
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsPreferMatchedMetadata }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
-            <ui-tooltip :text="tooltips.scannerDisableWatcher">
+            <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
               <p class="pl-4">
-                Disable Watcher
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsDisableWatcher }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
-          <!-- <div class="flex items-center py-2">
-            <ui-text-input type="number" v-model="newServerSettings.scannerMaxThreads" no-spinner :disabled="updatingServerSettings" :padding-x="1" text-center class="w-10" @change="updateScannerMaxThreads" />
-            <ui-tooltip :text="tooltips.scannerMaxThreads">
-              <p class="pl-4">
-                Max # of threads to use
-                <span class="material-icons icon-text text-sm">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div> -->
-
           <div class="pt-4">
-            <h2 class="font-semibold">Experimental Features</h2>
+            <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
           </div>
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="showExperimentalFeatures" />
-            <ui-tooltip :text="tooltips.experimentalFeatures">
+            <ui-tooltip :text="$strings.LabelSettingsExperimentalFeaturesHelp">
               <p class="pl-4">
-                Experimental Features
+                {{ $strings.LabelSettingsExperimentalFeatures }}
                 <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
-                  <span class="material-icons icon-text text-sm">info_outlined</span>
+                  <span class="material-icons icon-text">info_outlined</span>
                 </a>
               </p>
             </ui-tooltip>
@@ -185,10 +176,10 @@
 
           <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
-            <ui-tooltip :text="tooltips.enableEReader">
+            <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
               <p class="pl-4">
-                Enable e-reader for all users
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                {{ $strings.LabelSettingsEnableEReader }}
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
@@ -198,26 +189,27 @@
             <ui-tooltip text="Tone library for metadata">
               <p class="pl-4">
                 Use Tone library for metadata
-                <span class="material-icons icon-text text-sm">info_outlined</span>
+                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div> -->
         </div>
       </div>
-    </div>
+    </app-settings-content>
 
     <div class="h-0.5 bg-primary bg-opacity-30 w-full" />
 
     <div class="flex items-center py-4">
       <div class="flex-grow" />
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click.stop="purgeCache">Purge All Cache</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isPurgingCache" @click.stop="purgeItemsCache">Purge Items Cache</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="hidden lg:block mr-2" :loading="isResettingLibraryItems" @click="resetLibraryItems">Remove All Library Items</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeCache">{{ $strings.ButtonPurgeAllCache }}</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
+      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isResettingLibraryItems" @click="resetLibraryItems">{{ $strings.ButtonRemoveAllLibraryItems }}</ui-btn>
     </div>
+
     <div class="flex items-center py-4">
       <div class="flex-grow" />
       <p class="pr-2 text-sm font-book text-yellow-400">
-        Report bugs, request features, and contribute on
+        {{ $strings.MessageReportBugsAndContribute }}
         <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>
       </p>
       <a href="https://github.com/advplyr/audiobookshelf" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
@@ -228,7 +220,7 @@
         </svg>
       </a>
       <p class="pl-4 pr-2 text-sm font-book text-yellow-400">
-        Join us on
+        {{ $strings.MessageJoinUsOn }}
         <a class="underline" href="https://discord.gg/pJsjuNCKRq" target="_blank">discord</a>
       </p>
       <a href="https://discord.gg/pJsjuNCKRq" target="_blank" class="text-white hover:text-gray-200 hover:scale-150 hover:rotate-6 transform duration-500">
@@ -276,23 +268,6 @@ export default {
       useBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
-      tooltips: {
-        experimentalFeatures: 'Features in development that could use your feedback and help testing. Click to open github discussion.',
-        scannerDisableWatcher: 'Disables the automatic adding/updating of items when file changes are detected. *Requires server restart',
-        scannerPreferOpfMetadata: 'OPF file metadata will be used for book details over folder names',
-        scannerPreferMatchedMetadata: 'Matched data will overide book details when using Quick Match',
-        scannerPreferAudioMetadata: 'Audio file ID3 meta tags will be used for book details over folder names',
-        scannerParseSubtitle: 'Extract subtitles from audiobook folder names.<br>Subtitle must be seperated by " - "<br>i.e. "Book Title - A Subtitle Here" has the subtitle "A Subtitle Here"',
-        sortingIgnorePrefix: 'i.e. for prefix "the" book title "The Book Title" would sort as "Book Title, The"',
-        scannerFindCovers: 'If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time',
-        bookshelfView: 'Skeumorphic design with wooden shelves',
-        storeCoverWithItem: 'By default covers are stored in /metadata/items, enabling this setting will store covers in your library item folder. Only one file named "cover" will be kept',
-        storeMetadataWithItem: 'By default metadata files are stored in /metadata/items, enabling this setting will store metadata files in your library item folders. Uses .abs file extension',
-        enableEReader: 'E-reader is still a work in progress, but use this setting to open it up to all your users (or use the "Experimental Features" toggle just for use by you)',
-        scannerPreferOverdriveMediaMarker: 'MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically',
-        scannerUseSingleThreadedProber: 'The old scanner used a single thread. Leaving it in to use as a comparison for now.',
-        scannerMaxThreads: 'Number of concurrent media files to scan at a time. Value of 1 will be a slower scan but less CPU usage. <br><br>Value of 0 defaults to # of CPU cores for this server times 2 (i.e. 4-core CPU will be 8)'
-      },
       showConfirmPurgeCache: false
     }
   },
@@ -323,26 +298,6 @@ export default {
     }
   },
   methods: {
-    updateScannerMaxThreads(val) {
-      if (!val || isNaN(val)) {
-        this.$toast.error('Invalid max threads must be a number')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      if (Number(val) < 0) {
-        this.$toast.error('Max threads must be >= 0')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      if (Math.round(Number(val)) !== Number(val)) {
-        this.$toast.error('Max threads must be an integer')
-        this.newServerSettings.scannerMaxThreads = 0
-        return
-      }
-      this.updateServerSettings({
-        scannerMaxThreads: Number(val)
-      })
-    },
     updateSortingPrefixes(val) {
       if (!val || !val.length) {
         this.$toast.error('Must have at least 1 prefix')
@@ -368,6 +323,9 @@ export default {
         bookshelfView: !val ? this.$constants.BookshelfView.DETAIL : this.$constants.BookshelfView.STANDARD
       })
     },
+    updateServerLanguage(val) {
+      this.updateSettingsKey('language', val)
+    },
     updateSettingsKey(key, val) {
       this.updateServerSettings({
         [key]: val
@@ -381,6 +339,11 @@ export default {
           console.log('Updated Server Settings', success)
           this.updatingServerSettings = false
           this.$toast.success('Server settings updated')
+
+          if (payload.language) {
+            // Updating language after save allows for re-rendering
+            this.$setLanguageCode(payload.language)
+          }
         })
         .catch((error) => {
           console.error('Failed to update server settings', error)
@@ -396,7 +359,7 @@ export default {
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
     },
     resetLibraryItems() {
-      if (confirm('WARNING! This action will remove all library items from the database including any updates or matches you have made. This does not do anything to your actual files. Shall we continue?')) {
+      if (confirm(this.$strings.MessageRemoveAllItemsWarning)) {
         this.isResettingLibraryItems = true
         this.$axios
           .$delete('/api/items/all')

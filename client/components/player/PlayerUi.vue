@@ -4,33 +4,43 @@
       <div class="absolute -top-10 md:top-0 right-0 lg:right-2 flex items-center h-full">
         <!-- <span class="material-icons text-2xl cursor-pointer" @click="toggleFullscreen(true)">expand_less</span> -->
 
-        <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
+        <ui-tooltip direction="top" :text="$strings.LabelVolume">
+          <controls-volume-control ref="volumeControl" v-model="volume" @input="setVolume" class="mx-2 hidden md:block" />
+        </ui-tooltip>
 
-        <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
-          <span v-if="!sleepTimerSet" class="material-icons text-2xl sm:text-2.5xl">snooze</span>
-          <div v-else class="flex items-center">
-            <span class="material-icons text-lg text-warning">snooze</span>
-            <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
+        <ui-tooltip direction="top" :text="$strings.LabelSleepTimer">
+          <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showSleepTimer')">
+            <span v-if="!sleepTimerSet" class="material-icons text-2xl">snooze</span>
+            <div v-else class="flex items-center">
+              <span class="material-icons text-lg text-warning">snooze</span>
+              <p class="text-xl text-warning font-mono font-semibold text-center px-0.5 pb-0.5" style="min-width: 30px">{{ sleepTimerRemainingString }}</p>
+            </div>
           </div>
-        </div>
+        </ui-tooltip>
 
-        <div v-if="!isPodcast" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
-          <span class="material-icons text-2xl sm:text-2.5xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
-        </div>
+        <ui-tooltip v-if="!isPodcast" direction="top" :text="$strings.LabelViewBookmarks">
+          <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showBookmarks')">
+            <span class="material-icons text-2xl">{{ bookmarks.length ? 'bookmarks' : 'bookmark_border' }}</span>
+          </div>
+        </ui-tooltip>
 
-        <div v-if="chapters.length" class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
-          <span class="material-icons text-2xl sm:text-3xl">format_list_bulleted</span>
-        </div>
+        <ui-tooltip v-if="chapters.length" direction="top" :text="$strings.LabelViewChapters">
+          <div class="cursor-pointer text-gray-300 hover:text-white mx-1 lg:mx-2" @mousedown.prevent @mouseup.prevent @click.stop="showChapters">
+            <span class="material-icons text-2xl">format_list_bulleted</span>
+          </div>
+        </ui-tooltip>
 
-        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? 'Use full track' : 'Use chapter track'">
+        <ui-tooltip v-if="playerQueueItems.length" direction="top" :text="$strings.LabelViewQueue">
+          <button class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
+            <span class="material-icons text-2.5xl sm:text-3xl">playlist_play</span>
+          </button>
+        </ui-tooltip>
+
+        <ui-tooltip v-if="chapters.length" direction="top" :text="useChapterTrack ? $strings.LabelUseFullTrack : $strings.LabelUseChapterTrack">
           <div class="cursor-pointer text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="setUseChapterTrack">
             <span class="material-icons text-2xl sm:text-3xl transform transition-transform" :class="useChapterTrack ? 'rotate-180' : ''">timelapse</span>
           </div>
         </ui-tooltip>
-
-        <button v-if="playerQueueItems.length" class="outline-none text-gray-300 mx-1 lg:mx-2 hover:text-white" @mousedown.prevent @mouseup.prevent @click.stop="$emit('showPlayerQueueItems')">
-          <span class="material-icons text-2xl sm:text-3xl">playlist_play</span>
-        </button>
       </div>
 
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
@@ -224,13 +234,10 @@ export default {
       this.showChaptersModal = false
     },
     setUseChapterTrack() {
-      var useChapterTrack = !this.useChapterTrack
-      this.useChapterTrack = useChapterTrack
-      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(useChapterTrack)
+      this.useChapterTrack = !this.useChapterTrack
+      if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
 
-      this.$store.dispatch('user/updateUserSettings', { useChapterTrack }).catch((err) => {
-        console.error('Failed to update settings', err)
-      })
+      this.$store.dispatch('user/updateUserSettings', { useChapterTrack: this.useChapterTrack })
       this.updateTimestamp()
     },
     checkUpdateChapterTrack() {
@@ -301,7 +308,7 @@ export default {
     init() {
       this.playbackRate = this.$store.getters['user/getUserSetting']('playbackRate') || 1
 
-      var _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
+      const _useChapterTrack = this.$store.getters['user/getUserSetting']('useChapterTrack') || false
       this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
@@ -335,13 +342,14 @@ export default {
     }
   },
   mounted() {
-    this.$store.commit('user/addSettingsListener', { id: 'audioplayer', meth: this.settingsUpdated })
-    this.init()
     this.$eventBus.$on('player-hotkey', this.hotkey)
+    this.$eventBus.$on('user-settings', this.settingsUpdated)
+
+    this.init()
   },
   beforeDestroy() {
-    this.$store.commit('user/removeSettingsListener', 'audioplayer')
     this.$eventBus.$off('player-hotkey', this.hotkey)
+    this.$eventBus.$off('user-settings', this.settingsUpdated)
   }
 }
 </script>

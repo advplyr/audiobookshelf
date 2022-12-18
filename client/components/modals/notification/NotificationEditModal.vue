@@ -8,23 +8,25 @@
     <form @submit.prevent="submitForm">
       <div class="w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300">
         <div class="w-full px-3 py-5 md:p-12">
-          <ui-dropdown v-model="newNotification.eventName" label="Notification Event" :items="eventOptions" class="mb-4" @input="eventOptionUpdated" />
+          <ui-dropdown v-model="newNotification.eventName" :label="$strings.LabelNotificationEvent" :items="eventOptions" class="mb-4" @input="eventOptionUpdated" />
 
-          <ui-multi-select v-model="newNotification.urls" label="Apprise URL(s)" class="mb-2" />
+          <ui-multi-select v-model="newNotification.urls" :label="$strings.LabelNotificationAppriseURL" class="mb-2" />
 
-          <ui-text-input-with-label v-model="newNotification.titleTemplate" label="Title Template" class="mb-2" />
+          <ui-text-input-with-label v-model="newNotification.titleTemplate" :label="$strings.LabelNotificationTitleTemplate" class="mb-2" />
 
-          <ui-textarea-with-label v-model="newNotification.bodyTemplate" label="Body Template" :rows="4" class="mb-2" />
+          <ui-textarea-with-label v-model="newNotification.bodyTemplate" :label="$strings.LabelNotificationBodyTemplate" :rows="4" class="mb-2" />
 
-          <p v-if="availableVariables" class="text-sm text-gray-300"><strong>Available variables:</strong> {{ availableVariables.join(', ') }}</p>
+          <p v-if="availableVariables" class="text-sm text-gray-300">
+            <strong>{{ $strings.LabelNotificationAvailableVariables }}:</strong> {{ availableVariables.join(', ') }}
+          </p>
 
           <div class="flex items-center pt-4">
             <div class="flex items-center">
               <ui-toggle-switch v-model="newNotification.enabled" />
-              <p class="text-lg pl-2">Enabled</p>
+              <p class="text-lg pl-2">{{ $strings.LabelEnable }}</p>
             </div>
             <div class="flex-grow" />
-            <ui-btn color="success" type="submit">Submit</ui-btn>
+            <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
           </div>
         </div>
       </div>

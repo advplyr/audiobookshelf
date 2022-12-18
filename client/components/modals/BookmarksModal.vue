@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">Your Bookmarks</p>
+        <p class="font-book text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
       </div>
     </template>
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
@@ -11,7 +11,7 @@
           <modals-bookmarks-bookmark-item :key="bookmark.id" :highlight="currentTime === bookmark.time" :bookmark="bookmark" @click="clickBookmark" @update="submitUpdateBookmark" @delete="deleteBookmark" />
         </template>
         <div v-if="!bookmarks.length" class="flex h-32 items-center justify-center">
-          <p class="text-xl">No Bookmarks</p>
+          <p class="text-xl">{{ $strings.MessageNoBookmarks }}</p>
         </div>
         <div v-if="!hideCreate" class="w-full h-px bg-white bg-opacity-10" />
         <form v-if="!hideCreate" @submit.prevent="submitCreateBookmark">
@@ -24,7 +24,7 @@
             <div class="flex-grow px-2">
               <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-icons -mt-px">add</span></ui-btn>
+            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-icons text-2xl -mt-px">add</span></ui-btn>
           </div>
         </form>
       </div>
@@ -85,10 +85,10 @@ export default {
       this.$axios
         .$delete(`/api/me/item/${this.libraryItemId}/bookmark/${bm.time}`)
         .then(() => {
-          this.$toast.success('Bookmark removed')
+          this.$toast.success(this.$strings.ToastBookmarkRemoveSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to remove bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkRemoveFailed)
           console.error(error)
         })
       this.show = false
@@ -101,10 +101,10 @@ export default {
       this.$axios
         .$patch(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
         .then(() => {
-          this.$toast.success('Bookmark updated')
+          this.$toast.success(this.$strings.ToastBookmarkUpdateSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to update bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkUpdateFailed)
           console.error(error)
         })
       this.show = false
@@ -120,10 +120,10 @@ export default {
       this.$axios
         .$post(`/api/me/item/${this.libraryItemId}/bookmark`, bookmark)
         .then(() => {
-          this.$toast.success('Bookmark added')
+          this.$toast.success(this.$strings.ToastBookmarkCreateSuccess)
         })
         .catch((error) => {
-          this.$toast.error(`Failed to create bookmark`)
+          this.$toast.error(this.$strings.ToastBookmarkCreateFailed)
           console.error(error)
         })
 

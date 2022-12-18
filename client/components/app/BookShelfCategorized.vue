@@ -16,17 +16,17 @@
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
         <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-episode-slider>
         <widgets-series-slider v-else-if="shelf.type === 'series'" :key="index + '.'" :items="shelf.entities" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-series-slider>
         <widgets-authors-slider v-else-if="shelf.type === 'authors'" :key="index + '.'" :items="shelf.entities" :height="192 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
-          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ shelf.label }}</p>
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-authors-slider>
       </template>
     </div>
@@ -89,8 +89,8 @@ export default {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.bookCoverWidth / baseSize
     },
-    selectedLibraryItems() {
-      return this.$store.state.selectedLibraryItems || []
+    selectedMediaItems() {
+      return this.$store.state.globals.selectedMediaItems || []
     }
   },
   methods: {
@@ -100,15 +100,15 @@ export default {
       const indexOf = shelf.shelfStartIndex + entityShelfIndex
 
       const lastLastItemIndexSelected = this.lastItemIndexSelected
-      if (!this.selectedLibraryItems.includes(entity.id)) {
+      if (!this.selectedMediaItems.some((i) => i.id === entity.id)) {
         this.lastItemIndexSelected = indexOf
       } else {
         this.lastItemIndexSelected = -1
       }
 
       if (shiftKey && lastLastItemIndexSelected >= 0) {
-        var loopStart = indexOf
-        var loopEnd = lastLastItemIndexSelected
+        let loopStart = indexOf
+        let loopEnd = lastLastItemIndexSelected
         if (indexOf > lastLastItemIndexSelected) {
           loopStart = lastLastItemIndexSelected
           loopEnd = indexOf
@@ -117,12 +117,12 @@ export default {
         const flattenedEntitiesArray = []
         this.shelves.map((s) => flattenedEntitiesArray.push(...s.entities))
 
-        var isSelecting = false
+        let isSelecting = false
         // If any items in this range is not selected then select all otherwise unselect all
         for (let i = loopStart; i <= loopEnd; i++) {
           const thisEntity = flattenedEntitiesArray[i]
           if (thisEntity) {
-            if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+            if (!this.selectedMediaItems.some((i) => i.id === thisEntity.id)) {
               isSelecting = true
               break
             }
@@ -133,13 +133,23 @@ export default {
         for (let i = loopStart; i <= loopEnd; i++) {
           const thisEntity = flattenedEntitiesArray[i]
           if (thisEntity) {
-            this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+            const mediaItem = {
+              id: thisEntity.id,
+              mediaType: thisEntity.mediaType,
+              hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+            }
+            this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
           } else {
             console.error('Invalid entity index', i)
           }
         }
       } else {
-        this.$store.commit('toggleLibraryItemSelected', entity.id)
+        const mediaItem = {
+          id: entity.id,
+          mediaType: entity.mediaType,
+          hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+        }
+        this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
       }
 
       this.$nextTick(() => {
@@ -180,6 +190,7 @@ export default {
         shelves.push({
           id: 'books',
           label: 'Books',
+          labelStringKey: 'LabelBooks',
           type: 'book',
           entities: this.results.books.map((res) => res.libraryItem)
         })
@@ -189,6 +200,7 @@ export default {
         shelves.push({
           id: 'podcasts',
           label: 'Podcasts',
+          labelStringKey: 'LabelPodcasts',
           type: 'podcast',
           entities: this.results.podcasts.map((res) => res.libraryItem)
         })
@@ -198,6 +210,7 @@ export default {
         shelves.push({
           id: 'series',
           label: 'Series',
+          labelStringKey: 'LabelSeries',
           type: 'series',
           entities: this.results.series.map((seriesObj) => {
             return {
@@ -212,6 +225,7 @@ export default {
         shelves.push({
           id: 'tags',
           label: 'Tags',
+          labelStringKey: 'LabelTags',
           type: 'tags',
           entities: this.results.tags.map((tagObj) => {
             return {
@@ -226,6 +240,7 @@ export default {
         shelves.push({
           id: 'authors',
           label: 'Authors',
+          labelStringKey: 'LabelAuthors',
           type: 'authors',
           entities: this.results.authors.map((a) => {
             return {

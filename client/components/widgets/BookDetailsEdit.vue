@@ -3,20 +3,20 @@
     <form class="w-full h-full px-2 md:px-4 py-6" @submit.prevent="submitForm">
       <div class="flex flex-wrap -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-text-input-with-label ref="titleInput" v-model="details.title" label="Title" />
+          <ui-text-input-with-label ref="titleInput" v-model="details.title" :label="$strings.LabelTitle" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="subtitleInput" v-model="details.subtitle" label="Subtitle" />
+          <ui-text-input-with-label ref="subtitleInput" v-model="details.subtitle" :label="$strings.LabelSubtitle" />
         </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-3/4 px-1">
           <!-- Authors filter only contains authors in this library, use query input to query all authors -->
-          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" label="Authors" endpoint="authors/search" />
+          <ui-multi-select-query-input ref="authorsSelect" v-model="details.authors" :label="$strings.LabelAuthors" endpoint="authors/search" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" label="Publish Year" />
+          <ui-text-input-with-label ref="publishYearInput" v-model="details.publishedYear" type="number" :label="$strings.LabelPublishYear" />
         </div>
       </div>
 
@@ -26,20 +26,20 @@
         </div>
       </div>
 
-      <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" label="Description" class="mt-2" />
+      <ui-textarea-with-label ref="descriptionInput" v-model="details.description" :rows="3" :label="$strings.LabelDescription" class="mt-2" />
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-multi-select ref="genresSelect" v-model="details.genres" label="Genres" :items="genres" />
+          <ui-multi-select ref="genresSelect" v-model="details.genres" :label="$strings.LabelGenres" :items="genres" />
         </div>
         <div class="flex-grow px-1 mt-2 md:mt-0">
-          <ui-multi-select ref="tagsSelect" v-model="newTags" label="Tags" :items="tags" />
+          <ui-multi-select ref="tagsSelect" v-model="newTags" :label="$strings.LabelTags" :items="tags" />
         </div>
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-multi-select ref="narratorsSelect" v-model="details.narrators" label="Narrators" :items="narrators" />
+          <ui-multi-select ref="narratorsSelect" v-model="details.narrators" :label="$strings.LabelNarrators" :items="narrators" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
           <ui-text-input-with-label ref="isbnInput" v-model="details.isbn" label="ISBN" />
@@ -51,14 +51,14 @@
 
       <div class="flex flex-wrap mt-2 -mx-1">
         <div class="w-full md:w-1/2 px-1">
-          <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" label="Publisher" />
+          <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" :label="$strings.LabelPublisher" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
-          <ui-text-input-with-label ref="languageInput" v-model="details.language" label="Language" />
+          <ui-text-input-with-label ref="languageInput" v-model="details.language" :label="$strings.LabelLanguage" />
         </div>
         <div class="flex-grow px-1 pt-6 mt-2 md:mt-0">
           <div class="flex justify-center">
-            <ui-checkbox v-model="details.explicit" label="Explicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
         </div>
       </div>
@@ -137,16 +137,33 @@ export default {
         author: (this.details.authors || []).map((au) => au.name).join(', ')
       }
     },
-    mapBatchDetails(batchDetails) {
+    mapBatchDetails(batchDetails, mapType = 'overwrite') {
       for (const key in batchDetails) {
-        if (key === 'tags') {
-          this.newTags = [...batchDetails.tags]
-        } else if (key === 'genres' || key === 'narrators') {
-          this.details[key] = [...batchDetails[key]]
-        } else if (key === 'authors' || key === 'series') {
-          this.details[key] = batchDetails[key].map((i) => ({ ...i }))
+        if (mapType === 'append') {
+          if (key === 'tags') {
+            // Concat and remove dupes
+            this.newTags = [...new Set(this.newTags.concat(batchDetails.tags))]
+          } else if (key === 'genres' || key === 'narrators') {
+            // Concat and remove dupes
+            this.details[key] = [...new Set(this.details[key].concat(batchDetails[key]))]
+          } else if (key === 'authors' || key === 'series') {
+            batchDetails[key].forEach((detail) => {
+              const existingDetail = this.details[key].find((_d) => _d.name.toLowerCase() == detail.name.toLowerCase().trim() || _d.id == detail.id)
+              if (!existingDetail) {
+                this.details[key].push({ ...detail })
+              }
+            })
+          }
         } else {
-          this.details[key] = batchDetails[key]
+          if (key === 'tags') {
+            this.newTags = [...batchDetails.tags]
+          } else if (key === 'genres' || key === 'narrators') {
+            this.details[key] = [...batchDetails[key]]
+          } else if (key === 'authors' || key === 'series') {
+            this.details[key] = batchDetails[key].map((i) => ({ ...i }))
+          } else {
+            this.details[key] = batchDetails[key]
+          }
         }
       }
     },

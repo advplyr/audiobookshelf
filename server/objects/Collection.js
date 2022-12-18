@@ -1,7 +1,7 @@
 const Logger = require('../Logger')
 const { getId } = require('../utils/index')
 
-class UserCollection {
+class Collection {
   constructor(collection) {
     this.id = null
     this.libraryId = null
@@ -38,10 +38,10 @@ class UserCollection {
   }
 
   toJSONExpanded(libraryItems, minifiedBooks = false) {
-    var json = this.toJSON()
+    const json = this.toJSON()
     json.books = json.books.map(bookId => {
-      var _ab = libraryItems.find(li => li.id === bookId)
-      return _ab ? minifiedBooks ? _ab.toJSONMinified() : _ab.toJSONExpanded() : null
+      const book = libraryItems.find(li => li.id === bookId)
+      return book ? minifiedBooks ? book.toJSONMinified() : book.toJSONExpanded() : null
     }).filter(b => !!b)
     return json
   }
@@ -63,7 +63,7 @@ class UserCollection {
     if (!data.userId || !data.libraryId || !data.name) {
       return false
     }
-    this.id = getId('usr')
+    this.id = getId('col')
     this.userId = data.userId
     this.libraryId = data.libraryId
     this.name = data.name
@@ -105,4 +105,4 @@ class UserCollection {
     return hasUpdates
   }
 }
-module.exports = UserCollection
+module.exports = Collection

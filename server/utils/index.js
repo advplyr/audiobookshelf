@@ -140,14 +140,24 @@ module.exports.cleanStringForSearch = (str) => {
   return str.toLowerCase().replace(/[\'\.\`\",]/g, '').trim()
 }
 
-module.exports.getTitleIgnorePrefix = (title) => {
-  if (!title) return ''
+const getTitleParts = (title) => {
+  if (!title) return ['', null]
   var prefixesToIgnore = global.ServerSettings.sortingPrefixes || []
+  prefixes = []
   for (const prefix of prefixesToIgnore) {
     // e.g. for prefix "the". If title is "The Book" return "Book, The"
     if (title.toLowerCase().startsWith(`${prefix} `)) {
-      return title.substr(prefix.length + 1) + `, ${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`
+      return [title.substr(prefix.length + 1), `${prefix.substr(0, 1).toUpperCase() + prefix.substr(1)}`]
     }
   }
-  return title
+  return [title, null]
+}
+
+module.exports.getTitleIgnorePrefix = (title) => {
+  return getTitleParts(title)[0]
+}
+
+module.exports.getTitlePrefixAtEnd = (title) => {
+  let [sort, prefix] = getTitleParts(title)
+  return prefix ? `${sort}, ${prefix}` : title
 }

@@ -1,9 +1,6 @@
 <template>
-  <div class="w-full h-full">
-    <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-      <div class="flex items-center mb-2">
-        <h1 class="text-xl">Logs</h1>
-      </div>
+  <div>
+    <app-settings-content :header-text="$strings.HeaderLogs">
       <div class="flex justify-between mb-2 place-items-end">
         <ui-text-input ref="input" v-model="search" placeholder="Search filter.." @input="inputUpdate" clearable class="w-full sm:w-40 h-8 text-sm sm:mb-0" />
 
@@ -22,10 +19,10 @@
         </div>
 
         <div v-if="!logs.length" class="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-center">
-          <p class="text-xl text-gray-200 mb-2">No Logs</p>
+          <p class="text-xl text-gray-200 mb-2">{{ $strings.MessageNoLogs }}</p>
         </div>
       </div>
-    </div>
+    </app-settings-content>
   </div>
 </template>
 
@@ -38,20 +35,6 @@ export default {
       searchText: null,
       newServerSettings: {},
       logColors: ['yellow-200', 'gray-400', 'info', 'warning', 'error', 'red-800', 'blue-400'],
-      logLevels: [
-        {
-          value: 1,
-          text: 'Debug'
-        },
-        {
-          value: 2,
-          text: 'Info'
-        },
-        {
-          value: 3,
-          text: 'Warn'
-        }
-      ],
       loadedLogs: []
     }
   },
@@ -66,6 +49,22 @@ export default {
     }
   },
   computed: {
+    logLevels() {
+      return [
+        {
+          value: 1,
+          text: this.$strings.LabelLogLevelDebug
+        },
+        {
+          value: 2,
+          text: this.$strings.LabelLogLevelInfo
+        },
+        {
+          value: 3,
+          text: this.$strings.LabelLogLevelWarn
+        }
+      ]
+    },
     logLevelItems() {
       if (process.env.NODE_ENV === 'production') return this.logLevels
       this.logLevels.unshift({ text: 'Trace', value: 0 })

@@ -1,5 +1,6 @@
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
+const requestIp = require('./libs/requestIp')
 const Logger = require('./Logger')
 const User = require('./objects/user/User')
 const { getId } = require('./utils/index')
@@ -111,7 +112,7 @@ class Auth {
           Logger.error('JWT Verify Token Failed', err)
           return resolve(null)
         }
-        var user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
+        const user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
         resolve(user || null)
       })
     })
@@ -128,14 +129,16 @@ class Auth {
   }
 
   async login(req, res, feeds) {
+    const ipAddress = requestIp.getClientIp(req)
     var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
 
     var user = this.users.find(u => u.username.toLowerCase() === username)
 
     if (!user || !user.isActive) {
-      Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)
+      Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
       if (req.rateLimit.remaining <= 2) {
+        Logger.error(`[Auth] Failed login attempt for username ${username} from ip ${ipAddress}. Attempts: ${req.rateLimit.current}`)
         return res.status(401).send(`Invalid user or password (${req.rateLimit.remaining === 0 ? '1 attempt remaining' : `${req.rateLimit.remaining + 1} attempts remaining`})`)
       }
       return res.status(401).send('Invalid user or password')
@@ -155,9 +158,9 @@ class Auth {
     if (compare) {
       res.json(this.getUserLoginResponsePayload(user, feeds))
     } else {
-      Logger.debug(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit}`)
+      Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
       if (req.rateLimit.remaining <= 2) {
-        Logger.error(`[Auth] Failed login attempt for user ${user.username}. Attempts: ${req.rateLimit.current}`)
+        Logger.error(`[Auth] Failed login attempt for user ${user.username} from ip ${ipAddress}. Attempts: ${req.rateLimit.current}`)
         return res.status(401).send(`Invalid user or password (${req.rateLimit.remaining === 0 ? '1 attempt remaining' : `${req.rateLimit.remaining + 1} attempts remaining`})`)
       }
       return res.status(401).send('Invalid user or password')

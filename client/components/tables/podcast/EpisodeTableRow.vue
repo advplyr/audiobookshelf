@@ -16,12 +16,24 @@
 
         <div class="flex items-center pt-2">
           <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
-            <span class="material-icons" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
+            <span class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
 
-          <ui-tooltip :text="userIsFinished ? 'Mark as Not Finished' : 'Mark as Finished'" direction="top">
+          <!-- <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="isQueued ? 'text-success' : ''" @click.stop="queueBtnClick">
+            <span class="material-icons-outlined">{{ isQueued ? 'playlist_add_check' : 'queue' }}</span>
+          </button> -->
+
+          <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
+            <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
+          </ui-tooltip>
+
+          <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
+          </ui-tooltip>
+
+          <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
+            <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist" />
           </ui-tooltip>
 
           <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
@@ -83,8 +95,17 @@ export default {
     duration() {
       return this.$secondsToTimestamp(this.episode.duration)
     },
+    libraryItemIdStreaming() {
+      return this.$store.getters['getLibraryItemIdStreaming']
+    },
+    isStreamingFromDifferentLibrary() {
+      return this.$store.getters['getIsStreamingFromDifferentLibrary']
+    },
     isStreaming() {
       return this.$store.getters['getIsMediaStreaming'](this.libraryItemId, this.episode.id)
+    },
+    isQueued() {
+      return this.$store.getters['getIsMediaQueued'](this.libraryItemId, this.episode.id)
     },
     streamIsPlaying() {
       return this.$store.state.streamIsPlaying && this.isStreaming
@@ -110,6 +131,9 @@ export default {
     }
   },
   methods: {
+    clickAddToPlaylist() {
+      this.$emit('addToPlaylist', this.episode)
+    },
     clickedEpisode() {
       this.$emit('view', this.episode)
     },
@@ -159,16 +183,25 @@ export default {
         .$patch(`/api/me/progress/${this.libraryItemId}/${this.episode.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(`Item marked as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
           this.isProcessingReadUpdate = false
-          this.$toast.error(`Failed to mark as ${updatePayload.isFinished ? 'Finished' : 'Not Finished'}`)
+          this.$toast.error(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedFailed : this.$strings.ToastItemMarkedAsNotFinishedFailed)
         })
     },
     removeClick() {
       this.$emit('remove', this.episode)
+    },
+    queueBtnClick() {
+      if (this.isQueued) {
+        // Remove from queue
+        this.$store.commit('removeItemFromQueue', { libraryItemId: this.libraryItemId, episodeId: this.episode.id })
+      } else {
+        // Add to queue
+        this.$emit('addToQueue', this.episode)
+      }
     }
   }
 }

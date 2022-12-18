@@ -7,17 +7,17 @@
     </template>
 
     <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
+      <p class="text-center text-2xl font-book mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
-        <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
-        <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
+        <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
+        <ui-btn color="success" class="w-52" @click="scan">{{ $strings.ButtonScanLibrary }}</ui-btn>
       </div>
     </div>
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
       <!-- Clear filter only available on Library bookshelf -->
       <div v-if="entityName === 'books'" class="flex justify-center mt-2">
-        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">Clear Filter</ui-btn>
+        <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
       </div>
     </div>
 
@@ -85,27 +85,28 @@ export default {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
     },
     emptyMessage() {
-      if (this.page === 'series') return 'You have no series'
-      if (this.page === 'collections') return "You haven't made any collections yet"
+      if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
+      if (this.page === 'collections') return this.$strings.MessageBookshelfNoCollections
+      if (this.page === 'playlists') return this.$strings.MessageNoUserPlaylists
       if (this.hasFilter) {
-        if (this.filterName === 'Issues') return 'No Issues'
-        else if (this.filterName === 'Feed-open') return 'No RSS feeds are open'
-        return `No Results for filter "${this.filterName}: ${this.filterValue}"`
+        if (this.filterName === 'Issues') return this.$strings.MessageNoIssues
+        else if (this.filterName === 'Feed-open') return this.$strings.MessageBookshelfNoRSSFeeds
+        return this.$getString('MessageBookshelfNoResultsForFilter', [this.filterName, this.filterValue])
       }
-      return 'No results'
+      return this.$strings.MessageNoResults
     },
     entityName() {
       if (!this.page) return 'books'
       return this.page
     },
     seriesSortBy() {
-      return this.$store.state.libraries.seriesSortBy
+      return this.$store.getters['user/getUserSetting']('seriesSortBy')
     },
     seriesSortDesc() {
-      return this.$store.state.libraries.seriesSortDesc
+      return this.$store.getters['user/getUserSetting']('seriesSortDesc')
     },
     seriesFilterBy() {
-      return this.$store.state.libraries.seriesFilterBy
+      return this.$store.getters['user/getUserSetting']('seriesFilterBy')
     },
     orderBy() {
       return this.$store.getters['user/getUserSetting']('orderBy')
@@ -118,6 +119,9 @@ export default {
     },
     collapseSeries() {
       return this.$store.getters['user/getUserSetting']('collapseSeries')
+    },
+    collapseBookSeries() {
+      return this.$store.getters['user/getUserSetting']('collapseBookSeries')
     },
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
@@ -159,11 +163,11 @@ export default {
     },
     bookWidth() {
       var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
-      if (this.isCoverSquareAspectRatio) return coverSize * 1.6
+      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return coverSize * 1.6
       return coverSize
     },
     bookHeight() {
-      if (this.isCoverSquareAspectRatio) return this.bookWidth
+      if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return this.bookWidth
       return this.bookWidth * 1.6
     },
     shelfPadding() {
@@ -197,8 +201,8 @@ export default {
       // Includes margin
       return this.entityWidth + 24
     },
-    selectedLibraryItems() {
-      return this.$store.state.selectedLibraryItems || []
+    selectedMediaItems() {
+      return this.$store.state.globals.selectedMediaItems || []
     },
     sizeMultiplier() {
       var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
@@ -216,6 +220,8 @@ export default {
         this.$store.commit('showEditModal', entity)
       } else if (this.entityName === 'collections') {
         this.$store.commit('globals/setEditCollection', entity)
+      } else if (this.entityName === 'playlists') {
+        this.$store.commit('globals/setEditPlaylist', entity)
       }
     },
     clearSelectedEntities() {
@@ -224,28 +230,28 @@ export default {
     },
     selectEntity(entity, shiftKey) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
-        var indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
+        const indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
         const lastLastItemIndexSelected = this.lastItemIndexSelected
-        if (!this.selectedLibraryItems.includes(entity.id)) {
+        if (!this.selectedMediaItems.some((i) => i.id === entity.id)) {
           this.lastItemIndexSelected = indexOf
         } else {
           this.lastItemIndexSelected = -1
         }
 
         if (shiftKey && lastLastItemIndexSelected >= 0) {
-          var loopStart = indexOf
-          var loopEnd = lastLastItemIndexSelected
+          let loopStart = indexOf
+          let loopEnd = lastLastItemIndexSelected
           if (indexOf > lastLastItemIndexSelected) {
             loopStart = lastLastItemIndexSelected
             loopEnd = indexOf
           }
 
-          var isSelecting = false
+          let isSelecting = false
           // If any items in this range is not selected then select all otherwise unselect all
           for (let i = loopStart; i <= loopEnd; i++) {
             const thisEntity = this.entities[i]
             if (thisEntity && !thisEntity.collapsedSeries) {
-              if (!this.selectedLibraryItems.includes(thisEntity.id)) {
+              if (!this.selectedMediaItems.some((i) => i.id === thisEntity.id)) {
                 isSelecting = true
                 break
               }
@@ -263,16 +269,28 @@ export default {
             const entityComponentRef = this.entityComponentRefs[i]
             if (thisEntity && entityComponentRef) {
               entityComponentRef.selected = isSelecting
-              this.$store.commit('setLibraryItemSelected', { libraryItemId: thisEntity.id, selected: isSelecting })
+
+              const mediaItem = {
+                id: thisEntity.id,
+                mediaType: thisEntity.mediaType,
+                hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+              }
+              console.log('Setting media item selected', mediaItem, 'Num Selected=', this.selectedMediaItems.length)
+              this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
             } else {
               console.error('Invalid entity index', i)
             }
           }
         } else {
-          this.$store.commit('toggleLibraryItemSelected', entity.id)
+          const mediaItem = {
+            id: entity.id,
+            mediaType: entity.mediaType,
+            hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+          }
+          this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
         }
 
-        var newIsSelectionMode = !!this.selectedLibraryItems.length
+        const newIsSelectionMode = !!this.selectedMediaItems.length
         if (this.isSelectionMode !== newIsSelectionMode) {
           this.isSelectionMode = newIsSelectionMode
           this.updateBookSelectionMode(newIsSelectionMode)
@@ -298,11 +316,11 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      var entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? `items` : this.entityName
-      var sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      var fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
+      const entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? 'items' : this.entityName
+      const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
+      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
 
-      var payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
+      const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch books', error)
         return null
       })
@@ -319,7 +337,6 @@ export default {
           this.totalEntities = payload.total
           this.totalShelves = Math.ceil(this.totalEntities / this.entitiesPerShelf)
           this.entities = new Array(this.totalEntities)
-          this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
         }
 
         for (let i = 0; i < payload.results.length; i++) {
@@ -329,6 +346,8 @@ export default {
             this.entityComponentRefs[index].setEntity(this.entities[index])
           }
         }
+
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
       }
     },
     loadPage(page) {
@@ -437,6 +456,9 @@ export default {
         searchParams.set('filter', this.seriesFilterBy)
       } else if (this.page === 'series-books') {
         searchParams.set('filter', `series.${this.$encode(this.seriesId)}`)
+        if (this.collapseBookSeries) {
+          searchParams.set('collapseseries', 1)
+        }
       } else {
         if (this.filterBy && this.filterBy !== 'all') {
           searchParams.set('filter', this.filterBy)
@@ -452,8 +474,6 @@ export default {
       return searchParams.toString()
     },
     checkUpdateSearchParams() {
-      if (this.page === 'series-books') return false
-
       var newSearchParams = this.buildSearchParams()
       var currentQueryString = window.location.search
       if (currentQueryString && currentQueryString.startsWith('?')) currentQueryString = currentQueryString.slice(1)
@@ -478,7 +498,7 @@ export default {
       }
     },
     settingsUpdated(settings) {
-      var wasUpdated = this.checkUpdateSearchParams()
+      const wasUpdated = this.checkUpdateSearchParams()
       if (wasUpdated) {
         this.resetEntities()
       } else if (settings.bookshelfCoverSize !== this.currentBookWidth) {
@@ -512,7 +532,7 @@ export default {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
           this.entities = this.entities.filter((ent) => ent.id !== libraryItem.id)
-          this.totalEntities = this.entities.length
+          this.totalEntities--
           this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
           this.executeRebuild()
         }
@@ -550,7 +570,34 @@ export default {
       var indexOf = this.entities.findIndex((ent) => ent && ent.id === collection.id)
       if (indexOf >= 0) {
         this.entities = this.entities.filter((ent) => ent.id !== collection.id)
-        this.totalEntities = this.entities.length
+        this.totalEntities--
+        this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
+        this.executeRebuild()
+      }
+    },
+    playlistAdded(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistAdded ${playlist.id}`, playlist)
+      this.resetEntities()
+    },
+    playlistUpdated(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistUpdated ${playlist.id}`, playlist)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === playlist.id)
+      if (indexOf >= 0) {
+        this.entities[indexOf] = playlist
+        if (this.entityComponentRefs[indexOf]) {
+          this.entityComponentRefs[indexOf].setEntity(playlist)
+        }
+      }
+    },
+    playlistRemoved(playlist) {
+      if (this.entityName !== 'playlists') return
+      console.log(`[LazyBookshelf] playlistRemoved ${playlist.id}`, playlist)
+      var indexOf = this.entities.findIndex((ent) => ent && ent.id === playlist.id)
+      if (indexOf >= 0) {
+        this.entities = this.entities.filter((ent) => ent.id !== playlist.id)
+        this.totalEntities--
         this.$eventBus.$emit('bookshelf-total-entities', this.totalEntities)
         this.executeRebuild()
       }
@@ -620,11 +667,9 @@ export default {
         }
       })
 
-      this.$eventBus.$on('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$on('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$on('socket_init', this.socketInit)
-
-      this.$store.commit('user/addSettingsListener', { id: 'lazy-bookshelf', meth: this.settingsUpdated })
+      this.$eventBus.$on('user-settings', this.settingsUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.on('item_updated', this.libraryItemUpdated)
@@ -635,6 +680,9 @@ export default {
         this.$root.socket.on('collection_added', this.collectionAdded)
         this.$root.socket.on('collection_updated', this.collectionUpdated)
         this.$root.socket.on('collection_removed', this.collectionRemoved)
+        this.$root.socket.on('playlist_added', this.playlistAdded)
+        this.$root.socket.on('playlist_updated', this.playlistUpdated)
+        this.$root.socket.on('playlist_removed', this.playlistRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -646,11 +694,9 @@ export default {
         bookshelf.removeEventListener('scroll', this.scroll)
       }
 
-      this.$eventBus.$off('series-sort-updated', this.seriesSortUpdated)
       this.$eventBus.$off('bookshelf_clear_selection', this.clearSelectedEntities)
       this.$eventBus.$off('socket_init', this.socketInit)
-
-      this.$store.commit('user/removeSettingsListener', 'lazy-bookshelf')
+      this.$eventBus.$off('user-settings', this.settingsUpdated)
 
       if (this.$root.socket) {
         this.$root.socket.off('item_updated', this.libraryItemUpdated)
@@ -661,6 +707,9 @@ export default {
         this.$root.socket.off('collection_added', this.collectionAdded)
         this.$root.socket.off('collection_updated', this.collectionUpdated)
         this.$root.socket.off('collection_removed', this.collectionRemoved)
+        this.$root.socket.off('playlist_added', this.playlistAdded)
+        this.$root.socket.off('playlist_updated', this.playlistUpdated)
+        this.$root.socket.off('playlist_removed', this.playlistRemoved)
       } else {
         console.error('Bookshelf - Socket not initialized')
       }
@@ -715,6 +764,7 @@ export default {
 .bookshelfRow {
   background-image: var(--bookshelf-texture-img);
 }
+
 .bookshelfDivider {
   background: rgb(149, 119, 90);
   background: var(--bookshelf-divider-bg);

@@ -9,9 +9,9 @@ export const state = () => ({
   issues: 0,
   folderLastUpdate: 0,
   filterData: null,
-  seriesSortBy: 'name',
-  seriesSortDesc: false,
-  seriesFilterBy: 'all'
+  numUserPlaylists: 0,
+  collections: [],
+  userPlaylists: []
 })
 
 export const getters = {
@@ -55,6 +55,12 @@ export const getters = {
   getBookCoverAspectRatio: (state, getters) => {
     if (!getters.getCurrentLibrarySettings || isNaN(getters.getCurrentLibrarySettings.coverAspectRatio)) return 1
     return getters.getCurrentLibrarySettings.coverAspectRatio === Constants.BookCoverAspectRatio.STANDARD ? 1.6 : 1
+  },
+  getCollection: state => id => {
+    return state.collections.find(c => c.id === id)
+  },
+  getPlaylist: state => id => {
+    return state.userPlaylists.find(p => p.id === id)
   }
 }
 
@@ -77,8 +83,8 @@ export const actions = {
       .$get('/api/filesystem')
       .then((res) => {
         console.log('Settings folders', res)
-        commit('setFolders', res)
-        return res
+        commit('setFolders', res.directories)
+        return res.directories
       })
       .catch((error) => {
         console.error('Failed to load dirs', error)
@@ -98,19 +104,26 @@ export const actions = {
       return false
     }
 
+    const libraryChanging = state.currentLibraryId !== libraryId
     return this.$axios
       .$get(`/api/libraries/${libraryId}?include=filterdata`)
       .then((data) => {
-        var library = data.library
-        var filterData = data.filterdata
-        var issues = data.issues || 0
+        const library = data.library
+        const filterData = data.filterdata
+        const issues = data.issues || 0
+        const numUserPlaylists = data.numUserPlaylists
 
         dispatch('user/checkUpdateLibrarySortFilter', library.mediaType, { root: true })
 
         commit('addUpdate', library)
         commit('setLibraryIssues', issues)
         commit('setLibraryFilterData', filterData)
+        commit('setNumUserPlaylists', numUserPlaylists)
         commit('setCurrentLibrary', libraryId)
+        if (libraryChanging) {
+          commit('setCollections', [])
+          commit('setUserPlaylists', [])
+        }
         return data
       })
       .catch((error) => {
@@ -135,7 +148,7 @@ export const actions = {
     this.$axios
       .$get(`/api/libraries`)
       .then((data) => {
-        commit('set', data)
+        commit('set', data.libraries)
         commit('setLastLoad')
       })
       .catch((error) => {
@@ -213,6 +226,9 @@ export const mutations = {
   },
   setLibraryFilterData(state, filterData) {
     state.filterData = filterData
+  },
+  setNumUserPlaylists(state, numUserPlaylists) {
+    state.numUserPlaylists = numUserPlaylists
   },
   updateFilterDataWithItem(state, libraryItem) {
     if (!libraryItem || !state.filterData) return
@@ -293,13 +309,35 @@ export const mutations = {
       }
     }
   },
-  setSeriesSortBy(state, sortBy) {
-    state.seriesSortBy = sortBy
+  setCollections(state, collections) {
+    state.collections = collections
   },
-  setSeriesSortDesc(state, sortDesc) {
-    state.seriesSortDesc = sortDesc
+  addUpdateCollection(state, collection) {
+    var index = state.collections.findIndex(c => c.id === collection.id)
+    if (index >= 0) {
+      state.collections.splice(index, 1, collection)
+    } else {
+      state.collections.push(collection)
+    }
   },
-  setSeriesFilterBy(state, filterBy) {
-    state.seriesFilterBy = filterBy
+  removeCollection(state, collection) {
+    state.collections = state.collections.filter(c => c.id !== collection.id)
+  },
+  setUserPlaylists(state, playlists) {
+    state.userPlaylists = playlists
+    state.numUserPlaylists = playlists.length
+  },
+  addUpdateUserPlaylist(state, playlist) {
+    const index = state.userPlaylists.findIndex(p => p.id === playlist.id)
+    if (index >= 0) {
+      state.userPlaylists.splice(index, 1, playlist)
+    } else {
+      state.userPlaylists.push(playlist)
+      state.numUserPlaylists++
+    }
+  },
+  removeUserPlaylist(state, playlist) {
+    state.userPlaylists = state.userPlaylists.filter(p => p.id !== playlist.id)
+    state.numUserPlaylists = state.userPlaylists.length
   }
 }

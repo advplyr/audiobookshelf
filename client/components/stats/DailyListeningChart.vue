@@ -1,6 +1,6 @@
 <template>
   <div class="w-96 my-6 mx-auto">
-    <h1 class="text-2xl mb-4 font-book">Minutes Listening <span class="text-white text-opacity-60 text-lg">(Last 7 days)</span></h1>
+    <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsMinutesListeningChart }}</h1>
     <div class="relative w-96 h-72">
       <div class="absolute top-0 left-0">
         <template v-for="lbl in yAxisLabels">
@@ -34,24 +34,24 @@
     </div>
     <div class="flex justify-between pt-12">
       <div>
-        <p class="text-sm text-center">Week Listening</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsWeekListening }}</p>
         <p class="text-5xl font-semibold text-center" style="line-height: 0.85">{{ totalMinutesListeningThisWeek }}</p>
-        <p class="text-sm text-center">minutes</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsMinutes }}</p>
       </div>
       <div>
-        <p class="text-sm text-center">Daily Average</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsDailyAverage }}</p>
         <p class="text-5xl font-semibold text-center" style="line-height: 0.85">{{ averageMinutesPerDay }}</p>
-        <p class="text-sm text-center">minutes</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsMinutes }}</p>
       </div>
       <div>
-        <p class="text-sm text-center">Best Day</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsBestDay }}</p>
         <p class="text-5xl font-semibold text-center" style="line-height: 0.85">{{ mostListenedDay }}</p>
-        <p class="text-sm text-center">minutes</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsMinutes }}</p>
       </div>
       <div>
-        <p class="text-sm text-center">Days</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsDays }}</p>
         <p class="text-5xl font-semibold text-center" style="line-height: 0.85">{{ daysInARow }}</p>
-        <p class="text-sm text-center">in a row</p>
+        <p class="text-sm text-center">{{ $strings.LabelStatsInARow }}</p>
       </div>
     </div>
   </div>

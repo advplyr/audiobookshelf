@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch, getTitleIgnorePrefix, getTitlePrefixAtEnd } = require('../../utils/index')
 const parseNameString = require('../../utils/parsers/parseNameString')
 class BookMetadata {
   constructor(metadata) {
@@ -62,7 +62,7 @@ class BookMetadata {
   toJSONMinified() {
     return {
       title: this.title,
-      titleIgnorePrefix: this.titleIgnorePrefix,
+      titleIgnorePrefix: this.titlePrefixAtEnd,
       subtitle: this.subtitle,
       authorName: this.authorName,
       authorNameLF: this.authorNameLF,
@@ -83,7 +83,7 @@ class BookMetadata {
   toJSONExpanded() {
     return {
       title: this.title,
-      titleIgnorePrefix: this.titleIgnorePrefix,
+      titleIgnorePrefix: this.titlePrefixAtEnd,
       subtitle: this.subtitle,
       authors: this.authors.map(a => ({ ...a })), // Author JSONMinimal with name and id
       narrators: [...this.narrators],
@@ -111,6 +111,9 @@ class BookMetadata {
   get titleIgnorePrefix() {
     return getTitleIgnorePrefix(this.title)
   }
+  get titlePrefixAtEnd() {
+    return getTitlePrefixAtEnd(this.title)
+  }
   get authorName() {
     if (!this.authors.length) return ''
     return this.authors.map(au => au.name).join(', ')
@@ -131,6 +134,13 @@ class BookMetadata {
     return this.series.map(se => {
       if (!se.sequence) return getTitleIgnorePrefix(se.name)
       return `${getTitleIgnorePrefix(se.name)} #${se.sequence}`
+    }).join(', ')
+  }
+  get seriesNamePrefixAtEnd() {
+    if (!this.series.length) return ''
+    return this.series.map(se => {
+      if (!se.sequence) return getTitlePrefixAtEnd(se.name)
+      return `${getTitlePrefixAtEnd(se.name)} #${se.sequence}`
     }).join(', ')
   }
   get firstSeriesName() {

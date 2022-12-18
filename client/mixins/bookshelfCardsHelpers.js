@@ -2,6 +2,7 @@ import Vue from 'vue'
 import LazyBookCard from '@/components/cards/LazyBookCard'
 import LazySeriesCard from '@/components/cards/LazySeriesCard'
 import LazyCollectionCard from '@/components/cards/LazyCollectionCard'
+import LazyPlaylistCard from '@/components/cards/LazyPlaylistCard'
 
 export default {
   data() {
@@ -15,6 +16,7 @@ export default {
     getComponentClass() {
       if (this.entityName === 'series') return Vue.extend(LazySeriesCard)
       if (this.entityName === 'collections') return Vue.extend(LazyCollectionCard)
+      if (this.entityName === 'playlists') return Vue.extend(LazyPlaylistCard)
       return Vue.extend(LazyBookCard)
     },
     async mountEntityCard(index) {
@@ -30,7 +32,7 @@ export default {
         shelfEl.appendChild(bookComponent.$el)
         if (this.isSelectionMode) {
           bookComponent.setSelectionMode(true)
-          if (this.selectedLibraryItems.includes(bookComponent.libraryItemId) || this.isSelectAll) {
+          if (this.selectedMediaItems.some(i => i.id === bookComponent.libraryItemId) || this.isSelectAll) {
             bookComponent.selected = true
           } else {
             bookComponent.selected = false
@@ -87,7 +89,7 @@ export default {
       }
       if (this.isSelectionMode) {
         instance.setSelectionMode(true)
-        if (instance.libraryItemId && this.selectedLibraryItems.includes(instance.libraryItemId) || this.isSelectAll) {
+        if (instance.libraryItemId && this.selectedMediaItems.some(i => i.id === instance.libraryItemId) || this.isSelectAll) {
           instance.selected = true
         }
       }

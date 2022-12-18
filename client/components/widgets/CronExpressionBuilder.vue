@@ -2,22 +2,22 @@
   <div class="w-full py-2">
     <div class="flex -mb-px">
       <div class="w-1/2 h-8 rounded-tl-md relative border border-black-200 flex items-center justify-center cursor-pointer" :class="!showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = false">
-        <p class="text-sm">Scheduler</p>
+        <p class="text-sm">{{ $strings.HeaderSchedule }}</p>
       </div>
       <div class="w-1/2 h-8 rounded-tr-md relative border border-black-200 flex items-center justify-center -ml-px cursor-pointer" :class="showAdvancedView ? 'text-white bg-bg hover:bg-opacity-60 border-b-bg' : 'text-gray-400 hover:text-gray-300 bg-primary bg-opacity-70 hover:bg-opacity-60'" @click="showAdvancedView = true">
-        <p class="text-sm">Advanced</p>
+        <p class="text-sm">{{ $strings.HeaderAdvanced }}</p>
       </div>
     </div>
     <div class="px-2 py-4 md:p-4 border border-black-200 rounded-b-md mr-px" style="min-height: 280px">
       <template v-if="!showAdvancedView">
-        <ui-dropdown v-model="selectedInterval" @input="updateCron" label="Interval" :items="intervalOptions" class="mb-2" />
+        <ui-dropdown v-model="selectedInterval" @input="updateCron" :label="$strings.LabelInterval" :items="intervalOptions" class="mb-2" />
 
-        <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" label="Weekdays to run" :items="weekdays" />
+        <ui-multi-select-dropdown v-if="selectedInterval === 'custom'" v-model="selectedWeekdays" @input="updateCron" :label="$strings.LabelWeekdaysToRun" :items="weekdays" />
 
         <div v-if="(selectedWeekdays.length && selectedInterval === 'custom') || selectedInterval === 'daily'" class="flex items-center py-2">
-          <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" label="Hour" class="max-w-20" />
+          <ui-text-input-with-label v-model="selectedHour" @input="updateCron" @blur="hourBlur" type="number" :label="$strings.LabelHour" class="max-w-20" />
           <p class="text-xl px-2 mt-4">:</p>
-          <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" label="Minute" class="max-w-20" />
+          <ui-text-input-with-label v-model="selectedMinute" @input="updateCron" @blur="minuteBlur" type="number" :label="$strings.LabelMinute" class="max-w-20" />
         </div>
 
         <div v-if="description" class="w-full bg-primary bg-opacity-75 rounded-xl p-2 md:p-4 text-center mt-2">
@@ -25,15 +25,15 @@
         </div>
       </template>
       <template v-else>
-        <p class="px-1 text-sm font-semibold">Cron Expression</p>
-        <ui-text-input ref="customExpressionInput" v-model="customCronExpression" @blur="cronExpressionBlur" label="Cron Expression" :padding-y="2" text-center class="w-full text-2xl md:text-4xl -tracking-widest mb-4 font-mono" />
+        <p class="px-1 text-sm font-semibold">{{ $strings.LabelCronExpression }}</p>
+        <ui-text-input ref="customExpressionInput" v-model="customCronExpression" @blur="cronExpressionBlur" :padding-y="2" text-center class="w-full text-2xl md:text-4xl -tracking-widest mb-4 font-mono" />
 
         <div class="flex items-center justify-center">
           <widgets-loading-spinner v-if="isValidating" class="mr-2" />
           <span v-else class="material-icons-outlined mr-2 text-xl" :class="isValid ? 'text-success' : 'text-error'">{{ isValid ? 'check_circle_outline' : 'error_outline' }}</span>
-          <p v-if="isValidating" class="text-gray-300 text-base md:text-lg text-center">Checking cron...</p>
+          <p v-if="isValidating" class="text-gray-300 text-base md:text-lg text-center">{{ $strings.MessageCheckingCron }}</p>
           <p v-else-if="customCronError" class="text-error text-base md:text-lg text-center">{{ customCronError }}</p>
-          <p v-else class="text-success text-base md:text-lg text-center">Valid cron expression</p>
+          <p v-else class="text-success text-base md:text-lg text-center">{{ $strings.MessageValidCronExpression }}</p>
         </div>
       </template>
     </div>
@@ -101,35 +101,35 @@ export default {
     intervalOptions() {
       return [
         {
-          text: 'Custom daily/weekly',
+          text: this.$strings.LabelIntervalCustomDailyWeekly,
           value: 'custom'
         },
         {
-          text: 'Every day',
+          text: this.$strings.LabelIntervalEveryDay,
           value: 'daily'
         },
         {
-          text: 'Every 12 hours',
+          text: this.$strings.LabelIntervalEvery12Hours,
           value: '0 */12 * * *'
         },
         {
-          text: 'Every 6 hours',
+          text: this.$strings.LabelIntervalEvery6Hours,
           value: '0 */6 * * *'
         },
         {
-          text: 'Every 2 hours',
+          text: this.$strings.LabelIntervalEvery2Hours,
           value: '0 */2 * * *'
         },
         {
-          text: 'Every hour',
+          text: this.$strings.LabelIntervalEveryHour,
           value: '0 * * * *'
         },
         {
-          text: 'Every 30 minutes',
+          text: this.$strings.LabelIntervalEvery30Minutes,
           value: '*/30 * * * *'
         },
         {
-          text: 'Every 15 minutes',
+          text: this.$strings.LabelIntervalEvery15Minutes,
           value: '*/15 * * * *'
         }
       ]
@@ -137,31 +137,31 @@ export default {
     weekdays() {
       return [
         {
-          text: 'Sunday',
+          text: this.$strings.WeekdaySunday,
           value: 0
         },
         {
-          text: 'Monday',
+          text: this.$strings.WeekdayMonday,
           value: 1
         },
         {
-          text: 'Tuesday',
+          text: this.$strings.WeekdayTuesday,
           value: 2
         },
         {
-          text: 'Wednesday',
+          text: this.$strings.WeekdayWednesday,
           value: 3
         },
         {
-          text: 'Thursday',
+          text: this.$strings.WeekdayThursday,
           value: 4
         },
         {
-          text: 'Friday',
+          text: this.$strings.WeekdayFriday,
           value: 5
         },
         {
-          text: 'Saturday',
+          text: this.$strings.WeekdaySaturday,
           value: 6
         }
       ]

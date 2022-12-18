@@ -3,32 +3,29 @@ const Logger = require('../Logger')
 class BackupController {
   constructor() { }
 
-  async create(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to craete backup`, req.user)
-      return res.sendStatus(403)
-    }
+  getAll(req, res) {
+    res.json({
+      backups: this.backupManager.backups.map(b => b.toJSON())
+    })
+  }
+
+  create(req, res) {
     this.backupManager.requestCreateBackup(res)
   }
 
   async delete(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to delete backup`, req.user)
-      return res.sendStatus(403)
-    }
     var backup = this.backupManager.backups.find(b => b.id === req.params.id)
     if (!backup) {
       return res.sendStatus(404)
     }
     await this.backupManager.removeBackup(backup)
-    res.json(this.backupManager.backups.map(b => b.toJSON()))
+
+    res.json({
+      backups: this.backupManager.backups.map(b => b.toJSON())
+    })
   }
 
   async upload(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to upload backup`, req.user)
-      return res.sendStatus(403)
-    }
     if (!req.files.file) {
       Logger.error('[BackupController] Upload backup invalid')
       return res.sendStatus(500)
@@ -37,16 +34,20 @@ class BackupController {
   }
 
   async apply(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[BackupController] Non-admin user attempting to apply backup`, req.user)
-      return res.sendStatus(403)
-    }
     var backup = this.backupManager.backups.find(b => b.id === req.params.id)
     if (!backup) {
       return res.sendStatus(404)
     }
     await this.backupManager.requestApplyBackup(backup)
     res.sendStatus(200)
+  }
+
+  middleware(req, res, next) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[BackupController] Non-admin user attempting to access backups`, req.user)
+      return res.sendStatus(403)
+    }
+    next()
   }
 }
 module.exports = new BackupController()

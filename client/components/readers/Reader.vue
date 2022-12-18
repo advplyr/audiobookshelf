@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-50 bg-primary text-white">
+  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-60 bg-primary text-white">
     <div class="absolute top-4 right-4 z-20">
       <span class="material-icons cursor-pointer text-4xl" @click="close">close</span>
     </div>
@@ -92,13 +92,18 @@ export default {
     },
     ebookUrl() {
       if (!this.ebookFile) return null
-      var itemRelPath = this.selectedLibraryItem.relPath
-      if (itemRelPath.startsWith('/')) itemRelPath = itemRelPath.slice(1)
-      var relPath = this.ebookFile.metadata.relPath
-      if (relPath.startsWith('/')) relPath = relPath.slice(1)
+      let filepath = ''
+      if (this.selectedLibraryItem.isFile) {
+        filepath = this.$encodeUriPath(this.ebookFile.metadata.filename)
+      } else {
+        const itemRelPath = this.selectedLibraryItem.relPath
+        if (itemRelPath.startsWith('/')) itemRelPath = itemRelPath.slice(1)
+        const relPath = this.ebookFile.metadata.relPath
+        if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
-      const relRelPath = this.$encodeUriPath(`${itemRelPath}/${relPath}`)
-      return `/ebook/${this.libraryId}/${this.folderId}/${relRelPath}`
+        filepath = this.$encodeUriPath(`${itemRelPath}/${relPath}`)
+      }
+      return `/ebook/${this.libraryId}/${this.folderId}/${filepath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']

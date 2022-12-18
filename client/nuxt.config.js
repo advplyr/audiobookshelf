@@ -52,7 +52,8 @@ module.exports = {
     '@/plugins/init.client.js',
     '@/plugins/axios.js',
     '@/plugins/toast.js',
-    '@/plugins/utils.js'
+    '@/plugins/utils.js',
+    '@/plugins/i18n.js'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -112,20 +113,15 @@ module.exports = {
       icons: [
         {
           src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "64x64"
-        },
-        {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "192x192"
-        },
-        {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
-          sizes: "512x512"
+          sizes: "any"
         }
       ]
     },
     workbox: {
-      enabled: false,
+      offline: false,
+      cacheAssets: false,
+      preCaching: [],
+      runtimeCaching: []
     }
   },
 

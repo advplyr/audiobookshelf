@@ -19,23 +19,23 @@
           <div class="flex-grow">
             <div class="flex">
               <div class="w-3/4 p-2">
-                <ui-text-input-with-label v-model="authorCopy.name" :disabled="processing" label="Name" />
+                <ui-text-input-with-label v-model="authorCopy.name" :disabled="processing" :label="$strings.LabelName" />
               </div>
               <div class="flex-grow p-2">
                 <ui-text-input-with-label v-model="authorCopy.asin" :disabled="processing" label="ASIN" />
               </div>
             </div>
             <div class="p-2">
-              <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" label="Photo Path/URL" />
+              <ui-text-input-with-label v-model="authorCopy.imagePath" :disabled="processing" :label="$strings.LabelPhotoPathURL" />
             </div>
             <div class="p-2">
-              <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" label="Description" :rows="8" />
+              <ui-textarea-with-label v-model="authorCopy.description" :disabled="processing" :label="$strings.LabelDescription" :rows="8" />
             </div>
 
             <div class="flex pt-2 px-2">
-              <ui-btn type="button" @click="searchAuthor">Quick Match</ui-btn>
+              <ui-btn type="button" @click="searchAuthor">{{ $strings.ButtonQuickMatch }}</ui-btn>
               <div class="flex-grow" />
-              <ui-btn type="submit">Submit</ui-btn>
+              <ui-btn type="submit">{{ $strings.ButtonSave }}</ui-btn>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@ export default {
       return this.author.id
     },
     title() {
-      return 'Edit Author'
+      return this.$strings.HeaderUpdateAuthor
     }
   },
   methods: {
@@ -103,23 +103,23 @@ export default {
         }
       })
       if (!Object.keys(updatePayload).length) {
-        this.$toast.info('No updates are necessary')
+        this.$toast.info(this.$strings.MessageNoUpdateNecessary)
         return
       }
       this.processing = true
       var result = await this.$axios.$patch(`/api/authors/${this.authorId}`, updatePayload).catch((error) => {
         console.error('Failed', error)
-        this.$toast.error('Failed to update author')
+        this.$toast.error(this.$strings.ToastAuthorUpdateFailed)
         return null
       })
       if (result) {
         if (result.updated) {
-          this.$toast.success('Author updated')
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
           this.show = false
         } else if (result.merged) {
-          this.$toast.success('Author merged')
+          this.$toast.success(this.$strings.ToastAuthorUpdateMerged)
           this.show = false
-        } else this.$toast.info('No updates were needed')
+        } else this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
       }
       this.processing = false
     },
@@ -131,11 +131,12 @@ export default {
       this.processing = true
       var result = await this.$axios.$patch(`/api/authors/${this.authorId}`, updatePayload).catch((error) => {
         console.error('Failed', error)
-        this.$toast.error('Failed to remove image')
+        this.$toast.error(this.$strings.ToastAuthorImageRemoveFailed)
         return null
       })
       if (result && result.updated) {
-        this.$toast.success('Author image removed')
+        this.$toast.success(this.$strings.ToastAuthorImageRemoveSuccess)
+        this.$store.commit('globals/showEditAuthorModal', result.author)
       }
       this.processing = false
     },
@@ -157,8 +158,11 @@ export default {
       if (!response) {
         this.$toast.error('Author not found')
       } else if (response.updated) {
-        if (response.author.imagePath) this.$toast.success('Author was updated')
-        else this.$toast.success('Author was updated (no image found)')
+        if (response.author.imagePath) {
+          this.$toast.success(this.$strings.ToastAuthorUpdateSuccess)
+          this.$store.commit('globals/showEditAuthorModal', response.author)
+        }
+        else this.$toast.success(this.$strings.ToastAuthorUpdateSuccessNoImageFound)
       } else {
         this.$toast.info('No updates were made for Author')
       }

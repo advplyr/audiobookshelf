@@ -13,7 +13,7 @@
     <div ref="slider" class="w-full overflow-y-hidden overflow-x-auto no-scroll -mx-2" style="scroll-behavior: smooth" @scroll="scrolled">
       <div class="flex" :style="{ height: height + 'px' }">
         <template v-for="(item, index) in items">
-          <cards-lazy-book-card :key="item.id" :ref="`slider-item-${item.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @edit="editItem" @select="selectItem" @hook:updated="setScrollVars" />
+          <cards-lazy-book-card :key="item.id + '-' + shelfId" :ref="`slider-item-${item.id}`" :index="index" :book-mount="item" :height="cardHeight" :width="cardWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" :bookshelf-view="bookshelfView" :continue-listening-shelf="continueListeningShelf" class="relative mx-2" @edit="editItem" @select="selectItem" @hook:updated="setScrollVars" />
         </template>
       </div>
     </div>
@@ -35,6 +35,7 @@ export default {
       type: Number,
       default: 1
     },
+    shelfId: String,
     continueListeningShelf: Boolean
   },
   data() {
@@ -62,7 +63,7 @@ export default {
       return Math.floor(this.clientWidth / (this.cardWidth + 16))
     },
     isSelectionMode() {
-      return this.$store.getters['getNumLibraryItemsSelected'] > 0
+      return this.$store.getters['globals/getIsBatchSelectingMediaItems']
     }
   },
   methods: {
@@ -81,14 +82,14 @@ export default {
       this.updateSelectionMode(this.isSelectionMode)
     },
     updateSelectionMode(val) {
-      var selectedLibraryItems = this.$store.state.selectedLibraryItems
+      const selectedMediaItems = this.$store.state.globals.selectedMediaItems
 
       this.items.forEach((item) => {
-        var component = this.$refs[`slider-item-${item.id}`]
+        let component = this.$refs[`slider-item-${item.id}`]
         if (!component || !component.length) return
         component = component[0]
         component.setSelectionMode(val)
-        component.selected = selectedLibraryItems.includes(item.id)
+        component.selected = selectedMediaItems.some((i) => i.id === item.id)
       })
     },
     scrolled() {

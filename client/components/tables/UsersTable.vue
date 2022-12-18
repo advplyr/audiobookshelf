@@ -1,20 +1,13 @@
 <template>
-  <div class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-    <div class="flex items-center mb-2">
-      <h1 class="text-xl">Users</h1>
-      <div class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clickAddUser">
-        <span class="material-icons" style="font-size: 1.4rem">add</span>
-      </div>
-    </div>
-    <!-- <div class="h-0.5 bg-primary bg-opacity-50 w-full" /> -->
+  <div>
     <div class="text-center">
       <table id="accounts">
         <tr>
-          <th>Username</th>
-          <th class="w-20">Type</th>
-          <th class="hidden lg:table-cell">Activity</th>
-          <th class="w-32 hidden sm:table-cell">Last Seen</th>
-          <th class="w-32 hidden sm:table-cell">Created</th>
+          <th>{{ $strings.LabelUsername }}</th>
+          <th class="w-20">{{ $strings.LabelAccountType }}</th>
+          <th class="hidden lg:table-cell">{{ $strings.LabelActivity }}</th>
+          <th class="w-32 hidden sm:table-cell">{{ $strings.LabelLastSeen }}</th>
+          <th class="w-32 hidden sm:table-cell">{{ $strings.LabelCreatedAt }}</th>
           <th class="w-32"></th>
         </tr>
         <tr v-for="user in users" :key="user.id" class="cursor-pointer" :class="user.isActive ? '' : 'bg-error bg-opacity-20'" @click="$router.push(`/config/users/${user.id}`)">
@@ -26,11 +19,9 @@
           </td>
           <td class="text-sm">{{ user.type }}</td>
           <td class="hidden lg:table-cell">
-            <div v-if="usersOnline[user.id] && usersOnline[user.id].session && usersOnline[user.id].session.libraryItem && usersOnline[user.id].session.libraryItem.media">
-              <p class="truncate text-xs">Listening: {{ usersOnline[user.id].session.libraryItem.media.metadata.title || '' }}</p>
-            </div>
-            <div v-else-if="user.mostRecent">
-              <p class="truncate text-xs">Last: {{ user.mostRecent.metadata.title }}</p>
+            <div v-if="usersOnline[user.id]">
+              <p v-if="usersOnline[user.id].session && usersOnline[user.id].session.libraryItem" class="truncate text-xs">Listening: {{ usersOnline[user.id].session.libraryItem.media.metadata.title || '' }}</p>
+              <p v-else-if="usersOnline[user.id].mostRecent && usersOnline[user.id].mostRecent.media" class="truncate text-xs">Last: {{ usersOnline[user.id].mostRecent.media.metadata.title }}</p>
             </div>
           </td>
           <td class="text-xs font-mono hidden sm:table-cell">
@@ -81,14 +72,14 @@ export default {
     },
     usersOnline() {
       var usermap = {}
-      this.$store.state.users.users.forEach((u) => (usermap[u.id] = { online: true, session: u.session }))
+      this.$store.state.users.usersOnline.forEach((u) => (usermap[u.id] = u))
       return usermap
     }
   },
   methods: {
     deleteUserClick(user) {
       if (this.isDeletingUser) return
-      if (confirm(`Are you sure you want to permanently delete user "${user.username}"?`)) {
+      if (confirm(this.$getString('MessageRemoveUserWarning', [user.username]))) {
         this.isDeletingUser = true
         this.$axios
           .$delete(`/api/users/${user.id}`)
@@ -97,12 +88,12 @@ export default {
             if (data.error) {
               this.$toast.error(data.error)
             } else {
-              this.$toast.success('User deleted')
+              this.$toast.success(this.$strings.ToastUserDeleteSuccess)
             }
           })
           .catch((error) => {
             console.error('Failed to delete user', error)
-            this.$toast.error('Failed to delete user')
+            this.$toast.error(this.$strings.ToastUserDeleteFailed)
             this.isDeletingUser = false
           })
       }
@@ -118,8 +109,8 @@ export default {
     loadUsers() {
       this.$axios
         .$get('/api/users')
-        .then((users) => {
-          this.users = users.sort((a, b) => {
+        .then((res) => {
+          this.users = res.users.sort((a, b) => {
             return a.createdAt - b.createdAt
           })
         })

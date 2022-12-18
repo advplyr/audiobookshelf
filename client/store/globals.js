@@ -1,19 +1,24 @@
 export const state = () => ({
   isMobile: false,
   isMobileLandscape: false,
-  showBatchUserCollectionModal: false,
-  showUserCollectionsModal: false,
+  showBatchCollectionModal: false,
+  showCollectionsModal: false,
   showEditCollectionModal: false,
+  showPlaylistsModal: false,
+  showEditPlaylistModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
   showConfirmPrompt: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
   selectedEpisode: null,
+  selectedPlaylistItems: null,
+  selectedPlaylist: null,
   selectedCollection: null,
   selectedAuthor: null,
+  selectedMediaItems: [],
   isCasting: false, // Actively casting
-  isChromecastInitialized: false, // Script loaded
+  isChromecastInitialized: false, // Script loadeds
   showBatchQuickMatchModal: false,
   dateFormats: [
     {
@@ -60,6 +65,9 @@ export const getters = {
       return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
     }
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
+  },
+  getIsBatchSelectingMediaItems: (state) => {
+    return state.selectedMediaItems.length
   }
 }
 
@@ -68,16 +76,22 @@ export const mutations = {
     state.isMobile = width < 640 || height < 640
     state.isMobileLandscape = state.isMobile && height > width
   },
-  setShowUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = false
-    state.showUserCollectionsModal = val
+  setShowCollectionsModal(state, val) {
+    state.showBatchCollectionModal = false
+    state.showCollectionsModal = val
   },
-  setShowBatchUserCollectionsModal(state, val) {
-    state.showBatchUserCollectionModal = true
-    state.showUserCollectionsModal = val
+  setShowBatchCollectionsModal(state, val) {
+    state.showBatchCollectionModal = true
+    state.showCollectionsModal = val
   },
   setShowEditCollectionModal(state, val) {
     state.showEditCollectionModal = val
+  },
+  setShowPlaylistsModal(state, val) {
+    state.showPlaylistsModal = val
+  },
+  setShowEditPlaylistModal(state, val) {
+    state.showEditPlaylistModal = val
   },
   setShowEditPodcastEpisodeModal(state, val) {
     state.showEditPodcastEpisode = val
@@ -96,8 +110,15 @@ export const mutations = {
     state.selectedCollection = collection
     state.showEditCollectionModal = true
   },
+  setEditPlaylist(state, playlist) {
+    state.selectedPlaylist = playlist
+    state.showEditPlaylistModal = true
+  },
   setSelectedEpisode(state, episode) {
     state.selectedEpisode = episode
+  },
+  setSelectedPlaylistItems(state, items) {
+    state.selectedPlaylistItems = items
   },
   showEditAuthorModal(state, author) {
     state.selectedAuthor = author
@@ -117,5 +138,24 @@ export const mutations = {
   },
   setShowBatchQuickMatchModal(state, val) {
     state.showBatchQuickMatchModal = val
+  },
+  resetSelectedMediaItems(state) {
+    state.selectedMediaItems = []
+  },
+  toggleMediaItemSelected(state, item) {
+    if (state.selectedMediaItems.some(i => i.id === item.id)) {
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
+    } else {
+      state.selectedMediaItems.push(item)
+    }
+  },
+  setMediaItemSelected(state, { item, selected }) {
+    const isAlreadySelected = state.selectedMediaItems.some(i => i.id === item.id)
+    if (isAlreadySelected && !selected) {
+      state.selectedMediaItems = state.selectedMediaItems.filter(i => i.id !== item.id)
+
+    } else if (selected && !isAlreadySelected) {
+      state.selectedMediaItems.push(item)
+    }
   }
 }

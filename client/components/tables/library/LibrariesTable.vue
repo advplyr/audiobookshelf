@@ -1,11 +1,5 @@
 <template>
-  <div id="librariesTable" class="bg-bg rounded-md shadow-lg border border-white border-opacity-5 p-4 mb-8">
-    <div class="flex items-center mb-2">
-      <h1 class="text-xl">Libraries</h1>
-      <div class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clickAddLibrary">
-        <span class="material-icons" style="font-size: 1.4rem">add</span>
-      </div>
-    </div>
+  <div id="librariesTable">
     <draggable v-if="libraryCopies.length" :list="libraryCopies" v-bind="dragOptions" class="list-group" handle=".drag-handle" draggable=".item" tag="div" @start="startDrag" @end="endDrag">
       <template v-for="library in libraryCopies">
         <div :key="library.id" class="item">
@@ -14,12 +8,16 @@
       </template>
     </draggable>
     <div v-if="!libraries.length" class="pb-4">
-      <ui-btn @click="clickAddLibrary">Add your first library</ui-btn>
+      <ui-btn @click="clickAddLibrary">{{ $strings.ButtonAddYourFirstLibrary }}</ui-btn>
     </div>
 
-    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">*<strong>Force Re-Scan</strong> will scan all files again like a fresh scan. Audio file ID3 tags, OPF files, and text files will be probed/parsed and used for book details.</p>
+    <p v-if="libraries.length" class="text-xs mt-4 text-gray-200">
+      *<strong>{{ $strings.ButtonForceReScan }}</strong> {{ $strings.MessageForceReScanDescription }}
+    </p>
 
-    <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">**<strong>Match Books</strong> will attempt to match books in library with a book from the selected search provider and fill in empty details and cover art. Does not overwrite details.</p>
+    <p v-if="libraries.length && libraries.some((li) => li.mediaType === 'book')" class="text-xs mt-4 text-gray-200">
+      **<strong>{{ $strings.ButtonMatchBooks }}</strong> {{ $strings.MessageMatchBooksDescription }}
+    </p>
   </div>
 </template>
 
@@ -84,10 +82,10 @@ export default {
       })
       var newOrder = libraryOrderData.map((lib) => lib.id).join(',')
       if (currOrder !== newOrder) {
-        this.$axios.$post('/api/libraries/order', libraryOrderData).then((libraries) => {
-          if (libraries && libraries.length) {
+        this.$axios.$post('/api/libraries/order', libraryOrderData).then((response) => {
+          if (response.libraries && response.libraries.length) {
             this.$toast.success('Library order saved', { timeout: 1500 })
-            this.$store.commit('libraries/set', libraries)
+            this.$store.commit('libraries/set', response.libraries)
           }
         })
       }

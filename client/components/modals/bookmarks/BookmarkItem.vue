@@ -12,7 +12,7 @@
             <div class="flex-grow pr-2">
               <ui-text-input v-model="newBookmarkTitle" placeholder="Note" class="w-full" />
             </div>
-            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-icons -mt-px">forward</span></ui-btn>
+            <ui-btn type="submit" color="success" :padding-x="4" class="h-10"><span class="material-icons text-2xl -mt-px">forward</span></ui-btn>
             <div class="pl-2 flex items-center">
               <span class="material-icons text-3xl text-white text-opacity-70 hover:text-opacity-95 cursor-pointer" @click.stop.prevent="cancelEditing">close</span>
             </div>

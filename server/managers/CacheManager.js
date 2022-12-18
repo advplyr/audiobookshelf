@@ -47,7 +47,7 @@ class CacheManager {
 
     res.type(`image/${format}`)
 
-    var path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
+    const path = Path.join(this.CoverCachePath, `${libraryItem.id}_${width}${height ? `x${height}` : ''}`) + '.' + format
 
     // Cache exists
     if (await fs.pathExists(path)) {
@@ -56,18 +56,18 @@ class CacheManager {
       stream.pipeline(r, ps, (err) => {
         if (err) {
           console.log(err)
-          return res.sendStatus(400)
+          return res.sendStatus(500)
         }
       })
       return ps.pipe(res)
     }
 
     if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
-      return res.sendStatus(404)
+      return res.sendStatus(500)
     }
 
-    let writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
-    if (!writtenFile) return res.sendStatus(400)
+    const writtenFile = await resizeImage(libraryItem.media.coverPath, path, width, height)
+    if (!writtenFile) return res.sendStatus(500)
 
     // Set owner and permissions of cache image
     await filePerms.setDefault(path)
@@ -139,14 +139,14 @@ class CacheManager {
       stream.pipeline(r, ps, (err) => {
         if (err) {
           console.log(err)
-          return res.sendStatus(400)
+          return res.sendStatus(500)
         }
       })
       return ps.pipe(res)
     }
 
     let writtenFile = await resizeImage(author.imagePath, path, width, height)
-    if (!writtenFile) return res.sendStatus(400)
+    if (!writtenFile) return res.sendStatus(500)
 
     // Set owner and permissions of cache image
     await filePerms.setDefault(path)

@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
 const { sort } = require('../libs/fastSort')
 const { isObject, toNumber } = require('../utils/index')
 
@@ -48,7 +49,7 @@ class MeController {
       return res.sendStatus(200)
     }
     await this.db.updateEntity('user', req.user)
-    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }
 
@@ -62,7 +63,7 @@ class MeController {
     var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, req.body)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.sendStatus(200)
   }
@@ -82,7 +83,7 @@ class MeController {
     var wasUpdated = req.user.createUpdateMediaProgress(libraryItem, req.body, episodeId)
     if (wasUpdated) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.sendStatus(200)
   }
@@ -91,7 +92,7 @@ class MeController {
   async batchUpdateMediaProgress(req, res) {
     var itemProgressPayloads = req.body
     if (!itemProgressPayloads || !itemProgressPayloads.length) {
-      return res.sendStatus(500)
+      return res.status(400).send('Missing request payload')
     }
 
     var shouldUpdate = false
@@ -107,7 +108,7 @@ class MeController {
 
     if (shouldUpdate) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
 
     res.sendStatus(200)
@@ -120,7 +121,7 @@ class MeController {
     const { time, title } = req.body
     var bookmark = req.user.createBookmark(libraryItem.id, time, title)
     await this.db.updateEntity('user', req.user)
-    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
   }
 
@@ -136,7 +137,7 @@ class MeController {
     var bookmark = req.user.updateBookmark(libraryItem.id, time, title)
     if (!bookmark) return res.sendStatus(500)
     await this.db.updateEntity('user', req.user)
-    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
   }
 
@@ -153,7 +154,7 @@ class MeController {
     }
     req.user.removeBookmark(libraryItem.id, time)
     await this.db.updateEntity('user', req.user)
-    this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)
   }
 
@@ -166,6 +167,7 @@ class MeController {
     this.auth.userChangePassword(req, res)
   }
 
+  // TODO: Remove after mobile release v0.9.61-beta
   // PATCH: api/me/settings
   async updateSettings(req, res) {
     var settingsUpdate = req.body
@@ -233,7 +235,7 @@ class MeController {
     Logger.debug(`[MeController] syncLocalMediaProgress server updates = ${numServerProgressUpdates}, local updates = ${updatedLocalMediaProgress.length}`)
     if (numServerProgressUpdates > 0) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
 
     res.json({
@@ -288,7 +290,23 @@ class MeController {
     const hasUpdated = req.user.addSeriesToHideFromContinueListening(req.params.id)
     if (hasUpdated) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+    }
+    res.json(req.user.toJSONForBrowser())
+  }
+
+  // GET: api/me/series/:id/readd-to-continue-listening
+  async readdSeriesFromContinueListening(req, res) {
+    const series = this.db.series.find(se => se.id === req.params.id)
+    if (!series) {
+      Logger.error(`[MeController] readdSeriesFromContinueListening: Series ${req.params.id} not found`)
+      return res.sendStatus(404)
+    }
+
+    const hasUpdated = req.user.removeSeriesFromHideFromContinueListening(req.params.id)
+    if (hasUpdated) {
+      await this.db.updateEntity('user', req.user)
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())
   }
@@ -298,7 +316,7 @@ class MeController {
     const hasUpdated = req.user.removeProgressFromContinueListening(req.params.id)
     if (hasUpdated) {
       await this.db.updateEntity('user', req.user)
-      this.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
+      SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     }
     res.json(req.user.toJSONForBrowser())
   }

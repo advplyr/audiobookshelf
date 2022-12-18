@@ -2,56 +2,67 @@
   <div ref="page" id="page-wrapper" class="page px-6 pt-6 pb-52 overflow-y-auto" :class="streamLibraryItem ? 'streaming' : ''">
     <div class="border border-white border-opacity-10 max-w-7xl mx-auto mb-10 mt-5">
       <div class="flex items-center px-4 py-4 cursor-pointer" @click="openMapOptions = !openMapOptions" @mousedown.prevent @mouseup.prevent>
-        <span class="material-icons">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
+        <span class="material-icons text-2xl">{{ openMapOptions ? 'expand_less' : 'expand_more' }}</span>
 
-        <p class="ml-4 text-gray-200 text-lg">Map details</p>
+        <p class="ml-4 text-gray-200 text-lg">{{ $strings.HeaderMapDetails }}</p>
+
+        <div class="flex-grow" />
+
+        <div class="w-64 flex">
+          <button class="w-32 h-8 rounded-l-md shadow-md border border-gray-600" :class="!isMapOverwrite ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'overwrite'">
+            <p class="text-sm">{{ $strings.LabelOverwrite }}</p>
+          </button>
+          <button class="w-32 h-8 rounded-r-md shadow-md border border-gray-600" :class="!isMapAppend ? 'bg-bg text-white/30' : 'bg-primary'" @click.stop.prevent="mapDetailsType = 'append'">
+            <p class="text-sm">{{ $strings.LabelAppend }}</p>
+          </button>
+        </div>
       </div>
       <div class="overflow-hidden">
         <transition name="slide">
           <div v-if="openMapOptions" class="flex flex-wrap">
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.subtitle" />
-              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" label="Subtitle" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="subtitleInput" v-model="batchDetails.subtitle" :disabled="!selectedBatchUsage.subtitle" :label="$strings.LabelSubtitle" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.authors" />
               <!-- Authors filter only contains authors in this library, use query input to query all authors -->
-              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" label="Authors" endpoint="authors/search" class="mb-4 ml-4" />
+              <ui-multi-select-query-input ref="authorsSelect" v-model="batchDetails.authors" :disabled="!selectedBatchUsage.authors" :label="$strings.LabelAuthors" endpoint="authors/search" class="mb-4 ml-4" />
             </div>
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publishedYear" />
-              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" label="Publish Year" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="publishedYearInput" v-model="batchDetails.publishedYear" :disabled="!selectedBatchUsage.publishedYear" :label="$strings.LabelPublishYear" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.series" />
-              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" label="Series" :items="seriesItems" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="seriesSelect" v-model="batchDetails.series" :disabled="!selectedBatchUsage.series" :label="$strings.LabelSeries" :items="existingSeriesNames" @newItem="newSeriesItem" @removedItem="removedSeriesItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.genres" />
-              <ui-multi-select ref="genresSelect" v-model="batchDetails.genres" :disabled="!selectedBatchUsage.genres" label="Genres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="genresSelect" v-model="batchDetails.genres" :disabled="!selectedBatchUsage.genres" :label="$strings.LabelGenres" :items="genreItems" @newItem="newGenreItem" @removedItem="removedGenreItem" class="mb-4 ml-4" />
             </div>
             <div class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.tags" />
-              <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" label="Tags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="tagsSelect" v-model="batchDetails.tags" :label="$strings.LabelTags" :disabled="!selectedBatchUsage.tags" :items="tagItems" @newItem="newTagItem" @removedItem="removedTagItem" class="mb-4 ml-4" />
             </div>
             <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.narrators" />
-              <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" label="Narrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
+              <ui-multi-select ref="narratorsSelect" v-model="batchDetails.narrators" :disabled="!selectedBatchUsage.narrators" :label="$strings.LabelNarrators" :items="narratorItems" @newItem="newNarratorItem" @removedItem="removedNarratorItem" class="mb-4 ml-4" />
             </div>
-            <div v-if="!isPodcastLibrary" class="flex items-center px-4 w-1/2">
+            <div v-if="!isPodcastLibrary && !isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.publisher" />
-              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" label="Publisher" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="publisherInput" v-model="batchDetails.publisher" :disabled="!selectedBatchUsage.publisher" :label="$strings.LabelPublisher" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.language" />
-              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" label="Language" class="mb-4 ml-4" />
+              <ui-text-input-with-label ref="languageInput" v-model="batchDetails.language" :disabled="!selectedBatchUsage.language" :label="$strings.LabelLanguage" class="mb-4 ml-4" />
             </div>
-            <div class="flex items-center px-4 w-1/2">
+            <div v-if="!isMapAppend" class="flex items-center px-4 w-1/2">
               <ui-checkbox v-model="selectedBatchUsage.explicit" />
               <div class="ml-4">
                 <ui-checkbox
                   v-model="batchDetails.explicit"
-                  label="Explicit"
+                  :label="$strings.LabelExplicit"
                   :disabled="!selectedBatchUsage.explicit"
                   :checkbox-bg="!selectedBatchUsage.explicit ? 'bg' : 'primary'"
                   :check-color="!selectedBatchUsage.explicit ? 'gray-600' : 'green-500'"
@@ -62,7 +73,7 @@
             </div>
 
             <div class="w-full flex items-center justify-end p-4">
-              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">Apply</ui-btn>
+              <ui-btn color="success" :disabled="!hasSelectedBatchUsage" :padding-x="8" small class="text-base" :loading="isProcessing" @click="mapBatchDetails">{{ $strings.ButtonApply }}</ui-btn>
             </div>
           </div>
         </transition>
@@ -83,7 +94,7 @@
 
     <div :class="isScrollable ? 'fixed left-0 box-shadow-lg-up bg-primary' : ''" class="w-full h-20 px-4 flex items-center border-t border-bg z-40" :style="{ bottom: streamLibraryItem ? '165px' : '0px' }">
       <div class="flex-grow" />
-      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">Save</ui-btn>
+      <ui-btn color="success" :padding-x="8" class="text-lg" :loading="isProcessing" @click.prevent="saveClick">{{ $strings.ButtonSave }}</ui-btn>
     </div>
   </div>
 </template>
@@ -91,14 +102,19 @@
 <script>
 export default {
   async asyncData({ store, redirect, app }) {
-    if (!store.state.selectedLibraryItems.length) {
+    if (!store.state.globals.selectedMediaItems.length) {
       return redirect('/')
     }
-    var libraryItems = await app.$axios.$post(`/api/items/batch/get`, { libraryItemIds: store.state.selectedLibraryItems }).catch((error) => {
-      var errorMsg = error.response.data || 'Failed to get items'
-      console.error(errorMsg, error)
-      return []
-    })
+
+    const libraryItemIds = store.state.globals.selectedMediaItems.map((i) => i.id)
+    const libraryItems = await app.$axios
+      .$post(`/api/items/batch/get`, { libraryItemIds })
+      .then((res) => res.libraryItems)
+      .catch((error) => {
+        const errorMsg = error.response.data || 'Failed to get items'
+        console.error(errorMsg, error)
+        return []
+      })
     return {
       mediaType: libraryItems[0].mediaType,
       libraryItems
@@ -109,10 +125,10 @@ export default {
       isProcessing: false,
       libraryItemCopies: [],
       isScrollable: false,
-      newSeriesNames: [],
       newTagItems: [],
       newGenreItems: [],
       newNarratorItems: [],
+      mapDetailsType: 'overwrite',
       batchDetails: {
         subtitle: null,
         authors: null,
@@ -137,10 +153,17 @@ export default {
         language: false,
         explicit: false
       },
+      appendableKeys: ['authors', 'genres', 'tags', 'narrators', 'series'],
       openMapOptions: false
     }
   },
   computed: {
+    isMapOverwrite() {
+      return this.mapDetailsType === 'overwrite'
+    },
+    isMapAppend() {
+      return this.mapDetailsType === 'append'
+    },
     isPodcastLibrary() {
       return this.mediaType === 'podcast'
     },
@@ -152,9 +175,6 @@ export default {
     },
     tagItems() {
       return this.tags.concat(this.newTagItems)
-    },
-    seriesItems() {
-      return [...this.existingSeriesNames, ...this.newSeriesNames]
     },
     narratorItems() {
       return [...this.narrators, ...this.newNarratorItems]
@@ -214,31 +234,32 @@ export default {
     mapBatchDetails() {
       this.blurBatchForm()
 
-      var batchMapPayload = {}
+      const batchMapPayload = {}
       for (const key in this.selectedBatchUsage) {
-        if (this.selectedBatchUsage[key]) {
-          if (key === 'series') {
-            // Map string of series to series objects
-            batchMapPayload[key] = this.batchDetails[key].map((seItem) => {
-              var existingSeries = this.series.find((se) => se.name.toLowerCase() === seItem.toLowerCase().trim())
-              if (existingSeries) {
-                return existingSeries
-              } else {
-                return {
-                  id: `new-${Math.floor(Math.random() * 10000)}`,
-                  name: seItem
-                }
+        if (!this.selectedBatchUsage[key]) continue
+        if (this.isMapAppend && !this.appendableKeys.includes(key)) continue
+
+        if (key === 'series') {
+          // Map string of series to series objects
+          batchMapPayload[key] = this.batchDetails[key].map((seItem) => {
+            const existingSeries = this.series.find((se) => se.name.toLowerCase() === seItem.toLowerCase().trim())
+            if (existingSeries) {
+              return existingSeries
+            } else {
+              return {
+                id: `new-${Math.floor(Math.random() * 10000)}`,
+                name: seItem
               }
-            })
-          } else {
-            batchMapPayload[key] = this.batchDetails[key]
-          }
+            }
+          })
+        } else {
+          batchMapPayload[key] = this.batchDetails[key]
         }
       }
 
       this.libraryItemCopies.forEach((li) => {
-        var ref = this.getEditFormRef(li.id)
-        ref.mapBatchDetails(batchMapPayload)
+        const ref = this.getEditFormRef(li.id)
+        ref.mapBatchDetails(batchMapPayload, this.mapDetailsType)
       })
       this.$toast.success('Details mapped')
     },
@@ -342,7 +363,7 @@ export default {
             this.$toast.success(`Successfully updated ${data.updates} items`)
             this.$router.replace(`/library/${this.currentLibraryId}/bookshelf`)
           } else {
-            this.$toast.warning('No updates were necessary')
+            this.$toast.warning(this.$strings.MessageNoUpdatesWereNecessary)
           }
         })
         .catch((error) => {

@@ -22,7 +22,7 @@
               <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
-              <span class="material-icons">arrow_right</span>
+              <span class="material-icons text-2xl">arrow_right</span>
             </div>
           </li>
         </template>
@@ -30,7 +30,7 @@
       <ul v-show="sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <li class="text-gray-50 select-none relative py-2 pl-9 cursor-pointer hover:bg-black-400" role="option" @click="sublist = null">
           <div class="absolute left-1 top-0 bottom-0 h-full flex items-center">
-            <span class="material-icons">arrow_left</span>
+            <span class="material-icons text-2xl">arrow_left</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="font-normal ml-3 block truncate">Back</span>
@@ -41,9 +41,9 @@
             <span class="font-normal block truncate py-2">No {{ sublist }}</span>
           </div>
         </li>
-        <li v-else-if="sublist === 'series'" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" role="option" @click="clickedSublistOption($encode('No Series'))">
+        <li v-else-if="sublist === 'series'" class="text-gray-50 select-none relative px-2 cursor-pointer hover:bg-black-400" role="option" @click="clickedSublistOption($encode('no-series'))">
           <div class="flex items-center">
-            <span class="font-normal block truncate py-2 text-xs text-white text-opacity-80">No Series</span>
+            <span class="font-normal block truncate py-2 text-xs text-white text-opacity-80">{{ $strings.MessageNoSeries }}</span>
           </div>
         </li>
         <template v-for="item in sublistItems">
@@ -67,120 +67,7 @@ export default {
   data() {
     return {
       showMenu: false,
-      sublist: null,
-      seriesItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Authors',
-          value: 'authors',
-          sublist: true
-        },
-        {
-          text: 'Narrator',
-          value: 'narrators',
-          sublist: true
-        },
-        {
-          text: 'Language',
-          value: 'languages',
-          sublist: true
-        },
-        {
-          text: 'Series Progress',
-          value: 'progress',
-          sublist: true
-        }
-      ],
-      bookItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Series',
-          value: 'series',
-          sublist: true
-        },
-        {
-          text: 'Authors',
-          value: 'authors',
-          sublist: true
-        },
-        {
-          text: 'Narrator',
-          value: 'narrators',
-          sublist: true
-        },
-        {
-          text: 'Language',
-          value: 'languages',
-          sublist: true
-        },
-        {
-          text: 'Progress',
-          value: 'progress',
-          sublist: true
-        },
-        {
-          text: 'Missing',
-          value: 'missing',
-          sublist: true
-        },
-        {
-          text: 'Issues',
-          value: 'issues',
-          sublist: false
-        },
-        {
-          text: 'RSS Feed Open',
-          value: 'feed-open',
-          sublist: false
-        }
-      ],
-      podcastItems: [
-        {
-          text: 'All',
-          value: 'all'
-        },
-        {
-          text: 'Genre',
-          value: 'genres',
-          sublist: true
-        },
-        {
-          text: 'Tag',
-          value: 'tags',
-          sublist: true
-        },
-        {
-          text: 'Issues',
-          value: 'issues',
-          sublist: false
-        }
-      ]
+      sublist: null
     }
   },
   watch: {
@@ -202,6 +89,130 @@ export default {
     },
     isPodcast() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+    },
+    seriesItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelAuthor,
+          value: 'authors',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelNarrator,
+          value: 'narrators',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelLanguage,
+          value: 'languages',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelSeriesProgress,
+          value: 'progress',
+          sublist: true
+        }
+      ]
+    },
+    bookItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelSeries,
+          value: 'series',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelAuthor,
+          value: 'authors',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelNarrator,
+          value: 'narrators',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelLanguage,
+          value: 'languages',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelProgress,
+          value: 'progress',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelMissing,
+          value: 'missing',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTracks,
+          value: 'tracks',
+          sublist: true
+        },
+        {
+          text: this.$strings.ButtonIssues,
+          value: 'issues',
+          sublist: false
+        },
+        {
+          text: this.$strings.LabelRSSFeedOpen,
+          value: 'feed-open',
+          sublist: false
+        }
+      ]
+    },
+    podcastItems() {
+      return [
+        {
+          text: this.$strings.LabelAll,
+          value: 'all'
+        },
+        {
+          text: this.$strings.LabelGenre,
+          value: 'genres',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelTag,
+          value: 'tags',
+          sublist: true
+        },
+        {
+          text: this.$strings.ButtonIssues,
+          value: 'issues',
+          sublist: false
+        }
+      ]
     },
     selectItems() {
       if (this.isSeries) return this.seriesItems
@@ -257,10 +268,92 @@ export default {
       return this.filterData.languages || []
     },
     progress() {
-      return ['Finished', 'In Progress', 'Not Started', 'Not Finished']
+      return [
+        {
+          id: 'finished',
+          name: this.$strings.LabelFinished
+        },
+        {
+          id: 'in-progress',
+          name: this.$strings.LabelInProgress
+        },
+        {
+          id: 'not-started',
+          name: this.$strings.LabelNotStarted
+        },
+        {
+          id: 'not-finished',
+          name: this.$strings.LabelNotFinished
+        }
+      ]
+    },
+    tracks() {
+      return [
+        {
+          id: 'single',
+          name: this.$strings.LabelTracksSingleTrack
+        },
+        {
+          id: 'multi',
+          name: this.$strings.LabelTracksMultiTrack
+        }
+      ]
     },
     missing() {
-      return ['ASIN', 'ISBN', 'Subtitle', 'Author', 'Publish Year', 'Series', 'Description', 'Genres', 'Tags', 'Narrator', 'Publisher', 'Language']
+      return [
+        {
+          id: 'asin',
+          name: 'ASIN'
+        },
+        {
+          id: 'isbn',
+          name: 'ISBN'
+        },
+        {
+          id: 'subtitle',
+          name: this.$strings.LabelSubtitle
+        },
+        {
+          id: 'authors',
+          name: this.$strings.LabelAuthor
+        },
+        {
+          id: 'publishedYear',
+          name: this.$strings.LabelPublishYear
+        },
+        {
+          id: 'series',
+          name: this.$strings.LabelSeries
+        },
+        {
+          id: 'description',
+          name: this.$strings.LabelDescription
+        },
+        {
+          id: 'genres',
+          name: this.$strings.LabelGenres
+        },
+        {
+          id: 'tags',
+          name: this.$strings.LabelTags
+        },
+        {
+          id: 'narrators',
+          name: this.$strings.LabelNarrator
+        },
+        {
+          id: 'publisher',
+          name: this.$strings.LabelPublisher
+        },
+        {
+          id: 'language',
+          name: this.$strings.LabelLanguage
+        },
+        {
+          id: 'cover',
+          name: this.$strings.LabelCover
+        }
+      ]
     },
     sublistItems() {
       return (this[this.sublist] || []).map((item) => {

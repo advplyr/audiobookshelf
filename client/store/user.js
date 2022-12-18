@@ -6,12 +6,13 @@ export const state = () => ({
     filterBy: 'all',
     playbackRate: 1,
     bookshelfCoverSize: 120,
-    collapseSeries: false
-  },
-  settingsListeners: [],
-  collections: [],
-  collectionsLoaded: false,
-  collectionsListeners: []
+    collapseSeries: false,
+    collapseBookSeries: false,
+    useChapterTrack: false,
+    seriesSortBy: 'name',
+    seriesSortDesc: false,
+    seriesFilterBy: 'all'
+  }
 })
 
 export const getters = {
@@ -59,15 +60,16 @@ export const getters = {
     if (getters.getUserCanAccessAllLibraries) return true
     return getters.getLibrariesAccessible.includes(libraryId)
   },
-  getCollection: state => id => {
-    return state.collections.find(c => c.id === id)
+  getIsSeriesRemovedFromContinueListening: (state) => (seriesId) => {
+    if (!state.user || !state.user.seriesHideFromContinueListening || !state.user.seriesHideFromContinueListening.length) return false
+    return state.user.seriesHideFromContinueListening.includes(seriesId)
   }
 }
 
 export const actions = {
   // When changing libraries make sure sort and filter is still valid
   checkUpdateLibrarySortFilter({ state, dispatch, commit }, mediaType) {
-    var settingsUpdate = {}
+    const settingsUpdate = {}
     if (mediaType == 'podcast') {
       if (state.settings.orderBy == 'media.metadata.authorName' || state.settings.orderBy == 'media.metadata.authorNameLF') {
         settingsUpdate.orderBy = 'media.metadata.author'
@@ -78,8 +80,8 @@ export const actions = {
       if (state.settings.orderBy == 'media.metadata.publishedYear') {
         settingsUpdate.orderBy = 'media.metadata.title'
       }
-      var invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
-      var filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
+      const invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
+      const filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
       if (invalidFilters.includes(filterByFirstPart)) {
         settingsUpdate.filterBy = 'all'
       }
@@ -95,44 +97,46 @@ export const actions = {
       dispatch('updateUserSettings', settingsUpdate)
     }
   },
-  updateUserSettings({ commit }, payload) {
-    var updatePayload = {
-      ...payload
-    }
-    // Immediately update
-    commit('setSettings', updatePayload)
-    return this.$axios.$patch('/api/me/settings', updatePayload).then((result) => {
-      if (result.success) {
-        commit('setSettings', result.settings)
-        return true
-      } else {
-        return false
-      }
-    }).catch((error) => {
-      console.error('Failed to update settings', error)
-      return false
-    })
-  },
-  loadUserCollections({ state, commit }) {
-    if (state.collectionsLoaded) {
-      console.log('Collections already loaded')
-      return state.collections
-    }
+  updateUserSettings({ state, commit }, payload) {
+    if (!payload) return false
 
-    return this.$axios.$get('/api/collections').then((collections) => {
-      commit('setCollections', collections)
-      return collections
-    }).catch((error) => {
-      console.error('Failed to get collections', error)
-      return []
-    })
+    let hasChanges = false
+    const existingSettings = { ...state.settings }
+    for (const key in existingSettings) {
+      if (payload[key] !== undefined && existingSettings[key] !== payload[key]) {
+        hasChanges = true
+        existingSettings[key] = payload[key]
+      }
+    }
+    if (hasChanges) {
+      commit('setSettings', existingSettings)
+      this.$eventBus.$emit('user-settings', state.settings)
+    }
+  },
+  loadUserSettings({ state, commit }) {
+    // Load settings from local storage
+    try {
+      let userSettingsFromLocal = localStorage.getItem('userSettings')
+      if (userSettingsFromLocal) {
+        userSettingsFromLocal = JSON.parse(userSettingsFromLocal)
+        const userSettings = { ...state.settings }
+        for (const key in userSettings) {
+          if (userSettingsFromLocal[key] !== undefined) {
+            userSettings[key] = userSettingsFromLocal[key]
+          }
+        }
+        commit('setSettings', userSettings)
+        this.$eventBus.$emit('user-settings', state.settings)
+      }
+    } catch (error) {
+      console.error('Failed to load userSettings from local storage', error)
+    }
   }
 }
 
 export const mutations = {
   setUser(state, user) {
     state.user = user
-    state.settings = user.settings
     if (user) {
       if (user.token) localStorage.setItem('token', user.token)
     } else {
@@ -158,51 +162,7 @@ export const mutations = {
   },
   setSettings(state, settings) {
     if (!settings) return
-    var hasChanges = false
-    for (const key in settings) {
-      if (state.settings[key] !== settings[key]) {
-        hasChanges = true
-        state.settings[key] = settings[key]
-      }
-    }
-    if (hasChanges) {
-      state.settingsListeners.forEach((listener) => {
-        listener.meth(state.settings)
-      })
-    }
-  },
-  addSettingsListener(state, listener) {
-    var index = state.settingsListeners.findIndex(l => l.id === listener.id)
-    if (index >= 0) state.settingsListeners.splice(index, 1, listener)
-    else state.settingsListeners.push(listener)
-  },
-  removeSettingsListener(state, listenerId) {
-    state.settingsListeners = state.settingsListeners.filter(l => l.id !== listenerId)
-  },
-  setCollections(state, collections) {
-    state.collectionsLoaded = true
-    state.collections = collections
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  addUpdateCollection(state, collection) {
-    var index = state.collections.findIndex(c => c.id === collection.id)
-    if (index >= 0) {
-      state.collections.splice(index, 1, collection)
-    } else {
-      state.collections.push(collection)
-    }
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  removeCollection(state, collection) {
-    state.collections = state.collections.filter(c => c.id !== collection.id)
-    state.collectionsListeners.forEach((listener) => listener.meth())
-  },
-  addCollectionsListener(state, listener) {
-    var index = state.collectionsListeners.findIndex(l => l.id === listener.id)
-    if (index >= 0) state.collectionsListeners.splice(index, 1, listener)
-    else state.collectionsListeners.push(listener)
-  },
-  removeCollectionsListener(state, listenerId) {
-    state.collectionsListeners = state.collectionsListeners.filter(l => l.id !== listenerId)
-  },
+    localStorage.setItem('userSettings', JSON.stringify(settings))
+    state.settings = settings
+  }
 }

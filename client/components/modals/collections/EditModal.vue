@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="edit-collection" :width="700" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">Collection</p>
+        <p class="font-book text-3xl text-white truncate">{{ $strings.HeaderCollection }}</p>
       </div>
     </template>
     <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">
@@ -14,15 +14,15 @@
               <!-- <ui-btn type="button" @click="showImageUploader = true">Upload</ui-btn> -->
             </div>
             <div class="flex-grow px-4">
-              <ui-text-input-with-label v-model="newCollectionName" label="Name" class="mb-2" />
+              <ui-text-input-with-label v-model="newCollectionName" :label="$strings.LabelName" class="mb-2" />
 
-              <ui-textarea-with-label v-model="newCollectionDescription" label="Description" />
+              <ui-textarea-with-label v-model="newCollectionDescription" :label="$strings.LabelDescription" />
             </div>
           </div>
           <div class="absolute bottom-0 left-0 right-0 w-full py-2 px-4 flex">
-            <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">Remove</ui-btn>
+            <ui-btn v-if="userCanDelete" small color="error" type="button" @click.stop="removeClick">{{ $strings.ButtonRemove }}</ui-btn>
             <div class="flex-grow" />
-            <ui-btn color="success" type="submit">Save</ui-btn>
+            <ui-btn color="success" type="submit">{{ $strings.ButtonSave }}</ui-btn>
           </div>
         </form>
       </template>
@@ -96,20 +96,19 @@ export default {
       this.newCollectionDescription = this.collection.description || ''
     },
     removeClick() {
-      if (confirm(`Are you sure you want to remove collection "${this.collectionName}"?`)) {
+      if (confirm(this.$getString('MessageConfirmRemoveCollection', [this.collectionName]))) {
         this.processing = true
-        var collectionName = this.collectionName
         this.$axios
           .$delete(`/api/collections/${this.collection.id}`)
           .then(() => {
             this.processing = false
             this.show = false
-            this.$toast.success(`Collection "${collectionName}" Removed`)
+            this.$toast.success(this.$strings.ToastCollectionRemoveSuccess)
           })
           .catch((error) => {
             console.error('Failed to remove collection', error)
             this.processing = false
-            this.$toast.error(`Failed to remove collection`)
+            this.$toast.error(this.$strings.ToastCollectionRemoveFailed)
           })
       }
     },
@@ -133,12 +132,12 @@ export default {
           console.log('Collection Updated', collection)
           this.processing = false
           this.show = false
-          this.$toast.success(`Collection "${collection.name}" Updated`)
+          this.$toast.success(this.$strings.ToastCollectionUpdateSuccess)
         })
         .catch((error) => {
           console.error('Failed to update collection', error)
           this.processing = false
-          this.$toast.error(`Failed to update collection`)
+          this.$toast.error(this.$strings.ToastCollectionUpdateFailed)
         })
     }
   },

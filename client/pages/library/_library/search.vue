@@ -3,7 +3,7 @@
     <app-book-shelf-toolbar is-home page="search" :search-query="query" />
     <app-book-shelf-categorized v-if="hasResults" ref="bookshelf" search :results="results" />
     <div v-else class="w-full py-16">
-      <p class="text-xl text-center">No Search results for "{{ query }}"</p>
+      <p class="text-xl text-center">{{ $getString('MessageNoSearchResultsFor', [query]) }}</p>
     </div>
   </div>
 </template>

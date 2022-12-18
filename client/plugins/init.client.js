@@ -5,8 +5,6 @@ import { formatDistance, format, addDays, isDate } from 'date-fns'
 
 Vue.directive('click-outside', vClickOutside.directive)
 
-Vue.prototype.$eventBus = new Vue()
-
 Vue.prototype.$dateDistanceFromNow = (unixms) => {
   if (!unixms) return ''
   return formatDistance(unixms, Date.now(), { addSuffix: true })
@@ -30,23 +28,26 @@ Vue.prototype.$addDaysToDate = (jsdate, daysToAdd) => {
   return date
 }
 
-Vue.prototype.$sanitizeFilename = (input, colonReplacement = ' - ') => {
-  if (typeof input !== 'string') {
+Vue.prototype.$sanitizeFilename = (filename, colonReplacement = ' - ') => {
+  if (typeof filename !== 'string') {
     return false
   }
 
-  // Max is actually 255-260 for windows but this leaves padding incase ext wasnt put on yet
-  const MAX_FILENAME_LEN = 240
+  // Most file systems use number of bytes for max filename
+  //   to support most filesystems we will use max of 255 bytes in utf-16
+  //   Ref: https://doc.owncloud.com/server/next/admin_manual/troubleshooting/path_filename_length.html
+  //   Issue: https://github.com/advplyr/audiobookshelf/issues/1261
+  const MAX_FILENAME_BYTES = 255
 
-  var replacement = ''
-  var illegalRe = /[\/\?<>\\:\*\|"]/g
-  var controlRe = /[\x00-\x1f\x80-\x9f]/g
-  var reservedRe = /^\.+$/
-  var windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i
-  var windowsTrailingRe = /[\. ]+$/
-  var lineBreaks = /[\n\r]/g
+  const replacement = ''
+  const illegalRe = /[\/\?<>\\:\*\|"]/g
+  const controlRe = /[\x00-\x1f\x80-\x9f]/g
+  const reservedRe = /^\.+$/
+  const windowsReservedRe = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i
+  const windowsTrailingRe = /[\. ]+$/
+  const lineBreaks = /[\n\r]/g
 
-  var sanitized = input
+  sanitized = filename
     .replace(':', colonReplacement) // Replace first occurrence of a colon
     .replace(illegalRe, replacement)
     .replace(controlRe, replacement)
@@ -55,13 +56,25 @@ Vue.prototype.$sanitizeFilename = (input, colonReplacement = ' - ') => {
     .replace(windowsReservedRe, replacement)
     .replace(windowsTrailingRe, replacement)
 
+  // Check if basename is too many bytes
+  const ext = Path.extname(sanitized) // separate out file extension
+  const basename = Path.basename(sanitized, ext)
+  const extByteLength = Buffer.byteLength(ext, 'utf16le')
+  const basenameByteLength = Buffer.byteLength(basename, 'utf16le')
+  if (basenameByteLength + extByteLength > MAX_FILENAME_BYTES) {
+    const MaxBytesForBasename = MAX_FILENAME_BYTES - extByteLength
+    let totalBytes = 0
+    let trimmedBasename = ''
 
-  if (sanitized.length > MAX_FILENAME_LEN) {
-    var lenToRemove = sanitized.length - MAX_FILENAME_LEN
-    var ext = Path.extname(sanitized)
-    var basename = Path.basename(sanitized, ext)
-    basename = basename.slice(0, basename.length - lenToRemove)
-    sanitized = basename + ext
+    // Add chars until max bytes is reached
+    for (const char of basename) {
+      totalBytes += Buffer.byteLength(char, 'utf16le')
+      if (totalBytes > MaxBytesForBasename) break
+      else trimmedBasename += char
+    }
+
+    trimmedBasename = trimmedBasename.trim()
+    sanitized = trimmedBasename + ext
   }
 
   return sanitized
@@ -94,13 +107,11 @@ Vue.prototype.$sanitizeSlug = (str) => {
 
 Vue.prototype.$copyToClipboard = (str, ctx) => {
   return new Promise((resolve) => {
-    if (!navigator.clipboard) {
+    if (navigator.clipboard) {
       navigator.clipboard.writeText(str).then(() => {
         if (ctx) ctx.$toast.success('Copied to clipboard')
-        resolve(true)
       }, (err) => {
         console.error('Clipboard copy failed', str, err)
-        resolve(false)
       })
     } else {
       const el = document.createElement('textarea')
@@ -146,6 +157,7 @@ export {
 export default ({ app, store }, inject) => {
   app.$decode = decode
   app.$encode = encode
+  inject('eventBus', new Vue())
   inject('isDev', process.env.NODE_ENV !== 'production')
 
   store.commit('setRouterBasePath', app.$config.routerBasePath)

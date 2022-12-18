@@ -1,7 +1,6 @@
 const Path = require('path')
 const express = require('express')
 const http = require('http')
-const SocketIO = require('socket.io')
 const fs = require('./libs/fsExtra')
 const fileUpload = require('./libs/expressFileupload')
 const rateLimit = require('./libs/expressRateLimit')
@@ -13,11 +12,11 @@ const dbMigration = require('./utils/dbMigration')
 const filePerms = require('./utils/filePerms')
 const Logger = require('./Logger')
 
-// Classes
 const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./scanner/Scanner')
 const Db = require('./Db')
+const SocketAuthority = require('./SocketAuthority')
 
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
@@ -67,60 +66,30 @@ class Server {
     this.auth = new Auth(this.db)
 
     // Managers
-    this.taskManager = new TaskManager(this.emitter.bind(this))
-    this.notificationManager = new NotificationManager(this.db, this.emitter.bind(this))
-    this.backupManager = new BackupManager(this.db, this.emitter.bind(this))
+    this.taskManager = new TaskManager()
+    this.notificationManager = new NotificationManager(this.db)
+    this.backupManager = new BackupManager(this.db)
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
-    this.abMergeManager = new AbMergeManager(this.db, this.taskManager, this.clientEmitter.bind(this))
-    this.playbackSessionManager = new PlaybackSessionManager(this.db, this.emitter.bind(this), this.clientEmitter.bind(this))
+    this.abMergeManager = new AbMergeManager(this.db, this.taskManager)
+    this.playbackSessionManager = new PlaybackSessionManager(this.db)
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db, this.watcher, this.emitter.bind(this), this.notificationManager)
-    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.rssFeedManager = new RssFeedManager(this.db, this.emitter.bind(this))
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager)
+    this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager)
+    this.rssFeedManager = new RssFeedManager(this.db)
 
-    this.scanner = new Scanner(this.db, this.coverManager, this.emitter.bind(this))
+    this.scanner = new Scanner(this.db, this.coverManager)
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
-    this.apiRouter = new ApiRouter(this.db, this.auth, this.scanner, this.playbackSessionManager, this.abMergeManager, this.coverManager, this.backupManager, this.watcher, this.cacheManager, this.podcastManager, this.audioMetadataManager, this.rssFeedManager, this.cronManager, this.notificationManager, this.taskManager, this.emitter.bind(this), this.clientEmitter.bind(this))
-    this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager, this.emitter.bind(this))
+    this.apiRouter = new ApiRouter(this)
+    this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager)
     this.staticRouter = new StaticRouter(this.db)
 
     Logger.logManager = this.logManager
 
     this.server = null
     this.io = null
-
-    this.clients = {}
-  }
-
-  get usersOnline() {
-    // TODO: Map open user sessions
-    return Object.values(this.clients).filter(c => c.user).map(client => {
-      return client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems)
-    })
-  }
-
-  getClientsForUser(userId) {
-    return Object.values(this.clients).filter(c => c.user && c.user.id === userId)
-  }
-
-  emitter(ev, data) {
-    // Logger.debug('EMITTER', ev)
-    this.io.emit(ev, data)
-  }
-
-  clientEmitter(userId, ev, data) {
-    var clients = this.getClientsForUser(userId)
-    if (!clients.length) {
-      return Logger.debug(`[Server] clientEmitter - no clients found for user ${userId}`)
-    }
-    clients.forEach((client) => {
-      if (client.socket) {
-        client.socket.emit(ev, data)
-      }
-    })
   }
 
   authMiddleware(req, res, next) {
@@ -131,7 +100,7 @@ class Server {
     Logger.info('[Server] Init v' + version)
     await this.playbackSessionManager.removeOrphanStreams()
 
-    var previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
+    const previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
     if (previousVersion) {
       Logger.debug(`[Server] Upgraded from previous version ${previousVersion}`)
     }
@@ -198,13 +167,13 @@ class Server {
 
     // EBook static file routes
     router.get('/ebook/:library/:folder/*', (req, res) => {
-      var library = this.db.libraries.find(lib => lib.id === req.params.library)
+      const library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
-      var folder = library.folders.find(fol => fol.id === req.params.folder)
+      const folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
 
-      var remainingPath = req.params['0']
-      var fullPath = Path.join(folder.fullPath, remainingPath)
+      const remainingPath = req.params['0']
+      const fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })
 
@@ -237,7 +206,8 @@ class Server {
       '/library/:library/podcast/latest',
       '/config/users/:id',
       '/config/users/:id/sessions',
-      '/collection/:id'
+      '/collection/:id',
+      '/playlist/:id'
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
@@ -255,7 +225,8 @@ class Server {
       // status check for client to see if server has been initialized
       // server has been initialized if a root user exists
       const payload = {
-        isInit: this.db.hasRootUser
+        isInit: this.db.hasRootUser,
+        language: this.db.serverSettings.language
       }
       if (!payload.isInit) {
         payload.ConfigPath = global.ConfigPath
@@ -270,61 +241,12 @@ class Server {
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     this.server.listen(this.Port, this.Host, () => {
-      Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+      if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
+      else Logger.info(`Listening on port :${this.Port}`)
     })
 
-    this.io = new SocketIO.Server(this.server, {
-      cors: {
-        origin: '*',
-        methods: ["GET", "POST"]
-      }
-    })
-    this.io.on('connection', (socket) => {
-      this.clients[socket.id] = {
-        id: socket.id,
-        socket,
-        connected_at: Date.now()
-      }
-      socket.sheepClient = this.clients[socket.id]
-
-      Logger.info('[Server] Socket Connected', socket.id)
-
-      socket.on('auth', (token) => this.authenticateSocket(socket, token))
-
-      // Scanning
-      socket.on('cancel_scan', this.cancelScan.bind(this))
-
-      // Logs
-      socket.on('set_log_listener', (level) => Logger.addSocketListener(socket, level))
-      socket.on('remove_log_listener', () => Logger.removeSocketListener(socket.id))
-      socket.on('fetch_daily_logs', () => this.logManager.socketRequestDailyLogs(socket))
-
-      socket.on('ping', () => {
-        var client = this.clients[socket.id] || {}
-        var user = client.user || {}
-        Logger.debug(`[Server] Received ping from socket ${user.username || 'No User'}`)
-        socket.emit('pong')
-      })
-
-      socket.on('disconnect', (reason) => {
-        Logger.removeSocketListener(socket.id)
-
-        var _client = this.clients[socket.id]
-        if (!_client) {
-          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
-        } else if (!_client.user) {
-          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
-          delete this.clients[socket.id]
-        } else {
-          Logger.debug('[Server] User Offline ' + _client.user.username)
-          this.io.emit('user_offline', _client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
-
-          const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
-          delete this.clients[socket.id]
-        }
-      })
-    })
+    // Start listening for socket connections
+    SocketAuthority.initialize(this)
   }
 
   async initializeServer(req, res) {
@@ -343,22 +265,17 @@ class Server {
     await this.scanner.scanFilesChanged(fileUpdates)
   }
 
-  cancelScan(id) {
-    Logger.debug('[Server] Cancel scan', id)
-    this.scanner.setCancelLibraryScan(id)
-  }
-
   // Remove unused /metadata/items/{id} folders
   async purgeMetadata() {
-    var itemsMetadata = Path.join(global.MetadataPath, 'items')
+    const itemsMetadata = Path.join(global.MetadataPath, 'items')
     if (!(await fs.pathExists(itemsMetadata))) return
-    var foldersInItemsMetadata = await fs.readdir(itemsMetadata)
+    const foldersInItemsMetadata = await fs.readdir(itemsMetadata)
 
-    var purged = 0
+    let purged = 0
     await Promise.all(foldersInItemsMetadata.map(async foldername => {
-      var hasMatchingItem = this.db.libraryItems.find(ab => ab.id === foldername)
+      const hasMatchingItem = this.db.libraryItems.find(ab => ab.id === foldername)
       if (!hasMatchingItem) {
-        var folderPath = Path.join(itemsMetadata, foldername)
+        const folderPath = Path.join(itemsMetadata, foldername)
         Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
 
         await fs.remove(folderPath).then(() => {
@@ -377,8 +294,8 @@ class Server {
   // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
   async cleanUserData() {
     for (let i = 0; i < this.db.users.length; i++) {
-      var _user = this.db.users[i]
-      var hasUpdated = false
+      const _user = this.db.users[i]
+      let hasUpdated = false
       if (_user.mediaProgress.length) {
         const lengthBefore = _user.mediaProgress.length
         _user.mediaProgress = _user.mediaProgress.filter(mp => {
@@ -424,66 +341,12 @@ class Server {
   }
 
   logout(req, res) {
-    var { socketId } = req.body
-    Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${socketId}`)
-
-    // Strip user and client from client and client socket
-    if (socketId && this.clients[socketId]) {
-      var client = this.clients[socketId]
-      var clientSocket = client.socket
-      Logger.debug(`[Server] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
-
-      if (client.user) {
-        Logger.debug('[Server] User Offline ' + client.user.username)
-        this.io.emit('user_offline', client.user.toJSONForPublic(null, this.db.libraryItems))
-      }
-
-      delete this.clients[socketId].user
-      if (clientSocket && clientSocket.sheepClient) delete this.clients[socketId].socket.sheepClient
-    } else if (socketId) {
-      Logger.warn(`[Server] No client for socket ${socketId}`)
+    if (req.body.socketId) {
+      Logger.info(`[Server] User ${req.user ? req.user.username : 'Unknown'} is logging out with socket ${req.body.socketId}`)
+      SocketAuthority.logout(req.body.socketId)
     }
 
     res.sendStatus(200)
-  }
-
-  async authenticateSocket(socket, token) {
-    var user = await this.auth.authenticateUser(token)
-    if (!user) {
-      Logger.error('Cannot validate socket - invalid token')
-      return socket.emit('invalid_token')
-    }
-    var client = this.clients[socket.id]
-
-    if (client.user !== undefined) {
-      Logger.debug(`[Server] Authenticating socket client already has user`, client.user.username)
-    }
-
-    client.user = user
-
-    if (!client.user.toJSONForBrowser) {
-      Logger.error('Invalid user...', client.user)
-      return
-    }
-
-    Logger.debug(`[Server] User Online ${client.user.username}`)
-
-    this.io.emit('user_online', client.user.toJSONForPublic(this.playbackSessionManager.sessions, this.db.libraryItems))
-
-    user.lastSeen = Date.now()
-    await this.db.updateEntity('user', user)
-
-    const initialPayload = {
-      metadataPath: global.MetadataPath,
-      configPath: global.ConfigPath,
-      user: client.user.toJSONForBrowser(),
-      librariesScanning: this.scanner.librariesScanning,
-      backups: (this.backupManager.backups || []).map(b => b.toJSON())
-    }
-    if (user.type === 'root') {
-      initialPayload.usersOnline = this.usersOnline
-    }
-    client.socket.emit('init', initialPayload)
   }
 
   async stop() {

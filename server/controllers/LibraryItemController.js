@@ -1,4 +1,7 @@
+const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
+const SocketAuthority = require('../SocketAuthority')
+
 const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
@@ -53,7 +56,7 @@ class LibraryItemController {
     if (hasUpdates) {
       Logger.debug(`[LibraryItemController] Updated now saving`)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json(libraryItem.toJSON())
   }
@@ -97,7 +100,7 @@ class LibraryItemController {
 
       Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json({
       updated: hasUpdates,
@@ -132,7 +135,7 @@ class LibraryItemController {
     }
 
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json({
       success: true,
       cover: result.cover
@@ -152,7 +155,7 @@ class LibraryItemController {
     }
     if (validationResult.updated) {
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
     res.json({
       success: true,
@@ -168,7 +171,7 @@ class LibraryItemController {
       libraryItem.updateMediaCover('')
       await this.cacheManager.purgeCoverCache(libraryItem.id)
       await this.db.updateLibraryItem(libraryItem)
-      this.emitter('item_updated', libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
     res.sendStatus(200)
@@ -176,7 +179,15 @@ class LibraryItemController {
 
   // GET api/items/:id/cover
   async getCover(req, res) {
-    let { query: { width, height, format }, libraryItem } = req
+    const { query: { width, height, format, raw }, libraryItem } = req
+
+    if (raw) { // any value
+      if (!libraryItem.media.coverPath || !await fs.pathExists(libraryItem.media.coverPath)) {
+        return res.sendStatus(404)
+      }
+
+      return res.sendFile(libraryItem.media.coverPath)
+    }
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
@@ -228,7 +239,7 @@ class LibraryItemController {
     }
     libraryItem.media.updateAudioTracks(orderedFileData)
     await this.db.updateLibraryItem(libraryItem)
-    this.emitter('item_updated', libraryItem.toJSONExpanded())
+    SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())
   }
 
@@ -284,7 +295,7 @@ class LibraryItemController {
       if (hasUpdates) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
         await this.db.updateLibraryItem(libraryItem)
-        this.emitter('item_updated', libraryItem.toJSONExpanded())
+        SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
         itemsUpdated++
       }
     }
@@ -297,12 +308,18 @@ class LibraryItemController {
 
   // POST: api/items/batch/get
   async batchGet(req, res) {
-    var libraryItemIds = req.body.libraryItemIds || []
+    const libraryItemIds = req.body.libraryItemIds || []
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    var libraryItems = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id)).map((li) => li.toJSONExpanded())
-    res.json(libraryItems)
+    const libraryItems = []
+    libraryItemIds.forEach((lid) => {
+      const li = this.db.libraryItems.find(_li => _li.id === lid)
+      if (li) libraryItems.push(li.toJSONExpanded())
+    })
+    res.json({
+      libraryItems
+    })
   }
 
   // POST: api/items/batch/quickmatch
@@ -338,7 +355,7 @@ class LibraryItemController {
       updates: itemsUpdated,
       unmatched: itemsUnmatched
     }
-    this.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
+    SocketAuthority.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
   }
 
   // DELETE: api/items/all
@@ -385,23 +402,6 @@ class LibraryItemController {
     res.json(this.audioMetadataManager.getToneMetadataObjectForApi(req.libraryItem))
   }
 
-  // GET: api/items/:id/audio-metadata
-  async updateAudioFileMetadata(req, res) {
-    if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to update audio metadata`, req.user)
-      return res.sendStatus(403)
-    }
-
-    if (req.libraryItem.isMissing || !req.libraryItem.hasAudioFiles || !req.libraryItem.isBook) {
-      Logger.error(`[LibraryItemController] Invalid library item`)
-      return res.sendStatus(500)
-    }
-
-    const useTone = req.query.tone === '1'
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone)
-    res.sendStatus(200)
-  }
-
   // POST: api/items/:id/chapters
   async updateMediaChapters(req, res) {
     if (!req.user.canUpdate) {
@@ -423,7 +423,7 @@ class LibraryItemController {
     const wasUpdated = req.libraryItem.media.updateChapters(chapters)
     if (wasUpdated) {
       await this.db.updateLibraryItem(req.libraryItem)
-      this.emitter('item_updated', req.libraryItem.toJSONExpanded())
+      SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
     }
 
     res.json({
@@ -436,7 +436,7 @@ class LibraryItemController {
   async openRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to open RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     const feedData = await this.rssFeedManager.openFeedForItem(req.user, req.libraryItem, req.body)
@@ -456,7 +456,7 @@ class LibraryItemController {
   async closeRSSFeed(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to close RSS feed`, req.user.username)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
 
     await this.rssFeedManager.closeFeedForItem(req.params.id)

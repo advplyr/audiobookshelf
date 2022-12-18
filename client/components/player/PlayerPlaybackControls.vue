@@ -9,7 +9,7 @@
         <span class="material-icons text-2xl sm:text-3xl">replay_10</span>
       </div>
       <div class="cursor-pointer p-2 shadow-sm bg-accent flex items-center justify-center rounded-full text-primary mx-4 md:mx-8" :class="seekLoading ? 'animate-spin' : ''" @mousedown.prevent @mouseup.prevent @click.stop="playPause">
-        <span class="material-icons">{{ seekLoading ? 'autorenew' : paused ? 'play_arrow' : 'pause' }}</span>
+        <span class="material-icons text-2xl">{{ seekLoading ? 'autorenew' : paused ? 'play_arrow' : 'pause' }}</span>
       </div>
       <div class="cursor-pointer flex items-center justify-center text-gray-300" @mousedown.prevent @mouseup.prevent @click.stop="jumpForward">
         <span class="material-icons text-2xl sm:text-3xl">forward_10</span>

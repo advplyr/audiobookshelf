@@ -1,5 +1,5 @@
 <template>
-  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-40 bg-primary px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-50 bg-primary px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
     <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-1 sm:left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
@@ -15,7 +15,7 @@
           <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
-          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">Unknown</p>
+          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</p>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -24,7 +24,9 @@
         </div>
       </div>
       <div class="flex-grow" />
-      <span class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</span>
+      <ui-tooltip direction="top" :text="$strings.LabelClosePlayer">
+        <span class="material-icons sm:px-2 py-1 md:p-4 cursor-pointer text-xl sm:text-2xl" @click="closePlayer">close</span>
+      </ui-tooltip>
     </div>
     <player-ui
       ref="audioPlayer"
@@ -159,8 +161,8 @@ export default {
         return i.libraryItemId === libraryItemId
       })
       if (currentQueueIndex < 0) {
-        console.error('Media finished not found in queue', this.playerQueueItems)
-        return
+        console.error('Media finished not found in queue - using first in queue', this.playerQueueItems)
+        currentQueueIndex = -1
       }
       if (currentQueueIndex === this.playerQueueItems.length - 1) {
         console.log('Finished last item in queue')
@@ -297,6 +299,16 @@ export default {
         this.playerHandler.seek(e.seekTime)
       }
     },
+    mediaSessionPreviousTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.prevChapter()
+      }
+    },
+    mediaSessionNextTrack() {
+      if (this.$refs.audioPlayer) {
+        this.$refs.audioPlayer.nextChapter()
+      }
+    },
     updateMediaSessionPlaybackState() {
       if ('mediaSession' in navigator) {
         navigator.mediaSession.playbackState = this.isPlaying ? 'playing' : 'paused'
@@ -330,8 +342,9 @@ export default {
         navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
         navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
         navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
-        // navigator.mediaSession.setActionHandler('previoustrack')
-        // navigator.mediaSession.setActionHandler('nexttrack')
+        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionPreviousTrack)
+        const hasNextChapter = this.$refs.audioPlayer && this.$refs.audioPlayer.hasNextChapter
+        navigator.mediaSession.setActionHandler('nexttrack', hasNextChapter ? this.mediaSessionNextTrack : null)
       } else {
         console.warn('Media session not available')
       }
@@ -365,7 +378,7 @@ export default {
       }
     },
     streamReady() {
-      console.log(`[STREAM-CONTAINER] Stream Ready`)
+      console.log(`[StreamContainer] Stream Ready`)
       if (this.$refs.audioPlayer) {
         this.$refs.audioPlayer.setStreamReady()
       } else {
