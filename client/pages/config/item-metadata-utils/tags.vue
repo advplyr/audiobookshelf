@@ -76,8 +76,6 @@ export default {
 
       const tagNameExists = this.tags.find((t) => t !== this.editingTag && t === this.newTagName)
       const tagNameExistsOfDifferentCase = !tagNameExists ? this.tags.find((t) => t !== this.editingTag && t.toLowerCase() === this.newTagName.toLowerCase()) : null
-      console.log('Tag name', this.newTagName, 'ExistS?', tagNameExists, tagNameExistsOfDifferentCase)
-      console.log('Saving tag', this.editingTag, 'with name', this.newTagName)
 
       let message = `Are you sure you want to rename tag "${this.editingTag}" to "${this.newTagName}" for all items?`
       if (tagNameExists) {

@@ -405,8 +405,6 @@ export default {
       }
     },
     removeListeners() {
-      this.$store.commit('user/removeSettingsListener', 'bookshelf')
-
       if (this.$root.socket) {
         this.$root.socket.off('user_updated', this.userUpdated)
         this.$root.socket.off('author_updated', this.authorUpdated)

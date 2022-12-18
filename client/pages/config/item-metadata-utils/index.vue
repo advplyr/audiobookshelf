@@ -7,12 +7,12 @@
           <span class="material-icons">arrow_forward</span>
         </div>
       </nuxt-link>
-      <!-- <nuxt-link to="/config/item-metadata-utils/tags" class="block w-full rounded bg-primary/40 hover:bg-primary/60 text-gray-300 hover:text-white p-4 my-2">
+      <nuxt-link to="/config/item-metadata-utils/genres" class="block w-full rounded bg-primary/40 hover:bg-primary/60 text-gray-300 hover:text-white p-4 my-2">
         <div class="flex justify-between">
           <p>Manage Genres</p>
           <span class="material-icons">arrow_forward</span>
         </div>
-      </nuxt-link> -->
+      </nuxt-link>
     </app-settings-content>
   </div>
 </template>
