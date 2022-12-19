@@ -1,8 +1,11 @@
+
+const fs = require('../libs/fsExtra')
+const { createNewSortInstance } = require('../libs/fastSort')
+
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 
 const { reqSupportsWebp } = require('../utils/index')
-const { createNewSortInstance } = require('../libs/fastSort')
 
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -206,7 +209,15 @@ class AuthorController {
 
   // GET api/authors/:id/image
   async getImage(req, res) {
-    let { query: { width, height, format }, author } = req
+    const { query: { width, height, format, raw }, author } = req
+
+    if (raw) { // any value
+      if (!author.imagePath || !await fs.pathExists(author.imagePath)) {
+        return res.sendStatus(404)
+      }
+
+      return res.sendFile(author.imagePath)
+    }
 
     const options = {
       format: format || (reqSupportsWebp(req) ? 'webp' : 'jpeg'),
