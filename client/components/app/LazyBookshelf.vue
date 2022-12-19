@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-30" />
+    <widgets-cover-size-widget class="fixed bottom-4 right-4 z-50" />
   </div>
 </template>
 
