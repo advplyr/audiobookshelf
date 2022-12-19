@@ -26,7 +26,8 @@ class ToolsController {
       return res.status(500).send('Invalid audiobook: no audio tracks')
     }
 
-    this.abMergeManager.startAudiobookMerge(req.user, req.libraryItem)
+    const options = req.query || {}
+    this.abMergeManager.startAudiobookMerge(req.user, req.libraryItem, options)
 
     res.sendStatus(200)
   }

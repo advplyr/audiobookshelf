@@ -62,19 +62,38 @@
     <div class="w-full h-px bg-white bg-opacity-10 my-8" />
 
     <div class="w-full max-w-4xl mx-auto">
-      <div v-if="selectedTool === 'embed'" class="w-full flex justify-end items-center mb-4">
+      <div v-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
         <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
-      <div v-else class="w-full flex justify-end items-center mb-4">
+      <div v-else class="w-full flex items-center mb-4">
+        <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
+          <span class="material-icons text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
+        </button>
+
+        <div class="flex-grow" />
+
         <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
         <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
         <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
 
+      <div v-if="isM4BTool" class="overflow-hidden">
+        <transition name="slide">
+          <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
+            <div class="flex flex-wrap -mx-2">
+              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 64k)'" class="m-2 max-w-40" />
+              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" />
+              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" />
+            </div>
+            <p class="text-sm text-warning">Warning: Do not update these settings unless you are familiar with ffmpeg encoding options.</p>
+          </div>
+        </transition>
+      </div>
+
       <div class="mb-4">
-        <div v-if="selectedTool === 'embed'" class="flex items-start mb-2">
+        <div v-if="isEmbedTool" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Metadata will be embedded in the audio tracks inside your audiobook folder.</p>
         </div>
@@ -91,15 +110,15 @@
             A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
           </p>
         </div>
-        <div v-if="selectedTool === 'embed' && audioFiles.length > 1" class="flex items-start mb-2">
+        <div v-if="isEmbedTool && audioFiles.length > 1" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Chapters are not embedded in multi-track audiobooks.</p>
         </div>
-        <div v-if="selectedTool === 'm4b'" class="flex items-start mb-2">
+        <div v-if="isM4BTool" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">Encoding can take up to 30 minutes.</p>
         </div>
-        <div v-if="selectedTool === 'm4b'" class="flex items-start mb-2">
+        <div v-if="isM4BTool" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">If you have the watcher disabled you will need to re-scan this audiobook afterwards.</p>
         </div>
@@ -180,7 +199,13 @@ export default {
       isFinished: false,
       toneObject: null,
       selectedTool: 'embed',
-      isCancelingEncode: false
+      isCancelingEncode: false,
+      showEncodeOptions: false,
+      encodingOptions: {
+        bitrate: '64k',
+        channels: '2',
+        codec: 'aac'
+      }
     }
   },
   watch: {
@@ -193,6 +218,12 @@ export default {
     }
   },
   computed: {
+    isEmbedTool() {
+      return this.selectedTool === 'embed'
+    },
+    isM4BTool() {
+      return this.selectedTool === 'm4b'
+    },
     libraryItemId() {
       return this.libraryItem.id
     },
@@ -260,9 +291,23 @@ export default {
         })
     },
     encodeM4bClick() {
+      if (this.$refs.bitrateInput) this.$refs.bitrateInput.blur()
+      if (this.$refs.channelsInput) this.$refs.channelsInput.blur()
+      if (this.$refs.codecInput) this.$refs.codecInput.blur()
+
+      let queryStr = ''
+      if (this.showEncodeOptions) {
+        const options = []
+        if (this.encodingOptions.bitrate) options.push(`bitrate=${this.encodingOptions.bitrate}`)
+        if (this.encodingOptions.channels) options.push(`channels=${this.encodingOptions.channels}`)
+        if (this.encodingOptions.codec) options.push(`codec=${this.encodingOptions.codec}`)
+        if (options.length) {
+          queryStr = `?${options.join('&')}`
+        }
+      }
       this.processing = true
       this.$axios
-        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b`)
+        .$post(`/api/tools/item/${this.libraryItemId}/encode-m4b${queryStr}`)
         .then(() => {
           console.log('Ab m4b merge started')
         })
