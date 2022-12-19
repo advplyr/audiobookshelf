@@ -68,14 +68,14 @@ export default {
   },
   methods: {
     recalcMenuPos() {
-      if (!this.menu) return
+      if (!this.menu || !this.$refs.inputWrapper) return
       var boundingBox = this.$refs.inputWrapper.getBoundingClientRect()
       this.menu.style.top = boundingBox.y + boundingBox.height - 4 + 'px'
       this.menu.style.left = boundingBox.x + 'px'
       this.menu.style.width = boundingBox.width + 'px'
     },
     unmountMountMenu() {
-      if (!this.$refs.menu) return
+      if (!this.$refs.menu || !this.$refs.inputWrapper) return
       this.menu = this.$refs.menu
 
       var boundingBox = this.$refs.inputWrapper.getBoundingClientRect()

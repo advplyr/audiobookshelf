@@ -117,7 +117,7 @@ export default {
       }, 50)
     },
     recalcMenuPos() {
-      if (!this.menu) return
+      if (!this.menu || !this.$refs.inputWrapper) return
       var boundingBox = this.$refs.inputWrapper.getBoundingClientRect()
       if (boundingBox.y > window.innerHeight - 8) {
         // Input is off the page
@@ -135,7 +135,7 @@ export default {
       this.menu.style.width = boundingBox.width + 'px'
     },
     unmountMountMenu() {
-      if (!this.$refs.menu) return
+      if (!this.$refs.menu || !this.$refs.inputWrapper) return
       this.menu = this.$refs.menu
 
       var boundingBox = this.$refs.inputWrapper.getBoundingClientRect()
