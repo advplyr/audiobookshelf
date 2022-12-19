@@ -47,7 +47,7 @@ Vue.prototype.$sanitizeFilename = (filename, colonReplacement = ' - ') => {
   const windowsTrailingRe = /[\. ]+$/
   const lineBreaks = /[\n\r]/g
 
-  sanitized = filename
+  let sanitized = filename
     .replace(':', colonReplacement) // Replace first occurrence of a colon
     .replace(illegalRe, replacement)
     .replace(controlRe, replacement)
