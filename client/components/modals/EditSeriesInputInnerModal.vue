@@ -1,5 +1,5 @@
 <template>
-  <div ref="wrapper" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 rounded-lg items-center justify-center" style="z-index: 51" @click="clickClose">
+  <div ref="wrapper" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-50 rounded-lg items-center justify-center" style="z-index: 61" @click="clickClose">
     <div class="absolute top-3 right-3 md:top-5 md:right-5 h-8 w-8 md:h-12 md:w-12 flex items-center justify-center cursor-pointer text-white hover:text-gray-300">
       <span class="material-icons text-2xl md:text-4xl">close</span>
     </div>
