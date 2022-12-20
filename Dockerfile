@@ -1,32 +1,52 @@
-### STAGE 0: Build client ###
-FROM node:16-alpine AS build
+### STAGE 0: Get deps ###
+FROM --platform=${TARGETPLATFORM} node:16-alpine AS deps
+
 WORKDIR /client
+
+COPY /client/package* ./
+
+RUN npm ci
+
+### STAGE 1: Build client ###
+FROM --platform=${TARGETPLATFORM} node:16-alpine AS build
+
+WORKDIR /client
+
 COPY /client /client
-RUN npm ci && npm cache clean --force
+
+COPY --from=deps /client/node_modules /client/node_modules
+
 RUN npm run generate
 
-### STAGE 1: Build server ###
-FROM sandreas/tone:v0.1.2 AS tone
-FROM node:16-alpine
+### STAGE 2: Build server ###
+FROM --platform=${TARGETPLATFORM} ghcr.io/linuxserver/baseimage-alpine:3.15 AS runner
 
-ENV NODE_ENV=production
-RUN apk update && \
-    apk add --no-cache --update \
-    curl \
-    tzdata \
-    ffmpeg
+ENV NODE_ENV=production \
+    TZ="Etc/UTC"
 
-COPY --from=tone /usr/local/bin/tone /usr/local/bin/
-COPY --from=build /client/dist /client/dist
-COPY index.js package* /
-COPY server server
+COPY --from=sandreas/tone:v0.1.2 /usr/local/bin/tone /usr/local/bin/
+COPY --from=build /client/dist /app/audiobookshelf/client/dist
 
-RUN npm ci --only=production
+COPY index.js package* readme.md LICENSE Dockerfile /app/audiobookshelf/
+COPY server /app/audiobookshelf/server
 
-EXPOSE 80
+RUN \ 
+    apk add --upgrade --no-cache \
+        ffmpeg \
+        nodejs \
+        npm && \
+        cd app/audiobookshelf && \
+        npm ci --omit-dev
+
 HEALTHCHECK \
     --interval=30s \
     --timeout=3s \
     --start-period=10s \
     CMD curl -f http://127.0.0.1/healthcheck || exit 1
-CMD ["npm", "start"]
+
+# copy local files
+COPY root/ /
+
+# ports and volumes
+EXPOSE 80
+VOLUME /config /metadata

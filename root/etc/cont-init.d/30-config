@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+
+# make config & metadata folder
+mkdir -p \
+        /config/ \
+        /metadata/
+
+# chown config & metadata directories if currently not set to abc
+if [[ -d /config ]] && [[ "$(stat -c '%U' /config)" != "abc" ]]; then
+    chown -R abc:abc /config/
+elif [[ -d /metadata ]] && [[ "$(stat -c '%U' /metadata)" != "abc" ]]; then
+    chown -R abc:abc /metadata/
+fi
