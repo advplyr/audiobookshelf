@@ -22,6 +22,7 @@ files=(
     "/config/users/data"
     "/config/authors/data"
     "/config/libraries/data"
+    "/config/series/data"
     "/config/settings/tmp"
     "/config/users/tmp"
     "/config/authors/tmp"
