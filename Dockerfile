@@ -45,7 +45,7 @@ HEALTHCHECK \
     CMD curl -f http://127.0.0.1/healthcheck || exit 1
 
 # copy local files
-COPY root/ /
+COPY build/docker/root/ /
 
 # ports and volumes
 EXPOSE 80
