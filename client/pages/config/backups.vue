@@ -33,6 +33,8 @@
       </div>
 
       <tables-backups-table />
+
+      <modals-backup-schedule-modal v-model="showCronBuilder" :cron-expression.sync="cronExpression" />
     </app-settings-content>
   </div>
 </template>
