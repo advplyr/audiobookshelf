@@ -1,48 +1,7 @@
 #!/usr/bin/with-contenv bash
 
 
-## Changing ownership recursively on /config still threw ownership errors for some reason
-files=(
-    "/config/"
-    "/audiobooks/"
-    "/podcasts/"
-    "/metadata/"
-    "/config/users/njodb.properties"
-    "/config/libraryItems/njodb.properties"
-    "/config/sessions/njodb.properties"
-    "/config/libraries/njodb.properties"
-    "/config/settings/njodb.properties"
-    "/config/collections/njodb.properties"
-    "/config/playlists/njodb.properties"
-    "/config/authors/njodb.properties"
-    "/config/series/njodb.properties"
-    "/config/feeds/njodb.properties"
-    "/config/libraryItems"
-    "/config/settings/data"
-    "/config/users/data"
-    "/config/authors/data"
-    "/config/libraries/data"
-    "/config/series/data"
-    "/config/settings/tmp"
-    "/config/users/tmp"
-    "/config/authors/tmp"
-    "/config/libraries/tmp"
-    "/config/settings/cache"
-    "/config/users/cache"
-    "/config/authors/cache"
-    "/config/libraries/cache"
-)
-
-for file in "${files[@]}"; do
-    if [[ -f "$file" ]] && [[ "$(stat -c '%U' "$file")" != "abc" ]]; then
-        chown abc:abc "$file"
-    elif [[ -d "$file" ]] && [[ "$(stat -c '%U' "$file")" != "abc" ]]; then
-        chown -R abc:abc "$file"
-    fi
-done
-
-
 PORT=${PORT:-80}
 
 exec \
-    s6-setuidgid abc npm --prefix /app/audiobookshelf/ --cache /app/audiobookshelf/ run start --port "${PORT}"
+    s6-setuidgid abc npm --prefix /app/audiobookshelf/ --cache /app/audiobookshelf/ start --port "${PORT}"

@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv bash
+
+# folders
+mkdir -p \
+    /metadata/ \
+    /config/ \
+    /audiobooks/ \
+    /podcasts/
+    
+# permissions
+chown -R abc:abc \
+    /config \
+    /metadata \
+    /audiobooks \
+    /podcasts
