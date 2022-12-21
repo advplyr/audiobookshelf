@@ -88,8 +88,8 @@ class PodcastMetadata {
   }
 
   searchQuery(query) { // Returns key if match is found
-    var keysToCheck = ['title', 'author', 'itunesId', 'itunesArtistId']
-    for (var key of keysToCheck) {
+    const keysToCheck = ['title', 'author', 'itunesId', 'itunesArtistId']
+    for (const key of keysToCheck) {
       if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
         return {
           matchKey: key,
@@ -118,8 +118,8 @@ class PodcastMetadata {
   }
 
   update(payload) {
-    var json = this.toJSON()
-    var hasUpdates = false
+    const json = this.toJSON()
+    let hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined) {
         if (!areEquivalent(payload[key], json[key])) {

@@ -295,16 +295,21 @@ class BookMetadata {
       }
     ]
 
-    var updatePayload = {}
+    const updatePayload = {}
 
     // Metadata is only mapped to the book if it is empty
     MetadataMapArray.forEach((mapping) => {
-      var value = audioFileMetaTags[mapping.tag]
-      var tagToUse = mapping.tag
+      let value = audioFileMetaTags[mapping.tag]
+      // let tagToUse = mapping.tag
       if (!value && mapping.altTag) {
         value = audioFileMetaTags[mapping.altTag]
-        tagToUse = mapping.altTag
+        // tagToUse = mapping.altTag
       }
+
+      if (value && typeof value === 'string') { // Trim whitespace
+        value = value.trim()
+      }
+
       if (value) {
         if (mapping.key === 'narrators' && (!this.narrators.length || overrideExistingDetails)) {
           updatePayload.narrators = this.parseNarratorsTag(value)
@@ -313,7 +318,7 @@ class BookMetadata {
         } else if (mapping.key === 'genres' && (!this.genres.length || overrideExistingDetails)) {
           updatePayload.genres = this.parseGenresTag(value)
         } else if (mapping.key === 'series' && (!this.series.length || overrideExistingDetails)) {
-          var sequenceTag = audioFileMetaTags.tagSeriesPart || null
+          const sequenceTag = audioFileMetaTags.tagSeriesPart || null
           updatePayload.series = this.parseSeriesTag(value, sequenceTag)
         } else if (!this[mapping.key] || overrideExistingDetails) {
           updatePayload[mapping.key] = value
