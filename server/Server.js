@@ -38,7 +38,7 @@ const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, LDAP_ENABLED, LDAP_URL, LDAP_BASE_DN, LDAP_BIND_USER, LDAP_BIND_PASS, LDAP_SEARCH_FILTER, LDAP_USERNAME_ATTRIBUTE) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -49,6 +49,19 @@ class Server {
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
     global.XAccel = process.env.USE_X_ACCEL
+    global.ldapUrl = LDAP_URL
+    global.ldapBaseDn = LDAP_BASE_DN
+    global.ldapBindUser = LDAP_BIND_USER
+    global.ldapBindPass = LDAP_BIND_PASS
+    global.ldapSearchFilter = LDAP_SEARCH_FILTER
+    global.ldapUsernameAttribute = LDAP_USERNAME_ATTRIBUTE
+    global.ldapEnabled = LDAP_ENABLED
+
+    // Fix backslash if not on Windows
+    if (process.platform !== 'win32') {
+      global.ConfigPath = global.ConfigPath.replace(/\\/g, '/')
+      global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
+    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
