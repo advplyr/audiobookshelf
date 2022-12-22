@@ -148,7 +148,7 @@ class PodcastEpisode {
 
   // Only checks container format
   checkCanDirectPlay(payload) {
-    var supportedMimeTypes = payload.supportedMimeTypes || []
+    const supportedMimeTypes = payload.supportedMimeTypes || []
     return supportedMimeTypes.includes(this.audioFile.mimeType)
   }
 

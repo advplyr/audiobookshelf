@@ -122,6 +122,9 @@ export default {
     isPodcast() {
       return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
     },
+    isMusic() {
+      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'music' : false
+    },
     mediaMetadata() {
       return this.media.metadata || {}
     },
@@ -405,8 +408,8 @@ export default {
       }
     },
     async playLibraryItem(payload) {
-      var libraryItemId = payload.libraryItemId
-      var episodeId = payload.episodeId || null
+      const libraryItemId = payload.libraryItemId
+      const episodeId = payload.episodeId || null
 
       if (this.playerHandler.libraryItemId == libraryItemId && this.playerHandler.episodeId == episodeId) {
         if (payload.startTime !== null && !isNaN(payload.startTime)) {
@@ -417,11 +420,12 @@ export default {
         return
       }
 
-      var libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}?expanded=1`).catch((error) => {
+      const libraryItem = await this.$axios.$get(`/api/items/${libraryItemId}?expanded=1`).catch((error) => {
         console.error('Failed to fetch full item', error)
         return null
       })
       if (!libraryItem) return
+
       this.$store.commit('setMediaPlaying', {
         libraryItem,
         episodeId,

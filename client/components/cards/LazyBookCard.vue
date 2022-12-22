@@ -190,6 +190,9 @@ export default {
     isPodcast() {
       return this.mediaType === 'podcast'
     },
+    isMusic() {
+      return this.mediaType === 'music'
+    },
     placeholderUrl() {
       const config = this.$config || this.$nuxt.$config
       return `${config.routerBasePath}/book_placeholder.jpg`
@@ -305,6 +308,7 @@ export default {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId, this.recentEpisode.id)
     },
     userProgress() {
+      if (this.isMusic) return null
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },

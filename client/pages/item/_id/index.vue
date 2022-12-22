@@ -132,6 +132,7 @@
               <span v-show="!isStreaming" class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
               {{ isStreaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
+
             <ui-btn v-else-if="isMissing || isInvalid" color="error" :padding-x="4" small class="flex items-center h-9 mr-2">
               <span v-show="!isStreaming" class="material-icons text-2xl -ml-2 pr-1 text-white">error</span>
               {{ isMissing ? $strings.LabelMissing : $strings.LabelIncomplete }}
@@ -150,11 +151,11 @@
               <ui-icon-btn icon="edit" class="mx-0.5" @click="editClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+            <ui-tooltip v-if="!isPodcast && !isMusic" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="!isPodcast && userCanUpdate" :text="$strings.LabelCollections" direction="top">
+            <ui-tooltip v-if="showCollectionsButton" :text="$strings.LabelCollections" direction="top">
               <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
             </ui-tooltip>
 
@@ -263,11 +264,17 @@ export default {
     isDeveloperMode() {
       return this.$store.state.developerMode
     },
+    isBook() {
+      return this.libraryItem.mediaType === 'book'
+    },
     isPodcast() {
       return this.libraryItem.mediaType === 'podcast'
     },
     isVideo() {
       return this.libraryItem.mediaType === 'video'
+    },
+    isMusic() {
+      return this.libraryItem.mediaType === 'music'
     },
     isMissing() {
       return this.libraryItem.isMissing
@@ -276,11 +283,12 @@ export default {
       return this.libraryItem.isInvalid
     },
     invalidAudioFiles() {
-      if (this.isPodcast || this.isVideo) return []
+      if (!this.isBook) return []
       return this.libraryItem.media.audioFiles.filter((af) => af.invalid)
     },
     showPlayButton() {
       if (this.isMissing || this.isInvalid) return false
+      if (this.isMusic) return !!this.audioFile
       if (this.isVideo) return !!this.videoFile
       if (this.isPodcast) return this.podcastEpisodes.length
       return this.tracks.length
@@ -374,6 +382,10 @@ export default {
     videoFile() {
       return this.media.videoFile
     },
+    audioFile() {
+      // Music track
+      return this.media.audioFile
+    },
     showExperimentalReadAlert() {
       return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures && !this.enableEReader
     },
@@ -381,6 +393,7 @@ export default {
       return this.mediaMetadata.description || ''
     },
     userMediaProgress() {
+      if (this.isMusic) return null
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userIsFinished() {
@@ -425,8 +438,11 @@ export default {
       return this.userIsAdminOrUp || this.rssFeedUrl
     },
     showQueueBtn() {
-      if (this.isPodcast || this.isVideo) return false
+      if (!this.isBook) return false
       return !this.$store.getters['getIsStreamingFromDifferentLibrary'] && this.streamLibraryItem
+    },
+    showCollectionsButton() {
+      return this.isBook && this.userCanUpdate
     }
   },
   methods: {
@@ -531,14 +547,14 @@ export default {
         })
     },
     playItem(startTime = null) {
-      var episodeId = null
+      let episodeId = null
       const queueItems = []
       if (this.isPodcast) {
         const episodesInListeningOrder = this.podcastEpisodes.map((ep) => ({ ...ep })).sort((a, b) => String(a.publishedAt).localeCompare(String(b.publishedAt), undefined, { numeric: true, sensitivity: 'base' }))
 
         // Find most recent episode unplayed
-        var episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
-          var podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
+        let episodeIndex = episodesInListeningOrder.findLastIndex((ep) => {
+          const podcastProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItemId, ep.id)
           return !podcastProgress || !podcastProgress.isFinished
         })
         if (episodeIndex < 0) episodeIndex = 0

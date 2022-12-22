@@ -127,7 +127,7 @@ class PlaybackSessionManager {
     const shouldDirectPlay = options.forceDirectPlay || (!options.forceTranscode && libraryItem.media.checkCanDirectPlay(options, episodeId))
     const mediaPlayer = options.mediaPlayer || 'unknown'
 
-    const userProgress = user.getMediaProgress(libraryItem.id, episodeId)
+    const userProgress = libraryItem.isMusic ? null : user.getMediaProgress(libraryItem.id, episodeId)
     let userStartTime = 0
     if (userProgress) {
       if (userProgress.isFinished) {
