@@ -106,7 +106,7 @@ class RssFeedManager {
 
     Logger.debug(`[RssFeedManager] Opened RSS feed ${feed.feedUrl}`)
     await this.db.insertEntity('feed', feed)
-    SocketAuthority.emitter('rss_feed_open', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
   }
 
@@ -120,7 +120,7 @@ class RssFeedManager {
     if (!this.feeds[id]) return
     var feed = this.feeds[id]
     await this.db.removeEntity('feed', id)
-    SocketAuthority.emitter('rss_feed_closed', { id: feed.id, entityType: feed.entityType, entityId: feed.entityId, feedUrl: feed.feedUrl })
+    SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
     delete this.feeds[id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
   }

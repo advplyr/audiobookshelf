@@ -58,7 +58,7 @@ class NotificationManager {
     }
 
     await this.db.updateEntity('settings', this.db.notificationSettings)
-    SocketAuthority.emitter('notifications_updated', this.db.notificationSettings)
+    SocketAuthority.emitter('notifications_updated', this.db.notificationSettings.toJSON())
 
     this.notificationFinished()
   }
