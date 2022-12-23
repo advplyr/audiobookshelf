@@ -61,6 +61,15 @@ class Feed {
     }
   }
 
+  toJSONMinified() {
+    return {
+      id: this.id,
+      entityType: this.entityType,
+      entityId: this.entityId,
+      feedUrl: this.feedUrl
+    }
+  }
+
   getEpisodePath(id) {
     var episode = this.episodes.find(ep => ep.id === id)
     if (!episode) return null

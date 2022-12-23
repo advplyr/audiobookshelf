@@ -476,7 +476,7 @@ class ApiRouter {
         }
         if (newAuthors.length) {
           await this.db.insertEntities('author', newAuthors)
-          SocketAuthority.emitter('authors_added', newAuthors)
+          SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
         }
       }
 
@@ -500,7 +500,7 @@ class ApiRouter {
         }
         if (newSeries.length) {
           await this.db.insertEntities('series', newSeries)
-          SocketAuthority.emitter('authors_added', newSeries)
+          SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
         }
       }
     }

@@ -41,9 +41,9 @@ class SeriesController {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
       await this.db.updateEntity('series', req.series)
-      SocketAuthority.emitter('series_updated', req.series)
+      SocketAuthority.emitter('series_updated', req.series.toJSON())
     }
-    res.json(req.series)
+    res.json(req.series.toJSON())
   }
 
   middleware(req, res, next) {

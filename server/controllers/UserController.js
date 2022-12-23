@@ -48,7 +48,7 @@ class UserController {
     var newUser = new User(account)
     var success = await this.db.insertEntity('user', newUser)
     if (success) {
-      SocketAuthority.adminEmitter('user_added', newUser)
+      SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
       res.json({
         user: newUser.toJSONForBrowser()
       })

@@ -477,7 +477,7 @@ class Scanner {
       })
       if (newSeries.length) {
         await this.db.insertEntities('series', newSeries)
-        SocketAuthority.emitter('series_added', newSeries.map(se => se.toJSON()))
+        SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
       }
     }
   }
@@ -844,7 +844,7 @@ class Scanner {
           author = new Author()
           author.setData({ name: authorName })
           await this.db.insertEntity('author', author)
-          SocketAuthority.emitter('author_added', author)
+          SocketAuthority.emitter('author_added', author.toJSON())
         }
         authorPayload.push(author.toJSONMinimal())
       }
@@ -862,7 +862,7 @@ class Scanner {
           seriesItem = new Series()
           seriesItem.setData({ name: seriesMatchItem.series })
           await this.db.insertEntity('series', seriesItem)
-          SocketAuthority.emitter('series_added', seriesItem)
+          SocketAuthority.emitter('series_added', seriesItem.toJSON())
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))
       }
@@ -984,7 +984,7 @@ class Scanner {
         Logger.info(`[Scanner] matchLibraryItems: Library match scan canceled for "${libraryScan.libraryName}"`)
         delete this.cancelLibraryScan[libraryScan.libraryId]
         var scanData = libraryScan.getScanEmitData
-        scanData.results = false
+        scanData.results = null
         SocketAuthority.emitter('scan_complete', scanData)
         this.librariesScanning = this.librariesScanning.filter(ls => ls.id !== library.id)
         return
