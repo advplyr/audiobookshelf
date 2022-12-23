@@ -7,6 +7,7 @@ const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
 const Video = require('./mediaTypes/Video')
+const Music = require('./mediaTypes/Music')
 const { areEquivalent, copyValue, getId, cleanStringForSearch } = require('../utils/index')
 
 class LibraryItem {
@@ -72,6 +73,8 @@ class LibraryItem {
       this.media = new Podcast(libraryItem.media)
     } else if (this.mediaType === 'video') {
       this.media = new Video(libraryItem.media)
+    } else if (this.mediaType === 'music') {
+      this.media = new Music(libraryItem.media)
     }
     this.media.libraryItemId = this.id
 
@@ -153,13 +156,14 @@ class LibraryItem {
 
   get isPodcast() { return this.mediaType === 'podcast' }
   get isBook() { return this.mediaType === 'book' }
+  get isMusic() { return this.mediaType === 'music' }
   get size() {
-    var total = 0
+    let total = 0
     this.libraryFiles.forEach((lf) => total += lf.metadata.size)
     return total
   }
   get audioFileTotalSize() {
-    var total = 0
+    let total = 0
     this.libraryFiles.filter(lf => lf.fileType == 'audio').forEach((lf) => total += lf.metadata.size)
     return total
   }
@@ -182,8 +186,10 @@ class LibraryItem {
       this.media = new Video()
     } else if (libraryMediaType === 'podcast') {
       this.media = new Podcast()
-    } else {
+    } else if (libraryMediaType === 'book') {
       this.media = new Book()
+    } else if (libraryMediaType === 'music') {
+      this.media = new Music()
     }
     this.media.libraryItemId = this.id
 
@@ -348,11 +354,11 @@ class LibraryItem {
       }
     })
 
-    var newLibraryFiles = []
-    var existingLibraryFiles = []
+    const newLibraryFiles = []
+    const existingLibraryFiles = []
 
     dataFound.libraryFiles.forEach((lf) => {
-      var fileFoundCheck = this.checkFileFound(lf, true)
+      const fileFoundCheck = this.checkFileFound(lf, true)
       if (fileFoundCheck === null) {
         newLibraryFiles.push(lf)
       } else if (fileFoundCheck && lf.metadata.format !== 'abs') { // Ignore abs file updates
@@ -397,7 +403,7 @@ class LibraryItem {
 
     // If cover path is in item folder, make sure libraryFile exists for it
     if (this.media.coverPath && this.media.coverPath.startsWith(this.path)) {
-      var lf = this.libraryFiles.find(lf => lf.metadata.path === this.media.coverPath)
+      const lf = this.libraryFiles.find(lf => lf.metadata.path === this.media.coverPath)
       if (!lf) {
         Logger.warn(`[LibraryItem] Invalid cover path - library file dne "${this.media.coverPath}"`)
         this.media.updateCover('')
@@ -419,7 +425,7 @@ class LibraryItem {
 
   // Set metadata from files
   async syncFiles(preferOpfMetadata) {
-    var hasUpdated = false
+    let hasUpdated = false
 
     if (this.mediaType === 'book') {
       // Add/update ebook file (ebooks that were removed are removed in checkScanData)
@@ -436,7 +442,7 @@ class LibraryItem {
     }
 
     // Set cover image if not set
-    var imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
+    const imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
     if (imageFiles.length && !this.media.coverPath) {
       this.media.coverPath = imageFiles[0].metadata.path
       Logger.debug('[LibraryItem] Set media cover path', this.media.coverPath)
@@ -444,7 +450,7 @@ class LibraryItem {
     }
 
     // Parse metadata files
-    var textMetadataFiles = this.libraryFiles.filter(lf => lf.fileType === 'metadata' || lf.fileType === 'text')
+    const textMetadataFiles = this.libraryFiles.filter(lf => lf.fileType === 'metadata' || lf.fileType === 'text')
     if (textMetadataFiles.length) {
       if (await this.media.syncMetadataFiles(textMetadataFiles, preferOpfMetadata)) {
         hasUpdated = true
@@ -468,12 +474,12 @@ class LibraryItem {
 
   // Saves metadata.abs file
   async saveMetadata() {
-    if (this.mediaType === 'video') return
+    if (this.mediaType === 'video' || this.mediaType === 'music') return
 
     if (this.isSavingMetadata) return
     this.isSavingMetadata = true
 
-    var metadataPath = Path.join(global.MetadataPath, 'items', this.id)
+    let metadataPath = Path.join(global.MetadataPath, 'items', this.id)
     if (global.ServerSettings.storeMetadataWithItem && !this.isFile) {
       metadataPath = this.path
     } else {

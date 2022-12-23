@@ -118,9 +118,9 @@ class Book {
     return this.missingParts.length || this.invalidAudioFiles.length
   }
   get tracks() {
-    var startOffset = 0
+    let startOffset = 0
     return this.includedAudioFiles.map((af) => {
-      var audioTrack = new AudioTrack()
+      const audioTrack = new AudioTrack()
       audioTrack.setData(this.libraryItemId, af, startOffset)
       startOffset += audioTrack.duration
       return audioTrack

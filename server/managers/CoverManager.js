@@ -230,27 +230,30 @@ class CoverManager {
   }
 
   async saveEmbeddedCoverArt(libraryItem) {
-    var audioFileWithCover = null
-    if (libraryItem.mediaType === 'book') audioFileWithCover = libraryItem.media.audioFiles.find(af => af.embeddedCoverArt)
-    else {
-      var episodeWithCover = libraryItem.media.episodes.find(ep => ep.audioFile.embeddedCoverArt)
+    const audioFileWithCover = null
+    if (libraryItem.mediaType === 'book') {
+      audioFileWithCover = libraryItem.media.audioFiles.find(af => af.embeddedCoverArt)
+    } else if (libraryItem.mediaType == 'podcast') {
+      const episodeWithCover = libraryItem.media.episodes.find(ep => ep.audioFile.embeddedCoverArt)
       if (episodeWithCover) audioFileWithCover = episodeWithCover.audioFile
+    } else if (libraryItem.mediaType === 'music') {
+      audioFileWithCover = libraryItem.media.audioFile
     }
     if (!audioFileWithCover) return false
 
-    var coverDirPath = this.getCoverDirectory(libraryItem)
+    const coverDirPath = this.getCoverDirectory(libraryItem)
     await fs.ensureDir(coverDirPath)
 
-    var coverFilename = audioFileWithCover.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
-    var coverFilePath = Path.join(coverDirPath, coverFilename)
+    const coverFilename = audioFileWithCover.embeddedCoverArt === 'png' ? 'cover.png' : 'cover.jpg'
+    const coverFilePath = Path.join(coverDirPath, coverFilename)
 
-    var coverAlreadyExists = await fs.pathExists(coverFilePath)
+    const coverAlreadyExists = await fs.pathExists(coverFilePath)
     if (coverAlreadyExists) {
       Logger.warn(`[CoverManager] Extract embedded cover art but cover already exists for "${libraryItem.media.metadata.title}" - bail`)
       return false
     }
 
-    var success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
+    const success = await extractCoverArt(audioFileWithCover.metadata.path, coverFilePath)
     if (success) {
       await filePerms.setDefault(coverFilePath)
 

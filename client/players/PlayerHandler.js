@@ -17,6 +17,7 @@ export default class PlayerHandler {
     this.playerState = 'IDLE'
     this.isHlsTranscode = false
     this.isVideo = false
+    this.isMusic = false
     this.currentSessionId = null
     this.startTimeOverride = undefined // Used for starting playback at a specific time (i.e. clicking bookmark from library item page)
     this.startTime = 0
@@ -54,10 +55,13 @@ export default class PlayerHandler {
 
   load(libraryItem, episodeId, playWhenReady, playbackRate, startTimeOverride = undefined) {
     this.libraryItem = libraryItem
+    this.isVideo = libraryItem.mediaType === 'video'
+    this.isMusic = libraryItem.mediaType === 'music'
+
     this.episodeId = episodeId
     this.playWhenReady = playWhenReady
-    this.initialPlaybackRate = playbackRate
-    this.isVideo = libraryItem.mediaType === 'video'
+    this.initialPlaybackRate = this.isMusic ? 1 : playbackRate
+
     this.startTimeOverride = (startTimeOverride == null || isNaN(startTimeOverride)) ? undefined : Number(startTimeOverride)
 
     if (!this.player) this.switchPlayer(playWhenReady)
@@ -140,12 +144,16 @@ export default class PlayerHandler {
   playerStateChange(state) {
     console.log('[PlayerHandler] Player state change', state)
     this.playerState = state
-    if (this.playerState === 'PLAYING') {
-      this.setPlaybackRate(this.initialPlaybackRate)
-      this.startPlayInterval()
-    } else {
-      this.stopPlayInterval()
+
+    if (!this.isMusic) {
+      if (this.playerState === 'PLAYING') {
+        this.setPlaybackRate(this.initialPlaybackRate)
+        this.startPlayInterval()
+      } else {
+        this.stopPlayInterval()
+      }
     }
+
     if (this.player) {
       if (this.playerState === 'LOADED' || this.playerState === 'PLAYING') {
         this.ctx.setDuration(this.getDuration())

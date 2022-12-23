@@ -47,7 +47,7 @@ class Scanner {
   }
 
   async scanLibraryItemById(libraryItemId) {
-    var libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
+    const libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
     if (!libraryItem) {
       Logger.error(`[Scanner] Scan libraryItem by id not found ${libraryItemId}`)
       return ScanResult.NOTHING
@@ -68,13 +68,13 @@ class Scanner {
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
     // TODO: Support for single media item
-    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
     if (!libraryItemData) {
       return ScanResult.NOTHING
     }
-    var hasUpdated = false
+    let hasUpdated = false
 
-    var checkRes = libraryItem.checkScanData(libraryItemData)
+    const checkRes = libraryItem.checkScanData(libraryItemData)
     if (checkRes.updated) hasUpdated = true
 
     // Sync other files first so that local images are used as cover art
@@ -84,14 +84,14 @@ class Scanner {
 
     // Scan all audio files
     if (libraryItem.hasAudioFiles) {
-      var libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
+      const libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
       if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata, this.db.serverSettings.scannerPreferOverdriveMediaMarker)) {
         hasUpdated = true
       }
 
       // Extract embedded cover art if cover is not already in directory
       if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-        var coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
+        const coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
         if (coverPath) {
           Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
           hasUpdated = true
@@ -172,8 +172,8 @@ class Scanner {
 
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
-      var folder = libraryScan.folders[i]
-      var itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder, this.db.serverSettings)
+      const folder = libraryScan.folders[i]
+      const itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder, this.db.serverSettings)
       libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
@@ -196,16 +196,16 @@ class Scanner {
 
     // Check for existing & removed library items
     for (let i = 0; i < libraryItemsInLibrary.length; i++) {
-      var libraryItem = libraryItemsInLibrary[i]
+      const libraryItem = libraryItemsInLibrary[i]
       // Find library item folder with matching inode or matching path
-      var dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
+      const dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
       if (!dataFound) {
         libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
         libraryScan.resultsMissing++
         libraryItem.setMissing()
         itemsToUpdate.push(libraryItem)
       } else {
-        var checkRes = libraryItem.checkScanData(dataFound)
+        const checkRes = libraryItem.checkScanData(dataFound)
         if (checkRes.newLibraryFiles.length || libraryScan.scanOptions.forceRescan) { // Item has new files
           checkRes.libraryItem = libraryItem
           checkRes.scanData = dataFound
@@ -244,15 +244,15 @@ class Scanner {
 
     // Potential NEW Library Items
     for (let i = 0; i < libraryItemDataFound.length; i++) {
-      var dataFound = libraryItemDataFound[i]
+      const dataFound = libraryItemDataFound[i]
 
-      var hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
+      const hasMediaFile = dataFound.libraryFiles.some(lf => lf.isMediaFile)
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
       } else {
         if (global.ServerSettings.scannerUseSingleThreadedProber) {
           // If this item will go over max size then push current chunk
-          var mediaFileSize = 0
+          let mediaFileSize = 0
           dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
           if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
             newItemDataToScanChunks.push(newItemDataToScan)
@@ -277,8 +277,8 @@ class Scanner {
 
     // Library Items not requiring a scan but require a search for cover
     for (let i = 0; i < itemsToFindCovers.length; i++) {
-      var libraryItem = itemsToFindCovers[i]
-      var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+      const libraryItem = itemsToFindCovers[i]
+      const updatedCover = await this.searchForCover(libraryItem, libraryScan)
       libraryItem.media.updateLastCoverSearch(updatedCover)
     }
 
@@ -397,10 +397,10 @@ class Scanner {
     if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Scanning new library item "${libraryItemData.path}"`)
     else Logger.debug(`[Scanner] Scanning new item "${libraryItemData.path}"`)
 
-    var libraryItem = new LibraryItem()
+    const libraryItem = new LibraryItem()
     libraryItem.setData(libraryMediaType, libraryItemData)
 
-    var mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
+    const mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
     if (mediaFiles.length) {
       await MediaFileScanner.scanMediaFiles(mediaFiles, libraryItemData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan)
     }
@@ -414,7 +414,7 @@ class Scanner {
 
     // Extract embedded cover art if cover is not already in directory
     if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-      var coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
+      const coverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
       if (coverPath) {
         if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${coverPath}"`)
         else Logger.debug(`[Scanner] Saved embedded cover art "${coverPath}"`)
@@ -424,7 +424,7 @@ class Scanner {
     // Scan for cover if enabled and has no cover
     if (libraryMediaType === 'book') {
       if (libraryItem && findCovers && !libraryItem.media.coverPath && libraryItem.media.shouldSearchForCover) {
-        var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+        const updatedCover = await this.searchForCover(libraryItem, libraryScan)
         libraryItem.media.updateLastCoverSearch(updatedCover)
       }
     }
@@ -636,19 +636,19 @@ class Scanner {
   }
 
   async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath, isSingleMediaItem = false) {
-    var libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
     if (!libraryItemData) return null
-    var serverSettings = this.db.serverSettings
+    const serverSettings = this.db.serverSettings
     return this.scanNewLibraryItem(libraryItemData, libraryMediaType, serverSettings.scannerPreferAudioMetadata, serverSettings.scannerPreferOpfMetadata, serverSettings.scannerFindCovers, serverSettings.scannerPreferOverdriveMediaMarker)
   }
 
   async searchForCover(libraryItem, libraryScan = null) {
-    var options = {
+    const options = {
       titleDistance: 2,
       authorDistance: 2
     }
-    var scannerCoverProvider = this.db.serverSettings.scannerCoverProvider
-    var results = await this.bookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
+    const scannerCoverProvider = this.db.serverSettings.scannerCoverProvider
+    const results = await this.bookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
     if (results.length) {
       if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
       else Logger.debug(`[Scanner] Found best cover for "${libraryItem.media.metadata.title}"`)
@@ -657,7 +657,7 @@ class Scanner {
       for (let i = 0; i < results.length && i < 2; i++) {
 
         // Downloads and updates the book cover
-        var result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
+        const result = await this.coverManager.downloadCoverFromUrl(libraryItem, results[i])
 
         if (result.error) {
           Logger.error(`[Scanner] Failed to download cover from url "${results[i]}" | Attempt ${i + 1}`, result.error)

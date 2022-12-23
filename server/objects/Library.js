@@ -57,7 +57,9 @@ class Library {
       else if (this.icon === 'comic') this.icon = 'file-picture'
       else this.icon = 'database'
     }
-    if (!this.mediaType || (this.mediaType !== 'podcast' && this.mediaType !== 'book' && this.mediaType !== 'video')) {
+
+    const mediaTypes = ['podcast', 'book', 'video', 'music']
+    if (!this.mediaType || !mediaTypes.includes(this.mediaType)) {
       this.mediaType = 'book'
     }
   }

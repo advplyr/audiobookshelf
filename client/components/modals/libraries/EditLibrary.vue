@@ -67,6 +67,10 @@ export default {
           value: 'podcast',
           text: this.$strings.LabelPodcasts
         }
+        // {
+        //   value: 'music',
+        //   text: 'Music'
+        // }
       ]
     },
     folderPaths() {
