@@ -115,7 +115,7 @@ class Music {
   }
 
   findFileWithInode(inode) {
-    return this.audioFile && this.audioFile.ino === inode
+    return (this.audioFile && this.audioFile.ino === inode) ? this.audioFile : null
   }
 
   setData(mediaData) {

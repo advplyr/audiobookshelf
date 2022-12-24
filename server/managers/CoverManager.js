@@ -230,7 +230,7 @@ class CoverManager {
   }
 
   async saveEmbeddedCoverArt(libraryItem) {
-    const audioFileWithCover = null
+    let audioFileWithCover = null
     if (libraryItem.mediaType === 'book') {
       audioFileWithCover = libraryItem.media.audioFiles.find(af => af.embeddedCoverArt)
     } else if (libraryItem.mediaType == 'podcast') {
