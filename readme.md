@@ -71,6 +71,8 @@ See [install docs](https://www.audiobookshelf.org/docs)
 
 #### Important! Audiobookshelf requires a websocket connection.
 
+#### Note: Subfolder paths (e.g. /audiobooks) are not supported yet. See [issue](https://github.com/advplyr/audiobookshelf/issues/385)
+
 ### NGINX Proxy Manager
 
 Toggle websockets support.
