@@ -6,7 +6,7 @@
     <br />
     <a href="https://audiobookshelf.org/docs">Documentation</a>
     ·
-    <a href="https://audiobookshelf.org/install">Install Guides</a>
+    <a href="https://audiobookshelf.org/guides">User Guides</a>
     ·
     <a href="https://audiobookshelf.org/support">Support</a>
   </p>
@@ -41,8 +41,11 @@ Join us on [discord](https://discord.gg/pJsjuNCKRq) or [matrix](https://matrix.t
 ### Android App (beta)
 Try it out on the [Google Play Store](https://play.google.com/store/apps/details?id=com.audiobookshelf.app)
 
-### iOS App (early beta)
+### iOS App (beta)
 Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join the discussion](https://github.com/advplyr/audiobookshelf-app/discussions/60)
+
+### Build your own tools & clients
+Check out the [API documentation](https://api.audiobookshelf.org/)
 
 <br />
 
@@ -54,108 +57,14 @@ Available using Test Flight: https://testflight.apple.com/join/wiic7QIW - [Join 
 
 #### Directory structure and folder names are important to Audiobookshelf!
 
- See [documentation](https://audiobookshelf.org/docs) for supported directory structure, folder naming conventions, and audio file metadata usage.
+ See [documentation](https://audiobookshelf.org/docs#book-directory-structure) for supported directory structure, folder naming conventions, and audio file metadata usage.
 
 <br />
 
 # Installation
 
-### Docker Install
-Available in Unraid Community Apps
+See [install docs](https://www.audiobookshelf.org/docs)
 
-```bash
-docker pull ghcr.io/advplyr/audiobookshelf:latest
-
-docker run -d \
-  -e AUDIOBOOKSHELF_UID=99 \
-  -e AUDIOBOOKSHELF_GID=100 \
-  -p 13378:80 \
-  -v </path/to/audiobooks>:/audiobooks \
-  -v </path/to/podcasts>:/podcasts \
-  -v </path/to/config>:/config \
-  -v </path/to/metadata>:/metadata \
-  --name audiobookshelf \
-  ghcr.io/advplyr/audiobookshelf:latest
-```
-
-### Docker Update
-
-```bash
-docker stop audiobookshelf
-docker rm audiobookshelf
-docker pull ghcr.io/advplyr/audiobookshelf:latest
-docker start audiobookshelf
-```
-
-### Running with Docker Compose
-
-```yaml
-### docker-compose.yml ###
-services:
-  audiobookshelf:
-    container_name: audiobookshelf
-    image: ghcr.io/advplyr/audiobookshelf:latest
-    environment:
-      - AUDIOBOOKSHELF_UID=99
-      - AUDIOBOOKSHELF_GID=100
-    ports:
-      - 13378:80
-    volumes:
-      - </path/to/audiobooks>:/audiobooks
-      - </path/to/podcasts>:/podcasts
-      - </path/to/config>:/config
-      - </path/to/metadata>:/metadata
-```
-
-### Docker Compose Update
-
-Depending on the version of Docker Compose please run one of the two commands. If not sure on which version you are running you can run the following command and check.
-
-#### Version Check
-
-docker-compose --version or docker compose version
-
-#### v2 Update
-
-```bash
-docker compose --file <path/to/config>/docker-compose.yml pull
-docker compose --file <path/to/config>/docker-compose.yml up -d
-```
-
-#### V1 Update
-```bash
-docker-compose --file <path/to/config>/docker-compose.yml pull
-docker-compose --file <path/to/config>/docker-compose.yml up -d
-```
-
-### Linux (amd64) Install
-
-Debian package will use this config file `/etc/default/audiobookshelf` if exists. The install will create a user and group named `audiobookshelf`.
-
-### Ubuntu Install via PPA
-
-A PPA is hosted on [github](https://github.com/advplyr/audiobookshelf-ppa)
-
-See [install docs](https://www.audiobookshelf.org/install/#ubuntu)
-
-### Install via debian package
-
-Get the `deb` file from the [github repo](https://github.com/advplyr/audiobookshelf-ppa).
-
-See [install docs](https://www.audiobookshelf.org/install#debian)
-
-
-#### Linux file locations
-
-Project directory: `/usr/share/audiobookshelf/`
-
-Config file: `/etc/default/audiobookshelf`
-
-System Service: `/lib/systemd/system/audiobookshelf.service`
-
-Ffmpeg static build: `/usr/lib/audiobookshelf-ffmpeg/`
-
-<br />
 
 # Reverse Proxy Set Up
 
