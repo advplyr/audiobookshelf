@@ -265,18 +265,8 @@ From [@Dondochaka](https://discord.com/channels/942908292873723984/9429141542541
 
 ```
 subdomain.domain.com {
-        tls internal
-        header {
-                Strict-Transport-Security max-age=31536000
-                X-Content-Type-Options nosniff
-                X-Frame-Options DENY
-                Referrer-Policy no-referrer-when-downgrade
-                X-XSS-Protection 1
-        }
         encode gzip zstd
-        reverse_proxy LOCAL_IP:PORT {
-                trusted_proxies xxx.xx.xxx.x/xx xxx.xx.xxx.x/xx
-        }
+        reverse_proxy <LOCAL_IP>:<PORT>
 }
 ```
 
