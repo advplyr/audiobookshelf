@@ -173,6 +173,16 @@ Middleware relating to CORS will cause the app to report Unknown Error when logg
 From [@Dondochaka](https://discord.com/channels/942908292873723984/942914154254176257/945074590374318170) and [@BeastleeUK](https://discord.com/channels/942908292873723984/942914154254176257/970366039294611506)
 <br />
 
+### Example Caddyfile - [Caddy Reverse Proxy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+
+```
+subdomain.domain.com {
+        encode gzip zstd
+        reverse_proxy <LOCAL_IP>:<PORT>
+}
+```
+
+
 # Run from source
 
 [See discussion](https://github.com/advplyr/audiobookshelf/discussions/259#discussioncomment-1869729)
