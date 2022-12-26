@@ -5,11 +5,11 @@ const isDev = process.env.NODE_ENV !== 'production'
 if (isDev) {
   const devEnv = require('./dev').config
   process.env.NODE_ENV = 'development'
-  process.env.PORT = devEnv.Port
-  process.env.CONFIG_PATH = devEnv.ConfigPath
-  process.env.METADATA_PATH = devEnv.MetadataPath
-  process.env.FFMPEG_PATH = devEnv.FFmpegPath
-  process.env.FFPROBE_PATH = devEnv.FFProbePath
+  if (devEnv.Port) process.env.PORT = devEnv.Port
+  if (devEnv.ConfigPath) process.env.CONFIG_PATH = devEnv.ConfigPath
+  if (devEnv.MetadataPath) process.env.METADATA_PATH = devEnv.MetadataPath
+  if (devEnv.FFmpegPath) process.env.FFMPEG_PATH = devEnv.FFmpegPath
+  if (devEnv.FFProbePath) process.env.FFPROBE_PATH = devEnv.FFProbePath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
 }
