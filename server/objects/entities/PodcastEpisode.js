@@ -92,7 +92,7 @@ class PodcastEpisode {
   }
 
   get audioTrack() {
-    var audioTrack = new AudioTrack()
+    const audioTrack = new AudioTrack()
     audioTrack.setData(this.libraryItemId, this.audioFile, 0)
     return audioTrack
   }
@@ -133,7 +133,7 @@ class PodcastEpisode {
   }
 
   update(payload) {
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in this.toJSON()) {
       if (payload[key] != undefined && payload[key] != this[key]) {
         this[key] = payload[key]

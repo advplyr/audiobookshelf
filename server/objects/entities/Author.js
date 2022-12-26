@@ -40,7 +40,7 @@ class Author {
   }
 
   toJSONExpanded(numBooks = 0) {
-    var json = this.toJSON()
+    const json = this.toJSON()
     json.numBooks = numBooks
     return json
   }
@@ -63,11 +63,11 @@ class Author {
   }
 
   update(payload) {
-    var json = this.toJSON()
+    const json = this.toJSON()
     delete json.id
     delete json.addedAt
     delete json.updatedAt
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined && json[key] != payload[key]) {
         this[key] = payload[key]

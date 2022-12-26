@@ -198,7 +198,7 @@ class LibraryItem {
         this.libraryFiles = payload.libraryFiles.map(lf => lf.clone())
 
         // Use first image library file as cover
-        var firstImageFile = this.libraryFiles.find(lf => lf.fileType === 'image')
+        const firstImageFile = this.libraryFiles.find(lf => lf.fileType === 'image')
         if (firstImageFile) this.media.coverPath = firstImageFile.metadata.path
       } else if (this[key] !== undefined && key !== 'media') {
         this[key] = payload[key]
@@ -214,8 +214,8 @@ class LibraryItem {
   }
 
   update(payload) {
-    var json = this.toJSON()
-    var hasUpdates = false
+    const json = this.toJSON()
+    let hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined) {
         if (key === 'media') {
@@ -259,10 +259,10 @@ class LibraryItem {
   // Returns null if file not found, true if file was updated, false if up to date
   //  updates existing LibraryFile, AudioFile, EBookFile's
   checkFileFound(fileFound) {
-    var hasUpdated = false
+    let hasUpdated = false
 
-    var existingFile = this.libraryFiles.find(lf => lf.ino === fileFound.ino)
-    var mediaFile = null
+    let existingFile = this.libraryFiles.find(lf => lf.ino === fileFound.ino)
+    let mediaFile = null
     if (!existingFile) {
       existingFile = this.libraryFiles.find(lf => lf.metadata.path === fileFound.metadata.path)
       if (existingFile) {
@@ -315,7 +315,7 @@ class LibraryItem {
 
   // Data pulled from scandir during a scan, check it with current data
   checkScanData(dataFound) {
-    var hasUpdated = false
+    let hasUpdated = false
 
     if (this.isMissing) {
       // Item no longer missing
@@ -498,7 +498,7 @@ class LibraryItem {
 
   removeLibraryFile(ino) {
     if (!ino) return false
-    var libraryFile = this.libraryFiles.find(lf => lf.ino === ino)
+    const libraryFile = this.libraryFiles.find(lf => lf.ino === ino)
     if (libraryFile) {
       this.libraryFiles = this.libraryFiles.filter(lf => lf.ino !== ino)
       this.updatedAt = Date.now()
