@@ -23,6 +23,7 @@ const NotificationController = require('../controllers/NotificationController')
 const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
+const RSSFeedController = require('../controllers/RSSFeedController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -104,8 +105,6 @@ class ApiRouter {
     this.router.get('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
     this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
-    this.router.post('/items/:id/open-feed', LibraryItemController.middleware.bind(this), LibraryItemController.openRSSFeed.bind(this))
-    this.router.post('/items/:id/close-feed', LibraryItemController.middleware.bind(this), LibraryItemController.closeRSSFeed.bind(this))
     this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
@@ -231,7 +230,7 @@ class ApiRouter {
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
 
     //
-    // Notification Routes
+    // Notification Routes (Admin and up)
     //
     this.router.get('/notifications', NotificationController.middleware.bind(this), NotificationController.get.bind(this))
     this.router.patch('/notifications', NotificationController.middleware.bind(this), NotificationController.update.bind(this))
@@ -252,17 +251,23 @@ class ApiRouter {
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
 
     //
-    // Cache Routes
+    // Cache Routes (Admin and up)
     //
     this.router.post('/cache/purge', CacheController.purgeCache.bind(this))
     this.router.post('/cache/items/purge', CacheController.purgeItemsCache.bind(this))
 
     //
-    // Tools Routes
+    // Tools Routes (Admin and up)
     //
     this.router.post('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.encodeM4b.bind(this))
     this.router.delete('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
     this.router.post('/tools/item/:id/embed-metadata', ToolsController.itemMiddleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+
+    // 
+    // RSS Feed Routes (Admin and up)
+    //
+    this.router.post('/feeds/item/:itemId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForItem.bind(this))
+    this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
 
     //
     // Misc Routes

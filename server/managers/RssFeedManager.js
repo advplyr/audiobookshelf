@@ -18,10 +18,10 @@ class RssFeedManager {
   }
 
   async init() {
-    var feedObjects = await this.db.getAllEntities('feed')
+    const feedObjects = await this.db.getAllEntities('feed')
     if (feedObjects && feedObjects.length) {
       feedObjects.forEach((feedObj) => {
-        var feed = new Feed(feedObj)
+        const feed = new Feed(feedObj)
         this.feeds[feed.id] = feed
         Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
       })
@@ -32,8 +32,12 @@ class RssFeedManager {
     return Object.values(this.feeds).find(feed => feed.entityId === libraryItemId)
   }
 
+  findFeed(feedId) {
+    return this.feeds[feedId] || null
+  }
+
   async getFeed(req, res) {
-    var feed = this.feeds[req.params.id]
+    const feed = this.feeds[req.params.id]
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
@@ -49,19 +53,19 @@ class RssFeedManager {
       }
     }
 
-    var xml = feed.buildXml()
+    const xml = feed.buildXml()
     res.set('Content-Type', 'text/xml')
     res.send(xml)
   }
 
   getFeedItem(req, res) {
-    var feed = this.feeds[req.params.id]
+    const feed = this.feeds[req.params.id]
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
       return
     }
-    var episodePath = feed.getEpisodePath(req.params.episodeId)
+    const episodePath = feed.getEpisodePath(req.params.episodeId)
     if (!episodePath) {
       Logger.error(`[RssFeedManager] Feed episode not found ${req.params.episodeId}`)
       res.sendStatus(404)
@@ -71,7 +75,7 @@ class RssFeedManager {
   }
 
   getFeedCover(req, res) {
-    var feed = this.feeds[req.params.id]
+    const feed = this.feeds[req.params.id]
     if (!feed) {
       Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
       res.sendStatus(404)
@@ -85,7 +89,7 @@ class RssFeedManager {
 
     const extname = Path.extname(feed.coverPath).toLowerCase().slice(1)
     res.type(`image/${extname}`)
-    var readStream = fs.createReadStream(feed.coverPath)
+    const readStream = fs.createReadStream(feed.coverPath)
     readStream.pipe(res)
   }
 
@@ -93,32 +97,25 @@ class RssFeedManager {
     const serverAddress = options.serverAddress
     const slug = options.slug
 
-    if (this.feeds[slug]) {
-      Logger.error(`[RssFeedManager] Slug already in use`)
-      return {
-        error: `Slug "${slug}" already in use`
-      }
-    }
-
     const feed = new Feed()
     feed.setFromItem(user.id, slug, libraryItem, serverAddress)
     this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed ${feed.feedUrl}`)
+    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await this.db.insertEntity('feed', feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
   }
 
   closeFeedForItem(libraryItemId) {
-    var feed = this.findFeedForItem(libraryItemId)
+    const feed = this.findFeedForItem(libraryItemId)
     if (!feed) return
     return this.closeRssFeed(feed.id)
   }
 
   async closeRssFeed(id) {
     if (!this.feeds[id]) return
-    var feed = this.feeds[id]
+    const feed = this.feeds[id]
     await this.db.removeEntity('feed', id)
     SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
     delete this.feeds[id]

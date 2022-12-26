@@ -6,13 +6,13 @@
       </div>
     </template>
     <div ref="wrapper" class="px-8 py-6 w-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
-      <div v-if="currentFeedUrl" class="w-full">
+      <div v-if="currentFeed" class="w-full">
         <p class="text-lg font-semibold mb-4">{{ $strings.HeaderRSSFeedIsOpen }}</p>
 
         <div class="w-full relative">
-          <ui-text-input v-model="currentFeedUrl" readonly />
+          <ui-text-input v-model="currentFeed.feedUrl" readonly />
 
-          <span class="material-icons absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(currentFeedUrl)">content_copy</span>
+          <span class="material-icons absolute right-2 bottom-2 p-0.5 text-base transition-transform duration-100 text-gray-300 hover:text-white transform hover:scale-125 cursor-pointer" @click="copyToClipboard(currentFeed.feedUrl)">content_copy</span>
         </div>
       </div>
       <div v-else class="w-full">
@@ -28,7 +28,7 @@
       </div>
       <div v-show="userIsAdminOrUp" class="flex items-center pt-6">
         <div class="flex-grow" />
-        <ui-btn v-if="currentFeedUrl" color="error" small @click="closeFeed">{{ $strings.ButtonCloseFeed }}</ui-btn>
+        <ui-btn v-if="currentFeed" color="error" small @click="closeFeed">{{ $strings.ButtonCloseFeed }}</ui-btn>
         <ui-btn v-else color="success" small @click="openFeed">{{ $strings.ButtonOpenFeed }}</ui-btn>
       </div>
     </div>
@@ -43,13 +43,16 @@ export default {
       type: Object,
       default: () => null
     },
-    feedUrl: String
+    feed: {
+      type: Object,
+      default: () => null
+    }
   },
   data() {
     return {
       processing: false,
       newFeedSlug: null,
-      currentFeedUrl: null
+      currentFeed: null
     }
   },
   watch: {
@@ -106,7 +109,7 @@ export default {
         return
       }
 
-      var sanitized = this.$sanitizeSlug(this.newFeedSlug)
+      const sanitized = this.$sanitizeSlug(this.newFeedSlug)
       if (this.newFeedSlug !== sanitized) {
         this.newFeedSlug = sanitized
         this.$toast.warning('Slug had to be modified - Run again')
@@ -121,19 +124,15 @@ export default {
 
       console.log('Payload', payload)
       this.$axios
-        .$post(`/api/items/${this.libraryItemId}/open-feed`, payload)
+        .$post(`/api/feeds/item/${this.libraryItemId}/open`, payload)
         .then((data) => {
-          if (data.success) {
-            console.log('Opened RSS Feed', data)
-            this.currentFeedUrl = data.feedUrl
-          } else {
-            const errorMsg = data.error || 'Unknown error'
-            this.$toast.error(errorMsg)
-          }
+          console.log('Opened RSS Feed', data)
+          this.currentFeed = data.feed
         })
         .catch((error) => {
           console.error('Failed to open RSS Feed', error)
-          this.$toast.error()
+          const errorMsg = error.response ? error.response.data : null
+          this.$toast.error(errorMsg || 'Failed to open RSS Feed')
         })
     },
     copyToClipboard(str) {
@@ -142,22 +141,23 @@ export default {
     closeFeed() {
       this.processing = true
       this.$axios
-        .$post(`/api/items/${this.libraryItem.id}/close-feed`)
+        .$post(`/api/feeds/${this.currentFeed.id}/close`)
         .then(() => {
           this.$toast.success(this.$strings.ToastRSSFeedCloseSuccess)
           this.show = false
-          this.processing = false
         })
         .catch((error) => {
           console.error('Failed to close RSS feed', error)
-          this.processing = false
           this.$toast.error(this.$strings.ToastRSSFeedCloseFailed)
+        })
+        .finally(() => {
+          this.processing = false
         })
     },
     init() {
       if (!this.libraryItem) return
       this.newFeedSlug = this.libraryItem.id
-      this.currentFeedUrl = this.feedUrl
+      this.currentFeed = this.feed
     }
   },
   mounted() {}

@@ -174,7 +174,7 @@
 
             <!-- RSS feed -->
             <ui-tooltip v-if="showRssFeedBtn" :text="$strings.LabelOpenRSSFeed" direction="top">
-              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeedUrl ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
+              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
           </div>
 
@@ -200,7 +200,7 @@
     </div>
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
-    <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed-url="rssFeedUrl" />
+    <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed="rssFeed" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>
@@ -223,7 +223,7 @@ export default {
     }
     return {
       libraryItem: item,
-      rssFeedUrl: item.rssFeedUrl || null
+      rssFeed: item.rssFeed || null
     }
   },
   data() {
@@ -432,10 +432,10 @@ export default {
       return this.$store.getters['user/getUserCanDownload']
     },
     showRssFeedBtn() {
-      if (!this.rssFeedUrl && !this.podcastEpisodes.length && !this.tracks.length) return false // Cannot open RSS feed with no episodes/tracks
+      if (!this.rssFeed && !this.podcastEpisodes.length && !this.tracks.length) return false // Cannot open RSS feed with no episodes/tracks
 
       // If rss feed is open then show feed url to users otherwise just show to admins
-      return this.userIsAdminOrUp || this.rssFeedUrl
+      return this.userIsAdminOrUp || this.rssFeed
     },
     showQueueBtn() {
       if (!this.isBook) return false
@@ -655,13 +655,13 @@ export default {
     rssFeedOpen(data) {
       if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Opened', data)
-        this.rssFeedUrl = data.feedUrl
+        this.rssFeed = data
       }
     },
     rssFeedClosed(data) {
       if (data.entityId === this.libraryItemId) {
         console.log('RSS Feed Closed', data)
-        this.rssFeedUrl = null
+        this.rssFeed = null
       }
     },
     queueBtnClick() {
