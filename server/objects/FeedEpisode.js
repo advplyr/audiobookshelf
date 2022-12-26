@@ -83,9 +83,15 @@ class FeedEpisode {
     this.fullPath = episode.audioFile.metadata.path
   }
 
-  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta) {
+  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, additionalOffset = 0) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
-    const timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
+    let timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
+
+    // Additional offset can be used for collections/series
+    if (additionalOffset && !isNaN(additionalOffset)) {
+      timeOffset += Number(additionalOffset) * 1000
+    }
+
     // e.g. Track 1 will have a pub date before Track 2
     const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 

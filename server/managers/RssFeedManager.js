@@ -51,6 +51,18 @@ class RssFeedManager {
         feed.updateFromItem(libraryItem)
         await this.db.updateEntity('feed', feed)
       }
+    } else if (feed.entityType === 'collection') {
+      // TODO: Also trigger an update if any item in the collection was updated
+      const collection = this.db.collections.find(c => c.id === feed.entityId)
+      if (collection) {
+        const collectionExpanded = collection.toJSONExpanded(this.db.libraryItems)
+        if (!feed.entityUpdatedAt || collection.lastUpdate > feed.entityUpdatedAt) {
+          Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
+
+          feed.updateFromCollection(collectionExpanded)
+          await this.db.updateEntity('feed', feed)
+        }
+      }
     }
 
     const xml = feed.buildXml()
@@ -107,10 +119,18 @@ class RssFeedManager {
     return feed
   }
 
-  closeFeedForItem(libraryItemId) {
-    const feed = this.findFeedForItem(libraryItemId)
-    if (!feed) return
-    return this.closeRssFeed(feed.id)
+  async openFeedForCollection(user, collectionExpanded, options) {
+    const serverAddress = options.serverAddress
+    const slug = options.slug
+
+    const feed = new Feed()
+    feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress)
+    this.feeds[feed.id] = feed
+
+    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    await this.db.insertEntity('feed', feed)
+    SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
+    return feed
   }
 
   async closeRssFeed(id) {

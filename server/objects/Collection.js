@@ -1,4 +1,3 @@
-const Logger = require('../Logger')
 const { getId } = require('../utils/index')
 
 class Collection {
@@ -43,6 +42,18 @@ class Collection {
       const book = libraryItems.find(li => li.id === bookId)
       return book ? minifiedBooks ? book.toJSONMinified() : book.toJSONExpanded() : null
     }).filter(b => !!b)
+    return json
+  }
+
+  // Expanded and filtered out items not accessible to user
+  toJSONExpandedForUser(user, libraryItems) {
+    const json = this.toJSON()
+    json.books = json.books.map(libraryItemId => {
+      const libraryItem = libraryItems.find(li => li.id === libraryItemId)
+      return libraryItem ? libraryItem.toJSONExpanded() : null
+    }).filter(li => {
+      return li && user.checkCanAccessLibraryItem(li)
+    })
     return json
   }
 
