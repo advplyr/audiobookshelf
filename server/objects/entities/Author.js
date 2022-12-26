@@ -9,7 +9,6 @@ class Author {
     this.name = null
     this.description = null
     this.imagePath = null
-    this.relImagePath = null
     this.addedAt = null
     this.updatedAt = null
 
@@ -24,7 +23,6 @@ class Author {
     this.name = author.name || ''
     this.description = author.description || null
     this.imagePath = author.imagePath
-    this.relImagePath = author.relImagePath
     this.addedAt = author.addedAt
     this.updatedAt = author.updatedAt
   }
@@ -36,7 +34,6 @@ class Author {
       name: this.name,
       description: this.description,
       imagePath: this.imagePath,
-      relImagePath: this.relImagePath,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt
     }
@@ -61,7 +58,6 @@ class Author {
     this.description = data.description || null
     this.asin = data.asin || null
     this.imagePath = data.imagePath || null
-    this.relImagePath = data.relImagePath || null
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
   }

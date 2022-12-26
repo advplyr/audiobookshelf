@@ -80,7 +80,6 @@ class AuthorController {
             await this.cacheManager.purgeImageCache(req.author.id) // Purge cache
           }
           payload.imagePath = imageData.path
-          payload.relImagePath = imageData.relPath
           hasUpdated = true
         }
       }
@@ -181,7 +180,6 @@ class AuthorController {
       var imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path
-        req.author.relImagePath = imageData.relPath
         hasUpdates = true
       }
     }
