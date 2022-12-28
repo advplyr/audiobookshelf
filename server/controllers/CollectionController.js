@@ -26,7 +26,16 @@ class CollectionController {
   }
 
   findOne(req, res) {
-    res.json(req.collection.toJSONExpanded(this.db.libraryItems))
+    const includeEntities = (req.query.include || '').split(',')
+
+    const collectionExpanded = req.collection.toJSONExpanded(this.db.libraryItems)
+
+    if (includeEntities.includes('rssfeed')) {
+      const feedData = this.rssFeedManager.findFeedForEntityId(collectionExpanded.id)
+      collectionExpanded.rssFeed = feedData ? feedData.toJSONMinified() : null
+    }
+
+    res.json(collectionExpanded)
   }
 
   async update(req, res) {

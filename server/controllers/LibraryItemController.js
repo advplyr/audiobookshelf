@@ -21,7 +21,7 @@ class LibraryItemController {
       }
 
       if (includeEntities.includes('rssfeed')) {
-        const feedData = this.rssFeedManager.findFeedForItem(item.id)
+        const feedData = this.rssFeedManager.findFeedForEntityId(item.id)
         item.rssFeed = feedData ? feedData.toJSONMinified() : null
       }
 

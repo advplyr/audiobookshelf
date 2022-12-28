@@ -28,8 +28,8 @@ class RssFeedManager {
     }
   }
 
-  findFeedForItem(libraryItemId) {
-    return Object.values(this.feeds).find(feed => feed.entityId === libraryItemId)
+  findFeedForEntityId(entityId) {
+    return Object.values(this.feeds).find(feed => feed.entityId === entityId)
   }
 
   findFeed(feedId) {
