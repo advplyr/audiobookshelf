@@ -1,6 +1,6 @@
 <template>
   <div v-if="currentLibrary" class="relative h-8 max-w-52 md:min-w-32" v-click-outside="clickOutsideObj">
-    <button type="button" :disabled="disabled" class="w-10 sm:w-full relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm px-2 text-left text-sm focus:outline-none cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+    <button type="button" :disabled="disabled" class="w-10 sm:w-full relative h-full border border-white border-opacity-10 hover:border-opacity-20 rounded shadow-sm px-2 text-left text-sm cursor-pointer bg-black bg-opacity-20 text-gray-400 hover:text-gray-200" aria-haspopup="listbox" :aria-expanded="showMenu" :aria-label="$strings.ButtonLibrary + ': ' + currentLibrary.name" @click.stop.prevent="clickShowMenu">
       <div class="flex items-center justify-center sm:justify-start">
         <ui-library-icon :icon="currentLibraryIcon" class="sm:mr-1.5" />
         <span class="hidden sm:block truncate">{{ currentLibrary.name }}</span>
