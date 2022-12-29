@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Sicherung hochladen",
   "ButtonUploadCover": "Titelbild hochladen",
   "ButtonUploadOPMLFile": "OPML-Datei hochladen",
+  "ButtonUserEdit": "Benutzer {0} editieren",
+  "ButtonUserDelete": "Benutzer {0} löschen",
   "ButtonViewAll": "Alles anzeigen",
   "ButtonYes": "Ja",
   "HeaderAccount": "Konto",
