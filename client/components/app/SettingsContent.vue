@@ -4,7 +4,7 @@
       <h1 class="text-xl">{{ headerText }}</h1>
 
       <div v-if="showAddButton" class="mx-2 w-7 h-7 flex items-center justify-center rounded-full cursor-pointer hover:bg-white hover:bg-opacity-10 text-center" @click="clicked">
-        <span class="material-icons" style="font-size: 1.4rem">add</span>
+        <button class="material-icons" :aria-label="$strings.ButtonAdd + ': ' + headerText" style="font-size: 1.4rem">add</button>
       </div>
     </div>
 
