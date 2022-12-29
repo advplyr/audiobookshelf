@@ -52,7 +52,7 @@ class LibraryItemController {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
-    var hasUpdates = libraryItem.update(req.body)
+    const hasUpdates = libraryItem.update(req.body)
     if (hasUpdates) {
       Logger.debug(`[LibraryItemController] Updated now saving`)
       await this.db.updateLibraryItem(libraryItem)
@@ -70,8 +70,8 @@ class LibraryItemController {
   // PATCH: will create new authors & series if in payload
   //
   async updateMedia(req, res) {
-    var libraryItem = req.libraryItem
-    var mediaPayload = req.body
+    const libraryItem = req.libraryItem
+    const mediaPayload = req.body
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
@@ -83,7 +83,7 @@ class LibraryItemController {
     }
 
     // Podcast specific
-    var isPodcastAutoDownloadUpdated = false
+    let isPodcastAutoDownloadUpdated = false
     if (libraryItem.isPodcast) {
       if (mediaPayload.autoDownloadEpisodes !== undefined && libraryItem.media.autoDownloadEpisodes !== mediaPayload.autoDownloadEpisodes) {
         isPodcastAutoDownloadUpdated = true
@@ -92,8 +92,10 @@ class LibraryItemController {
       }
     }
 
-    var hasUpdates = libraryItem.media.update(mediaPayload)
+    const hasUpdates = libraryItem.media.update(mediaPayload)
     if (hasUpdates) {
+      libraryItem.updatedAt = Date.now()
+
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(libraryItem)
       }

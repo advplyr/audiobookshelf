@@ -167,7 +167,7 @@ class Feed {
     this.userId = userId
     this.entityType = 'collection'
     this.entityId = collectionExpanded.id
-    this.entityUpdatedAt = collectionExpanded.lastUpdate
+    this.entityUpdatedAt = collectionExpanded.lastUpdate // This will be set to the most recently updated library item
     this.coverPath = firstItemWithCover?.coverPath || null
     this.serverAddress = serverAddress
     this.feedUrl = feedUrl
@@ -184,6 +184,8 @@ class Feed {
     this.episodes = []
 
     itemsWithTracks.forEach((item, index) => {
+      if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
+
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
         feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, index)
@@ -211,6 +213,8 @@ class Feed {
     this.episodes = []
 
     itemsWithTracks.forEach((item, index) => {
+      if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
+
       item.media.tracks.forEach((audioTrack) => {
         const feedEpisode = new FeedEpisode()
         feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, index)

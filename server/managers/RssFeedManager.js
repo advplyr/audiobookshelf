@@ -52,11 +52,19 @@ class RssFeedManager {
         await this.db.updateEntity('feed', feed)
       }
     } else if (feed.entityType === 'collection') {
-      // TODO: Also trigger an update if any item in the collection was updated
       const collection = this.db.collections.find(c => c.id === feed.entityId)
       if (collection) {
         const collectionExpanded = collection.toJSONExpanded(this.db.libraryItems)
-        if (!feed.entityUpdatedAt || collection.lastUpdate > feed.entityUpdatedAt) {
+
+        // Find most recently updated item in collection
+        let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
+        collectionExpanded.books.forEach((libraryItem) => {
+          if (libraryItem.media.tracks.length && libraryItem.updatedAt > mostRecentlyUpdatedAt) {
+            mostRecentlyUpdatedAt = libraryItem.updatedAt
+          }
+        })
+
+        if (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
           Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
 
           feed.updateFromCollection(collectionExpanded)

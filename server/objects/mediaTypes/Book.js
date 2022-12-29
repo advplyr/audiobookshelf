@@ -136,11 +136,11 @@ class Book {
   }
 
   update(payload) {
-    var json = this.toJSON()
+    const json = this.toJSON()
     delete json.audiobooks // do not update media entities here
     delete json.ebooks
 
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in json) {
       if (payload[key] !== undefined) {
         if (key === 'metadata') {
