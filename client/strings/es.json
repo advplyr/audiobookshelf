@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Upload Backup",
   "ButtonUploadCover": "Upload Cover",
   "ButtonUploadOPMLFile": "Upload OPML File",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "View All",
   "ButtonYes": "Yes",
   "HeaderAccount": "Account",

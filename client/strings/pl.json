@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Wgraj kopię zapasową",
   "ButtonUploadCover": "Wgraj okładkę",
   "ButtonUploadOPMLFile": "Wgraj plik OPML",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Zobacz wszystko",
   "ButtonYes": "Tak",
   "HeaderAccount": "Konto",

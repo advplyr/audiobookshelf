@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Carica Backup",
   "ButtonUploadCover": "Carica Cover",
   "ButtonUploadOPMLFile": "Carica File OPML",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Mostra Tutto",
   "ButtonYes": "Si",
   "HeaderAccount": "Account",
