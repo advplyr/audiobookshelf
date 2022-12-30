@@ -7,30 +7,30 @@
             <h2 class="font-semibold">{{ $strings.HeaderSettingsGeneral }}</h2>
           </div>
           <div class="flex items-end py-2">
-            <ui-toggle-switch v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
+            <ui-toggle-switch labeledBy="settings-store-cover-with-items" v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
             <ui-tooltip :text="$strings.LabelSettingsStoreCoversWithItemHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsStoreCoversWithItem }}
+                <span  id="settings-store-cover-with-items">{{ $strings.LabelSettingsStoreCoversWithItem }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
+            <ui-toggle-switch labeledBy="settings-store-metadata-with-items" v-model="newServerSettings.storeMetadataWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeMetadataWithItem', val)" />
             <ui-tooltip :text="$strings.LabelSettingsStoreMetadataWithItemHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsStoreMetadataWithItem }}
+                <span id="settings-store-metadata-with-items">{{ $strings.LabelSettingsStoreMetadataWithItem }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
+            <ui-toggle-switch labeledBy="settings-sorting-ignore-prefixes" v-model="newServerSettings.sortingIgnorePrefix" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('sortingIgnorePrefix', val)" />
             <ui-tooltip :text="$strings.LabelSettingsSortingIgnorePrefixesHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsSortingIgnorePrefixes }}
+                <span id="settings-sorting-ignore-prefixes">{{ $strings.LabelSettingsSortingIgnorePrefixes }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -40,8 +40,8 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
-            <p class="pl-4">{{ $strings.LabelSettingsChromecastSupport }}</p>
+            <ui-toggle-switch labeledBy="settings-chromecast-support" v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
+            <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
           </div>
 
           <div class="pt-4">
@@ -49,33 +49,31 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="homepageUseBookshelfView" :disabled="updatingServerSettings" @input="updateHomeUseBookshelfView" />
+            <ui-toggle-switch labeledBy="settings-home-page-uses-bookshelf" v-model="homepageUseBookshelfView" :disabled="updatingServerSettings" @input="updateHomeUseBookshelfView" />
             <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsHomePageBookshelfView }}
+                <span id="settings-home-page-uses-bookshelf">{{ $strings.LabelSettingsHomePageBookshelfView }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="useBookshelfView" :disabled="updatingServerSettings" @input="updateUseBookshelfView" />
+            <ui-toggle-switch labeledBy="settings-library-uses-bookshelf" v-model="useBookshelfView" :disabled="updatingServerSettings" @input="updateUseBookshelfView" />
             <ui-tooltip :text="$strings.LabelSettingsBookshelfViewHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsLibraryBookshelfView }}
+                <span id="settings-library-uses-bookshelf">{{ $strings.LabelSettingsLibraryBookshelfView }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="py-2">
-            <p class="px-1 text-sm font-semibold">{{ $strings.LabelSettingsDateFormat }}</p>
-            <ui-dropdown v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
+            <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
           </div>
 
           <div class="py-2">
-            <p class="px-1 text-sm font-semibold">{{ $strings.LabelLanguageDefaultServer }}</p>
-            <ui-dropdown ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
+            <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
           </div>
         </div>
 
@@ -85,20 +83,20 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerParseSubtitle', val)" />
+            <ui-toggle-switch labeledBy="settings-parse-subtitles" v-model="newServerSettings.scannerParseSubtitle" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerParseSubtitle', val)" />
             <ui-tooltip :text="$strings.LabelSettingsParseSubtitlesHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsParseSubtitles }}
+                <span id="settings-parse-subtitles">{{ $strings.LabelSettingsParseSubtitles }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerFindCovers', val)" />
+            <ui-toggle-switch labeledBy="settings-find-covers" v-model="newServerSettings.scannerFindCovers" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerFindCovers', val)" />
             <ui-tooltip :text="$strings.LabelSettingsFindCoversHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsFindCovers }}
+                <span id="settings-find-covers">{{ $strings.LabelSettingsFindCovers }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -109,50 +107,50 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
+            <ui-toggle-switch labeledBy="settings-overdrive-media-markers" v-model="newServerSettings.scannerPreferOverdriveMediaMarker" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOverdriveMediaMarker', val)" />
             <ui-tooltip :text="$strings.LabelSettingsOverdriveMediaMarkersHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsOverdriveMediaMarkers }}
+                <span id="settings-overdrive-media-markers">{{ $strings.LabelSettingsOverdriveMediaMarkers }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
+            <ui-toggle-switch labeledBy="settings-prefer-audio-metadata" v-model="newServerSettings.scannerPreferAudioMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferAudioMetadata', val)" />
             <ui-tooltip :text="$strings.LabelSettingsPreferAudioMetadataHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsPreferAudioMetadata }}
+                <span id="settings-prefer-audio-metadata">{{ $strings.LabelSettingsPreferAudioMetadata }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
+            <ui-toggle-switch labeledBy="settings-prefer-opf-metadata" v-model="newServerSettings.scannerPreferOpfMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferOpfMetadata', val)" />
             <ui-tooltip :text="$strings.LabelSettingsPreferOPFMetadataHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsPreferOPFMetadata }}
+                <span id="settings-prefer-opf-metadata">{{ $strings.LabelSettingsPreferOPFMetadata }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
+            <ui-toggle-switch labeledBy="settings-prefer-matched-metadata" v-model="newServerSettings.scannerPreferMatchedMetadata" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerPreferMatchedMetadata', val)" />
             <ui-tooltip :text="$strings.LabelSettingsPreferMatchedMetadataHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsPreferMatchedMetadata }}
+                <span id="settings-prefer-matched-metadata">{{ $strings.LabelSettingsPreferMatchedMetadata }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
+            <ui-toggle-switch labeledBy="settings-disable-watcher" v-model="newServerSettings.scannerDisableWatcher" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerDisableWatcher', val)" />
             <ui-tooltip :text="$strings.LabelSettingsDisableWatcherHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsDisableWatcher }}
+                <span id="settings-disable-watcher">{{ $strings.LabelSettingsDisableWatcher }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -163,11 +161,11 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="showExperimentalFeatures" />
+            <ui-toggle-switch labeledBy="settings-experimental-features" v-model="showExperimentalFeatures" />
             <ui-tooltip :text="$strings.LabelSettingsExperimentalFeaturesHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsExperimentalFeatures }}
-                <a href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
+                <span id="settings-experimental-features">{{ $strings.LabelSettingsExperimentalFeatures }}</span>
+                <a :aria-label="$strings.LabelSettingsExperimentalFeaturesHelp" href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
                   <span class="material-icons icon-text">info_outlined</span>
                 </a>
               </p>
@@ -175,10 +173,10 @@
           </div>
 
           <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
+            <ui-toggle-switch labeledBy="settings-enable-e-reader" v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
             <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
               <p class="pl-4">
-                {{ $strings.LabelSettingsEnableEReader }}
+                <span id="settings-enable-e-reader">{{ $strings.LabelSettingsEnableEReader }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
