@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="border rounded-full border-black-100 flex items-center cursor-pointer w-10 justify-start" :class="className" @click="clickToggle">
+    <button :aria-labelledby="labeledBy" role="checkbox" class="border rounded-full border-black-100 flex items-center cursor-pointer w-10 justify-start" :aria-checked="toggleValue" :class="className" @click="clickToggle">
       <span class="rounded-full border w-5 h-5 border-black-50 shadow transform transition-transform duration-100" :class="switchClassName"></span>
-    </div>
+    </button>
   </div>
 </template>
 
@@ -18,7 +18,8 @@ export default {
       type: String,
       default: 'primary'
     },
-    disabled: Boolean
+    disabled: Boolean,
+    labeledBy: String
   },
   computed: {
     toggleValue: {
