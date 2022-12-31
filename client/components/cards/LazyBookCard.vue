@@ -260,7 +260,7 @@ export default {
       return this.bookCoverAspectRatio === 1
     },
     sizeMultiplier() {
-      var baseSize = this.squareAspectRatio ? 192 : 120
+      const baseSize = this.squareAspectRatio ? 192 : 120
       return this.width / baseSize
     },
     title() {
@@ -538,11 +538,11 @@ export default {
       return this.author
     },
     isAlternativeBookshelfView() {
-      var constants = this.$constants || this.$nuxt.$constants
+      const constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.DETAIL
     },
     isAuthorBookshelfView() {
-      var constants = this.$constants || this.$nuxt.$constants
+      const constants = this.$constants || this.$nuxt.$constants
       return this.bookshelfView === constants.BookshelfView.AUTHOR
     },
     titleDisplayBottomOffset() {
@@ -552,7 +552,7 @@ export default {
     },
     rssFeed() {
       if (this.booksInSeries) return null
-      return this.store.getters['feeds/getFeedForItem'](this.libraryItemId)
+      return this._libraryItem.rssFeed || null
     }
   },
   methods: {

@@ -291,11 +291,11 @@ module.exports = {
   collapseBookSeries(libraryItems, series, filterSeries) {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
-    var seriesObjects = this
+    const seriesObjects = this
       .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true)
       .filter(s => s.id != filterSeries)
 
-    var filteredLibraryItems = []
+    const filteredLibraryItems = []
 
     libraryItems.forEach((li) => {
       if (li.mediaType != 'book') return
@@ -307,12 +307,12 @@ module.exports = {
         filteredLibraryItems.push(Object.assign(
           Object.create(Object.getPrototypeOf(li)),
           li, { collapsedSeries: series }))
-      });
+      })
 
       // Only included books not contained in series
       if (!seriesObjects.some(s => s.books.some(b => b.id == li.id)))
         filteredLibraryItems.push(li)
-    });
+    })
 
     return filteredLibraryItems
   },

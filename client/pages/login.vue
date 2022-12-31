@@ -127,7 +127,6 @@ export default {
     setUser({ user, userDefaultLibraryId, serverSettings, Source, feeds }) {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
-      this.$store.commit('feeds/setFeeds', feeds)
       this.$setServerLanguageCode(serverSettings.language)
 
       if (serverSettings.chromecastEnabled) {

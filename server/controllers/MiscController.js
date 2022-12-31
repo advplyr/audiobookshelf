@@ -122,7 +122,7 @@ class MiscController {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    const userResponse = this.auth.getUserLoginResponsePayload(req.user, this.rssFeedManager.feedsArray)
+    const userResponse = this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
 

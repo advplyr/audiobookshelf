@@ -330,10 +330,10 @@ export default {
       this.$store.commit('libraries/removeUserPlaylist', playlist)
     },
     rssFeedOpen(data) {
-      this.$store.commit('feeds/addFeed', data)
+      console.log('RSS Feed Open', data)
     },
     rssFeedClosed(data) {
-      this.$store.commit('feeds/removeFeed', data)
+      console.log('RSS Feed Closed', data)
     },
     backupApplied() {
       // Force refresh

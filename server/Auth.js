@@ -115,17 +115,16 @@ class Auth {
     })
   }
 
-  getUserLoginResponsePayload(user, feeds) {
+  getUserLoginResponsePayload(user) {
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
       serverSettings: this.db.serverSettings.toJSONForBrowser(),
-      feeds,
       Source: global.Source
     }
   }
 
-  async login(req, res, feeds) {
+  async login(req, res) {
     const ipAddress = requestIp.getClientIp(req)
     var username = (req.body.username || '').toLowerCase()
     var password = req.body.password || ''
@@ -146,14 +145,14 @@ class Auth {
       if (password) {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
-        return res.json(this.getUserLoginResponsePayload(user, feeds))
+        return res.json(this.getUserLoginResponsePayload(user))
       }
     }
 
     // Check password match
     var compare = await bcrypt.compare(password, user.pash)
     if (compare) {
-      res.json(this.getUserLoginResponsePayload(user, feeds))
+      res.json(this.getUserLoginResponsePayload(user))
     } else {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
       if (req.rateLimit.remaining <= 2) {

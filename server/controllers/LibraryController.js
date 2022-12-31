@@ -170,8 +170,11 @@ class LibraryController {
   // api/libraries/:id/items
   // TODO: Optimize this method, items are iterated through several times but can be combined
   getLibraryItems(req, res) {
-    var libraryItems = req.libraryItems
-    var payload = {
+    let libraryItems = req.libraryItems
+
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
+    const payload = {
       results: [],
       total: libraryItems.length,
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
@@ -181,7 +184,8 @@ class LibraryController {
       filterBy: req.query.filter,
       mediaType: req.library.mediaType,
       minified: req.query.minified === '1',
-      collapseseries: req.query.collapseseries === '1'
+      collapseseries: req.query.collapseseries === '1',
+      include: include.join(',')
     }
     const mediaIsBook = payload.mediaType === 'book'
 
@@ -219,7 +223,7 @@ class LibraryController {
     }
 
     // Step 3 - Sort the retrieved library items.
-    var sortArray = []
+    const sortArray = []
 
     // When on the series page, sort by sequence only
     if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
@@ -294,13 +298,13 @@ class LibraryController {
 
     // Step 3.5: Limit items
     if (payload.limit) {
-      var startIndex = payload.page * payload.limit
+      const startIndex = payload.page * payload.limit
       libraryItems = libraryItems.slice(startIndex, startIndex + payload.limit)
     }
 
     // Step 4 - Transform the items to pass to the client side
     payload.results = libraryItems.map(li => {
-      let json = payload.minified ? li.toJSONMinified() : li.toJSON()
+      const json = payload.minified ? li.toJSONMinified() : li.toJSON()
 
       if (li.collapsedSeries) {
         json.collapsedSeries = {
@@ -333,9 +337,16 @@ class LibraryController {
               .map(r => r.start == r.end ? r.start : `${r.start}-${r.end}`)
               .join(', ')
         }
-      } else if (filterSeries) {
-        // If filtering by series, make sure to include the series metadata
-        json.media.metadata.series = li.media.metadata.getSeries(filterSeries)
+      } else {
+        // add rssFeed object if "include=rssfeed" was put in query string (only for non-collapsed series)
+        if (include.includes('rssfeed')) {
+          json.rssFeed = this.rssFeedManager.findFeedForEntityId(json.id)
+        }
+
+        if (filterSeries) {
+          // If filtering by series, make sure to include the series metadata
+          json.media.metadata.series = li.media.metadata.getSeries(filterSeries)
+        }
       }
 
       return json
