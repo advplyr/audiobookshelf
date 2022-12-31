@@ -119,7 +119,7 @@ export default {
 
       const items = [
         {
-          text: this.isSeriesFinished ? 'Mark series as not finished' : 'Mark series as finished',
+          text: this.isSeriesFinished ? this.$strings.MessageMarkAsNotFinished : this.$strings.MessageMarkAsFinished,
           action: 'mark-series-finished'
         }
       ]
@@ -334,10 +334,8 @@ export default {
     markSeriesFinished() {
       const newIsFinished = !this.isSeriesFinished
 
-      const message = newIsFinished ? 'Are you sure you want to mark all books in this series as finished?' : 'Are you sure you want to reset your progress on all books in this series?'
-
       const payload = {
-        message,
+        message: newIsFinished ? this.$strings.MessageConfirmMarkSeriesFinished : this.$strings.MessageConfirmMarkSeriesNotFinished,
         callback: (confirmed) => {
           if (confirmed) {
             this.processingSeries = true
@@ -351,13 +349,14 @@ export default {
             this.$axios
               .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
               .then(() => {
-                this.$toast.success('Series update success')
+                this.$toast.success(this.$strings.ToastSeriesUpdateSuccess)
                 this.selectedSeries.progress.isFinished = newIsFinished
-                this.processingSeries = false
               })
               .catch((error) => {
-                this.$toast.error('Series update failed')
+                this.$toast.error(this.$strings.ToastSeriesUpdateFailed)
                 console.error('Failed to batch update read/not read', error)
+              })
+              .finally(() => {
                 this.processingSeries = false
               })
           }
