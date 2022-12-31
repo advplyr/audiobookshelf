@@ -340,7 +340,8 @@ class LibraryController {
       } else {
         // add rssFeed object if "include=rssfeed" was put in query string (only for non-collapsed series)
         if (include.includes('rssfeed')) {
-          json.rssFeed = this.rssFeedManager.findFeedForEntityId(json.id)
+          const feedData = this.rssFeedManager.findFeedForEntityId(json.id)
+          json.rssFeed = feedData ? feedData.toJSONMinified() : null
         }
 
         if (filterSeries) {
@@ -440,7 +441,8 @@ class LibraryController {
       if (!expanded.books.length && c.books.length) return null
 
       if (include.includes('rssfeed')) {
-        expanded.rssFeed = this.rssFeedManager.findFeedForEntityId(c.id)
+        const feedData = this.rssFeedManager.findFeedForEntityId(c.id)
+        expanded.rssFeed = feedData ? feedData.toJSONMinified() : null
       }
 
       return expanded
@@ -486,9 +488,10 @@ class LibraryController {
   async getLibraryUserPersonalizedOptimal(req, res) {
     const mediaType = req.library.mediaType
     const libraryItems = req.libraryItems
-    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 10
+    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
-    const categories = libraryHelpers.buildPersonalizedShelves(req.user, libraryItems, mediaType, this.db.series, this.db.authors, limitPerShelf)
+    const categories = libraryHelpers.buildPersonalizedShelves(this, req.user, libraryItems, mediaType, limitPerShelf, include)
     res.json(categories)
   }
 

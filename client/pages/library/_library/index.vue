@@ -8,8 +8,8 @@
 <script>
 export default {
   async asyncData({ store, params, redirect }) {
-    var libraryId = params.library
-    var library = await store.dispatch('libraries/fetch', libraryId)
+    const libraryId = params.library
+    const library = await store.dispatch('libraries/fetch', libraryId)
     if (!library) {
       return redirect(`/oops?message=Library "${libraryId}" not found`)
     }

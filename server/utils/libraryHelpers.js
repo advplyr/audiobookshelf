@@ -317,8 +317,9 @@ module.exports = {
     return filteredLibraryItems
   },
 
-  buildPersonalizedShelves(user, libraryItems, mediaType, allSeries, allAuthors, maxEntitiesPerShelf = 10) {
+  buildPersonalizedShelves(ctx, user, libraryItems, mediaType, maxEntitiesPerShelf, include) {
     const isPodcastLibrary = mediaType === 'podcast'
+    const includeRssFeed = include.includes('rssfeed')
 
     const shelves = [
       {
@@ -396,7 +397,7 @@ module.exports = {
     for (const libraryItem of libraryItems) {
       if (libraryItem.addedAt > categoryMap.newestItems.smallest) {
 
-        var indexToPut = categoryMap.newestItems.items.findIndex(i => libraryItem.addedAt > i.addedAt)
+        const indexToPut = categoryMap.newestItems.items.findIndex(i => libraryItem.addedAt > i.addedAt)
         if (indexToPut >= 0) {
           categoryMap.newestItems.items.splice(indexToPut, 0, libraryItem.toJSONMinified())
         } else {
@@ -411,7 +412,7 @@ module.exports = {
         categoryMap.newestItems.biggest = categoryMap.newestItems.items[0].addedAt
       }
 
-      var allItemProgress = user.getAllMediaProgressForLibraryItem(libraryItem.id)
+      const allItemProgress = user.getAllMediaProgressForLibraryItem(libraryItem.id)
       if (libraryItem.isPodcast) {
         // Podcast categories
         const podcastEpisodes = libraryItem.media.episodes || []
@@ -423,7 +424,7 @@ module.exports = {
               recentEpisode: episode.toJSON()
             }
 
-            var indexToPut = categoryMap.newestEpisodes.items.findIndex(i => episode.addedAt > i.recentEpisode.addedAt)
+            const indexToPut = categoryMap.newestEpisodes.items.findIndex(i => episode.addedAt > i.recentEpisode.addedAt)
             if (indexToPut >= 0) {
               categoryMap.newestEpisodes.items.splice(indexToPut, 0, libraryItemWithEpisode)
             } else {
@@ -439,7 +440,7 @@ module.exports = {
           }
 
           // Episode recently listened and finished
-          var mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
+          const mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
           if (mediaProgress) {
             if (mediaProgress.isFinished) {
               if (mediaProgress.finishedAt > categoryMap.recentlyFinished.smallest) { // Item belongs on shelf
@@ -449,7 +450,7 @@ module.exports = {
                   finishedAt: mediaProgress.finishedAt
                 }
 
-                var indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+                const indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
                 if (indexToPut >= 0) {
                   categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemWithEpisode)
                 } else {
@@ -471,7 +472,7 @@ module.exports = {
                   progressLastUpdate: mediaProgress.lastUpdate
                 }
 
-                var indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+                const indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
                 if (indexToPut >= 0) {
                   categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemWithEpisode)
                 } else {
@@ -503,9 +504,9 @@ module.exports = {
             const hideFromContinueListening = user.checkShouldHideSeriesFromContinueListening(librarySeries.id)
 
             if (!seriesMap[librarySeries.id]) {
-              const seriesObj = allSeries.find(se => se.id === librarySeries.id)
+              const seriesObj = ctx.db.series.find(se => se.id === librarySeries.id)
               if (seriesObj) {
-                var series = {
+                const series = {
                   ...seriesObj.toJSON(),
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
@@ -516,7 +517,7 @@ module.exports = {
                 seriesMap[librarySeries.id] = series
 
                 if (series.addedAt > categoryMap.newestSeries.smallest) {
-                  var indexToPut = categoryMap.newestSeries.items.findIndex(i => series.addedAt > i.addedAt)
+                  const indexToPut = categoryMap.newestSeries.items.findIndex(i => series.addedAt > i.addedAt)
                   if (indexToPut >= 0) {
                     categoryMap.newestSeries.items.splice(indexToPut, 0, series)
                   } else {
@@ -559,16 +560,16 @@ module.exports = {
         if (libraryItem.media.metadata.authors.length) {
           for (const libraryAuthor of libraryItem.media.metadata.authors) {
             if (!authorMap[libraryAuthor.id]) {
-              const authorObj = allAuthors.find(au => au.id === libraryAuthor.id)
+              const authorObj = ctx.db.authors.find(au => au.id === libraryAuthor.id)
               if (authorObj) {
-                var author = {
+                const author = {
                   ...authorObj.toJSON(),
                   numBooks: 1
                 }
 
                 if (author.addedAt > categoryMap.newestAuthors.smallest) {
 
-                  var indexToPut = categoryMap.newestAuthors.items.findIndex(i => author.addedAt > i.addedAt)
+                  const indexToPut = categoryMap.newestAuthors.items.findIndex(i => author.addedAt > i.addedAt)
                   if (indexToPut >= 0) {
                     categoryMap.newestAuthors.items.splice(indexToPut, 0, author)
                   } else {
@@ -677,11 +678,22 @@ module.exports = {
       }
     }
 
-    var categoriesWithItems = Object.values(categoryMap).filter(cat => cat.items.length)
+    const categoriesWithItems = Object.values(categoryMap).filter(cat => cat.items.length)
 
     return categoriesWithItems.map(cat => {
-      var shelf = shelves.find(s => s.category === cat.category)
+      const shelf = shelves.find(s => s.category === cat.category)
       shelf.entities = cat.items
+
+      // Add rssFeed to entities if query string "include=rssfeed" was on request
+      if (includeRssFeed) {
+        if (shelf.type === 'book' || shelf.type === 'podcast') {
+          shelf.entities = shelf.entities.map((item) => {
+            item.rssFeed = ctx.rssFeedManager.findFeedForEntityId(item.id)?.toJSONMinified() || null
+            return item
+          })
+        }
+      }
+
       return shelf
     })
   }
