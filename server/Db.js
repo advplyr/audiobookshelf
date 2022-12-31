@@ -280,7 +280,7 @@ class Db {
   }
 
   getAllEntities(entityName) {
-    var entityDb = this.getEntityDb(entityName)
+    const entityDb = this.getEntityDb(entityName)
     return entityDb.select(() => true).then((results) => results.data).catch((error) => {
       Logger.error(`[DB] Failed to get all ${entityName}`, error)
       return null
@@ -371,16 +371,16 @@ class Db {
   }
 
   updateEntity(entityName, entity) {
-    var entityDb = this.getEntityDb(entityName)
+    const entityDb = this.getEntityDb(entityName)
 
-    var jsonEntity = entity
+    let jsonEntity = entity
     if (entity && entity.toJSON) {
       jsonEntity = entity.toJSON()
     }
 
     return entityDb.update((record) => record.id === entity.id, () => jsonEntity).then((results) => {
       Logger.debug(`[DB] Updated ${entityName}: ${results.updated}`)
-      var arrayKey = this.getEntityArrayKey(entityName)
+      const arrayKey = this.getEntityArrayKey(entityName)
       if (this[arrayKey]) {
         this[arrayKey] = this[arrayKey].map(e => {
           return e.id === entity.id ? entity : e

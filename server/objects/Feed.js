@@ -87,7 +87,7 @@ class Feed {
     this.id = slug
     this.slug = slug
     this.userId = userId
-    this.entityType = 'item'
+    this.entityType = 'libraryItem'
     this.entityId = libraryItem.id
     this.entityUpdatedAt = libraryItem.updatedAt
     this.coverPath = media.coverPath || null

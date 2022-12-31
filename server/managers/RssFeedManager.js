@@ -17,14 +17,43 @@ class RssFeedManager {
     return Object.values(this.feeds)
   }
 
+  validateFeedEntity(feedObj) {
+    if (feedObj.entityType === 'collection') {
+      if (!this.db.collections.some(li => li.id === feedObj.entityId)) {
+        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
+        return false
+      }
+    } else if (feedObj.entityType === 'libraryItem') {
+      if (!this.db.libraryItems.some(li => li.id === feedObj.entityId)) {
+        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
+        return false
+      }
+    } else {
+      Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Invalid entityType "${feedObj.entityType}"`)
+      return false
+    }
+    return true
+  }
+
   async init() {
     const feedObjects = await this.db.getAllEntities('feed')
-    if (feedObjects && feedObjects.length) {
-      feedObjects.forEach((feedObj) => {
-        const feed = new Feed(feedObj)
-        this.feeds[feed.id] = feed
-        Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
-      })
+    if (!feedObjects || !feedObjects.length) return
+
+    for (const feedObj of feedObjects) {
+      // Migration: In v2.2.12 entityType "item" was updated to "libraryItem"
+      if (feedObj.entityType === 'item') {
+        feedObj.entityType = 'libraryItem'
+        await this.db.updateEntity('feed', feedObj)
+      }
+
+      // Remove invalid feeds
+      if (!this.validateFeedEntity(feedObj)) {
+        await this.db.removeEntity('feed', feedObj.id)
+      }
+
+      const feed = new Feed(feedObj)
+      this.feeds[feed.id] = feed
+      Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
     }
   }
 
@@ -141,13 +170,23 @@ class RssFeedManager {
     return feed
   }
 
-  async closeRssFeed(id) {
-    if (!this.feeds[id]) return
-    const feed = this.feeds[id]
-    await this.db.removeEntity('feed', id)
+  async handleCloseFeed(feed) {
+    if (!feed) return
+    await this.db.removeEntity('feed', feed.id)
     SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
-    delete this.feeds[id]
+    delete this.feeds[feed.id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
+  }
+
+  closeRssFeed(id) {
+    if (!this.feeds[id]) return
+    return this.handleCloseFeed(this.feeds[id])
+  }
+
+  closeFeedForEntityId(entityId) {
+    const feed = this.findFeedForEntityId(entityId)
+    if (!feed) return
+    return this.handleCloseFeed(feed)
   }
 }
 module.exports = RssFeedManager

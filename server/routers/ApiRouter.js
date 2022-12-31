@@ -386,6 +386,9 @@ class ApiRouter {
       }
     }
 
+    // Close rss feed - remove from db and emit socket event
+    await this.rssFeedManager.closeFeedForEntityId(libraryItem.id)
+
     // purge cover cache
     if (libraryItem.media.coverPath) {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
