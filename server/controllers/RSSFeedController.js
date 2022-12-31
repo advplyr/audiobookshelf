@@ -75,6 +75,41 @@ class RSSFeedController {
     })
   }
 
+  // POST: api/feeds/series/:seriesId/open
+  async openRSSFeedForSeries(req, res) {
+    const options = req.body || {}
+
+    const series = this.db.series.find(se => se.id === req.params.seriesId)
+    if (!series) return res.sendStatus(404)
+
+    // Check request body options exist
+    if (!options.serverAddress || !options.slug) {
+      Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
+      return res.status(400).send('Invalid request body')
+    }
+
+    // Check that this slug is not being used for another feed (slug will also be the Feed id)
+    if (this.rssFeedManager.feeds[options.slug]) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
+      return res.status(400).send('Slug already in use')
+    }
+
+    const seriesJson = series.toJSON()
+    // Get books in series that have audio tracks
+    seriesJson.books = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+
+    // Check series has audio tracks
+    if (!seriesJson.books.length) {
+      Logger.error(`[RSSFeedController] Cannot open RSS feed for series "${seriesJson.name}" because it has no audio tracks`)
+      return res.status(400).send('Series has no audio tracks')
+    }
+
+    const feed = await this.rssFeedManager.openFeedForSeries(req.user, seriesJson, req.body)
+    res.json({
+      feed: feed.toJSONMinified()
+    })
+  }
+
   // POST: api/feeds/:id/close
   async closeRSSFeed(req, res) {
     await this.rssFeedManager.closeRssFeed(req.params.id)

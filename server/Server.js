@@ -124,6 +124,7 @@ class Server {
 
     await this.backupManager.init()
     await this.logManager.init()
+    await this.apiRouter.checkRemoveEmptySeries(this.db.series) // Remove empty series
     await this.rssFeedManager.init()
     this.cronManager.init()
 

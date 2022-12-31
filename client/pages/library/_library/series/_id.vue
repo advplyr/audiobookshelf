@@ -8,8 +8,8 @@
 <script>
 export default {
   async asyncData({ store, params, redirect, query, app }) {
-    var libraryId = params.library
-    var libraryData = await store.dispatch('libraries/fetch', libraryId)
+    const libraryId = params.library
+    const libraryData = await store.dispatch('libraries/fetch', libraryId)
     if (!libraryData) {
       return redirect('/oops?message=Library not found')
     }
@@ -19,7 +19,7 @@ export default {
       return redirect(`/library/${libraryId}`)
     }
 
-    var series = await app.$axios.$get(`/api/series/${params.id}?include=progress`).catch((error) => {
+    const series = await app.$axios.$get(`/api/series/${params.id}?include=progress,rssfeed`).catch((error) => {
       console.error('Failed', error)
       return false
     })

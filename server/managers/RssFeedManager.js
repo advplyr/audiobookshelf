@@ -28,6 +28,13 @@ class RssFeedManager {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
         return false
       }
+    } else if (feedObj.entityType === 'series') {
+      const series = this.db.series.find(s => s.id === feedObj.entityId)
+      const hasSeriesBook = this.db.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+      if (!hasSeriesBook) {
+        Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found or has no audio tracks`)
+        return false
+      }
     } else {
       Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Invalid entityType "${feedObj.entityType}"`)
       return false
@@ -73,6 +80,7 @@ class RssFeedManager {
       return
     }
 
+    // Check if feed needs to be updated
     if (feed.entityType === 'item') {
       const libraryItem = this.db.getLibraryItem(feed.entityId)
       if (libraryItem && (!feed.entityUpdatedAt || libraryItem.updatedAt > feed.entityUpdatedAt)) {
@@ -97,6 +105,33 @@ class RssFeedManager {
           Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
 
           feed.updateFromCollection(collectionExpanded)
+          await this.db.updateEntity('feed', feed)
+        }
+      }
+    } else if (feed.entityType === 'series') {
+      const series = this.db.series.find(s => s.id === feed.entityId)
+      if (series) {
+        const seriesJson = series.toJSON()
+        // Get books in series that have audio tracks
+        seriesJson.books = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+
+        // Find most recently updated item in series
+        let mostRecentlyUpdatedAt = seriesJson.updatedAt
+        let totalTracks = 0 // Used to detect series items removed
+        seriesJson.books.forEach((libraryItem) => {
+          totalTracks += libraryItem.media.tracks.length
+          if (libraryItem.media.tracks.length && libraryItem.updatedAt > mostRecentlyUpdatedAt) {
+            mostRecentlyUpdatedAt = libraryItem.updatedAt
+          }
+        })
+        if (totalTracks !== feed.episodes.length) {
+          mostRecentlyUpdatedAt = Date.now()
+        }
+
+        if (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt) {
+          Logger.debug(`[RssFeedManager] Updating RSS feed for series "${seriesJson.name}"`)
+
+          feed.updateFromSeries(seriesJson)
           await this.db.updateEntity('feed', feed)
         }
       }
@@ -162,6 +197,20 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress)
+    this.feeds[feed.id] = feed
+
+    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    await this.db.insertEntity('feed', feed)
+    SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
+    return feed
+  }
+
+  async openFeedForSeries(user, seriesExpanded, options) {
+    const serverAddress = options.serverAddress
+    const slug = options.slug
+
+    const feed = new Feed()
+    feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress)
     this.feeds[feed.id] = feed
 
     Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)

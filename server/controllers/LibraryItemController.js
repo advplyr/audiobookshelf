@@ -92,9 +92,22 @@ class LibraryItemController {
       }
     }
 
+    // Book specific - Get all series being removed from this item
+    let seriesRemoved = []
+    if (libraryItem.isBook && mediaPayload.metadata?.series) {
+      const seriesIdsInUpdate = (mediaPayload.metadata?.series || []).map(se => se.id)
+      seriesRemoved = libraryItem.media.metadata.series.filter(se => !seriesIdsInUpdate.includes(se.id))
+    }
+
     const hasUpdates = libraryItem.media.update(mediaPayload)
     if (hasUpdates) {
       libraryItem.updatedAt = Date.now()
+
+      if (seriesRemoved.length) {
+        // Check remove empty series
+        Logger.debug(`[LibraryItemController] Series was removed from book. Check if series is now empty.`)
+        await this.checkRemoveEmptySeries(seriesRemoved)
+      }
 
       if (isPodcastAutoDownloadUpdated) {
         this.cronManager.checkUpdatePodcastCron(libraryItem)

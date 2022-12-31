@@ -268,6 +268,7 @@ class ApiRouter {
     //
     this.router.post('/feeds/item/:itemId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForItem.bind(this))
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
+    this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
     this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
 
     //
@@ -360,13 +361,18 @@ class ApiRouter {
 
     // TODO: Remove open sessions for library item
 
-    // remove book from collections
-    const collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
-    for (let i = 0; i < collectionsWithBook.length; i++) {
-      const collection = collectionsWithBook[i]
-      collection.removeBook(libraryItem.id)
-      await this.db.updateEntity('collection', collection)
-      SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+    if (libraryItem.isBook) {
+      // remove book from collections
+      const collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
+      for (let i = 0; i < collectionsWithBook.length; i++) {
+        const collection = collectionsWithBook[i]
+        collection.removeBook(libraryItem.id)
+        await this.db.updateEntity('collection', collection)
+        SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+      }
+
+      // Check remove empty series
+      await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
     }
 
     // remove item from playlists
@@ -396,6 +402,21 @@ class ApiRouter {
 
     await this.db.removeLibraryItem(libraryItem.id)
     SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
+  }
+
+  async checkRemoveEmptySeries(seriesToCheck, excludeLibraryItemId = null) {
+    if (!seriesToCheck || !seriesToCheck.length) return
+
+    for (const series of seriesToCheck) {
+      const otherLibraryItemsInSeries = this.db.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))
+      if (!otherLibraryItemsInSeries.length) {
+        // Close open RSS feed for series
+        await this.rssFeedManager.closeFeedForEntityId(series.id)
+        Logger.debug(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
+        await this.db.removeEntity('series', series.id)
+        // TODO: Socket events for series?
+      }
+    }
   }
 
   async getUserListeningSessionsHelper(userId) {

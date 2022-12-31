@@ -1,6 +1,10 @@
 const FeedMeta = require('./FeedMeta')
 const FeedEpisode = require('./FeedEpisode')
 const RSS = require('../libs/rss')
+const { createNewSortInstance } = require('../libs/fastSort')
+const naturalSort = createNewSortInstance({
+  comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
+})
 
 class Feed {
   constructor(feed) {
@@ -206,6 +210,83 @@ class Feed {
 
     this.meta.title = collectionExpanded.name
     this.meta.description = collectionExpanded.description || ''
+    this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
+    this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
+    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+
+    this.episodes = []
+
+    itemsWithTracks.forEach((item, index) => {
+      if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
+
+      item.media.tracks.forEach((audioTrack) => {
+        const feedEpisode = new FeedEpisode()
+        feedEpisode.setFromAudiobookTrack(item, this.serverAddress, this.slug, audioTrack, this.meta, index)
+        this.episodes.push(feedEpisode)
+      })
+    })
+
+    this.updatedAt = Date.now()
+    this.xml = null
+  }
+
+  setFromSeries(userId, slug, seriesExpanded, serverAddress) {
+    const feedUrl = `${serverAddress}/feed/${slug}`
+
+    let itemsWithTracks = seriesExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
+    // Sort series items by series sequence
+    itemsWithTracks = naturalSort(itemsWithTracks).asc(li => li.media.metadata.getSeriesSequence(seriesExpanded.id))
+
+    const libraryId = itemsWithTracks[0].libraryId
+    const firstItemWithCover = itemsWithTracks.find(li => li.media.coverPath)
+
+    this.id = slug
+    this.slug = slug
+    this.userId = userId
+    this.entityType = 'series'
+    this.entityId = seriesExpanded.id
+    this.entityUpdatedAt = seriesExpanded.updatedAt // This will be set to the most recently updated library item
+    this.coverPath = firstItemWithCover?.coverPath || null
+    this.serverAddress = serverAddress
+    this.feedUrl = feedUrl
+
+    this.meta = new FeedMeta()
+    this.meta.title = seriesExpanded.name
+    this.meta.description = seriesExpanded.description || ''
+    this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
+    this.meta.imageUrl = this.coverPath ? `${serverAddress}/feed/${slug}/cover` : `${serverAddress}/Logo.png`
+    this.meta.feedUrl = feedUrl
+    this.meta.link = `${serverAddress}/library/${libraryId}/series/${seriesExpanded.id}`
+    this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit
+
+    this.episodes = []
+
+    itemsWithTracks.forEach((item, index) => {
+      if (item.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = item.updatedAt
+
+      item.media.tracks.forEach((audioTrack) => {
+        const feedEpisode = new FeedEpisode()
+        feedEpisode.setFromAudiobookTrack(item, serverAddress, slug, audioTrack, this.meta, index)
+        this.episodes.push(feedEpisode)
+      })
+    })
+
+    this.createdAt = Date.now()
+    this.updatedAt = Date.now()
+  }
+
+  updateFromSeries(seriesExpanded) {
+    let itemsWithTracks = seriesExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
+    // Sort series items by series sequence
+    itemsWithTracks = naturalSort(itemsWithTracks).asc(li => li.media.metadata.getSeriesSequence(seriesExpanded.id))
+
+    const firstItemWithCover = itemsWithTracks.find(item => item.media.coverPath)
+
+    this.entityUpdatedAt = seriesExpanded.updatedAt
+    this.coverPath = firstItemWithCover?.coverPath || null
+
+    this.meta.title = seriesExpanded.name
+    this.meta.description = seriesExpanded.description || ''
     this.meta.author = this.getAuthorsStringFromLibraryItems(itemsWithTracks)
     this.meta.imageUrl = this.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!itemsWithTracks.some(li => li.media.metadata.explicit) // explicit if any item is explicit

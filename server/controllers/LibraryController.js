@@ -375,6 +375,9 @@ class LibraryController {
   // api/libraries/:id/series
   async getAllSeriesForLibrary(req, res) {
     const libraryItems = req.libraryItems
+
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
     const payload = {
       results: [],
       total: 0,
@@ -383,7 +386,8 @@ class LibraryController {
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
-      minified: req.query.minified === '1'
+      minified: req.query.minified === '1',
+      include: include.join(',')
     }
 
     let series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified)
@@ -408,8 +412,17 @@ class LibraryController {
     payload.total = series.length
 
     if (payload.limit) {
-      var startIndex = payload.page * payload.limit
+      const startIndex = payload.page * payload.limit
       series = series.slice(startIndex, startIndex + payload.limit)
+    }
+
+    // add rssFeed when "include=rssfeed" is in query string
+    if (include.includes('rssfeed')) {
+      series = series.map((se) => {
+        const feedData = this.rssFeedManager.findFeedForEntityId(se.id)
+        se.rssFeed = feedData?.toJSONMinified() || null
+        return se
+      })
     }
 
     payload.results = series
@@ -442,7 +455,7 @@ class LibraryController {
 
       if (include.includes('rssfeed')) {
         const feedData = this.rssFeedManager.findFeedForEntityId(c.id)
-        expanded.rssFeed = feedData ? feedData.toJSONMinified() : null
+        expanded.rssFeed = feedData?.toJSONMinified() || null
       }
 
       return expanded

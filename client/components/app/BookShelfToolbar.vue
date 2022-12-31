@@ -51,6 +51,11 @@
         <div class="flex-grow" />
         <ui-checkbox v-if="!isBatchSelecting" v-model="settings.collapseBookSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseBookSeries" />
 
+        <!-- RSS feed -->
+        <ui-tooltip v-if="seriesRssFeed" :text="$strings.LabelOpenRSSFeed" direction="top">
+          <ui-icon-btn icon="rss_feed" class="mx-0.5" :size="7" icon-font-size="1.2rem" bg-color="success" outlined @click="showOpenSeriesRSSFeed" />
+        </ui-tooltip>
+
         <ui-context-menu-dropdown v-if="!isBatchSelecting && seriesContextMenuItems.length" :items="seriesContextMenuItems" class="mx-px" @action="seriesContextMenuAction" />
       </template>
       <!-- library & collections page -->
@@ -229,6 +234,9 @@ export default {
     seriesProgress() {
       return this.selectedSeries ? this.selectedSeries.progress : null
     },
+    seriesRssFeed() {
+      return this.selectedSeries ? this.selectedSeries.rssFeed : null
+    },
     seriesLibraryItemIds() {
       if (!this.seriesProgress) return []
       return this.seriesProgress.libraryItemIds || []
@@ -253,7 +261,7 @@ export default {
   methods: {
     seriesContextMenuAction(action) {
       if (action === 'open-rss-feed') {
-        // TODO: Open RSS Feed
+        this.showOpenSeriesRSSFeed()
       } else if (action === 're-add-to-continue-listening') {
         if (this.processingSeries) {
           console.warn('Already processing series')
@@ -267,6 +275,14 @@ export default {
         }
         this.markSeriesFinished()
       }
+    },
+    showOpenSeriesRSSFeed() {
+      this.$store.commit('globals/setRSSFeedOpenCloseModal', {
+        id: this.selectedSeries.id,
+        name: this.selectedSeries.name,
+        type: 'series',
+        feed: this.selectedSeries.rssFeed
+      })
     },
     reAddSeriesToContinueListening() {
       this.processingSeries = true
@@ -396,16 +412,32 @@ export default {
     },
     setBookshelfTotalEntities(totalEntities) {
       this.totalEntities = totalEntities
+    },
+    rssFeedOpen(data) {
+      if (data.entityId === this.seriesId) {
+        console.log('RSS Feed Opened', data)
+        this.selectedSeries.rssFeed = data
+      }
+    },
+    rssFeedClosed(data) {
+      if (data.entityId === this.seriesId) {
+        console.log('RSS Feed Closed', data)
+        this.selectedSeries.rssFeed = null
+      }
     }
   },
   mounted() {
     this.init()
     this.$eventBus.$on('user-settings', this.settingsUpdated)
     this.$eventBus.$on('bookshelf-total-entities', this.setBookshelfTotalEntities)
+    this.$root.socket.on('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.on('rss_feed_closed', this.rssFeedClosed)
   },
   beforeDestroy() {
     this.$eventBus.$off('user-settings', this.settingsUpdated)
     this.$eventBus.$off('bookshelf-total-entities', this.setBookshelfTotalEntities)
+    this.$root.socket.off('rss_feed_open', this.rssFeedOpen)
+    this.$root.socket.off('rss_feed_closed', this.rssFeedClosed)
   }
 }
 </script>

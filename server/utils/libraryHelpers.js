@@ -205,7 +205,7 @@ module.exports = {
       })
     })
 
-    var seriesItems = Object.values(_series)
+    let seriesItems = Object.values(_series)
 
     // check progress filter
     if (filterBy && filterBy.startsWith('progress.') && user) {
@@ -690,6 +690,11 @@ module.exports = {
           shelf.entities = shelf.entities.map((item) => {
             item.rssFeed = ctx.rssFeedManager.findFeedForEntityId(item.id)?.toJSONMinified() || null
             return item
+          })
+        } else if (shelf.type === 'series') {
+          shelf.entities = shelf.entities.map((series) => {
+            series.rssFeed = ctx.rssFeedManager.findFeedForEntityId(series.id)?.toJSONMinified() || null
+            return series
           })
         }
       }

@@ -175,7 +175,7 @@ class BookMetadata {
     return this.series.length ? this.series[0] : null
   }
   getSeriesSequence(seriesId) {
-    var series = this.series.find(se => se.id == seriesId)
+    const series = this.series.find(se => se.id == seriesId)
     if (!series) return null
     return series.sequence || ''
   }

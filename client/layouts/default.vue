@@ -330,12 +330,6 @@ export default {
       }
       this.$store.commit('libraries/removeUserPlaylist', playlist)
     },
-    rssFeedOpen(data) {
-      console.log('RSS Feed Open', data)
-    },
-    rssFeedClosed(data) {
-      console.log('RSS Feed Closed', data)
-    },
     backupApplied() {
       // Force refresh
       location.reload()
@@ -424,10 +418,6 @@ export default {
       // Task Listeners
       this.socket.on('task_started', this.taskStarted)
       this.socket.on('task_finished', this.taskFinished)
-
-      // Feed Listeners
-      this.socket.on('rss_feed_open', this.rssFeedOpen)
-      this.socket.on('rss_feed_closed', this.rssFeedClosed)
 
       this.socket.on('backup_applied', this.backupApplied)
 
