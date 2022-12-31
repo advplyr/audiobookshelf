@@ -9,6 +9,9 @@
         <span class="material-icons text-xl text-white text-opacity-75 hover:text-opacity-100">edit</span>
       </div>
     </div>
+
+    <span v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 * sizeMultiplier + 'rem', left: 0.5 * sizeMultiplier + 'rem', fontSize: 1.5 * sizeMultiplier + 'rem' }">rss_feed</span>
+
     <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-30 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(200, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
@@ -72,6 +75,9 @@ export default {
     },
     userCanUpdate() {
       return this.store.getters['user/getUserCanUpdate']
+    },
+    rssFeed() {
+      return this.collection ? this.collection.rssFeed : null
     }
   },
   methods: {

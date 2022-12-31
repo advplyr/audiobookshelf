@@ -406,9 +406,11 @@ class LibraryController {
 
   // api/libraries/:id/collections
   async getCollectionsForLibrary(req, res) {
-    var libraryItems = req.libraryItems
+    const libraryItems = req.libraryItems
 
-    var payload = {
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
+    const payload = {
       results: [],
       total: 0,
       limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
@@ -416,20 +418,27 @@ class LibraryController {
       sortBy: req.query.sort,
       sortDesc: req.query.desc === '1',
       filterBy: req.query.filter,
-      minified: req.query.minified === '1'
+      minified: req.query.minified === '1',
+      include: include.join(',')
     }
 
-    var collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => {
-      var expanded = c.toJSONExpanded(libraryItems, payload.minified)
+    let collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => {
+      const expanded = c.toJSONExpanded(libraryItems, payload.minified)
+
       // If all books restricted to user in this collection then hide this collection
       if (!expanded.books.length && c.books.length) return null
+
+      if (include.includes('rssfeed')) {
+        expanded.rssFeed = this.rssFeedManager.findFeedForEntityId(c.id)
+      }
+
       return expanded
     }).filter(c => !!c)
 
     payload.total = collections.length
 
     if (payload.limit) {
-      var startIndex = payload.page * payload.limit
+      const startIndex = payload.page * payload.limit
       collections = collections.slice(startIndex, startIndex + payload.limit)
     }
 

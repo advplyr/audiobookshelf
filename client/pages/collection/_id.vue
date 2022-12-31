@@ -19,7 +19,7 @@
               {{ streaming ? $strings.ButtonPlaying : $strings.ButtonPlay }}
             </ui-btn>
 
-             <!-- RSS feed -->
+            <!-- RSS feed -->
             <ui-tooltip v-if="rssFeed" :text="$strings.LabelOpenRSSFeed" direction="top">
               <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
@@ -124,7 +124,7 @@ export default {
           action: 'create-playlist'
         }
       ]
-      if (this.userIsAdminOrUp) {
+      if (this.userIsAdminOrUp || this.rssFeed) {
         items.push({
           text: this.$strings.LabelOpenRSSFeed,
           action: 'open-rss-feed'

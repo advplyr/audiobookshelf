@@ -318,7 +318,7 @@ export default {
 
       const entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? 'items' : this.entityName
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1`
+      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed`
 
       const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
         console.error('failed to fetch books', error)
@@ -340,7 +340,7 @@ export default {
         }
 
         for (let i = 0; i < payload.results.length; i++) {
-          var index = i + startIndex
+          const index = i + startIndex
           this.entities[index] = payload.results[i]
           if (this.entityComponentRefs[index]) {
             this.entityComponentRefs[index].setEntity(this.entities[index])
