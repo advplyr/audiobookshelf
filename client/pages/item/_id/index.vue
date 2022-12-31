@@ -200,7 +200,6 @@
     </div>
 
     <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
-    <modals-rssfeed-view-modal v-model="showRssFeedModal" :library-item="libraryItem" :feed="rssFeed" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>
@@ -235,7 +234,6 @@ export default {
       podcastFeedEpisodes: [],
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      showRssFeedModal: false,
       showBookmarksModal: false
     }
   },
@@ -633,7 +631,13 @@ export default {
       this.$store.commit('globals/setShowPlaylistsModal', true)
     },
     clickRSSFeed() {
-      this.showRssFeedModal = true
+      this.$store.commit('globals/setRSSFeedOpenCloseModal', {
+        id: this.libraryItemId,
+        name: this.title,
+        type: 'item',
+        feed: this.rssFeed,
+        hasEpisodesWithoutPubDate: this.podcastEpisodes.some((ep) => !ep.pubDate)
+      })
     },
     episodeDownloadQueued(episodeDownload) {
       if (episodeDownload.libraryItemId === this.libraryItemId) {

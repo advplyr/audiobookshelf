@@ -8,9 +8,11 @@ export const state = () => ({
   showEditPlaylistModal: false,
   showEditPodcastEpisode: false,
   showViewPodcastEpisodeModal: false,
+  showRSSFeedOpenCloseModal: false,
   showConfirmPrompt: false,
   confirmPromptOptions: null,
   showEditAuthorModal: false,
+  rssFeedEntity: null,
   selectedEpisode: null,
   selectedPlaylistItems: null,
   selectedPlaylist: null,
@@ -98,6 +100,13 @@ export const mutations = {
   },
   setShowViewPodcastEpisodeModal(state, val) {
     state.showViewPodcastEpisodeModal = val
+  },
+  setShowRSSFeedOpenCloseModal(state, val) {
+    state.showRSSFeedOpenCloseModal = val
+  },
+  setRSSFeedOpenCloseModal(state, entity) {
+    state.rssFeedEntity = entity
+    state.showRSSFeedOpenCloseModal = true
   },
   setShowConfirmPrompt(state, val) {
     state.showConfirmPrompt = val

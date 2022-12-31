@@ -18,6 +18,7 @@
     <modals-podcast-view-episode />
     <modals-authors-edit-modal />
     <modals-batch-quick-match-model />
+    <modals-rssfeed-open-close-modal />
     <prompt-confirm />
     <readers-reader />
   </div>

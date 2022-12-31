@@ -37,17 +37,6 @@
 
 <script>
 export default {
-  props: {
-    value: Boolean,
-    libraryItem: {
-      type: Object,
-      default: () => null
-    },
-    feed: {
-      type: Object,
-      default: () => null
-    }
-  },
   data() {
     return {
       processing: false,
@@ -68,23 +57,29 @@ export default {
   computed: {
     show: {
       get() {
-        return this.value
+        return this.$store.state.globals.showRSSFeedOpenCloseModal
       },
       set(val) {
-        this.$emit('input', val)
+        this.$store.commit('globals/setShowRSSFeedOpenCloseModal', val)
       }
     },
-    libraryItemId() {
-      return this.libraryItem.id
+    rssFeedEntity() {
+      return this.$store.state.globals.rssFeedEntity || {}
     },
-    media() {
-      return this.libraryItem.media || {}
+    entityId() {
+      return this.rssFeedEntity.id
     },
-    mediaMetadata() {
-      return this.media.metadata || {}
+    entityType() {
+      return this.rssFeedEntity.type
+    },
+    entityFeed() {
+      return this.rssFeedEntity.feed
+    },
+    hasEpisodesWithoutPubDate() {
+      return !!this.rssFeedEntity.hasEpisodesWithoutPubDate
     },
     title() {
-      return this.mediaMetadata.title
+      return this.rssFeedEntity.name
     },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
@@ -94,12 +89,6 @@ export default {
     },
     isHttp() {
       return window.origin.startsWith('http://')
-    },
-    episodes() {
-      return this.media.episodes || []
-    },
-    hasEpisodesWithoutPubDate() {
-      return this.episodes.some((ep) => !ep.pubDate)
     }
   },
   methods: {
@@ -124,7 +113,7 @@ export default {
 
       console.log('Payload', payload)
       this.$axios
-        .$post(`/api/feeds/item/${this.libraryItemId}/open`, payload)
+        .$post(`/api/feeds/${this.entityType}/${this.entityId}/open`, payload)
         .then((data) => {
           console.log('Opened RSS Feed', data)
           this.currentFeed = data.feed
@@ -155,9 +144,9 @@ export default {
         })
     },
     init() {
-      if (!this.libraryItem) return
-      this.newFeedSlug = this.libraryItem.id
-      this.currentFeed = this.feed
+      if (!this.entityId) return
+      this.newFeedSlug = this.entityId
+      this.currentFeed = this.entityFeed
     }
   },
   mounted() {}
