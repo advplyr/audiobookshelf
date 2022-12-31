@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Téléverser une Sauvegarde",
   "ButtonUploadCover": "Téléverser une Couverture",
   "ButtonUploadOPMLFile": "Téléverser un Fichier OPML",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Afficher tout",
   "ButtonYes": "Oui",
   "HeaderAccount": "Compte",

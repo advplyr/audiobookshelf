@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "上传备份",
   "ButtonUploadCover": "上传封面",
   "ButtonUploadOPMLFile": "上传 OPML 文件",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "查看全部",
   "ButtonYes": "确定",
   "HeaderAccount": "帐户",

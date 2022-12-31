@@ -35,13 +35,13 @@
             </ui-tooltip>
           </td>
           <td class="py-0">
-            <div class="w-full flex justify-center">
+            <div class="w-full flex justify-left">
               <!-- Dont show edit for non-root users -->
               <div v-if="user.type !== 'root' || userIsRoot" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-opacity-100 cursor-pointer" @click.stop="editUser(user)">
-                <span class="material-icons text-base">edit</span>
+                <button :aria-label="$getString('ButtonUserEdit', [user.username])" class="material-icons text-base">edit</button>
               </div>
               <div v-show="user.type !== 'root'" class="h-8 w-8 flex items-center justify-center text-white text-opacity-50 hover:text-error cursor-pointer" @click.stop="deleteUserClick(user)">
-                <span class="material-icons text-base">delete</span>
+                <button :aria-label="$getString('ButtonUserDelete', [user.username])" class="material-icons text-base">delete</button>
               </div>
             </div>
           </td>

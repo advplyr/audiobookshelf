@@ -75,6 +75,8 @@
   "ButtonUploadBackup": "Upload backup",
   "ButtonUploadCover": "Upload Cover",
   "ButtonUploadOPMLFile": "Upload OPML Datoteku",
+  "ButtonUserDelete": "Delete user {0}",
+  "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Prikaži sve",
   "ButtonYes": "Da",
   "HeaderAccount": "Korisnički račun",
