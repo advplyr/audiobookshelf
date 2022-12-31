@@ -1,7 +1,7 @@
 <template>
   <div class="relative w-full" v-click-outside="clickOutsideObj">
     <p class="text-sm font-semibold px-1" :class="disabled ? 'text-gray-300' : ''">{{ label }}</p>
-    <button type="button" :disabled="disabled" class="relative w-full border rounded shadow-sm pl-3 pr-8 py-2 text-left sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
+    <button type="button" :aria-label="longLabel" :disabled="disabled" class="relative w-full border rounded shadow-sm pl-3 pr-8 py-2 text-left sm:text-sm" :class="buttonClass" aria-haspopup="listbox" aria-expanded="true" @click.stop.prevent="clickShowMenu">
       <span class="flex items-center">
         <span class="block truncate font-sans" :class="{ 'font-semibold': selectedSubtext, 'text-sm': small }">{{ selectedText }}</span>
         <span v-if="selectedSubtext">:&nbsp;</span>
@@ -91,6 +91,13 @@ export default {
       else classes.push('cursor-pointer border-gray-600 bg-primary text-gray-100')
 
       return classes.join(' ')
+    },
+    longLabel() {
+      let result = ''
+      if (this.label) result += this.label + ': '
+      if (this.selectedText) result += this.selectedText
+      if (this.selectedSubtext) result += ' ' + this.selectedSubtext
+      return result
     }
   },
   methods: {
