@@ -1,6 +1,6 @@
 <template>
   <div class="w-44 fixed left-0 top-16 h-full bg-bg bg-opacity-100 md:bg-opacity-70 shadow-lg border-r border-white border-opacity-5 py-3 transform transition-transform" :class="wrapperClass" v-click-outside="clickOutside">
-    <div class="md:hidden flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
+    <div v-show="isMobilePortrait" class="flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
       <span class="material-icons text-2xl">arrow_back</span>
     </div>
 
@@ -114,7 +114,7 @@ export default {
       var classes = []
       if (this.drawerOpen) classes.push('translate-x-0')
       else classes.push('-translate-x-44')
-      if (this.isMobile) classes.push('z-50')
+      if (this.isMobilePortrait) classes.push('z-50')
       else classes.push('z-40')
       return classes.join(' ')
     },
@@ -124,9 +124,11 @@ export default {
     isMobileLandscape() {
       return this.$store.state.globals.isMobileLandscape
     },
+    isMobilePortrait() {
+      return this.$store.state.globals.isMobilePortrait
+    },
     drawerOpen() {
-      if (this.isMobile) return this.isOpen
-      return true
+      return !this.isMobilePortrait || this.isOpen
     },
     routeName() {
       return this.$route.name

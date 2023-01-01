@@ -1,6 +1,7 @@
 export const state = () => ({
   isMobile: false,
   isMobileLandscape: false,
+  isMobilePortrait: false,
   showBatchCollectionModal: false,
   showCollectionsModal: false,
   showEditCollectionModal: false,
@@ -76,7 +77,8 @@ export const getters = {
 export const mutations = {
   updateWindowSize(state, { width, height }) {
     state.isMobile = width < 640 || height < 640
-    state.isMobileLandscape = state.isMobile && height > width
+    state.isMobileLandscape = state.isMobile && height < width
+    state.isMobilePortrait = state.isMobile && height >= width
   },
   setShowCollectionsModal(state, val) {
     state.showBatchCollectionModal = false
