@@ -2,9 +2,9 @@
   <div id="page-wrapper" class="page p-2 md:p-6 overflow-y-auto relative" :class="streamLibraryItem ? 'streaming' : ''">
     <app-config-side-nav :is-open.sync="sideDrawerOpen" />
     <div class="configContent" :class="`page-${currentPage}`">
-      <div v-show="isMobile" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2">
-        <span class="material-icons text-2xl cursor-pointer" @click.stop.prevent="showMore">more_vert</span>
-        <p class="pl-3 capitalize">{{ currentPage }}</p>
+      <div v-show="isMobilePortrait" class="w-full pb-4 px-2 flex border-b border-white border-opacity-10 mb-2 cursor-pointer" @click.stop.prevent="toggleShowMore">
+        <span class="material-icons text-2xl cursor-pointer">arrow_forward</span>
+        <p class="pl-3 capitalize">{{ $strings.HeaderSettings }}</p>
       </div>
       <nuxt-child />
     </div>
@@ -35,8 +35,8 @@ export default {
     }
   },
   computed: {
-    isMobile() {
-      return this.$store.state.globals.isMobile
+    isMobilePortrait() {
+      return this.$store.state.globals.isMobilePortrait
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
@@ -60,8 +60,8 @@ export default {
     }
   },
   methods: {
-    showMore() {
-      this.sideDrawerOpen = true
+    toggleShowMore() {
+      this.sideDrawerOpen = !this.sideDrawerOpen
     },
     setDeveloperMode() {
       var value = !this.$store.state.developerMode
