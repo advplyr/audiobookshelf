@@ -131,7 +131,7 @@ class AudioFile {
     this.channels = probeData.channels
     this.channelLayout = probeData.channelLayout
     this.chapters = probeData.chapters || []
-    this.metaTags = probeData.audioFileMetadata
+    this.metaTags = probeData.audioMetaTags
     this.embeddedCoverArt = probeData.embeddedCoverArt
   }
 
@@ -167,9 +167,7 @@ class AudioFile {
     let hasUpdated = false
 
     const newjson = scannedAudioFile.toJSON()
-    if (this.manuallyVerified) newjson.manuallyVerified = true
-    if (this.exclude) newjson.exclude = true
-    newjson.addedAt = this.addedAt
+    const ignoreKeys = ['manuallyVerified', 'exclude', 'addedAt', 'updatedAt']
 
     for (const key in newjson) {
       if (key === 'metadata') {
@@ -185,7 +183,7 @@ class AudioFile {
         if (this.syncChapters(newjson.chapters || [])) {
           hasUpdated = true
         }
-      } else if (this[key] !== newjson[key]) {
+      } else if (!ignoreKeys.includes(key) && this[key] !== newjson[key]) {
         this[key] = newjson[key]
         hasUpdated = true
       }

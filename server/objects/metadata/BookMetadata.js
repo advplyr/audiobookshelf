@@ -306,11 +306,9 @@ class BookMetadata {
         // tagToUse = mapping.altTag
       }
 
-      if (value && typeof value === 'string') { // Trim whitespace
-        value = value.trim()
-      }
+      if (value && typeof value === 'string') {
+        value = value.trim() // Trim whitespace
 
-      if (value) {
         if (mapping.key === 'narrators' && (!this.narrators.length || overrideExistingDetails)) {
           updatePayload.narrators = this.parseNarratorsTag(value)
         } else if (mapping.key === 'authors' && (!this.authors.length || overrideExistingDetails)) {
@@ -335,13 +333,13 @@ class BookMetadata {
 
   // Returns array of names in First Last format
   parseNarratorsTag(narratorsTag) {
-    var parsed = parseNameString.parse(narratorsTag)
+    const parsed = parseNameString.parse(narratorsTag)
     return parsed ? parsed.names : []
   }
 
   // Return array of authors minified with placeholder id
   parseAuthorsTag(authorsTag) {
-    var parsed = parseNameString.parse(authorsTag)
+    const parsed = parseNameString.parse(authorsTag)
     if (!parsed) return []
     return (parsed.names || []).map((au) => {
       return {
@@ -353,7 +351,7 @@ class BookMetadata {
 
   parseGenresTag(genreTag) {
     if (!genreTag || !genreTag.length) return []
-    var separators = ['/', '//', ';']
+    const separators = ['/', '//', ';']
     for (let i = 0; i < separators.length; i++) {
       if (genreTag.includes(separators[i])) {
         return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)

@@ -21,6 +21,15 @@ class AudioMetaTags {
     this.tagLanguage = null
     this.tagASIN = null
     this.tagOverdriveMediaMarker = null
+    this.tagOriginalYear = null
+    this.tagReleaseCountry = null
+    this.tagReleaseType = null
+    this.tagReleaseStatus = null
+    this.tagISRC = null
+    this.tagMusicBrainzTrackId = null
+    this.tagMusicBrainzAlbumId = null
+    this.tagMusicBrainzAlbumArtistId = null
+    this.tagMusicBrainzArtistId = null
 
     if (metadata) {
       this.construct(metadata)
@@ -29,7 +38,7 @@ class AudioMetaTags {
 
   toJSON() {
     // Only return the tags that are actually set
-    var json = {}
+    const json = {}
     for (const key in this) {
       if (key.startsWith('tag') && this[key]) {
         json[key] = this[key]
@@ -37,6 +46,51 @@ class AudioMetaTags {
     }
     return json
   }
+
+  get trackNumAndTotal() {
+    const data = {
+      number: null,
+      total: null
+    }
+
+    // Track ID3 tag might be "3/10" or just "3"
+    if (this.tagTrack) {
+      const trackParts = this.tagTrack.split('/').map(part => Number(part))
+      if (trackParts.length > 0) {
+        // Fractional track numbers not supported
+        data.number = !isNaN(trackParts[0]) ? Math.trunc(trackParts[0]) : null
+      }
+      if (trackParts.length > 1) {
+        data.total = !isNaN(trackParts[1]) ? trackParts[1] : null
+      }
+    }
+
+    return data
+  }
+
+  get discNumAndTotal() {
+    const data = {
+      number: null,
+      total: null
+    }
+
+    if (this.tagDisc) {
+      const discParts = this.tagDisc.split('/').map(p => Number(p))
+      if (discParts.length > 0) {
+        data.number = !isNaN(discParts[0]) ? Math.trunc(discParts[0]) : null
+      }
+      if (discParts.length > 1) {
+        data.total = !isNaN(discParts[1]) ? discParts[1] : null
+      }
+    }
+
+    return data
+  }
+
+  get discNumber() { return this.discNumAndTotal.number }
+  get discTotal() { return this.discNumAndTotal.total }
+  get trackNumber() { return this.trackNumAndTotal.number }
+  get trackTotal() { return this.trackNumAndTotal.total }
 
   construct(metadata) {
     this.tagAlbum = metadata.tagAlbum || null
@@ -60,6 +114,15 @@ class AudioMetaTags {
     this.tagLanguage = metadata.tagLanguage || null
     this.tagASIN = metadata.tagASIN || null
     this.tagOverdriveMediaMarker = metadata.tagOverdriveMediaMarker || null
+    this.tagOriginalYear = metadata.tagOriginalYear || null
+    this.tagReleaseCountry = metadata.tagReleaseCountry || null
+    this.tagReleaseType = metadata.tagReleaseType || null
+    this.tagReleaseStatus = metadata.tagReleaseStatus || null
+    this.tagISRC = metadata.tagISRC || null
+    this.tagMusicBrainzTrackId = metadata.tagMusicBrainzTrackId || null
+    this.tagMusicBrainzAlbumId = metadata.tagMusicBrainzAlbumId || null
+    this.tagMusicBrainzAlbumArtistId = metadata.tagMusicBrainzAlbumArtistId || null
+    this.tagMusicBrainzArtistId = metadata.tagMusicBrainzArtistId || null
   }
 
   // Data parsed in prober.js
@@ -85,6 +148,15 @@ class AudioMetaTags {
     this.tagLanguage = payload.file_tag_language || null
     this.tagASIN = payload.file_tag_asin || null
     this.tagOverdriveMediaMarker = payload.file_tag_overdrive_media_marker || null
+    this.tagOriginalYear = payload.file_tag_originalyear || null
+    this.tagReleaseCountry = payload.file_tag_releasecountry || null
+    this.tagReleaseType = payload.file_tag_releasetype || null
+    this.tagReleaseStatus = payload.file_tag_releasestatus || null
+    this.tagISRC = payload.file_tag_isrc || null
+    this.tagMusicBrainzTrackId = payload.file_tag_musicbrainz_trackid || null
+    this.tagMusicBrainzAlbumId = payload.file_tag_musicbrainz_albumid || null
+    this.tagMusicBrainzAlbumArtistId = payload.file_tag_musicbrainz_albumartistid || null
+    this.tagMusicBrainzArtistId = payload.file_tag_musicbrainz_artistid || null
   }
 
   setDataFromTone(tags) {
@@ -114,9 +186,18 @@ class AudioMetaTags {
       tagLanguage: payload.file_tag_language || null,
       tagASIN: payload.file_tag_asin || null,
       tagOverdriveMediaMarker: payload.file_tag_overdrive_media_marker || null,
+      tagOriginalYear: payload.file_tag_originalyear || null,
+      tagReleaseCountry: payload.file_tag_releasecountry || null,
+      tagReleaseType: payload.file_tag_releasetype || null,
+      tagReleaseStatus: payload.file_tag_releasestatus || null,
+      tagISRC: payload.file_tag_isrc || null,
+      tagMusicBrainzTrackId: payload.file_tag_musicbrainz_trackid || null,
+      tagMusicBrainzAlbumId: payload.file_tag_musicbrainz_albumid || null,
+      tagMusicBrainzAlbumArtistId: payload.file_tag_musicbrainz_albumartistid || null,
+      tagMusicBrainzArtistId: payload.file_tag_musicbrainz_artistid || null
     }
 
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in dataMap) {
       if (dataMap[key] !== this[key]) {
         this[key] = dataMap[key]

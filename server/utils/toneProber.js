@@ -147,7 +147,7 @@ module.exports.probe = (filepath, verbose = false) => {
     }
     const rawProbeData = parseProbeDump(dumpPayload)
     const probeData = new MediaProbeData()
-    probeData.setData(rawProbeData)
+    probeData.setDataFromTone(rawProbeData)
     return probeData
   }).catch((error) => {
     Logger.error(`[toneProber] Failed to probe file at path "${filepath}"`, error)

@@ -93,8 +93,8 @@ class MediaFileScanner {
       }
 
       const audioFile = new AudioFile()
-      audioFile.trackNumFromMeta = probeData.trackNumber
-      audioFile.discNumFromMeta = probeData.discNumber
+      audioFile.trackNumFromMeta = probeData.audioMetaTags.trackNumber
+      audioFile.discNumFromMeta = probeData.audioMetaTags.discNumber
       if (mediaType === 'book') {
         const { trackNumber, discNumber } = this.getTrackAndDiscNumberFromFilename(mediaMetadataFromScan, libraryFile)
         audioFile.trackNumFromFilename = trackNumber
@@ -302,6 +302,18 @@ class MediaFileScanner {
           libraryItem.media.setAudioFile(newAudioFiles[0])
           hasUpdated = true
         } else if (libraryItem.media.audioFile && libraryItem.media.audioFile.updateFromScan(mediaScanResult.audioFiles[0])) {
+          hasUpdated = true
+          console.log('Updated from scan')
+        }
+
+        if (libraryItem.media.setMetadataFromAudioFile()) {
+          hasUpdated = true
+        }
+
+        // If the audio track has no title meta tag then use the audio file name
+        if (!libraryItem.media.metadata.title && libraryItem.media.audioFile) {
+          const audioFileName = libraryItem.media.audioFile.metadata.filename
+          libraryItem.media.metadata.title = Path.basename(audioFileName, Path.extname(audioFileName))
           hasUpdated = true
         }
       }

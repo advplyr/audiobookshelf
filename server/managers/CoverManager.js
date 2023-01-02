@@ -19,7 +19,7 @@ class CoverManager {
   }
 
   getCoverDirectory(libraryItem) {
-    if (this.db.serverSettings.storeCoverWithItem && !libraryItem.isFile) {
+    if (this.db.serverSettings.storeCoverWithItem && !libraryItem.isFile && !libraryItem.isMusic) {
       return libraryItem.path
     } else {
       return Path.posix.join(this.ItemMetadataPath, libraryItem.id)
