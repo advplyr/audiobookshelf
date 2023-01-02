@@ -3,7 +3,7 @@ const htmlSanitizer = require('../htmlSanitizer')
 
 function parseCreators(metadata) {
   if (!metadata['dc:creator']) return null
-  var creators = metadata['dc:creator']
+  const creators = metadata['dc:creator']
   if (!creators.length) return null
   return creators.map(c => {
     if (typeof c !== 'object' || !c['$'] || !c['_']) return false
@@ -22,15 +22,15 @@ function fetchCreators(creators, role) {
 
 function fetchTagString(metadata, tag) {
   if (!metadata[tag] || !metadata[tag].length) return null
-  var tag = metadata[tag][0]
-  if (typeof tag !== 'string') return null
-  return tag
+  const value = metadata[tag][0]
+  if (typeof value !== 'string') return null
+  return value
 }
 
 function fetchDate(metadata) {
-  var date = fetchTagString(metadata, 'dc:date')
+  const date = fetchTagString(metadata, 'dc:date')
   if (!date) return null
-  var dateSplit = date.split('-')
+  const dateSplit = date.split('-')
   if (!dateSplit.length || dateSplit[0].length !== 4 || isNaN(dateSplit[0])) return null
   return dateSplit[0]
 }
@@ -41,17 +41,28 @@ function fetchPublisher(metadata) {
 
 function fetchISBN(metadata) {
   if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
-  var identifiers = metadata['dc:identifier']
-  var isbnObj = identifiers.find(i => i['$'] && i['$']['opf:scheme'] === 'ISBN')
+  const identifiers = metadata['dc:identifier']
+  const isbnObj = identifiers.find(i => i['$'] && i['$']['opf:scheme'] === 'ISBN')
   return isbnObj ? isbnObj['_'] || null : null
+}
+
+function fetchASIN(metadata) {
+  if (!metadata['dc:identifier'] || !metadata['dc:identifier'].length) return null
+  const identifiers = metadata['dc:identifier']
+  const asinObj = identifiers.find(i => i['$'] && i['$']['opf:scheme'] === 'ASIN')
+  return asinObj ? asinObj['_'] || null : null
 }
 
 function fetchTitle(metadata) {
   return fetchTagString(metadata, 'dc:title')
 }
 
+function fetchSubtitle(metadata) {
+  return fetchTagString(metadata, 'dc:subtitle')
+}
+
 function fetchDescription(metadata) {
-  var description = fetchTagString(metadata, 'dc:description')
+  let description = fetchTagString(metadata, 'dc:description')
   if (!description) return null
   // check if description is HTML or plain text. only plain text allowed
   // calibre stores < and > as &lt; and &gt;
@@ -79,10 +90,10 @@ function fetchVolumeNumber(metadataMeta) {
 }
 
 function fetchNarrators(creators, metadata) {
-  var narrators = fetchCreators(creators, 'nrt')
+  const narrators = fetchCreators(creators, 'nrt')
   if (typeof metadata.meta == "undefined" || narrators.length) return narrators
   try {
-    var narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
+    const narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
     return narratorsJSON["#value#"]
   } catch {
     return null
@@ -100,7 +111,7 @@ function stripPrefix(str) {
 }
 
 module.exports.parseOpfMetadataXML = async (xml) => {
-  var json = await xmlToJSON(xml)
+  const json = await xmlToJSON(xml)
 
   if (!json) return null
 
@@ -108,7 +119,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   const packageKey = Object.keys(json).find(key => stripPrefix(key) === 'package')
   if (!packageKey) return null
   const prefix = packageKey.split(':').shift()
-  var metadata = prefix ? json[packageKey][`${prefix}:metadata`] || json[packageKey].metadata : json[packageKey].metadata
+  let metadata = prefix ? json[packageKey][`${prefix}:metadata`] || json[packageKey].metadata : json[packageKey].metadata
   if (!metadata) return null
 
   if (Array.isArray(metadata)) {
@@ -132,11 +143,13 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   const narrators = (fetchNarrators(creators, metadata) || []).filter(nrt => nrt && nrt.trim())
   const data = {
     title: fetchTitle(metadata),
+    subtitle: fetchSubtitle(metadata),
     authors,
     narrators,
     publishedYear: fetchDate(metadata),
     publisher: fetchPublisher(metadata),
     isbn: fetchISBN(metadata),
+    asin: fetchASIN(metadata),
     description: fetchDescription(metadata),
     genres: fetchGenres(metadata),
     language: fetchLanguage(metadata),

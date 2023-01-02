@@ -228,31 +228,31 @@ class Book {
 
   // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
-    var metadataUpdatePayload = {}
-    var tagsUpdated = false
+    let metadataUpdatePayload = {}
+    let tagsUpdated = false
 
-    var descTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'desc.txt')
+    const descTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'desc.txt')
     if (descTxt) {
-      var descriptionText = await readTextFile(descTxt.metadata.path)
+      const descriptionText = await readTextFile(descTxt.metadata.path)
       if (descriptionText) {
         Logger.debug(`[Book] "${this.metadata.title}" found desc.txt updating description with "${descriptionText.slice(0, 20)}..."`)
         metadataUpdatePayload.description = descriptionText
       }
     }
-    var readerTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'reader.txt')
+    const readerTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'reader.txt')
     if (readerTxt) {
-      var narratorText = await readTextFile(readerTxt.metadata.path)
+      const narratorText = await readTextFile(readerTxt.metadata.path)
       if (narratorText) {
         Logger.debug(`[Book] "${this.metadata.title}" found reader.txt updating narrator with "${narratorText}"`)
         metadataUpdatePayload.narrators = this.metadata.parseNarratorsTag(narratorText)
       }
     }
 
-    var metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
     if (metadataAbs) {
       Logger.debug(`[Book] Found metadata.abs file for "${this.metadata.title}"`)
-      var metadataText = await readTextFile(metadataAbs.metadata.path)
-      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'book')
+      const metadataText = await readTextFile(metadataAbs.metadata.path)
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'book')
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
         metadataUpdatePayload = {
@@ -262,11 +262,11 @@ class Book {
       }
     }
 
-    var metadataOpf = textMetadataFiles.find(lf => lf.isOPFFile || lf.metadata.filename === 'metadata.xml')
+    const metadataOpf = textMetadataFiles.find(lf => lf.isOPFFile || lf.metadata.filename === 'metadata.xml')
     if (metadataOpf) {
-      var xmlText = await readTextFile(metadataOpf.metadata.path)
+      const xmlText = await readTextFile(metadataOpf.metadata.path)
       if (xmlText) {
-        var opfMetadata = await parseOpfMetadataXML(xmlText)
+        const opfMetadata = await parseOpfMetadataXML(xmlText)
         if (opfMetadata) {
           for (const key in opfMetadata) {
 
