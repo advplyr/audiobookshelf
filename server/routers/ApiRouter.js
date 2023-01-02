@@ -24,6 +24,7 @@ const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
+const EBookController = require('../controllers/EBookController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -50,6 +51,7 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
     this.taskManager = Server.taskManager
+    this.eBookManager = Server.eBookManager
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
@@ -270,6 +272,13 @@ class ApiRouter {
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
     this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
+
+    // 
+    // EBook Routes
+    //
+    this.router.get('/ebooks/:id/info', EBookController.middleware.bind(this), EBookController.getEbookInfo.bind(this))
+    this.router.get('/ebooks/:id/page/:page', EBookController.middleware.bind(this), EBookController.getEbookPage.bind(this))
+    this.router.get('/ebooks/:id/resource', EBookController.middleware.bind(this), EBookController.getEbookResource.bind(this))
 
     //
     // Misc Routes

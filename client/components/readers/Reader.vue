@@ -9,7 +9,7 @@
       <p v-if="abAuthor">by {{ abAuthor }}</p>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" />
 
     <div class="absolute bottom-2 left-2">{{ ebookType }}</div>
   </div>
@@ -37,7 +37,8 @@ export default {
       }
     },
     componentName() {
-      if (this.ebookType === 'epub') return 'readers-epub-reader'
+      if (this.ebookType === 'epub' && this.$isDev) return 'readers-epub-reader2'
+      else if (this.ebookType === 'epub') return 'readers-epub-reader'
       else if (this.ebookType === 'mobi') return 'readers-mobi-reader'
       else if (this.ebookType === 'pdf') return 'readers-pdf-reader'
       else if (this.ebookType === 'comic') return 'readers-comic-reader'

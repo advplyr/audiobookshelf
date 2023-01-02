@@ -31,6 +31,10 @@ class EBookFile {
     }
   }
 
+  get isEpub() {
+    return this.ebookFormat === 'epub'
+  }
+
   setData(libraryFile) {
     this.ino = libraryFile.ino
     this.metadata = libraryFile.metadata.clone()
