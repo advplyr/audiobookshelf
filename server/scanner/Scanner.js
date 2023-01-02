@@ -210,23 +210,19 @@ class Scanner {
           checkRes.libraryItem = libraryItem
           checkRes.scanData = dataFound
 
-          if (global.ServerSettings.scannerUseSingleThreadedProber) {
-            // If this item will go over max size then push current chunk
-            if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
-              itemDataToRescanChunks.push(itemDataToRescan)
-              itemDataToRescanSize = 0
-              itemDataToRescan = []
-            }
+          // If this item will go over max size then push current chunk
+          if (libraryItem.audioFileTotalSize + itemDataToRescanSize > MaxSizePerChunk && itemDataToRescan.length > 0) {
+            itemDataToRescanChunks.push(itemDataToRescan)
+            itemDataToRescanSize = 0
+            itemDataToRescan = []
+          }
 
-            itemDataToRescan.push(checkRes)
-            itemDataToRescanSize += libraryItem.audioFileTotalSize
-            if (itemDataToRescanSize >= MaxSizePerChunk) {
-              itemDataToRescanChunks.push(itemDataToRescan)
-              itemDataToRescanSize = 0
-              itemDataToRescan = []
-            }
-          } else {
-            itemDataToRescan.push(checkRes)
+          itemDataToRescan.push(checkRes)
+          itemDataToRescanSize += libraryItem.audioFileTotalSize
+          if (itemDataToRescanSize >= MaxSizePerChunk) {
+            itemDataToRescanChunks.push(itemDataToRescan)
+            itemDataToRescanSize = 0
+            itemDataToRescan = []
           }
 
         } else if (libraryScan.findCovers && libraryItem.media.shouldSearchForCover) { // Search cover
@@ -250,26 +246,22 @@ class Scanner {
       if (!hasMediaFile) {
         libraryScan.addLog(LogLevel.WARN, `Item found "${libraryItemDataFound.path}" has no media files`)
       } else {
-        if (global.ServerSettings.scannerUseSingleThreadedProber) {
-          // If this item will go over max size then push current chunk
-          let mediaFileSize = 0
-          dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
-          if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
-            newItemDataToScanChunks.push(newItemDataToScan)
-            newItemDataToScanSize = 0
-            newItemDataToScan = []
-          }
+        // If this item will go over max size then push current chunk
+        let mediaFileSize = 0
+        dataFound.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video').forEach(lf => mediaFileSize += lf.metadata.size)
+        if (mediaFileSize + newItemDataToScanSize > MaxSizePerChunk && newItemDataToScan.length > 0) {
+          newItemDataToScanChunks.push(newItemDataToScan)
+          newItemDataToScanSize = 0
+          newItemDataToScan = []
+        }
 
-          newItemDataToScan.push(dataFound)
-          newItemDataToScanSize += mediaFileSize
+        newItemDataToScan.push(dataFound)
+        newItemDataToScanSize += mediaFileSize
 
-          if (newItemDataToScanSize >= MaxSizePerChunk) {
-            newItemDataToScanChunks.push(newItemDataToScan)
-            newItemDataToScanSize = 0
-            newItemDataToScan = []
-          }
-        } else { // Chunking is not necessary for new scanner
-          newItemDataToScan.push(dataFound)
+        if (newItemDataToScanSize >= MaxSizePerChunk) {
+          newItemDataToScanChunks.push(newItemDataToScan)
+          newItemDataToScanSize = 0
+          newItemDataToScan = []
         }
       }
     }
