@@ -107,7 +107,7 @@ class Db {
   checkPreviousVersion() {
     return this.settingsDb.select(() => true).then((results) => {
       if (results.data && results.data.length) {
-        var serverSettings = results.data.find(s => s.id === 'server-settings')
+        const serverSettings = results.data.find(s => s.id === 'server-settings')
         if (serverSettings && serverSettings.version && serverSettings.version !== version) {
           return serverSettings.version
         }
@@ -163,7 +163,7 @@ class Db {
     const p4 = this.settingsDb.select(() => true).then(async (results) => {
       if (results.data && results.data.length) {
         this.settings = results.data
-        var serverSettings = this.settings.find(s => s.id === 'server-settings')
+        const serverSettings = this.settings.find(s => s.id === 'server-settings')
         if (serverSettings) {
           this.serverSettings = new ServerSettings(serverSettings)
 
@@ -185,7 +185,7 @@ class Db {
           }
         }
 
-        var notificationSettings = this.settings.find(s => s.id === 'notification-settings')
+        const notificationSettings = this.settings.find(s => s.id === 'notification-settings')
         if (notificationSettings) {
           this.notificationSettings = new NotificationSettings(notificationSettings)
         }

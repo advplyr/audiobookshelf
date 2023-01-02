@@ -110,14 +110,14 @@ class MediaFileScanner {
   }
 
   // Returns array of { MediaFile, elapsed, averageScanDuration } from audio file scan objects
-  async executeMediaFileScans(libraryItem, mediaLibraryFiles, scanData) {
+  async executeMediaFileScans(libraryItem, mediaLibraryFiles) {
     const mediaType = libraryItem.mediaType
 
     const scanStart = Date.now()
-    const mediaMetadataFromScan = scanData.media.metadata || null
+    const mediaMetadata = libraryItem.media.metadata || null
     const proms = []
     for (let i = 0; i < mediaLibraryFiles.length; i++) {
-      proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadataFromScan))
+      proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadata))
     }
     const results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
     return {
@@ -206,10 +206,21 @@ class MediaFileScanner {
     }
   }
 
-  async scanMediaFiles(mediaLibraryFiles, scanData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan = null) {
+  /**
+  * Scans media files for a library item and adds them as audio tracks and sets library item metadata
+  * @async
+  * @param {Array<LibraryFile>} mediaLibraryFiles - Media files for this library item
+  * @param {LibraryItem} libraryItem
+  * @param {LibraryScan} [libraryScan=null] - Optional when doing a library scan to use LibraryScan config/logs
+  * @return {Promise<Boolean>} True if any updates were made
+  */
+  async scanMediaFiles(mediaLibraryFiles, libraryItem, libraryScan = null) {
+    const preferAudioMetadata = libraryScan ? !!libraryScan.preferAudioMetadata : !!global.ServerSettings.scannerPreferAudioMetadata
+    const preferOverdriveMediaMarker = libraryScan ? !!libraryScan.preferOverdriveMediaMarker : !!global.ServerSettings.scannerPreferOverdriveMediaMarker
+
     let hasUpdated = false
 
-    const mediaScanResult = await this.executeMediaFileScans(libraryItem, mediaLibraryFiles, scanData)
+    const mediaScanResult = await this.executeMediaFileScans(libraryItem, mediaLibraryFiles)
 
     if (libraryItem.mediaType === 'video') {
       if (mediaScanResult.videoFiles.length) {
@@ -219,9 +230,9 @@ class MediaFileScanner {
       }
     } else if (mediaScanResult.audioFiles.length) {
       if (libraryScan) {
-        libraryScan.addLog(LogLevel.DEBUG, `Library Item "${scanData.path}" Media file scan took ${mediaScanResult.elapsed}ms for ${mediaScanResult.audioFiles.length} with average time of ${mediaScanResult.averageScanDuration}ms per MB`)
+        libraryScan.addLog(LogLevel.DEBUG, `Library Item "${libraryItem.path}" Media file scan took ${mediaScanResult.elapsed}ms for ${mediaScanResult.audioFiles.length} with average time of ${mediaScanResult.averageScanDuration}ms per MB`)
       }
-      Logger.debug(`Library Item "${scanData.path}" Media file scan took ${mediaScanResult.elapsed}ms with ${mediaScanResult.audioFiles.length} audio files averaging ${mediaScanResult.averageScanDuration}ms per MB`)
+      Logger.debug(`Library Item "${libraryItem.path}" Media file scan took ${mediaScanResult.elapsed}ms with ${mediaScanResult.audioFiles.length} audio files averaging ${mediaScanResult.averageScanDuration}ms per MB`)
 
       const newAudioFiles = mediaScanResult.audioFiles.filter(af => {
         return !libraryItem.media.findFileWithInode(af.ino)

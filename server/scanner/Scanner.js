@@ -85,7 +85,7 @@ class Scanner {
     // Scan all audio files
     if (libraryItem.hasAudioFiles) {
       const libraryAudioFiles = libraryItem.libraryFiles.filter(lf => lf.fileType === 'audio')
-      if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItemData, libraryItem, this.db.serverSettings.scannerPreferAudioMetadata, this.db.serverSettings.scannerPreferOverdriveMediaMarker)) {
+      if (await MediaFileScanner.scanMediaFiles(libraryAudioFiles, libraryItem)) {
         hasUpdated = true
       }
 
@@ -168,7 +168,7 @@ class Scanner {
   }
 
   async scanLibrary(libraryScan) {
-    var libraryItemDataFound = []
+    let libraryItemDataFound = []
 
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
@@ -182,17 +182,17 @@ class Scanner {
 
     // Remove items with no inode
     libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino)
-    var libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
+    const libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
 
     const MaxSizePerChunk = 2.5e9
     const itemDataToRescanChunks = []
     const newItemDataToScanChunks = []
-    var itemsToUpdate = []
-    var itemDataToRescan = []
-    var itemDataToRescanSize = 0
-    var newItemDataToScan = []
-    var newItemDataToScanSize = 0
-    var itemsToFindCovers = []
+    let itemsToUpdate = []
+    let itemDataToRescan = []
+    let itemDataToRescanSize = 0
+    let newItemDataToScan = []
+    let newItemDataToScanSize = 0
+    const itemsToFindCovers = []
 
     // Check for existing & removed library items
     for (let i = 0; i < libraryItemsInLibrary.length; i++) {
@@ -323,8 +323,8 @@ class Scanner {
   }
 
   async scanNewLibraryItemDataChunk(newLibraryItemsData, libraryScan) {
-    var newLibraryItems = await Promise.all(newLibraryItemsData.map((lid) => {
-      return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan.preferAudioMetadata, libraryScan.preferOpfMetadata, libraryScan.findCovers, libraryScan.preferOverdriveMediaMarker, libraryScan)
+    let newLibraryItems = await Promise.all(newLibraryItemsData.map((lid) => {
+      return this.scanNewLibraryItem(lid, libraryScan.libraryMediaType, libraryScan)
     }))
     newLibraryItems = newLibraryItems.filter(li => li) // Filter out nulls
 
@@ -341,7 +341,7 @@ class Scanner {
   async rescanLibraryItem(libraryItemCheckData, libraryScan) {
     const { newLibraryFiles, filesRemoved, existingLibraryFiles, libraryItem, scanData, updated } = libraryItemCheckData
     libraryScan.addLog(LogLevel.DEBUG, `Library "${libraryScan.libraryName}" Re-scanning "${libraryItem.path}"`)
-    var hasUpdated = updated
+    let hasUpdated = updated
 
     // Sync other files first to use local images as cover before extracting audio file cover
     if (await libraryItem.syncFiles(libraryScan.preferOpfMetadata)) {
@@ -349,24 +349,24 @@ class Scanner {
     }
 
     // forceRescan all existing audio files - will probe and update ID3 tag metadata
-    var existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
+    const existingAudioFiles = existingLibraryFiles.filter(lf => lf.fileType === 'audio')
     if (libraryScan.scanOptions.forceRescan && existingAudioFiles.length) {
-      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
+      if (await MediaFileScanner.scanMediaFiles(existingAudioFiles, libraryItem, libraryScan)) {
         hasUpdated = true
       }
     }
     // Scan new audio files
-    var newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
-    var removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
+    const newAudioFiles = newLibraryFiles.filter(lf => lf.fileType === 'audio')
+    const removedAudioFiles = filesRemoved.filter(lf => lf.fileType === 'audio')
     if (newAudioFiles.length || removedAudioFiles.length) {
-      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, scanData, libraryItem, libraryScan.preferAudioMetadata, libraryScan.preferOverdriveMediaMarker, libraryScan)) {
+      if (await MediaFileScanner.scanMediaFiles(newAudioFiles, libraryItem, libraryScan)) {
         hasUpdated = true
       }
     }
     // If an audio file has embedded cover art and no cover is set yet, extract & use it
     if (newAudioFiles.length || libraryScan.scanOptions.forceRescan) {
       if (libraryItem.media.hasEmbeddedCoverArt && !libraryItem.media.coverPath) {
-        var savedCoverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
+        const savedCoverPath = await this.coverManager.saveEmbeddedCoverArt(libraryItem)
         if (savedCoverPath) {
           hasUpdated = true
           libraryScan.addLog(LogLevel.DEBUG, `Saved embedded cover art "${savedCoverPath}"`)
@@ -385,7 +385,7 @@ class Scanner {
 
     // Scan for cover if enabled and has no cover (and author or title has changed OR has been 7 days since last lookup)
     if (libraryScan.findCovers && !libraryItem.media.coverPath && libraryItem.media.shouldSearchForCover) {
-      var updatedCover = await this.searchForCover(libraryItem, libraryScan)
+      const updatedCover = await this.searchForCover(libraryItem, libraryScan)
       libraryItem.media.updateLastCoverSearch(updatedCover)
       hasUpdated = true
     }
@@ -393,16 +393,19 @@ class Scanner {
     return hasUpdated ? libraryItem : null
   }
 
-  async scanNewLibraryItem(libraryItemData, libraryMediaType, preferAudioMetadata, preferOpfMetadata, findCovers, preferOverdriveMediaMarker, libraryScan = null) {
+  async scanNewLibraryItem(libraryItemData, libraryMediaType, libraryScan = null) {
     if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Scanning new library item "${libraryItemData.path}"`)
     else Logger.debug(`[Scanner] Scanning new item "${libraryItemData.path}"`)
+
+    const preferOpfMetadata = libraryScan ? !!libraryScan.preferOpfMetadata : !!global.ServerSettings.scannerPreferOpfMetadata
+    const findCovers = libraryScan ? !!libraryScan.findCovers : !!global.ServerSettings.scannerFindCovers
 
     const libraryItem = new LibraryItem()
     libraryItem.setData(libraryMediaType, libraryItemData)
 
     const mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
     if (mediaFiles.length) {
-      await MediaFileScanner.scanMediaFiles(mediaFiles, libraryItemData, libraryItem, preferAudioMetadata, preferOverdriveMediaMarker, libraryScan)
+      await MediaFileScanner.scanMediaFiles(mediaFiles, libraryItem, libraryScan)
     }
 
     await libraryItem.syncFiles(preferOpfMetadata)
@@ -638,8 +641,7 @@ class Scanner {
   async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath, isSingleMediaItem = false) {
     const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
     if (!libraryItemData) return null
-    const serverSettings = this.db.serverSettings
-    return this.scanNewLibraryItem(libraryItemData, libraryMediaType, serverSettings.scannerPreferAudioMetadata, serverSettings.scannerPreferOpfMetadata, serverSettings.scannerFindCovers, serverSettings.scannerPreferOverdriveMediaMarker)
+    return this.scanNewLibraryItem(libraryItemData, libraryMediaType)
   }
 
   async searchForCover(libraryItem, libraryScan = null) {
