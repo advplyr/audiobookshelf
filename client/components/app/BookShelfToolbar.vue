@@ -213,11 +213,16 @@ export default {
     isAuthorsPage() {
       return this.$route.name === 'library-library-authors'
     },
+    isAlbumsPage() {
+      return this.page === 'albums'
+    },
     numShowing() {
       return this.totalEntities
     },
     entityName() {
+      if (this.isAlbumsPage) return 'Albums'
       if (this.isMusicLibrary) return 'Tracks'
+
       if (this.isPodcastLibrary) return this.$strings.LabelPodcasts
       if (!this.page) return this.$strings.LabelBooks
       if (this.isSeriesPage) return this.$strings.LabelSeries

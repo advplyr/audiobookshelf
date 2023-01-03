@@ -361,12 +361,12 @@ function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettin
 // Called from Scanner.js
 async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, isSingleMediaItem, serverSettings = {}) {
   libraryItemPath = libraryItemPath.replace(/\\/g, '/')
-  var folderFullPath = folder.fullPath.replace(/\\/g, '/')
+  const folderFullPath = folder.fullPath.replace(/\\/g, '/')
 
-  var libraryItemDir = libraryItemPath.replace(folderFullPath, '').slice(1)
-  var libraryItemData = {}
+  const libraryItemDir = libraryItemPath.replace(folderFullPath, '').slice(1)
+  let libraryItemData = {}
 
-  var fileItems = []
+  let fileItems = []
 
   if (isSingleMediaItem) { // Single media item in root of folder
     fileItems = [
@@ -388,8 +388,8 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
     libraryItemData = getDataFromMediaDir(libraryMediaType, folderFullPath, libraryItemDir, serverSettings, fileNames)
   }
 
-  var libraryItemDirStats = await getFileTimestampsWithIno(libraryItemData.path)
-  var libraryItem = {
+  const libraryItemDirStats = await getFileTimestampsWithIno(libraryItemData.path)
+  const libraryItem = {
     ino: libraryItemDirStats.ino,
     mtimeMs: libraryItemDirStats.mtimeMs || 0,
     ctimeMs: libraryItemDirStats.ctimeMs || 0,

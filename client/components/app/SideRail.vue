@@ -70,6 +70,14 @@
       <div v-show="isPodcastSearchPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
+    <nuxt-link v-if="isMusicLibrary" :to="`/library/${currentLibraryId}/bookshelf/albums`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isMusicAlbumsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <span class="material-icons-outlined text-xl">album</span>
+
+      <p class="font-book pt-1.5 text-center leading-4" style="font-size: 0.9rem">Albums</p>
+
+      <div v-show="isMusicAlbumsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+    </nuxt-link>
+
     <nuxt-link v-if="showPlaylists" :to="`/library/${currentLibraryId}/bookshelf/playlists`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPlaylistsPage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
       <span class="material-icons text-2.5xl">queue_music</span>
 
@@ -138,11 +146,17 @@ export default {
     isPodcastLibrary() {
       return this.currentLibraryMediaType === 'podcast'
     },
+    isMusicLibrary() {
+      return this.currentLibraryMediaType === 'music'
+    },
     isPodcastSearchPage() {
       return this.$route.name === 'library-library-podcast-search'
     },
     isPodcastLatestPage() {
       return this.$route.name === 'library-library-podcast-latest'
+    },
+    isMusicAlbumsPage() {
+      return this.paramId === 'albums'
     },
     homePage() {
       return this.$route.name === 'library-library'

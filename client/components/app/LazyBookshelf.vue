@@ -205,7 +205,7 @@ export default {
       return this.$store.state.globals.selectedMediaItems || []
     },
     sizeMultiplier() {
-      var baseSize = this.isCoverSquareAspectRatio ? 192 : 120
+      const baseSize = this.isCoverSquareAspectRatio ? 192 : 120
       return this.entityWidth / baseSize
     }
   },
@@ -215,7 +215,7 @@ export default {
     },
     editEntity(entity) {
       if (this.entityName === 'books' || this.entityName === 'series-books') {
-        var bookIds = this.entities.map((e) => e.id)
+        const bookIds = this.entities.map((e) => e.id)
         this.$store.commit('setBookshelfBookIds', bookIds)
         this.$store.commit('showEditModal', entity)
       } else if (this.entityName === 'collections') {
@@ -308,7 +308,7 @@ export default {
       }
     },
     async fetchEntites(page = 0) {
-      var startIndex = page * this.booksPerFetch
+      const startIndex = page * this.booksPerFetch
 
       this.isFetchingEntities = true
 

@@ -1,4 +1,5 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
+const Logger = require('../Logger')
 const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -701,5 +702,34 @@ module.exports = {
 
       return shelf
     })
+  },
+
+  groupMusicLibraryItemsIntoAlbums(libraryItems) {
+    const albums = {}
+
+    libraryItems.forEach((li) => {
+      const albumTitle = li.media.metadata.album
+      const albumArtist = li.media.metadata.albumArtist
+
+      if (albumTitle && !albums[albumTitle]) {
+        albums[albumTitle] = {
+          title: albumTitle,
+          artist: albumArtist,
+          libraryItemId: li.media.coverPath ? li.id : null,
+          numTracks: 1
+        }
+      } else if (albumTitle && albums[albumTitle].artist === albumArtist) {
+        if (!albums[albumTitle].libraryItemId && li.media.coverPath) albums[albumTitle].libraryItemId = li.id
+        albums[albumTitle].numTracks++
+      } else {
+        if (albumTitle) {
+          Logger.warn(`Music track "${li.media.metadata.title}" with album "${albumTitle}" has a different album artist then another track in the same album.  This track album artist is "${albumArtist}" but the album artist is already set to "${albums[albumTitle].artist}"`)
+        }
+        if (!albums['_none_']) albums['_none_'] = { title: 'No Album', artist: 'Various Artists', libraryItemId: null, numTracks: 0 }
+        albums['_none_'].numTracks++
+      }
+    })
+
+    return Object.values(albums)
   }
 }

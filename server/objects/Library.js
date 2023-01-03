@@ -29,6 +29,9 @@ class Library {
   get isPodcast() {
     return this.mediaType === 'podcast'
   }
+  get isMusic() {
+    return this.mediaType === 'music'
+  }
 
   construct(library) {
     this.id = library.id

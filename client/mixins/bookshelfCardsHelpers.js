@@ -3,6 +3,7 @@ import LazyBookCard from '@/components/cards/LazyBookCard'
 import LazySeriesCard from '@/components/cards/LazySeriesCard'
 import LazyCollectionCard from '@/components/cards/LazyCollectionCard'
 import LazyPlaylistCard from '@/components/cards/LazyPlaylistCard'
+import LazyAlbumCard from '@/components/cards/LazyAlbumCard'
 
 export default {
   data() {
@@ -17,6 +18,7 @@ export default {
       if (this.entityName === 'series') return Vue.extend(LazySeriesCard)
       if (this.entityName === 'collections') return Vue.extend(LazyCollectionCard)
       if (this.entityName === 'playlists') return Vue.extend(LazyPlaylistCard)
+      if (this.entityName === 'albums') return Vue.extend(LazyAlbumCard)
       return Vue.extend(LazyBookCard)
     },
     async mountEntityCard(index) {
@@ -28,7 +30,7 @@ export default {
       }
       this.entityIndexesMounted.push(index)
       if (this.entityComponentRefs[index]) {
-        var bookComponent = this.entityComponentRefs[index]
+        const bookComponent = this.entityComponentRefs[index]
         shelfEl.appendChild(bookComponent.$el)
         if (this.isSelectionMode) {
           bookComponent.setSelectionMode(true)
@@ -43,13 +45,13 @@ export default {
         bookComponent.isHovering = false
         return
       }
-      var shelfOffsetY = 16
-      var row = index % this.entitiesPerShelf
-      var shelfOffsetX = row * this.totalEntityCardWidth + this.bookshelfMarginLeft
+      const shelfOffsetY = 16
+      const row = index % this.entitiesPerShelf
+      const shelfOffsetX = row * this.totalEntityCardWidth + this.bookshelfMarginLeft
 
-      var ComponentClass = this.getComponentClass()
+      const ComponentClass = this.getComponentClass()
 
-      var props = {
+      const props = {
         index,
         width: this.entityWidth,
         height: this.entityHeight,
@@ -65,8 +67,8 @@ export default {
         props.orderBy = this.seriesSortBy
       }
 
-      var _this = this
-      var instance = new ComponentClass({
+      const _this = this
+      const instance = new ComponentClass({
         propsData: props,
         created() {
           this.$on('edit', (entity) => {
