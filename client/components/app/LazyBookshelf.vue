@@ -6,7 +6,7 @@
       </div>
     </template>
 
-    <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'books'" class="w-full flex flex-col items-center justify-center py-12">
+    <div v-if="initialized && !totalShelves && !hasFilter && entityName === 'items'" class="w-full flex flex-col items-center justify-center py-12">
       <p class="text-center text-2xl font-book mb-4 py-4">{{ $getString('MessageXLibraryIsEmpty', [libraryName]) }}</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">{{ $strings.ButtonConfigureScanner }}</ui-btn>
@@ -16,7 +16,7 @@
     <div v-else-if="!totalShelves && initialized" class="w-full py-16">
       <p class="text-xl text-center">{{ emptyMessage }}</p>
       <!-- Clear filter only available on Library bookshelf -->
-      <div v-if="entityName === 'books'" class="flex justify-center mt-2">
+      <div v-if="entityName === 'items'" class="flex justify-center mt-2">
         <ui-btn v-if="hasFilter" color="primary" @click="clearFilter">{{ $strings.ButtonClearFilter }}</ui-btn>
       </div>
     </div>
@@ -81,8 +81,11 @@ export default {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
     },
+    libraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+    },
     isPodcast() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+      return this.libraryMediaType === 'podcast'
     },
     emptyMessage() {
       if (this.page === 'series') return this.$strings.MessageBookshelfNoSeries
@@ -96,7 +99,7 @@ export default {
       return this.$strings.MessageNoResults
     },
     entityName() {
-      if (!this.page) return 'books'
+      if (!this.page) return 'items'
       return this.page
     },
     seriesSortBy() {
@@ -158,11 +161,8 @@ export default {
     libraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
-    isEntityBook() {
-      return this.entityName === 'series-books' || this.entityName === 'books'
-    },
     bookWidth() {
-      var coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
+      const coverSize = this.$store.getters['user/getUserSetting']('bookshelfCoverSize')
       if (this.isCoverSquareAspectRatio || this.entityName === 'playlists') return coverSize * 1.6
       return coverSize
     },
@@ -192,7 +192,8 @@ export default {
     },
     shelfHeight() {
       if (this.isAlternativeBookshelfView) {
-        var extraTitleSpace = this.isEntityBook ? 80 : 40
+        const isItemEntity = this.entityName === 'series-books' || this.entityName === 'items'
+        const extraTitleSpace = isItemEntity ? 80 : this.entityName === 'albums' ? 60 : 40
         return this.entityHeight + extraTitleSpace * this.sizeMultiplier
       }
       return this.entityHeight + 40
@@ -214,7 +215,7 @@ export default {
       this.$store.dispatch('user/updateUserSettings', { filterBy: 'all' })
     },
     editEntity(entity) {
-      if (this.entityName === 'books' || this.entityName === 'series-books') {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
         const bookIds = this.entities.map((e) => e.id)
         this.$store.commit('setBookshelfBookIds', bookIds)
         this.$store.commit('showEditModal', entity)
@@ -229,7 +230,7 @@ export default {
       this.isSelectionMode = false
     },
     selectEntity(entity, shiftKey) {
-      if (this.entityName === 'books' || this.entityName === 'series-books') {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
         const indexOf = this.entities.findIndex((ent) => ent && ent.id === entity.id)
         const lastLastItemIndexSelected = this.lastItemIndexSelected
         if (!this.selectedMediaItems.some((i) => i.id === entity.id)) {
@@ -273,9 +274,8 @@ export default {
               const mediaItem = {
                 id: thisEntity.id,
                 mediaType: thisEntity.mediaType,
-                hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+                hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.audioFile || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
               }
-              console.log('Setting media item selected', mediaItem, 'Num Selected=', this.selectedMediaItems.length)
               this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
             } else {
               console.error('Invalid entity index', i)
@@ -285,7 +285,7 @@ export default {
           const mediaItem = {
             id: entity.id,
             mediaType: entity.mediaType,
-            hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+            hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
           }
           this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
         }
@@ -316,7 +316,7 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      const entityPath = this.entityName === 'books' || this.entityName === 'series-books' ? 'items' : this.entityName
+      const entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
       const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed`
 
@@ -517,7 +517,7 @@ export default {
     },
     libraryItemUpdated(libraryItem) {
       console.log('Item updated', libraryItem)
-      if (this.entityName === 'books' || this.entityName === 'series-books') {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
           this.entities[indexOf] = libraryItem
@@ -528,7 +528,7 @@ export default {
       }
     },
     libraryItemRemoved(libraryItem) {
-      if (this.entityName === 'books' || this.entityName === 'series-books') {
+      if (this.entityName === 'items' || this.entityName === 'series-books') {
         var indexOf = this.entities.findIndex((ent) => ent && ent.id === libraryItem.id)
         if (indexOf >= 0) {
           this.entities = this.entities.filter((ent) => ent.id !== libraryItem.id)

@@ -136,7 +136,7 @@ export default {
             const mediaItem = {
               id: thisEntity.id,
               mediaType: thisEntity.mediaType,
-              hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
+              hasTracks: thisEntity.mediaType === 'podcast' || thisEntity.media.audioFile || thisEntity.media.numTracks || (thisEntity.media.tracks && thisEntity.media.tracks.length)
             }
             this.$store.commit('globals/setMediaItemSelected', { item: mediaItem, selected: isSelecting })
           } else {
@@ -147,7 +147,7 @@ export default {
         const mediaItem = {
           id: entity.id,
           mediaType: entity.mediaType,
-          hasTracks: entity.mediaType === 'podcast' || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
+          hasTracks: entity.mediaType === 'podcast' || entity.media.audioFile || entity.media.numTracks || (entity.media.tracks && entity.media.tracks.length)
         }
         this.$store.commit('globals/toggleMediaItemSelected', mediaItem)
       }

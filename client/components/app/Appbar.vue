@@ -58,13 +58,13 @@
           <span class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
           {{ $strings.ButtonPlay }}
         </ui-btn>
-        <ui-tooltip v-if="userIsAdminOrUp && !isPodcastLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
+        <ui-tooltip v-if="userIsAdminOrUp && isBookLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="!isPodcastLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
+        <ui-tooltip v-if="isBookLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
-        <ui-tooltip v-if="userCanUpdate && !isPodcastLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
+        <ui-tooltip v-if="userCanUpdate && isBookLibrary" :text="$strings.LabelAddToCollection" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="collections_bookmark" @click="batchAddToCollectionClick" class="mx-1.5" />
         </ui-tooltip>
         <template v-if="userCanUpdate">
@@ -102,6 +102,9 @@ export default {
     },
     isPodcastLibrary() {
       return this.libraryMediaType === 'podcast'
+    },
+    isBookLibrary() {
+      return this.libraryMediaType === 'book'
     },
     isHome() {
       return this.$route.name === 'library-library'
@@ -181,12 +184,15 @@ export default {
 
       const queueItems = []
       libraryItems.forEach((item) => {
+        let subtitle = ''
+        if (item.mediaType === 'book') subtitle = item.media.metadata.authors.map((au) => au.name).join(', ')
+        else if (item.mediaType === 'music') subtitle = item.media.metadata.artists.join(', ')
         queueItems.push({
           libraryItemId: item.id,
           libraryId: item.libraryId,
           episodeId: null,
           title: item.media.metadata.title,
-          subtitle: item.media.metadata.authors.map((au) => au.name).join(', '),
+          subtitle,
           caption: '',
           duration: item.media.duration || null,
           coverPath: item.media.coverPath || null

@@ -12,6 +12,7 @@
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
           <p v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</p>
+          <p v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</p>
           <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
             <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
           </p>
@@ -147,6 +148,10 @@ export default {
     podcastAuthor() {
       if (!this.isPodcast) return null
       return this.mediaMetadata.author || 'Unknown'
+    },
+    musicArtists() {
+      if (!this.isMusic) return null
+      return this.mediaMetadata.artists.join(', ')
     },
     playerQueueItems() {
       return this.$store.state.playerQueueItems || []

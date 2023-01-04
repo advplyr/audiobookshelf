@@ -41,6 +41,7 @@ class Music {
       coverPath: this.coverPath,
       tags: [...this.tags],
       audioFile: this.audioFile.toJSON(),
+      duration: this.duration,
       size: this.size
     }
   }
@@ -52,6 +53,7 @@ class Music {
       coverPath: this.coverPath,
       tags: [...this.tags],
       audioFile: this.audioFile.toJSON(),
+      duration: this.duration,
       size: this.size
     }
   }

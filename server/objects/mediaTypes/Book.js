@@ -127,7 +127,7 @@ class Book {
     })
   }
   get duration() {
-    var total = 0
+    let total = 0
     this.tracks.forEach((track) => total += track.duration)
     return total
   }

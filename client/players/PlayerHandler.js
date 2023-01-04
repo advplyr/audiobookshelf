@@ -145,13 +145,11 @@ export default class PlayerHandler {
     console.log('[PlayerHandler] Player state change', state)
     this.playerState = state
 
-    if (!this.isMusic) {
-      if (this.playerState === 'PLAYING') {
-        this.setPlaybackRate(this.initialPlaybackRate)
-        this.startPlayInterval()
-      } else {
-        this.stopPlayInterval()
-      }
+    if (this.playerState === 'PLAYING') {
+      this.setPlaybackRate(this.initialPlaybackRate)
+      this.startPlayInterval()
+    } else {
+      this.stopPlayInterval()
     }
 
     if (this.player) {
@@ -260,14 +258,14 @@ export default class PlayerHandler {
 
   startPlayInterval() {
     clearInterval(this.playInterval)
-    var lastTick = Date.now()
+    let lastTick = Date.now()
     this.playInterval = setInterval(() => {
       // Update UI
       if (!this.player) return
-      var currentTime = this.player.getCurrentTime()
+      const currentTime = this.player.getCurrentTime()
       this.ctx.setCurrentTime(currentTime)
 
-      var exactTimeElapsed = ((Date.now() - lastTick) / 1000)
+      const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
       if (this.listeningTimeSinceSync >= 5) {
@@ -277,9 +275,9 @@ export default class PlayerHandler {
   }
 
   sendCloseSession() {
-    var syncData = null
+    let syncData = null
     if (this.player) {
-      var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
+      const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
       syncData = {
         timeListened: listeningTimeToAdd,
         duration: this.getDuration(),
@@ -293,12 +291,14 @@ export default class PlayerHandler {
   }
 
   sendProgressSync(currentTime) {
-    var diffSinceLastSync = Math.abs(this.lastSyncTime - currentTime)
+    if (this.isMusic) return
+
+    const diffSinceLastSync = Math.abs(this.lastSyncTime - currentTime)
     if (diffSinceLastSync < 1) return
 
     this.lastSyncTime = currentTime
-    var listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
-    var syncData = {
+    const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
+    const syncData = {
       timeListened: listeningTimeToAdd,
       duration: this.getDuration(),
       currentTime

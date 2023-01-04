@@ -12,6 +12,7 @@
     </div>
     <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
       <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
+      <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ artist || '&nbsp;' }}</p>
     </div>
   </div>
 </template>
@@ -51,11 +52,14 @@ export default {
       return 0.875
     },
     sizeMultiplier() {
-      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
-      return this.width / 240
+      const baseSize = this.bookCoverAspectRatio === 1 ? 192 : 120
+      return this.width / baseSize
     },
     title() {
       return this.album ? this.album.title : ''
+    },
+    artist() {
+      return this.album ? this.album.artist : ''
     },
     store() {
       return this.$store || this.$nuxt.$store

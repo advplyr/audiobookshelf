@@ -70,7 +70,7 @@
       </div>
 
       <!-- More Menu Icon -->
-      <div ref="moreIcon" v-show="!isSelectionMode" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
+      <div ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
     </div>
@@ -276,6 +276,10 @@ export default {
     authorLF() {
       return this.mediaMetadata.authorNameLF
     },
+    artist() {
+      const artists = this.mediaMetadata.artists || []
+      return artists.join(', ')
+    },
     displayTitle() {
       if (this.recentEpisode) return this.recentEpisode.title
       const ignorePrefix = this.orderBy === 'media.metadata.title' && this.sortingIgnorePrefix
@@ -285,6 +289,7 @@ export default {
     displayLineTwo() {
       if (this.recentEpisode) return this.title
       if (this.isPodcast) return this.author
+      if (this.isMusic) return this.artist
       if (this.collapsedSeries) return ''
       if (this.isAuthorBookshelfView) {
         return this.mediaMetadata.publishedYear || ''
@@ -345,7 +350,7 @@ export default {
       return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
     },
     showPlayButton() {
-      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode)
+      return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
     },
     showSmallEBookIcon() {
       return !this.isSelectionMode && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
@@ -370,7 +375,7 @@ export default {
         if (this.isPodcast) return 'Podcast has no episodes'
         return 'Item has no audio tracks & ebook'
       }
-      var txt = ''
+      let txt = ''
       if (this.numMissingParts) {
         txt += `${this.numMissingParts} missing parts.`
       }
@@ -381,7 +386,7 @@ export default {
       return txt || 'Unknown Error'
     },
     overlayWrapperClasslist() {
-      var classes = []
+      const classes = []
       if (this.isSelectionMode) classes.push('bg-opacity-60')
       else classes.push('bg-opacity-40')
       if (this.selected) {
@@ -405,6 +410,8 @@ export default {
       return this.store.getters['user/getIsAdminOrUp']
     },
     moreMenuItems() {
+      if (this.isMusic) return []
+
       if (this.recentEpisode) {
         const items = [
           {
@@ -442,7 +449,7 @@ export default {
         return items
       }
 
-      var items = []
+      let items = []
       if (!this.isPodcast) {
         items = [
           {

@@ -50,8 +50,14 @@ export default {
         this.$emit('update:descending', val)
       }
     },
+    libraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+    },
     isPodcast() {
-      return this.$store.getters['libraries/getCurrentLibraryMediaType'] == 'podcast'
+      return this.libraryMediaType === 'podcast'
+    },
+    isMusic() {
+      return this.libraryMediaType === 'music'
     },
     podcastItems() {
       return [
@@ -134,10 +140,40 @@ export default {
         }
       ]
     },
+    musicItems() {
+      return [
+        {
+          text: this.$strings.LabelTitle,
+          value: 'media.metadata.title'
+        },
+        {
+          text: this.$strings.LabelAddedAt,
+          value: 'addedAt'
+        },
+        {
+          text: this.$strings.LabelSize,
+          value: 'size'
+        },
+        {
+          text: this.$strings.LabelDuration,
+          value: 'media.duration'
+        },
+        {
+          text: this.$strings.LabelFileBirthtime,
+          value: 'birthtimeMs'
+        },
+        {
+          text: this.$strings.LabelFileModified,
+          value: 'mtimeMs'
+        }
+      ]
+    },
     selectItems() {
       let items = null
       if (this.isPodcast) {
         items = this.podcastItems
+      } else if (this.isMusic) {
+        items = this.musicItems
       } else if (this.$store.getters['user/getUserSetting']('filterBy').startsWith('series.')) {
         items = this.seriesItems
       } else {

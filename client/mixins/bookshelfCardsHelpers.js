@@ -60,7 +60,7 @@ export default {
         sortingIgnorePrefix: !!this.sortingIgnorePrefix
       }
 
-      if (this.entityName === 'books') {
+      if (this.entityName === 'items') {
         props.filterBy = this.filterBy
         props.orderBy = this.orderBy
       } else if (this.entityName === 'series') {
