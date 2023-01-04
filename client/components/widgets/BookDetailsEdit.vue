@@ -210,11 +210,13 @@ export default {
       // array of objects with id key
       if (array1.length !== array2.length) return false
 
-      for (var item of array1) {
-        var matchingItem = array2.find((a) => a.id === item.id)
-        if (!matchingItem) return false
-        for (var key in item) {
-          if (item[key] !== matchingItem[key]) {
+      for (let i = 0; i < array1.length; i++) {
+        const item1 = array1[i]
+        const item2 = array2[i]
+        if (!item1 || !item2) return false
+
+        for (const key in item1) {
+          if (item1[key] !== item2[key]) {
             // console.log('Object array item keys changed', key, item[key], matchingItem[key])
             return false
           }

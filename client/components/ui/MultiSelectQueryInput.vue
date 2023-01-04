@@ -204,15 +204,21 @@ export default {
       }
       if (this.$refs.input) this.$refs.input.focus()
 
-      var newSelected = null
+      let newSelected = null
       if (this.getIsSelected(item.id)) {
         newSelected = this.selected.filter((s) => s.id !== item.id)
         this.$emit('removedItem', item.id)
       } else {
-        newSelected = this.selected.concat([item])
+        newSelected = this.selected.concat([
+          {
+            id: item.id,
+            name: item.name
+          }
+        ])
       }
       this.textInput = null
       this.currentSearch = null
+
       this.$emit('input', newSelected)
       this.$nextTick(() => {
         this.recalcMenuPos()
@@ -246,10 +252,11 @@ export default {
     submitForm() {
       if (!this.textInput) return
 
-      var cleaned = this.textInput.trim()
-      var matchesItem = this.items.find((i) => {
-        return i === cleaned
+      const cleaned = this.textInput.trim()
+      const matchesItem = this.items.find((i) => {
+        return i.name === cleaned
       })
+
       if (matchesItem) {
         this.clickedOption(null, matchesItem)
       } else {
