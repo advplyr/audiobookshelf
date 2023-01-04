@@ -1,5 +1,5 @@
 const Path = require('path')
-const { getId } = require('../../utils/index')
+const { getId, cleanStringForSearch } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 
@@ -159,6 +159,10 @@ class PodcastEpisode {
   checkEqualsEnclosureUrl(url) {
     if (!this.enclosure || !this.enclosure.url) return false
     return this.enclosure.url == url
+  }
+
+  searchQuery(query) {
+    return cleanStringForSearch(this.title).includes(query)
   }
 }
 module.exports = PodcastEpisode

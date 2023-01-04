@@ -1,7 +1,7 @@
 const Logger = require('../../Logger')
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
-const { areEquivalent, copyValue } = require('../../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
 const { readTextFile } = require('../../utils/fileUtils')
 const { createNewSortInstance } = require('../../libs/fastSort')
@@ -206,9 +206,29 @@ class Podcast {
     return false
   }
 
+  searchEpisodes(query) {
+    return this.episodes.filter(ep => ep.searchQuery(query))
+  }
+
   searchQuery(query) {
-    var payload = this.metadata.searchQuery(query)
-    return payload || {}
+    const payload = {
+      tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
+      matchKey: null,
+      matchText: null
+    }
+    const metadataMatch = this.metadata.searchQuery(query)
+    if (metadataMatch) {
+      payload.matchKey = metadataMatch.matchKey
+      payload.matchText = metadataMatch.matchText
+    } else {
+      const matchingEpisodes = this.searchEpisodes(query)
+      if (matchingEpisodes.length) {
+        payload.matchKey = 'episode'
+        payload.matchText = matchingEpisodes[0].title
+      }
+    }
+
+    return payload
   }
 
   checkHasEpisode(episodeId) {

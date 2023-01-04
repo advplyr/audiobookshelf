@@ -572,16 +572,16 @@ class LibraryController {
     if (!req.query.q) {
       return res.status(400).send('No query string')
     }
-    var libraryItems = req.libraryItems
-    var maxResults = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
+    const libraryItems = req.libraryItems
+    const maxResults = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 12
 
-    var itemMatches = []
-    var authorMatches = {}
-    var seriesMatches = {}
-    var tagMatches = {}
+    const itemMatches = []
+    const authorMatches = {}
+    const seriesMatches = {}
+    const tagMatches = {}
 
     libraryItems.forEach((li) => {
-      var queryResult = li.searchQuery(req.query.q)
+      const queryResult = li.searchQuery(req.query.q)
       if (queryResult.matchKey) {
         itemMatches.push({
           libraryItem: li.toJSONExpanded(),
@@ -592,7 +592,7 @@ class LibraryController {
       if (queryResult.series && queryResult.series.length) {
         queryResult.series.forEach((se) => {
           if (!seriesMatches[se.id]) {
-            var _series = this.db.series.find(_se => _se.id === se.id)
+            const _series = this.db.series.find(_se => _se.id === se.id)
             if (_series) seriesMatches[se.id] = { series: _series.toJSON(), books: [li.toJSON()] }
           } else {
             seriesMatches[se.id].books.push(li.toJSON())
@@ -602,7 +602,7 @@ class LibraryController {
       if (queryResult.authors && queryResult.authors.length) {
         queryResult.authors.forEach((au) => {
           if (!authorMatches[au.id]) {
-            var _author = this.db.authors.find(_au => _au.id === au.id)
+            const _author = this.db.authors.find(_au => _au.id === au.id)
             if (_author) {
               authorMatches[au.id] = _author.toJSON()
               authorMatches[au.id].numBooks = 1
@@ -622,8 +622,8 @@ class LibraryController {
         })
       }
     })
-    var itemKey = req.library.mediaType
-    var results = {
+    const itemKey = req.library.mediaType
+    const results = {
       [itemKey]: itemMatches.slice(0, maxResults),
       tags: Object.values(tagMatches).slice(0, maxResults),
       authors: Object.values(authorMatches).slice(0, maxResults),

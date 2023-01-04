@@ -10,7 +10,7 @@
       <p v-if="matchKey !== 'authors'" class="text-xs text-gray-200 truncate">by {{ authorName }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
 
-      <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn' || matchKey === 'asin'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
+      <div v-if="matchKey === 'series' || matchKey === 'tags' || matchKey === 'isbn' || matchKey === 'asin' || matchKey === 'episode'" class="m-0 p-0 truncate text-xs" v-html="matchHtml" />
     </div>
   </div>
 </template>
@@ -67,6 +67,7 @@ export default {
       //        but with removing commas periods etc this is no longer plausible
       const html = this.matchText
 
+      if (this.matchKey === 'episode') return `<p class="truncate">Episode: ${html}</p>`
       if (this.matchKey === 'tags') return `<p class="truncate">Tags: ${html}</p>`
       if (this.matchKey === 'authors') return `by ${html}`
       if (this.matchKey === 'isbn') return `<p class="truncate">ISBN: ${html}</p>`

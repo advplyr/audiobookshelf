@@ -311,14 +311,14 @@ class Book {
   }
 
   searchQuery(query) {
-    var payload = {
+    const payload = {
       tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
       series: this.metadata.searchSeries(query),
       authors: this.metadata.searchAuthors(query),
       matchKey: null,
       matchText: null
     }
-    var metadataMatch = this.metadata.searchQuery(query)
+    const metadataMatch = this.metadata.searchQuery(query)
     if (metadataMatch) {
       payload.matchKey = metadataMatch.matchKey
       payload.matchText = metadataMatch.matchText
