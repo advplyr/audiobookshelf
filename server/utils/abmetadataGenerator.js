@@ -102,9 +102,11 @@ const bookMetadataMapper = {
     to: (m) => m.seriesName,
     from: (v) => {
       return commaSeparatedToArray(v).map(series => { // Return array of { name, sequence }
-        var sequence = null
-        var name = series
-        var matchResults = series.match(/ #((?:\d*\.?\d+)|(?:\.?\d*))$/) // Pull out sequence #
+        let sequence = null
+        let name = series
+        // Series sequence match any characters after " #" other than whitespace and another #
+        //  e.g. "Name #1a" is valid. "Name #1#a" or "Name #1 a" is not valid.
+        const matchResults = series.match(/ #([^#\s]+)$/) // Pull out sequence #
         if (matchResults && matchResults.length && matchResults.length > 1) {
           sequence = matchResults[1] // Group 1
           name = series.replace(matchResults[0], '')
