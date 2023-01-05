@@ -1,5 +1,5 @@
 const Path = require('path')
-const { encodeUriPath } = require('../../utils/index')
+const { encodeUriPath } = require('../../utils/fileUtils')
 
 class AudioTrack {
   constructor() {

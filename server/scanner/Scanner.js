@@ -6,7 +6,7 @@ const SocketAuthority = require('../SocketAuthority')
 // Utils
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder } = require('../utils/scandir')
 const { comparePaths } = require('../utils/index')
-const { getIno } = require('../utils/fileUtils')
+const { getIno, filePathToPOSIX } = require('../utils/fileUtils')
 const { ScanResult, LogLevel } = require('../utils/constants')
 const { findMatchingEpisodesInFeed, getPodcastFeed } = require('../utils/podcastUtils')
 
@@ -554,12 +554,12 @@ class Scanner {
       var firstNest = itemDirNestedFiles[0].split('/').shift()
       var altDir = `${itemDir}/${firstNest}`
 
-      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
+      var fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
       var childLibraryItem = this.db.libraryItems.find(li => li.path !== fullPath && li.path.startsWith(fullPath))
       if (!childLibraryItem) {
         continue;
       }
-      var altFullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), altDir)
+      var altFullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), altDir)
       var altChildLibraryItem = this.db.libraryItems.find(li => li.path !== altFullPath && li.path.startsWith(altFullPath))
       if (altChildLibraryItem) {
         continue;
@@ -571,13 +571,13 @@ class Scanner {
     }
 
     // Second pass: Check for new/updated/removed items
-    var itemGroupingResults = {}
+    const itemGroupingResults = {}
     for (const itemDir in fileUpdateGroup) {
-      var fullPath = Path.posix.join(folder.fullPath.replace(/\\/g, '/'), itemDir)
+      const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
       const dirIno = await getIno(fullPath)
 
       // Check if book dir group is already an item
-      var existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
+      let existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
       if (!existingLibraryItem) {
         existingLibraryItem = this.db.libraryItems.find(li => li.ino === dirIno)
         if (existingLibraryItem) {
@@ -590,7 +590,7 @@ class Scanner {
       if (existingLibraryItem) {
         // Is the item exactly - check if was deleted
         if (existingLibraryItem.path === fullPath) {
-          var exists = await fs.pathExists(fullPath)
+          const exists = await fs.pathExists(fullPath)
           if (!exists) {
             Logger.info(`[Scanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
             existingLibraryItem.setMissing()

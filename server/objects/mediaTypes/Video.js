@@ -3,6 +3,7 @@ const VideoFile = require('../files/VideoFile')
 const VideoTrack = require('../files/VideoTrack')
 const VideoMetadata = require('../metadata/VideoMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
+const { filePathToPOSIX } = require('../../utils/fileUtils')
 
 class Video {
   constructor(video) {
@@ -101,7 +102,7 @@ class Video {
   }
 
   updateCover(coverPath) {
-    coverPath = coverPath.replace(/\\/g, '/')
+    coverPath = filePathToPOSIX(coverPath)
     if (this.coverPath === coverPath) return false
     this.coverPath = coverPath
     return true

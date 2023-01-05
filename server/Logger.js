@@ -88,7 +88,7 @@ class Logger {
 
   trace(...args) {
     if (this.logLevel > LogLevel.TRACE) return
-    console.trace(`[${this.timestamp}[ TRACE:`, ...args)
+    console.trace(`[${this.timestamp}] TRACE:`, ...args)
     this.handleLog(LogLevel.TRACE, args)
   }
 

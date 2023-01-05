@@ -3,6 +3,7 @@ const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 const MusicMetadata = require('../metadata/MusicMetadata')
 const { areEquivalent, copyValue } = require('../../utils/index')
+const { filePathToPOSIX } = require('../../utils/fileUtils')
 
 class Music {
   constructor(music) {
@@ -106,7 +107,7 @@ class Music {
   }
 
   updateCover(coverPath) {
-    coverPath = coverPath.replace(/\\/g, '/')
+    coverPath = filePathToPOSIX(coverPath)
     if (this.coverPath === coverPath) return false
     this.coverPath = coverPath
     return true

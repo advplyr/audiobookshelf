@@ -8,6 +8,7 @@ const fs = require('../libs/fsExtra')
 
 const filePerms = require('../utils/filePerms')
 const { secondsToTimestamp } = require('../utils/index')
+const { filePathToPOSIX } = require('../utils/fileUtils')
 const { writeMetadataFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
@@ -127,7 +128,7 @@ class AudioMetadataMangaer {
     await writeMetadataFile(libraryItem, metadataFilePath)
 
     if (libraryItem.media.coverPath != null) {
-      var coverPath = libraryItem.media.coverPath.replace(/\\/g, '/')
+      var coverPath = filePathToPOSIX(libraryItem.media.coverPath)
     }
 
     const proms = audioFiles.map(af => {

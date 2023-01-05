@@ -5,7 +5,7 @@ const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
 const { parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
-const { readTextFile } = require('../../utils/fileUtils')
+const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 const EBookFile = require('../files/EBookFile')
@@ -182,7 +182,7 @@ class Book {
   }
 
   updateCover(coverPath) {
-    coverPath = coverPath.replace(/\\/g, '/')
+    coverPath = filePathToPOSIX(coverPath)
     if (this.coverPath === coverPath) return false
     this.coverPath = coverPath
     return true

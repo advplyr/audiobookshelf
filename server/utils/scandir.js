@@ -1,7 +1,7 @@
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
-const { recurseFiles, getFileTimestampsWithIno } = require('./fileUtils')
+const { recurseFiles, getFileTimestampsWithIno, filePathToPOSIX } = require('./fileUtils')
 const globals = require('./globals')
 const LibraryFile = require('../objects/files/LibraryFile')
 
@@ -176,7 +176,7 @@ function cleanFileObjects(libraryItemPath, files) {
 
 // Scan folder
 async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
-  const folderPath = folder.fullPath.replace(/\\/g, '/')
+  const folderPath = filePathToPOSIX(folder.fullPath)
 
   const pathExists = await fs.pathExists(folderPath)
   if (!pathExists) {
@@ -243,7 +243,7 @@ module.exports.scanFolder = scanFolder
 
 // Input relative filepath, output all details that can be parsed
 function getBookDataFromDir(folderPath, relPath, parseSubtitle = false) {
-  relPath = relPath.replace(/\\/g, '/')
+  relPath = filePathToPOSIX(relPath)
   var splitDir = relPath.split('/')
 
   var folder = splitDir.pop() // Audio files will always be in the directory named for the title
@@ -333,7 +333,7 @@ function getSubtitle(folder) {
 }
 
 function getPodcastDataFromDir(folderPath, relPath) {
-  relPath = relPath.replace(/\\/g, '/')
+  relPath = filePathToPOSIX(relPath)
   const splitDir = relPath.split('/')
 
   // Audio files will always be in the directory named for the title
@@ -360,8 +360,8 @@ function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettin
 
 // Called from Scanner.js
 async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, isSingleMediaItem, serverSettings = {}) {
-  libraryItemPath = libraryItemPath.replace(/\\/g, '/')
-  const folderFullPath = folder.fullPath.replace(/\\/g, '/')
+  libraryItemPath = filePathToPOSIX(libraryItemPath)
+  const folderFullPath = filePathToPOSIX(folder.fullPath)
 
   const libraryItemDir = libraryItemPath.replace(folderFullPath, '').slice(1)
   let libraryItemData = {}

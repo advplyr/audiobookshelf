@@ -4,7 +4,7 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed, findMatchingEpisodes } = require('../utils/podcastUtils')
-const { getFileTimestampsWithIno } = require('../utils/fileUtils')
+const { getFileTimestampsWithIno, filePathToPOSIX } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 
 const LibraryItem = require('../objects/LibraryItem')
@@ -30,7 +30,7 @@ class PodcastController {
       return res.status(404).send('Folder not found')
     }
 
-    var podcastPath = payload.path.replace(/\\/g, '/')
+    const podcastPath = filePathToPOSIX(payload.path)
     if (await fs.pathExists(podcastPath)) {
       Logger.error(`[PodcastController] Podcast folder already exists "${podcastPath}"`)
       return res.status(400).send('Podcast already exists')

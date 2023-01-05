@@ -1,6 +1,7 @@
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
 const { getId } = require('../utils/index')
+const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class Library {
   constructor(library = null) {
@@ -156,8 +157,8 @@ class Library {
   }
 
   checkFullPathInLibrary(fullPath) {
-    fullPath = fullPath.replace(/\\/g, '/')
-    return this.folders.find(folder => fullPath.startsWith(folder.fullPath.replace(/\\/g, '/')))
+    fullPath = filePathToPOSIX(fullPath)
+    return this.folders.find(folder => fullPath.startsWith(filePathToPOSIX(folder.fullPath)))
   }
 
   getFolderById(id) {

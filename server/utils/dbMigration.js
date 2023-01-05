@@ -5,6 +5,7 @@ const njodb = require('../libs/njodb')
 const { SupportedEbookTypes } = require('./globals')
 const { PlayMethod } = require('./constants')
 const { getId } = require('./index')
+const { filePathToPOSIX } = require('./fileUtils')
 const Logger = require('../Logger')
 
 const Library = require('../objects/Library')
@@ -87,8 +88,8 @@ function makeSeriesFromOldAb({ series, volumeNumber }) {
 }
 
 function getRelativePath(srcPath, basePath) {
-  srcPath = srcPath.replace(/\\/g, '/')
-  basePath = basePath.replace(/\\/g, '/')
+  srcPath = filePathToPOSIX(srcPath)
+  basePath = filePathToPOSIX(basePath)
   return srcPath.replace(basePath, '')
 }
 

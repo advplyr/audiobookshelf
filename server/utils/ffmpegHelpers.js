@@ -3,10 +3,11 @@ const fs = require('../libs/fsExtra')
 const Path = require('path')
 const package = require('../../package.json')
 const Logger = require('../Logger')
+const { filePathToPOSIX } = require('./fileUtils')
 
 function escapeSingleQuotes(path) {
   // return path.replace(/'/g, '\'\\\'\'')
-  return path.replace(/\\/g, '/').replace(/ /g, '\\ ').replace(/'/g, '\\\'')
+  return filePathToPOSIX(path).replace(/ /g, '\\ ').replace(/'/g, '\\\'')
 }
 
 // Returns first track start time

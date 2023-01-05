@@ -10,6 +10,7 @@ const { version } = require('../package.json')
 // Utils
 const dbMigration = require('./utils/dbMigration')
 const filePerms = require('./utils/filePerms')
+const fileUtils = require('./utils/fileUtils')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -44,15 +45,9 @@ class Server {
     global.isWin = process.platform === 'win32'
     global.Uid = isNaN(UID) ? 0 : Number(UID)
     global.Gid = isNaN(GID) ? 0 : Number(GID)
-    global.ConfigPath = Path.normalize(CONFIG_PATH)
-    global.MetadataPath = Path.normalize(METADATA_PATH)
+    global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
+    global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
-
-    // Fix backslash if not on Windows
-    if (process.platform !== 'win32') {
-      global.ConfigPath = global.ConfigPath.replace(/\\/g, '/')
-      global.MetadataPath = global.MetadataPath.replace(/\\/g, '/')
-    }
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)

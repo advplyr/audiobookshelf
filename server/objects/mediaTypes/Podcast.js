@@ -3,7 +3,7 @@ const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const abmetadataGenerator = require('../../utils/abmetadataGenerator')
-const { readTextFile } = require('../../utils/fileUtils')
+const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
 const { createNewSortInstance } = require('../../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -159,7 +159,7 @@ class Podcast {
   }
 
   updateCover(coverPath) {
-    coverPath = coverPath.replace(/\\/g, '/')
+    coverPath = filePathToPOSIX(coverPath)
     if (this.coverPath === coverPath) return false
     this.coverPath = coverPath
     return true

@@ -1,5 +1,4 @@
 const Path = require('path')
-const fs = require('fs')
 const Logger = require('../Logger')
 const { parseString } = require("xml2js")
 const areEquivalent = require('./areEquivalent')
@@ -123,10 +122,6 @@ module.exports.copyValue = (val) => {
     }
     return final
   }
-}
-
-module.exports.encodeUriPath = (path) => {
-  return path.replace(/\\/g, '/').replace(/%/g, '%25').replace(/#/g, '%23')
 }
 
 module.exports.toNumber = (val, fallback = 0) => {

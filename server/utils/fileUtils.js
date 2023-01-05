@@ -80,11 +80,11 @@ function bytesPretty(bytes, decimals = 0) {
 module.exports.bytesPretty = bytesPretty
 
 async function recurseFiles(path, relPathToReplace = null) {
-  path = path.replace(/\\/g, '/')
+  path = this.filePathToPOSIX(path)
   if (!path.endsWith('/')) path = path + '/'
 
   if (relPathToReplace) {
-    relPathToReplace = relPathToReplace.replace(/\\/g, '/')
+    relPathToReplace = this.filePathToPOSIX(relPathToReplace)
     if (!relPathToReplace.endsWith('/')) relPathToReplace += '/'
   } else {
     relPathToReplace = path
@@ -244,4 +244,19 @@ module.exports.removeFile = (path) => {
     Logger.error(`[fileUtils] Failed remove file "${path}"`, error)
     return false
   })
+}
+
+/**
+* Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
+*
+* @param {String} path - Ugly file path
+* @return {String} Pretty posix file path
+*/
+module.exports.filePathToPOSIX = (path) => {
+  if (!global.isWin || !path) return path
+  return path.replace(/\\/g, '/')
+}
+
+module.exports.encodeUriPath = (path) => {
+  return this.filePathToPOSIX(path).replace(/%/g, '%25').replace(/#/g, '%23')
 }

@@ -1,13 +1,12 @@
 const fs = require('../libs/fsExtra')
 const Path = require('path')
-const axios = require('axios')
 const Logger = require('../Logger')
 const readChunk = require('../libs/readChunk')
 const imageType = require('../libs/imageType')
 const filePerms = require('../utils/filePerms')
 
 const globals = require('../utils/globals')
-const { downloadFile } = require('../utils/fileUtils')
+const { downloadFile, filePathToPOSIX } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 
 class CoverManager {
@@ -173,7 +172,7 @@ class CoverManager {
         error: 'Invalid cover path'
       }
     }
-    coverPath = coverPath.replace(/\\/g, '/')
+    coverPath = filePathToPOSIX(coverPath)
     // Cover path already set on media
     if (libraryItem.media.coverPath == coverPath) {
       Logger.debug(`[CoverManager] validate cover path already set "${coverPath}"`)

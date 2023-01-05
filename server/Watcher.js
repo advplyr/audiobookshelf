@@ -2,6 +2,8 @@ const EventEmitter = require('events')
 const Watcher = require('./libs/watcher/watcher')
 const Logger = require('./Logger')
 
+const { filePathToPOSIX } = require('./utils/fileUtils')
+
 class FolderWatcher extends EventEmitter {
   constructor() {
     super()
@@ -143,23 +145,23 @@ class FolderWatcher extends EventEmitter {
   }
 
   addFileUpdate(libraryId, path, type) {
-    path = path.replace(/\\/g, '/')
+    path = filePathToPOSIX(path)
     if (this.pendingFilePaths.includes(path)) return
 
     // Get file library
-    var libwatcher = this.libraryWatchers.find(lw => lw.id === libraryId)
+    const libwatcher = this.libraryWatchers.find(lw => lw.id === libraryId)
     if (!libwatcher) {
       Logger.error(`[Watcher] Invalid library id from watcher ${libraryId}`)
       return
     }
 
     // Get file folder
-    var folder = libwatcher.folders.find(fold => path.startsWith(fold.fullPath.replace(/\\/g, '/')))
+    const folder = libwatcher.folders.find(fold => path.startsWith(filePathToPOSIX(fold.fullPath)))
     if (!folder) {
       Logger.error(`[Watcher] New file folder not found in library "${libwatcher.name}" with path "${path}"`)
       return
     }
-    var folderFullPath = folder.fullPath.replace(/\\/g, '/')
+    const folderFullPath = filePathToPOSIX(folder.fullPath)
 
     var relPath = path.replace(folderFullPath, '')
 
@@ -189,12 +191,12 @@ class FolderWatcher extends EventEmitter {
 
   checkShouldIgnorePath(path) {
     return !!this.ignoreDirs.find(dirpath => {
-      return path.replace(/\\/g, '/').startsWith(dirpath)
+      return filePathToPOSIX(path).startsWith(dirpath)
     })
   }
 
   cleanDirPath(path) {
-    var path = path.replace(/\\/g, '/')
+    path = filePathToPOSIX(path)
     if (path.endsWith('/')) path = path.slice(0, -1)
     return path
   }
