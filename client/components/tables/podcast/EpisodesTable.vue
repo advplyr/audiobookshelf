@@ -1,8 +1,9 @@
 <template>
   <div class="w-full py-6">
+    <p class="text-lg mb-2 font-semibold md:hidden">{{ $strings.HeaderEpisodes }}</p>
     <div class="flex items-center mb-4">
-      <p class="text-lg mb-0 font-semibold">{{ $strings.HeaderEpisodes }}</p>
-      <div class="flex-grow" />
+      <p class="text-lg mb-0 font-semibold hidden md:block">{{ $strings.HeaderEpisodes }}</p>
+      <div class="flex-grow hidden md:block" />
       <template v-if="isSelectionMode">
         <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
@@ -11,8 +12,10 @@
         <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
       </template>
       <template v-else>
-        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-32 md:w-36 h-9 ml-1 sm:ml-4" />
-        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-32 sm:w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 sm:ml-4" />
+        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+        <div class="flex-grow md:hidden" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
       </template>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
@@ -42,15 +45,27 @@ export default {
       showPodcastRemoveModal: false,
       selectedEpisodes: [],
       episodesToRemove: [],
-      processing: false
+      processing: false,
+      quickMatchingEpisodes: false
     }
   },
   watch: {
-    libraryItem() {
-      this.init()
+    libraryItem: {
+      handler() {
+        this.init()
+      }
     }
   },
   computed: {
+    contextMenuItems() {
+      if (!this.userIsAdminOrUp) return []
+      return [
+        {
+          text: 'Quick match all episodes',
+          action: 'quick-match-episodes'
+        }
+      ]
+    },
     sortItems() {
       return [
         {
@@ -94,8 +109,8 @@ export default {
     isSelectionMode() {
       return this.selectedEpisodes.length > 0
     },
-    userCanUpdate() {
-      return this.$store.getters['user/getUserCanUpdate']
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     media() {
       return this.libraryItem.media || {}
@@ -131,6 +146,44 @@ export default {
     }
   },
   methods: {
+    contextMenuAction(action) {
+      if (action === 'quick-match-episodes') {
+        if (this.quickMatchingEpisodes) return
+
+        this.quickMatchAllEpisodes()
+      }
+    },
+    quickMatchAllEpisodes() {
+      if (!this.mediaMetadata.feedUrl) {
+        this.$toast.error(this.$strings.MessagePodcastHasNoRSSFeedForMatching)
+        return
+      }
+      this.quickMatchingEpisodes = true
+
+      const payload = {
+        message: 'Quick matching episodes will overwrite details if a match is found. Only unmatched episodes will be updated. Are you sure?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$post(`/api/podcasts/${this.libraryItem.id}/match-episodes?override=1`)
+              .then((data) => {
+                if (data.numEpisodesUpdated) {
+                  this.$toast.success(`${data.numEpisodesUpdated} episodes updated`)
+                } else {
+                  this.$toast.info('No changes were made')
+                }
+              })
+              .catch((error) => {
+                console.error('Failed to request match episodes', error)
+                this.$toast.error('Failed to match episodes')
+              })
+          }
+          this.quickMatchingEpisodes = false
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
     addToPlaylist(episode) {
       this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode }])
       this.$store.commit('globals/setShowPlaylistsModal', true)

@@ -880,15 +880,15 @@ class Scanner {
       return false
     }
 
-    var episodesWereUpdated = false
+    let numEpisodesUpdated = 0
     for (const episode of episodesToQuickMatch) {
       const episodeMatches = findMatchingEpisodesInFeed(feed, episode.title)
       if (episodeMatches && episodeMatches.length) {
         const wasUpdated = this.updateEpisodeWithMatch(libraryItem, episode, episodeMatches[0].episode, options)
-        if (wasUpdated) episodesWereUpdated = true
+        if (wasUpdated) numEpisodesUpdated++
       }
     }
-    return episodesWereUpdated
+    return numEpisodesUpdated
   }
 
   updateEpisodeWithMatch(libraryItem, episode, episodeToMatch, options = {}) {

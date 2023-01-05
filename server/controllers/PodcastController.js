@@ -173,7 +173,7 @@ class PodcastController {
   async downloadEpisodes(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
-      return res.sendStatus(500)
+      return res.sendStatus(403)
     }
     var libraryItem = req.libraryItem
 
@@ -186,8 +186,27 @@ class PodcastController {
     res.sendStatus(200)
   }
 
+  // POST: api/podcasts/:id/match-episodes
+  async quickMatchEpisodes(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[PodcastController] Non-admin user attempted to download episodes`, req.user)
+      return res.sendStatus(403)
+    }
+
+    const overrideDetails = req.query.override === '1'
+    const episodesUpdated = await this.scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
+    if (episodesUpdated) {
+      await this.db.updateLibraryItem(req.libraryItem)
+      SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    }
+
+    res.json({
+      numEpisodesUpdated: episodesUpdated
+    })
+  }
+
   async updateEpisode(req, res) {
-    var libraryItem = req.libraryItem
+    const libraryItem = req.libraryItem
 
     var episodeId = req.params.episodeId
     if (!libraryItem.media.checkHasEpisode(episodeId)) {
@@ -237,7 +256,7 @@ class PodcastController {
   }
 
   middleware(req, res, next) {
-    var item = this.db.libraryItems.find(li => li.id === req.params.id)
+    const item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)
 
     if (!item.isPodcast) {
