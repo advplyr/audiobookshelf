@@ -22,6 +22,15 @@ class Logger {
     return 'UNKNOWN'
   }
 
+  get source() {
+    try {
+      throw new Error()
+    } catch (error) {
+      const regex = global.isWin ? /^.*\\([^\\:]*:[0-9]*):[0-9]*\)*/ : /^.*\/([^/:]*:[0-9]*):[0-9]*\)*/
+      return error.stack.split('\n')[3].replace(regex, '$1')
+    }
+  }
+
   getLogLevelString(level) {
     for (const key in LogLevel) {
       if (LogLevel[key] === level) {
@@ -55,6 +64,7 @@ class Logger {
   handleLog(level, args) {
     const logObj = {
       timestamp: this.timestamp,
+      source: this.source,
       message: args.join(' '),
       levelName: this.getLogLevelString(level),
       level
@@ -78,36 +88,36 @@ class Logger {
 
   trace(...args) {
     if (this.logLevel > LogLevel.TRACE) return
-    console.trace(`[${this.timestamp}] TRACE:`, ...args)
+    console.trace(`[${this.timestamp}[ TRACE:`, ...args)
     this.handleLog(LogLevel.TRACE, args)
   }
 
   debug(...args) {
     if (this.logLevel > LogLevel.DEBUG) return
-    console.debug(`[${this.timestamp}] DEBUG:`, ...args)
+    console.debug(`[${this.timestamp}] DEBUG:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.DEBUG, args)
   }
 
   info(...args) {
     if (this.logLevel > LogLevel.INFO) return
-    console.info(`[${this.timestamp}]  INFO:`, ...args)
+    console.info(`[${this.timestamp}] INFO:`, ...args)
     this.handleLog(LogLevel.INFO, args)
   }
 
   warn(...args) {
     if (this.logLevel > LogLevel.WARN) return
-    console.warn(`[${this.timestamp}]  WARN:`, ...args)
+    console.warn(`[${this.timestamp}] WARN:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.WARN, args)
   }
 
   error(...args) {
     if (this.logLevel > LogLevel.ERROR) return
-    console.error(`[${this.timestamp}] ERROR:`, ...args)
+    console.error(`[${this.timestamp}] ERROR:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.ERROR, args)
   }
 
   fatal(...args) {
-    console.error(`[${this.timestamp}] FATAL:`, ...args)
+    console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.FATAL, args)
   }
 
