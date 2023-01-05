@@ -1,5 +1,5 @@
 <template>
-  <div class="w-20 bg-bg h-full fixed left-0 box-shadow-side z-50" style="min-width: 80px" :style="{ top: offsetTop + 'px' }">
+  <div class="w-20 bg-bg h-full fixed left-0 box-shadow-side z-50" style="min-width: 90px" :style="{ top: offsetTop + 'px' }">
     <!-- ugly little workaround to cover up the shadow overlapping the bookshelf toolbar -->
     <div v-if="isShowingBookshelfToolbar" class="absolute top-0 -right-4 w-4 bg-bg h-10 pointer-events-none" />
 
