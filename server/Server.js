@@ -41,6 +41,7 @@ class Server {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
+    global.isWin = process.platform === 'win32'
     global.Uid = isNaN(UID) ? 0 : Number(UID)
     global.Gid = isNaN(GID) ? 0 : Number(GID)
     global.ConfigPath = Path.normalize(CONFIG_PATH)

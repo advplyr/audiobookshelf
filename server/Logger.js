@@ -24,9 +24,10 @@ class Logger {
 
   get source() {
     try {
-      throw new Error();
+      throw new Error()
     } catch (error) {
-      return error.stack.split('\n')[3].replace(/^.*\/([^/]*:[0-9]*:[[0-9]*)\)*/, '$1')
+      const regex = global.isWin ? /^.*\\([^\\:]*:[0-9]*):[0-9]*\)*/ : /^.*\/([^/:]*:[0-9]*):[0-9]*\)*/
+      return error.stack.split('\n')[3].replace(regex, '$1')
     }
   }
 
@@ -87,41 +88,41 @@ class Logger {
 
   trace(...args) {
     if (this.logLevel > LogLevel.TRACE) return
-    console.trace(`[${this.timestamp}[ (${this.source}) TRACE:`, ...args)
+    console.trace(`[${this.timestamp}[ TRACE:`, ...args)
     this.handleLog(LogLevel.TRACE, args)
   }
 
   debug(...args) {
     if (this.logLevel > LogLevel.DEBUG) return
-    console.debug(`[${this.timestamp}[ (${this.source}) DEBUG:`, ...args)
+    console.debug(`[${this.timestamp}] DEBUG:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.DEBUG, args)
   }
 
   info(...args) {
     if (this.logLevel > LogLevel.INFO) return
-    console.info(`[${this.timestamp}] (${this.source})  INFO:`, ...args)
+    console.info(`[${this.timestamp}] INFO:`, ...args)
     this.handleLog(LogLevel.INFO, args)
   }
 
   warn(...args) {
     if (this.logLevel > LogLevel.WARN) return
-    console.warn(`[${this.timestamp}] (${this.source})  WARN:`, ...args)
+    console.warn(`[${this.timestamp}] WARN:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.WARN, args)
   }
 
   error(...args) {
     if (this.logLevel > LogLevel.ERROR) return
-    console.error(`[${this.timestamp}] (${this.source}) ERROR:`, ...args)
+    console.error(`[${this.timestamp}] ERROR:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.ERROR, args)
   }
 
   fatal(...args) {
-    console.error(`[${this.timestamp}] (${this.source}) FATAL:`, ...args)
+    console.error(`[${this.timestamp}] FATAL:`, ...args, `(${this.source})`)
     this.handleLog(LogLevel.FATAL, args)
   }
 
   note(...args) {
-    console.log(`[${this.timestamp}] (${this.source}) NOTE:`, ...args)
+    console.log(`[${this.timestamp}] NOTE:`, ...args)
     this.handleLog(LogLevel.NOTE, args)
   }
 }
