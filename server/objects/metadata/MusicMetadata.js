@@ -290,14 +290,15 @@ class MusicMetadata {
     // Metadata is only mapped to the music track if it is empty
     MetadataMapArray.forEach((mapping) => {
       let value = audioFileMetaTags[mapping.tag]
+
       // let tagToUse = mapping.tag
       if (!value && mapping.altTag) {
         value = audioFileMetaTags[mapping.altTag]
         // tagToUse = mapping.altTag
       }
 
-      if (value && typeof value === 'string') {
-        value = value.trim() // Trim whitespace
+      if (value && (typeof value === 'string' || typeof value === 'number')) {
+        value = value.toString().trim() // Trim whitespace
 
         if (mapping.key === 'artists' && (!this.artists.length || overrideExistingDetails)) {
           updatePayload.artists = this.parseArtistsTag(value)

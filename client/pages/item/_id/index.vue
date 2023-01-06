@@ -80,7 +80,7 @@
               </div>
               <div v-if="musicTrackPretty" class="flex py-0.5">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Track #</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">Track</span>
                 </div>
                 <div>
                   {{ musicTrackPretty }}
@@ -88,7 +88,7 @@
               </div>
               <div v-if="musicDiscPretty" class="flex py-0.5">
                 <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Disc #</span>
+                  <span class="text-white text-opacity-60 uppercase text-sm">Disc</span>
                 </div>
                 <div>
                   {{ musicDiscPretty }}
