@@ -112,7 +112,7 @@ class Podcast {
     return false
   }
   get duration() {
-    var total = 0
+    let total = 0
     this.episodes.forEach((ep) => total += ep.duration)
     return total
   }

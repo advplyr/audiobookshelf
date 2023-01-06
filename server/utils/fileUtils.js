@@ -5,6 +5,19 @@ const Path = require('path')
 const Logger = require('../Logger')
 const { AudioMimeType } = require('./constants')
 
+
+/**
+* Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
+*
+* @param {String} path - Ugly file path
+* @return {String} Pretty posix file path
+*/
+const filePathToPOSIX = (path) => {
+  if (!global.isWin || !path) return path
+  return path.replace(/\\/g, '/')
+}
+module.exports.filePathToPOSIX = filePathToPOSIX
+
 async function getFileStat(path) {
   try {
     var stat = await fs.stat(path)
@@ -80,11 +93,11 @@ function bytesPretty(bytes, decimals = 0) {
 module.exports.bytesPretty = bytesPretty
 
 async function recurseFiles(path, relPathToReplace = null) {
-  path = this.filePathToPOSIX(path)
+  path = filePathToPOSIX(path)
   if (!path.endsWith('/')) path = path + '/'
 
   if (relPathToReplace) {
-    relPathToReplace = this.filePathToPOSIX(relPathToReplace)
+    relPathToReplace = filePathToPOSIX(relPathToReplace)
     if (!relPathToReplace.endsWith('/')) relPathToReplace += '/'
   } else {
     relPathToReplace = path
@@ -246,17 +259,6 @@ module.exports.removeFile = (path) => {
   })
 }
 
-/**
-* Make sure folder separator is POSIX for Windows file paths. e.g. "C:\Users\Abs" becomes "C:/Users/Abs"
-*
-* @param {String} path - Ugly file path
-* @return {String} Pretty posix file path
-*/
-module.exports.filePathToPOSIX = (path) => {
-  if (!global.isWin || !path) return path
-  return path.replace(/\\/g, '/')
-}
-
 module.exports.encodeUriPath = (path) => {
-  return this.filePathToPOSIX(path).replace(/%/g, '%25').replace(/#/g, '%23')
+  return filePathToPOSIX(path).replace(/%/g, '%25').replace(/#/g, '%23')
 }

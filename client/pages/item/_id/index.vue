@@ -34,6 +34,9 @@
 
               <template v-if="!isVideo">
                 <p v-if="isPodcast" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl">by {{ podcastAuthor || 'Unknown' }}</p>
+                <p v-else-if="musicArtists.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
+                  <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
+                </p>
                 <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
                   by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
@@ -59,6 +62,38 @@
                   {{ publishedYear }}
                 </div>
               </div>
+              <div v-if="musicAlbum" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Album</span>
+                </div>
+                <div>
+                  {{ musicAlbum }}
+                </div>
+              </div>
+              <div v-if="musicAlbumArtist" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Album Artist</span>
+                </div>
+                <div>
+                  {{ musicAlbumArtist }}
+                </div>
+              </div>
+              <div v-if="musicTrackPretty" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Track #</span>
+                </div>
+                <div>
+                  {{ musicTrackPretty }}
+                </div>
+              </div>
+              <div v-if="musicDiscPretty" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">Disc #</span>
+                </div>
+                <div>
+                  {{ musicDiscPretty }}
+                </div>
+              </div>
               <div class="flex py-0.5" v-if="genres.length">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
@@ -70,7 +105,7 @@
                   </template>
                 </div>
               </div>
-              <div v-if="tracks.length" class="flex py-0.5">
+              <div v-if="tracks.length || audioFile" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
                 </div>
@@ -344,6 +379,25 @@ export default {
     authors() {
       return this.mediaMetadata.authors || []
     },
+    musicArtists() {
+      return this.mediaMetadata.artists || []
+    },
+    musicAlbum() {
+      return this.mediaMetadata.album || ''
+    },
+    musicAlbumArtist() {
+      return this.mediaMetadata.albumArtist || ''
+    },
+    musicTrackPretty() {
+      if (!this.mediaMetadata.trackNumber) return null
+      if (!this.mediaMetadata.trackTotal) return this.mediaMetadata.trackNumber
+      return `${this.mediaMetadata.trackNumber} / ${this.mediaMetadata.trackTotal}`
+    },
+    musicDiscPretty() {
+      if (!this.mediaMetadata.discNumber) return null
+      if (!this.mediaMetadata.discTotal) return this.mediaMetadata.discNumber
+      return `${this.mediaMetadata.discNumber} / ${this.mediaMetadata.discTotal}`
+    },
     narrators() {
       return this.mediaMetadata.narrators || []
     },
@@ -352,7 +406,7 @@ export default {
     },
     seriesList() {
       return this.series.map((se) => {
-        var text = se.name
+        let text = se.name
         if (se.sequence) text += ` #${se.sequence}`
         return {
           ...se,
@@ -361,11 +415,12 @@ export default {
       })
     },
     durationPretty() {
-      if (!this.tracks.length) return 'N/A'
-      return this.$elapsedPretty(this.media.duration)
+      if (!this.tracks.length && !this.audioFile) return 'N/A'
+      if (this.audioFile) return this.$elapsedPrettyExtended(this.duration)
+      return this.$elapsedPretty(this.duration)
     },
     duration() {
-      if (!this.tracks.length) return 0
+      if (!this.tracks.length && !this.audioFile) return 0
       return this.media.duration
     },
     sizePretty() {
@@ -399,7 +454,7 @@ export default {
     },
     userTimeRemaining() {
       if (!this.userMediaProgress) return 0
-      var duration = this.userMediaProgress.duration || this.duration
+      const duration = this.userMediaProgress.duration || this.duration
       return duration - this.userMediaProgress.currentTime
     },
     progressPercent() {
@@ -693,6 +748,7 @@ export default {
     if (this.libraryItem.episodesDownloading) {
       this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
     }
+    console.log('Media metadata', this.mediaMetadata)
 
     // use this items library id as the current
     if (this.libraryId) {

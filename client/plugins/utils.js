@@ -54,18 +54,18 @@ Vue.prototype.$elapsedPrettyExtended = (seconds, useDays = true) => {
   if (isNaN(seconds) || seconds === null) return ''
   seconds = Math.round(seconds)
 
-  var minutes = Math.floor(seconds / 60)
+  let minutes = Math.floor(seconds / 60)
   seconds -= minutes * 60
-  var hours = Math.floor(minutes / 60)
+  let hours = Math.floor(minutes / 60)
   minutes -= hours * 60
 
-  var days = 0
+  let days = 0
   if (useDays || Math.floor(hours / 24) >= 100) {
     days = Math.floor(hours / 24)
     hours -= days * 24
   }
 
-  var strs = []
+  const strs = []
   if (days) strs.push(`${days}d`)
   if (hours) strs.push(`${hours}h`)
   if (minutes) strs.push(`${minutes}m`)
