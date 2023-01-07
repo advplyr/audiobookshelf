@@ -100,8 +100,6 @@ function secondsToTimestamp(seconds, includeMs = false, alwaysIncludeHours = fal
 }
 module.exports.secondsToTimestamp = secondsToTimestamp
 
-module.exports.msToTimestamp = (ms, includeMs) => secondsToTimestamp(ms / 1000, includeMs)
-
 module.exports.reqSupportsWebp = (req) => {
   if (!req || !req.headers || !req.headers.accept) return false
   return req.headers.accept.includes('image/webp') || req.headers.accept === '*/*'

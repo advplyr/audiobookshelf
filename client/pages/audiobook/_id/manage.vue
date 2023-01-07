@@ -63,6 +63,10 @@
 
     <div class="w-full max-w-4xl mx-auto">
       <div v-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
+        <ui-checkbox v-if="!isFinished" v-model="shouldBackupAudioFiles" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
+
+        <div class="flex-grow" />
+
         <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
@@ -104,7 +108,7 @@
           </p>
         </div>
 
-        <div class="flex items-start mb-2">
+        <div v-if="shouldBackupAudioFiles || isM4BTool" class="flex items-start mb-2">
           <span class="material-icons text-base text-warning pt-1">star</span>
           <p class="text-gray-200 ml-2">
             A backup of your original audio files will be stored in <span class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">/metadata/cache/items/{{ libraryItemId }}/</span>. Make sure to periodically purge items cache.
@@ -171,7 +175,7 @@ export default {
     if (!store.getters['user/getIsAdminOrUp']) {
       return redirect('/?error=unauthorized')
     }
-    var libraryItem = await app.$axios.$get(`/api/items/${params.id}?expanded=1`).catch((error) => {
+    const libraryItem = await app.$axios.$get(`/api/items/${params.id}?expanded=1`).catch((error) => {
       console.error('Failed', error)
       return false
     })
@@ -201,6 +205,7 @@ export default {
       selectedTool: 'embed',
       isCancelingEncode: false,
       showEncodeOptions: false,
+      shouldBackupAudioFiles: true,
       encodingOptions: {
         bitrate: '64k',
         channels: '2',
@@ -275,6 +280,9 @@ export default {
     }
   },
   methods: {
+    toggleBackupAudioFiles(val) {
+      localStorage.setItem('embedMetadataShouldBackup', val ? 1 : 0)
+    },
     cancelEncodeClick() {
       this.isCancelingEncode = true
       this.$axios
@@ -332,7 +340,7 @@ export default {
     updateAudioFileMetadata() {
       this.processing = true
       this.$axios
-        .$post(`/api/tools/item/${this.libraryItemId}/embed-metadata?tone=1`)
+        .$post(`/api/tools/item/${this.libraryItemId}/embed-metadata?backup=${this.shouldBackupAudioFiles ? 1 : 0}`)
         .then(() => {
           console.log('Audio metadata encode started')
         })
@@ -350,9 +358,14 @@ export default {
       console.log('audio metadata finished', data)
       if (data.libraryItemId !== this.libraryItemId) return
       this.processing = false
-      this.isFinished = true
       this.audiofilesEncoding = {}
-      this.$toast.success('Audio file metadata updated')
+
+      if (data.failed) {
+        this.$toast.error(data.error)
+      } else {
+        this.isFinished = true
+        this.$toast.success('Audio file metadata updated')
+      }
     },
     audiofileMetadataStarted(data) {
       if (data.libraryItemId !== this.libraryItemId) return
@@ -378,6 +391,9 @@ export default {
       }
 
       if (this.task) this.taskUpdated(this.task)
+
+      const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
+      this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
     },
     fetchToneObject() {
       this.$axios

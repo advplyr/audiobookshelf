@@ -47,7 +47,6 @@ class ToolsController {
     res.sendStatus(200)
   }
 
-
   // POST: api/tools/item/:id/embed-metadata
   async embedAudioFileMetadata(req, res) {
     if (!req.user.isAdminOrUp) {
@@ -60,9 +59,11 @@ class ToolsController {
       return res.sendStatus(500)
     }
 
-    const useTone = req.query.tone === '1'
-    const forceEmbedChapters = req.query.forceEmbedChapters === '1'
-    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, useTone, forceEmbedChapters)
+    const options = {
+      forceEmbedChapters: req.query.forceEmbedChapters === '1',
+      backup: req.query.backup === '1'
+    }
+    this.audioMetadataManager.updateMetadataForItem(req.user, req.libraryItem, options)
     res.sendStatus(200)
   }
 

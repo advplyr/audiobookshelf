@@ -1,7 +1,6 @@
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
-const package = require('../../package.json')
 const Logger = require('../Logger')
 const { filePathToPOSIX } = require('./fileUtils')
 
@@ -40,59 +39,6 @@ async function writeConcatFile(tracks, outputPath, startTime = 0) {
   return firstTrackStartTime
 }
 module.exports.writeConcatFile = writeConcatFile
-
-
-async function writeMetadataFile(libraryItem, outputPath) {
-  var inputstrs = [
-    ';FFMETADATA1',
-    `title=${libraryItem.media.metadata.title}`,
-    `artist=${libraryItem.media.metadata.authorName}`,
-    `album_artist=${libraryItem.media.metadata.authorName}`,
-    `date=${libraryItem.media.metadata.publishedYear || ''}`,
-    `description=${libraryItem.media.metadata.description || ''}`,
-    `genre=${libraryItem.media.metadata.genres.join(';')}`,
-    `performer=${libraryItem.media.metadata.narratorName || ''}`,
-    `encoded_by=audiobookshelf:${package.version}`
-  ]
-
-  if (libraryItem.media.metadata.asin) {
-    inputstrs.push(`ASIN=${libraryItem.media.metadata.asin}`)
-  }
-  if (libraryItem.media.metadata.isbn) {
-    inputstrs.push(`ISBN=${libraryItem.media.metadata.isbn}`)
-  }
-  if (libraryItem.media.metadata.language) {
-    inputstrs.push(`language=${libraryItem.media.metadata.language}`)
-  }
-  if (libraryItem.media.metadata.series.length) {
-    // Only uses first series
-    var firstSeries = libraryItem.media.metadata.series[0]
-    inputstrs.push(`series=${firstSeries.name}`)
-    if (firstSeries.sequence) {
-      inputstrs.push(`series-part=${firstSeries.sequence}`)
-    }
-  }
-  if (libraryItem.media.metadata.subtitle) {
-    inputstrs.push(`subtitle=${libraryItem.media.metadata.subtitle}`)
-  }
-
-  if (libraryItem.media.chapters) {
-    libraryItem.media.chapters.forEach((chap) => {
-      const chapterstrs = [
-        '[CHAPTER]',
-        'TIMEBASE=1/1000',
-        `START=${Math.round(chap.start * 1000)}`,
-        `END=${Math.round(chap.end * 1000)}`,
-        `title=${chap.title}`
-      ]
-      inputstrs = inputstrs.concat(chapterstrs)
-    })
-  }
-
-  await fs.writeFile(outputPath, inputstrs.join('\n'))
-  return inputstrs
-}
-module.exports.writeMetadataFile = writeMetadataFile
 
 async function extractCoverArt(filepath, outputpath) {
   var dirname = Path.dirname(outputpath)
