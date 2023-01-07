@@ -30,6 +30,7 @@ const MiscController = require('../controllers/MiscController')
 const BookFinder = require('../finders/BookFinder')
 const AuthorFinder = require('../finders/AuthorFinder')
 const PodcastFinder = require('../finders/PodcastFinder')
+const MusicFinder = require('../finders/MusicFinder')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
@@ -56,6 +57,7 @@ class ApiRouter {
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
     this.podcastFinder = new PodcastFinder()
+    this.musicFinder = new MusicFinder()
 
     this.router = express()
     this.init()
@@ -253,6 +255,7 @@ class ApiRouter {
     this.router.get('/search/podcast', SearchController.findPodcasts.bind(this))
     this.router.get('/search/authors', SearchController.findAuthor.bind(this))
     this.router.get('/search/chapters', SearchController.findChapters.bind(this))
+    this.router.get('/search/tracks', SearchController.findMusicTrack.bind(this))
 
     //
     // Cache Routes (Admin and up)

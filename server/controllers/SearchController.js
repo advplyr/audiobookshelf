@@ -49,5 +49,12 @@ class SearchController {
     }
     res.json(chapterData)
   }
+
+  async findMusicTrack(req, res) {
+    const tracks = await this.musicFinder.searchTrack(req.query || {})
+    res.json({
+      tracks
+    })
+  }
 }
 module.exports = new SearchController()
