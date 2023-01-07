@@ -70,8 +70,8 @@ export const actions = {
   },
   loadFolders({ state, commit }) {
     if (state.folders.length) {
-      var lastCheck = Date.now() - state.folderLastUpdate
-      if (lastCheck < 1000 * 60 * 10) { // 10 minutes
+      const lastCheck = Date.now() - state.folderLastUpdate
+      if (lastCheck < 1000 * 5) { // 5 seconds
         // Folders up to date
         return state.folders
       }
