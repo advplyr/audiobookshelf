@@ -40,7 +40,7 @@ export default {
       showMenu: false,
       currentPlaybackRate: 0,
       MIN_SPEED: 0.5,
-      MAX_SPEED: 3,
+      MAX_SPEED: 10,
       menuLeft: -92,
       arrowLeft: 0
     }
