@@ -28,8 +28,10 @@
       </template>
     </div>
 
-    <div v-if="loading" class="absolute top-0 left-0 w-full h-full bg-black/25 flex items-center justify-center">
-      <ui-loading-indicator />
+    <div v-if="loading" class="absolute top-0 left-0 w-full h-full bg-black/25 rounded-md">
+      <div class="sticky top-0 left-0 w-full h-full flex items-center justify-center" style="max-height: 80vh">
+        <ui-loading-indicator />
+      </div>
     </div>
   </div>
 </template>
