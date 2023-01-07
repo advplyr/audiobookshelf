@@ -19,11 +19,21 @@ class Audible {
     }
 
     cleanResult(item) {
-        var { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin } = item
+        const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin } = item
 
-        var series = []
-        if (seriesPrimary) series.push(seriesPrimary)
-        if (seriesSecondary) series.push(seriesSecondary)
+        const series = []
+        if (seriesPrimary) {
+            series.push({
+                series: seriesPrimary.name,
+                sequence: (seriesPrimary.position || '').replace(/Book /, '') // Can be badly formatted see #1339
+            })
+        }
+        if (seriesSecondary) {
+            series.push({
+                series: seriesSecondary.name,
+                sequence: (seriesSecondary.position || '').replace(/Book /, '')
+            })
+        }
 
         const genresFiltered = genres ? genres.filter(g => g.type == "genre").map(g => g.name) : []
         const tagsFiltered = genres ? genres.filter(g => g.type == "tag").map(g => g.name) : []
@@ -40,7 +50,7 @@ class Audible {
             asin,
             genres: genresFiltered.length ? genresFiltered : null,
             tags: tagsFiltered.length ? tagsFiltered.join(', ') : null,
-            series: series != [] ? series.map(({ name, position }) => ({ series: name, sequence: position })) : null,
+            series: series.length ? series : null,
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
             duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
             region: item.region || null,
@@ -72,7 +82,7 @@ class Audible {
             region = ''
         }
 
-        var items
+        let items
         if (asin) {
             items = [await this.asinSearch(asin, region)]
         }
@@ -82,7 +92,7 @@ class Audible {
         }
 
         if (!items) {
-            var queryObj = {
+            const queryObj = {
                 num_results: '10',
                 products_sort_by: 'Relevance',
                 title: title

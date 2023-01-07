@@ -59,7 +59,6 @@ export default {
         ..._series
       }
 
-      console.log('Selected series', this.selectedSeries)
       this.showSeriesForm = true
     },
     addNewSeries() {
