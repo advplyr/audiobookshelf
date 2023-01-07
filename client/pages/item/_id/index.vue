@@ -748,7 +748,6 @@ export default {
     if (this.libraryItem.episodesDownloading) {
       this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
     }
-    console.log('Media metadata', this.mediaMetadata)
 
     // use this items library id as the current
     if (this.libraryId) {

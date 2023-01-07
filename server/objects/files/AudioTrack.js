@@ -9,6 +9,7 @@ class AudioTrack {
     this.title = null
     this.contentUrl = null
     this.mimeType = null
+    this.codec = null
     this.metadata = null
   }
 
@@ -20,6 +21,7 @@ class AudioTrack {
       title: this.title,
       contentUrl: this.contentUrl,
       mimeType: this.mimeType,
+      codec: this.codec,
       metadata: this.metadata ? this.metadata.toJSON() : null
     }
   }
@@ -31,6 +33,7 @@ class AudioTrack {
     this.title = audioFile.metadata.filename || ''
     this.contentUrl = Path.join(`${global.RouterBasePath}/s/item/${itemId}`, encodeUriPath(audioFile.metadata.relPath))
     this.mimeType = audioFile.mimeType
+    this.codec = audioFile.codec || null
     this.metadata = audioFile.metadata.clone()
   }
 
