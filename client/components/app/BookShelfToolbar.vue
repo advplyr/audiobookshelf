@@ -109,13 +109,7 @@ export default {
       totalEntities: 0,
       processingSeries: false,
       processingIssues: false,
-      processingAuthors: false,
-      contextMenuItems: [
-        {
-          text: 'cat',
-          action: 'dog'
-        }
-      ]
+      processingAuthors: false
     }
   },
   computed: {

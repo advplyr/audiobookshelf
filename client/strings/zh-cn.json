@@ -20,6 +20,7 @@
   "ButtonCreate": "创建",
   "ButtonCreateBackup": "创建备份",
   "ButtonDelete": "删除",
+  "ButtonEdit": "Edit",
   "ButtonEditChapters": "编辑章节",
   "ButtonEditPodcast": "编辑播客",
   "ButtonForceReScan": "强制重新扫描",

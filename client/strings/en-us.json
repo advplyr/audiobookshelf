@@ -20,6 +20,7 @@
   "ButtonCreate": "Create",
   "ButtonCreateBackup": "Create Backup",
   "ButtonDelete": "Delete",
+  "ButtonEdit": "Edit",
   "ButtonEditChapters": "Edit Chapters",
   "ButtonEditPodcast": "Edit Podcast",
   "ButtonForceReScan": "Force Re-Scan",

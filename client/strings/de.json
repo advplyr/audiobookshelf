@@ -20,6 +20,7 @@
   "ButtonCreate": "Ertsellen",
   "ButtonCreateBackup": "Sicherung erstellen",
   "ButtonDelete": "Löschen",
+  "ButtonEdit": "Edit",
   "ButtonEditChapters": "Kapitel bearbeiten",
   "ButtonEditPodcast": "Podcast bearbeiten",
   "ButtonForceReScan": "Erzwinge kompletten Neu-Scan",
