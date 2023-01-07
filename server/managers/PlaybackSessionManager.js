@@ -54,9 +54,10 @@ class PlaybackSessionManager {
   }
 
   async syncSessionRequest(user, session, payload, res) {
-    const result = await this.syncSession(user, session, payload)
-    if (result) {
-      res.json(session.toJSONForClient(result.libraryItem))
+    if (await this.syncSession(user, session, payload)) {
+      res.sendStatus(200)
+    } else {
+      res.sendStatus(500)
     }
   }
 
