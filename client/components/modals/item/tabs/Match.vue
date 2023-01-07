@@ -396,6 +396,12 @@ export default {
       if (this.isPodcast) this.provider = 'itunes'
       else this.provider = localStorage.getItem('book-provider') || 'google'
 
+      // Prefer using ASIN if set and using audible provider
+      if (this.provider.startsWith('audible') && this.libraryItem.media.metadata.asin) {
+        this.searchTitle = this.libraryItem.media.metadata.asin
+        this.searchAuthor = ''
+      }
+
       if (this.searchTitle) {
         this.submitSearch()
       }
