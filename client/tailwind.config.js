@@ -62,6 +62,7 @@ module.exports = {
         '80': '20rem'
       },
       spacing: {
+        '18': '4.5rem',
         '-54': '-13.5rem'
       },
       rotate: {

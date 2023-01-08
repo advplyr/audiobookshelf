@@ -1,10 +1,10 @@
 <template>
-  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-50 bg-primary px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
-    <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-1 sm:left-4 cursor-pointer" :style="{ top: bookCoverPosTop + 'px' }">
+    <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-2 top-2 md:left-4 cursor-pointer">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </nuxt-link>
-    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : 'pl-20 sm:pl-24'">
+    <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
       <div>
         <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg">
           {{ title }}
@@ -86,12 +86,15 @@ export default {
     coverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
-    bookCoverWidth() {
-      return 88
+    isSquareCover() {
+      return this.coverAspectRatio === 1
     },
-    bookCoverPosTop() {
-      if (this.coverAspectRatio == 1) return -10
-      return -64
+    isMobile() {
+      return this.$store.state.globals.isMobile
+    },
+    bookCoverWidth() {
+      if (this.isMobile) return 64 / this.coverAspectRatio
+      return 77 / this.coverAspectRatio
     },
     cover() {
       if (this.media.coverPath) return this.media.coverPath
