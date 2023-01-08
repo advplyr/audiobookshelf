@@ -410,10 +410,10 @@ class Db {
     })
   }
 
-  removeEntities(entityName, selectFunc) {
+  removeEntities(entityName, selectFunc, silent = false) {
     var entityDb = this.getEntityDb(entityName)
     return entityDb.delete(selectFunc).then((results) => {
-      Logger.debug(`[DB] Deleted entities ${entityName}: ${results.deleted}`)
+      if (!silent) Logger.debug(`[DB] Deleted entities ${entityName}: ${results.deleted}`)
       var arrayKey = this.getEntityArrayKey(entityName)
       if (this[arrayKey]) {
         this[arrayKey] = this[arrayKey].filter(e => {

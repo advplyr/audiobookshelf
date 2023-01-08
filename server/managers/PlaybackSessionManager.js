@@ -272,7 +272,7 @@ class PlaybackSessionManager {
   // Remove playback sessions with listening time too high
   async removeInvalidSessions() {
     const selectFunc = (session) => isNaN(session.timeListening) || Number(session.timeListening) > 3600000000
-    const numSessionsRemoved = await this.db.removeEntities('session', selectFunc)
+    const numSessionsRemoved = await this.db.removeEntities('session', selectFunc, true)
     if (numSessionsRemoved) {
       Logger.info(`[PlaybackSessionManager] Removed ${numSessionsRemoved} invalid playback sessions`)
     }
