@@ -295,14 +295,14 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      archive.directory(this.db.LibraryItemsPath, 'config/libraryItems')
-      archive.directory(this.db.UsersPath, 'config/users')
-      archive.directory(this.db.SessionsPath, 'config/sessions')
-      archive.directory(this.db.LibrariesPath, 'config/libraries')
-      archive.directory(this.db.SettingsPath, 'config/settings')
-      archive.directory(this.db.CollectionsPath, 'config/collections')
-      archive.directory(this.db.AuthorsPath, 'config/authors')
-      archive.directory(this.db.SeriesPath, 'config/series')
+      archive.directory(this.db.LibraryItemsPath, 'config/libraryItems/data')
+      archive.directory(this.db.UsersPath, 'config/users/data')
+      archive.directory(this.db.SessionsPath, 'config/sessions/data')
+      archive.directory(this.db.LibrariesPath, 'config/libraries/data')
+      archive.directory(this.db.SettingsPath, 'config/settings/data')
+      archive.directory(this.db.CollectionsPath, 'config/collections/data')
+      archive.directory(this.db.AuthorsPath, 'config/authors/data')
+      archive.directory(this.db.SeriesPath, 'config/series/data')
 
       if (this.serverSettings.backupMetadataCovers) {
         Logger.debug(`[BackupManager] Backing up Metadata Items "${this.ItemsMetadataPath}"`)
