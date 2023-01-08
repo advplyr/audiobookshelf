@@ -135,11 +135,12 @@ class BackupManager {
 
   async loadBackups() {
     try {
-      var filesInDir = await fs.readdir(this.BackupPath)
+      const filesInDir = await fs.readdir(this.BackupPath)
+
       for (let i = 0; i < filesInDir.length; i++) {
-        var filename = filesInDir[i]
+        const filename = filesInDir[i]
         if (filename.endsWith('.audiobookshelf')) {
-          var fullFilePath = Path.join(this.BackupPath, filename)
+          const fullFilePath = Path.join(this.BackupPath, filename)
 
           let zip = null
           let data = null
@@ -147,27 +148,21 @@ class BackupManager {
             zip = new StreamZip.async({ file: fullFilePath })
             data = await zip.entryData('details')
           } catch (error) {
-            if (error.message === "Bad archive") {
-              Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
-              continue;
-            } else if (error.message === "unexpected end of file") {
-              Logger.warn(`[BackupManager] Backup appears to be corrupted: ${fullFilePath}`)
-              continue;
-            } else {
-              throw error
-            }
+            Logger.error(`[BackupManager] Failed to unzip backup "${fullFilePath}"`, error)
+            await zip.close()
+            continue
           }
 
-          var details = data.toString('utf8').split('\n')
+          const details = data.toString('utf8').split('\n')
 
-          var backup = new Backup({ details, fullPath: fullFilePath })
+          const backup = new Backup({ details, fullPath: fullFilePath })
 
           if (!backup.serverVersion) {
             Logger.error(`[BackupManager] Old unsupported backup was found "${backup.fullPath}"`)
           }
 
           backup.fileSize = await getFileSize(backup.fullPath)
-          var existingBackupWithId = this.backups.find(b => b.id === backup.id)
+          const existingBackupWithId = this.backups.find(b => b.id === backup.id)
           if (existingBackupWithId) {
             Logger.warn(`[BackupManager] Backup already loaded with id ${backup.id} - ignoring`)
           } else {
@@ -175,7 +170,7 @@ class BackupManager {
           }
 
           Logger.debug(`[BackupManager] Backup found "${backup.id}"`)
-          zip.close()
+          await zip.close()
         }
       }
       Logger.info(`[BackupManager] ${this.backups.length} Backups Found`)
