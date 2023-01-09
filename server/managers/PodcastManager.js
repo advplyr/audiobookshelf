@@ -49,6 +49,13 @@ class PodcastManager {
     }
   }
 
+  async refreshPodcastFeed(libraryItem) {
+    var feed = await getPodcastFeed(libraryItem.media.metadata.feedUrl);
+    libraryItem.updatedAt = Date.now();
+    libraryItem.media.update({podcastFeed: feed, podcastFeedDownloadedAt: Date.now()})
+    await this.db.updateLibraryItem(libraryItem);
+  }
+
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
     var index = libraryItem.media.episodes.length + 1
     episodesToDownload.forEach((ep) => {

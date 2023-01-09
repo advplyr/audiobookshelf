@@ -198,11 +198,6 @@
               <ui-icon-btn icon="playlist_add" class="mx-0.5" outlined @click="playlistsClick" />
             </ui-tooltip>
 
-            <!-- Only admin or root user can download new episodes -->
-            <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
-              <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
-            </ui-tooltip>
-
             <ui-tooltip v-if="bookmarks.length" :text="$strings.LabelYourBookmarks" direction="top">
               <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
             </ui-tooltip>
@@ -225,7 +220,7 @@
 
           <widgets-audiobook-data v-if="tracks.length" :library-item-id="libraryItemId" :is-file="isFile" :media="media" />
 
-          <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" />
+          <tables-podcast-episodes-table v-if="isPodcast" :library-item="libraryItem" :episodes-downloading="episodesDownloading" :episodes-queued="episodeDownloadsQueued"/>
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
@@ -234,7 +229,6 @@
       </div>
     </div>
 
-    <modals-podcast-episode-feed v-model="showPodcastEpisodeFeed" :library-item="libraryItem" :episodes="podcastFeedEpisodes" />
     <modals-bookmarks-modal v-model="showBookmarksModal" :bookmarks="bookmarks" :library-item-id="libraryItemId" hide-create @select="selectBookmark" />
   </div>
 </template>

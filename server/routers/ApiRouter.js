@@ -234,7 +234,7 @@ class ApiRouter {
     this.router.post('/podcasts/:id/match-episodes', PodcastController.middleware.bind(this), PodcastController.quickMatchEpisodes.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
-
+    this.router.get('/podcasts/:id/refresh-episodes-list', PodcastController.middleware.bind(this), PodcastController.refreshPodcastFeed.bind(this))
     //
     // Notification Routes (Admin and up)
     //

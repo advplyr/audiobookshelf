@@ -1,13 +1,16 @@
 <template>
   <div class="w-full py-6">
     <p class="text-lg mb-2 font-semibold md:hidden">{{ $strings.HeaderEpisodes }}</p>
+    <p v-if="media.podcastFeedDownloadedAt" class="text-sm text-gray-300">Feed last updated {{ $formatDate(media.podcastFeedDownloadedAt, 'MMM do, yyyy HH:mm') }}</p>
     <div class="flex items-center mb-4">
       <p class="text-lg mb-0 font-semibold hidden md:block">{{ $strings.HeaderEpisodes }}</p>
+      <ui-icon-btn icon="refresh" class="mx-0.5" outlined @click.stop="refreshPodcastFeed" />
       <div class="flex-grow hidden md:block" />
       <template v-if="isSelectionMode">
         <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
         </ui-tooltip>
+        <ui-btn color="success" :disabled="processing" small class="h-9 mr-1.5" @click="downloadSelectedEpisodes">Download {{ selectedEpisodes.length }} episode(s)</ui-btn>
         <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
         <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
       </template>
@@ -19,10 +22,9 @@
       </template>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
-    <template v-for="episode in episodesSorted">
-      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @addToPlaylist="addToPlaylist" />
+    <template v-for="episode in this.allEpisodes">
+      <tables-podcast-episode-table-row ref="episodeRow" :key="episode.id" :episode="episode" :library-item-id="libraryItem.id" :selection-mode="isSelectionMode" :is-downloading="isDownloading(episode)" :is-download-queued="isDownloadQueued(episode)" class="item" @play="playEpisode" @remove="removeEpisode" @edit="editEpisode" @view="viewEpisode" @selected="episodeSelected" @addToQueue="addEpisodeToQueue" @addToPlaylist="addToPlaylist" />
     </template>
-
     <modals-podcast-remove-episode v-model="showPodcastRemoveModal" @input="removeEpisodeModalToggled" :library-item="libraryItem" :episodes="episodesToRemove" @clearSelected="clearSelected" />
   </div>
 </template>
@@ -33,6 +35,14 @@ export default {
     libraryItem: {
       type: Object,
       default: () => {}
+    },
+    episodesDownloading: {
+      type: Array,
+      default: () => []
+    },
+    episodesQueued: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -53,6 +63,11 @@ export default {
     libraryItem: {
       handler() {
         this.init()
+      }
+    },
+    episodesDownloading: {
+      handler() {
+        console.log(this.episodesDownloading)
       }
     }
   },
@@ -136,6 +151,17 @@ export default {
           }
           return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
         })
+    },
+    allEpisodes() {
+      const added = new Set()
+      const episodes = []
+      for (const episode of [...this.episodes, ...this.media.podcastFeed.episodes]) {
+        const key = `${episode.pubDate}-${episode.title}`
+        if (added.has(key)) continue
+        episodes.push(episode)
+        added.add(key)
+      }
+      return episodes
     },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
@@ -289,6 +315,49 @@ export default {
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowViewPodcastEpisodeModal', true)
+    },
+    refreshPodcastFeed() {
+      this.$axios
+        .get(`/api/podcasts/${this.libraryItem.id}/refresh-episodes-list`)
+        .then(() => {
+          this.$toast.success('Fetched episodes!')
+        })
+        .catch((error) => {
+          this.$toast.error('Fetching episodes failed')
+          console.error('Fetching episodes failed', error)
+        })
+    },
+    downloadSelectedEpisodes() {
+      var episodesToDownload = this.selectedEpisodes
+      var payloadSize = JSON.stringify(episodesToDownload).length
+      var sizeInMb = payloadSize / 1024 / 1024
+      var sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
+      console.log('Request size', sizeInMb)
+      if (sizeInMb > 4.99) {
+        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 5Mb`)
+      }
+      this.processing = true
+      this.$axios
+        .$post(`/api/podcasts/${this.libraryItem.id}/download-episodes`, episodesToDownload)
+        .then(() => {
+          this.processing = false
+          this.$toast.success('Started downloading episodes')
+          this.show = false
+          this.clearSelected()
+        })
+        .catch((error) => {
+          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to download episodes'
+          console.error('Failed to download episodes', error)
+          this.processing = false
+          this.$toast.error(errorMsg)
+          this.clearSelected()
+        })
+    },
+    isDownloading(episode) {
+      return this.episodesDownloading.map(ep => ep.url).includes(episode?.url || episode?.enclosure?.url)
+    },
+    isDownloadQueued(episode) {
+      return this.episodesQueued.map(ep => ep.url).includes(episode?.url || episode?.enclosure?.url)
     },
     init() {
       this.episodesCopy = this.episodes.map((ep) => ({ ...ep }))

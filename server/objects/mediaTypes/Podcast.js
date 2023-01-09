@@ -26,6 +26,9 @@ class Podcast {
     this.lastCoverSearch = null
     this.lastCoverSearchQuery = null
 
+    this.podcastFeed = null
+    this.podcastFeedDownloadedAt = null
+
     if (podcast) {
       this.construct(podcast)
     }
@@ -46,6 +49,8 @@ class Podcast {
     this.lastEpisodeCheck = podcast.lastEpisodeCheck || 0
     this.maxEpisodesToKeep = podcast.maxEpisodesToKeep || 0
     this.maxNewEpisodesToDownload = podcast.maxNewEpisodesToDownload || 3
+    this.podcastFeed = podcast.podcastFeed
+    this.podcastFeedDownloadedAt = podcast.podcastFeedDownloadedAt
   }
 
   toJSON() {
@@ -54,12 +59,14 @@ class Podcast {
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSON()),
+      episodes: this.episodes.map((e) => e.toJSON()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
-      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload
+      maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
+      podcastFeed: this.podcastFeed,
+      podcastFeedDownloadedAt: this.podcastFeedDownloadedAt,
     }
   }
 
@@ -74,7 +81,9 @@ class Podcast {
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
-      size: this.size
+      size: this.size,
+      podcastFeed: this.podcastFeed,
+      podcastFeedDownloadedAt: this.podcastFeedDownloadedAt,
     }
   }
 
@@ -84,13 +93,15 @@ class Podcast {
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
       tags: [...this.tags],
-      episodes: this.episodes.map(e => e.toJSONExpanded()),
+      episodes: this.episodes.map((e) => e.toJSONExpanded()),
       autoDownloadEpisodes: this.autoDownloadEpisodes,
       autoDownloadSchedule: this.autoDownloadSchedule,
       lastEpisodeCheck: this.lastEpisodeCheck,
       maxEpisodesToKeep: this.maxEpisodesToKeep,
       maxNewEpisodesToDownload: this.maxNewEpisodesToDownload,
-      size: this.size
+      size: this.size,
+      podcastFeed: this.podcastFeed,
+      podcastFeedDownloadedAt: this.podcastFeedDownloadedAt,
     }
   }
 
@@ -185,6 +196,9 @@ class Podcast {
     this.autoDownloadEpisodes = !!mediaData.autoDownloadEpisodes
     this.autoDownloadSchedule = mediaData.autoDownloadSchedule || global.ServerSettings.podcastEpisodeSchedule
     this.lastEpisodeCheck = Date.now() // Makes sure new episodes are after this
+
+    this.podcastFeed = mediaData.podcastFeed || null
+    this.podcastFeedDownloadedAt = mediaData.podcastFeedDownloadedAt || null
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {

@@ -45,6 +45,9 @@ class PodcastController {
 
     var libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
 
+    var podcastFeed = await getPodcastFeed(payload.media.metadata.feedUrl)
+    var podcastFeedDownloadedAt = Date.now() 
+
     var relPath = payload.path.replace(folder.fullPath, '')
     if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
@@ -57,7 +60,7 @@ class PodcastController {
       mtimeMs: libraryItemFolderStats.mtimeMs || 0,
       ctimeMs: libraryItemFolderStats.ctimeMs || 0,
       birthtimeMs: libraryItemFolderStats.birthtimeMs || 0,
-      media: payload.media
+      media: { ...payload.media, podcastFeed, podcastFeedDownloadedAt }
     }
 
     var libraryItem = new LibraryItem()
@@ -104,6 +107,12 @@ class PodcastController {
       return res.status(404).send('Podcast RSS feed request failed or invalid response data')
     }
     res.json({ podcast })
+  }
+
+  async refreshPodcastFeed(req, res) {
+    var libraryItem = req.libraryItem;
+    await this.podcastManager.refreshPodcastFeed(libraryItem);
+    res.json({ episodes: libraryItem.media.episodes });
   }
 
   async getOPMLFeeds(req, res) {

@@ -15,29 +15,36 @@
         </div>
 
         <div class="flex items-center pt-2">
-          <button class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
+          <button v-if="episode.audioTrack" class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="playClick">
             <span class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
+          </button>
+
+          <button v-if="!episode.id && !isDownloading && !isDownloadQueued && userIsAdminOrUp" class="h-8 px-4 border border-white border-opacity-20 hover:bg-white hover:bg-opacity-10 rounded-full flex items-center justify-center cursor-pointer focus:outline-none" :class="userIsFinished ? 'text-white text-opacity-40' : ''" @click.stop="downloadEpisode">
+            <span class="material-icons text-success">download</span>
+            <p class="pl-2 pr-1 text-sm font-semibold">Download</p>
           </button>
 
           <!-- <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="isQueued ? 'text-success' : ''" @click.stop="queueBtnClick">
             <span class="material-icons-outlined">{{ isQueued ? 'playlist_add_check' : 'queue' }}</span>
           </button> -->
 
-          <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
+          <ui-tooltip  v-if="episode.id && libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
             <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
           </ui-tooltip>
 
-          <ui-tooltip :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
+          <ui-tooltip v-if="episode.id" :text="userIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="top">
             <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" borderless class="mx-1 mt-0.5" @click="toggleFinished" />
           </ui-tooltip>
 
-          <ui-tooltip :text="$strings.LabelYourPlaylists" direction="top">
+          <ui-tooltip v-if="episode.id" :text="$strings.LabelYourPlaylists" direction="top">
             <ui-icon-btn icon="playlist_add" borderless @click="clickAddToPlaylist" />
           </ui-tooltip>
 
-          <ui-icon-btn v-if="userCanUpdate" icon="edit" borderless @click="clickEdit" />
-          <ui-icon-btn v-if="userCanDelete" icon="close" borderless @click="removeClick" />
+          <ui-icon-btn v-if="episode.id && userCanUpdate" icon="edit" borderless @click="clickEdit" />
+          <ui-icon-btn v-if="episode.id && userCanDelete" icon="close" borderless @click="removeClick" />
+          <p v-if="isDownloading">Downloading...</p>
+          <p v-if="isDownloadQueued">Queued...</p>
         </div>
       </div>
       <div v-if="isHovering || isSelected || selectionMode" class="hidden md:block w-12 min-w-12" />
@@ -63,14 +70,16 @@ export default {
       type: Object,
       default: () => {}
     },
-    selectionMode: Boolean
+    selectionMode: Boolean,
+    isDownloading: Boolean,
+    isDownloadQueued: Boolean
   },
   data() {
     return {
       isProcessingReadUpdate: false,
       processingRemove: false,
       isHovering: false,
-      isSelected: false
+      isSelected: false,
     }
   },
   computed: {
@@ -79,6 +88,9 @@ export default {
     },
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
+    },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     audioFile() {
       return this.episode.audioFile
@@ -202,7 +214,33 @@ export default {
         // Add to queue
         this.$emit('addToQueue', this.episode)
       }
-    }
+    },
+    downloadEpisode() {
+      var episodesToDownload = [this.episode]
+      var payloadSize = JSON.stringify(episodesToDownload).length
+      var sizeInMb = payloadSize / 1024 / 1024
+      var sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
+      console.log('Request size', sizeInMb)
+      if (sizeInMb > 4.99) {
+        return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 5Mb`)
+      }
+      this.processing = true
+      this.$axios
+        .$post(`/api/podcasts/${this.libraryItemId}/download-episodes`, episodesToDownload)
+        .then(() => {
+          this.processing = false
+          this.$toast.success('Started downloading episodes')
+          this.show = false
+        })
+        .catch((error) => {
+          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to download episodes'
+          console.error('Failed to download episodes', error)
+          this.processing = false
+          this.$toast.error(errorMsg)
+          this.selectedEpisodes = {}
+          this.selectAll = false
+        })
+    },
   }
 }
 </script>
