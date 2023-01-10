@@ -499,6 +499,7 @@ module.exports = {
           for (const librarySeries of libraryItem.media.metadata.series) {
             const mediaProgress = allItemProgress.length ? allItemProgress[0] : null
             const bookInProgress = mediaProgress && (mediaProgress.inProgress || mediaProgress.isFinished)
+            const bookActive = mediaProgress && mediaProgress.inProgress && !mediaProgress.isFinished
             const libraryItemJson = libraryItem.toJSONMinified()
             libraryItemJson.seriesSequence = librarySeries.sequence
 
@@ -511,6 +512,7 @@ module.exports = {
                   ...seriesObj.toJSON(),
                   books: [libraryItemJson],
                   inProgress: bookInProgress,
+                  hasActiveBook: bookActive,
                   hideFromContinueListening,
                   bookInProgressLastUpdate: bookInProgress ? mediaProgress.lastUpdate : null,
                   firstBookUnread: bookInProgress ? null : libraryItemJson
@@ -552,6 +554,11 @@ module.exports = {
                 if (!firstBookUnreadSequence || String(firstBookUnreadSequence).localeCompare(String(librarySeries.sequence), undefined, { sensitivity: 'base', numeric: true }) > 0) {
                   seriesMap[librarySeries.id].firstBookUnread = libraryItemJson
                 }
+              }
+
+              // Update if series has an active (progress < 100%) book
+              if (bookActive) {
+                seriesMap[librarySeries.id].hasActiveBook = true
               }
             }
           }
@@ -648,10 +655,12 @@ module.exports = {
       if (seriesMap[seriesId].inProgress && !seriesMap[seriesId].hideFromContinueListening) {
         seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
 
-        // NEW implementation takes the first book unread with the smallest series sequence
+        // take the first book unread with the smallest series sequence
+        // unless the user is already listening to a book from this series
+        const hasActiveBook = seriesMap[seriesId].hasActiveBook
         const nextBookInSeries = seriesMap[seriesId].firstBookUnread
 
-        if (nextBookInSeries) {
+        if (!hasActiveBook && nextBookInSeries) {
           const bookForContinueSeries = {
             ...nextBookInSeries,
             prevBookInProgressLastUpdate: seriesMap[seriesId].bookInProgressLastUpdate
