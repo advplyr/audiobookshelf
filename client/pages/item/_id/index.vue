@@ -113,6 +113,14 @@
                   {{ durationPretty }}
                 </div>
               </div>
+              <div v-if="isPodcast" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
+                </div>
+                <div>
+                  {{ (podcastDurationTotal / 3600).toFixed(1) }} (hrs)
+                </div>
+              </div>
               <div class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
@@ -375,6 +383,13 @@ export default {
     },
     podcastAuthor() {
       return this.mediaMetadata.author || ''
+    },
+    podcastDurationTotal() {
+      let totalDuration = 0;
+      this.media.episodes.forEach((ep) => {
+        totalDuration += ep.duration
+      })
+      return totalDuration;
     },
     authors() {
       return this.mediaMetadata.authors || []
