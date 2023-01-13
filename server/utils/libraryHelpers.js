@@ -672,10 +672,12 @@ module.exports = {
           }
 
           const indexToPut = categoryMap.continueSeries.items.findIndex(i => i.prevBookInProgressLastUpdate < bookForContinueSeries.prevBookInProgressLastUpdate)
-          if (indexToPut >= 0) {
-            categoryMap.continueSeries.items.splice(indexToPut, 0, bookForContinueSeries)
-          } else if (categoryMap.continueSeries.items.length < 10) { // Max 10 books
-            categoryMap.continueSeries.items.push(bookForContinueSeries)
+          if (!categoryMap.continueSeries.items.find(book => book.id === bookForContinueSeries.id)) {
+            if (indexToPut >= 0) {
+              categoryMap.continueSeries.items.splice(indexToPut, 0, bookForContinueSeries)
+            } else if (categoryMap.continueSeries.items.length < 10) { // Max 10 books
+              categoryMap.continueSeries.items.push(bookForContinueSeries)
+            }
           }
         }
       }
