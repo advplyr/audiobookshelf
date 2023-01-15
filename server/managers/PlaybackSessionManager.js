@@ -73,6 +73,17 @@ class PlaybackSessionManager {
       return res.status(500).send('Library item not found')
     }
 
+    // If server session is open for this same media item then close it
+    const userSessionForThisItem = this.sessions.find(playbackSession => {
+      if (playbackSession.userId !== user.id) return false
+      if (sessionJson.episodeId) return playbackSession.episodeId !== sessionJson.episodeId
+      return playbackSession.libraryItemId === sessionJson.libraryItemId
+    })
+    if (userSessionForThisItem) {
+      Logger.info(`[PlaybackSessionManager] syncLocalSessionRequest: Closing open session "${userSessionForThisItem.displayTitle}" for user "${user.username}"`)
+      await this.closeSession(user, userSessionForThisItem, null)
+    }
+
     this.localSessionLock[sessionJson.id] = true // Lock local session
 
     let session = await this.db.getPlaybackSession(sessionJson.id)

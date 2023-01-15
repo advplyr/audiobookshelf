@@ -361,13 +361,15 @@ export default {
       }
     },
     streamProgress(data) {
-      if (!data.numSegments) return
-      var chunks = data.chunks
-      console.log(`[StreamContainer] Stream Progress ${data.percent}`)
-      if (this.$refs.audioPlayer) {
-        this.$refs.audioPlayer.setChunksReady(chunks, data.numSegments)
-      } else {
-        console.error('No Audio Ref')
+      if (this.playerHandler.isPlayingLocalItem && this.playerHandler.currentStreamId === data.stream) {
+        if (!data.numSegments) return
+        var chunks = data.chunks
+        console.log(`[StreamContainer] Stream Progress ${data.percent}`)
+        if (this.$refs.audioPlayer) {
+          this.$refs.audioPlayer.setChunksReady(chunks, data.numSegments)
+        } else {
+          console.error('No Audio Ref')
+        }
       }
     },
     sessionOpen(session) {

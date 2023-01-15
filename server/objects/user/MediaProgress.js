@@ -72,7 +72,7 @@ class MediaProgress {
   }
 
   update(payload) {
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in payload) {
       if (this[key] !== undefined && payload[key] !== this[key]) {
         if (key === 'isFinished') {
