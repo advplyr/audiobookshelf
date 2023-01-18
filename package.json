@@ -30,12 +30,12 @@
   "author": "advplyr",
   "license": "GPL-3.0",
   "dependencies": {
-    "axios": "^0.26.1",
+    "axios": "^1.2.2",
     "express": "^4.17.1",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "node-tone": "^1.0.1",
-    "socket.io": "^4.4.1",
+    "socket.io": "^4.5.4",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {
