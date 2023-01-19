@@ -105,7 +105,7 @@
                   </template>
                 </div>
               </div>
-              <div v-if="tracks.length || audioFile" class="flex py-0.5">
+              <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
                 <div class="w-32">
                   <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
                 </div>
@@ -415,6 +415,8 @@ export default {
       })
     },
     durationPretty() {
+      if (this.isPodcast) return this.$elapsedPrettyExtended(this.totalPodcastDuration)
+
       if (!this.tracks.length && !this.audioFile) return 'N/A'
       if (this.audioFile) return this.$elapsedPrettyExtended(this.duration)
       return this.$elapsedPretty(this.duration)
@@ -422,6 +424,12 @@ export default {
     duration() {
       if (!this.tracks.length && !this.audioFile) return 0
       return this.media.duration
+    },
+    totalPodcastDuration() {
+      if (!this.podcastEpisodes.length) return 0
+      let totalDuration = 0
+      this.podcastEpisodes.forEach((ep) => (totalDuration += ep.duration || 0))
+      return totalDuration
     },
     sizePretty() {
       return this.$bytesPretty(this.media.size)
