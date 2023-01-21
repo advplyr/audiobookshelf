@@ -20,12 +20,12 @@ var inputConfig = options.config ? Path.resolve(options.config) : null
 var inputMetadata = options.metadata ? Path.resolve(options.metadata) : null
 
 const PORT = options.port || process.env.PORT || 3333
-const HOST = options.host || process.env.HOST || "0.0.0.0"
+const HOST = options.host || process.env.HOST
 const CONFIG_PATH = inputConfig || process.env.CONFIG_PATH || Path.resolve('config')
 const METADATA_PATH = inputMetadata || process.env.METADATA_PATH || Path.resolve('metadata')
 const UID = 99
 const GID = 100
-const SOURCE = options.source || 'debian'
+const SOURCE = options.source || process.env.SOURCE || 'debian'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
 
 console.log(process.env.NODE_ENV, 'Config', CONFIG_PATH, METADATA_PATH)
