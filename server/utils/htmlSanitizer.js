@@ -10,7 +10,7 @@ function sanitize(html) {
     allowedAttributes: {
       a: ['href', 'name', 'target']
     },
-    allowedSchemes: ['http', 'https'],
+    allowedSchemes: ['http', 'https', 'mailto'],
     allowProtocolRelative: false
   }
 
