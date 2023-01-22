@@ -18,8 +18,8 @@ const PORT = process.env.PORT || 80
 const HOST = process.env.HOST
 const CONFIG_PATH = process.env.CONFIG_PATH || '/config'
 const METADATA_PATH = process.env.METADATA_PATH || '/metadata'
-const UID = process.env.AUDIOBOOKSHELF_UID || 99
-const GID = process.env.AUDIOBOOKSHELF_GID || 100
+const UID = process.env.AUDIOBOOKSHELF_UID
+const GID = process.env.AUDIOBOOKSHELF_GID
 const SOURCE = process.env.SOURCE || 'docker'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
 
