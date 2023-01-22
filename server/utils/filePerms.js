@@ -91,7 +91,11 @@ module.exports.setDefault = (path, silent = false) => {
   const uid = global.Uid
   const gid = global.Gid
   return new Promise((resolve) => {
-    if (!silent) Logger.debug(`[FilePerms] Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
+    if (isNaN(uid) || isNaN(gid)) {
+      if (!silent) Logger.debug('Not modifying permissions since no uid/gid is specified')
+      return resolve()
+    }
+    if (!silent) Logger.debug(`Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
     chmodr(path, mode, uid, gid, resolve)
   })
 }
@@ -102,6 +106,10 @@ module.exports.setDefaultDirSync = (path, silent = false) => {
   const mode = 0o744
   const uid = global.Uid
   const gid = global.Gid
+  if (isNaN(uid) || isNaN(gid)) {
+    if (!silent) Logger.debug('Not modifying permissions since no uid/gid is specified')
+    return true
+  }
   if (!silent) Logger.debug(`[FilePerms] Setting dir permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
   try {
     fs.chmodSync(path, mode)
