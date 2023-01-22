@@ -142,6 +142,7 @@ class Server {
     const app = express()
     const router = express.Router()
     app.use(global.RouterBasePath, router)
+    app.disable('x-powered-by')
 
     this.server = http.createServer(app)
 
