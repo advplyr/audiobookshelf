@@ -43,8 +43,8 @@ class Server {
     this.Host = HOST
     global.Source = SOURCE
     global.isWin = process.platform === 'win32'
-    global.Uid = isNaN(UID) ? 0 : Number(UID)
-    global.Gid = isNaN(GID) ? 0 : Number(GID)
+    global.Uid = isNaN(UID) ? undefined : Number(UID)
+    global.Gid = isNaN(GID) ? undefined : Number(GID)
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
