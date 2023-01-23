@@ -38,7 +38,7 @@ const TaskManager = require('./managers/TaskManager')
 const EBookManager = require('./managers/EBookManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, MEDIA_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -48,6 +48,7 @@ class Server {
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
+    global.MediaBasePath = MEDIA_BASE_PATH
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
