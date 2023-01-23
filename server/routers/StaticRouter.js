@@ -1,5 +1,6 @@
 const express = require('express')
 const Path = require('path')
+const Logger = require('../Logger')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 
 class StaticRouter {
@@ -13,13 +14,18 @@ class StaticRouter {
   init() {
     // Library Item static file routes
     this.router.get('/item/:id/*', (req, res) => {
-      var item = this.db.libraryItems.find(ab => ab.id === req.params.id)
+      const item = this.db.libraryItems.find(ab => ab.id === req.params.id)
       if (!item) return res.status(404).send('Item not found with id ' + req.params.id)
 
-      var remainingPath = req.params['0']
-      var fullPath = null
-      if (item.isFile) fullPath = item.path
-      else fullPath = Path.join(item.path, remainingPath)
+      const remainingPath = req.params['0']
+      const fullPath = item.isFile ? item.path : Path.join(item.path, remainingPath)
+
+      // Allow reverse proxy to serve files directly
+      // See: https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/
+      if (global.XAccel) {
+        Logger.debug(`Use X-Accel to serve static file ${fullPath}`)
+        return res.status(204).header({'X-Accel-Redirect': global.XAccel + fullPath}).send()
+      }
 
       var opts = {}
 
