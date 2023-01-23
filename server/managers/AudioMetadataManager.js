@@ -60,7 +60,7 @@ class AudioMetadataMangaer {
 
     const results = []
     for (const af of audioFiles) {
-      const result = await this.updateAudioFileMetadataWithTone(libraryItem.id, af, toneJsonPath, itemCacheDir, backupFiles)
+      const result = await this.updateAudioFileMetadataWithTone(libraryItem, af, toneJsonPath, itemCacheDir, backupFiles)
       results.push(result)
     }
 
@@ -82,9 +82,9 @@ class AudioMetadataMangaer {
     SocketAuthority.emitter('audio_metadata_finished', itemAudioMetadataPayload)
   }
 
-  async updateAudioFileMetadataWithTone(libraryItemId, audioFile, toneJsonPath, itemCacheDir, backupFiles) {
+  async updateAudioFileMetadataWithTone(libraryItem, audioFile, toneJsonPath, itemCacheDir, backupFiles) {
     const resultPayload = {
-      libraryItemId,
+      libraryItemId: libraryItem.id,
       index: audioFile.index,
       ino: audioFile.ino,
       filename: audioFile.metadata.filename
@@ -105,6 +105,10 @@ class AudioMetadataMangaer {
     const _toneMetadataObject = {
       'ToneJsonFile': toneJsonPath,
       'TrackNumber': audioFile.index,
+    }
+
+    if (libraryItem.media.coverPath) {
+      _toneMetadataObject['CoverFile'] = libraryItem.media.coverPath
     }
 
     resultPayload.success = await toneHelpers.tagAudioFile(audioFile.metadata.path, _toneMetadataObject)
