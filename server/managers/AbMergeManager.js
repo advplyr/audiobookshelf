@@ -141,6 +141,10 @@ class AbMergeManager {
       'TrackNumber': 1,
     }
 
+    if (libraryItem.media.coverPath) {
+      task.data.toneJsonObject['CoverFile'] = libraryItem.media.coverPath
+    }
+
     const workerData = {
       inputs: ffmpegInputs,
       options: ffmpegOptions,
