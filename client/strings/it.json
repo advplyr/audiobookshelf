@@ -630,9 +630,13 @@
   "WeekdayFriday": "Venerdì",
   "WeekdayMon": "Lun",
   "WeekdayMonday": "Lunedì",
+  "WeekdaySat": "Sat",
   "WeekdaySaturday": "Sabato",
+  "WeekdaySun": "Sun",
   "WeekdaySunday": "Domenica",
+  "WeekdayThu": "Thu",
   "WeekdayThursday": "Giovedì",
+  "WeekdayTue": "Tue",
   "WeekdayTuesday": "Martedì",
   "WeekdayWed": "Mer",
   "WeekdayWednesday": "Mercoledì"

@@ -630,9 +630,13 @@
   "WeekdayFriday": "星期五",
   "WeekdayMon": "Mon",
   "WeekdayMonday": "星期一",
+  "WeekdaySat": "Sat",
   "WeekdaySaturday": "星期六",
+  "WeekdaySun": "Sun",
   "WeekdaySunday": "星期日",
+  "WeekdayThu": "Thu",
   "WeekdayThursday": "星期四",
+  "WeekdayTue": "Tue",
   "WeekdayTuesday": "星期二",
   "WeekdayWed": "Wed",
   "WeekdayWednesday": "星期三"

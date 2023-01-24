@@ -208,7 +208,7 @@ export default {
         const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
         const datePretty = this.$formatJsDate(date, 'MMM d, yyyy')
-        const monthString = this.$formatJsDate(date, 'MMM')
+        const monthString = this.$strings[`Month${this.$formatJsDate(date, 'MMM')}`]
         const value = this.daysListening[dateString] || 0
         const x = col * 13
         const y = row * 13
