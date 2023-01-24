@@ -630,9 +630,13 @@
   "WeekdayFriday": "Vendredi",
   "WeekdayMon": "Lun",
   "WeekdayMonday": "Lundi",
+  "WeekdaySat": "Sam",
   "WeekdaySaturday": "Samedi",
+  "WeekdaySun": "Dim",
   "WeekdaySunday": "Dimanche",
+  "WeekdayThu": "Jeu",
   "WeekdayThursday": "Jeudi",
+  "WeekdayTue": "Mar",
   "WeekdayTuesday": "Mardi",
   "WeekdayWed": "Mer",
   "WeekdayWednesday": "Mercredi"

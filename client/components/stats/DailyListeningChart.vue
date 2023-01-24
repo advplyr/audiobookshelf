@@ -27,7 +27,7 @@
       <div class="absolute -bottom-2 left-0 flex ml-6">
         <template v-for="dayObj in last7Days">
           <div :key="dayObj.date" :style="{ width: daySpacing + daySpacing / 14 + 'px' }">
-            <p class="text-sm font-book">{{ dayObj.dayOfWeek.slice(0, 3) }}</p>
+            <p class="text-sm font-book">{{ dayObj.dayOfWeekAbbr }}</p>
           </div>
         </template>
       </div>
@@ -108,6 +108,7 @@ export default {
         var _date = this.$addDaysToToday(i * -1)
         days.push({
           dayOfWeek: this.$formatJsDate(_date, 'EEEE'),
+          dayOfWeekAbbr: this.$strings[`Weekday${this.$formatJsDate(_date, 'EEE')}`],
           date: this.$formatJsDate(_date, 'yyyy-MM-dd')
         })
       }

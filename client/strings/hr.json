@@ -630,9 +630,13 @@
   "WeekdayFriday": "Petak",
   "WeekdayMon": "Mon",
   "WeekdayMonday": "Ponedjeljak",
+  "WeekdaySat": "Sat",
   "WeekdaySaturday": "Subota",
+  "WeekdaySun": "Sun",
   "WeekdaySunday": "Nedjelja",
+  "WeekdayThu": "Thu",
   "WeekdayThursday": "Četvrtak",
+  "WeekdayTue": "Tue",
   "WeekdayTuesday": "Utorak",
   "WeekdayWed": "Wed",
   "WeekdayWednesday": "Srijeda"

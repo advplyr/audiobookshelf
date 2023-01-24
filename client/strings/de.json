@@ -630,9 +630,13 @@
   "WeekdayFriday": "Freitag",
   "WeekdayMon": "Mon",
   "WeekdayMonday": "Montag",
+  "WeekdaySat": "Sat",
   "WeekdaySaturday": "Samstag",
+  "WeekdaySun": "Sun",
   "WeekdaySunday": "Sonntag",
+  "WeekdayThu": "Thu",
   "WeekdayThursday": "Donnerstag",
+  "WeekdayTue": "Tue",
   "WeekdayTuesday": "Dienstag",
   "WeekdayWed": "Wed",
   "WeekdayWednesday": "Mittwoch"
