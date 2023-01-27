@@ -340,20 +340,20 @@ module.exports = {
         category: 'continueSeries'
       },
       {
+        id: 'episodes-recently-added',
+        label: 'Newest Episodes',
+        labelStringKey: 'LabelNewestEpisodes',
+        type: 'episode',
+        entities: [],
+        category: 'newestEpisodes'
+      },
+      {
         id: 'recently-added',
         label: 'Recently Added',
         labelStringKey: 'LabelRecentlyAdded',
         type: mediaType,
         entities: [],
         category: 'newestItems'
-      },
-      {
-        id: 'listen-again',
-        label: 'Listen Again',
-        labelStringKey: 'LabelListenAgain',
-        type: isPodcastLibrary ? 'episode' : mediaType,
-        entities: [],
-        category: 'recentlyFinished'
       },
       {
         id: 'recent-series',
@@ -364,28 +364,35 @@ module.exports = {
         category: 'newestSeries'
       },
       {
+        id: 'recommended',
+        label: 'Recommended',
+        labelStringKey: 'LabelRecommended',
+        type: mediaType,
+        entities: [],
+        category: 'recommended'
+      },
+      {
+        id: 'listen-again',
+        label: 'Listen Again',
+        labelStringKey: 'LabelListenAgain',
+        type: isPodcastLibrary ? 'episode' : mediaType,
+        entities: [],
+        category: 'recentlyFinished'
+      },
+      {
         id: 'newest-authors',
         label: 'Newest Authors',
         labelStringKey: 'LabelNewestAuthors',
         type: 'authors',
         entities: [],
         category: 'newestAuthors'
-      },
-      {
-        id: 'episodes-recently-added',
-        label: 'Newest Episodes',
-        labelStringKey: 'LabelNewestEpisodes',
-        type: 'episode',
-        entities: [],
-        category: 'newestEpisodes'
       }
     ]
 
-    const categories = ['recentlyListened', 'continueSeries', 'newestEpisodes', 'newestItems', 'newestSeries', 'recentlyFinished', 'newestAuthors']
     const categoryMap = {}
-    categories.forEach((cat) => {
-      categoryMap[cat] = {
-        category: cat,
+    shelves.forEach((shelf) => {
+      categoryMap[shelf.category] = {
+        category: shelf.category,
         biggest: 0,
         smallest: 0,
         items: []
@@ -394,6 +401,12 @@ module.exports = {
 
     const seriesMap = {}
     const authorMap = {}
+
+    // For use with recommended
+    const topGenresListened = {}
+    const topAuthorsListened = {}
+    const topTagsListened = {}
+    const notStartedBooks = []
 
     for (const libraryItem of libraryItems) {
       if (libraryItem.addedAt > categoryMap.newestItems.smallest) {
@@ -494,10 +507,28 @@ module.exports = {
       } else if (libraryItem.isBook) {
         // Book categories
 
+        const mediaProgress = allItemProgress.length ? allItemProgress[0] : null
+
+        // Used for recommended. Tally up most listened to authors/genres/tags
+        if (mediaProgress && (mediaProgress.inProgress || mediaProgress.isFinished)) {
+          libraryItem.media.metadata.authors.forEach((author) => {
+            topAuthorsListened[author.id] = (topAuthorsListened[author.id] || 0) + 1
+          })
+          libraryItem.media.metadata.genres.forEach((genre) => {
+            topGenresListened[genre] = (topGenresListened[genre] || 0) + 1
+          })
+          libraryItem.media.tags.forEach((tag) => {
+            topTagsListened[tag] = (topTagsListened[tag] || 0) + 1
+          })
+        } else {
+          // Insert in random position to add randomization to equal weighted items
+          notStartedBooks.splice(Math.floor(Math.random() * (notStartedBooks.length + 1)), 0, libraryItem)
+        }
+
         // Newest series
         if (libraryItem.media.metadata.series.length) {
           for (const librarySeries of libraryItem.media.metadata.series) {
-            const mediaProgress = allItemProgress.length ? allItemProgress[0] : null
+
             const bookInProgress = mediaProgress && (mediaProgress.inProgress || mediaProgress.isFinished)
             const bookActive = mediaProgress && mediaProgress.inProgress && !mediaProgress.isFinished
             const libraryItemJson = libraryItem.toJSONMinified()
@@ -602,7 +633,6 @@ module.exports = {
         }
 
         // Book listening and finished
-        var mediaProgress = allItemProgress.length ? allItemProgress[0] : null
         if (mediaProgress) {
           // Handle most recently finished
           if (mediaProgress.isFinished) {
@@ -612,7 +642,7 @@ module.exports = {
                 finishedAt: mediaProgress.finishedAt
               }
 
-              var indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+              const indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
               if (indexToPut >= 0) {
                 categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemObj)
               } else {
@@ -632,7 +662,7 @@ module.exports = {
                 progressLastUpdate: mediaProgress.lastUpdate
               }
 
-              var indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+              const indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
               if (indexToPut >= 0) {
                 categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemObj)
               } else { // Should only happen when array is < max
@@ -652,9 +682,9 @@ module.exports = {
 
     // For Continue Series - Find next book in series for series that are in progress
     for (const seriesId in seriesMap) {
-      if (seriesMap[seriesId].inProgress && !seriesMap[seriesId].hideFromContinueListening) {
-        seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
+      seriesMap[seriesId].books = naturalSort(seriesMap[seriesId].books).asc(li => li.seriesSequence)
 
+      if (seriesMap[seriesId].inProgress && !seriesMap[seriesId].hideFromContinueListening) {
         // take the first book unread with the smallest series sequence
         // unless the user is already listening to a book from this series
         const hasActiveBook = seriesMap[seriesId].hasActiveBook
@@ -678,6 +708,76 @@ module.exports = {
             } else if (categoryMap.continueSeries.items.length < 10) { // Max 10 books
               categoryMap.continueSeries.items.push(bookForContinueSeries)
             }
+          }
+        }
+      }
+    }
+
+    // For recommended
+    if (!isPodcastLibrary && notStartedBooks.length) {
+      const genresCount = Object.values(topGenresListened).reduce((a, b) => a + b, 0)
+      const authorsCount = Object.values(topAuthorsListened).reduce((a, b) => a + b, 0)
+      const tagsCount = Object.values(topTagsListened).reduce((a, b) => a + b, 0)
+
+      for (const libraryItem of notStartedBooks) {
+        // dont include books in an unfinished series and books that are not first in an unstarted series
+        let shouldContinue = !libraryItem.media.metadata.series.length
+        libraryItem.media.metadata.series.forEach((se) => {
+          if (seriesMap[se.id]) {
+            if (seriesMap[se.id].inProgress) {
+              shouldContinue = false
+              return
+            } else if (seriesMap[se.id].books[0].id === libraryItem.id) {
+              shouldContinue = true
+            }
+          }
+        })
+        if (!shouldContinue) {
+          continue;
+        }
+
+        let totalWeight = 0
+
+        if (authorsCount > 0) {
+          libraryItem.media.metadata.authors.forEach((author) => {
+            if (topAuthorsListened[author.id]) {
+              totalWeight += topAuthorsListened[author.id] / authorsCount
+            }
+          })
+        }
+
+        if (genresCount > 0) {
+          libraryItem.media.metadata.genres.forEach((genre) => {
+            if (topGenresListened[genre]) {
+              totalWeight += topGenresListened[genre] / genresCount
+            }
+          })
+        }
+
+        if (tagsCount > 0) {
+          libraryItem.media.tags.forEach((tag) => {
+            if (topTagsListened[tag]) {
+              totalWeight += topTagsListened[tag] / tagsCount
+            }
+          })
+        }
+
+        if (!categoryMap.recommended.smallest || totalWeight > categoryMap.recommended.smallest) {
+          const libraryItemObj = {
+            ...libraryItem.toJSONMinified(),
+            weight: totalWeight
+          }
+
+          const indexToPut = categoryMap.recommended.items.findIndex(i => totalWeight > i.weight)
+          if (indexToPut >= 0) {
+            categoryMap.recommended.items.splice(indexToPut, 0, libraryItemObj)
+          } else {
+            categoryMap.recommended.items.push(libraryItemObj)
+          }
+
+          if (categoryMap.recommended.items.length > maxEntitiesPerShelf) {
+            categoryMap.recommended.items.pop()
+            categoryMap.recommended.smallest = categoryMap.recommended.items[categoryMap.recommended.items.length - 1].weight
           }
         }
       }

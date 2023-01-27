@@ -820,7 +820,6 @@ export default {
         return null
       })
       if (!libraryItem) return
-      console.log('Got library itemn', libraryItem)
       this.store.commit('showEReader', libraryItem)
     },
     selectBtnClick(evt) {
