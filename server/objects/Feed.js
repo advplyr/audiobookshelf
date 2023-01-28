@@ -110,13 +110,15 @@ class Feed {
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES
       media.episodes.forEach((episode) => {
-        var feedEpisode = new FeedEpisode()
+        if (episode.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = episode.updatedAt
+
+        const feedEpisode = new FeedEpisode()
         feedEpisode.setFromPodcastEpisode(libraryItem, serverAddress, slug, episode, this.meta)
         this.episodes.push(feedEpisode)
       })
     } else { // AUDIOBOOK EPISODES
       media.tracks.forEach((audioTrack) => {
-        var feedEpisode = new FeedEpisode()
+        const feedEpisode = new FeedEpisode()
         feedEpisode.setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, this.meta)
         this.episodes.push(feedEpisode)
       })
@@ -144,13 +146,15 @@ class Feed {
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES
       media.episodes.forEach((episode) => {
-        var feedEpisode = new FeedEpisode()
+        if (episode.updatedAt > this.entityUpdatedAt) this.entityUpdatedAt = episode.updatedAt
+
+        const feedEpisode = new FeedEpisode()
         feedEpisode.setFromPodcastEpisode(libraryItem, this.serverAddress, this.slug, episode, this.meta)
         this.episodes.push(feedEpisode)
       })
     } else { // AUDIOBOOK EPISODES
       media.tracks.forEach((audioTrack) => {
-        var feedEpisode = new FeedEpisode()
+        const feedEpisode = new FeedEpisode()
         feedEpisode.setFromAudiobookTrack(libraryItem, this.serverAddress, this.slug, audioTrack, this.meta)
         this.episodes.push(feedEpisode)
       })
