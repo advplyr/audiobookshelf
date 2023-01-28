@@ -192,7 +192,8 @@ class MeController {
     }
     const updatedLocalMediaProgress = []
     var numServerProgressUpdates = 0
-    var localMediaProgress = req.body.localMediaProgress || []
+    const updatedServerMediaProgress = []
+    const localMediaProgress = req.body.localMediaProgress || []
 
     localMediaProgress.forEach(localProgress => {
       if (!localProgress.libraryItemId) {
@@ -205,18 +206,22 @@ class MeController {
         return
       }
 
-      var mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
+      let mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
       if (!mediaProgress) {
         // New media progress from mobile
         Logger.debug(`[MeController] syncLocalMediaProgress local progress is new - creating ${localProgress.id}`)
         req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
+        mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
+        updatedServerMediaProgress.push(mediaProgress)
         numServerProgressUpdates++
       } else if (mediaProgress.lastUpdate < localProgress.lastUpdate) {
         Logger.debug(`[MeController] syncLocalMediaProgress local progress is more recent - updating ${mediaProgress.id}`)
         req.user.createUpdateMediaProgress(libraryItem, localProgress, localProgress.episodeId)
+        mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
+        updatedServerMediaProgress.push(mediaProgress)
         numServerProgressUpdates++
       } else if (mediaProgress.lastUpdate > localProgress.lastUpdate) {
-        var updateTimeDifference = mediaProgress.lastUpdate - localProgress.lastUpdate
+        const updateTimeDifference = mediaProgress.lastUpdate - localProgress.lastUpdate
         Logger.debug(`[MeController] syncLocalMediaProgress server progress is more recent by ${updateTimeDifference}ms - ${mediaProgress.id}`)
 
         for (const key in localProgress) {
@@ -240,7 +245,8 @@ class MeController {
 
     res.json({
       numServerProgressUpdates,
-      localProgressUpdates: updatedLocalMediaProgress
+      localProgressUpdates: updatedLocalMediaProgress, // Array of LocalMediaProgress that were updated from server (server more recent)
+      serverProgressUpdates: updatedServerMediaProgress // Array of MediaProgress that made updates to server (local more recent)
     })
   }
 
