@@ -37,7 +37,7 @@ class ServerSettings {
     this.loggerScannerLogsToKeep = 2
 
     // Bookshelf Display
-    this.homeBookshelfView = BookshelfView.STANDARD
+    this.homeBookshelfView = BookshelfView.DETAIL
     this.bookshelfView = BookshelfView.DETAIL
 
     // Podcasts
