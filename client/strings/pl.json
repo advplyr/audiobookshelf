@@ -80,6 +80,7 @@
   "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Zobacz wszystko",
   "ButtonYes": "Tak",
+  "ConfigDateFnsLocale": "pl",
   "HeaderAccount": "Konto",
   "HeaderAdvanced": "Zaawansowane",
   "HeaderAppriseNotificationSettings": "Ustawienia powiadomień Apprise",

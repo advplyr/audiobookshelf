@@ -80,6 +80,7 @@
   "ButtonUserEdit": "Edit user {0}",
   "ButtonViewAll": "Prikaži sve",
   "ButtonYes": "Da",
+  "ConfigDateFnsLocale": "hr",
   "HeaderAccount": "Korisnički račun",
   "HeaderAdvanced": "Napredno",
   "HeaderAppriseNotificationSettings": "Apprise Notification Settings",

@@ -73,6 +73,8 @@ async function loadi18n(code) {
   for (const key in Vue.prototype.$strings) {
     Vue.prototype.$strings[key] = strings[key] || translations[defaultCode][key]
   }
+  console.log(`ConfigDateFnsLocale = ${translations[code].ConfigDateFnsLocale}`)
+  Vue.prototype.$setDateFnsLocale(translations[code].ConfigDateFnsLocale)
 
   console.log('i18n strings=', Vue.prototype.$strings)
   Vue.prototype.$eventBus.$emit('change-lang', code)

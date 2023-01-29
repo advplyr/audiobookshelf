@@ -1,10 +1,26 @@
 import Vue from 'vue'
 import Path from 'path'
 import vClickOutside from 'v-click-outside'
-import { formatDistance, format, addDays, isDate } from 'date-fns'
+import { formatDistance, format, addDays, isDate, setDefaultOptions } from 'date-fns'
+import { de as localeDE, enUS as localeENUS, es as localeES, fr as localeFR, hr as localeHR, it as localeIT, pl as localePL, zhCN as localeZNCN } from 'date-fns/locale'
+let locale = {
+  de: localeDE,
+  enUS: localeENUS,
+  es: localeES,
+  fr: localeFR,
+  hr: localeHR,
+  it: localeIT,
+  pl: localePL,
+  znCN: localeZNCN
+}
 
 Vue.directive('click-outside', vClickOutside.directive)
 
+
+Vue.prototype.$setDateFnsLocale = (localeString) => {
+  if (!locale[localeString]) return 0
+  return setDefaultOptions({locale: locale[localeString]})
+}
 Vue.prototype.$dateDistanceFromNow = (unixms) => {
   if (!unixms) return ''
   return formatDistance(unixms, Date.now(), { addSuffix: true })
