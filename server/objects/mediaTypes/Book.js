@@ -424,8 +424,9 @@ class Book {
     if (includedAudioFiles[0].chapters?.length) {
       // If all files chapters are the same, then only make chapters for the first file
       if (
+        includedAudioFiles.length === 1 ||
         includedAudioFiles.length > 1 &&
-        includedAudioFiles[0].chapters.length === includedAudioFiles[1].chapters.length &&
+        includedAudioFiles[0].chapters.length === includedAudioFiles[1].chapters?.length &&
         includedAudioFiles[0].chapters.every((c, i) => c.title === includedAudioFiles[1].chapters[i].title)
       ) {
         Logger.debug(`[Book] setChapters: Using embedded chapters in first audio file ${includedAudioFiles[0].metadata?.path}`)
