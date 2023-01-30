@@ -314,18 +314,18 @@ class User {
   }
 
   createUpdateMediaProgress(libraryItem, updatePayload, episodeId = null) {
-    var itemProgress = this.mediaProgress.find(li => {
+    const itemProgress = this.mediaProgress.find(li => {
       if (episodeId && li.episodeId !== episodeId) return false
       return li.libraryItemId === libraryItem.id
     })
     if (!itemProgress) {
-      var newItemProgress = new MediaProgress()
+      const newItemProgress = new MediaProgress()
 
       newItemProgress.setData(libraryItem.id, updatePayload, episodeId)
       this.mediaProgress.push(newItemProgress)
       return true
     }
-    var wasUpdated = itemProgress.update(updatePayload)
+    const wasUpdated = itemProgress.update(updatePayload)
 
     if (updatePayload.lastUpdate) itemProgress.lastUpdate = updatePayload.lastUpdate // For local to keep update times in sync
     return wasUpdated

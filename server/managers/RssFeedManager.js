@@ -81,9 +81,17 @@ class RssFeedManager {
     }
 
     // Check if feed needs to be updated
-    if (feed.entityType === 'item') {
+    if (feed.entityType === 'libraryItem') {
       const libraryItem = this.db.getLibraryItem(feed.entityId)
-      if (libraryItem && (!feed.entityUpdatedAt || libraryItem.updatedAt > feed.entityUpdatedAt)) {
+
+      let mostRecentlyUpdatedAt = libraryItem.updatedAt
+      if (libraryItem.isPodcast) {
+        libraryItem.media.episodes.forEach((episode) => {
+          if (episode.updatedAt > mostRecentlyUpdatedAt) mostRecentlyUpdatedAt = episode.updatedAt
+        })
+      }
+
+      if (libraryItem && (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt)) {
         Logger.debug(`[RssFeedManager] Updating RSS feed for item ${libraryItem.id} "${libraryItem.media.metadata.title}"`)
         feed.updateFromItem(libraryItem)
         await this.db.updateEntity('feed', feed)
