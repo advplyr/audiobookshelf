@@ -420,10 +420,38 @@ class Book {
       }
     }
 
-    // IF first audio file has embedded chapters then use embedded chapters
-    if (includedAudioFiles[0].chapters && includedAudioFiles[0].chapters.length) {
-      Logger.debug(`[Book] setChapters: Using embedded chapters in audio file ${includedAudioFiles[0].metadata.path}`)
-      this.chapters = includedAudioFiles[0].chapters.map(c => ({ ...c }))
+    // If first audio file has embedded chapters then use embedded chapters
+    if (includedAudioFiles[0].chapters?.length) {
+      // If all files chapters are the same, then only make chapters for the first file
+      if (
+        includedAudioFiles.length === 1 ||
+        includedAudioFiles.length > 1 &&
+        includedAudioFiles[0].chapters.length === includedAudioFiles[1].chapters?.length &&
+        includedAudioFiles[0].chapters.every((c, i) => c.title === includedAudioFiles[1].chapters[i].title)
+      ) {
+        Logger.debug(`[Book] setChapters: Using embedded chapters in first audio file ${includedAudioFiles[0].metadata?.path}`)
+        this.chapters = includedAudioFiles[0].chapters.map((c) => ({ ...c }))
+      } else {
+        Logger.debug(`[Book] setChapters: Using embedded chapters from all audio files ${includedAudioFiles[0].metadata?.path}`)
+        this.chapters = []
+        let currChapterId = 0
+        let currStartTime = 0
+
+        includedAudioFiles.forEach((file) => {
+          if (file.duration) {
+            const chapters = file.chapters?.map((c) => ({
+              ...c,
+              id: c.id + currChapterId,
+              start: c.start + currStartTime,
+              end: c.end + currStartTime,
+            })) ?? []
+            this.chapters = this.chapters.concat(chapters)
+
+            currChapterId += file.chapters?.length ?? 0
+            currStartTime += file.duration
+          }
+        })
+      }
     } else if (includedAudioFiles.length > 1) {
       // Build chapters from audio files
       this.chapters = []
