@@ -137,31 +137,31 @@ export default {
     weekdays() {
       return [
         {
-          text: this.$strings.WeekdaySunday,
+          text: this.$formatJsDate(new Date(2023, 0, 1), 'EEEE'),
           value: 0
         },
         {
-          text: this.$strings.WeekdayMonday,
+          text: this.$formatJsDate(new Date(2023, 0, 2), 'EEEE'),
           value: 1
         },
         {
-          text: this.$strings.WeekdayTuesday,
+          text: this.$formatJsDate(new Date(2023, 0, 3), 'EEEE'),
           value: 2
         },
         {
-          text: this.$strings.WeekdayWednesday,
+          text: this.$formatJsDate(new Date(2023, 0, 4), 'EEEE'),
           value: 3
         },
         {
-          text: this.$strings.WeekdayThursday,
+          text: this.$formatJsDate(new Date(2023, 0, 5), 'EEEE'),
           value: 4
         },
         {
-          text: this.$strings.WeekdayFriday,
+          text: this.$formatJsDate(new Date(2023, 0, 6), 'EEEE'),
           value: 5
         },
         {
-          text: this.$strings.WeekdaySaturday,
+          text: this.$formatJsDate(new Date(2023, 0, 7), 'EEEE'),
           value: 6
         }
       ]

@@ -5,18 +5,18 @@ import { supplant } from './utils'
 const defaultCode = 'en-us'
 
 const languageCodeMap = {
-  'de': 'Deutsch',
-  'en-us': 'English',
-  // 'es': 'Español',
-  'fr': 'Français',
-  'hr': 'Hrvatski',
-  'it': 'Italiano',
-  'pl': 'Polski',
-  'zh-cn': '简体中文 (Simplified Chinese)'
+  'de': { label: 'Deutsch', dateFnsLocale: 'de' },
+  'en-us': { label: 'English', dateFnsLocale: 'enUS' },
+  // 'es': { label: 'Español', dateFnsLocale: 'es' },
+  'fr': { label: 'Français', dateFnsLocale: 'fr' },
+  'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
+  'it': { label: 'Italiano', dateFnsLocale: 'it' },
+  'pl': { label: 'Polski', dateFnsLocale: 'pl' },
+  'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
 }
 Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
   return {
-    text: languageCodeMap[code],
+    text: languageCodeMap[code].label,
     value: code
   }
 })
@@ -73,6 +73,8 @@ async function loadi18n(code) {
   for (const key in Vue.prototype.$strings) {
     Vue.prototype.$strings[key] = strings[key] || translations[defaultCode][key]
   }
+  console.log(`dateFnsLocale = ${languageCodeMap[code].dateFnsLocale}`)
+  Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
   console.log('i18n strings=', Vue.prototype.$strings)
   Vue.prototype.$eventBus.$emit('change-lang', code)

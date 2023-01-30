@@ -68,7 +68,7 @@ export default {
     dayLabels() {
       return [
         {
-          label: this.$strings.WeekdayMon,
+          label: this.$formatJsDate(new Date(2023, 0, 2), 'EEE'),
           style: {
             transform: `translate(${-25}px, ${13}px)`,
             lineHeight: '10px',
@@ -76,7 +76,7 @@ export default {
           }
         },
         {
-          label: this.$strings.WeekdayWed,
+          label: this.$formatJsDate(new Date(2023, 0, 4), 'EEE'),
           style: {
             transform: `translate(${-25}px, ${13 * 3}px)`,
             lineHeight: '10px',
@@ -84,7 +84,7 @@ export default {
           }
         },
         {
-          label: this.$strings.WeekdayFri,
+          label: this.$formatJsDate(new Date(2023, 0, 6), 'EEE'),
           style: {
             transform: `translate(${-25}px, ${13 * 5}px)`,
             lineHeight: '10px',
@@ -208,7 +208,7 @@ export default {
         const date = i === 0 ? this.firstWeekStart : this.$addDaysToDate(this.firstWeekStart, i)
         const dateString = this.$formatJsDate(date, 'yyyy-MM-dd')
         const datePretty = this.$formatJsDate(date, 'MMM d, yyyy')
-        const monthString = this.$strings[`Month${this.$formatJsDate(date, 'MMM')}`]
+        const monthString = this.$formatJsDate(date, 'MMM')
         const value = this.daysListening[dateString] || 0
         const x = col * 13
         const y = row * 13
