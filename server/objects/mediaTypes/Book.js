@@ -439,7 +439,7 @@ class Book {
 
         includedAudioFiles.forEach((file) => {
           if (file.duration) {
-            let chapters = file.chapters?.map((c) => ({
+            const chapters = file.chapters?.map((c) => ({
               ...c,
               id: c.id + currChapterId,
               start: c.start + currStartTime,
