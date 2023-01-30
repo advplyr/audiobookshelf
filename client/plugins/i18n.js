@@ -12,7 +12,7 @@ const languageCodeMap = {
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
-  'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'znCN' },
+  'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
 }
 Vue.prototype.$languageCodeOptions = Object.keys(languageCodeMap).map(code => {
   return {
