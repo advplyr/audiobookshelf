@@ -108,7 +108,7 @@ export default {
         var _date = this.$addDaysToToday(i * -1)
         days.push({
           dayOfWeek: this.$formatJsDate(_date, 'EEEE'),
-          dayOfWeekAbbr: this.$strings[`Weekday${this.$formatJsDate(_date, 'EEE')}`],
+          dayOfWeekAbbr: this.$formatJsDate(_date, 'EEE'),
           date: this.$formatJsDate(_date, 'yyyy-MM-dd')
         })
       }
