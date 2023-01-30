@@ -444,7 +444,7 @@ class Book {
               id: c.id + currChapterId,
               start: c.start + currStartTime,
               end: c.end + currStartTime,
-            }))
+            })) ?? []
             this.chapters = this.chapters.concat(chapters)
 
             currChapterId += file.chapters?.length ?? 0
