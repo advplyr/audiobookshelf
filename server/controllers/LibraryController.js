@@ -319,7 +319,7 @@ class LibraryController {
         // series represents in the filtered series
         if (filterSeries) {
           json.collapsedSeries.seriesSequenceList =
-            naturalSort(li.collapsedSeries.books.map(b => b.filterSeriesSequence)).asc()
+            naturalSort(li.collapsedSeries.books.filter(b => b.filterSeriesSequence).map(b => b.filterSeriesSequence)).asc()
               .reduce((ranges, currentSequence) => {
                 let lastRange = ranges.at(-1)
                 let isNumber = /^(\d+|\d+\.\d*|\d*\.\d+)$/.test(currentSequence)
