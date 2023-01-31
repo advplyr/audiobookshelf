@@ -6,7 +6,7 @@
           <ui-dropdown v-model="mediaType" :items="mediaTypes" :label="$strings.LabelMediaType" :disabled="!isNew" small @input="changedMediaType" />
         </div>
         <div class="w-full md:flex-grow px-1 py-1 md:py-0">
-          <ui-text-input-with-label v-model="name" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
+          <ui-text-input-with-label ref="nameInput" v-model="name" :label="$strings.LabelLibraryName" @blur="nameBlurred" />
         </div>
         <div class="w-1/5 md:w-18 px-1 py-1 md:py-0">
           <ui-media-icon-picker v-model="icon" :label="$strings.LabelIcon" @input="iconChanged" />
@@ -20,12 +20,12 @@
         <p class="px-1 text-sm font-semibold">{{ $strings.LabelFolders }}</p>
         <div v-for="(folder, index) in folders" :key="index" class="w-full flex items-center py-1 px-2">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
-          <ui-editable-text v-model="folder.fullPath" readonly type="text" class="w-full" />
+          <ui-editable-text ref="folderInput" v-model="folder.fullPath" readonly type="text" class="w-full" />
           <span v-show="folders.length > 1" class="material-icons text-2xl ml-2 cursor-pointer hover:text-error" @click="removeFolder(folder)">close</span>
         </div>
         <div class="flex py-1 px-2 items-center w-full">
           <span class="material-icons bg-opacity-50 mr-2 text-yellow-200" style="font-size: 1.2rem">folder</span>
-          <ui-editable-text v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
+          <ui-editable-text ref="newFolderInput" v-model="newFolderPath" :placeholder="$strings.PlaceholderNewFolderPath" type="text" class="w-full" @blur="newFolderInputBlurred" />
         </div>
 
         <ui-btn class="w-full mt-2" color="primary" @click="browseForFolder">{{ $strings.ButtonBrowseForFolder }}</ui-btn>
@@ -82,6 +82,19 @@ export default {
     }
   },
   methods: {
+    checkBlurExpressionInput() {
+      if (this.$refs.nameInput) {
+        this.$refs.nameInput.blur()
+      }
+      if (this.$refs.folderInput && this.$refs.folderInput.length) {
+        this.$refs.folderInput.forEach((input) => {
+          if (input.blur) input.blur()
+        })
+      }
+      if (this.$refs.newFolderInput) {
+        this.$refs.newFolderInput.blur()
+      }
+    },
     browseForFolder() {
       this.showDirectoryPicker = true
     },

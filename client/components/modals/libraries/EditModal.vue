@@ -144,14 +144,14 @@ export default {
       return true
     },
     submit() {
-      if (!this.validate()) return
-
       // If custom expression input is focused then unfocus it instead of submitting
       if (this.$refs.tabComponent && this.$refs.tabComponent.checkBlurExpressionInput) {
         if (this.$refs.tabComponent.checkBlurExpressionInput()) {
           return
         }
       }
+
+      if (!this.validate()) return
 
       if (this.library) {
         this.submitUpdateLibrary()
