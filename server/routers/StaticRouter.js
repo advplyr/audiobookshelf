@@ -8,6 +8,7 @@ class StaticRouter {
     this.db = db
 
     this.router = express()
+    this.router.disable('x-powered-by')
     this.init()
   }
 
@@ -24,7 +25,7 @@ class StaticRouter {
       // See: https://www.nginx.com/resources/wiki/start/topics/examples/x-accel/
       if (global.XAccel) {
         Logger.debug(`Use X-Accel to serve static file ${fullPath}`)
-        return res.status(204).header({'X-Accel-Redirect': global.XAccel + fullPath}).send()
+        return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + fullPath }).send()
       }
 
       var opts = {}

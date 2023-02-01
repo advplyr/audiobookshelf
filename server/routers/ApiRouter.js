@@ -60,6 +60,7 @@ class ApiRouter {
     this.musicFinder = new MusicFinder()
 
     this.router = express()
+    this.router.disable('x-powered-by')
     this.init()
   }
 

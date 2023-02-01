@@ -14,6 +14,7 @@ class HlsRouter {
     this.playbackSessionManager = playbackSessionManager
 
     this.router = express()
+    this.router.disable('x-powered-by')
     this.init()
   }
 
