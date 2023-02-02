@@ -2,7 +2,7 @@ const fs = require('../libs/fsExtra')
 const filePerms = require('./filePerms')
 const package = require('../../package.json')
 const Logger = require('../Logger')
-const { getId } = require('./index')
+const { getId, copyValue } = require('./index')
 
 
 const CurrentAbMetadataVersion = 2
@@ -136,6 +136,7 @@ function generate(libraryItem, outputPath) {
   const mediaType = libraryItem.mediaType
 
   fileString += `media=${mediaType}\n`
+  fileString += `tags=`+JSON.stringify(libraryItem.media.tags)+`\n\n`
 
   const metadataMapper = metadataMappers[mediaType]
   var mediaMetadata = libraryItem.media.metadata
@@ -159,7 +160,6 @@ function generate(libraryItem, outputPath) {
       fileString += `title=${chapter.title}\n`
     })
   }
-
   return fs.writeFile(outputPath, fileString).then(() => {
     return filePerms.setDefault(outputPath, true).then(() => true)
   }).catch((error) => {
@@ -263,7 +263,16 @@ function parseAbMetadataText(text, mediaType) {
   } else {
     Logger.warn(`No media type found in abmetadata file - expecting ${mediaType}`)
   }
-
+  const abTags = [];
+  try{
+    if (detailLines[0].toLowerCase().startsWith('tags=')) {
+      var tagLine = detailLines.shift()
+      var tagsStr = tagLine.substring(5, tagLine.len)
+      JSON.parse(tagsStr).forEach((loadedTag) => { abTags.push(loadedTag) })
+    }
+  }catch(err){
+    Logger.error("Error parsing TAGS:", err.message)
+  }
   const metadataMapper = metadataMappers[mediaType]
   // Put valid book detail values into map
   const mediaMetadataDetails = {}
@@ -301,7 +310,8 @@ function parseAbMetadataText(text, mediaType) {
 
   return {
     metadata: mediaMetadataDetails,
-    chapters
+    chapters,
+    tags: abTags
   }
 }
 module.exports.parse = parseAbMetadataText
@@ -377,12 +387,12 @@ function checkArraysChanged(abmetadataArray, mediaArray) {
 }
 
 // Input text from abmetadata file and return object of metadata changes from media metadata
-function parseAndCheckForUpdates(text, mediaMetadata, mediaType) {
-  if (!text || !mediaMetadata || !mediaType) {
+function parseAndCheckForUpdates(text, media, mediaType) {
+  if (!text || !media || !media.metadata || !mediaType) {
     Logger.error(`Invalid inputs to parseAndCheckForUpdates`)
     return null
   }
-
+  const mediaMetadata = media.metadata
   var updatePayload = {} // Only updated key/values
 
   var abmetadataData = parseAbMetadataText(text, mediaType)
@@ -411,7 +421,18 @@ function parseAndCheckForUpdates(text, mediaMetadata, mediaType) {
       Logger.warn('[abmetadataGenerator] Invalid key', key)
     }
   }
-
+  try{
+    if(abmetadataData.tags.length > 0){
+      abmetadataData.tags.forEach((tag) => {
+        if(media.tags.includes(tag) == false){
+          media.tags.push(copyValue(tag))
+        }
+      })
+    }
+  }
+  catch(err){
+    Logger.error("[abmetadataGenerator] Error parsing tags", err.message)
+  }
   return updatePayload
 }
 module.exports.parseAndCheckForUpdates = parseAndCheckForUpdates
