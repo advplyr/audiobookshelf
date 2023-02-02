@@ -193,7 +193,7 @@ class Podcast {
     var metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
     if (metadataAbs) {
       var metadataText = await readTextFile(metadataAbs.metadata.path)
-      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'podcast')
+      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast')
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
         metadataUpdatePayload = abmetadataUpdates
