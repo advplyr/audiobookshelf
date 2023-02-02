@@ -252,12 +252,19 @@ class Book {
     if (metadataAbs) {
       Logger.debug(`[Book] Found metadata.abs file for "${this.metadata.title}"`)
       const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this.metadata, 'book')
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book')
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
-        metadataUpdatePayload = {
-          ...metadataUpdatePayload,
-          ...abmetadataUpdates
+
+        if (abmetadataUpdates.tags) { // Set media tags if updated
+          this.tags = abmetadataUpdates.tags
+          tagsUpdated = true
+        }
+        if (abmetadataUpdates.metadata) {
+          metadataUpdatePayload = {
+            ...metadataUpdatePayload,
+            ...abmetadataUpdates.metadata
+          }
         }
       }
     }
