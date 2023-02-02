@@ -255,9 +255,16 @@ class Book {
       const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book')
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
-        metadataUpdatePayload = {
-          ...metadataUpdatePayload,
-          ...abmetadataUpdates
+
+        if (abmetadataUpdates.tags) { // Set media tags if updated
+          this.tags = abmetadataUpdates.tags
+          tagsUpdated = true
+        }
+        if (abmetadataUpdates.metadata) {
+          metadataUpdatePayload = {
+            ...metadataUpdatePayload,
+            ...abmetadataUpdates.metadata
+          }
         }
       }
     }

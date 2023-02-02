@@ -188,22 +188,33 @@ class Podcast {
   }
 
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
-    var metadataUpdatePayload = {}
+    let metadataUpdatePayload = {}
+    let tagsUpdated = false
 
-    var metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
     if (metadataAbs) {
-      var metadataText = await readTextFile(metadataAbs.metadata.path)
-      var abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast')
+      const metadataText = await readTextFile(metadataAbs.metadata.path)
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast')
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
-        metadataUpdatePayload = abmetadataUpdates
+
+        if (abmetadataUpdates.tags) { // Set media tags if updated
+          this.tags = abmetadataUpdates.tags
+          tagsUpdated = true
+        }
+        if (abmetadataUpdates.metadata) {
+          metadataUpdatePayload = {
+            ...metadataUpdatePayload,
+            ...abmetadataUpdates.metadata
+          }
+        }
       }
     }
 
     if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload)
+      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
     }
-    return false
+    return tagsUpdated
   }
 
   searchEpisodes(query) {
