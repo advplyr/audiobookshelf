@@ -154,7 +154,7 @@ class PlaybackSessionManager {
 
     if (libraryItem.mediaType === 'video') {
       if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id}`)
         newPlaybackSession.videoTrack = libraryItem.media.getVideoTrack()
         newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       } else {
@@ -163,7 +163,7 @@ class PlaybackSessionManager {
     } else {
       let audioTracks = []
       if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}"`)
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id}`)
         audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
         newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       } else {

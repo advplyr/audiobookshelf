@@ -89,8 +89,11 @@ class SessionController {
   }
 
   async middleware(req, res, next) {
-    var playbackSession = await this.db.getPlaybackSession(req.params.id)
-    if (!playbackSession) return res.sendStatus(404)
+    const playbackSession = await this.db.getPlaybackSession(req.params.id)
+    if (!playbackSession) {
+      Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
+      return res.sendStatus(404)
+    }
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[SessionController] User attempted to delete without permission`, req.user)

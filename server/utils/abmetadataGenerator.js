@@ -2,7 +2,7 @@ const fs = require('../libs/fsExtra')
 const filePerms = require('./filePerms')
 const package = require('../../package.json')
 const Logger = require('../Logger')
-const { getId } = require('./index')
+const { getId, copyValue } = require('./index')
 
 
 const CurrentAbMetadataVersion = 2
@@ -130,12 +130,13 @@ const metadataMappers = {
 }
 
 function generate(libraryItem, outputPath) {
-  var fileString = `;ABMETADATA${CurrentAbMetadataVersion}\n`
+  let fileString = `;ABMETADATA${CurrentAbMetadataVersion}\n`
   fileString += `#audiobookshelf v${package.version}\n\n`
 
   const mediaType = libraryItem.mediaType
 
   fileString += `media=${mediaType}\n`
+  fileString += `tags=${JSON.stringify(libraryItem.media.tags)}\n`
 
   const metadataMapper = metadataMappers[mediaType]
   var mediaMetadata = libraryItem.media.metadata
@@ -159,7 +160,6 @@ function generate(libraryItem, outputPath) {
       fileString += `title=${chapter.title}\n`
     })
   }
-
   return fs.writeFile(outputPath, fileString).then(() => {
     return filePerms.setDefault(outputPath, true).then(() => true)
   }).catch((error) => {
@@ -223,17 +223,31 @@ function parseChapterLines(lines) {
   return chapter
 }
 
+function parseTags(value) {
+  if (!value) return null
+  try {
+    const parsedTags = []
+    JSON.parse(value).forEach((loadedTag) => {
+      if (loadedTag.trim()) parsedTags.push(loadedTag) // Only push tags that are non-empty
+    })
+    return parsedTags
+  } catch (err) {
+    Logger.error(`[abmetadataGenerator] Error parsing TAGS "${value}":`, err.message)
+    return null
+  }
+}
+
 function parseAbMetadataText(text, mediaType) {
   if (!text) return null
-  var lines = text.split(/\r?\n/)
+  let lines = text.split(/\r?\n/)
 
   // Check first line and get abmetadata version number
-  var firstLine = lines.shift().toLowerCase()
+  const firstLine = lines.shift().toLowerCase()
   if (!firstLine.startsWith(';abmetadata')) {
     Logger.error(`Invalid abmetadata file first line is not ;abmetadata "${firstLine}"`)
     return null
   }
-  var abmetadataVersion = Number(firstLine.replace(';abmetadata', '').trim())
+  const abmetadataVersion = Number(firstLine.replace(';abmetadata', '').trim())
   if (isNaN(abmetadataVersion) || abmetadataVersion != CurrentAbMetadataVersion) {
     Logger.warn(`Invalid abmetadata version ${abmetadataVersion} - must use version ${CurrentAbMetadataVersion}`)
     return null
@@ -244,9 +258,9 @@ function parseAbMetadataText(text, mediaType) {
   lines = lines.filter(line => !!line.trim() && !ignoreFirstChars.includes(line[0]))
 
   // Get lines that map to book details (all lines before the first chapter or description section)
-  var firstSectionLine = lines.findIndex(l => l.startsWith('['))
-  var detailLines = firstSectionLine > 0 ? lines.slice(0, firstSectionLine) : lines
-  var remainingLines = firstSectionLine > 0 ? lines.slice(firstSectionLine) : []
+  const firstSectionLine = lines.findIndex(l => l.startsWith('['))
+  const detailLines = firstSectionLine > 0 ? lines.slice(0, firstSectionLine) : lines
+  const remainingLines = firstSectionLine > 0 ? lines.slice(firstSectionLine) : []
 
   if (!detailLines.length) {
     Logger.error(`Invalid abmetadata file no detail lines`)
@@ -255,8 +269,8 @@ function parseAbMetadataText(text, mediaType) {
 
   // Check the media type saved for this abmetadata file show warning if not matching expected
   if (detailLines[0].toLowerCase().startsWith('media=')) {
-    var mediaLine = detailLines.shift() // Remove media line
-    var abMediaType = mediaLine.toLowerCase().split('=')[1].trim()
+    const mediaLine = detailLines.shift() // Remove media line
+    const abMediaType = mediaLine.toLowerCase().split('=')[1].trim()
     if (abMediaType != mediaType) {
       Logger.warn(`Invalid media type in abmetadata file ${abMediaType} expecting ${mediaType}`)
     }
@@ -266,43 +280,46 @@ function parseAbMetadataText(text, mediaType) {
 
   const metadataMapper = metadataMappers[mediaType]
   // Put valid book detail values into map
-  const mediaMetadataDetails = {}
+  const mediaDetails = {
+    metadata: {},
+    chapters: [],
+    tags: null // When tags are null it will not be used
+  }
+
   for (let i = 0; i < detailLines.length; i++) {
-    var line = detailLines[i]
-    var keyValue = line.split('=')
+    const line = detailLines[i]
+    const keyValue = line.split('=')
     if (keyValue.length < 2) {
       Logger.warn('abmetadata invalid line has no =', line)
-    } else if (!metadataMapper[keyValue[0].trim()]) {
+    } else if (keyValue[0].trim() === 'tags') { // Parse tags
+      const value = keyValue.slice(1).join('=').trim() // Everything after "tags="
+      mediaDetails.tags = parseTags(value)
+    } else if (!metadataMapper[keyValue[0].trim()]) { // Ensure valid media metadata key
       Logger.warn(`abmetadata key "${keyValue[0].trim()}" is not a valid ${mediaType} metadata key`)
     } else {
-      var key = keyValue.shift().trim()
-      var value = keyValue.join('=').trim()
-      mediaMetadataDetails[key] = metadataMapper[key].from(value)
+      const key = keyValue.shift().trim()
+      const value = keyValue.join('=').trim()
+      mediaDetails.metadata[key] = metadataMapper[key].from(value)
     }
   }
 
-  const chapters = []
-
   // Parse sections for description and chapters
-  var sections = parseSections(remainingLines)
+  const sections = parseSections(remainingLines)
   sections.forEach((section) => {
-    var sectionHeader = section.shift()
+    const sectionHeader = section.shift()
     if (sectionHeader.toLowerCase().startsWith('[description]')) {
-      mediaMetadataDetails.description = section.join('\n')
+      mediaDetails.metadata.description = section.join('\n')
     } else if (sectionHeader.toLowerCase().startsWith('[chapter]')) {
-      var chapter = parseChapterLines(section)
+      const chapter = parseChapterLines(section)
       if (chapter) {
-        chapters.push(chapter)
+        mediaDetails.chapters.push(chapter)
       }
     }
   })
 
-  chapters.sort((a, b) => a.start - b.start)
+  mediaDetails.chapters.sort((a, b) => a.start - b.start)
 
-  return {
-    metadata: mediaMetadataDetails,
-    chapters
-  }
+  return mediaDetails
 }
 module.exports.parse = parseAbMetadataText
 
@@ -376,40 +393,52 @@ function checkArraysChanged(abmetadataArray, mediaArray) {
   return abmetadataArray.join(',') != mediaArray.join(',')
 }
 
-// Input text from abmetadata file and return object of metadata changes from media metadata
-function parseAndCheckForUpdates(text, mediaMetadata, mediaType) {
-  if (!text || !mediaMetadata || !mediaType) {
+// Input text from abmetadata file and return object of media changes
+//  only returns object of changes. empty object means no changes
+function parseAndCheckForUpdates(text, media, mediaType) {
+  if (!text || !media || !media.metadata || !mediaType) {
     Logger.error(`Invalid inputs to parseAndCheckForUpdates`)
     return null
   }
+  const mediaMetadata = media.metadata
+  const metadataUpdatePayload = {} // Only updated key/values
 
-  var updatePayload = {} // Only updated key/values
-
-  var abmetadataData = parseAbMetadataText(text, mediaType)
+  const abmetadataData = parseAbMetadataText(text, mediaType)
   if (!abmetadataData || !abmetadataData.metadata) {
     return null
   }
 
-  var abMetadata = abmetadataData.metadata // Metadata from abmetadata file
-
+  const abMetadata = abmetadataData.metadata // Metadata from abmetadata file
   for (const key in abMetadata) {
     if (mediaMetadata[key] !== undefined) {
       if (key === 'authors') {
-        var authorUpdatePayload = checkUpdatedBookAuthors(abMetadata[key], mediaMetadata[key])
-        if (authorUpdatePayload.hasUpdates) updatePayload.authors = authorUpdatePayload.authors
+        const authorUpdatePayload = checkUpdatedBookAuthors(abMetadata[key], mediaMetadata[key])
+        if (authorUpdatePayload.hasUpdates) metadataUpdatePayload.authors = authorUpdatePayload.authors
       } else if (key === 'series') {
-        var seriesUpdatePayload = checkUpdatedBookSeries(abMetadata[key], mediaMetadata[key])
-        if (seriesUpdatePayload.hasUpdates) updatePayload.series = seriesUpdatePayload.series
+        const seriesUpdatePayload = checkUpdatedBookSeries(abMetadata[key], mediaMetadata[key])
+        if (seriesUpdatePayload.hasUpdates) metadataUpdatePayload.series = seriesUpdatePayload.series
       } else if (key === 'genres' || key === 'narrators') { // Compare array differences
         if (checkArraysChanged(abMetadata[key], mediaMetadata[key])) {
-          updatePayload[key] = abMetadata[key]
+          metadataUpdatePayload[key] = abMetadata[key]
         }
       } else if (abMetadata[key] !== mediaMetadata[key]) {
-        updatePayload[key] = abMetadata[key]
+        metadataUpdatePayload[key] = abMetadata[key]
       }
     } else {
       Logger.warn('[abmetadataGenerator] Invalid key', key)
     }
+  }
+
+  const updatePayload = {} // Only updated key/values
+  // Check update tags
+  if (abmetadataData.tags) {
+    if (checkArraysChanged(abmetadataData.tags, media.tags)) {
+      updatePayload.tags = abmetadataData.tags
+    }
+  }
+
+  if (Object.keys(metadataUpdatePayload).length) {
+    updatePayload.metadata = metadataUpdatePayload
   }
 
   return updatePayload
