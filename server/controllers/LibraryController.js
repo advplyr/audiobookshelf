@@ -684,13 +684,13 @@ class LibraryController {
     res.sendStatus(200)
   }
 
-  // GET: api/libraries/:id/scan
+  // POST: api/libraries/:id/scan
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryController] Non-root user attempted to scan library`, req.user)
       return res.sendStatus(403)
     }
-    var options = {
+    const options = {
       forceRescan: req.query.force == 1
     }
     res.sendStatus(200)

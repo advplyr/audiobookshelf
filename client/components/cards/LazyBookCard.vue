@@ -662,7 +662,7 @@ export default {
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
       axios
-        .$get(`/api/items/${this.libraryItemId}/scan`)
+        .$post(`/api/items/${this.libraryItemId}/scan`)
         .then((data) => {
           var result = data.result
           if (!result) {

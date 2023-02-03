@@ -66,7 +66,7 @@ export const getters = {
 
 export const actions = {
   requestLibraryScan({ state, commit }, { libraryId, force }) {
-    return this.$axios.$get(`/api/libraries/${libraryId}/scan`, { params: { force } })
+    return this.$axios.$post(`/api/libraries/${libraryId}/scan?force=${force ? 1 : 0}`)
   },
   loadFolders({ state, commit }) {
     if (state.folders.length) {

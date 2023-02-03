@@ -203,7 +203,7 @@ class LibraryItemController {
 
       if (global.XAccel) {
         Logger.debug(`Use X-Accel to serve static file ${libraryItem.media.coverPath}`)
-        return res.status(204).header({'X-Accel-Redirect': global.XAccel + libraryItem.media.coverPath}).send()
+        return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + libraryItem.media.coverPath }).send()
       }
       return res.sendFile(libraryItem.media.coverPath)
     }
@@ -389,7 +389,7 @@ class LibraryItemController {
     else res.sendStatus(500)
   }
 
-  // GET: api/items/:id/scan (admin)
+  // POST: api/items/:id/scan (admin)
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[LibraryItemController] Non-admin user attempted to scan library item`, req.user)

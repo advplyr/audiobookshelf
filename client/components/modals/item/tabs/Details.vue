@@ -129,7 +129,7 @@ export default {
     rescan() {
       this.rescanning = true
       this.$axios
-        .$get(`/api/items/${this.libraryItemId}/scan`)
+        .$post(`/api/items/${this.libraryItemId}/scan`)
         .then((data) => {
           this.rescanning = false
           var result = data.result
