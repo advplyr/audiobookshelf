@@ -146,6 +146,11 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
+  get deviceDescription() {
+    if (!this.deviceInfo) return 'No Device Info'
+    return this.deviceInfo.deviceDescription
+  }
+
   setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id

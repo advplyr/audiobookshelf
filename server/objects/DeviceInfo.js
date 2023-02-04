@@ -52,6 +52,14 @@ class DeviceInfo {
     return obj
   }
 
+  get deviceDescription() {
+    if (this.model) { // Set from mobile apps
+      if (this.sdkVersion) return `${this.model} SDK ${this.sdkVersion} / v${this.clientVersion}`
+      return `${this.model} / v${this.clientVersion}`
+    }
+    return `${this.osName} ${this.osVersion} / ${this.browserName}`
+  }
+
   setData(ip, ua, clientDeviceInfo, serverVersion) {
     this.ipAddress = ip || null
 
@@ -62,7 +70,7 @@ class DeviceInfo {
     this.osVersion = uaObj.os.version || null
     this.deviceType = uaObj.device.type || null
 
-    var cdi = clientDeviceInfo || {}
+    const cdi = clientDeviceInfo || {}
     this.clientVersion = cdi.clientVersion || null
     this.manufacturer = cdi.manufacturer || null
     this.model = cdi.model || null
