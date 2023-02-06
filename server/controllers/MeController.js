@@ -6,6 +6,10 @@ const { isObject, toNumber } = require('../utils/index')
 class MeController {
   constructor() { }
 
+  getCurrentUser(req, res) {
+    res.json(req.user.toJSONForBrowser())
+  }
+
   // GET: api/me/listening-sessions
   async getListeningSessions(req, res) {
     var listeningSessions = await this.getUserListeningSessionsHelper(req.user.id)
@@ -184,6 +188,7 @@ class MeController {
     })
   }
 
+  // TODO: Deprecated. Removed from Android. Only used in iOS app now.
   // POST: api/me/sync-local-progress
   async syncLocalMediaProgress(req, res) {
     if (!req.body.localMediaProgress) {

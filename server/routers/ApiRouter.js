@@ -162,6 +162,7 @@ class ApiRouter {
     //
     // Current User Routes (Me)
     //
+    this.router.get('/me', MeController.getCurrentUser.bind(this))
     this.router.get('/me/listening-sessions', MeController.getListeningSessions.bind(this))
     this.router.get('/me/listening-stats', MeController.getListeningStats.bind(this))
     this.router.get('/me/progress/:id/remove-from-continue-listening', MeController.removeItemFromContinueListening.bind(this))
@@ -174,8 +175,8 @@ class ApiRouter {
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
-    this.router.patch('/me/settings', MeController.updateSettings.bind(this)) // TODO: Remove after mobile release v0.9.61-beta
-    this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this))
+    this.router.patch('/me/settings', MeController.updateSettings.bind(this)) // TODO: Deprecated. Remove after mobile release v0.9.61-beta
+    this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this)) // TODO: Deprecated. Removed from Android. Only used in iOS app now.
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
     this.router.get('/me/series/:id/readd-to-continue-listening', MeController.readdSeriesFromContinueListening.bind(this))
@@ -215,11 +216,12 @@ class ApiRouter {
     //
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
     this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
+    this.router.post('/session/local', SessionController.syncLocal.bind(this))
+    this.router.post('/session/local-all', SessionController.syncLocalSessions.bind(this))
     // TODO: Update these endpoints because they are only for open playback sessions
     this.router.get('/session/:id', SessionController.openSessionMiddleware.bind(this), SessionController.getOpenSession.bind(this))
     this.router.post('/session/:id/sync', SessionController.openSessionMiddleware.bind(this), SessionController.sync.bind(this))
     this.router.post('/session/:id/close', SessionController.openSessionMiddleware.bind(this), SessionController.close.bind(this))
-    this.router.post('/session/local', SessionController.syncLocal.bind(this))
 
     //
     // Podcast Routes

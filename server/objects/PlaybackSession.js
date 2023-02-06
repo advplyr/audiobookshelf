@@ -141,9 +141,28 @@ class PlaybackSession {
     this.updatedAt = session.updatedAt || null
   }
 
+  get mediaItemId() {
+    if (this.episodeId) return `${this.libraryItemId}-${this.episodeId}`
+    return this.libraryItemId
+  }
+
   get progress() { // Value between 0 and 1
     if (!this.duration) return 0
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
+  }
+
+  get deviceDescription() {
+    if (!this.deviceInfo) return 'No Device Info'
+    return this.deviceInfo.deviceDescription
+  }
+
+  get mediaProgressObject() {
+    return {
+      duration: this.duration,
+      currentTime: this.currentTime,
+      progress: this.progress,
+      lastUpdate: this.updatedAt
+    }
   }
 
   setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {

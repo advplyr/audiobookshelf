@@ -97,7 +97,7 @@ export default {
   },
   methods: {
     toFeedMetadata(feed) {
-      var metadata = feed.metadata
+      const metadata = feed.metadata
       return {
         title: metadata.title,
         author: metadata.author,
@@ -122,9 +122,9 @@ export default {
     },
     async submit() {
       this.processing = true
-      var newFeedPayloads = this.feedMetadata.map((metadata) => {
+      const newFeedPayloads = this.feedMetadata.map((metadata) => {
         return {
-          path: `${this.selectedFolderPath}\\${this.$sanitizeFilename(metadata.title)}`,
+          path: `${this.selectedFolderPath}/${this.$sanitizeFilename(metadata.title)}`,
           folderId: this.selectedFolderId,
           libraryId: this.currentLibrary.id,
           media: {

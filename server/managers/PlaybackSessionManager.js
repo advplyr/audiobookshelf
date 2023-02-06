@@ -21,7 +21,6 @@ class PlaybackSessionManager {
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
 
     this.sessions = []
-    this.localSessionLock = {}
   }
 
   getSession(sessionId) {
@@ -47,7 +46,7 @@ class PlaybackSessionManager {
 
   async startSessionRequest(req, res, episodeId) {
     const deviceInfo = this.getDeviceInfo(req)
-
+    Logger.debug(`[PlaybackSessionManager] startSessionRequest for device ${deviceInfo.deviceDescription}`)
     const { user, libraryItem, body: options } = req
     const session = await this.startSession(user, deviceInfo, libraryItem, episodeId, options)
     res.json(session.toJSONForClient(libraryItem))
@@ -61,18 +60,84 @@ class PlaybackSessionManager {
     }
   }
 
-  async syncLocalSessionRequest(user, sessionJson, res) {
-    if (this.localSessionLock[sessionJson.id]) {
-      Logger.debug(`[PlaybackSessionManager] syncLocalSessionRequest: Local session is locked and already syncing`)
-      return res.status(500).send('Local session is locked and already syncing')
+  async syncLocalSessionsRequest(req, res) {
+    const user = req.user
+    const sessions = req.body.sessions || []
+
+    const syncResults = []
+    for (const sessionJson of sessions) {
+      Logger.info(`[PlaybackSessionManager] Syncing local session "${sessionJson.displayTitle}" (${sessionJson.id})`)
+      const result = await this.syncLocalSession(user, sessionJson)
+      syncResults.push(result)
     }
 
+    res.json({
+      results: syncResults
+    })
+  }
+
+  async syncLocalSession(user, sessionJson) {
     const libraryItem = this.db.getLibraryItem(sessionJson.libraryItemId)
-    if (!libraryItem) {
-      Logger.error(`[PlaybackSessionManager] syncLocalSessionRequest: Library item not found for session "${sessionJson.libraryItemId}"`)
-      return res.status(500).send('Library item not found')
+    const episode = (sessionJson.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
+    if (!libraryItem || (libraryItem.isPodcast && !episode)) {
+      Logger.error(`[PlaybackSessionManager] syncLocalSession: Media item not found for session "${sessionJson.displayTitle}" (${sessionJson.id})`)
+      return {
+        id: sessionJson.id,
+        success: false,
+        error: 'Media item not found'
+      }
     }
 
+    let session = await this.db.getPlaybackSession(sessionJson.id)
+    if (!session) {
+      // New session from local
+      session = new PlaybackSession(sessionJson)
+      Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
+      await this.db.insertEntity('session', session)
+    } else {
+      session.currentTime = sessionJson.currentTime
+      session.timeListening = sessionJson.timeListening
+      session.updatedAt = sessionJson.updatedAt
+      session.date = date.format(new Date(), 'YYYY-MM-DD')
+      session.dayOfWeek = date.format(new Date(), 'dddd')
+
+      Logger.debug(`[PlaybackSessionManager] Updated session for "${session.displayTitle}" (${session.id})`)
+      await this.db.updateEntity('session', session)
+    }
+
+    const result = {
+      id: session.id,
+      success: true,
+      progressSynced: false
+    }
+
+    const userProgressForItem = user.getMediaProgress(session.libraryItemId, session.episodeId)
+    if (userProgressForItem) {
+      if (userProgressForItem.lastUpdate > session.updatedAt) {
+        Logger.debug(`[PlaybackSessionManager] Not updating progress for "${session.displayTitle}" because it has been updated more recently`)
+      } else {
+        Logger.debug(`[PlaybackSessionManager] Updating progress for "${session.displayTitle}" with current time ${session.currentTime} (previously ${userProgressForItem.currentTime})`)
+        result.progressSynced = user.createUpdateMediaProgress(libraryItem, session.mediaProgressObject, session.episodeId)
+      }
+    } else {
+      Logger.debug(`[PlaybackSessionManager] Creating new media progress for media item "${session.displayTitle}"`)
+      result.progressSynced = user.createUpdateMediaProgress(libraryItem, session.mediaProgressObject, session.episodeId)
+    }
+
+    // Update user and emit socket event
+    if (result.progressSynced) {
+      await this.db.updateEntity('user', user)
+      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
+      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
+        id: itemProgress.id,
+        data: itemProgress.toJSON()
+      })
+    }
+
+    return result
+  }
+
+  async syncLocalSessionRequest(user, sessionJson, res) {
     // If server session is open for this same media item then close it
     const userSessionForThisItem = this.sessions.find(playbackSession => {
       if (playbackSession.userId !== user.id) return false
@@ -84,43 +149,13 @@ class PlaybackSessionManager {
       await this.closeSession(user, userSessionForThisItem, null)
     }
 
-    this.localSessionLock[sessionJson.id] = true // Lock local session
-
-    let session = await this.db.getPlaybackSession(sessionJson.id)
-    if (!session) {
-      // New session from local
-      session = new PlaybackSession(sessionJson)
-      await this.db.insertEntity('session', session)
+    // Sync
+    const result = await this.syncLocalSession(user, sessionJson)
+    if (result.error) {
+      res.status(500).send(result.error)
     } else {
-      session.currentTime = sessionJson.currentTime
-      session.timeListening = sessionJson.timeListening
-      session.updatedAt = sessionJson.updatedAt
-      session.date = date.format(new Date(), 'YYYY-MM-DD')
-      session.dayOfWeek = date.format(new Date(), 'dddd')
-      await this.db.updateEntity('session', session)
+      res.sendStatus(200)
     }
-
-    session.currentTime = sessionJson.currentTime
-
-    const itemProgressUpdate = {
-      duration: session.duration,
-      currentTime: session.currentTime,
-      progress: session.progress,
-      lastUpdate: session.updatedAt // Keep media progress update times the same as local
-    }
-    const wasUpdated = user.createUpdateMediaProgress(libraryItem, itemProgressUpdate, session.episodeId)
-    if (wasUpdated) {
-      await this.db.updateEntity('user', user)
-      const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
-      SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
-        id: itemProgress.id,
-        data: itemProgress.toJSON()
-      })
-    }
-
-    delete this.localSessionLock[sessionJson.id] // Unlock local session
-
-    res.sendStatus(200)
   }
 
   async closeSessionRequest(user, session, syncData, res) {
@@ -132,7 +167,7 @@ class PlaybackSessionManager {
     // Close any sessions already open for user
     const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
     for (const session of userSessions) {
-      Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}"`)
+      Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}" (Device: ${session.deviceDescription})`)
       await this.closeSession(user, session, null)
     }
 
@@ -163,11 +198,11 @@ class PlaybackSessionManager {
     } else {
       let audioTracks = []
       if (shouldDirectPlay) {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id}`)
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting direct play session for item "${libraryItem.id}" with id ${newPlaybackSession.id} (Device: ${newPlaybackSession.deviceDescription})`)
         audioTracks = libraryItem.getDirectPlayTracklist(episodeId)
         newPlaybackSession.playMethod = PlayMethod.DIRECTPLAY
       } else {
-        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}"`)
+        Logger.debug(`[PlaybackSessionManager] "${user.username}" starting stream session for item "${libraryItem.id}" (Device: ${newPlaybackSession.deviceDescription})`)
         const stream = new Stream(newPlaybackSession.id, this.StreamsPath, user, libraryItem, episodeId, userStartTime)
         await stream.generatePlaylist()
         stream.start() // Start transcode
@@ -177,7 +212,7 @@ class PlaybackSessionManager {
         newPlaybackSession.playMethod = PlayMethod.TRANSCODE
 
         stream.on('closed', () => {
-          Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}"`)
+          Logger.debug(`[PlaybackSessionManager] Stream closed for session "${newPlaybackSession.id}" (Device: ${newPlaybackSession.deviceDescription})`)
           newPlaybackSession.stream = null
         })
       }
@@ -202,7 +237,7 @@ class PlaybackSessionManager {
 
     session.currentTime = syncData.currentTime
     session.addListeningTime(syncData.timeListened)
-    Logger.debug(`[PlaybackSessionManager] syncSession "${session.id}" | Total Time Listened: ${session.timeListening}`)
+    Logger.debug(`[PlaybackSessionManager] syncSession "${session.id}" (Device: ${session.deviceDescription}) | Total Time Listened: ${session.timeListening}`)
 
     const itemProgressUpdate = {
       duration: syncData.duration,

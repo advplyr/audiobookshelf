@@ -54,7 +54,7 @@ export default {
     },
     folderPath() {
       if (!this.libraryFolderPath) return ''
-      return `${this.libraryFolderPath}\\${this.$sanitizeFilename(this.title)}`
+      return `${this.libraryFolderPath}/${this.$sanitizeFilename(this.title)}`
     },
     detailsWidth() {
       return this.width - 85
