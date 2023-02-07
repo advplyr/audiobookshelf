@@ -115,11 +115,16 @@ class MediaFileScanner {
 
     const scanStart = Date.now()
     const mediaMetadata = libraryItem.media.metadata || null
-    const proms = []
-    for (let i = 0; i < mediaLibraryFiles.length; i++) {
-      proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadata))
+    const batchSize = 32
+    const results = []
+    for (let batch = 0; batch < mediaLibraryFiles.length; batch += batchSize) {
+      const proms = []
+      for (let i = batch; i < Math.min(batch + batchSize, mediaLibraryFiles.length); i++) {
+        proms.push(this.scan(mediaType, mediaLibraryFiles[i], mediaMetadata))
+      }
+      results.push(...await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr)))
     }
-    const results = await Promise.all(proms).then((scanResults) => scanResults.filter(sr => sr))
+
     return {
       audioFiles: results.filter(r => r.audioFile).map(r => r.audioFile),
       videoFiles: results.filter(r => r.videoFile).map(r => r.videoFile),
