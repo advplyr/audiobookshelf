@@ -18,10 +18,7 @@ module.exports = (function () {
       proc.stdout.on('data', function (data) { probeData.push(data) })
       proc.stderr.on('data', function (data) { errData.push(data) })
 
-      proc.on('exit', code => {
-        exitCode = code
-        proc.kill()
-      })
+      proc.on('exit', code => { exitCode = code })
       proc.on('error', err => reject(err))
       proc.on('close', () => {
         try {
