@@ -19,57 +19,59 @@ class FantLab {
   // 56 - anthology series
   // 57 - newspaper
   // types can get here https://api.fantlab.ru/config.json
-  _filterWorkType = [7, 11, 12, 22, 23, 24, 25, 26, 46, 47, 49, 51, 52, 55, 56, 57];
+  _filterWorkType = [7, 11, 12, 22, 23, 24, 25, 26, 46, 47, 49, 51, 52, 55, 56, 57]
   _baseUrl = 'https://api.fantlab.ru'
 
   constructor() { }
 
   async search(title, author) {
-    var searchString = encodeURIComponent(title)
+    let searchString = encodeURIComponent(title)
     if (author) {
       searchString += encodeURIComponent(' ' + author)
     }
-    var url = `${this._baseUrl}/search-works?q=${searchString}&page=1&onlymatches=1`
+    const url = `${this._baseUrl}/search-works?q=${searchString}&page=1&onlymatches=1`
     Logger.debug(`[FantLab] Search url: ${url}`)
-    var items = await axios.get(url).then((res) => {
+    const items = await axios.get(url).then((res) => {
       return res.data || []
     }).catch(error => {
       Logger.error('[FantLab] search error', error)
       return []
     })
 
-    return Promise.all(items.map(async item => await this.getWork(item)))
+    return Promise.all(items.map(async item => await this.getWork(item))).then(resArray => {
+      return resArray.filter(res => res != null)
+    })
   }
 
   async getWork(item) {
-    var { work_id, work_type_id } = item
+    const { work_id, work_type_id } = item
 
     if (this._filterWorkType.includes(work_type_id)) {
       return { title: null }
     }
 
-    var url = `${this._baseUrl}/work/${work_id}/extended`
-    var bookData = await axios.get(url).then((resp) => {
+    const url = `${this._baseUrl}/work/${work_id}/extended`
+    const bookData = await axios.get(url).then((resp) => {
       return resp.data || null
     }).catch((error) => {
       Logger.error(`[FantLab] work info reques error`, error)
       return null
     })
 
-    return await this.cleanBookData(bookData)
+    return this.cleanBookData(bookData)
   }
 
   async cleanBookData(bookData) {
-    var { authors, work_name_alts, work_id, work_name, work_year, work_description, image, classificatory, editions_blocks } = bookData;
+    let { authors, work_name_alts, work_id, work_name, work_year, work_description, image, classificatory, editions_blocks } = bookData
 
-    var subtitle = Array.isArray(work_name_alts) ? work_name_alts[0] : null
-    var auth = authors.map(function (author) {
+    const subtitle = Array.isArray(work_name_alts) ? work_name_alts[0] : null
+    const auth = authors.map(function (author) {
       return author.name
-    });
+    })
 
-    var genres = classificatory ? this.tryGetGenres(classificatory) : []
+    const genres = classificatory ? this.tryGetGenres(classificatory) : []
 
-    var imageAndIsbn = await this.tryGetCoverFromEditions(editions_blocks)
+    const imageAndIsbn = await this.tryGetCoverFromEditions(editions_blocks)
 
     if (imageAndIsbn) {
       var { imageUrl, isbn } = imageAndIsbn
@@ -79,7 +81,7 @@ class FantLab {
       }
     }
 
-    var cover = 'https://fantlab.ru' + image
+    const cover = 'https://fantlab.ru' + image
 
     return {
       id: work_id,
@@ -96,11 +98,11 @@ class FantLab {
   }
 
   tryGetGenres(classificatory) {
-    var { genre_group } = classificatory;
+    const { genre_group } = classificatory
     if (!genre_group) {
       return []
     }
-    var genresGroup = genre_group.find(group => group.genre_group_id = 1) // genres and subgenres
+    const genresGroup = genre_group.find(group => group.genre_group_id == 1) // genres and subgenres
 
     // genre_group_id=2 - General Characteristics
     // genre_group_id=3 - Arena
@@ -111,16 +113,16 @@ class FantLab {
 
     if (!genresGroup) return []
 
-    var { genre } = genresGroup;
-    var rootGenre = genre[0];
+    const { genre } = genresGroup
+    const rootGenre = genre[0]
 
-    var { label } = rootGenre
+    const { label } = rootGenre
 
     return [label].concat(this.tryGetSubGenres(rootGenre))
   }
 
   tryGetSubGenres(rootGenre) {
-    var { genre } = rootGenre
+    const { genre } = rootGenre
     return genre ? genre.map(genreObj => genreObj.label) : []
   }
 
@@ -130,7 +132,7 @@ class FantLab {
       return null
     }
 
-    var bookEditions = editions['30'] // try get audiobooks first
+    let bookEditions = editions['30'] // try get audiobooks first
     if (!bookEditions) {
       bookEditions = editions['10'] // paper editions in ru lang
     }
@@ -139,12 +141,12 @@ class FantLab {
       return null
     }
 
-    var { list } = bookEditions
+    const { list } = bookEditions
 
-    var lastEdition = list[list.length - 1]
+    const lastEdition = list[list.length - 1]
 
-    var editionId = lastEdition['edition_id']
-    var isbn = lastEdition['isbn'] // get only from paper edition
+    const editionId = lastEdition['edition_id']
+    const isbn = lastEdition['isbn'] // get only from paper edition
 
     return {
       imageUrl: await this.getCoverFromEdition(editionId),
@@ -153,9 +155,9 @@ class FantLab {
   }
 
   async getCoverFromEdition(editionId) {
-    var url = `${this._baseUrl}/edition/${editionId}`
+    const url = `${this._baseUrl}/edition/${editionId}`
 
-    var editionInfo = await axios.get(url).then((resp) => {
+    const editionInfo = await axios.get(url).then((resp) => {
       return resp.data || null
     }).catch(error => {
       Logger.error('[FantLab] search cover from edition error', error)
