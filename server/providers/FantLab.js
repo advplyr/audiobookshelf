@@ -47,7 +47,7 @@ class FantLab {
     const { work_id, work_type_id } = item
 
     if (this._filterWorkType.includes(work_type_id)) {
-      return { title: null }
+      return null
     }
 
     const url = `${this._baseUrl}/work/${work_id}/extended`
