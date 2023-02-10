@@ -22,7 +22,27 @@ function fetchCreators(creators, role) {
 
 function fetchTagString(metadata, tag) {
   if (!metadata[tag] || !metadata[tag].length) return null
-  const value = metadata[tag][0]
+  let value = metadata[tag][0]
+
+  /*
+    EXAMPLES:
+
+    "dc:title": [
+      {
+        "_": "The Quest for Character",
+        "$": {
+          "opf:file-as": "Quest for Character What the Story of Socrates and Alcibiades"
+        }
+      }
+    ]
+
+    OR
+
+    "dc:title": [
+      "The Quest for Character"
+    ]
+  */
+  if (typeof value === 'object') value = value._
   if (typeof value !== 'string') return null
   return value
 }
