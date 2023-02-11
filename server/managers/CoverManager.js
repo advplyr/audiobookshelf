@@ -54,7 +54,7 @@ class CoverManager {
     for (let i = 0; i < filesInDir.length; i++) {
       var file = filesInDir[i]
       var _extname = Path.extname(file).toLowerCase()
-      var _filename = Path.basename(file, _extname)
+      var _filename = Path.basename(file, _extname).toLowerCase()
       if (_filename === 'cover' && _extname !== newCoverExt && imageExtensions.includes(_extname)) {
         var filepath = Path.join(dirpath, file)
         Logger.debug(`[CoverManager] Removing old cover from metadata "${filepath}"`)
@@ -83,20 +83,20 @@ class CoverManager {
   }
 
   async uploadCover(libraryItem, coverFile) {
-    var extname = Path.extname(coverFile.name.toLowerCase())
+    const extname = Path.extname(coverFile.name.toLowerCase())
     if (!extname || !globals.SupportedImageTypes.includes(extname.slice(1))) {
       return {
         error: `Invalid image type ${extname} (Supported: ${globals.SupportedImageTypes.join(',')})`
       }
     }
 
-    var coverDirPath = this.getCoverDirectory(libraryItem)
+    const coverDirPath = this.getCoverDirectory(libraryItem)
     await fs.ensureDir(coverDirPath)
 
-    var coverFullPath = Path.posix.join(coverDirPath, `cover${extname}`)
+    const coverFullPath = Path.posix.join(coverDirPath, `cover${extname}`)
 
     // Move cover from temp upload dir to destination
-    var success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
+    const success = await coverFile.mv(coverFullPath).then(() => true).catch((error) => {
       Logger.error('[CoverManager] Failed to move cover file', path, error)
       return false
     })
