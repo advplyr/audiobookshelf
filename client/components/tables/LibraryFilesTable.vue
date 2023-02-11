@@ -14,7 +14,7 @@
     <transition name="slide">
       <div class="w-full" v-show="showFiles">
         <table class="text-sm tracksTable">
-          <tr class="font-book">
+          <tr>
             <th class="text-left px-4">{{ $strings.LabelPath }}</th>
             <th class="text-left w-24 min-w-24">{{ $strings.LabelSize }}</th>
             <th class="text-left px-4 w-24">{{ $strings.LabelType }}</th>
@@ -22,7 +22,7 @@
           </tr>
           <template v-for="file in files">
             <tr :key="file.path">
-              <td class="font-book px-4">
+              <td class="px-4">
                 {{ showFullPath ? file.metadata.path : file.metadata.relPath }}
               </td>
               <td class="font-mono">

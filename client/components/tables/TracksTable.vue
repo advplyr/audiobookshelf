@@ -18,7 +18,7 @@
     <transition name="slide">
       <div class="w-full" v-show="showTracks">
         <table class="text-sm tracksTable">
-          <tr class="font-book">
+          <tr>
             <th class="w-10">#</th>
             <th class="text-left">{{ $strings.LabelFilename }}</th>
             <th class="text-left w-20">{{ $strings.LabelSize }}</th>

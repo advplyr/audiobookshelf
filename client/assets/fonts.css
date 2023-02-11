@@ -48,14 +48,6 @@
   font-size: 1.5rem;
 }
 
-@font-face {
-  font-family: 'Gentium Book Basic';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(~static/fonts/GentiumBookBasic.woff2) format('woff2');
-}
-
 /* cyrillic-ext */
 @font-face {
   font-family: 'Source Sans Pro';

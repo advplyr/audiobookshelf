@@ -7,7 +7,7 @@
 
       <img v-if="libraryItem" ref="cover" :src="fullCoverUrl" loading="lazy" @error="imageError" @load="imageLoaded" class="w-full h-full absolute top-0 left-0 z-10 duration-300 transition-opacity" :style="{ opacity: imageReady ? '1' : '0' }" :class="showCoverBg ? 'object-contain' : 'object-fill'" />
       <div v-show="loading && libraryItem" class="absolute top-0 left-0 h-full w-full flex items-center justify-center">
-        <p class="font-book text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
+        <p class="text-center" :style="{ fontSize: 0.75 * sizeMultiplier + 'rem' }">{{ title }}</p>
         <div class="absolute top-2 right-2">
           <widgets-loading-spinner />
         </div>
@@ -17,17 +17,17 @@
     <div v-if="imageFailed" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full bg-red-100" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div class="w-full h-full border-2 border-error flex flex-col items-center justify-center">
         <img src="/Logo.png" loading="lazy" class="mb-2" :style="{ height: 64 * sizeMultiplier + 'px' }" />
-        <p class="text-center font-book text-error" :style="{ fontSize: titleFontSize + 'rem' }">Invalid Cover</p>
+        <p class="text-center text-error" :style="{ fontSize: titleFontSize + 'rem' }">Invalid Cover</p>
       </div>
     </div>
 
     <div v-if="!hasCover" class="absolute top-0 left-0 right-0 bottom-0 w-full h-full flex items-center justify-center z-10" :style="{ padding: placeholderCoverPadding + 'rem' }">
       <div>
-        <p class="text-center font-book" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
+        <p class="text-center" style="color: rgb(247 223 187)" :style="{ fontSize: titleFontSize + 'rem' }">{{ titleCleaned }}</p>
       </div>
     </div>
     <div v-if="!hasCover" class="absolute left-0 right-0 w-full flex items-center justify-center z-10" :style="{ padding: placeholderCoverPadding + 'rem', bottom: authorBottom + 'rem' }">
-      <p class="text-center font-book" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
+      <p class="text-center" style="color: rgb(247 223 187); opacity: 0.75" :style="{ fontSize: authorFontSize + 'rem' }">{{ authorCleaned }}</p>
     </div>
   </div>
 </template>

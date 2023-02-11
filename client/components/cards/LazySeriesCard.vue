@@ -10,12 +10,12 @@
     <div v-if="isSeriesFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success w-full" />
 
     <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
-      <p class="font-book" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
+      <p :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
     </div>
 
     <span v-if="!isHovering && rssFeed" class="absolute z-10 material-icons text-success" :style="{ top: 0.5 * sizeMultiplier + 'rem', left: 0.5 * sizeMultiplier + 'rem', fontSize: 1.5 * sizeMultiplier + 'rem' }">rss_feed</span>
 
-    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md font-book text-center" :style="{ width: Math.min(200, width) + 'px' }">
+    <div v-if="!isAlternativeBookshelfView" class="categoryPlacard absolute z-10 left-0 right-0 mx-auto -bottom-6 h-6 rounded-md text-center" :style="{ width: Math.min(200, width) + 'px' }">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border" :style="{ padding: `0rem ${0.5 * sizeMultiplier}rem` }">
         <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
       </div>

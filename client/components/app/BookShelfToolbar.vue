@@ -42,7 +42,7 @@
     <div id="toolbar" class="absolute top-10 md:top-0 left-0 w-full h-10 md:h-full z-40 flex items-center justify-end md:justify-start px-2 md:px-8">
       <!-- Series books page -->
       <template v-if="selectedSeries">
-        <p class="pl-2 font-book text-base md:text-lg">
+        <p class="pl-2 text-base md:text-lg">
           {{ seriesName }}
         </p>
         <div class="w-6 h-6 rounded-full bg-black bg-opacity-30 flex items-center justify-center ml-3">
@@ -60,7 +60,7 @@
       </template>
       <!-- library & collections page -->
       <template v-else-if="page !== 'search' && page !== 'podcast-search' && page !== 'recent-episodes' && !isHome">
-        <p class="font-book hidden md:block">{{ numShowing }} {{ entityName }}</p>
+        <p class="hidden md:block">{{ numShowing }} {{ entityName }}</p>
 
         <div class="flex-grow hidden sm:inline-block" />
 

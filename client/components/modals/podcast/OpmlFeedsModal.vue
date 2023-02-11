@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="opml-feeds-modal" :width="1000" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">{{ title }}</p>
+        <p class="text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
     <div ref="wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">

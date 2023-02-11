@@ -5,7 +5,7 @@
     <svg v-else viewBox="0 0 24 24" class="h-6 w-6 text-white text-opacity-50 animate-spin">
       <path fill="currentColor" d="M12,4V2A10,10 0 0,0 2,12H4A8,8 0 0,1 12,4Z" />
     </svg>
-    <p class="text-base md:text-xl font-book pl-2 md:pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
+    <p class="text-base md:text-xl pl-2 md:pl-4 hover:underline cursor-pointer" @click.stop="$emit('click', library)">{{ library.name }}</p>
 
     <div class="flex-grow" />
 
