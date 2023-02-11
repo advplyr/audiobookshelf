@@ -39,7 +39,7 @@ class FantLab {
     })
 
     return Promise.all(items.map(async item => await this.getWork(item))).then(resArray => {
-      return resArray.filter(res => res != null)
+      return resArray.filter(res => res)
     })
   }
 
@@ -54,7 +54,7 @@ class FantLab {
     const bookData = await axios.get(url).then((resp) => {
       return resp.data || null
     }).catch((error) => {
-      Logger.error(`[FantLab] work info reques error`, error)
+      Logger.error(`[FantLab] work info request for url "${url}" error`, error)
       return null
     })
 
@@ -65,44 +65,30 @@ class FantLab {
     let { authors, work_name_alts, work_id, work_name, work_year, work_description, image, classificatory, editions_blocks } = bookData
 
     const subtitle = Array.isArray(work_name_alts) ? work_name_alts[0] : null
-    const auth = authors.map(function (author) {
-      return author.name
-    })
-
-    const genres = classificatory ? this.tryGetGenres(classificatory) : []
+    const authorNames = authors.map(au => (au.name || '').trim()).filter(au => au)
 
     const imageAndIsbn = await this.tryGetCoverFromEditions(editions_blocks)
 
-    if (imageAndIsbn) {
-      var { imageUrl, isbn } = imageAndIsbn
-
-      if (imageUrl) {
-        image = imageUrl
-      }
-    }
-
-    const cover = 'https://fantlab.ru' + image
+    const imageToUse = imageAndIsbn?.imageUrl || image
 
     return {
       id: work_id,
       title: work_name,
       subtitle: subtitle || null,
-      author: auth ? auth.join(', ') : null,
+      author: authorNames.length ? authorNames.join(', ') : null,
       publisher: null,
       publishedYear: work_year,
       description: work_description,
-      cover: image ? cover : null,
-      genres: genres,
-      isbn: isbn
+      cover: imageToUse ? `https://fantlab.ru${imageToUse}` : null,
+      genres: this.tryGetGenres(classificatory),
+      isbn: imageAndIsbn?.isbn || null
     }
   }
 
   tryGetGenres(classificatory) {
-    const { genre_group } = classificatory
-    if (!genre_group) {
-      return []
-    }
-    const genresGroup = genre_group.find(group => group.genre_group_id == 1) // genres and subgenres
+    if (!classificatory || !classificatory.genre_group) return []
+
+    const genresGroup = classificatory.genre_group.find(group => group.genre_group_id == 1) // genres and subgenres
 
     // genre_group_id=2 - General Characteristics
     // genre_group_id=3 - Arena
@@ -111,10 +97,9 @@ class FantLab {
     // genre_group_id=7 - Story linearity
     // genre_group_id=5 - Recommended age of the reader
 
-    if (!genresGroup) return []
+    if (!genresGroup || !genresGroup.genre || !genresGroup.genre.length) return []
 
-    const { genre } = genresGroup
-    const rootGenre = genre[0]
+    const rootGenre = genresGroup.genre[0]
 
     const { label } = rootGenre
 
@@ -122,51 +107,46 @@ class FantLab {
   }
 
   tryGetSubGenres(rootGenre) {
-    const { genre } = rootGenre
-    return genre ? genre.map(genreObj => genreObj.label) : []
+    if (!rootGenre.genre || !rootGenre.genre.length) return []
+    return rootGenre.genre.map(g => g.label).filter(g => g)
   }
 
   async tryGetCoverFromEditions(editions) {
-
     if (!editions) {
       return null
     }
 
-    let bookEditions = editions['30'] // try get audiobooks first
-    if (!bookEditions) {
-      bookEditions = editions['10'] // paper editions in ru lang
-    }
-
-    if (!bookEditions) {
+    // 30 = audio, 10 = paper
+    // Prefer audio if available
+    const bookEditions = editions['30'] || editions['10']
+    if (!bookEditions || !bookEditions.list || !bookEditions.list.length) {
       return null
     }
 
-    const { list } = bookEditions
-
-    const lastEdition = list[list.length - 1]
+    const lastEdition = bookEditions.list.pop()
 
     const editionId = lastEdition['edition_id']
-    const isbn = lastEdition['isbn'] // get only from paper edition
+    const isbn = lastEdition['isbn'] || null // get only from paper edition
 
     return {
       imageUrl: await this.getCoverFromEdition(editionId),
-      isbn: isbn
+      isbn
     }
   }
 
   async getCoverFromEdition(editionId) {
+    if (!editionId) return null
     const url = `${this._baseUrl}/edition/${editionId}`
 
     const editionInfo = await axios.get(url).then((resp) => {
       return resp.data || null
     }).catch(error => {
-      Logger.error('[FantLab] search cover from edition error', error)
+      Logger.error(`[FantLab] search cover from edition with url "${url}" error`, error)
       return null
     })
 
-    return editionInfo ? editionInfo['image'] : null
+    return editionInfo?.image || null
   }
-
 }
 
 module.exports = FantLab
