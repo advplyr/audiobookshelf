@@ -21,7 +21,7 @@
       </div>
     </div>
     <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
-      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ displayTitle }}</p>
+      <p class="truncate" :style="{ fontSize: labelFontSize * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
   </div>

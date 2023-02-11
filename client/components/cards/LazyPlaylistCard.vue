@@ -15,7 +15,7 @@
       </div>
     </div>
     <div v-else class="absolute z-30 left-0 right-0 mx-auto -bottom-8 h-8 py-1 rounded-md text-center">
-      <p class="truncate" :style="{ fontSize: labelFontSize + 'rem' }">{{ title }}</p>
+      <p class="truncate" :style="{ fontSize: labelFontSize * sizeMultiplier + 'rem' }">{{ title }}</p>
     </div>
   </div>
 </template>
@@ -50,8 +50,8 @@ export default {
       return 0.875
     },
     sizeMultiplier() {
-      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6 * 2)
-      return this.width / 240
+      if (this.bookCoverAspectRatio === 1) return this.width / (120 * 1.6)
+      return this.width / 120
     },
     title() {
       return this.playlist ? this.playlist.name : ''
