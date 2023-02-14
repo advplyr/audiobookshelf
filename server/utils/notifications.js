@@ -7,8 +7,7 @@ module.exports.notificationData = {
       requiresLibrary: true,
       libraryMediaType: 'podcast',
       description: 'Triggered when a podcast episode is auto-downloaded',
-      variables: ['libraryItemId', 'libraryId', 'podcastTitle', 'episodeTitle', 'libraryName', 'episodeId'],
-      defaults: {
+      variables: ['libraryItemId', 'libraryId', 'podcastTitle', 'episodeTitle', 'libraryName', 'episodeId', 'libraryTags'],      defaults: {
         title: 'New {{podcastTitle}} Episode!',
         body: '{{episodeTitle}} has been added to {{libraryName}} library.'
       },
@@ -16,6 +15,7 @@ module.exports.notificationData = {
         libraryItemId: 'li_notification_test',
         libraryId: 'lib_test',
         libraryName: 'Podcasts',
+        libraryTags: ['TestTag1', 'TestTag2'],
         podcastTitle: 'Abs Test Podcast',
         episodeId: 'ep_notification_test',
         episodeTitle: 'Successful Test'
