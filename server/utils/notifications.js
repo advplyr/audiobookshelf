@@ -7,7 +7,8 @@ module.exports.notificationData = {
       requiresLibrary: true,
       libraryMediaType: 'podcast',
       description: 'Triggered when a podcast episode is auto-downloaded',
-      variables: ['libraryItemId', 'libraryId', 'podcastTitle', 'episodeTitle', 'libraryName', 'episodeId', 'libraryTags'],      defaults: {
+      variables: ['libraryItemId', 'libraryId', 'podcastTitle', 'episodeTitle', 'libraryName', 'episodeId', 'libraryTags'],
+      defaults: {
         title: 'New {{podcastTitle}} Episode!',
         body: '{{episodeTitle}} has been added to {{libraryName}} library.'
       },
