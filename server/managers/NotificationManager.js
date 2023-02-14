@@ -24,7 +24,7 @@ class NotificationManager {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,
       libraryName: library ? library.name : 'Unknown',
-      libraryTags: libraryItem.tags,
+      libraryTags: libraryItem.media.tags,
       podcastTitle: libraryItem.media.metadata.title,
       episodeId: episode.id,
       episodeTitle: episode.title
