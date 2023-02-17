@@ -24,9 +24,15 @@ class NotificationManager {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,
       libraryName: library ? library.name : 'Unknown',
+      mediaTags: (libraryItem.media.tags || []).join(', '),
       podcastTitle: libraryItem.media.metadata.title,
+      podcastAuthor: libraryItem.media.metadata.author || '',
+      podcastDescription: libraryItem.media.metadata.description || '',
+      podcastGenres: (libraryItem.media.metadata.genres || []).join(', '),
       episodeId: episode.id,
-      episodeTitle: episode.title
+      episodeTitle: episode.title,
+      episodeSubtitle: episode.subtitle || '',
+      episodeDescription: episode.description || ''
     }
     this.triggerNotification('onPodcastEpisodeDownloaded', eventData)
   }

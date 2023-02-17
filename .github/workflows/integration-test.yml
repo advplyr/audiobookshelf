@@ -1,0 +1,44 @@
+name: Integration Test
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - 'dependabot/**'  # Don't run dependabot branches, as they are already covered by pull requests
+
+jobs:
+  build:
+    name: build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: setup nade
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+
+      - name: install pkg
+        run: npm install -g pkg
+
+      - name: get client dependencies
+        working-directory: client
+        run: npm ci
+
+      - name: build client
+        working-directory: client
+        run: npm run generate
+
+      - name: get server dependencies
+        run: npm ci --only=production
+
+      - name: build binary
+        run: pkg -t node18-linux-x64 -o audiobookshelf .
+
+      - name: run audiobookshelf
+        run: |
+          ./audiobookshelf &
+          sleep 5
+
+      - name: test if server is available
+        run: curl -sf http://127.0.0.1:3333 | grep Audiobookshelf
