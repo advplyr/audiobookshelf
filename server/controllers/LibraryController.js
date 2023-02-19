@@ -637,6 +637,7 @@ class LibraryController {
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
     var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
     var durationStats = libraryHelpers.getItemDurationStats(libraryItems)
+    var sizeStats = libraryHelpers.getItemSizeStats(libraryItems)
     var stats = {
       totalItems: libraryItems.length,
       totalAuthors: Object.keys(authorsWithCount).length,
@@ -645,6 +646,7 @@ class LibraryController {
       longestItems: durationStats.longestItems,
       numAudioTracks: durationStats.numAudioTracks,
       totalSize: libraryHelpers.getLibraryItemsTotalSize(libraryItems),
+      largestItems: sizeStats.largestItems,
       authorsWithCount,
       genresWithCount
     }

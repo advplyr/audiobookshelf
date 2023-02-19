@@ -280,6 +280,19 @@ module.exports = {
     }
   },
 
+  getItemSizeStats(libraryItems) {
+    var sorted = sort(libraryItems).desc(li => li.media.size)
+    var top10 = sorted.slice(0, 10).map(li => ({ id: li.id, title: li.media.metadata.title, size: li.media.size })).filter(i => i.size > 0)
+    var totalSize = 0
+    libraryItems.forEach((li) => {
+      totalSize += li.media.size
+    })
+    return {
+      totalSize,
+      largestItems: top10
+    }
+  },
+
   getLibraryItemsTotalSize(libraryItems) {
     var totalSize = 0
     libraryItems.forEach((li) => {
