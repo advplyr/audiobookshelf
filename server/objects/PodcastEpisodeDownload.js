@@ -50,7 +50,7 @@ class PodcastEpisodeDownload {
   setData(podcastEpisode, libraryItem, isAutoDownload) {
     this.id = getId('epdl')
     this.podcastEpisode = podcastEpisode
-    this.url = podcastEpisode.enclosure.url
+    this.url = encodeURI(podcastEpisode.enclosure.url)
     this.libraryItem = libraryItem
     this.isAutoDownload = isAutoDownload
     this.createdAt = Date.now()
