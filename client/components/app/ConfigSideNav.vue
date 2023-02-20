@@ -1,15 +1,19 @@
 <template>
-  <div class="w-44 fixed left-0 top-16 h-full bg-bg bg-opacity-100 md:bg-opacity-70 shadow-lg border-r border-white border-opacity-5 py-3 transform transition-transform" :class="wrapperClass" v-click-outside="clickOutside">
-    <div v-show="isMobilePortrait" class="flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
-      <span class="material-icons text-2xl">arrow_back</span>
+  <div>
+    <div class="w-44 fixed left-0 top-16 bg-bg bg-opacity-100 md:bg-opacity-70 shadow-lg border-r border-white border-opacity-5 py-3 transform transition-transform mb-12 overflow-y-auto" :class="wrapperClass + ' ' + (streamLibraryItem ? 'h-[calc(100%-270px)]' : 'h-[calc(100%-110px)]')" v-click-outside="clickOutside">
+      <div v-show="isMobilePortrait" class="flex items-center justify-end pb-2 px-4 mb-1" @click="closeDrawer">
+        <span class="material-icons text-2xl">arrow_back</span>
+      </div>
+
+      <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-4 h-12 border-b border-primary border-opacity-30 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
+        <p>{{ route.title }}</p>
+        <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+      </nuxt-link>
+
+      <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
     </div>
 
-    <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-4 h-12 border-b border-primary border-opacity-30 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-      <p>{{ route.title }}</p>
-      <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
-    </nuxt-link>
-
-    <div class="w-full h-12 px-4 border-t border-black border-opacity-20 absolute left-0 flex flex-col justify-center" :style="{ bottom: streamLibraryItem && isMobileLandscape ? '300px' : '65px' }">
+    <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
       <div class="flex justify-between">
         <p class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</p>
 
@@ -17,8 +21,6 @@
       </div>
       <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xs">Latest: {{ latestVersion }}</a>
     </div>
-
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
   </div>
 </template>
 

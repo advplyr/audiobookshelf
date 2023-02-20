@@ -3,11 +3,11 @@
     <div id="appbar" class="absolute top-0 bottom-0 left-0 w-full h-full px-2 md:px-6 py-1 z-60">
       <div class="flex h-full items-center">
         <nuxt-link to="/">
-          <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-12 sm:min-w-12 sm:h-12 sm:mr-4" />
+          <img src="~static/icon.svg" :alt="$strings.ButtonHome" class="w-8 min-w-8 h-8 mr-2 sm:w-10 sm:min-w-10 sm:h-10 sm:mr-4" />
         </nuxt-link>
 
         <nuxt-link to="/">
-          <h1 class="text-2xl font-book mr-6 hidden lg:block hover:underline">audiobookshelf <span v-if="showExperimentalFeatures" class="material-icons text-lg text-warning pr-1">logo_dev</span></h1>
+          <h1 class="text-xl mr-6 hidden lg:block hover:underline">audiobookshelf <span v-if="showExperimentalFeatures" class="material-icons text-lg text-warning pr-1">logo_dev</span></h1>
         </nuxt-link>
 
         <ui-libraries-dropdown class="mr-2" />

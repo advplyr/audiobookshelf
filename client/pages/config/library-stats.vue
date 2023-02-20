@@ -5,14 +5,14 @@
 
       <div class="flex lg:flex-row flex-wrap justify-between flex-col mt-8">
         <div class="w-80 my-6 mx-auto">
-          <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsTop5Genres }}</h1>
+          <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop5Genres }}</h1>
           <p v-if="!top5Genres.length">{{ $strings.MessageNoGenres }}</p>
           <template v-for="genre in top5Genres">
             <div :key="genre.genre" class="w-full py-2">
               <div class="flex items-end mb-1">
                 <p class="text-2xl font-bold">{{ Math.round((100 * genre.count) / totalItems) }}&nbsp;%</p>
                 <div class="flex-grow" />
-                <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=genres.${$encode(genre.genre)}`" class="text-base font-book text-white text-opacity-70 hover:underline">
+                <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=genres.${$encode(genre.genre)}`" class="text-base text-white text-opacity-70 hover:underline">
                   {{ genre.genre }}
                 </nuxt-link>
               </div>
@@ -23,12 +23,12 @@
           </template>
         </div>
         <div class="w-80 my-6 mx-auto">
-          <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsTop10Authors }}</h1>
+          <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsTop10Authors }}</h1>
           <p v-if="!top10Authors.length">{{ $strings.MessageNoAuthors }}</p>
           <template v-for="(author, index) in top10Authors">
             <div :key="author.id" class="w-full py-2">
               <div class="flex items-center mb-1">
-                <p class="text-sm font-book text-white text-opacity-70 w-36 pr-2 truncate">
+                <p class="text-sm text-white text-opacity-70 w-36 pr-2 truncate">
                   {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=authors.${$encode(author.id)}`" class="hover:underline">{{ author.name }}</nuxt-link>
                 </p>
                 <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
@@ -42,12 +42,12 @@
           </template>
         </div>
         <div class="w-80 my-6 mx-auto">
-          <h1 class="text-2xl mb-4 font-book">{{ $strings.HeaderStatsLongestItems }}</h1>
+          <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsLongestItems }}</h1>
           <p v-if="!top10LongestItems.length">{{ $strings.MessageNoItems }}</p>
           <template v-for="(ab, index) in top10LongestItems">
             <div :key="index" class="w-full py-2">
               <div class="flex items-center mb-1">
-                <p class="text-sm font-book text-white text-opacity-70 w-44 pr-2 truncate">
+                <p class="text-sm text-white text-opacity-70 w-44 pr-2 truncate">
                   {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
                 </p>
                 <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">

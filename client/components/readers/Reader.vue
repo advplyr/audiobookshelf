@@ -4,7 +4,7 @@
       <span class="material-icons cursor-pointer text-4xl" @click="close">close</span>
     </div>
 
-    <div class="absolute top-4 left-4 font-book">
+    <div class="absolute top-4 left-4">
       <h1 class="text-2xl mb-1">{{ abTitle }}</h1>
       <p v-if="abAuthor">by {{ abAuthor }}</p>
     </div>

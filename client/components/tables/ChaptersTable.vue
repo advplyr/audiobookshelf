@@ -11,7 +11,7 @@
     </div>
     <transition name="slide">
       <table class="text-sm tracksTable" v-show="expanded || keepOpen">
-        <tr class="font-book">
+        <tr>
           <th class="text-left w-16"><span class="px-4">Id</span></th>
           <th class="text-left">{{ $strings.LabelTitle }}</th>
           <th class="text-center">{{ $strings.LabelStart }}</th>
@@ -21,7 +21,7 @@
           <td class="text-left">
             <p class="px-4">{{ chapter.id }}</p>
           </td>
-          <td class="font-book">
+          <td>
             {{ chapter.title }}
           </td>
           <td class="font-mono text-center hover:underline cursor-pointer" @click.stop="goToTimestamp(chapter.start)">

@@ -52,6 +52,10 @@ export const state = () => ({
     {
       text: 'Audible.es',
       value: 'audible.es'
+    },
+    {
+      text: 'FantLab.ru',
+      value: 'fantlab'
     }
   ],
   podcastProviders: [

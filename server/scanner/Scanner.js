@@ -581,7 +581,7 @@ class Scanner {
       if (!existingLibraryItem) {
         existingLibraryItem = this.db.libraryItems.find(li => li.ino === dirIno)
         if (existingLibraryItem) {
-          Logger.debug(`[Scanner] scanFolderUpdates: Library item found by inode value "${existingLibraryItem.relPath} => ${itemDir}"`)
+          Logger.debug(`[Scanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
           // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
           existingLibraryItem.path = fullPath
           existingLibraryItem.relPath = itemDir

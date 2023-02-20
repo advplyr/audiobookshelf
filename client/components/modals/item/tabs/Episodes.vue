@@ -19,7 +19,7 @@
       </div>
       <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">{{ $strings.MessageNoEpisodes }}</div>
       <table v-else class="text-sm tracksTable">
-        <tr class="font-book">
+        <tr>
           <th class="text-left">Sort #</th>
           <th class="text-left whitespace-nowrap">{{ $strings.LabelEpisode }}</th>
           <th class="text-left">{{ $strings.EpisodeTitle }}</th>
@@ -33,7 +33,7 @@
           <td class="text-left">
             <p class="px-4">{{ episode.episode }}</p>
           </td>
-          <td class="font-book">
+          <td>
             {{ episode.title }}
           </td>
           <td class="font-mono text-center">

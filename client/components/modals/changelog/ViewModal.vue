@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="changelog" :width="800" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">Changelog</p>
+        <p class="text-3xl text-white truncate">Changelog</p>
       </div>
     </template>
     <div class="px-8 py-6 w-full rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-y-scroll" style="max-height: 80vh">

@@ -10,7 +10,7 @@
             <ui-toggle-switch labeledBy="settings-store-cover-with-items" v-model="newServerSettings.storeCoverWithItem" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('storeCoverWithItem', val)" />
             <ui-tooltip :text="$strings.LabelSettingsStoreCoversWithItemHelp">
               <p class="pl-4">
-                <span  id="settings-store-cover-with-items">{{ $strings.LabelSettingsStoreCoversWithItem }}</span>
+                <span id="settings-store-cover-with-items">{{ $strings.LabelSettingsStoreCoversWithItem }}</span>
                 <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
@@ -216,7 +216,7 @@
 
     <div class="flex items-center py-4">
       <div class="flex-grow" />
-      <p class="pr-2 text-sm font-book text-yellow-400">
+      <p class="pr-2 text-sm text-yellow-400">
         {{ $strings.MessageReportBugsAndContribute }}
         <a class="underline" href="https://github.com/advplyr/audiobookshelf" target="_blank">github</a>
       </p>
@@ -227,7 +227,7 @@
           />
         </svg>
       </a>
-      <p class="pl-4 pr-2 text-sm font-book text-yellow-400">
+      <p class="pl-4 pr-2 text-sm text-yellow-400">
         {{ $strings.MessageJoinUsOn }}
         <a class="underline" href="https://discord.gg/pJsjuNCKRq" target="_blank">discord</a>
       </p>

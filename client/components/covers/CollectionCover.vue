@@ -19,7 +19,7 @@
     <div v-else class="relative w-full h-full flex items-center justify-center p-2 bg-primary rounded-sm">
       <div class="absolute top-0 left-0 w-full h-full bg-gray-400 bg-opacity-5" />
 
-      <p class="font-book text-white text-opacity-60 text-center" :style="{ fontSize: Math.min(1, sizeMultiplier) + 'rem' }">Empty Collection</p>
+      <p class="text-white text-opacity-60 text-center" :style="{ fontSize: Math.min(1, sizeMultiplier) + 'rem' }">Empty Collection</p>
     </div>
   </div>
 </template>

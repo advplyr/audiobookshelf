@@ -37,23 +37,23 @@
       <draggable v-model="files" v-bind="dragOptions" class="list-group border border-gray-600" draggable=".item" tag="ul" @start="drag = true" @end="drag = false" @update="draggableUpdate">
         <transition-group type="transition" :name="!drag ? 'flip-list' : null">
           <li v-for="(audio, index) in files" :key="audio.ino" :class="audio.include ? 'item' : 'exclude'" class="w-full list-group-item flex items-center relative">
-            <div class="font-book text-center px-4 py-1 w-12 min-w-12">
+            <div class="text-center px-4 py-1 w-12 min-w-12">
               {{ audio.include ? index - numExcluded + 1 : -1 }}
             </div>
-            <div class="font-book text-center px-4 w-24 min-w-24">{{ audio.index }}</div>
-            <div class="font-book text-center px-2 w-32 min-w-32">
+            <div class="text-center px-4 w-24 min-w-24">{{ audio.index }}</div>
+            <div class="text-center px-2 w-32 min-w-32">
               {{ audio.trackNumFromFilename }}
             </div>
-            <div class="font-book text-center w-32 min-w-32">
+            <div class="text-center w-32 min-w-32">
               {{ audio.trackNumFromMeta }}
             </div>
-            <div class="font-book truncate px-4 w-20 min-w-20">
+            <div class="truncate px-4 w-20 min-w-20">
               {{ audio.discNumFromFilename }}
             </div>
-            <div class="font-book truncate px-4 w-20 min-w-20">
+            <div class="truncate px-4 w-20 min-w-20">
               {{ audio.discNumFromMeta }}
             </div>
-            <div class="font-book truncate px-4 flex-grow">
+            <div class="truncate px-4 flex-grow">
               {{ audio.metadata.filename }}
             </div>
 

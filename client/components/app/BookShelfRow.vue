@@ -44,7 +44,7 @@
       </div>
     </div>
 
-    <div class="absolute text-center categoryPlacard font-book transform z-30 bottom-px left-4 md:left-8 w-44 rounded-md" style="height: 22px">
+    <div class="absolute text-center categoryPlacard transform z-30 bottom-px left-4 md:left-8 w-44 rounded-md" style="height: 22px">
       <div class="w-full h-full shinyBlack flex items-center justify-center rounded-sm border">
         <p class="transform text-sm">{{ $strings[shelf.labelStringKey] }}</p>
       </div>

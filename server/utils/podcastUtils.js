@@ -191,7 +191,17 @@ module.exports.parsePodcastRssFeedXml = async (xml, excludeEpisodeMetadata = fal
 
 module.exports.getPodcastFeed = (feedUrl, excludeEpisodeMetadata = false) => {
   Logger.debug(`[podcastUtils] getPodcastFeed for "${feedUrl}"`)
-  return axios.get(feedUrl, { timeout: 6000 }).then(async (data) => {
+  return axios.get(feedUrl, { timeout: 6000, responseType: 'arraybuffer' }).then(async (data) => {
+
+    // Adding support for ios-8859-1 encoded RSS feeds.
+    //  See: https://github.com/advplyr/audiobookshelf/issues/1489
+    const contentType = data.headers?.['content-type'] || '' // e.g. text/xml; charset=iso-8859-1
+    if (contentType.toLowerCase().includes('iso-8859-1')) {
+      data.data = data.data.toString('latin1')
+    } else {
+      data.data = data.data.toString()
+    }
+
     if (!data || !data.data) {
       Logger.error(`[podcastUtils] getPodcastFeed: Invalid podcast feed request response (${feedUrl})`)
       return false

@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="bookmarks" :width="500" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
+        <p class="text-3xl text-white truncate">{{ $strings.LabelYourBookmarks }}</p>
       </div>
     </template>
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
