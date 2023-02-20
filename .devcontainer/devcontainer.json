@@ -7,6 +7,7 @@
         "fish": "latest"
 	},
 	"extensions": [
-		"eamodio.gitlens"
+		"eamodio.gitlens",
+		"octref.vetur"
 	]
 }

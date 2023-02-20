@@ -158,7 +158,13 @@ class BookMetadata {
     if (!this.authorName) return this.title
     return this.title + '&' + this.authorName
   }
-
+  get genresDisplay() {
+    if (!this.genres.length) return ''
+    return this.genres.join(', ')
+  }
+  get explicitDisplay() {
+    return this.explicit ? 'Explicit' : 'Not Explicit'
+  }
   hasAuthor(id) {
     return !!this.authors.find(au => au.id == id)
   }
@@ -184,7 +190,24 @@ class BookMetadata {
     if (!series.sequence) return series.name
     return `${series.name} #${series.sequence}`
   }
-
+  getSeriesNameDisplay(index) {
+    if (this.validateSeries(index)) {
+      return this.series[index].name
+    } else { return null }
+  }
+  getSeriesSequenceDisplay(index) {
+    if (this.validateSeries(index)) {
+      return this.series[index].sequence
+    } else { return null }
+  }
+  validateSeries(index) {
+    if (this.series.length && index < this.series.length && index >= 0) {
+      return true
+    }
+    else {
+      return false
+    }
+  }
   update(payload) {
     var json = this.toJSON()
     var hasUpdates = false

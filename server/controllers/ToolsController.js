@@ -79,5 +79,41 @@ class ToolsController {
     req.libraryItem = item
     next()
   }
+  // POST: api/tools/item/:id/renameFolder
+  async renameBookFolder(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error('[MiscController] renameBookFolder: Non-admin user attempting to make m4b', req.user)
+      return res.sendStatus(403)
+    }
+
+    if (req.libraryItem.isMissing || req.libraryItem.isInvalid) {
+      Logger.error(`[MiscController] renameBookFolder: library item not found or invalid ${req.params.id}`)
+      return res.status(404).send('Audiobook not found')
+    }
+
+    if (req.libraryItem.mediaType !== 'book') {
+      Logger.error(`[MiscController] renameBookFolder: Invalid library item ${req.params.id}: not a book`)
+      return res.status(500).send('Invalid library item: not a book')
+    }
+
+
+    const options = req.query || {}
+    var renameStatus = await this.folderRenameManager.startRenameBookFolder(req.libraryItem, req.query.strFormat || "")
+
+    //res.sendStatus(200)
+    res.json(renameStatus)
+  }
+  testRenameBookFolder(req, res) {
+    if (req.libraryItem.isMissing || req.libraryItem.isInvalid) {
+      Logger.error(`[MiscController] renameBookFolder: library item not found or invalid ${req.params.id}`)
+      return res.status(404).send('Audiobook not found')
+    }
+    if (req.libraryItem.mediaType !== 'book') {
+      Logger.error(`[MiscController] renameBookFolder: Invalid library item ${req.params.id}: not a book`)
+      return res.status(500).send('Invalid library item: not a book')
+    }
+    var result = this.folderRenameManager.parseRenameFormat(req.libraryItem, req.query.strFormat || "", req.query.includeSampleTemplate || "")
+    res.json(result)
+  }
 }
 module.exports = new ToolsController()

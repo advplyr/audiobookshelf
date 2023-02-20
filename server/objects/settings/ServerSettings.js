@@ -21,6 +21,7 @@ class ServerSettings {
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
     this.storeMetadataWithItem = false
+    this.defaultRenameString = "$bookAuthor/$bookTitle"
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -76,6 +77,7 @@ class ServerSettings {
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
+    this.defaultRenameString = settings.defaultRenameString || "$bookAuthor/$bookTitle"
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -131,6 +133,7 @@ class ServerSettings {
       scannerUseTone: this.scannerUseTone,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
+      defaultRenameString: this.defaultRenameString,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,

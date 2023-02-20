@@ -20,6 +20,7 @@ export const state = () => ({
   processingBatch: false,
   previousPath: '/',
   showExperimentalFeatures: false,
+  defaultRenameString: '',
   bookshelfBookIds: [],
   openModal: null,
   innerModalOpen: false,
@@ -214,6 +215,10 @@ export const mutations = {
   },
   setProcessingBatch(state, val) {
     state.processingBatch = val
+  },
+  setDefaultRenameString(state, val) {
+    state.defaultRenameString = val
+    localStorage.setItem('defaultRenameString', val)
   },
   setExperimentalFeatures(state, val) {
     state.showExperimentalFeatures = val
