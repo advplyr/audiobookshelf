@@ -546,6 +546,7 @@
   "PlaceholderNewFolderPath": "Nowa ścieżka folderu",
   "PlaceholderNewPlaylist": "New playlist name",
   "PlaceholderSearch": "Szukanie..",
+  "PlaceholderSearchEpisode": "Search episode..",
   "ToastAccountUpdateFailed": "Nie udało się zaktualizować konta",
   "ToastAccountUpdateSuccess": "Zaktualizowano konto",
   "ToastAuthorImageRemoveFailed": "Nie udało się usunąć obrazu",

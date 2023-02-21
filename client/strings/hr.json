@@ -546,6 +546,7 @@
   "PlaceholderNewFolderPath": "Nova folder putanja",
   "PlaceholderNewPlaylist": "New playlist name",
   "PlaceholderSearch": "Traži...",
+  "PlaceholderSearchEpisode": "Search episode...",
   "ToastAccountUpdateFailed": "Neuspješno aktualiziranje korisničkog računa",
   "ToastAccountUpdateSuccess": "Korisnički račun aktualiziran",
   "ToastAuthorImageRemoveFailed": "Neuspješno uklanjanje slike",

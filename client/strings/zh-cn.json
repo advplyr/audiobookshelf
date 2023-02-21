@@ -546,6 +546,7 @@
   "PlaceholderNewFolderPath": "输入文件夹路径",
   "PlaceholderNewPlaylist": "输入播放列表名称",
   "PlaceholderSearch": "查找..",
+  "PlaceholderSearchEpisode": "Search episode..",
   "ToastAccountUpdateFailed": "账户更新失败",
   "ToastAccountUpdateSuccess": "帐户已更新",
   "ToastAuthorImageRemoveFailed": "作者图像删除失败",

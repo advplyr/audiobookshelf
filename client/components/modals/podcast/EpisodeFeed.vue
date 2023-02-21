@@ -6,9 +6,9 @@
       </div>
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
-      <div class="w-full py-3 mx-auto flex">
+      <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="search" @input="inputUpdate" placeholder="Search episode..." class="flex-grow mr-2 text-sm md:text-base" />
+          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
         </form>
       </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">

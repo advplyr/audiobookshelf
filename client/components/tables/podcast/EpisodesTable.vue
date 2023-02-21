@@ -21,7 +21,7 @@
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
       <form @submit.prevent="submit" class="flex flex-grow">
-        <ui-text-input v-model="search" @input="inputUpdate" placeholder="Search episode..." class="flex-grow mr-2 text-sm md:text-base" />
+        <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
       </form>
     </div>
     <template v-for="episode in episodesList">
