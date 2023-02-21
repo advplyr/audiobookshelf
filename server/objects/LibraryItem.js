@@ -402,13 +402,10 @@ class LibraryItem {
     this.isInvalid = !this.media.hasMediaEntities
 
     // If cover path is in item folder, make sure libraryFile exists for it
-    if (this.media.coverPath && this.media.coverPath.startsWith(this.path)) {
-      const lf = this.libraryFiles.find(lf => lf.metadata.path === this.media.coverPath)
-      if (!lf) {
-        Logger.warn(`[LibraryItem] Invalid cover path - library file dne "${this.media.coverPath}"`)
-        this.media.updateCover('')
-        hasUpdated = true
-      }
+    if (this.media.coverPath && fs.pathExistsSync(this.media.coverPath) == false) {
+      Logger.warn(`[LibraryItem] Invalid cover path - library file dne "${this.media.coverPath}"`)
+      this.media.updateCover('')
+      hasUpdated = true
     }
 
     if (hasUpdated) {
