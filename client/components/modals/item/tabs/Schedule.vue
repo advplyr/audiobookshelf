@@ -59,6 +59,14 @@ export default {
       newMaxNewEpisodesToDownload: 0
     }
   },
+  watch: {
+    libraryItem: {
+      immediate: true,
+      handler(newVal) {
+        if (newVal) this.init()
+      }
+    }
+  },
   computed: {
     isProcessing: {
       get() {

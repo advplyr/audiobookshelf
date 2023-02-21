@@ -63,6 +63,14 @@ export default {
       isValid: true
     }
   },
+  watch: {
+    value: {
+      immediate: true,
+      handler(newVal) {
+        this.init()
+      }
+    }
+  },
   computed: {
     minuteIsValid() {
       return !(isNaN(this.selectedMinute) || this.selectedMinute === '' || this.selectedMinute < 0 || this.selectedMinute > 59)
@@ -271,6 +279,11 @@ export default {
         })
     },
     init() {
+      this.selectedInterval = 'custom'
+      this.selectedHour = 0
+      this.selectedMinute = 0
+      this.selectedWeekdays = []
+
       if (!this.value) return
       const pieces = this.value.split(' ')
       if (pieces.length !== 5) {
