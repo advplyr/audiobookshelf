@@ -11,20 +11,20 @@
     <transition name="slide">
       <div class="w-full" v-show="expand">
         <table class="text-sm tracksTable">
-          <tr class="font-book">
+          <tr>
             <th class="text-left">{{ $strings.LabelFilename }}</th>
             <th class="text-left">{{ $strings.LabelSize }}</th>
             <th class="text-left">{{ $strings.LabelType }}</th>
           </tr>
           <template v-for="file in files">
             <tr :key="file.path">
-              <td class="font-book pl-2">
+              <td class="pl-2">
                 {{ file.name }}
               </td>
               <td class="font-mono">
                 {{ $bytesPretty(file.size) }}
               </td>
-              <td class="font-book">
+              <td>
                 {{ file.filetype }}
               </td>
             </tr>

@@ -65,7 +65,7 @@
             <td>
               <covers-book-cover :width="50" :library-item="item" :book-cover-aspect-ratio="bookCoverAspectRatio" />
             </td>
-            <td class="font-book">
+            <td>
               <template v-if="item.media && item.media.metadata && item.episode">
                 <p>{{ item.episode.title || 'Unknown' }}</p>
                 <p class="text-white text-opacity-50 text-sm font-sans">{{ item.media.metadata.title }}</p>

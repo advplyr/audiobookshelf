@@ -4,14 +4,14 @@
     <widgets-cover-size-widget class="fixed bottom-4 right-4 z-50" />
 
     <div v-if="loaded && !shelves.length && !search" class="w-full flex flex-col items-center justify-center py-12">
-      <p class="text-center text-2xl font-book mb-4 py-4">{{ libraryName }} Library is empty!</p>
+      <p class="text-center text-2xl mb-4 py-4">{{ libraryName }} Library is empty!</p>
       <div v-if="userIsAdminOrUp" class="flex">
         <ui-btn to="/config" color="primary" class="w-52 mr-2">Configure Scanner</ui-btn>
         <ui-btn color="success" class="w-52" @click="scan">Scan Library</ui-btn>
       </div>
     </div>
     <div v-else-if="loaded && !shelves.length && search" class="w-full h-40 flex items-center justify-center">
-      <p class="text-center text-xl font-book py-4">No results for query</p>
+      <p class="text-center text-xl py-4">No results for query</p>
     </div>
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">

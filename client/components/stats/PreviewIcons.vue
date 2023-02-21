@@ -6,7 +6,7 @@
       </svg>
       <div class="px-2">
         <p class="text-4xl md:text-5xl font-bold">{{ totalItems }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsItemsInLibrary }}</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsItemsInLibrary }}</p>
       </div>
     </div>
 
@@ -14,7 +14,7 @@
       <span class="material-icons text-7xl">show_chart</span>
       <div class="px-1">
         <p class="text-4xl md:text-5xl font-bold">{{ totalTime }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ useOverallHours ? $strings.LabelStatsOverallHours : $strings.LabelStatsOverallDays }}</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ useOverallHours ? $strings.LabelStatsOverallHours : $strings.LabelStatsOverallDays }}</p>
       </div>
     </div>
 
@@ -24,7 +24,7 @@
       </svg>
       <div class="px-1">
         <p class="text-4xl md:text-5xl font-bold">{{ totalAuthors }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsAuthors }}</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsAuthors }}</p>
       </div>
     </div>
 
@@ -32,7 +32,7 @@
       <span class="material-icons-outlined text-6xl pt-1">insert_drive_file</span>
       <div class="px-1">
         <p class="text-4xl md:text-5xl font-bold">{{ totalSizeNum }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelSize }} ({{ totalSizeMod }})</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelSize }} ({{ totalSizeMod }})</p>
       </div>
     </div>
 
@@ -40,7 +40,7 @@
       <span class="material-icons-outlined text-6xl pt-1">audio_file</span>
       <div class="px-1">
         <p class="text-4xl md:text-5xl font-bold">{{ numAudioTracks }}</p>
-        <p class="font-book text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsAudioTracks }}</p>
+        <p class="text-xs md:text-sm text-white text-opacity-80">{{ $strings.LabelStatsAudioTracks }}</p>
       </div>
     </div>
   </div>

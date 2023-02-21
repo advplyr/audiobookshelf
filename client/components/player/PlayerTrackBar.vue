@@ -15,7 +15,7 @@
     </div>
 
     <!-- Hover timestamp -->
-    <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
+    <div ref="hoverTimestamp" class="absolute -top-8 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none z-10">
       <p ref="hoverTimestampText" class="text-xs font-mono text-center px-2 py-0.5 truncate whitespace-nowrap">00:00</p>
     </div>
     <div ref="hoverTimestampArrow" class="absolute -top-3 left-0 bg-white text-black rounded-full opacity-0 pointer-events-none">
@@ -83,9 +83,9 @@ export default {
 
       var offsetX = e.offsetX
       var perc = offsetX / this.trackWidth
-      const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
-      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
-      const time = baseTime + (perc * duration);
+      const baseTime = this.useChapterTrack ? this.currentChapterStart : 0
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+      const time = baseTime + perc * duration
       if (isNaN(time) || time === null) {
         console.error('Invalid time', perc, time)
         return
@@ -143,10 +143,10 @@ export default {
     mousemoveTrack(e) {
       var offsetX = e.offsetX
 
-      const baseTime = this.useChapterTrack ? this.currentChapterStart : 0;
-      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration;
-      const progressTime = (offsetX / this.trackWidth) * duration;
-      const totalTime = baseTime + progressTime;
+      const baseTime = this.useChapterTrack ? this.currentChapterStart : 0
+      const duration = this.useChapterTrack ? this.currentChapterDuration : this.duration
+      const progressTime = (offsetX / this.trackWidth) * duration
+      const totalTime = baseTime + progressTime
 
       if (this.$refs.hoverTimestamp) {
         var width = this.$refs.hoverTimestamp.clientWidth

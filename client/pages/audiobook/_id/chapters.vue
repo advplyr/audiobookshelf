@@ -136,7 +136,7 @@
     <modals-modal v-model="showFindChaptersModal" name="edit-book" :width="500" :processing="findingChapters">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden pointer-events-none">
-          <p class="font-book text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderFindChapters }}</p>
+          <p class="text-3xl text-white truncate pointer-events-none">{{ $strings.HeaderFindChapters }}</p>
         </div>
       </template>
       <div class="w-full h-full max-h-full text-sm rounded-lg bg-bg shadow-lg border border-black-300 relative">

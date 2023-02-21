@@ -31,21 +31,24 @@ class PodcastController {
     }
 
     const podcastPath = filePathToPOSIX(payload.path)
-    if (await fs.pathExists(podcastPath)) {
-      Logger.error(`[PodcastController] Podcast folder already exists "${podcastPath}"`)
+
+    // Check if a library item with this podcast folder exists already
+    const existingLibraryItem = this.db.libraryItems.find(li => li.path === podcastPath && li.libraryId === library.id)
+    if (existingLibraryItem) {
+      Logger.error(`[PodcastController] Podcast already exists with name "${existingLibraryItem.media.metadata.title}" at path "${podcastPath}"`)
       return res.status(400).send('Podcast already exists')
     }
 
-    var success = await fs.ensureDir(podcastPath).then(() => true).catch((error) => {
+    const success = await fs.ensureDir(podcastPath).then(() => true).catch((error) => {
       Logger.error(`[PodcastController] Failed to ensure podcast dir "${podcastPath}"`, error)
       return false
     })
     if (!success) return res.status(400).send('Invalid podcast path')
     await filePerms.setDefault(podcastPath)
 
-    var libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
+    const libraryItemFolderStats = await getFileTimestampsWithIno(podcastPath)
 
-    var relPath = payload.path.replace(folder.fullPath, '')
+    let relPath = payload.path.replace(folder.fullPath, '')
     if (relPath.startsWith('/')) relPath = relPath.slice(1)
 
     const libraryItemPayload = {
@@ -60,14 +63,14 @@ class PodcastController {
       media: payload.media
     }
 
-    var libraryItem = new LibraryItem()
+    const libraryItem = new LibraryItem()
     libraryItem.setData('podcast', libraryItemPayload)
 
     // Download and save cover image
     if (payload.media.metadata.imageUrl) {
       // TODO: Scan cover image to library files
       // Podcast cover will always go into library item folder
-      var coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
+      const coverResponse = await this.coverManager.downloadCoverFromUrl(libraryItem, payload.media.metadata.imageUrl, true)
       if (coverResponse) {
         if (coverResponse.error) {
           Logger.error(`[PodcastController] Download cover error from "${payload.media.metadata.imageUrl}": ${coverResponse.error}`)

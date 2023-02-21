@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="edit-playlist" :width="700" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">{{ $strings.HeaderPlaylist }}</p>
+        <p class="text-3xl text-white truncate">{{ $strings.HeaderPlaylist }}</p>
       </div>
     </template>
     <div class="p-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden" style="min-height: 400px; max-height: 80vh">

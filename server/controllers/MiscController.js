@@ -19,6 +19,10 @@ class MiscController {
       Logger.warn('User attempted to upload without permission', req.user)
       return res.sendStatus(403)
     }
+    if (!req.files) {
+      Logger.error('Invalid request, no files')
+      return res.sendStatus(400)
+    }
     var files = Object.values(req.files)
     var title = req.body.title
     var author = req.body.author

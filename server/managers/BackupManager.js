@@ -295,14 +295,16 @@ class BackupManager {
       // pipe archive data to the file
       archive.pipe(output)
 
-      archive.directory(this.db.LibraryItemsPath, 'config/libraryItems/data')
-      archive.directory(this.db.UsersPath, 'config/users/data')
-      archive.directory(this.db.SessionsPath, 'config/sessions/data')
-      archive.directory(this.db.LibrariesPath, 'config/libraries/data')
-      archive.directory(this.db.SettingsPath, 'config/settings/data')
-      archive.directory(this.db.CollectionsPath, 'config/collections/data')
-      archive.directory(this.db.AuthorsPath, 'config/authors/data')
-      archive.directory(this.db.SeriesPath, 'config/series/data')
+      archive.directory(Path.join(this.db.LibraryItemsPath, 'data'), 'config/libraryItems/data')
+      archive.directory(Path.join(this.db.UsersPath, 'data'), 'config/users/data')
+      archive.directory(Path.join(this.db.SessionsPath, 'data'), 'config/sessions/data')
+      archive.directory(Path.join(this.db.LibrariesPath, 'data'), 'config/libraries/data')
+      archive.directory(Path.join(this.db.SettingsPath, 'data'), 'config/settings/data')
+      archive.directory(Path.join(this.db.CollectionsPath, 'data'), 'config/collections/data')
+      archive.directory(Path.join(this.db.AuthorsPath, 'data'), 'config/authors/data')
+      archive.directory(Path.join(this.db.SeriesPath, 'data'), 'config/series/data')
+      archive.directory(Path.join(this.db.PlaylistsPath, 'data'), 'config/playlists/data')
+      archive.directory(Path.join(this.db.FeedsPath, 'data'), 'config/feeds/data')
 
       if (this.serverSettings.backupMetadataCovers) {
         Logger.debug(`[BackupManager] Backing up Metadata Items "${this.ItemsMetadataPath}"`)

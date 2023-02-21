@@ -91,8 +91,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['Source Sans Pro'],
-        mono: ['Ubuntu Mono'],
-        book: ['Gentium Book Basic', 'serif']
+        mono: ['Ubuntu Mono']
       },
       fontSize: {
         xxs: '0.625rem',

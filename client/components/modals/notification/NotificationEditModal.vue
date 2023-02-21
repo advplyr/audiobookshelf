@@ -2,7 +2,7 @@
   <modals-modal ref="modal" v-model="show" name="notification-edit" :width="800" :height="'unset'" :processing="processing">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="font-book text-3xl text-white truncate">{{ title }}</p>
+        <p class="text-3xl text-white truncate">{{ title }}</p>
       </div>
     </template>
     <form @submit.prevent="submitForm">
