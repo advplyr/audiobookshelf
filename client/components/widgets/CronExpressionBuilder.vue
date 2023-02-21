@@ -279,10 +279,10 @@ export default {
         })
     },
     init() {
-      this.selectedInterval = 'custom';
-      this.selectedHour = 0;
-      this.selectedMinute = 0;
-      this.selectedWeekdays = [];
+      this.selectedInterval = 'custom'
+      this.selectedHour = 0
+      this.selectedMinute = 0
+      this.selectedWeekdays = []
 
       if (!this.value) return
       const pieces = this.value.split(' ')
