@@ -219,10 +219,7 @@ export default {
       this.podcast.language = this._podcastData.language || this.feedMetadata.language || ''
       this.podcast.autoDownloadEpisodes = false
 
-      if (this._podcastData.explicit === 'yes' || this._podcastData.explicit == 'true' || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true') {
-        this.podcast.explicit = true
-      } else this.podcast.explicit = false
-
+      this.podcast.explicit = this._podcastData.explicit || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true'
       if (this.folderItems[0]) {
         this.selectedFolderId = this.folderItems[0].value
         this.folderUpdated()
