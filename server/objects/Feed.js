@@ -106,6 +106,7 @@ class Feed {
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/item/${libraryItem.id}`
     this.meta.explicit = !!mediaMetadata.explicit
+    this.meta.type = mediaMetadata.type
 
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES
@@ -142,6 +143,7 @@ class Feed {
     this.meta.author = author
     this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!mediaMetadata.explicit
+    this.meta.type = mediaMetadata.type
 
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES

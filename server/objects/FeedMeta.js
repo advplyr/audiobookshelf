@@ -7,6 +7,7 @@ class FeedMeta {
     this.feedUrl = null
     this.link = null
     this.explicit = null
+    this.type = null
 
     if (meta) {
       this.construct(meta)
@@ -21,6 +22,7 @@ class FeedMeta {
     this.feedUrl = meta.feedUrl
     this.link = meta.link
     this.explicit = meta.explicit
+    this.type = meta.type
   }
 
   toJSON() {
@@ -31,7 +33,8 @@ class FeedMeta {
       imageUrl: this.imageUrl,
       feedUrl: this.feedUrl,
       link: this.link,
-      explicit: this.explicit
+      explicit: this.explicit,
+      type: this.type
     }
   }
 
@@ -53,6 +56,7 @@ class FeedMeta {
         { 'author': this.author || 'advplyr' },
         { 'itunes:author': this.author || 'advplyr' },
         { 'itunes:summary': this.description || '' },
+        { 'itunes:type': this.type },
         {
           'itunes:image': {
             _attr: {

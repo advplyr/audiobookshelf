@@ -301,6 +301,7 @@
   "LabelPlayMethod": "Метод Воспроизведения",
   "LabelPodcast": "Подкаст",
   "LabelPodcasts": "Подкасты",
+  "LabelPodcastType": "Podcast Type",
   "LabelPrefixesToIgnore": "Игнорируемые Префиксы (без учета регистра)",
   "LabelProgress": "Прогресс",
   "LabelProvider": "Провайдер",

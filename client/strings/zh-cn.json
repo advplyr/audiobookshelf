@@ -301,6 +301,7 @@
   "LabelPlayMethod": "播放方法",
   "LabelPodcast": "播客",
   "LabelPodcasts": "播客",
+  "LabelPodcastType": "Podcast Type",
   "LabelPrefixesToIgnore": "忽略的前缀 (不区分大小写)",
   "LabelProgress": "进度",
   "LabelProvider": "供应商",

@@ -46,7 +46,8 @@ function extractPodcastMetadata(channel) {
     categories: extractCategories(channel),
     feedUrl: null,
     description: null,
-    descriptionPlain: null
+    descriptionPlain: null,
+    type: null
   }
 
   if (channel['itunes:new-feed-url']) {
@@ -61,7 +62,7 @@ function extractPodcastMetadata(channel) {
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
-  var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link']
+  var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
   arrayFields.forEach((key) => {
     var cleanKey = key.split(':').pop()
     metadata[cleanKey] = extractFirstArrayItem(channel, key)
