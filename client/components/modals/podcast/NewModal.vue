@@ -28,6 +28,14 @@
             <ui-multi-select v-model="podcast.genres" :items="podcast.genres" :label="$strings.LabelGenres" />
           </div>
         </div>
+        <div class="flex flex-wrap">
+          <div class="w-full md:w-1/2 p-2">
+            <ui-text-input-with-label v-model="podcast.language" :label="$strings.LabelLanguage" />
+          </div>
+          <div class="flex-grow px-1 pt-6">
+            <ui-checkbox v-model="podcast.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+          </div>
+        </div>
         <div class="p-2 w-full">
           <ui-textarea-with-label v-model="podcast.description" :label="$strings.LabelDescription" :rows="3" />
         </div>
@@ -82,7 +90,9 @@ export default {
         itunesPageUrl: '',
         itunesId: '',
         itunesArtistId: '',
-        autoDownloadEpisodes: false
+        autoDownloadEpisodes: false,
+        language: '',
+        explicit: false
       }
     }
   },
@@ -170,7 +180,8 @@ export default {
             itunesPageUrl: this.podcast.itunesPageUrl,
             itunesId: this.podcast.itunesId,
             itunesArtistId: this.podcast.itunesArtistId,
-            language: this.podcast.language
+            language: this.podcast.language,
+            explicit: this.podcast.explicit
           },
           autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
         }
@@ -205,8 +216,12 @@ export default {
       this.podcast.itunesPageUrl = this._podcastData.pageUrl || ''
       this.podcast.itunesId = this._podcastData.id || ''
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
-      this.podcast.language = this._podcastData.language || ''
+      this.podcast.language = this._podcastData.language || this.feedMetadata.language || ''
       this.podcast.autoDownloadEpisodes = false
+
+      if (this._podcastData.explicit === 'yes' || this._podcastData.explicit == 'true' || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true') {
+        this.podcast.explicit = true
+      } else this.podcast.explicit = false
 
       if (this.folderItems[0]) {
         this.selectedFolderId = this.folderItems[0].value

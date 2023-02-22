@@ -95,7 +95,8 @@ class iTunes {
       cover: this.getCoverArtwork(data),
       trackCount: data.trackCount,
       feedUrl: data.feedUrl,
-      pageUrl: data.collectionViewUrl
+      pageUrl: data.collectionViewUrl,
+      explicit: data.trackExplicitness === 'explicit'
     }
   }
 
