@@ -444,8 +444,15 @@ class LibraryItem {
     // Set cover image if not set
     const imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
     if (imageFiles.length && !this.media.coverPath) {
-      this.media.coverPath = imageFiles[0].metadata.path
-      Logger.debug('[LibraryItem] Set media cover path', this.media.coverPath)
+      //attempt to find a file called cover.<ext> otherwise just fall back to the first image found
+      var coverMatch = imageFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
+      if (coverMatch) {
+        this.media.coverPath = coverMatch.metadata.path
+      }
+      else {
+        this.media.coverPath = imageFiles[0].metadata.path
+      }
+      Logger.info('[LibraryItem] Set media cover path', this.media.coverPath)
       hasUpdated = true
     }
 
