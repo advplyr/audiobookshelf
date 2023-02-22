@@ -47,7 +47,8 @@ class FeedMeta {
       custom_namespaces: {
         'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd',
         'psc': 'http://podlove.org/simple-chapters',
-        'podcast': 'https://podcastindex.org/namespace/1.0'
+        'podcast': 'https://podcastindex.org/namespace/1.0',
+        'googleplay': 'http://www.google.com/schemas/play-podcasts/1.0'
       },
       custom_elements: [
         { 'author': this.author || 'advplyr' },
@@ -68,7 +69,9 @@ class FeedMeta {
         },
         {
           "itunes:explicit": !!this.explicit
-        }
+        },
+        { 'itunes:block': 'Yes' },
+        { 'googleplay:block': 'yes' }
       ]
     }
   }
