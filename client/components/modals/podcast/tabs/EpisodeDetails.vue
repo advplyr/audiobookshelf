@@ -8,7 +8,7 @@
         <ui-text-input-with-label v-model="newEpisode.episode" :label="$strings.LabelEpisode" />
       </div>
       <div class="w-1/5 p-1">
-        <ui-text-input-with-label v-model="newEpisode.episodeType" :label="$strings.LabelEpisodeType" />
+        <ui-dropdown v-model="newEpisode.episodeType" :label="$strings.LabelEpisodeType" :items="episodeTypes" small />
       </div>
       <div class="w-2/5 p-1">
         <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" :label="$strings.LabelPubDate" />
@@ -89,6 +89,9 @@ export default {
     },
     enclosureUrl() {
       return this.enclosure.url
+    },
+    episodeTypes() {
+      return this.$store.state.globals.episodeTypes || []
     }
   },
   methods: {

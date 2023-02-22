@@ -117,7 +117,7 @@ class PodcastEpisode {
     this.enclosure = data.enclosure ? { ...data.enclosure } : null
     this.season = data.season || ''
     this.episode = data.episode || ''
-    this.episodeType = data.episodeType || ''
+    this.episodeType = data.episodeType || 'full'
     this.publishedAt = data.publishedAt || 0
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
