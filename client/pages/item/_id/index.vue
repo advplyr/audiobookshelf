@@ -25,7 +25,7 @@
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
-                {{ title }}
+                {{ title }}<widgets-explicit-indicator :explicit="isExplicit" />
               </h1>
 
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
@@ -314,6 +314,9 @@ export default {
     },
     isInvalid() {
       return this.libraryItem.isInvalid
+    },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false;
     },
     invalidAudioFiles() {
       if (!this.isBook) return []

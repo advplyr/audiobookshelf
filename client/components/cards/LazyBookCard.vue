@@ -8,7 +8,7 @@
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
       <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        {{ displayTitle }}
+        {{ displayTitle }}<widgets-explicit-indicator :explicit="isExplicit" />
       </p>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
@@ -192,6 +192,9 @@ export default {
     },
     isMusic() {
       return this.mediaType === 'music'
+    },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
     },
     placeholderUrl() {
       const config = this.$config || this.$nuxt.$config
