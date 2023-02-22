@@ -33,6 +33,11 @@
         </div>
         <div class="flex flex-wrap">
           <div class="w-full md:w-1/2 p-2">
+            <ui-dropdown :label="$strings.LabelPodcastType" v-model="podcast.type" :items="podcastTypes" small />
+          </div>
+        </div>
+        <div class="flex flex-wrap">
+          <div class="w-full md:w-1/2 p-2">
             <ui-dropdown v-model="selectedFolderId" :items="folderItems" :disabled="processing" :label="$strings.LabelFolder" @input="folderUpdated" />
           </div>
           <div class="w-full md:w-1/2 p-2">
@@ -82,7 +87,8 @@ export default {
         itunesPageUrl: '',
         itunesId: '',
         itunesArtistId: '',
-        autoDownloadEpisodes: false
+        autoDownloadEpisodes: false,
+        type: ''
       }
     }
   },
@@ -140,6 +146,9 @@ export default {
     selectedFolderPath() {
       if (!this.selectedFolder) return ''
       return this.selectedFolder.fullPath
+    },
+    podcastTypes() {
+      return this.$store.state.globals.podcastTypes || []
     }
   },
   methods: {
@@ -170,7 +179,8 @@ export default {
             itunesPageUrl: this.podcast.itunesPageUrl,
             itunesId: this.podcast.itunesId,
             itunesArtistId: this.podcast.itunesArtistId,
-            language: this.podcast.language
+            language: this.podcast.language,
+            type: this.podcast.type
           },
           autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
         }
@@ -207,6 +217,7 @@ export default {
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
       this.podcast.language = this._podcastData.language || ''
       this.podcast.autoDownloadEpisodes = false
+      this.podcast.type = this._podcastData.type || this.feedMetadata.type || 'episodic'
 
       if (this.folderItems[0]) {
         this.selectedFolderId = this.folderItems[0].value

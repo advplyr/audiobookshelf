@@ -102,7 +102,7 @@ export default {
     },
     podcastTypes() {
       return this.$store.state.globals.podcastTypes || []
-    },
+    }
   },
   methods: {
     getDetails() {
