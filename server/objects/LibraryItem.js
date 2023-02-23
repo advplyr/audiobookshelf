@@ -197,9 +197,15 @@ class LibraryItem {
       if (key === 'libraryFiles') {
         this.libraryFiles = payload.libraryFiles.map(lf => lf.clone())
 
-        // Use first image library file as cover
-        const firstImageFile = this.libraryFiles.find(lf => lf.fileType === 'image')
-        if (firstImageFile) this.media.coverPath = firstImageFile.metadata.path
+        // Set cover image
+        const imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
+        const coverMatch = imageFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
+        if (coverMatch) {
+          this.media.coverPath = coverMatch.metadata.path
+        } else if (imageFiles.length) {
+          this.media.coverPath = imageFiles[0].metadata.path
+        }
+
       } else if (this[key] !== undefined && key !== 'media') {
         this[key] = payload[key]
       }
@@ -444,12 +450,11 @@ class LibraryItem {
     // Set cover image if not set
     const imageFiles = this.libraryFiles.filter(lf => lf.fileType === 'image')
     if (imageFiles.length && !this.media.coverPath) {
-      //attempt to find a file called cover.<ext> otherwise just fall back to the first image found
-      var coverMatch = imageFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
+      // attempt to find a file called cover.<ext> otherwise just fall back to the first image found
+      const coverMatch = imageFiles.find(iFile => /\/cover\.[^.\/]*$/.test(iFile.metadata.path))
       if (coverMatch) {
         this.media.coverPath = coverMatch.metadata.path
-      }
-      else {
+      } else {
         this.media.coverPath = imageFiles[0].metadata.path
       }
       Logger.info('[LibraryItem] Set media cover path', this.media.coverPath)
