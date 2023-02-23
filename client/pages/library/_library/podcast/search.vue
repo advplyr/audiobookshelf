@@ -20,7 +20,7 @@
               <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
             </div>
             <div class="flex-grow pl-4 max-w-2xl">
-              <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
+              <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a><widgets-explicit-indicator :explicit="podcast.explicit" />
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} {{ $strings.HeaderEpisodes }}</p>
