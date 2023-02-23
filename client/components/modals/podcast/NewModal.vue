@@ -29,10 +29,13 @@
           </div>
         </div>
         <div class="flex flex-wrap">
-          <div class="w-full md:w-1/2 p-2">
+          <div class="md:w-1/4 p-2">
+            <ui-dropdown :label="$strings.LabelPodcastType" v-model="podcast.type" :items="podcastTypes" small />
+          </div>
+          <div class="md:w-1/4 p-2">
             <ui-text-input-with-label v-model="podcast.language" :label="$strings.LabelLanguage" />
           </div>
-          <div class="flex-grow px-1 pt-6">
+          <div class="md:w-1/4 px-2 pt-7">
             <ui-checkbox v-model="podcast.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
         </div>
@@ -92,7 +95,8 @@ export default {
         itunesArtistId: '',
         autoDownloadEpisodes: false,
         language: '',
-        explicit: false
+        explicit: false,
+        type: ''
       }
     }
   },
@@ -150,6 +154,9 @@ export default {
     selectedFolderPath() {
       if (!this.selectedFolder) return ''
       return this.selectedFolder.fullPath
+    },
+    podcastTypes() {
+      return this.$store.state.globals.podcastTypes || []
     }
   },
   methods: {
@@ -181,7 +188,8 @@ export default {
             itunesId: this.podcast.itunesId,
             itunesArtistId: this.podcast.itunesArtistId,
             language: this.podcast.language,
-            explicit: this.podcast.explicit
+            explicit: this.podcast.explicit,
+            type: this.podcast.type
           },
           autoDownloadEpisodes: this.podcast.autoDownloadEpisodes
         }
@@ -218,6 +226,7 @@ export default {
       this.podcast.itunesArtistId = this._podcastData.artistId || ''
       this.podcast.language = this._podcastData.language || this.feedMetadata.language || ''
       this.podcast.autoDownloadEpisodes = false
+      this.podcast.type = this._podcastData.type || this.feedMetadata.type || 'episodic'
 
       this.podcast.explicit = this._podcastData.explicit || this.feedMetadata.explicit === 'yes' || this.feedMetadata.explicit == 'true'
       if (this.folderItems[0]) {

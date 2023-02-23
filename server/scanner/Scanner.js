@@ -899,7 +899,7 @@ class Scanner {
       description: episodeToMatch.description || '',
       enclosure: episodeToMatch.enclosure || null,
       episode: episodeToMatch.episode || '',
-      episodeType: episodeToMatch.episodeType || '',
+      episodeType: episodeToMatch.episodeType || 'full',
       season: episodeToMatch.season || '',
       pubDate: episodeToMatch.pubDate || '',
       publishedAt: episodeToMatch.publishedAt

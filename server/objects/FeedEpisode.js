@@ -14,6 +14,9 @@ class FeedEpisode {
     this.author = null
     this.explicit = null
     this.duration = null
+    this.season = null
+    this.episode = null
+    this.episodeType = null
 
     this.libraryItemId = null
     this.episodeId = null
@@ -35,6 +38,9 @@ class FeedEpisode {
     this.author = episode.author
     this.explicit = episode.explicit
     this.duration = episode.duration
+    this.season = episode.season
+    this.episode = episode.episode
+    this.episodeType = episode.episodeType
     this.libraryItemId = episode.libraryItemId
     this.episodeId = episode.episodeId || null
     this.trackIndex = episode.trackIndex || 0
@@ -52,6 +58,9 @@ class FeedEpisode {
       author: this.author,
       explicit: this.explicit,
       duration: this.duration,
+      season: this.season,
+      episode: this.episode,
+      episodeType: this.episodeType,
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
       trackIndex: this.trackIndex,
@@ -77,6 +86,9 @@ class FeedEpisode {
     this.author = meta.author
     this.explicit = mediaMetadata.explicit
     this.duration = episode.duration
+    this.season = episode.season
+    this.episode = episode.episode
+    this.episodeType = episode.episodeType
     this.libraryItemId = libraryItem.id
     this.episodeId = episode.id
     this.trackIndex = 0
@@ -144,7 +156,10 @@ class FeedEpisode {
         { 'itunes:summary': this.description || '' },
         {
           "itunes:explicit": !!this.explicit
-        }
+        },
+        {"itunes:episodeType": this.episodeType},
+        {"itunes:season": this.season},
+        {"itunes:episode": this.episode}
       ]
     }
   }
