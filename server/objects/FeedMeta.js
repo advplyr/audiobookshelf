@@ -8,6 +8,7 @@ class FeedMeta {
     this.link = null
     this.explicit = null
     this.type = null
+    this.language = null
 
     if (meta) {
       this.construct(meta)
@@ -23,6 +24,7 @@ class FeedMeta {
     this.link = meta.link
     this.explicit = meta.explicit
     this.type = meta.type
+    this.language = meta.language
   }
 
   toJSON() {
@@ -34,7 +36,8 @@ class FeedMeta {
       feedUrl: this.feedUrl,
       link: this.link,
       explicit: this.explicit,
-      type: this.type
+      type: this.type,
+      language: this.language
     }
   }
 
@@ -46,13 +49,13 @@ class FeedMeta {
       feed_url: this.feedUrl,
       site_url: this.link,
       image_url: this.imageUrl,
-      language: 'en',
       custom_namespaces: {
         'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd',
         'psc': 'http://podlove.org/simple-chapters',
         'podcast': 'https://podcastindex.org/namespace/1.0'
       },
       custom_elements: [
+        { 'language': this.language || 'en' },
         { 'author': this.author || 'advplyr' },
         { 'itunes:author': this.author || 'advplyr' },
         { 'itunes:summary': this.description || '' },

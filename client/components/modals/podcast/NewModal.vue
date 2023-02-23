@@ -29,20 +29,18 @@
           </div>
         </div>
         <div class="flex flex-wrap">
-          <div class="w-full md:w-1/2 p-2">
+          <div class="md:w-1/4 p-2">
+            <ui-dropdown :label="$strings.LabelPodcastType" v-model="podcast.type" :items="podcastTypes" small />
+          </div>
+          <div class="md:w-1/4 p-2">
             <ui-text-input-with-label v-model="podcast.language" :label="$strings.LabelLanguage" />
           </div>
-          <div class="flex-grow px-1 pt-6">
+          <div class="md:w-1/4 px-2 pt-7">
             <ui-checkbox v-model="podcast.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
         </div>
         <div class="p-2 w-full">
           <ui-textarea-with-label v-model="podcast.description" :label="$strings.LabelDescription" :rows="3" />
-        </div>
-        <div class="flex flex-wrap">
-          <div class="w-full md:w-1/2 p-2">
-            <ui-dropdown :label="$strings.LabelPodcastType" v-model="podcast.type" :items="podcastTypes" small />
-          </div>
         </div>
         <div class="flex flex-wrap">
           <div class="w-full md:w-1/2 p-2">
