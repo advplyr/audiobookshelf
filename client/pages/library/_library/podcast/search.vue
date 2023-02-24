@@ -152,7 +152,7 @@ export default {
       })
       console.log('Got results', results)
       for (let result of results) {
-        let podcast = this.existentPodcasts.find((p) => p.itunesId === result.id || p.title === result.title.toLowerCase());
+        let podcast = this.existentPodcasts.find((p) => p.itunesId === result.id || p.title === result.title.toLowerCase())
         if (podcast) {
           result.alreadyInLibrary = true
         }
