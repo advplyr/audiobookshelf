@@ -185,7 +185,7 @@ export default {
       this.processing = true
 
       const podcasts = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/items?page=0&minified=1`).catch((error) => {
-        console.error('failed to fetch books', error)
+        console.error('Failed to fetch podcasts', error)
         return []
       })
       this.existentPodcasts = podcasts.results.map((p) => {
