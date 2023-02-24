@@ -7,9 +7,12 @@
 
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
-      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        {{ displayTitle }}<widgets-explicit-indicator :explicit="isExplicit" />
-      </p>
+      <div class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+        <div class="flex items-center">
+          <span>{{ displayTitle }}</span>
+          <widgets-explicit-indicator :explicit="isExplicit" />
+        </div>
+      </div>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>

@@ -25,7 +25,10 @@
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
-                {{ title }}<widgets-explicit-indicator :explicit="isExplicit" />
+                <div class="flex items-center">
+                  {{ title }}
+                  <widgets-explicit-indicator :explicit="isExplicit" />
+                </div>
               </h1>
 
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>

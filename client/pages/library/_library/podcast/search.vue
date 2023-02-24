@@ -5,13 +5,12 @@
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
       <div class="w-full max-w-4xl mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
-          <ui-text-input v-model="searchInput" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />
+          <ui-text-input v-model="searchInput" type="search" :disabled="processing" placeholder="Enter search term or RSS feed URL" class="flex-grow mr-2 text-sm md:text-base" />
           <ui-btn type="submit" :disabled="processing" class="hidden md:block">{{ $strings.ButtonSubmit }}</ui-btn>
           <ui-btn type="submit" :disabled="processing" class="block md:hidden" small>{{ $strings.ButtonSubmit }}</ui-btn>
         </form>
         <ui-file-input ref="fileInput" :accept="'.opml, .txt'" class="ml-2" @change="opmlFileUpload">{{ $strings.ButtonUploadOPMLFile }}</ui-file-input>
       </div>
-
       <div class="w-full max-w-3xl mx-auto py-4">
         <p v-if="termSearched && !results.length && !processing" class="text-center text-xl">{{ $strings.MessageNoPodcastsFound }}</p>
         <template v-for="podcast in results">
@@ -20,7 +19,11 @@
               <img v-if="podcast.cover" :src="podcast.cover" class="h-full w-full" />
             </div>
             <div class="flex-grow pl-4 max-w-2xl">
-              <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a><widgets-explicit-indicator :explicit="podcast.explicit" />
+              <div class="flex items-center">
+                <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
+                <widgets-explicit-indicator :explicit="podcast.explicit" />
+                <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary"/>
+              </div>
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.trackCount }} {{ $strings.HeaderEpisodes }}</p>
@@ -68,10 +71,14 @@ export default {
       selectedPodcast: null,
       selectedPodcastFeed: null,
       showOPMLFeedsModal: false,
-      opmlFeeds: []
+      opmlFeeds: [],
+      existentPodcasts: []
     }
   },
   computed: {
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     }
@@ -144,6 +151,12 @@ export default {
         return []
       })
       console.log('Got results', results)
+      for (let result of results) {
+        let podcast = this.existentPodcasts.find((p) => p.itunesId === result.id || p.title === result.title.toLowerCase());
+        if (podcast) {
+          result.alreadyInLibrary = true
+        }
+      }
       this.results = results
       this.termSearched = term
       this.processing = false
@@ -167,8 +180,25 @@ export default {
       this.selectedPodcast = podcast
       this.showNewPodcastModal = true
       console.log('Got podcast feed', payload.podcast)
+    },
+    async fetchExistentPodcastsInYourLibrary() {
+      this.processing = true
+
+      const podcasts = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/items?page=0&minified=1`).catch((error) => {
+        console.error('failed to fetch books', error)
+        return []
+      })
+      this.existentPodcasts = podcasts.results.map((p) => {
+        return {
+          title: p.media.metadata.title.toLowerCase(),
+          itunesId: p.media.metadata.itunesId
+        }
+      })
+      this.processing = false
     }
   },
-  mounted() {}
+  mounted() {
+    this.fetchExistentPodcastsInYourLibrary()
+  }
 }
 </script>
