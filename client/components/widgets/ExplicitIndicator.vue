@@ -1,5 +1,7 @@
 <template>
-  <span v-if="explicit" class="material-icons ml-1" style="font-size: 0.8rem">explicit</span>
+  <ui-tooltip v-if="explicit" :text="$strings.LabelExplicit" direction="top">
+    <span class="material-icons ml-1" style="font-size: 0.8rem">explicit</span>
+  </ui-tooltip>
 </template>
 
 <script>

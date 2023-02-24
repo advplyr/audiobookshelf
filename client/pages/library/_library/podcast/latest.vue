@@ -14,15 +14,19 @@
               <div class="flex md:hidden mb-2">
                 <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId)" :width="48" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="md:hidden" />
                 <div class="flex-grow px-2">
-                  <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link><widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
-
+                  <div class="flex items-center">
+                    <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
+                    <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                  </div>
                   <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
                 </div>
               </div>
               <!-- desktop -->
               <div class="hidden md:block">
-                <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link><widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
-
+                <div class="flex items-center">
+                  <nuxt-link :to="`/item/${episode.libraryItemId}`" class="text-sm text-gray-200 hover:underline">{{ episode.podcast.metadata.title }}</nuxt-link>
+                  <widgets-explicit-indicator :explicit="episode.podcast.metadata.explicit" />
+                </div>
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>
 
