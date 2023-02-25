@@ -94,8 +94,8 @@ class FeedMeta {
           ]
         },
         { 'itunes:explicit': !!this.explicit },
-        { 'itunes:block': !!this.preventIndexing },
-        { 'googleplay:block': !!this.preventIndexing }
+        { 'itunes:block': this.preventIndexing?"Yes":"No" },
+        { 'googleplay:block': this.preventIndexing?"yes":"no" }
       ]
     }
   }
