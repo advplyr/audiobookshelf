@@ -18,7 +18,7 @@ class RSSFeedController {
     }
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug || options.metadataDetails == null) {
+    if (!options.serverAddress || !options.slug) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
@@ -49,7 +49,7 @@ class RSSFeedController {
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug || options.metadataDetails == null) {
+    if (!options.serverAddress || !options.slug) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
@@ -83,7 +83,7 @@ class RSSFeedController {
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist
-    if (!options.serverAddress || !options.slug || options.metadataDetails == null) {
+    if (!options.serverAddress || !options.slug) {
       Logger.error(`[RSSFeedController] Invalid request body to open RSS feed`)
       return res.status(400).send('Invalid request body')
     }
