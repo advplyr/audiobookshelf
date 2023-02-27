@@ -30,7 +30,16 @@
                 <p class="text-xs text-gray-300 mb-1">{{ $dateDistanceFromNow(episode.publishedAt) }}</p>
               </div>
 
-              <p class="font-semibold mb-2 text-sm md:text-base">{{ episode.title }}</p>
+              <div class="flex items-center font-semibold text-gray-200">
+                <div v-if="episode.season || episode.episode">#</div>
+                <div v-if="episode.season">{{ episode.season }}x</div>
+                <div v-if="episode.episode">{{ episode.episode }}</div>
+              </div>
+
+              <div class="flex items-center mb-2">
+                <div class="font-semibold text-sm md:text-base">{{ episode.title }}</div>
+                <widgets-podcast-type-indicator :type="episode.episodeType" />
+              </div>
 
               <p class="text-sm text-gray-200 mb-4">{{ episode.subtitle }}</p>
 

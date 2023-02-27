@@ -56,12 +56,13 @@ class PodcastManager {
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
       var newPeDl = new PodcastEpisodeDownload()
-      newPeDl.setData(newPe, libraryItem, isAutoDownload)
+      newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
     })
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
+    SocketAuthority.emitter('download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
@@ -99,6 +100,7 @@ class PodcastManager {
     }
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
+    SocketAuthority.emitter('download_queue_updated', this.getDownloadQueueDetails())
 
     this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
@@ -328,6 +330,23 @@ class PodcastManager {
     return {
       feeds: rssFeedData
     }
+  }
+
+  getDownloadQueueDetails() {
+    return this.downloadQueue.map(item => {
+      return {
+        id: item.id,
+        libraryId: item.libraryId || null,
+        libraryItemId: item.libraryItemId || null,
+        podcastTitle: item.libraryItem.media.metadata.title || null,
+        podcastExplicit: item.libraryItem.media.metadata.explicit || false,
+        episodeDisplayTitle: item.podcastEpisode.title || null,
+        season: item.podcastEpisode.season || null,
+        episode: item.podcastEpisode.episode || null,
+        episodeType: item.podcastEpisode.episodeType || 'full',
+        publishedAt: item.podcastEpisode.publishedAt || null
+      }
+    })
   }
 }
 module.exports = PodcastManager

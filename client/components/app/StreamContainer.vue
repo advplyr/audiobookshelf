@@ -11,12 +11,15 @@
         </nuxt-link>
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</p>
-          <p v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</p>
-          <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
-            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-          </p>
-          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</p>
+          <div class="flex items-center">
+            <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+            <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
+            <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
+              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+            </div>
+            <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
+            <widgets-explicit-indicator :explicit="isExplicit"></widgets-explicit-indicator>
+          </div>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -128,6 +131,9 @@ export default {
     },
     isMusic() {
       return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'music' : false
+    },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
     },
     mediaMetadata() {
       return this.media.metadata || {}

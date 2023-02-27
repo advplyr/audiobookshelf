@@ -82,6 +82,13 @@ class LibraryController {
     return res.json(req.library)
   }
 
+  async getDownloadQueue(req, res) {
+    const library = req.library
+
+    let queue = this.podcastManager.getDownloadQueueDetails().filter(q => q.libraryId === library.id)
+    return res.json(queue)
+  }
+
   async update(req, res) {
     const library = req.library
 
