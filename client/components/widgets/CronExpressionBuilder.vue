@@ -36,6 +36,10 @@
           <p v-else class="text-success text-base md:text-lg text-center">{{ $strings.MessageValidCronExpression }}</p>
         </div>
       </template>
+      <div v-if="cronExpression && isValid" class="flex items-center justify-center text-yellow-400 mt-2">
+        <span class="material-icons-outlined mr-2 text-xl">event</span>
+        <p>{{ $strings.LabelNextScheduledRun }}: {{ nextRun }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -77,6 +81,11 @@ export default {
     },
     hourIsValid() {
       return !(isNaN(this.selectedHour) || this.selectedHour === '' || this.selectedHour < 0 || this.selectedHour > 23)
+    },
+    nextRun() {
+      if (!this.cronExpression) return ''
+      const parsed = this.$getNextScheduledDate(this.cronExpression)
+      return this.$formatJsDatetime(parsed, this.$store.state.serverSettings.dateFormat, this.$store.state.serverSettings.timeFormat) || ''
     },
     description() {
       if ((this.selectedInterval !== 'custom' || !this.selectedWeekdays.length) && this.selectedInterval !== 'daily') return ''

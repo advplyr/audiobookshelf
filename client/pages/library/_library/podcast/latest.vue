@@ -117,6 +117,9 @@ export default {
         if (i.episodeId) episodeIds[i.episodeId] = true
       })
       return episodeIds
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
     }
   },
   methods: {
@@ -160,7 +163,7 @@ export default {
             episodeId: episode.id,
             title: episode.title,
             subtitle: episode.podcast.metadata.title,
-            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+            caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
             duration: episode.duration || null,
             coverPath: episode.podcast.coverPath || null
           })
@@ -198,7 +201,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: episode.podcast.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
           duration: episode.duration || null,
           coverPath: episode.podcast.coverPath || null
         }

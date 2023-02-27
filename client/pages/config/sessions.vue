@@ -39,7 +39,7 @@
               <p class="text-xs font-mono">{{ $secondsToTimestamp(session.currentTime) }}</p>
             </td>
             <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDate(session.updatedAt, 'MMMM do, yyyy HH:mm')">
+              <ui-tooltip v-if="session.updatedAt" direction="top" :text="$formatDatetime(session.updatedAt, dateFormat, timeFormat)">
                 <p class="text-xs text-gray-200">{{ $dateDistanceFromNow(session.updatedAt) }}</p>
               </ui-tooltip>
             </td>
@@ -105,6 +105,12 @@ export default {
       if (!this.userFilter) return null
       var user = this.users.find((u) => u.id === this.userFilter)
       return user ? user.username : null
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {
@@ -149,7 +155,7 @@ export default {
           episodeId: episode.id,
           title: episode.title,
           subtitle: libraryItem.media.metadata.title,
-          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
           duration: episode.audioFile.duration || null,
           coverPath: libraryItem.media.coverPath || null
         }

@@ -19,13 +19,13 @@
           <div class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelStartedAt }}</div>
             <div class="px-1">
-              {{ $formatDate(_session.startedAt, 'MMMM do, yyyy HH:mm') }}
+              {{ $formatDatetime(_session.startedAt, dateFormat, timeFormat) }}
             </div>
           </div>
           <div class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelUpdatedAt }}</div>
             <div class="px-1">
-              {{ $formatDate(_session.updatedAt, 'MMMM do, yyyy HH:mm') }}
+              {{ $formatDatetime(_session.updatedAt, dateFormat, timeFormat) }}
             </div>
           </div>
           <div class="flex items-center -mx-1 mb-1">
@@ -151,6 +151,12 @@ export default {
       else if (playMethod === this.$constants.PlayMethod.DIRECTSTREAM) return 'Direct Stream'
       else if (playMethod === this.$constants.PlayMethod.LOCAL) return 'Local'
       return 'Unknown'
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {
