@@ -33,6 +33,10 @@ export const state = () => ({
       value: 'dd/MM/yyyy'
     },
     {
+      text: 'DD.MM.YYYY',
+      value: 'dd.MM.yyyy'
+    },
+    {
       text: 'YYYY-MM-DD',
       value: 'yyyy-MM-dd'
     },
