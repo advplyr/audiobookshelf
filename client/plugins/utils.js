@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import cronParser from 'cron-parser'
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
@@ -137,44 +138,8 @@ Vue.prototype.$parseCronExpression = (expression) => {
 }
 
 Vue.prototype.$getNextScheduledDate = (expression) => {
-  const cronFields = expression.split(' ');
-  const currentDate = new Date();
-  const nextDate = new Date();
-
-  // Calculate next minute
-  const minute = cronFields[0];
-  const currentMinute = currentDate.getMinutes();
-  const nextMinute = getNextValue(minute, currentMinute, 59);
-  nextDate.setMinutes(nextMinute);
-
-  // Calculate next hour
-  const hour = cronFields[1];
-  const currentHour = currentDate.getHours();
-  const nextHour = getNextValue(hour, currentHour, 23);
-  nextDate.setHours(nextHour);
-
-  // Calculate next day of month
-  const dayOfMonth = cronFields[2];
-  const currentDayOfMonth = currentDate.getDate();
-  const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-  const nextDayOfMonth = getNextValue(dayOfMonth, currentDayOfMonth, lastDayOfMonth);
-  nextDate.setDate(nextDayOfMonth);
-
-  // Calculate next month
-  const month = cronFields[3];
-  const currentMonth = currentDate.getMonth() + 1;
-  const nextMonth = getNextValue(month, currentMonth, 12);
-  nextDate.setMonth(nextMonth - 1);
-
-  // Calculate next day of week
-  const dayOfWeek = cronFields[4];
-  const currentDayOfWeek = currentDate.getDay();
-  const nextDayOfWeek = getNextValue(dayOfWeek, currentDayOfWeek, 6);
-  const daysUntilNextDayOfWeek = getNextDaysUntilDayOfWeek(currentDate, nextDayOfWeek);
-  nextDate.setDate(currentDate.getDate() + daysUntilNextDayOfWeek);
-
-  // Return the next scheduled date
-  return nextDate;
+  const interval = cronParser.parseExpression(expression);
+  return interval.next().toDate()
 }
 
 export function supplant(str, subs) {
@@ -185,26 +150,4 @@ export function supplant(str, subs) {
       return typeof r === 'string' || typeof r === 'number' ? r : a
     }
   )
-}
-
-function getNextValue(cronField, currentValue, maxValue) {
-  if (cronField === '*') {
-    return currentValue + 1 <= maxValue ? currentValue + 1 : 0;
-  }
-  const values = cronField.split(',');
-  const len = values.length;
-  let nextValue = parseInt(values[0]);
-  for (let i = 0; i < len; i++) {
-    const value = parseInt(values[i]);
-    if (value > currentValue) {
-      nextValue = value;
-      break;
-    }
-  }
-  return nextValue <= maxValue ? nextValue : parseInt(values[0]);
-}
-
-function getNextDaysUntilDayOfWeek(currentDate, nextDayOfWeek) {
-  const daysUntilNextDayOfWeek = (nextDayOfWeek + 7 - currentDate.getDay()) % 7;
-  return daysUntilNextDayOfWeek === 0 ? 7 : daysUntilNextDayOfWeek;
 }
