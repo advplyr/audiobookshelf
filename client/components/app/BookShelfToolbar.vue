@@ -64,12 +64,22 @@
 
         <div class="flex-grow hidden sm:inline-block" />
 
+        <!-- collapse series checkbox -->
         <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+
+        <!-- library filter select -->
         <controls-library-filter-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+
+        <!-- library sort select -->
         <controls-library-sort-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+
+        <!-- series filter select -->
         <controls-library-filter-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
+
+        <!-- series sort select -->
         <controls-sort-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesSortBy" :descending.sync="settings.seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
+        <!-- issues page remove all button -->
         <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
       </template>
       <!-- search page -->
