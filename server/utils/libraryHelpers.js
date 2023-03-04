@@ -95,17 +95,20 @@ module.exports = {
   checkSeriesProgressFilter(series, filterBy, user) {
     const filter = this.decode(filterBy.split('.')[1])
 
-    var numBooksStartedOrFinished = 0
+    let someBookHasProgress = false
+    let someBookIsUnfinished = false
     for (const libraryItem of series.books) {
       const itemProgress = user.getMediaProgress(libraryItem.id)
-      if (filter === 'Finished' && (!itemProgress || !itemProgress.isFinished)) return false
-      if (filter === 'Not Started' && itemProgress) return false
-      if (itemProgress) numBooksStartedOrFinished++
+      if (!itemProgress || !itemProgress.isFinished) someBookIsUnfinished = true
+      if (itemProgress && itemProgress.progress > 0) someBookHasProgress = true
+
+      if (filter === 'finished' && (!itemProgress || !itemProgress.isFinished)) return false
+      if (filter === 'not-started' && itemProgress) return false
     }
 
-    if (numBooksStartedOrFinished === series.books.length) { // Completely finished series
-      if (filter === 'Not Finished') return false
-    } else if (numBooksStartedOrFinished === 0 && filter === 'In Progress') { // Series not started
+    if (!someBookIsUnfinished && filter === 'not-finished') { // Completely finished series
+      return false
+    } else if (!someBookHasProgress && filter === 'in-progress') { // Series not started
       return false
     }
     return true

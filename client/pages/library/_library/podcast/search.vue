@@ -155,6 +155,7 @@ export default {
         let podcast = this.existentPodcasts.find((p) => p.itunesId === result.id || p.title === result.title.toLowerCase())
         if (podcast) {
           result.alreadyInLibrary = true
+          result.existentId = podcast.id
         }
       }
       this.results = results
@@ -163,12 +164,16 @@ export default {
     },
     async selectPodcast(podcast) {
       console.log('Selected podcast', podcast)
+      if(podcast.existentId){
+        this.$router.push(`/item/${podcast.existentId}`)
+        return
+      }
       if (!podcast.feedUrl) {
         this.$toast.error('Invalid podcast - no feed')
         return
       }
       this.processing = true
-      var payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
+      var payload = await this.$axios.$post(`/api/podcasts/feed`, {rssFeed: podcast.feedUrl}).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error('Failed to get podcast feed')
         return null
@@ -191,7 +196,8 @@ export default {
       this.existentPodcasts = podcasts.results.map((p) => {
         return {
           title: p.media.metadata.title.toLowerCase(),
-          itunesId: p.media.metadata.itunesId
+          itunesId: p.media.metadata.itunesId,
+          id: p.id
         }
       })
       this.processing = false
