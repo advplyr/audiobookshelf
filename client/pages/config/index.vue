@@ -68,15 +68,18 @@
             </ui-tooltip>
           </div>
 
-          <div class="flex items-end py-2">
+          <div class="flex-grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
-            <span class="ml-2 text-yellow-400">{{ dateExample }}</span>
+            <p class="text-xs ml-1 text-warning text-opacity-60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ currentlyDate }}</p>
           </div>
 
-          <div class="flex items-end py-2">
+          <div class="flex-grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-52" @input="(val) => updateSettingsKey('timeFormat', val)" />
-            <span class="ml-2 text-yellow-400">{{ timeExample }}</span>
+            <p class="text-xs ml-1 text-warning text-opacity-60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ currentlyTime }}</p>
           </div>
+
 
           <div class="py-2">
             <ui-dropdown :label="$strings.LabelLanguageDefaultServer" ref="langDropdown" v-model="newServerSettings.language" :items="$languageCodeOptions" small class="max-w-52" @input="updateServerLanguage" />
@@ -302,6 +305,12 @@ export default {
     },
     timeFormats() {
       return this.$store.state.globals.timeFormats
+    },
+    currentlyDate() {
+      return this.$formatJsDate(new Date(), this.newServerSettings.dateFormat)
+    },
+    currentlyTime() {
+      return this.$formatJsTime(new Date(), this.newServerSettings.timeFormat)
     },
     dateExample() {
       const date = new Date(2014, 2, 25);
