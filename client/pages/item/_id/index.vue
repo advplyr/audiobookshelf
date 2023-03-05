@@ -319,7 +319,7 @@ export default {
       return this.libraryItem.isInvalid
     },
     isExplicit() {
-      return this.mediaMetadata.explicit || false;
+      return this.mediaMetadata.explicit || false
     },
     invalidAudioFiles() {
       if (!this.isBook) return []
@@ -759,9 +759,8 @@ export default {
     }
   },
   mounted() {
-    if (this.libraryItem.episodesDownloading) {
-      this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
-    }
+    this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
+    this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
     // use this items library id as the current
     if (this.libraryId) {

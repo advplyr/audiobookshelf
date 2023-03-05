@@ -36,8 +36,11 @@ class LibraryItemController {
           }).filter(au => au)
         }
       } else if (includeEntities.includes('downloads')) {
-        var downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
-        item.episodesDownloading = downloadsInQueue.map(d => d.toJSONForClient())
+        const downloadsInQueue = this.podcastManager.getEpisodeDownloadsInQueue(req.libraryItem.id)
+        item.episodeDownloadsQueued = downloadsInQueue.map(d => d.toJSONForClient())
+        if (this.podcastManager.currentDownload?.libraryItemId === req.libraryItem.id) {
+          item.episodesDownloading = [this.podcastManager.currentDownload.toJSONForClient()]
+        }
       }
 
       return res.json(item)

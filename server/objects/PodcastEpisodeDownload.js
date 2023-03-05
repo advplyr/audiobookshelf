@@ -8,9 +8,9 @@ class PodcastEpisodeDownload {
     this.podcastEpisode = null
     this.url = null
     this.libraryItem = null
+    this.libraryId = null
 
     this.isAutoDownload = false
-    this.isDownloading = false
     this.isFinished = false
     this.failed = false
 
@@ -22,15 +22,21 @@ class PodcastEpisodeDownload {
   toJSONForClient() {
     return {
       id: this.id,
-      episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.title : null,
+      episodeDisplayTitle: this.podcastEpisode?.title ?? null,
       url: this.url,
-      libraryItemId: this.libraryItem ? this.libraryItem.id : null,
-      isDownloading: this.isDownloading,
+      libraryItemId: this.libraryItem?.id || null,
+      libraryId: this.libraryId || null,
       isFinished: this.isFinished,
       failed: this.failed,
       startedAt: this.startedAt,
       createdAt: this.createdAt,
-      finishedAt: this.finishedAt
+      finishedAt: this.finishedAt,
+      podcastTitle: this.libraryItem?.media.metadata.title ?? null,
+      podcastExplicit: !!this.libraryItem?.media.metadata.explicit,
+      season: this.podcastEpisode?.season ?? null,
+      episode: this.podcastEpisode?.episode ?? null,
+      episodeType: this.podcastEpisode?.episodeType ?? 'full',
+      publishedAt: this.podcastEpisode?.publishedAt ?? null
     }
   }
 
@@ -47,13 +53,14 @@ class PodcastEpisodeDownload {
     return this.libraryItem ? this.libraryItem.id : null
   }
 
-  setData(podcastEpisode, libraryItem, isAutoDownload) {
+  setData(podcastEpisode, libraryItem, isAutoDownload, libraryId) {
     this.id = getId('epdl')
     this.podcastEpisode = podcastEpisode
     this.url = encodeURI(podcastEpisode.enclosure.url)
     this.libraryItem = libraryItem
     this.isAutoDownload = isAutoDownload
     this.createdAt = Date.now()
+    this.libraryId = libraryId
   }
 
   setFinished(success) {

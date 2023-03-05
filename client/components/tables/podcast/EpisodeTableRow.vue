@@ -2,9 +2,10 @@
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="episode" class="flex items-center cursor-pointer" :class="{ 'opacity-70': isSelected || selectionMode }" @click="clickedEpisode">
       <div class="flex-grow px-2">
-        <p class="text-sm font-semibold">
-          {{ title }}
-        </p>
+        <div class="flex items-center">
+          <span class="text-sm font-semibold">{{ title }}</span>
+          <widgets-podcast-type-indicator :type="episode.episodeType" />
+        </div>
 
         <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ subtitle }}</p>
 
