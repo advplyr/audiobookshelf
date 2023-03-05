@@ -16,6 +16,7 @@
     "@nuxtjs/axios": "^5.13.6",
     "@nuxtjs/proxy": "^2.1.0",
     "core-js": "^3.16.0",
+    "cron-parser": "^4.7.1",
     "date-fns": "^2.25.0",
     "epubjs": "^0.3.88",
     "hls.js": "^1.0.7",

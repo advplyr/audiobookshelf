@@ -9,10 +9,17 @@
       </div>
 
       <div v-if="enableBackups" class="mb-6">
-        <div class="flex items-center pl-6">
-          <span class="material-icons-outlined text-2xl text-black-50">schedule</span>
-          <p class="text-gray-100 px-2">{{ scheduleDescription }}</p>
-          <span class="material-icons text-lg text-black-50 hover:text-yellow-500 cursor-pointer" @click="showCronBuilder = !showCronBuilder">edit</span>
+        <div class="flex items-center pl-6 mb-2">
+          <span class="material-icons-outlined text-2xl text-black-50 mr-2">schedule</span>
+          <div class="w-48"><span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.HeaderSchedule }}:</span></div>
+          <div class="text-gray-100">{{ scheduleDescription }}</div>
+          <span class="material-icons text-lg text-black-50 hover:text-yellow-500 cursor-pointer ml-2" @click="showCronBuilder = !showCronBuilder">edit</span>
+        </div>
+
+        <div v-if="nextBackupDate" class="flex items-center pl-6 py-0.5 px-2">
+          <span class="material-icons-outlined text-2xl text-black-50 mr-2">event</span>
+          <div class="w-48"><span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNextBackupDate }}:</span></div>
+          <div class="text-gray-100">{{ nextBackupDate }}</div>
         </div>
       </div>
 
@@ -64,10 +71,21 @@ export default {
     serverSettings() {
       return this.$store.state.serverSettings
     },
+    dateFormat() {
+      return this.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.serverSettings.timeFormat
+    },
     scheduleDescription() {
       if (!this.cronExpression) return ''
       const parsed = this.$parseCronExpression(this.cronExpression)
-      return parsed ? parsed.description : 'Custom cron expression ' + this.cronExpression
+      return parsed ? parsed.description : `${this.$strings.LabelCustomCronExpression} ${this.cronExpression}`
+    },
+    nextBackupDate() {
+      if (!this.cronExpression) return ''
+      const parsed = this.$getNextScheduledDate(this.cronExpression)
+      return this.$formatJsDatetime(parsed, this.dateFormat, this.timeFormat) || ''
     }
   },
   methods: {
@@ -90,15 +108,15 @@ export default {
     updateServerSettings(payload) {
       this.updatingServerSettings = true
       this.$store
-        .dispatch('updateServerSettings', payload)
-        .then((success) => {
-          console.log('Updated Server Settings', success)
-          this.updatingServerSettings = false
-        })
-        .catch((error) => {
-          console.error('Failed to update server settings', error)
-          this.updatingServerSettings = false
-        })
+          .dispatch('updateServerSettings', payload)
+          .then((success) => {
+            console.log('Updated Server Settings', success)
+            this.updatingServerSettings = false
+          })
+          .catch((error) => {
+            console.error('Failed to update server settings', error)
+            this.updatingServerSettings = false
+          })
     },
     initServerSettings() {
       this.newServerSettings = this.serverSettings ? { ...this.serverSettings } : {}

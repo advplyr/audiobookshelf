@@ -12,7 +12,7 @@
         <div class="flex justify-between pt-2 max-w-xl">
           <p v-if="episode.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
           <p v-if="episode.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
-          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
+          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, dateFormat) }}</p>
         </div>
 
         <div class="flex items-center pt-2">
@@ -129,6 +129,9 @@ export default {
     },
     publishedAt() {
       return this.episode.publishedAt
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
     }
   },
   methods: {

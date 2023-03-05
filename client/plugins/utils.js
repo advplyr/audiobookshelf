@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import cronParser from 'cron-parser'
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
@@ -134,6 +135,11 @@ Vue.prototype.$parseCronExpression = (expression) => {
   return {
     description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
   }
+}
+
+Vue.prototype.$getNextScheduledDate = (expression) => {
+  const interval = cronParser.parseExpression(expression);
+  return interval.next().toDate()
 }
 
 export function supplant(str, subs) {
