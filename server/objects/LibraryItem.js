@@ -336,6 +336,7 @@ class LibraryItem {
     }
 
     if (dataFound.ino !== this.ino) {
+      Logger.warn(`[LibraryItem] Check scan item changed inode "${this.ino}" -> "${dataFound.ino}"`)
       this.ino = dataFound.ino
       hasUpdated = true
     }
@@ -347,7 +348,7 @@ class LibraryItem {
     }
 
     if (dataFound.path !== this.path) {
-      Logger.warn(`[LibraryItem] Check scan item changed path "${this.path}" -> "${dataFound.path}"`)
+      Logger.warn(`[LibraryItem] Check scan item changed path "${this.path}" -> "${dataFound.path}" (inode ${this.ino})`)
       this.path = dataFound.path
       this.relPath = dataFound.relPath
       hasUpdated = true
