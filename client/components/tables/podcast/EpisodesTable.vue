@@ -287,6 +287,8 @@ export default {
       this.showPodcastRemoveModal = true
     },
     editEpisode(episode) {
+      const episodeIds = this.episodesSorted.map((e) => e.id)
+      this.$store.commit('setEpisodeTableEpisodeIds', episodeIds)
       this.$store.commit('setSelectedLibraryItem', this.libraryItem)
       this.$store.commit('globals/setSelectedEpisode', episode)
       this.$store.commit('globals/setShowEditPodcastEpisodeModal', true)

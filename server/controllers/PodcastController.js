@@ -225,6 +225,20 @@ class PodcastController {
     res.json(libraryItem.toJSONExpanded())
   }
 
+  // GET: api/podcasts/:id/episode/:episodeId
+  async getEpisode(req, res) {
+    const episodeId = req.params.episodeId
+    const libraryItem = req.libraryItem
+
+    const episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      Logger.error(`[PodcastController] getEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      return res.sendStatus(404)
+    }
+
+    res.json(episode)
+  }
+
   // DELETE: api/podcasts/:id/episode/:episodeId
   async removeEpisode(req, res) {
     var episodeId = req.params.episodeId
