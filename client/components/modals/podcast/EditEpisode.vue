@@ -48,7 +48,7 @@ export default {
     show: {
       handler(newVal) {
         if (newVal) {
-          const availableTabIds = this.tabs.map((tab) => tab.id);
+          const availableTabIds = this.tabs.map((tab) => tab.id)
           if (!availableTabIds.length) {
             this.show = false
             return
@@ -94,11 +94,10 @@ export default {
       return this.episode.id
     },
     title() {
-      if (!this.libraryItem) return ''
-      return this.libraryItem.media.metadata.title || 'Unknown'
+      return this.libraryItem?.media.metadata.title || 'Unknown'
     },
     tabComponentName() {
-      const _tab = this.tabs.find((t) => t.id === this.selectedTab);
+      const _tab = this.tabs.find((t) => t.id === this.selectedTab)
       return _tab ? _tab.component : ''
     },
     episodeTableEpisodeIds() {
@@ -118,19 +117,17 @@ export default {
   methods: {
     async goPrevEpisode() {
       if (this.currentEpisodeIndex - 1 < 0) return
-      const prevEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex - 1];
+      const prevEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex - 1]
       this.processing = true
       const prevEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${prevEpisodeId}`).catch((error) => {
-        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch episode';
+        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch episode'
         this.$toast.error(errorMsg)
         return null
-      });
+      })
       this.processing = false
       if (prevEpisode) {
-        this.unregisterListeners()
         this.episodeItem = prevEpisode
         this.$store.commit('globals/setSelectedEpisode', prevEpisode)
-        this.$nextTick(this.registerListeners)
       } else {
         console.error('Episode not found', prevEpisodeId)
       }
@@ -138,18 +135,16 @@ export default {
     async goNextEpisode() {
       if (this.currentEpisodeIndex >= this.episodeTableEpisodeIds.length - 1) return
       this.processing = true
-      const nextEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex + 1];
+      const nextEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex + 1]
       const nextEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${nextEpisodeId}`).catch((error) => {
-        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book';
+        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
         this.$toast.error(errorMsg)
         return null
-      });
+      })
       this.processing = false
       if (nextEpisode) {
-        this.unregisterListeners()
         this.episodeItem = nextEpisode
         this.$store.commit('globals/setSelectedEpisode', nextEpisode)
-        this.$nextTick(this.registerListeners)
       } else {
         console.error('Episode not found', nextEpisodeId)
       }
@@ -160,9 +155,6 @@ export default {
         this.selectedTab = tab
         this.processing = false
       }
-    },
-    libraryItemUpdated(expandedLibraryItem) {
-      this.libraryItem = expandedLibraryItem
     },
     init() {
       this.fetchFull()
@@ -187,11 +179,9 @@ export default {
     },
     registerListeners() {
       this.$eventBus.$on('modal-hotkey', this.hotkey)
-      this.$eventBus.$on(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
     },
     unregisterListeners() {
       this.$eventBus.$off('modal-hotkey', this.hotkey)
-      this.$eventBus.$off(`${this.selectedLibraryItemId}_updated`, this.libraryItemUpdated)
     }
   },
   mounted() {},

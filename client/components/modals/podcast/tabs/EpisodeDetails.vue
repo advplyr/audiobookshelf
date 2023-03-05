@@ -148,15 +148,12 @@ export default {
     },
     async updateDetails(updatedDetails) {
       this.isProcessing = true
-      const updateResult = await this.$axios
-          .$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, updatedDetails)
-          .catch((error) => {
-            const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to update episode';
-            console.error('Failed update episode', error)
-            this.isProcessing = false
-            this.$toast.error(errorMsg)
-            return false
-          });
+      const updateResult = await this.$axios.$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, updatedDetails).catch((error) => {
+        console.error('Failed update episode', error)
+        this.isProcessing = false
+        this.$toast.error(error?.response?.data || 'Failed to update episode')
+        return false
+      })
 
       this.isProcessing = false
       if (updateResult) {
