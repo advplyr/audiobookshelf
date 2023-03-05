@@ -3,10 +3,9 @@
     <app-book-shelf-toolbar page="podcast-search" />
 
     <div id="bookshelf" class="w-full overflow-y-auto px-2 py-6 sm:px-4 md:p-12 relative">
-
-      <div class="w-full max-w-3xl mx-auto py-4">
+      <div class="w-full max-w-5xl mx-auto py-4">
         <p class="text-xl mb-2 font-semibold px-4 md:px-0">{{ $strings.HeaderCurrentDownloads }}</p>
-        <p v-if="!episodesDownloading.length" class="text-center text-xl">{{ $strings.MessageNoDownloadsInProgress }}</p>
+        <p v-if="!episodesDownloading.length" class="text-lg py-4">{{ $strings.MessageNoDownloadsInProgress }}</p>
         <template v-for="episode in episodesDownloading">
           <div :key="episode.id" class="flex py-5 relative">
             <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](episode.libraryItemId)" :width="96" :book-cover-aspect-ratio="bookCoverAspectRatio" :show-resolution="false" class="hidden md:block" />
@@ -46,17 +45,15 @@
             </div>
           </div>
         </template>
-      </div>
 
-      <tables-podcast-download-queue-table :queue="episodeDownloadsQueued"></tables-podcast-download-queue-table>
+        <tables-podcast-download-queue-table v-if="episodeDownloadsQueued.length" :queue="episodeDownloadsQueued"></tables-podcast-download-queue-table>
+      </div>
     </div>
   </div>
 </template>
-<script>
-import DownloadQueueTable from "~/components/tables/podcast/DownloadQueueTable.vue";
 
+<script>
 export default {
-  components: {DownloadQueueTable},
   async asyncData({ params, redirect }) {
     if (!params.library) {
       console.error('No library...', params.library)
@@ -70,7 +67,7 @@ export default {
     return {
       episodesDownloading: [],
       episodeDownloadsQueued: [],
-      processing: false,
+      processing: false
     }
   },
   computed: {
@@ -99,35 +96,45 @@ export default {
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
       }
     },
-    downloadQueueUpdated(downloadQueue) {
-      this.episodeDownloadsQueued = downloadQueue.filter((q) => q.libraryId == this.libraryId)
+    episodeDownloadQueueUpdated(downloadQueueDetails) {
+      this.episodeDownloadsQueued = downloadQueueDetails.queue.filter((q) => q.libraryId == this.libraryId)
     },
     async loadInitialDownloadQueue() {
       this.processing = true
-      const queuePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/downloads`).catch((error) => {
+      const queuePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/episode-downloads`).catch((error) => {
         console.error('Failed to get download queue', error)
         this.$toast.error('Failed to get download queue')
         return null
       })
       this.processing = false
-      this.episodeDownloadsQueued = queuePayload || []
+      this.episodeDownloadsQueued = queuePayload?.queue || []
+
+      if (queuePayload?.currentDownload) {
+        this.episodesDownloading.push(queuePayload.currentDownload)
+      }
+
+      // Initialize listeners after load to prevent event race conditions
+      this.initListeners()
+    },
+    initListeners() {
+      this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
+      this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
+      this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
+      this.$root.socket.on('episode_download_queue_updated', this.episodeDownloadQueueUpdated)
     }
   },
   mounted() {
     if (this.libraryId) {
       this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
     }
+
     this.loadInitialDownloadQueue()
-    this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
-    this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)
-    this.$root.socket.on('episode_download_finished', this.episodeDownloadFinished)
-    this.$root.socket.on('download_queue_updated', this.downloadQueueUpdated)
   },
   beforeDestroy() {
     this.$root.socket.off('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.off('episode_download_started', this.episodeDownloadStarted)
     this.$root.socket.off('episode_download_finished', this.episodeDownloadFinished)
-    this.$root.socket.off('download_queue_updated', this.downloadQueueUpdated)
+    this.$root.socket.off('episode_download_queue_updated', this.episodeDownloadQueueUpdated)
   }
 }
 </script>

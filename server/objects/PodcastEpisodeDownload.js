@@ -11,7 +11,6 @@ class PodcastEpisodeDownload {
     this.libraryId = null
 
     this.isAutoDownload = false
-    this.isDownloading = false
     this.isFinished = false
     this.failed = false
 
@@ -23,20 +22,21 @@ class PodcastEpisodeDownload {
   toJSONForClient() {
     return {
       id: this.id,
-      episodeDisplayTitle: this.podcastEpisode ? this.podcastEpisode.title : null,
+      episodeDisplayTitle: this.podcastEpisode?.title ?? null,
       url: this.url,
-      libraryItemId: this.libraryItem ? this.libraryItem.id : null,
+      libraryItemId: this.libraryItem?.id || null,
       libraryId: this.libraryId || null,
-      isDownloading: this.isDownloading,
       isFinished: this.isFinished,
       failed: this.failed,
       startedAt: this.startedAt,
       createdAt: this.createdAt,
       finishedAt: this.finishedAt,
-      season: this.podcastEpisode ? this.podcastEpisode.season : null,
-      episode: this.podcastEpisode ? this.podcastEpisode.episode : null,
-      episodeType: this.podcastEpisode ? this.podcastEpisode.episodeType : 'full',
-      publishedAt: this.podcastEpisode ? this.podcastEpisode.publishedAt : null
+      podcastTitle: this.libraryItem?.media.metadata.title ?? null,
+      podcastExplicit: !!this.libraryItem?.media.metadata.explicit,
+      season: this.podcastEpisode?.season ?? null,
+      episode: this.podcastEpisode?.episode ?? null,
+      episodeType: this.podcastEpisode?.episodeType ?? 'full',
+      publishedAt: this.podcastEpisode?.publishedAt ?? null
     }
   }
 

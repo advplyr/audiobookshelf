@@ -10,7 +10,7 @@
       <div class="w-full">
         <table class="text-sm tracksTable">
           <tr>
-            <th class="text-left px-4">{{ $strings.LabelPodcast }}</th>
+            <th class="text-left px-4 min-w-48">{{ $strings.LabelPodcast }}</th>
             <th class="text-left w-32 min-w-32">{{ $strings.LabelEpisode }}</th>
             <th class="text-left px-4">{{ $strings.LabelEpisodeTitle }}</th>
             <th class="text-left px-4 w-48">{{ $strings.LabelPubDate }}</th>
@@ -58,11 +58,8 @@ export default {
   data() {
     return {}
   },
-  computed: {
-  },
-  methods: {
-  },
-  mounted() {
-  }
+  computed: {},
+  methods: {},
+  mounted() {}
 }
 </script>

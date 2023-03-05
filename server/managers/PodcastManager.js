@@ -14,8 +14,7 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
-const Task = require("../objects/Task");
-const Path = require("path");
+const Task = require("../objects/Task")
 
 class PodcastManager {
   constructor(db, watcher, notificationManager, taskManager) {
@@ -60,12 +59,12 @@ class PodcastManager {
       newPe.libraryItemId = libraryItem.id
       var newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
-      this.startPodcastEpisodeDownload(newPeDl, libraryItem)
+      this.startPodcastEpisodeDownload(newPeDl)
     })
   }
 
-  async startPodcastEpisodeDownload(podcastEpisodeDownload, libraryItem) {
-    SocketAuthority.emitter('download_queue_updated', this.getDownloadQueueDetails())
+  async startPodcastEpisodeDownload(podcastEpisodeDownload) {
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
@@ -75,8 +74,8 @@ class PodcastManager {
     const task = new Task()
     const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
     const taskData = {
-      libraryId: libraryItem.libraryId,
-      libraryItemId: libraryItem.id,
+      libraryId: podcastEpisodeDownload.libraryId,
+      libraryItemId: podcastEpisodeDownload.libraryItemId,
     }
     task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, taskData)
     this.taskManager.addTask(task)
@@ -94,7 +93,7 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    var success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+    let success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
       Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
       return false
     })
@@ -117,12 +116,12 @@ class PodcastManager {
     this.taskManager.taskFinished(task)
 
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
-    SocketAuthority.emitter('download_queue_updated', this.getDownloadQueueDetails())
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
     if (this.downloadQueue.length) {
-      this.startPodcastEpisodeDownload(this.downloadQueue.shift(), libraryItem)
+      this.startPodcastEpisodeDownload(this.downloadQueue.shift())
     }
   }
 
@@ -349,21 +348,14 @@ class PodcastManager {
     }
   }
 
-  getDownloadQueueDetails() {
-    return this.downloadQueue.map(item => {
-      return {
-        id: item.id,
-        libraryId: item.libraryId || null,
-        libraryItemId: item.libraryItemId || null,
-        podcastTitle: item.libraryItem.media.metadata.title || null,
-        podcastExplicit: item.libraryItem.media.metadata.explicit || false,
-        episodeDisplayTitle: item.podcastEpisode.title || null,
-        season: item.podcastEpisode.season || null,
-        episode: item.podcastEpisode.episode || null,
-        episodeType: item.podcastEpisode.episodeType || 'full',
-        publishedAt: item.podcastEpisode.publishedAt || null
-      }
-    })
+  getDownloadQueueDetails(libraryId = null) {
+    let _currentDownload = this.currentDownload
+    if (libraryId && _currentDownload?.libraryId !== libraryId) _currentDownload = null
+
+    return {
+      currentDownload: _currentDownload?.toJSONForClient(),
+      queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
+    }
   }
 }
 module.exports = PodcastManager

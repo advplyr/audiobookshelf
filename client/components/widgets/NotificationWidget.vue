@@ -14,8 +14,8 @@
             <template v-if="tasksRunningOrFailed.length">
               <p class="uppercase text-xs text-gray-400 my-1 px-1 font-semibold">{{ $strings.LabelTasks }}</p>
               <template v-for="task in tasksRunningOrFailed">
-                <nuxt-link v-if="actionLink(task)" :to="actionLink(task)">
-                  <li :key="task.id" class="text-gray-50 select-none relative hover:bg-black-400 py-1 cursor-pointer">
+                <nuxt-link :key="task.id" v-if="actionLink(task)" :to="actionLink(task)">
+                  <li class="text-gray-50 select-none relative hover:bg-black-400 py-1 cursor-pointer">
                     <cards-item-task-running-card :task="task" />
                   </li>
                 </nuxt-link>
