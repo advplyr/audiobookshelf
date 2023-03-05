@@ -95,19 +95,22 @@ class FeedEpisode {
     this.fullPath = episode.audioFile.metadata.path
   }
 
-  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, additionalOffset = 0) {
+  setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, additionalOffset = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     let timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
+    let episodeId = String(audioTrack.index)
 
     // Additional offset can be used for collections/series
-    if (additionalOffset && !isNaN(additionalOffset)) {
+    if (additionalOffset !== null && !isNaN(additionalOffset)) {
       timeOffset += Number(additionalOffset) * 1000
+
+      episodeId = String(additionalOffset) + '-' + episodeId
     }
 
     // e.g. Track 1 will have a pub date before Track 2
     const audiobookPubDate = date.format(new Date(libraryItem.addedAt + timeOffset), 'ddd, DD MMM YYYY HH:mm:ss [GMT]')
 
-    const contentUrl = `/feed/${slug}/item/${audioTrack.index}/${audioTrack.metadata.filename}`
+    const contentUrl = `/feed/${slug}/item/${episodeId}/${audioTrack.metadata.filename}`
     const media = libraryItem.media
     const mediaMetadata = media.metadata
 
@@ -122,7 +125,7 @@ class FeedEpisode {
       }
     }
 
-    this.id = String(audioTrack.index)
+    this.id = episodeId
     this.title = title
     this.description = mediaMetadata.description || ''
     this.enclosure = {
@@ -157,9 +160,9 @@ class FeedEpisode {
         {
           "itunes:explicit": !!this.explicit
         },
-        {"itunes:episodeType": this.episodeType},
-        {"itunes:season": this.season},
-        {"itunes:episode": this.episode}
+        { "itunes:episodeType": this.episodeType },
+        { "itunes:season": this.season },
+        { "itunes:episode": this.episode }
       ]
     }
   }

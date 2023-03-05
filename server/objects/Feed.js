@@ -77,6 +77,7 @@ class Feed {
 
   getEpisodePath(id) {
     var episode = this.episodes.find(ep => ep.id === id)
+    console.log('getEpisodePath=', id, episode)
     if (!episode) return null
     return episode.fullPath
   }
