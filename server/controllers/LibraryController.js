@@ -234,6 +234,16 @@ class LibraryController {
     if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
     if (filterSeries && !payload.sortBy) {
       sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
+      // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
+      sortArray.push({
+        asc: (li) => {
+          if (this.db.serverSettings.sortingIgnorePrefix) {
+            return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+          } else {
+            return li.collapsedSeries?.name || li.media.metadata.title
+          }
+        }
+      })
     }
 
     if (payload.sortBy) {
