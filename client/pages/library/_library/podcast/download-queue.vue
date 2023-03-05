@@ -57,6 +57,15 @@ import DownloadQueueTable from "~/components/tables/podcast/DownloadQueueTable.v
 
 export default {
   components: {DownloadQueueTable},
+  async asyncData({ params, redirect }) {
+    if (!params.library) {
+      console.error('No library...', params.library)
+      return redirect('/')
+    }
+    return {
+      libraryId: params.library
+    }
+  },
   data() {
     return {
       episodesDownloading: [],
@@ -70,45 +79,44 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
-    },
-    currentLibraryId() {
-      return this.$store.state.libraries.currentLibraryId
     }
   },
   methods: {
     episodeDownloadQueued(episodeDownload) {
-      if (episodeDownload.libraryId === this.currentLibraryId) {
+      if (episodeDownload.libraryId === this.libraryId) {
         this.episodeDownloadsQueued.push(episodeDownload)
       }
     },
     episodeDownloadStarted(episodeDownload) {
-      if (episodeDownload.libraryId === this.currentLibraryId) {
+      if (episodeDownload.libraryId === this.libraryId) {
         this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
         this.episodesDownloading.push(episodeDownload)
       }
     },
     episodeDownloadFinished(episodeDownload) {
-      if (episodeDownload.libraryId === this.currentLibraryId) {
+      if (episodeDownload.libraryId === this.libraryId) {
         this.episodeDownloadsQueued = this.episodeDownloadsQueued.filter((d) => d.id !== episodeDownload.id)
         this.episodesDownloading = this.episodesDownloading.filter((d) => d.id !== episodeDownload.id)
       }
     },
     downloadQueueUpdated(downloadQueue) {
-      this.episodeDownloadsQueued = downloadQueue.filter((q) => q.libraryId == this.currentLibraryId)
+      this.episodeDownloadsQueued = downloadQueue.filter((q) => q.libraryId == this.libraryId)
     },
     async loadInitialDownloadQueue() {
       this.processing = true
-      const queuePayload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/downloads`).catch((error) => {
+      const queuePayload = await this.$axios.$get(`/api/libraries/${this.libraryId}/downloads`).catch((error) => {
         console.error('Failed to get download queue', error)
         this.$toast.error('Failed to get download queue')
         return null
       })
       this.processing = false
-      console.log('Episodes', queuePayload)
       this.episodeDownloadsQueued = queuePayload || []
     }
   },
   mounted() {
+    if (this.libraryId) {
+      this.$store.commit('libraries/setCurrentLibrary', this.libraryId)
+    }
     this.loadInitialDownloadQueue()
     this.$root.socket.on('episode_download_queued', this.episodeDownloadQueued)
     this.$root.socket.on('episode_download_started', this.episodeDownloadStarted)

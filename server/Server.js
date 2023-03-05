@@ -72,7 +72,7 @@ class Server {
     this.abMergeManager = new AbMergeManager(this.db, this.taskManager)
     this.playbackSessionManager = new PlaybackSessionManager(this.db)
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager)
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager, this.taskManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager)
     this.rssFeedManager = new RssFeedManager(this.db)
     this.eBookManager = new EBookManager(this.db)
