@@ -296,7 +296,7 @@ class Book {
                 })
               }
             } else if (key === 'narrators') {
-              if (opfMetadata.narrators && opfMetadata.narrators.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
+              if (opfMetadata.narrators?.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload.narrators = opfMetadata.narrators
               }
             } else if (key === 'series') {

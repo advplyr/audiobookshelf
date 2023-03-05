@@ -111,7 +111,7 @@ function fetchVolumeNumber(metadataMeta) {
 
 function fetchNarrators(creators, metadata) {
   const narrators = fetchCreators(creators, 'nrt')
-  if (typeof metadata.meta == "undefined" || narrators.length) return narrators
+  if (narrators?.length) return narrators
   try {
     const narratorsJSON = JSON.parse(fetchTagString(metadata.meta, "calibre:user_metadata:#narrators").replace(/&quot;/g, '"'))
     return narratorsJSON["#value#"]
@@ -150,7 +150,7 @@ module.exports.parseOpfMetadataXML = async (xml) => {
   const metadataMeta = prefix ? metadata[`${prefix}:meta`] || metadata.meta : metadata.meta
 
   metadata.meta = {}
-  if (metadataMeta && metadataMeta.length) {
+  if (metadataMeta?.length) {
     metadataMeta.forEach((meta) => {
       if (meta && meta['$'] && meta['$'].name) {
         metadata.meta[meta['$'].name] = [meta['$'].content || '']
