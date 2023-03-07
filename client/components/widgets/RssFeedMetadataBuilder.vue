@@ -19,10 +19,10 @@
           <ui-checkbox v-model="preventIndexing" :label="$strings.LabelPreventIndexing" checkbox-bg="primary" border-color="gray-600" label-class="pl-2" />
         </div>
         <div class="w-full relative mb-1">
-          <ui-text-input-with-label v-model="ownerName" :label="$strings.LabelRssFeedCustomOwnerName" />
+          <ui-text-input-with-label v-model="ownerName" :label="$strings.LabelRSSFeedCustomOwnerName" />
         </div>
         <div class="w-full relative mb-1">
-          <ui-text-input-with-label v-model="ownerEmail" :label="$strings.LabelRssFeedCustomOwnerEmail" />
+          <ui-text-input-with-label v-model="ownerEmail" :label="$strings.LabelRSSFeedCustomOwnerEmail" />
         </div>
       </template>
     </div>
@@ -84,9 +84,7 @@ export default {
       }
     }
   },
-  methods: {
-  },
-  mounted() {
-  }
+  methods: {},
+  mounted() {}
 }
 </script>

@@ -17,16 +17,22 @@
 
         <div v-if="currentFeed.meta" class="mt-5">
           <div class="flex py-0.5">
-            <div class="w-48"><span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRssFeedPreventIndexing }}</span></div>
-            <div> {{ currentFeed.meta.preventIndexing ? 'Yes' : 'No' }} </div>
+            <div class="w-48">
+              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedPreventIndexing }}</span>
+            </div>
+            <div>{{ currentFeed.meta.preventIndexing ? 'Yes' : 'No' }}</div>
           </div>
           <div v-if="currentFeed.meta.ownerName" class="flex py-0.5">
-            <div class="w-48"><span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRssFeedCustomOwnerName }}</span></div>
-            <div> {{ currentFeed.meta.ownerName }} </div>
+            <div class="w-48">
+              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerName }}</span>
+            </div>
+            <div>{{ currentFeed.meta.ownerName }}</div>
           </div>
           <div v-if="currentFeed.meta.ownerEmail" class="flex py-0.5">
-            <div class="w-48"><span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRssFeedCustomOwnerEmail }}</span></div>
-            <div> {{ currentFeed.meta.ownerEmail }} </div>
+            <div class="w-48">
+              <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelRSSFeedCustomOwnerEmail }}</span>
+            </div>
+            <div>{{ currentFeed.meta.ownerEmail }}</div>
           </div>
         </div>
       </div>
@@ -62,7 +68,7 @@ export default {
         preventIndexing: true,
         ownerName: '',
         ownerEmail: ''
-      },
+      }
     }
   },
   watch: {
