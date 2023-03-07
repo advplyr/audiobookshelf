@@ -353,7 +353,7 @@
   "LabelSettingsHomePageBookshelfView": "La pagina de inicio usa la vista de librero",
   "LabelSettingsLibraryBookshelfView": "La biblioteca usa la vista de librero",
   "LabelSettingsOverdriveMediaMarkers": "Usar Markers de multimedia en Overdrive para estos capítulos",
-  "LabelSettingsOverdriveMediaMarkersHelp": "MP3 files from Overdrive come with chapter timings embedded as custom metadata. Enabling this will use these tags for chapter timings automatically",
+  "LabelSettingsOverdriveMediaMarkersHelp": "Archivos MP3 de Overdrive vienen con capítulos con tiempos incrustados como metadata personalizada. Habilitar esto utilizará estas etiquetas para los tiempos de los capítulos automáticamente.",
   "LabelSettingsParseSubtitles": "Parse subtitles",
   "LabelSettingsParseSubtitlesHelp": "Extraiga subtítulos de los nombres de las carpetas de los audiolibros.<br>Los subtítulos deben estar separados por \" - \"<br>ejemplo. \"Titulo Libro - Este Subtitulo\" tiene el subtitulo \"Este Subtitulo\"",
   "LabelSettingsPreferAudioMetadata": "Preferir metadata del audio",
