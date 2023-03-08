@@ -35,7 +35,9 @@
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "node-tone": "^1.0.1",
+    "sequelize": "^6.29.1",
     "socket.io": "^4.5.4",
+    "sqlite3": "^5.1.4",
     "xml2js": "^0.4.23"
   },
   "devDependencies": {

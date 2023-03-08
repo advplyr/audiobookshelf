@@ -17,6 +17,7 @@ const Auth = require('./Auth')
 const Watcher = require('./Watcher')
 const Scanner = require('./scanner/Scanner')
 const Db = require('./Db')
+const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
 
 const ApiRouter = require('./routers/ApiRouter')
@@ -109,6 +110,10 @@ class Server {
     } else {
       await this.db.init()
     }
+
+    // TODO: Test new db connection
+    await Database.init()
+    await Database.createTestUser()
 
     // Create token secret if does not exist (Added v2.1.0)
     if (!this.db.serverSettings.tokenSecret) {

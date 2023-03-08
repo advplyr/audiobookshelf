@@ -14,7 +14,10 @@ RUN apk update && \
     apk add --no-cache --update \
     curl \
     tzdata \
-    ffmpeg
+    ffmpeg \
+    make \
+    python3 \
+    g++
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
@@ -22,6 +25,8 @@ COPY index.js package* /
 COPY server server
 
 RUN npm ci --only=production
+
+RUN apk del make python3 g++
 
 EXPOSE 80
 HEALTHCHECK \
