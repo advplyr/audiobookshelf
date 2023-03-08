@@ -105,8 +105,10 @@
     </div>
 
     <!-- Podcast Episode # -->
-    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
+    <div v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">
+        Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
+      </p>
     </div>
 
     <!-- Podcast Num Episodes -->
@@ -242,7 +244,7 @@ export default {
       if (this.recentEpisode.episode) {
         return this.recentEpisode.episode.replace(/^#/, '')
       }
-      return this.recentEpisode.index
+      return ''
     },
     collapsedSeries() {
       // Only added to item object when collapseSeries is enabled
