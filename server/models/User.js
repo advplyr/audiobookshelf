@@ -10,6 +10,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     username: DataTypes.STRING,
+    email: DataTypes.STRING,
     pash: DataTypes.STRING,
     type: DataTypes.STRING,
     token: DataTypes.STRING,

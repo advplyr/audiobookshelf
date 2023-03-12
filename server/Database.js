@@ -62,6 +62,10 @@ class Database {
     require('./models/PodcastTag')(this.sequelize)
     require('./models/Collection')(this.sequelize)
     require('./models/CollectionBook')(this.sequelize)
+    require('./models/Playlist')(this.sequelize)
+    require('./models/PlaylistMediaItem')(this.sequelize)
+    require('./models/Device')(this.sequelize)
+    require('./models/PlaybackSession')(this.sequelize)
 
     return this.sequelize.sync()
   }

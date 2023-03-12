@@ -52,19 +52,18 @@ module.exports = (sequelize) => {
   AudioBookmark.addHook('afterFind', findResult => {
     if (!Array.isArray(findResult)) findResult = [findResult]
     for (const instance of findResult) {
-      if (instance.mediaItemType === 'book' && instance.book !== undefined) {
-        instance.mediaItem = instance.book
-      } else if (instance.mediaItemType === 'podcastEpisode' && instance.podcastEpisode !== undefined) {
-        instance.mediaItem = instance.podcastEpisode
+      if (instance.mediaItemType === 'book' && instance.Book !== undefined) {
+        instance.MediaItem = instance.Book
+      } else if (instance.mediaItemType === 'podcastEpisode' && instance.PodcastEpisode !== undefined) {
+        instance.MediaItem = instance.PodcastEpisode
       }
       // To prevent mistakes:
-      delete instance.book
-      delete instance.dataValues.book
-      delete instance.podcastEpisode
-      delete instance.dataValues.podcastEpisode
+      delete instance.Book
+      delete instance.dataValues.Book
+      delete instance.PodcastEpisode
+      delete instance.dataValues.PodcastEpisode
     }
   })
-
 
   User.hasMany(AudioBookmark)
   AudioBookmark.belongsTo(User)

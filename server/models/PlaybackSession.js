@@ -2,12 +2,8 @@ const { DataTypes, Model } = require('sequelize')
 
 const uppercaseFirst = str => `${str[0].toUpperCase()}${str.substr(1)}`
 
-/*
- * Polymorphic association: https://sequelize.org/docs/v6/advanced-association-concepts/polymorphic-associations/
- * Book has many MediaProgress. PodcastEpisode has many MediaProgress.
- */
 module.exports = (sequelize) => {
-  class MediaProgress extends Model {
+  class PlaybackSession extends Model {
     getMediaItem(options) {
       if (!this.mediaItemType) return Promise.resolve(null)
       const mixinMethodName = `get${uppercaseFirst(this.mediaItemType)}`
@@ -15,7 +11,7 @@ module.exports = (sequelize) => {
     }
   }
 
-  MediaProgress.init({
+  PlaybackSession.init({
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -23,36 +19,41 @@ module.exports = (sequelize) => {
     },
     mediaItemId: DataTypes.UUIDV4,
     mediaItemType: DataTypes.STRING,
+    displayTitle: DataTypes.STRING,
+    displayAuthor: DataTypes.STRING,
     duration: DataTypes.INTEGER,
+    playMethod: DataTypes.STRING,
+    mediaPlayer: DataTypes.STRING,
+    startTime: DataTypes.INTEGER,
     currentTime: DataTypes.INTEGER,
-    isFinished: DataTypes.BOOLEAN,
-    hideFromContinueListening: DataTypes.BOOLEAN,
-    finishedAt: DataTypes.DATE
+    timeListening: DataTypes.INTEGER,
+    serverVersion: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'MediaProgress'
+    modelName: 'PlaybackSession'
   })
 
-  const { Book, PodcastEpisode, User } = sequelize.models
-  Book.hasMany(MediaProgress, {
+  const { Book, PodcastEpisode, User, Device } = sequelize.models
+
+  Book.hasMany(PlaybackSession, {
     foreignKey: 'mediaItemId',
     constraints: false,
     scope: {
       mediaItemType: 'book'
     }
   })
-  MediaProgress.belongsTo(Book, { foreignKey: 'mediaItemId', constraints: false })
+  PlaybackSession.belongsTo(Book, { foreignKey: 'mediaItemId', constraints: false })
 
-  PodcastEpisode.hasMany(MediaProgress, {
+  PodcastEpisode.hasOne(PlaybackSession, {
     foreignKey: 'mediaItemId',
     constraints: false,
     scope: {
       mediaItemType: 'podcastEpisode'
     }
   })
-  MediaProgress.belongsTo(PodcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
+  PlaybackSession.belongsTo(PodcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
-  MediaProgress.addHook('afterFind', findResult => {
+  PlaybackSession.addHook('afterFind', findResult => {
     if (!Array.isArray(findResult)) findResult = [findResult]
     for (const instance of findResult) {
       if (instance.mediaItemType === 'book' && instance.Book !== undefined) {
@@ -68,8 +69,11 @@ module.exports = (sequelize) => {
     }
   })
 
-  User.hasMany(MediaProgress)
-  MediaProgress.belongsTo(User)
+  User.hasMany(PlaybackSession)
+  PlaybackSession.belongsTo(User)
 
-  return MediaProgress
+  Device.hasMany(PlaybackSession)
+  PlaybackSession.belongsTo(Device)
+
+  return PlaybackSession
 }
