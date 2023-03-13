@@ -462,13 +462,20 @@ class Book {
         })
       }
     } else if (includedAudioFiles.length > 1) {
+      const preferAudioMetadata = !!global.ServerSettings.scannerPreferAudioMetadata
+
       // Build chapters from audio files
       this.chapters = []
       let currChapterId = 0
       let currStartTime = 0
       includedAudioFiles.forEach((file) => {
         if (file.duration) {
-          const title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+          let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+
+          // When prefer audio metadata server setting is set then use ID3 title tag as long as it is not the same as the book title
+          if (preferAudioMetadata && file.metaTags?.tagTitle && file.metaTags?.tagTitle !== this.metadata.title) {
+            title = file.metaTags.tagTitle
+          }
 
           this.chapters.push({
             id: currChapterId++,
