@@ -51,8 +51,8 @@ export default {
       tooltip.style.zIndex = 100
       tooltip.style.backgroundColor = 'rgba(0,0,0,0.85)'
       tooltip.innerHTML = this.text
-      tooltip.addEventListener('mouseover', this.cancelHide);
-      tooltip.addEventListener('mouseleave', this.hideTooltip);
+      tooltip.addEventListener('mouseover', this.cancelHide)
+      tooltip.addEventListener('mouseleave', this.hideTooltip)
 
       this.setTooltipPosition(tooltip)
 
@@ -107,7 +107,7 @@ export default {
       this.isShowing = false
     },
     cancelHide() {
-      if (this.hideTimeout) clearTimeout(this.hideTimeout);
+      if (this.hideTimeout) clearTimeout(this.hideTimeout)
     },
     mouseover() {
       if (!this.isShowing) this.showTooltip()
