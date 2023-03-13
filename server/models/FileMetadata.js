@@ -19,6 +19,7 @@ module.exports = (sequelize) => {
     birthtime: DataTypes.DATE(6)
   }, {
     sequelize,
+    freezeTableName: true, // sequelize uses datum as singular of data
     modelName: 'FileMetadata'
   })
 

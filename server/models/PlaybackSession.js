@@ -35,6 +35,12 @@ module.exports = (sequelize) => {
 
   const { Book, PodcastEpisode, User, Device } = sequelize.models
 
+  User.hasMany(PlaybackSession)
+  PlaybackSession.belongsTo(User)
+
+  Device.hasMany(PlaybackSession)
+  PlaybackSession.belongsTo(Device)
+
   Book.hasMany(PlaybackSession, {
     foreignKey: 'mediaItemId',
     constraints: false,
@@ -68,12 +74,6 @@ module.exports = (sequelize) => {
       delete instance.dataValues.PodcastEpisode
     }
   })
-
-  User.hasMany(PlaybackSession)
-  PlaybackSession.belongsTo(User)
-
-  Device.hasMany(PlaybackSession)
-  PlaybackSession.belongsTo(Device)
 
   return PlaybackSession
 }

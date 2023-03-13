@@ -18,7 +18,7 @@ module.exports = (sequelize) => {
     description: DataTypes.TEXT,
     pubDate: DataTypes.STRING,
     enclosureURL: DataTypes.STRING,
-    enclosureLength: DataTypes.BIGINT,
+    enclosureSize: DataTypes.BIGINT,
     enclosureType: DataTypes.STRING,
     publishedAt: DataTypes.DATE
   }, {

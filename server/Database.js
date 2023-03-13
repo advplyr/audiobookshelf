@@ -66,6 +66,11 @@ class Database {
     require('./models/PlaylistMediaItem')(this.sequelize)
     require('./models/Device')(this.sequelize)
     require('./models/PlaybackSession')(this.sequelize)
+    require('./models/PlaybackSessionListenTime')(this.sequelize)
+    require('./models/Feed')(this.sequelize)
+    require('./models/FeedEpisode')(this.sequelize)
+    require('./models/Setting')(this.sequelize)
+    require('./models/LibrarySetting')(this.sequelize)
 
     return this.sequelize.sync()
   }

@@ -30,6 +30,10 @@ module.exports = (sequelize) => {
   })
 
   const { Book, PodcastEpisode, FileMetadata } = sequelize.models
+
+  FileMetadata.hasOne(AudioTrack)
+  AudioTrack.belongsTo(FileMetadata)
+
   Book.hasMany(AudioTrack, {
     foreignKey: 'mediaItemId',
     constraints: false,
@@ -63,9 +67,6 @@ module.exports = (sequelize) => {
       delete instance.dataValues.PodcastEpisode
     }
   })
-
-  FileMetadata.hasOne(AudioTrack)
-  AudioTrack.belongsTo(FileMetadata)
 
   return AudioTrack
 }
