@@ -107,7 +107,6 @@ module.exports.setDefaultDirSync = (path, silent = false) => {
   const uid = global.Uid
   const gid = global.Gid
   if (isNaN(uid) || isNaN(gid)) {
-    if (!silent) Logger.debug('Not modifying permissions since no uid/gid is specified')
     return true
   }
   if (!silent) Logger.debug(`[FilePerms] Setting dir permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
