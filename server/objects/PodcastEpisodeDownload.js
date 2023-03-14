@@ -56,7 +56,14 @@ class PodcastEpisodeDownload {
   setData(podcastEpisode, libraryItem, isAutoDownload, libraryId) {
     this.id = getId('epdl')
     this.podcastEpisode = podcastEpisode
-    this.url = encodeURI(podcastEpisode.enclosure.url)
+
+    const url = podcastEpisode.enclosure.url
+    if (decodeURIComponent(url) !== url) { // Already encoded
+      this.url = url
+    } else {
+      this.url = encodeURI(url)
+    }
+
     this.libraryItem = libraryItem
     this.isAutoDownload = isAutoDownload
     this.createdAt = Date.now()
