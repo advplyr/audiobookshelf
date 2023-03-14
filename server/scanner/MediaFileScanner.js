@@ -221,7 +221,7 @@ class MediaFileScanner {
   */
   async scanMediaFiles(mediaLibraryFiles, libraryItem, libraryScan = null) {
     const preferAudioMetadata = libraryScan ? !!libraryScan.preferAudioMetadata : !!global.ServerSettings.scannerPreferAudioMetadata
-    const preferOverdriveMediaMarker = libraryScan ? !!libraryScan.preferOverdriveMediaMarker : !!global.ServerSettings.scannerPreferOverdriveMediaMarker
+    const preferOverdriveMediaMarker = !!global.ServerSettings.scannerPreferOverdriveMediaMarker
 
     let hasUpdated = false
 
@@ -280,7 +280,7 @@ class MediaFileScanner {
         }
 
         if (hasUpdated) {
-          libraryItem.media.rebuildTracks(preferOverdriveMediaMarker)
+          libraryItem.media.rebuildTracks()
         }
       } else if (libraryItem.mediaType === 'podcast') { // Podcast Media Type
         const existingAudioFiles = mediaScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))
