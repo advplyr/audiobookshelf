@@ -11,8 +11,8 @@ module.exports = (sequelize) => {
     },
     index: DataTypes.INTEGER,
     title: DataTypes.STRING,
-    start: DataTypes.INTEGER,
-    end: DataTypes.INTEGER
+    start: DataTypes.FLOAT,
+    end: DataTypes.FLOAT
   }, {
     sequelize,
     modelName: 'BookChapter'

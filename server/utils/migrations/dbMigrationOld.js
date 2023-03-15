@@ -1,33 +1,33 @@
 const Path = require('path')
-const fs = require('../libs/fsExtra')
-const njodb = require('../libs/njodb')
+const fs = require('../../libs/fsExtra')
+const njodb = require('../../libs/njodb')
 
-const { SupportedEbookTypes } = require('./globals')
-const { PlayMethod } = require('./constants')
-const { getId } = require('./index')
-const { filePathToPOSIX } = require('./fileUtils')
-const Logger = require('../Logger')
+const { SupportedEbookTypes } = require('../globals')
+const { PlayMethod } = require('../constants')
+const { getId } = require('../index')
+const { filePathToPOSIX } = require('../fileUtils')
+const Logger = require('../../Logger')
 
-const Library = require('../objects/Library')
-const LibraryItem = require('../objects/LibraryItem')
-const Book = require('../objects/mediaTypes/Book')
+const Library = require('../../objects/Library')
+const LibraryItem = require('../../objects/LibraryItem')
+const Book = require('../../objects/mediaTypes/Book')
 
-const BookMetadata = require('../objects/metadata/BookMetadata')
-const FileMetadata = require('../objects/metadata/FileMetadata')
+const BookMetadata = require('../../objects/metadata/BookMetadata')
+const FileMetadata = require('../../objects/metadata/FileMetadata')
 
-const AudioFile = require('../objects/files/AudioFile')
-const EBookFile = require('../objects/files/EBookFile')
-const LibraryFile = require('../objects/files/LibraryFile')
-const AudioMetaTags = require('../objects/metadata/AudioMetaTags')
+const AudioFile = require('../../objects/files/AudioFile')
+const EBookFile = require('../../objects/files/EBookFile')
+const LibraryFile = require('../../objects/files/LibraryFile')
+const AudioMetaTags = require('../../objects/metadata/AudioMetaTags')
 
-const Author = require('../objects/entities/Author')
-const Series = require('../objects/entities/Series')
+const Author = require('../../objects/entities/Author')
+const Series = require('../../objects/entities/Series')
 
-const MediaProgress = require('../objects/user/MediaProgress')
-const PlaybackSession = require('../objects/PlaybackSession')
+const MediaProgress = require('../../objects/user/MediaProgress')
+const PlaybackSession = require('../../objects/PlaybackSession')
 
-const { isObject } = require('.')
-const User = require('../objects/user/User')
+const { isObject } = require('..')
+const User = require('../../objects/user/User')
 
 var authorsToAdd = []
 var existingDbAuthors = []

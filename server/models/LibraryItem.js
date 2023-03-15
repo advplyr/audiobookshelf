@@ -20,7 +20,7 @@ module.exports = (sequelize) => {
     ctime: DataTypes.DATE(6),
     birthtime: DataTypes.DATE(6),
     lastScan: DataTypes.DATE,
-    scanVersion: DataTypes.STRING
+    lastScanVersion: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'LibraryItem'

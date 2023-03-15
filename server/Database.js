@@ -8,6 +8,10 @@ class Database {
     this.sequelize = null
   }
 
+  get models() {
+    return this.sequelize?.models || {}
+  }
+
   async init() {
     if (!await this.connect()) {
       throw new Error('Database connection failed')
@@ -49,6 +53,8 @@ class Database {
     require('./models/LibraryFile')(this.sequelize)
     require('./models/Person')(this.sequelize)
     require('./models/AudioBookmark')(this.sequelize)
+    require('./models/MediaFile')(this.sequelize)
+    require('./models/MediaStream')(this.sequelize)
     require('./models/AudioTrack')(this.sequelize)
     require('./models/BookAuthor')(this.sequelize)
     require('./models/BookChapter')(this.sequelize)
@@ -71,8 +77,10 @@ class Database {
     require('./models/FeedEpisode')(this.sequelize)
     require('./models/Setting')(this.sequelize)
     require('./models/LibrarySetting')(this.sequelize)
+    require('./models/Notification')(this.sequelize)
+    require('./models/UserPermission')(this.sequelize)
 
-    return this.sequelize.sync()
+    return this.sequelize.sync({ force: false })
   }
 
   async createTestUser() {

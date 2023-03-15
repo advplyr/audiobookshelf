@@ -14,8 +14,14 @@ module.exports = (sequelize) => {
     pash: DataTypes.STRING,
     type: DataTypes.STRING,
     token: DataTypes.STRING,
-    isActive: DataTypes.BOOLEAN,
-    isLocked: DataTypes.BOOLEAN,
+    isActive: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
+    isLocked: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
+    },
     lastSeen: DataTypes.DATE
   }, {
     sequelize,

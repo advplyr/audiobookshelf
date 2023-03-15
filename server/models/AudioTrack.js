@@ -23,16 +23,21 @@ module.exports = (sequelize) => {
     },
     mediaItemId: DataTypes.UUIDV4,
     mediaItemType: DataTypes.STRING,
-    index: DataTypes.INTEGER
+    index: DataTypes.INTEGER,
+    startOffset: DataTypes.INTEGER,
+    duration: DataTypes.INTEGER,
+    title: DataTypes.STRING,
+    mimeType: DataTypes.STRING,
+    codec: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'AudioTrack'
   })
 
-  const { Book, PodcastEpisode, FileMetadata } = sequelize.models
+  const { Book, PodcastEpisode, MediaFile } = sequelize.models
 
-  FileMetadata.hasOne(AudioTrack)
-  AudioTrack.belongsTo(FileMetadata)
+  MediaFile.hasOne(AudioTrack)
+  AudioTrack.belongsTo(MediaFile)
 
   Book.hasMany(AudioTrack, {
     foreignKey: 'mediaItemId',

@@ -8,7 +8,8 @@ const rateLimit = require('./libs/expressRateLimit')
 const { version } = require('../package.json')
 
 // Utils
-const dbMigration = require('./utils/dbMigration')
+const dbMigration2 = require('./utils/migrations/dbMigrationOld')
+const dbMigration3 = require('./utils/migrations/dbMigration')
 const filePerms = require('./utils/filePerms')
 const fileUtils = require('./utils/fileUtils')
 const Logger = require('./Logger')
@@ -100,20 +101,21 @@ class Server {
     Logger.info('[Server] Init v' + version)
     await this.playbackSessionManager.removeOrphanStreams()
 
+    // TODO: Test new db connection
+    await Database.init()
+    await Database.createTestUser()
+    // await dbMigration3.migrate()
+
     const previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
     if (previousVersion) {
       Logger.debug(`[Server] Upgraded from previous version ${previousVersion}`)
     }
     if (previousVersion && previousVersion.localeCompare('2.0.0') < 0) { // Old version data model migration
       Logger.debug(`[Server] Previous version was < 2.0.0 - migration required`)
-      await dbMigration.migrate(this.db)
+      await dbMigration2.migrate(this.db)
     } else {
       await this.db.init()
     }
-
-    // TODO: Test new db connection
-    await Database.init()
-    await Database.createTestUser()
 
     // Create token secret if does not exist (Added v2.1.0)
     if (!this.db.serverSettings.tokenSecret) {

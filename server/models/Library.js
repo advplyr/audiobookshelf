@@ -15,7 +15,7 @@ module.exports = (sequelize) => {
     mediaType: DataTypes.STRING,
     provider: DataTypes.STRING,
     lastScan: DataTypes.DATE,
-    scanVersion: DataTypes.STRING
+    lastScanVersion: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Library'
