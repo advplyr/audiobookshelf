@@ -178,11 +178,15 @@ async function migrateUsers(oldUsers) {
 }
 
 module.exports.migrate = async () => {
-  Logger.info(`[dbMigration3] Starting migration`)
+  Logger.info(`[dbMigration] Starting migration`)
 
   const data = await oldDbFiles.init()
 
+  const start = Date.now()
   await migrateLibraries(data.libraries)
-  await migrateLibraryItems(data.libraryItems.slice(0, 10))
+  await migrateLibraryItems(data.libraryItems)
   await migrateUsers(data.users)
+  const elapsed = Date.now() - start
+
+  Logger.info(`[dbMigration] Migration complete. Elapsed ${Math.round(elapsed / 1000)}s`)
 }

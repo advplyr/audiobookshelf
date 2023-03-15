@@ -80,7 +80,7 @@ class Database {
     require('./models/Notification')(this.sequelize)
     require('./models/UserPermission')(this.sequelize)
 
-    return this.sequelize.sync({ force: false })
+    return this.sequelize.sync({ force: true })
   }
 
   async createTestUser() {

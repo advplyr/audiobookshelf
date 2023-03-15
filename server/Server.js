@@ -103,8 +103,8 @@ class Server {
 
     // TODO: Test new db connection
     await Database.init()
-    await Database.createTestUser()
-    // await dbMigration3.migrate()
+    // await Database.createTestUser()
+    await dbMigration3.migrate()
 
     const previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
     if (previousVersion) {
