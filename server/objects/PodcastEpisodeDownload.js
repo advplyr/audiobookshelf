@@ -1,6 +1,7 @@
 const Path = require('path')
 const { getId } = require('../utils/index')
 const { sanitizeFilename } = require('../utils/fileUtils')
+const globals = require('../utils/globals')
 
 class PodcastEpisodeDownload {
   constructor() {
@@ -40,8 +41,14 @@ class PodcastEpisodeDownload {
     }
   }
 
+  get fileExtension() {
+    const extname = Path.extname(this.url).substring(1).toLowerCase()
+    if (globals.SupportedAudioTypes.includes(extname)) return extname
+    return 'mp3'
+  }
+
   get targetFilename() {
-    return sanitizeFilename(`${this.podcastEpisode.title}.mp3`)
+    return sanitizeFilename(`${this.podcastEpisode.title}.${this.fileExtension}`)
   }
   get targetPath() {
     return Path.join(this.libraryItem.path, this.targetFilename)
