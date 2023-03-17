@@ -1,3 +1,4 @@
+const uuidv4 = require("uuid").v4
 const package = require('../../../package.json')
 const Logger = require('../../Logger')
 const Database = require('../../Database')
@@ -11,11 +12,24 @@ const oldDbIdMap = {
   books: {},
   tags: {}
 }
+const newRecords = {
+  User: [],
+  Library: [],
+  LibraryFolder: [],
+  LibrarySetting: [],
+  LibraryItem: [],
+  Book: [],
+  BookChapter: [],
+  Tag: [],
+  BookTag: [],
+  Podcast: []
+}
 
-async function migrateBook(oldLibraryItem, LibraryItem) {
+function migrateBook(oldLibraryItem, LibraryItem) {
   const oldBook = oldLibraryItem.media
 
-  const Book = await Database.models.Book.create({
+  const Book = {
+    id: uuidv4(),
     title: oldBook.metadata.title,
     subtitle: oldBook.metadata.subtitle,
     publishedYear: oldBook.metadata.publishedYear,
@@ -31,14 +45,14 @@ async function migrateBook(oldLibraryItem, LibraryItem) {
     LibraryItemId: LibraryItem.id,
     createdAt: LibraryItem.createdAt,
     updatedAt: LibraryItem.updatedAt
-  })
-
+  }
   oldDbIdMap.books[oldLibraryItem.id] = Book.id
+  newRecords.Book.push(Book)
 
   // TODO: Handle cover image record
   // TODO: Handle EBook record
 
-  Logger.info(`[dbMigration] migrateBook: Book migrated "${Book.title}" (${Book.id})`)
+  // Logger.info(`[dbMigration] migrateBook: Book migrated "${Book.title}" (${Book.id})`)
 
   const oldTags = oldBook.tags || []
   for (const oldTag of oldTags) {
@@ -46,34 +60,43 @@ async function migrateBook(oldLibraryItem, LibraryItem) {
     if (oldDbIdMap[oldTag]) {
       tagId = oldDbIdMap[oldTag]
     } else {
-      const Tag = await Database.models.Tag.create({
+      const Tag = {
+        id: uuidv4(),
         name: oldTag
-      })
+      }
       tagId = Tag.id
+
+      newRecords.Tag.push(Tag)
     }
 
-    const BookTag = await Database.models.BookTag.create({
+    newRecords.BookTag.push({
+      id: uuidv4(),
       BookId: Book.id,
       TagId: tagId
     })
-    Logger.info(`[dbMigration] migrateBook: BookTag migrated "${oldTag}" (${BookTag.id})`)
   }
 
   for (const oldChapter of oldBook.chapters) {
-    const BookChapter = await Database.models.BookChapter.create({
+    const BookChapter = {
+      id: uuidv4(),
       index: oldChapter.id,
       start: oldChapter.start,
       end: oldChapter.end,
       title: oldChapter.title,
       BookId: Book.id
-    })
-    Logger.info(`[dbMigration] migrateBook: BookChapter migrated "${BookChapter.title}" (${BookChapter.id})`)
+    }
+    newRecords.BookChapter.push(BookChapter)
   }
 }
 
-async function migrateLibraryItems(oldLibraryItems) {
+function migratePodcast(oldLibraryItem, LibraryItem) {
+  // TODO: Migrate podcast
+}
+
+function migrateLibraryItems(oldLibraryItems) {
+
   for (const oldLibraryItem of oldLibraryItems) {
-    Logger.info(`[dbMigration] migrateLibraryItems: Migrating library item "${oldLibraryItem.media.metadata.title}" (${oldLibraryItem.id})`)
+    // Logger.info(`[dbMigration] migrateLibraryItems: Migrating library item "${oldLibraryItem.media.metadata.title}" (${oldLibraryItem.id})`)
 
     const LibraryId = oldDbIdMap.libraryFolders[oldLibraryItem.folderId]
     if (!LibraryId) {
@@ -81,7 +104,8 @@ async function migrateLibraryItems(oldLibraryItems) {
       continue
     }
 
-    const LibraryItem = await Database.models.LibraryItem.create({
+    const LibraryItem = {
+      id: uuidv4(),
       ino: oldLibraryItem.ino,
       path: oldLibraryItem.path,
       relPath: oldLibraryItem.relPath,
@@ -97,21 +121,26 @@ async function migrateLibraryItems(oldLibraryItems) {
       createdAt: oldLibraryItem.addedAt,
       updatedAt: oldLibraryItem.updatedAt,
       LibraryId
-    })
+    }
+    oldDbIdMap.libraryItems[oldLibraryItem.id] = LibraryItem.id
+    newRecords.LibraryItem.push(LibraryItem)
 
-    Logger.info(`[dbMigration] migrateLibraryItems: LibraryItem "${LibraryItem.path}" migrated (${LibraryItem.id})`)
+    // Logger.info(`[dbMigration] migrateLibraryItems: LibraryItem "${LibraryItem.path}" migrated (${LibraryItem.id})`)
 
     if (oldLibraryItem.mediaType === 'book') {
-      await migrateBook(oldLibraryItem, LibraryItem)
+      migrateBook(oldLibraryItem, LibraryItem)
+    } else if (oldLibraryItem.mediaType === 'podcast') {
+      migratePodcast(oldLibraryItem, LibraryItem)
     }
   }
 }
 
-async function migrateLibraries(oldLibraries) {
+function migrateLibraries(oldLibraries) {
   for (const oldLibrary of oldLibraries) {
-    Logger.info(`[dbMigration] migrateLibraries: Migrating library "${oldLibrary.name}" (${oldLibrary.id})`)
+    // Logger.info(`[dbMigration] migrateLibraries: Migrating library "${oldLibrary.name}" (${oldLibrary.id})`)
 
-    const Library = await Database.models.Library.create({
+    const Library = {
+      id: uuidv4(),
       name: oldLibrary.name,
       displayOrder: oldLibrary.displayOrder,
       icon: oldLibrary.icon || null,
@@ -119,43 +148,47 @@ async function migrateLibraries(oldLibraries) {
       provider: oldLibrary.provider,
       createdAt: oldLibrary.createdAt,
       updatedAt: oldLibrary.lastUpdate
-    })
-
+    }
     oldDbIdMap.libraries[oldLibrary.id] = Library.id
+    newRecords.Library.push(Library)
 
     const oldLibrarySettings = oldLibrary.settings || {}
     for (const oldSettingsKey in oldLibrarySettings) {
-      const LibrarySetting = await Database.models.LibrarySetting.create({
+      const LibrarySetting = {
+        id: uuidv4(),
         key: oldSettingsKey,
         value: oldLibrarySettings[oldSettingsKey],
         LibraryId: Library.id
-      })
-      Logger.info(`[dbMigration] migrateLibraries: LibrarySetting "${LibrarySetting.key}" migrated (${LibrarySetting.id})`)
+      }
+      newRecords.LibrarySetting.push(LibrarySetting)
+      // Logger.info(`[dbMigration] migrateLibraries: LibrarySetting "${LibrarySetting.key}" migrated (${LibrarySetting.id})`)
     }
 
-    Logger.info(`[dbMigration] migrateLibraries: Library "${Library.name}" migrated (${Library.id})`)
+    // Logger.info(`[dbMigration] migrateLibraries: Library "${Library.name}" migrated (${Library.id})`)
 
     for (const oldFolder of oldLibrary.folders) {
-      Logger.info(`[dbMigration] migrateLibraries: Migrating folder "${oldFolder.fullPath}" (${oldFolder.id})`)
+      // Logger.info(`[dbMigration] migrateLibraries: Migrating folder "${oldFolder.fullPath}" (${oldFolder.id})`)
 
-      const LibraryFolder = await Database.models.LibraryFolder.create({
+      const LibraryFolder = {
+        id: uuidv4(),
         path: oldFolder.fullPath,
         LibraryId: Library.id,
         createdAt: oldFolder.addedAt
-      })
-
+      }
       oldDbIdMap.libraryFolders[oldFolder.id] = LibraryFolder.id
+      newRecords.LibraryFolder.push(LibraryFolder)
 
-      Logger.info(`[dbMigration] migrateLibraries: LibraryFolder "${LibraryFolder.path}" migrated (${LibraryFolder.id})`)
+      // Logger.info(`[dbMigration] migrateLibraries: LibraryFolder "${LibraryFolder.path}" migrated (${LibraryFolder.id})`)
     }
   }
 }
 
-async function migrateUsers(oldUsers) {
+function migrateUsers(oldUsers) {
   for (const oldUser of oldUsers) {
-    Logger.info(`[dbMigration] migrateUsers: Migrating user "${oldUser.username}" (${oldUser.id})`)
+    // Logger.info(`[dbMigration] migrateUsers: Migrating user "${oldUser.username}" (${oldUser.id})`)
 
-    const User = await Database.models.User.create({
+    const User = {
+      id: uuidv4(),
       username: oldUser.username,
       pash: oldUser.pash || null,
       type: oldUser.type || null,
@@ -163,16 +196,16 @@ async function migrateUsers(oldUsers) {
       isActive: !!oldUser.isActive,
       lastSeen: oldUser.lastSeen || null,
       createdAt: oldUser.createdAt || Date.now()
-    })
-
+    }
     oldDbIdMap.users[oldUser.id] = User.id
+    newRecords.User.push(User)
 
-    Logger.info(`[dbMigration] migrateUsers: User "${User.username}" migrated (${User.id})`)
+    // Logger.info(`[dbMigration] migrateUsers: User "${User.username}" migrated (${User.id})`)
 
     // for (const oldMediaProgress of oldUser.mediaProgress) {
-    //   const MediaProgress = await Database.models.MediaProgress.create({
+    //   const MediaProgress = {
 
-    //   })
+    //   }
     // }
   }
 }
@@ -183,10 +216,16 @@ module.exports.migrate = async () => {
   const data = await oldDbFiles.init()
 
   const start = Date.now()
-  await migrateLibraries(data.libraries)
-  await migrateLibraryItems(data.libraryItems)
-  await migrateUsers(data.users)
+  migrateLibraries(data.libraries)
+  migrateLibraryItems(data.libraryItems)
+  migrateUsers(data.users)
+
+  for (const model in newRecords) {
+    Logger.info(`[dbMigration] Creating ${newRecords[model].length} ${model} records`)
+    await Database.models[model].bulkCreate(newRecords[model])
+  }
+
   const elapsed = Date.now() - start
 
-  Logger.info(`[dbMigration] Migration complete. Elapsed ${Math.round(elapsed / 1000)}s`)
+  Logger.info(`[dbMigration] Migration complete. Elapsed ${(elapsed / 1000).toFixed(2)}s`)
 }

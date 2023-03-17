@@ -26,7 +26,8 @@ class Database {
     Logger.info(`[Database] Initializing db at "${dbPath}"`)
     this.sequelize = new Sequelize({
       dialect: 'sqlite',
-      storage: dbPath
+      storage: dbPath,
+      logging: false
     })
 
     try {
