@@ -6,9 +6,14 @@
       </div>
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+      <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
+        <form @submit.prevent="submit" class="flex flex-grow">
+          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
+        </form>
+      </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
         <div
-          v-for="(episode, index) in episodes"
+          v-for="(episode, index) in episodesList"
           :key="index"
           class="relative"
           :class="itemEpisodeMap[episode.enclosure.url] ? 'bg-primary bg-opacity-40' : selectedEpisodes[String(index)] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
@@ -59,7 +64,10 @@ export default {
     return {
       processing: false,
       selectedEpisodes: {},
-      selectAll: false
+      selectAll: false,
+      search: null,
+      searchTimeout: null,
+      searchText: null,
     }
   },
   watch: {
@@ -103,9 +111,28 @@ export default {
         if (item.enclosure) map[item.enclosure.url] = true
       })
       return map
+    },
+    episodesList() {
+      return this.episodes.filter((episode) => {
+        if (!this.searchText) return true
+        return (
+          (episode.title && episode.title.toLowerCase().includes(this.searchText)) ||
+          (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
+        )
+      })
     }
   },
   methods: {
+    inputUpdate() {
+      clearTimeout(this.searchTimeout)
+      this.searchTimeout = setTimeout(() => {
+        if (!this.search || !this.search.trim()) {
+          this.searchText = ''
+          return
+        }
+        this.searchText = this.search.toLowerCase().trim()
+      }, 500)
+    },
     toggleSelectAll(val) {
       for (let i = 0; i < this.episodes.length; i++) {
         const episode = this.episodes[i]
