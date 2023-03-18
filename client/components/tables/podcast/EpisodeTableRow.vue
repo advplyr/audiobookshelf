@@ -2,16 +2,17 @@
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="episode" class="flex items-center cursor-pointer" :class="{ 'opacity-70': isSelected || selectionMode }" @click="clickedEpisode">
       <div class="flex-grow px-2">
-        <p class="text-sm font-semibold">
-          {{ title }}
-        </p>
+        <div class="flex items-center">
+          <span class="text-sm font-semibold">{{ title }}</span>
+          <widgets-podcast-type-indicator :type="episode.episodeType" />
+        </div>
 
         <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ subtitle }}</p>
 
         <div class="flex justify-between pt-2 max-w-xl">
           <p v-if="episode.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
           <p v-if="episode.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
-          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
+          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, dateFormat) }}</p>
         </div>
 
         <div class="flex items-center pt-2">
@@ -128,6 +129,9 @@ export default {
     },
     publishedAt() {
       return this.episode.publishedAt
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
     }
   },
   methods: {

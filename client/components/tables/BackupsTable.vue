@@ -17,7 +17,7 @@
           <td>
             <p class="truncate text-xs sm:text-sm md:text-base">/{{ backup.path.replace(/\\/g, '/') }}</p>
           </td>
-          <td class="hidden sm:table-cell font-sans text-sm">{{ backup.datePretty }}</td>
+          <td class="hidden sm:table-cell font-sans text-sm">{{ $formatDatetime(backup.createdAt, dateFormat, timeFormat) }}</td>
           <td class="hidden sm:table-cell font-mono md:text-sm text-xs">{{ $bytesPretty(backup.fileSize) }}</td>
           <td>
             <div class="w-full flex flex-row items-center justify-center">
@@ -46,7 +46,7 @@
         <p class="text-error text-lg font-semibold">{{ $strings.MessageImportantNotice }}</p>
         <p class="text-base py-1" v-html="$strings.MessageRestoreBackupWarning" />
 
-        <p class="text-lg text-center my-8">{{ $strings.MessageRestoreBackupConfirm }} {{ selectedBackup.datePretty }}?</p>
+        <p class="text-lg text-center my-8">{{ $strings.MessageRestoreBackupConfirm }} {{ $formatDatetime(selectedBackup.createdAt, dateFormat, timeFormat) }}?</p>
         <div class="flex px-1 items-center">
           <ui-btn color="primary" @click="showConfirmApply = false">{{ $strings.ButtonNevermind }}</ui-btn>
           <div class="flex-grow" />
@@ -71,6 +71,12 @@ export default {
   computed: {
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {
@@ -90,7 +96,7 @@ export default {
         })
     },
     deleteBackupClick(backup) {
-      if (confirm(this.$getString('MessageConfirmDeleteBackup', [backup.datePretty]))) {
+      if (confirm(this.$getString('MessageConfirmDeleteBackup', [this.$formatDatetime(backup.createdAt, this.dateFormat, this.timeFormat)]))) {
         this.processing = true
         this.$axios
           .$delete(`/api/backups/${backup.id}`)

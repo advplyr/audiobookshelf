@@ -79,12 +79,12 @@
               <p class="text-sm">{{ Math.floor(item.progress * 100) }}%</p>
             </td>
             <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="item.startedAt" direction="top" :text="$formatDate(item.startedAt, 'MMMM do, yyyy HH:mm')">
+              <ui-tooltip v-if="item.startedAt" direction="top" :text="$formatDatetime(item.startedAt, dateFormat, timeFormat)">
                 <p class="text-sm">{{ $dateDistanceFromNow(item.startedAt) }}</p>
               </ui-tooltip>
             </td>
             <td class="text-center hidden sm:table-cell">
-              <ui-tooltip v-if="item.lastUpdate" direction="top" :text="$formatDate(item.lastUpdate, 'MMMM do, yyyy HH:mm')">
+              <ui-tooltip v-if="item.lastUpdate" direction="top" :text="$formatDatetime(item.lastUpdate, dateFormat, timeFormat)">
                 <p class="text-sm">{{ $dateDistanceFromNow(item.lastUpdate) }}</p>
               </ui-tooltip>
             </td>
@@ -149,6 +149,12 @@ export default {
     latestSession() {
       if (!this.listeningSessions.sessions || !this.listeningSessions.sessions.length) return null
       return this.listeningSessions.sessions[0]
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {

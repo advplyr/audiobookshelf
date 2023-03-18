@@ -25,7 +25,10 @@
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
-                {{ title }}
+                <div class="flex items-center">
+                  {{ title }}
+                  <widgets-explicit-indicator :explicit="isExplicit" />
+                </div>
               </h1>
 
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
@@ -314,6 +317,9 @@ export default {
     },
     isInvalid() {
       return this.libraryItem.isInvalid
+    },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
     },
     invalidAudioFiles() {
       if (!this.isBook) return []
@@ -632,7 +638,7 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
@@ -753,9 +759,8 @@ export default {
     }
   },
   mounted() {
-    if (this.libraryItem.episodesDownloading) {
-      this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
-    }
+    this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
+    this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
     // use this items library id as the current
     if (this.libraryId) {

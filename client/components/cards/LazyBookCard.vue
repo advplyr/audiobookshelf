@@ -7,9 +7,12 @@
 
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
-      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        {{ displayTitle }}
-      </p>
+      <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+        <div class="flex items-center">
+          <span class="truncate">{{ displayTitle }}</span>
+          <widgets-explicit-indicator :explicit="isExplicit" />
+        </div>
+      </div>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
@@ -102,8 +105,10 @@
     </div>
 
     <!-- Podcast Episode # -->
-    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
+    <div v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">
+        Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
+      </p>
     </div>
 
     <!-- Podcast Num Episodes -->
@@ -193,6 +198,9 @@ export default {
     isMusic() {
       return this.mediaType === 'music'
     },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
+    },
     placeholderUrl() {
       const config = this.$config || this.$nuxt.$config
       return `${config.routerBasePath}/book_placeholder.jpg`
@@ -236,7 +244,7 @@ export default {
       if (this.recentEpisode.episode) {
         return this.recentEpisode.episode.replace(/^#/, '')
       }
-      return this.recentEpisode.index
+      return ''
     },
     collapsedSeries() {
       // Only added to item object when collapseSeries is enabled
@@ -734,7 +742,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -858,7 +866,7 @@ export default {
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
-                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
                   duration: episode.audioFile.duration || null,
                   coverPath: this.media.coverPath || null
                 })

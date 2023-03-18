@@ -164,6 +164,13 @@
             <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.releaseDate || '' }}</p>
           </div>
         </div>
+        <div v-if="selectedMatchOrig.explicit != null" class="flex items-center py-2">
+          <ui-checkbox v-model="selectedMatchUsage.explicit" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="flex-grow ml-4">
+            <ui-checkbox v-model="selectedMatch.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? 'Explicit (checked)' : 'Not Explicit (unchecked)' }}</p>
+          </div>
+        </div>
 
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
@@ -327,6 +334,7 @@ export default {
           res.itunesPageUrl = res.pageUrl || null
           res.itunesId = res.id || null
           res.author = res.artistName || null
+          res.explicit = res.explicit || false
           return res
         })
       }

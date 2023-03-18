@@ -68,8 +68,6 @@ export default {
     }
   },
   mounted() {},
-  beforeDestroy() {
-    console.log('Before destroy')
-  }
+  beforeDestroy() {}
 }
 </script>

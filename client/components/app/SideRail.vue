@@ -86,6 +86,14 @@
       <div v-show="isPlaylistsPage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
     </nuxt-link>
 
+    <nuxt-link v-if="isPodcastLibrary && userIsAdminOrUp" :to="`/library/${currentLibraryId}/podcast/download-queue`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-primary cursor-pointer relative" :class="isPodcastDownloadQueuePage ? 'bg-primary bg-opacity-80' : 'bg-bg bg-opacity-60'">
+      <span class="material-icons text-2xl">file_download</span>
+
+      <p class="pt-1.5 text-center leading-4" style="font-size: 0.9rem">{{ $strings.ButtonDownloadQueue }}</p>
+
+      <div v-show="isPodcastDownloadQueuePage" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
+    </nuxt-link>
+
     <nuxt-link v-if="numIssues" :to="`/library/${currentLibraryId}/bookshelf?filter=issues`" class="w-full h-20 flex flex-col items-center justify-center text-white text-opacity-80 border-b border-primary border-opacity-70 hover:bg-opacity-40 cursor-pointer relative" :class="showingIssues ? 'bg-error bg-opacity-40' : ' bg-error bg-opacity-20'">
       <span class="material-icons text-2xl">warning</span>
 
@@ -148,6 +156,9 @@ export default {
     },
     isMusicLibrary() {
       return this.currentLibraryMediaType === 'music'
+    },
+    isPodcastDownloadQueuePage() {
+      return this.$route.name === 'library-library-podcast-download-queue'
     },
     isPodcastSearchPage() {
       return this.$route.name === 'library-library-podcast-search'

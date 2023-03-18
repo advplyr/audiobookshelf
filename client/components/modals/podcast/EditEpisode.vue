@@ -11,8 +11,15 @@
       </template>
     </div>
 
+    <div v-show="canGoPrev" class="absolute -left-24 top-0 bottom-0 h-full pointer-events-none flex items-center px-6">
+      <div class="material-icons text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" @click.stop.prevent="goPrevEpisode" @mousedown.prevent>arrow_back_ios</div>
+    </div>
+    <div v-show="canGoNext" class="absolute -right-24 top-0 bottom-0 h-full pointer-events-none flex items-center px-6">
+      <div class="material-icons text-5xl text-white text-opacity-50 hover:text-opacity-90 cursor-pointer pointer-events-auto" @click.stop.prevent="goNextEpisode" @mousedown.prevent>arrow_forward_ios</div>
+    </div>
+
     <div ref="wrapper" class="p-4 w-full text-sm rounded-b-lg rounded-tr-lg bg-bg shadow-lg border border-black-300 relative overflow-y-auto" style="max-height: 80vh">
-      <component v-if="libraryItem && show" :is="tabComponentName" :library-item="libraryItem" :episode="episode" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
+      <component v-if="libraryItem && show" :is="tabComponentName" :library-item="libraryItem" :episode="episodeItem" :processing.sync="processing" @close="show = false" @selectTab="selectTab" />
     </div>
   </modals-modal>
 </template>
@@ -21,8 +28,8 @@
 export default {
   data() {
     return {
+      episodeItem: null,
       processing: false,
-      selectedTab: 'details',
       tabs: [
         {
           id: 'details',
@@ -37,6 +44,29 @@ export default {
       ]
     }
   },
+  watch: {
+    show: {
+      handler(newVal) {
+        if (newVal) {
+          const availableTabIds = this.tabs.map((tab) => tab.id)
+          if (!availableTabIds.length) {
+            this.show = false
+            return
+          }
+
+          if (!availableTabIds.includes(this.selectedTab)) {
+            this.selectedTab = availableTabIds[0]
+          }
+
+          this.episodeItem = null
+          this.init()
+          this.registerListeners()
+        } else {
+          this.unregisterListeners()
+        }
+      }
+    }
+  },
   computed: {
     show: {
       get() {
@@ -46,27 +76,118 @@ export default {
         this.$store.commit('globals/setShowEditPodcastEpisodeModal', val)
       }
     },
+    selectedTab: {
+      get() {
+        return this.$store.state.editPodcastModalTab
+      },
+      set(val) {
+        this.$store.commit('setEditPodcastModalTab', val)
+      }
+    },
     libraryItem() {
       return this.$store.state.selectedLibraryItem
     },
     episode() {
       return this.$store.state.globals.selectedEpisode
     },
+    selectedEpisodeId() {
+      return this.episode.id
+    },
     title() {
-      if (!this.libraryItem) return ''
-      return this.libraryItem.media.metadata.title || 'Unknown'
+      return this.libraryItem?.media.metadata.title || 'Unknown'
     },
     tabComponentName() {
-      var _tab = this.tabs.find((t) => t.id === this.selectedTab)
+      const _tab = this.tabs.find((t) => t.id === this.selectedTab)
       return _tab ? _tab.component : ''
+    },
+    episodeTableEpisodeIds() {
+      return this.$store.state.episodeTableEpisodeIds || []
+    },
+    currentEpisodeIndex() {
+      if (!this.episodeTableEpisodeIds.length) return 0
+      return this.episodeTableEpisodeIds.findIndex((bid) => bid === this.selectedEpisodeId)
+    },
+    canGoPrev() {
+      return this.episodeTableEpisodeIds.length && this.currentEpisodeIndex > 0
+    },
+    canGoNext() {
+      return this.episodeTableEpisodeIds.length && this.currentEpisodeIndex < this.episodeTableEpisodeIds.length - 1
     }
   },
   methods: {
+    async goPrevEpisode() {
+      if (this.currentEpisodeIndex - 1 < 0) return
+      const prevEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex - 1]
+      this.processing = true
+      const prevEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${prevEpisodeId}`).catch((error) => {
+        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch episode'
+        this.$toast.error(errorMsg)
+        return null
+      })
+      this.processing = false
+      if (prevEpisode) {
+        this.episodeItem = prevEpisode
+        this.$store.commit('globals/setSelectedEpisode', prevEpisode)
+      } else {
+        console.error('Episode not found', prevEpisodeId)
+      }
+    },
+    async goNextEpisode() {
+      if (this.currentEpisodeIndex >= this.episodeTableEpisodeIds.length - 1) return
+      this.processing = true
+      const nextEpisodeId = this.episodeTableEpisodeIds[this.currentEpisodeIndex + 1]
+      const nextEpisode = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${nextEpisodeId}`).catch((error) => {
+        const errorMsg = error.response && error.response.data ? error.response.data : 'Failed to fetch book'
+        this.$toast.error(errorMsg)
+        return null
+      })
+      this.processing = false
+      if (nextEpisode) {
+        this.episodeItem = nextEpisode
+        this.$store.commit('globals/setSelectedEpisode', nextEpisode)
+      } else {
+        console.error('Episode not found', nextEpisodeId)
+      }
+    },
     selectTab(tab) {
-      this.selectedTab = tab
+      if (this.selectedTab === tab) return
+      if (this.tabs.find((t) => t.id === tab)) {
+        this.selectedTab = tab
+        this.processing = false
+      }
+    },
+    init() {
+      this.fetchFull()
+    },
+    async fetchFull() {
+      try {
+        this.processing = true
+        this.episodeItem = await this.$axios.$get(`/api/podcasts/${this.libraryItem.id}/episode/${this.selectedEpisodeId}`)
+        this.processing = false
+      } catch (error) {
+        console.error('Failed to fetch episode', this.selectedEpisodeId, error)
+        this.processing = false
+        this.show = false
+      }
+    },
+    hotkey(action) {
+      if (action === this.$hotkeys.Modal.NEXT_PAGE) {
+        this.goNextEpisode()
+      } else if (action === this.$hotkeys.Modal.PREV_PAGE) {
+        this.goPrevEpisode()
+      }
+    },
+    registerListeners() {
+      this.$eventBus.$on('modal-hotkey', this.hotkey)
+    },
+    unregisterListeners() {
+      this.$eventBus.$off('modal-hotkey', this.hotkey)
     }
   },
-  mounted() {}
+  mounted() {},
+  beforeDestroy() {
+    this.unregisterListeners()
+  }
 }
 </script>
 

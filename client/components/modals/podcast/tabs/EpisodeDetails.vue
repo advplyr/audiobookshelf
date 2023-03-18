@@ -8,7 +8,7 @@
         <ui-text-input-with-label v-model="newEpisode.episode" :label="$strings.LabelEpisode" />
       </div>
       <div class="w-1/5 p-1">
-        <ui-text-input-with-label v-model="newEpisode.episodeType" :label="$strings.LabelEpisodeType" />
+        <ui-dropdown v-model="newEpisode.episodeType" :label="$strings.LabelEpisodeType" :items="episodeTypes" small />
       </div>
       <div class="w-2/5 p-1">
         <ui-text-input-with-label v-model="pubDateInput" @input="updatePubDate" type="datetime-local" :label="$strings.LabelPubDate" />
@@ -24,7 +24,12 @@
       </div>
     </div>
     <div class="flex items-center justify-end pt-4">
-      <ui-btn @click="submit">{{ $strings.ButtonSubmit }}</ui-btn>
+      <!-- desktop -->
+      <ui-btn @click="submit" class="mx-2 hidden md:block">{{ $strings.ButtonSave }}</ui-btn>
+      <ui-btn @click="saveAndClose" class="mx-2 hidden md:block">{{ $strings.ButtonSaveAndClose }}</ui-btn>
+
+      <!-- mobile -->
+      <ui-btn @click="saveAndClose" class="mx-2 md:hidden">{{ $strings.ButtonSave }}</ui-btn>
     </div>
     <div v-if="enclosureUrl" class="py-4">
       <p class="text-xs text-gray-300 font-semibold">Episode URL from RSS feed</p>
@@ -89,6 +94,9 @@ export default {
     },
     enclosureUrl() {
       return this.enclosure.url
+    },
+    episodeTypes() {
+      return this.$store.state.globals.episodeTypes || []
     }
   },
   methods: {
@@ -122,26 +130,41 @@ export default {
       }
       return updatePayload
     },
-    submit() {
-      const payload = this.getUpdatePayload()
-      if (!Object.keys(payload).length) {
-        return this.$toast.info('No updates were made')
+    async saveAndClose() {
+      const wasUpdated = await this.submit()
+      if (wasUpdated !== null) this.$emit('close')
+    },
+    async submit() {
+      if (this.isProcessing) {
+        return null
       }
 
+      const updatedDetails = this.getUpdatePayload()
+      if (!Object.keys(updatedDetails).length) {
+        this.$toast.info('No changes were made')
+        return false
+      }
+      return this.updateDetails(updatedDetails)
+    },
+    async updateDetails(updatedDetails) {
       this.isProcessing = true
-      this.$axios
-        .$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, payload)
-        .then(() => {
-          this.isProcessing = false
+      const updateResult = await this.$axios.$patch(`/api/podcasts/${this.libraryItem.id}/episode/${this.episodeId}`, updatedDetails).catch((error) => {
+        console.error('Failed update episode', error)
+        this.isProcessing = false
+        this.$toast.error(error?.response?.data || 'Failed to update episode')
+        return false
+      })
+
+      this.isProcessing = false
+      if (updateResult) {
+        if (updateResult) {
           this.$toast.success('Podcast episode updated')
-          this.$emit('close')
-        })
-        .catch((error) => {
-          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to update episode'
-          console.error('Failed update episode', error)
-          this.isProcessing = false
-          this.$toast.error(errorMsg)
-        })
+          return true
+        } else {
+          this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+        }
+      }
+      return false
     }
   },
   mounted() {}
