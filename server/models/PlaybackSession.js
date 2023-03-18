@@ -1,12 +1,10 @@
 const { DataTypes, Model } = require('sequelize')
 
-const uppercaseFirst = str => `${str[0].toUpperCase()}${str.substr(1)}`
-
 module.exports = (sequelize) => {
   class PlaybackSession extends Model {
     getMediaItem(options) {
       if (!this.mediaItemType) return Promise.resolve(null)
-      const mixinMethodName = `get${uppercaseFirst(this.mediaItemType)}`
+      const mixinMethodName = `get${this.mediaItemType}`
       return this[mixinMethodName](options)
     }
   }
@@ -17,16 +15,15 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    mediaItemId: DataTypes.UUIDV4,
+    MediaItemId: DataTypes.UUIDV4,
     mediaItemType: DataTypes.STRING,
     displayTitle: DataTypes.STRING,
     displayAuthor: DataTypes.STRING,
-    duration: DataTypes.INTEGER,
+    duration: DataTypes.FLOAT,
     playMethod: DataTypes.STRING,
     mediaPlayer: DataTypes.STRING,
-    startTime: DataTypes.INTEGER,
-    currentTime: DataTypes.INTEGER,
-    timeListening: DataTypes.INTEGER,
+    startTime: DataTypes.FLOAT,
+    currentTime: DataTypes.FLOAT,
     serverVersion: DataTypes.STRING
   }, {
     sequelize,
@@ -42,29 +39,29 @@ module.exports = (sequelize) => {
   PlaybackSession.belongsTo(Device)
 
   Book.hasMany(PlaybackSession, {
-    foreignKey: 'mediaItemId',
+    foreignKey: 'MediaItemId',
     constraints: false,
     scope: {
-      mediaItemType: 'book'
+      mediaItemType: 'Book'
     }
   })
-  PlaybackSession.belongsTo(Book, { foreignKey: 'mediaItemId', constraints: false })
+  PlaybackSession.belongsTo(Book, { foreignKey: 'MediaItemId', constraints: false })
 
   PodcastEpisode.hasOne(PlaybackSession, {
-    foreignKey: 'mediaItemId',
+    foreignKey: 'MediaItemId',
     constraints: false,
     scope: {
-      mediaItemType: 'podcastEpisode'
+      mediaItemType: 'PodcastEpisode'
     }
   })
-  PlaybackSession.belongsTo(PodcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
+  PlaybackSession.belongsTo(PodcastEpisode, { foreignKey: 'MediaItemId', constraints: false })
 
   PlaybackSession.addHook('afterFind', findResult => {
     if (!Array.isArray(findResult)) findResult = [findResult]
     for (const instance of findResult) {
-      if (instance.mediaItemType === 'book' && instance.Book !== undefined) {
+      if (instance.mediaItemType === 'Book' && instance.Book !== undefined) {
         instance.MediaItem = instance.Book
-      } else if (instance.mediaItemType === 'podcastEpisode' && instance.PodcastEpisode !== undefined) {
+      } else if (instance.mediaItemType === 'PodcastEpisode' && instance.PodcastEpisode !== undefined) {
         instance.MediaItem = instance.PodcastEpisode
       }
       // To prevent mistakes:

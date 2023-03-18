@@ -10,7 +10,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     eventName: DataTypes.STRING,
-    urls: DataTypes.TEXT, // JSON array of urls
+    urls: DataTypes.JSON, // JSON array of urls
     titleTemplate: DataTypes.STRING(1000),
     bodyTemplate: DataTypes.TEXT,
     type: DataTypes.STRING,
@@ -18,16 +18,12 @@ module.exports = (sequelize) => {
     lastAttemptFailed: DataTypes.BOOLEAN,
     numConsecutiveFailedAttempts: DataTypes.INTEGER,
     numTimesFired: DataTypes.INTEGER,
-    enabled: DataTypes.BOOLEAN
+    enabled: DataTypes.BOOLEAN,
+    extraData: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'Notification'
   })
-
-  const { Library } = sequelize.models
-
-  Library.hasMany(Notification)
-  Notification.belongsTo(Library)
 
   return Notification
 }

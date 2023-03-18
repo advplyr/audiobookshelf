@@ -20,7 +20,7 @@ module.exports = (sequelize) => {
     season: DataTypes.STRING,
     episode: DataTypes.STRING,
     episodeType: DataTypes.STRING,
-    duration: DataTypes.INTEGER,
+    duration: DataTypes.FLOAT,
     filePath: DataTypes.STRING,
     explicit: DataTypes.BOOLEAN
   }, {

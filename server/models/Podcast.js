@@ -13,14 +13,14 @@ module.exports = (sequelize) => {
     title: DataTypes.STRING,
     author: DataTypes.STRING,
     releaseDate: DataTypes.STRING,
-    feedUrl: DataTypes.STRING,
-    imageUrl: DataTypes.STRING,
+    feedURL: DataTypes.STRING,
+    imageURL: DataTypes.STRING,
     description: DataTypes.TEXT,
-    itunesPageUrl: DataTypes.STRING,
+    itunesPageURL: DataTypes.STRING,
     itunesId: DataTypes.STRING,
     itunesArtistId: DataTypes.STRING,
     language: DataTypes.STRING,
-    type: DataTypes.STRING,
+    podcastType: DataTypes.STRING,
     explicit: DataTypes.BOOLEAN,
 
     autoDownloadEpisodes: DataTypes.BOOLEAN,
@@ -39,8 +39,8 @@ module.exports = (sequelize) => {
   LibraryItem.hasOne(Podcast)
   Podcast.belongsTo(LibraryItem)
 
-  FileMetadata.hasOne(Podcast)
-  Podcast.belongsTo(FileMetadata, { as: 'ImageFile' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  FileMetadata.hasOne(Podcast, { foreignKey: 'ImageFileId' })
+  Podcast.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
   return Podcast
 }

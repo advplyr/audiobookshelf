@@ -22,8 +22,8 @@ module.exports = (sequelize) => {
 
   const { FileMetadata } = sequelize.models
 
-  FileMetadata.hasOne(MediaFile)
-  MediaFile.belongsTo(FileMetadata)
+  FileMetadata.hasOne(MediaFile, { foreignKey: 'FileMetadataId' })
+  MediaFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
 
   return MediaFile
 }

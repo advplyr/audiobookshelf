@@ -16,8 +16,8 @@ module.exports = (sequelize) => {
 
   const { FileMetadata } = sequelize.models
 
-  FileMetadata.hasOne(EBookFile)
-  EBookFile.belongsTo(FileMetadata)
+  FileMetadata.hasOne(EBookFile, { foreignKey: 'FileMetadataId' })
+  EBookFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
 
   return EBookFile
 }

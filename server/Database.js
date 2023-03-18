@@ -61,6 +61,7 @@ class Database {
     require('./models/BookChapter')(this.sequelize)
     require('./models/Genre')(this.sequelize)
     require('./models/BookGenre')(this.sequelize)
+    require('./models/PodcastGenre')(this.sequelize)
     require('./models/BookNarrator')(this.sequelize)
     require('./models/Series')(this.sequelize)
     require('./models/BookSeries')(this.sequelize)

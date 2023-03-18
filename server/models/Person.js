@@ -19,8 +19,8 @@ module.exports = (sequelize) => {
   })
 
   const { FileMetadata } = sequelize.models
-  FileMetadata.hasMany(Person)
-  Person.belongsTo(FileMetadata, { as: 'ImageFile' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  FileMetadata.hasMany(Person, { foreignKey: 'ImageFileId' })
+  Person.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
   return Person
 }

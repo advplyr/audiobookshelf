@@ -18,8 +18,8 @@ module.exports = (sequelize) => {
   LibraryItem.hasMany(LibraryFile)
   LibraryFile.belongsTo(LibraryItem)
 
-  FileMetadata.hasOne(LibraryFile)
-  LibraryFile.belongsTo(FileMetadata)
+  FileMetadata.hasOne(LibraryFile, { foreignKey: 'FileMetadataId' })
+  LibraryFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
 
   return LibraryFile
 }

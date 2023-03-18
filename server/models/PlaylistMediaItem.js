@@ -1,12 +1,10 @@
 const { DataTypes, Model } = require('sequelize')
 
-const uppercaseFirst = str => `${str[0].toUpperCase()}${str.substr(1)}`
-
 module.exports = (sequelize) => {
   class PlaylistMediaItem extends Model {
     getMediaItem(options) {
       if (!this.mediaItemType) return Promise.resolve(null)
-      const mixinMethodName = `get${uppercaseFirst(this.mediaItemType)}`
+      const mixinMethodName = `get${this.mediaItemType}`
       return this[mixinMethodName](options)
     }
   }
@@ -17,39 +15,41 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    mediaItemId: DataTypes.UUIDV4,
+    MediaItemId: DataTypes.UUIDV4,
     mediaItemType: DataTypes.STRING
   }, {
     sequelize,
+    timestamps: true,
+    updatedAt: false,
     modelName: 'PlaylistMediaItem'
   })
 
   const { Book, PodcastEpisode, Playlist } = sequelize.models
 
   Book.hasMany(PlaylistMediaItem, {
-    foreignKey: 'mediaItemId',
+    foreignKey: 'MediaItemId',
     constraints: false,
     scope: {
-      mediaItemType: 'book'
+      mediaItemType: 'Book'
     }
   })
-  PlaylistMediaItem.belongsTo(Book, { foreignKey: 'mediaItemId', constraints: false })
+  PlaylistMediaItem.belongsTo(Book, { foreignKey: 'MediaItemId', constraints: false })
 
   PodcastEpisode.hasOne(PlaylistMediaItem, {
-    foreignKey: 'mediaItemId',
+    foreignKey: 'MediaItemId',
     constraints: false,
     scope: {
-      mediaItemType: 'podcastEpisode'
+      mediaItemType: 'PodcastEpisode'
     }
   })
-  PlaylistMediaItem.belongsTo(PodcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
+  PlaylistMediaItem.belongsTo(PodcastEpisode, { foreignKey: 'MediaItemId', constraints: false })
 
   PlaylistMediaItem.addHook('afterFind', findResult => {
     if (!Array.isArray(findResult)) findResult = [findResult]
     for (const instance of findResult) {
-      if (instance.mediaItemType === 'book' && instance.Book !== undefined) {
+      if (instance.mediaItemType === 'Book' && instance.Book !== undefined) {
         instance.MediaItem = instance.Book
-      } else if (instance.mediaItemType === 'podcastEpisode' && instance.PodcastEpisode !== undefined) {
+      } else if (instance.mediaItemType === 'PodcastEpisode' && instance.PodcastEpisode !== undefined) {
         instance.MediaItem = instance.PodcastEpisode
       }
       // To prevent mistakes:

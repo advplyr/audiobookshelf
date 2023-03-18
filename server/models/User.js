@@ -22,7 +22,8 @@ module.exports = (sequelize) => {
       type: DataTypes.BOOLEAN,
       defaultValue: false
     },
-    lastSeen: DataTypes.DATE
+    lastSeen: DataTypes.DATE,
+    extraData: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'User'

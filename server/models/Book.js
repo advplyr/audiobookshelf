@@ -30,8 +30,8 @@ module.exports = (sequelize) => {
   LibraryItem.hasOne(Book)
   Book.belongsTo(LibraryItem)
 
-  FileMetadata.hasOne(Book)
-  Book.belongsTo(FileMetadata, { as: 'ImageFile' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  FileMetadata.hasOne(Book, { foreignKey: 'ImageFileId ' })
+  Book.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
   EBookFile.hasOne(Book)
   Book.belongsTo(EBookFile)

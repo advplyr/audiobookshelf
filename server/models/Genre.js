@@ -9,7 +9,8 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    name: DataTypes.STRING
+    name: DataTypes.STRING,
+    cleanName: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Genre'

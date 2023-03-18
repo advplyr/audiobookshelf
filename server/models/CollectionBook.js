@@ -11,6 +11,8 @@ module.exports = (sequelize) => {
     }
   }, {
     sequelize,
+    timestamps: true,
+    updatedAt: false,
     modelName: 'CollectionBook'
   })
 
