@@ -12,21 +12,21 @@ module.exports = (sequelize) => {
     sequence: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'BookSeries',
+    modelName: 'bookSeries',
     timestamps: false
   })
 
   // Super Many-to-Many
   // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
-  const { Book, Series } = sequelize.models
-  Book.belongsToMany(Series, { through: BookSeries })
-  Series.belongsToMany(Book, { through: BookSeries })
+  const { book, series } = sequelize.models
+  book.belongsToMany(series, { through: BookSeries })
+  series.belongsToMany(book, { through: BookSeries })
 
-  Book.hasMany(BookSeries)
-  BookSeries.belongsTo(Book)
+  book.hasMany(BookSeries)
+  BookSeries.belongsTo(book)
 
-  Series.hasMany(BookSeries)
-  BookSeries.belongsTo(Series)
+  series.hasMany(BookSeries)
+  BookSeries.belongsTo(series)
 
   return BookSeries
 }

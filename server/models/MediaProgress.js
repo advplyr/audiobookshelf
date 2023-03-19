@@ -8,7 +8,7 @@ module.exports = (sequelize) => {
   class MediaProgress extends Model {
     getMediaItem(options) {
       if (!this.mediaItemType) return Promise.resolve(null)
-      const mixinMethodName = `get${this.mediaItemType}`
+      const mixinMethodName = `get${sequelize.uppercaseFirst(this.mediaItemType)}`
       return this[mixinMethodName](options)
     }
   }
@@ -19,7 +19,7 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    MediaItemId: DataTypes.UUIDV4,
+    mediaItemId: DataTypes.UUIDV4,
     mediaItemType: DataTypes.STRING,
     duration: DataTypes.FLOAT,
     currentTime: DataTypes.FLOAT,
@@ -28,46 +28,52 @@ module.exports = (sequelize) => {
     finishedAt: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'MediaProgress'
+    modelName: 'mediaProgress'
   })
 
-  const { Book, PodcastEpisode, User } = sequelize.models
-  Book.hasMany(MediaProgress, {
-    foreignKey: 'MediaItemId',
-    constraints: false,
-    scope: {
-      mediaItemType: 'Book'
-    }
-  })
-  MediaProgress.belongsTo(Book, { foreignKey: 'MediaItemId', constraints: false })
+  const { book, podcastEpisode, user } = sequelize.models
 
-  PodcastEpisode.hasMany(MediaProgress, {
-    foreignKey: 'MediaItemId',
+  book.hasMany(MediaProgress, {
+    foreignKey: 'mediaItemId',
     constraints: false,
     scope: {
-      mediaItemType: 'PodcastEpisode'
+      mediaItemType: 'book'
     }
   })
-  MediaProgress.belongsTo(PodcastEpisode, { foreignKey: 'MediaItemId', constraints: false })
+  MediaProgress.belongsTo(book, { foreignKey: 'mediaItemId', constraints: false })
+
+  podcastEpisode.hasMany(MediaProgress, {
+    foreignKey: 'mediaItemId',
+    constraints: false,
+    scope: {
+      mediaItemType: 'podcastEpisode'
+    }
+  })
+  MediaProgress.belongsTo(podcastEpisode, { foreignKey: 'mediaItemId', constraints: false })
 
   MediaProgress.addHook('afterFind', findResult => {
+    if (!findResult) return
+
     if (!Array.isArray(findResult)) findResult = [findResult]
+
     for (const instance of findResult) {
-      if (instance.mediaItemType === 'Book' && instance.Book !== undefined) {
-        instance.MediaItem = instance.Book
-      } else if (instance.mediaItemType === 'PodcastEpisode' && instance.PodcastEpisode !== undefined) {
-        instance.MediaItem = instance.PodcastEpisode
+      if (instance.mediaItemType === 'book' && instance.book !== undefined) {
+        instance.mediaItem = instance.book
+        instance.dataValues.mediaItem = instance.dataValues.book
+      } else if (instance.mediaItemType === 'podcastEpisode' && instance.podcastEpisode !== undefined) {
+        instance.mediaItem = instance.podcastEpisode
+        instance.dataValues.mediaItem = instance.dataValues.podcastEpisode
       }
       // To prevent mistakes:
-      delete instance.Book
-      delete instance.dataValues.Book
-      delete instance.PodcastEpisode
-      delete instance.dataValues.PodcastEpisode
+      delete instance.book
+      delete instance.dataValues.book
+      delete instance.podcastEpisode
+      delete instance.dataValues.podcastEpisode
     }
   })
 
-  User.hasMany(MediaProgress)
-  MediaProgress.belongsTo(User)
+  user.hasMany(MediaProgress)
+  MediaProgress.belongsTo(user)
 
   return MediaProgress
 }

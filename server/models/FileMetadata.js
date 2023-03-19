@@ -21,10 +21,10 @@ module.exports = (sequelize) => {
     sequelize,
     freezeTableName: true, // sequelize uses datum as singular of data
     name: {
-      singular: 'FileMetadata',
-      plural: 'FileMetadata'
+      singular: 'fileMetadata',
+      plural: 'fileMetadata'
     },
-    modelName: 'FileMetadata'
+    modelName: 'fileMetadata'
   })
 
   return FileMetadata

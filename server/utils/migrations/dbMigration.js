@@ -1,6 +1,5 @@
 const Path = require('path')
 const uuidv4 = require("uuid").v4
-const package = require('../../../package.json')
 const { AudioMimeType } = require('../constants')
 const Logger = require('../../Logger')
 const Database = require('../../Database')
@@ -20,49 +19,50 @@ const oldDbIdMap = {
   files: {}, // key is fullpath
   podcastEpisodes: {},
   books: {}, // key is library item id
+  podcasts: {}, // key is library item id
   devices: {} // key is a json stringify of the old DeviceInfo data
 }
 const newRecords = {
-  User: [],
-  UserPermission: [],
-  Library: [],
-  LibraryFolder: [],
-  LibrarySetting: [],
-  FileMetadata: [],
-  Person: [],
-  LibraryItem: [],
-  LibraryFile: [],
-  EBookFile: [],
-  Book: [],
-  BookAuthor: [],
-  BookNarrator: [],
-  BookChapter: [],
-  Tag: [],
-  BookTag: [],
-  Genre: [],
-  BookGenre: [],
-  Series: [],
-  BookSeries: [],
-  Podcast: [],
-  PodcastTag: [],
-  PodcastGenre: [],
-  PodcastEpisode: [],
-  MediaProgress: [],
-  AudioBookmark: [],
-  MediaFile: [],
-  MediaStream: [],
-  AudioTrack: [],
-  Device: [],
-  PlaybackSession: [],
-  PlaybackSessionListenTime: [],
-  Collection: [],
-  CollectionBook: [],
-  Playlist: [],
-  PlaylistMediaItem: [],
-  Feed: [],
-  FeedEpisode: [],
-  Setting: [],
-  Notification: []
+  user: [],
+  userPermission: [],
+  library: [],
+  libraryFolder: [],
+  librarySetting: [],
+  fileMetadata: [],
+  person: [],
+  eBookFile: [],
+  book: [],
+  podcast: [],
+  libraryItem: [],
+  libraryFile: [],
+  bookAuthor: [],
+  bookNarrator: [],
+  bookChapter: [],
+  tag: [],
+  bookTag: [],
+  genre: [],
+  bookGenre: [],
+  series: [],
+  bookSeries: [],
+  podcastTag: [],
+  podcastGenre: [],
+  podcastEpisode: [],
+  mediaProgress: [],
+  audioBookmark: [],
+  mediaFile: [],
+  mediaStream: [],
+  audioTrack: [],
+  device: [],
+  playbackSession: [],
+  playbackSessionListenTime: [],
+  collection: [],
+  collectionBook: [],
+  playlist: [],
+  playlistMediaItem: [],
+  feed: [],
+  feedEpisode: [],
+  setting: [],
+  notification: []
 }
 
 function getDeviceInfoString(deviceInfo, UserId) {
@@ -102,10 +102,10 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   //
   // Migrate ImageFile
   //
-  let ImageFileId = null
+  let imageFileId = null
   if (oldBook.coverPath) {
-    ImageFileId = oldDbIdMap.files[oldBook.coverPath] || null
-    if (!ImageFileId) {
+    imageFileId = oldDbIdMap.files[oldBook.coverPath] || null
+    if (!imageFileId) {
       const FileMetadata = {
         id: uuidv4(),
         filename: Path.basename(oldBook.coverPath),
@@ -114,26 +114,28 @@ function migrateBook(oldLibraryItem, LibraryItem) {
         createdAt: LibraryItem.createdAt,
         updatedAt: LibraryItem.updatedAt
       }
-      newRecords.FileMetadata.push(FileMetadata)
+      newRecords.fileMetadata.push(FileMetadata)
       oldDbIdMap.files[oldBook.coverPath] = FileMetadata.id
-      ImageFileId = FileMetadata.id
+      imageFileId = FileMetadata.id
     }
   }
 
   //
   // Migrate EBookFile
   //
-  let EBookFileId = null
+  let eBookFileId = null
   if (oldBook.ebookFile) {
     if (oldDbIdMap.files[oldBook.ebookFile.metadata?.path]) {
+      const ext = oldBook.ebookFile.metadata.ext || ''
       const EBookFile = {
         id: uuidv4(),
-        FileMetadataId: oldDbIdMap.files[oldBook.ebookFile.metadata?.path]
+        format: ext.toLowerCase().slice(1),
+        fileMetadataId: oldDbIdMap.files[oldBook.ebookFile.metadata.path]
       }
-      newRecords.EBookFile.push(EBookFile)
-      EBookFileId = EBookFile.id
+      newRecords.eBookFile.push(EBookFile)
+      eBookFileId = EBookFile.id
     } else {
-      Logger.warn(`[dbMigration] migrateBook: `)
+      Logger.warn(`[dbMigration] migrateBook: Unable to find ebook file`)
     }
   }
 
@@ -156,11 +158,10 @@ function migrateBook(oldLibraryItem, LibraryItem) {
     lastCoverSearch: oldBook.lastCoverSearch,
     createdAt: LibraryItem.createdAt,
     updatedAt: LibraryItem.updatedAt,
-    ImageFileId,
-    EBookFileId,
-    LibraryItemId: LibraryItem.id,
+    imageFileId,
+    eBookFileId
   }
-  newRecords.Book.push(Book)
+  newRecords.book.push(Book)
   oldDbIdMap.books[oldLibraryItem.id] = Book.id
 
   //
@@ -169,8 +170,8 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   const oldAudioFiles = oldBook.audioFiles
   let startOffset = 0
   for (const oldAudioFile of oldAudioFiles) {
-    const FileMetadataId = oldDbIdMap.files[oldAudioFile.metadata.path]
-    if (!FileMetadataId) {
+    const fileMetadataId = oldDbIdMap.files[oldAudioFile.metadata.path]
+    if (!fileMetadataId) {
       Logger.warn(`[dbMigration] migrateBook: File metadata not found for audio file "${oldAudioFile.metadata.path}"`)
       continue
     }
@@ -187,9 +188,9 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       tags: cleanAudioFileMetaTags(oldAudioFile.metaTags),
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      FileMetadataId
+      fileMetadataId
     }
-    newRecords.MediaFile.push(MediaFile)
+    newRecords.mediaFile.push(MediaFile)
 
     const MediaStream = {
       id: uuidv4(),
@@ -207,9 +208,9 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       chapters: oldAudioFile.chapters,
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      MediaFileId: MediaFile.id
+      mediaFileId: MediaFile.id
     }
-    newRecords.MediaStream.push(MediaStream)
+    newRecords.mediaStream.push(MediaStream)
 
     if (oldAudioFile.embeddedCoverArt) {
       const CoverMediaStream = {
@@ -220,17 +221,17 @@ function migrateBook(oldLibraryItem, LibraryItem) {
         default: true,
         createdAt: LibraryItem.createdAt,
         updatedAt: LibraryItem.updatedAt,
-        MediaFileId: MediaFile.id
+        mediaFileId: MediaFile.id
       }
-      newRecords.MediaStream.push(CoverMediaStream)
+      newRecords.mediaStream.push(CoverMediaStream)
     }
 
     const include = !oldAudioFile.exclude && !oldAudioFile.invalid
 
     const AudioTrack = {
       id: uuidv4(),
-      MediaItemId: Book.id,
-      mediaItemType: 'Book',
+      mediaItemId: Book.id,
+      mediaItemType: 'book',
       index: oldAudioFile.index,
       startOffset: include ? startOffset : null,
       duration: oldAudioFile.duration,
@@ -241,9 +242,9 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       discNumber: oldAudioFile.discNumFromMeta || oldAudioFile.discNumFromFilename,
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      MediaFileId: MediaFile.id
+      mediaFileId: MediaFile.id
     }
-    newRecords.AudioTrack.push(AudioTrack)
+    newRecords.audioTrack.push(AudioTrack)
 
     if (include) {
       startOffset += AudioTrack.duration
@@ -267,13 +268,13 @@ function migrateBook(oldLibraryItem, LibraryItem) {
         updatedAt: LibraryItem.updatedAt
       }
       tagId = Tag.id
-      newRecords.Tag.push(Tag)
+      newRecords.tag.push(Tag)
     }
 
-    newRecords.BookTag.push({
+    newRecords.bookTag.push({
       id: uuidv4(),
-      BookId: Book.id,
-      TagId: tagId
+      bookId: Book.id,
+      tagId
     })
   }
 
@@ -281,7 +282,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   // Migrate BookChapters
   //
   for (const oldChapter of oldBook.chapters) {
-    newRecords.BookChapter.push({
+    newRecords.bookChapter.push({
       id: uuidv4(),
       index: oldChapter.id,
       start: oldChapter.start,
@@ -289,7 +290,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       title: oldChapter.title,
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      BookId: Book.id
+      bookId: Book.id
     })
   }
 
@@ -311,13 +312,13 @@ function migrateBook(oldLibraryItem, LibraryItem) {
         updatedAt: LibraryItem.updatedAt
       }
       genreId = Genre.id
-      newRecords.Genre.push(Genre)
+      newRecords.genre.push(Genre)
     }
 
-    newRecords.BookGenre.push({
+    newRecords.bookGenre.push({
       id: uuidv4(),
-      BookId: Book.id,
-      GenreId: genreId
+      bookId: Book.id,
+      genreId
     })
   }
 
@@ -326,10 +327,10 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   //
   for (const oldBookAuthor of oldBook.metadata.authors) {
     if (oldDbIdMap.people[oldBookAuthor.id]) {
-      newRecords.BookAuthor.push({
+      newRecords.bookAuthor.push({
         id: uuidv4(),
-        PersonId: oldDbIdMap.people[oldBookAuthor.id],
-        BookId: Book.id
+        authorId: oldDbIdMap.people[oldBookAuthor.id],
+        bookId: Book.id
       })
     } else {
       Logger.warn(`[dbMigration] migrateBook: Book author not found "${oldBookAuthor.name}"`)
@@ -340,23 +341,23 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   // Migrate BookNarrators
   //
   for (const oldBookNarrator of oldBook.metadata.narrators) {
-    let PersonId = oldDbIdMap.people[oldBookNarrator]
-    if (!PersonId) {
+    let personId = oldDbIdMap.people[oldBookNarrator]
+    if (!personId) {
       const Person = {
         id: uuidv4(),
-        type: 'Narrator',
+        type: 'narrator',
         name: oldBookNarrator,
         createdAt: LibraryItem.createdAt,
         updatedAt: LibraryItem.updatedAt
       }
-      newRecords.Person.push(Person)
-      PersonId = Person.id
+      newRecords.person.push(Person)
+      personId = Person.id
     }
 
-    newRecords.BookNarrator.push({
+    newRecords.bookNarrator.push({
       id: uuidv4(),
-      PersonId,
-      BookId: Book.id
+      narratorId: personId,
+      bookId: Book.id
     })
   }
 
@@ -368,10 +369,10 @@ function migrateBook(oldLibraryItem, LibraryItem) {
       const BookSeries = {
         id: uuidv4(),
         sequence: oldBookSeries.sequence,
-        SeriesId: oldDbIdMap.series[oldBookSeries.id],
-        BookId: Book.id
+        seriesId: oldDbIdMap.series[oldBookSeries.id],
+        bookId: Book.id
       }
-      newRecords.BookSeries.push(BookSeries)
+      newRecords.bookSeries.push(BookSeries)
     } else {
       Logger.warn(`[dbMigration] migrateBook: Series not found "${oldBookSeries.name}"`)
     }
@@ -385,10 +386,10 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
   //
   // Migrate ImageFile
   //
-  let ImageFileId = null
+  let imageFileId = null
   if (oldPodcast.coverPath) {
-    ImageFileId = oldDbIdMap.files[oldPodcast.coverPath] || null
-    if (!ImageFileId) {
+    imageFileId = oldDbIdMap.files[oldPodcast.coverPath] || null
+    if (!imageFileId) {
       const FileMetadata = {
         id: uuidv4(),
         filename: Path.basename(oldPodcast.coverPath),
@@ -397,9 +398,9 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
         createdAt: LibraryItem.createdAt,
         updatedAt: LibraryItem.updatedAt
       }
-      newRecords.FileMetadata.push(FileMetadata)
+      newRecords.fileMetadata.push(FileMetadata)
       oldDbIdMap.files[oldPodcast.coverPath] = FileMetadata.id
-      ImageFileId = FileMetadata.id
+      imageFileId = FileMetadata.id
     }
   }
 
@@ -429,10 +430,10 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     lastCoverSearch: oldPodcast.lastCoverSearch,
     createdAt: LibraryItem.createdAt,
     updatedAt: LibraryItem.updatedAt,
-    ImageFileId,
-    LibraryItemId: LibraryItem.id
+    imageFileId,
   }
-  newRecords.Podcast.push(Podcast)
+  newRecords.podcast.push(Podcast)
+  oldDbIdMap.podcasts[oldLibraryItem.id] = Podcast.id
 
   //
   // Migrate Tags
@@ -451,13 +452,13 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
         updatedAt: LibraryItem.updatedAt
       }
       tagId = Tag.id
-      newRecords.Tag.push(Tag)
+      newRecords.tag.push(Tag)
     }
 
-    newRecords.PodcastTag.push({
+    newRecords.podcastTag.push({
       id: uuidv4(),
-      PodcastId: Podcast.id,
-      TagId: tagId
+      podcastId: Podcast.id,
+      tagId
     })
   }
 
@@ -478,13 +479,13 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
         updatedAt: LibraryItem.updatedAt
       }
       genreId = Genre.id
-      newRecords.Genre.push(Genre)
+      newRecords.genre.push(Genre)
     }
 
-    newRecords.PodcastGenre.push({
+    newRecords.podcastGenre.push({
       id: uuidv4(),
-      PodcastId: Podcast.id,
-      GenreId: genreId
+      podcastId: Podcast.id,
+      genreId
     })
   }
 
@@ -494,8 +495,8 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
   const oldEpisodes = oldPodcast.episodes || []
   for (const oldEpisode of oldEpisodes) {
     const oldAudioFile = oldEpisode.audioFile
-    const FileMetadataId = oldDbIdMap.files[oldAudioFile.metadata.path]
-    if (!FileMetadataId) {
+    const fileMetadataId = oldDbIdMap.files[oldAudioFile.metadata.path]
+    if (!fileMetadataId) {
       Logger.warn(`[dbMigration] migratePodcast: File metadata not found for audio file "${oldAudioFile.metadata.path}"`)
       continue
     }
@@ -516,9 +517,9 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       publishedAt: oldEpisode.publishedAt,
       createdAt: oldEpisode.addedAt,
       updatedAt: oldEpisode.updatedAt,
-      PodcastId: Podcast.id
+      podcastId: Podcast.id
     }
-    newRecords.PodcastEpisode.push(PodcastEpisode)
+    newRecords.podcastEpisode.push(PodcastEpisode)
     oldDbIdMap.podcastEpisodes[oldEpisode.id] = PodcastEpisode.id
 
     //
@@ -535,9 +536,9 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       tags: cleanAudioFileMetaTags(oldAudioFile.metaTags),
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      FileMetadataId
+      fileMetadataId
     }
-    newRecords.MediaFile.push(MediaFile)
+    newRecords.mediaFile.push(MediaFile)
 
     const MediaStream = {
       id: uuidv4(),
@@ -555,9 +556,9 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       chapters: oldAudioFile.chapters,
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      MediaFileId: MediaFile.id
+      mediaFileId: MediaFile.id
     }
-    newRecords.MediaStream.push(MediaStream)
+    newRecords.mediaStream.push(MediaStream)
 
     if (oldAudioFile.embeddedCoverArt) {
       const CoverMediaStream = {
@@ -568,15 +569,15 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
         default: true,
         createdAt: LibraryItem.createdAt,
         updatedAt: LibraryItem.updatedAt,
-        MediaFileId: MediaFile.id
+        mediaFileId: MediaFile.id
       }
-      newRecords.MediaStream.push(CoverMediaStream)
+      newRecords.mediaStream.push(CoverMediaStream)
     }
 
     const AudioTrack = {
       id: uuidv4(),
-      MediaItemId: Podcast.id,
-      mediaItemType: 'Podcast',
+      mediaItemId: PodcastEpisode.id,
+      mediaItemType: 'podcastEpisode',
       index: oldAudioFile.index,
       startOffset: 0,
       duration: oldAudioFile.duration,
@@ -587,16 +588,16 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       discNumber: oldAudioFile.discNumFromMeta || oldAudioFile.discNumFromFilename,
       createdAt: LibraryItem.createdAt,
       updatedAt: LibraryItem.updatedAt,
-      MediaFileId: MediaFile.id
+      mediaFileId: MediaFile.id
     }
-    newRecords.AudioTrack.push(AudioTrack)
+    newRecords.audioTrack.push(AudioTrack)
   }
 }
 
 function migrateLibraryItems(oldLibraryItems) {
   for (const oldLibraryItem of oldLibraryItems) {
-    const LibraryId = oldDbIdMap.libraryFolders[oldLibraryItem.folderId]
-    if (!LibraryId) {
+    const libraryFolderId = oldDbIdMap.libraryFolders[oldLibraryItem.folderId]
+    if (!libraryFolderId) {
       Logger.error(`[dbMigration] migrateLibraryItems: Old library folder id not found "${oldLibraryItem.folderId}"`)
       continue
     }
@@ -609,6 +610,7 @@ function migrateLibraryItems(oldLibraryItems) {
       ino: oldLibraryItem.ino,
       path: oldLibraryItem.path,
       relPath: oldLibraryItem.relPath,
+      mediaId: null, // set below
       mediaType: oldLibraryItem.mediaType,
       isFile: !!oldLibraryItem.isFile,
       isMissing: !!oldLibraryItem.isMissing,
@@ -620,10 +622,10 @@ function migrateLibraryItems(oldLibraryItems) {
       lastScanVersion: oldLibraryItem.scanVersion,
       createdAt: oldLibraryItem.addedAt,
       updatedAt: oldLibraryItem.updatedAt,
-      LibraryId
+      libraryFolderId
     }
     oldDbIdMap.libraryItems[oldLibraryItem.id] = LibraryItem.id
-    newRecords.LibraryItem.push(LibraryItem)
+    newRecords.libraryItem.push(LibraryItem)
 
     //
     // Migrate LibraryFiles
@@ -642,17 +644,17 @@ function migrateLibraryItems(oldLibraryItems) {
         createdAt: oldLibraryFile.addedAt || Date.now(),
         updatedAt: oldLibraryFile.updatedAt || Date.now()
       }
-      newRecords.FileMetadata.push(FileMetadata)
+      newRecords.fileMetadata.push(FileMetadata)
       oldDbIdMap.files[FileMetadata.path] = FileMetadata.id
 
       const LibraryFile = {
         id: uuidv4(),
         createdAt: FileMetadata.createdAt,
         updatedAt: FileMetadata.updatedAt,
-        FileMetadataId: FileMetadata.id,
-        LibraryItemId: LibraryItem.id
+        fileMetadataId: FileMetadata.id,
+        libraryItemId: LibraryItem.id
       }
-      newRecords.LibraryFile.push(LibraryFile)
+      newRecords.libraryFile.push(LibraryFile)
     }
 
     // 
@@ -660,8 +662,10 @@ function migrateLibraryItems(oldLibraryItems) {
     //
     if (oldLibraryItem.mediaType === 'book') {
       migrateBook(oldLibraryItem, LibraryItem)
+      LibraryItem.mediaId = oldDbIdMap.books[oldLibraryItem.id]
     } else if (oldLibraryItem.mediaType === 'podcast') {
       migratePodcast(oldLibraryItem, LibraryItem)
+      LibraryItem.mediaId = oldDbIdMap.podcasts[oldLibraryItem.id]
     }
   }
 }
@@ -682,20 +686,20 @@ function migrateLibraries(oldLibraries) {
       updatedAt: oldLibrary.lastUpdate
     }
     oldDbIdMap.libraries[oldLibrary.id] = Library.id
-    newRecords.Library.push(Library)
+    newRecords.library.push(Library)
 
     // 
     // Migrate LibrarySettings
     //
     const oldLibrarySettings = oldLibrary.settings || {}
     for (const oldSettingsKey in oldLibrarySettings) {
-      newRecords.LibrarySetting.push({
+      newRecords.librarySetting.push({
         id: uuidv4(),
         key: oldSettingsKey,
         value: oldLibrarySettings[oldSettingsKey],
         createdAt: oldLibrary.createdAt,
         updatedAt: oldLibrary.lastUpdate,
-        LibraryId: Library.id
+        libraryId: Library.id
       })
     }
 
@@ -708,10 +712,10 @@ function migrateLibraries(oldLibraries) {
         path: oldFolder.fullPath,
         createdAt: oldFolder.addedAt,
         updatedAt: oldLibrary.lastUpdate,
-        LibraryId: Library.id
+        libraryId: Library.id
       }
       oldDbIdMap.libraryFolders[oldFolder.id] = LibraryFolder.id
-      newRecords.LibraryFolder.push(LibraryFolder)
+      newRecords.libraryFolder.push(LibraryFolder)
     }
   }
 }
@@ -728,22 +732,22 @@ function migrateAuthors(oldAuthors) {
         createdAt: oldAuthor.addedAt || Date.now(),
         updatedAt: oldAuthor.updatedAt || Date.now()
       }
-      newRecords.FileMetadata.push(FileMetadata)
+      newRecords.fileMetadata.push(FileMetadata)
       imageFileId = FileMetadata.id
     }
 
     const Person = {
       id: uuidv4(),
-      type: 'Author',
+      type: 'author',
       name: oldAuthor.name,
       asin: oldAuthor.asin || null,
       description: oldAuthor.description,
       createdAt: oldAuthor.addedAt || Date.now(),
       updatedAt: oldAuthor.updatedAt || Date.now(),
-      ImageFileId: imageFileId
+      imageFileId
     }
     oldDbIdMap.people[oldAuthor.id] = Person.id
-    newRecords.Person.push(Person)
+    newRecords.person.push(Person)
   }
 }
 
@@ -757,7 +761,7 @@ function migrateSeries(oldSerieses) {
       updatedAt: oldSeries.updatedAt || Date.now()
     }
     oldDbIdMap.series[oldSeries.id] = Series.id
-    newRecords.Series.push(Series)
+    newRecords.series.push(Series)
   }
 }
 
@@ -780,7 +784,7 @@ function migrateUsers(oldUsers) {
       createdAt: oldUser.createdAt || Date.now()
     }
     oldDbIdMap.users[oldUser.id] = User.id
-    newRecords.User.push(User)
+    newRecords.user.push(User)
 
     // 
     // Migrate UserPermissions
@@ -792,9 +796,9 @@ function migrateUsers(oldUsers) {
           key: oldUserPermission,
           value: !!oldUser.permissions[oldUserPermission],
           createdAt: User.createdAt,
-          UserId: User.id
+          userId: User.id
         }
-        newRecords.UserPermission.push(UserPermission)
+        newRecords.userPermission.push(UserPermission)
       }
     }
     if (oldUser.librariesAccessible?.length) {
@@ -803,9 +807,9 @@ function migrateUsers(oldUsers) {
         key: 'librariesAccessible',
         value: JSON.stringify(oldUser.librariesAccessible),
         createdAt: User.createdAt,
-        UserId: User.id
+        userId: User.id
       }
-      newRecords.UserPermission.push(UserPermission)
+      newRecords.userPermission.push(UserPermission)
     }
     if (oldUser.itemTagsAccessible?.length) {
       const UserPermission = {
@@ -813,32 +817,32 @@ function migrateUsers(oldUsers) {
         key: 'itemTagsAccessible',
         value: JSON.stringify(oldUser.itemTagsAccessible),
         createdAt: User.createdAt,
-        UserId: User.id
+        userId: User.id
       }
-      newRecords.UserPermission.push(UserPermission)
+      newRecords.userPermission.push(UserPermission)
     }
 
     // 
     // Migrate MediaProgress
     //
     for (const oldMediaProgress of oldUser.mediaProgress) {
-      let mediaItemType = 'Book'
-      let MediaItemId = null
+      let mediaItemType = 'book'
+      let mediaItemId = null
       if (oldMediaProgress.episodeId) {
-        mediaItemType = 'PodcastEpisode'
-        MediaItemId = oldDbIdMap.podcastEpisodes[oldMediaProgress.episodeId]
+        mediaItemType = 'podcastEpisode'
+        mediaItemId = oldDbIdMap.podcastEpisodes[oldMediaProgress.episodeId]
       } else {
-        MediaItemId = oldDbIdMap.books[oldMediaProgress.libraryItemId]
+        mediaItemId = oldDbIdMap.books[oldMediaProgress.libraryItemId]
       }
 
-      if (!MediaItemId) {
+      if (!mediaItemId) {
         Logger.warn(`[dbMigration] migrateUsers: Unable to find media item for media progress "${oldMediaProgress.id}"`)
         continue
       }
 
       const MediaProgress = {
         id: uuidv4(),
-        MediaItemId,
+        mediaItemId,
         mediaItemType,
         duration: oldMediaProgress.duration,
         currentTime: oldMediaProgress.currentTime,
@@ -847,49 +851,49 @@ function migrateUsers(oldUsers) {
         finishedAt: oldMediaProgress.finishedAt,
         createdAt: oldMediaProgress.startedAt || oldMediaProgress.lastUpdate,
         updatedAt: oldMediaProgress.lastUpdate,
-        UserId: User.id
+        userId: User.id
       }
-      newRecords.MediaProgress.push(MediaProgress)
+      newRecords.mediaProgress.push(MediaProgress)
     }
 
     // 
     // Migrate AudioBookmarks
     //
     for (const oldBookmark of oldUser.bookmarks) {
-      const MediaItemId = oldDbIdMap.books[oldBookmark.libraryItemId]
-      if (!MediaItemId) {
+      const mediaItemId = oldDbIdMap.books[oldBookmark.libraryItemId]
+      if (!mediaItemId) {
         Logger.warn(`[dbMigration] migrateUsers: Unable to find media item for audio bookmark "${oldBookmark.id}"`)
         continue
       }
 
       const AudioBookmark = {
         id: uuidv4(),
-        MediaItemId,
-        mediaItemType: 'Book',
+        mediaItemId,
+        mediaItemType: 'book',
         title: oldBookmark.title,
         time: oldBookmark.time,
         createdAt: oldBookmark.createdAt,
         updatedAt: oldBookmark.createdAt,
-        UserId: User.id
+        userId: User.id
       }
-      newRecords.AudioBookmark.push(AudioBookmark)
+      newRecords.audioBookmark.push(AudioBookmark)
     }
   }
 }
 
 function migrateSessions(oldSessions) {
   for (const oldSession of oldSessions) {
-    const UserId = oldDbIdMap.users[oldSession.userId] || null // Can be null
+    const userId = oldDbIdMap.users[oldSession.userId] || null // Can be null
 
     //
     // Migrate Device
     //
-    let DeviceId = null
+    let deviceId = null
     if (oldSession.deviceInfo) {
       const oldDeviceInfo = oldSession.deviceInfo
-      const deviceInfoStr = getDeviceInfoString(oldDeviceInfo, UserId)
-      DeviceId = oldDbIdMap.devices[deviceInfoStr]
-      if (!DeviceId) {
+      const deviceInfoStr = getDeviceInfoString(oldDeviceInfo, userId)
+      deviceId = oldDbIdMap.devices[deviceInfoStr]
+      if (!deviceId) {
         let clientName = 'Unknown'
         let clientVersion = null
         let deviceName = null
@@ -918,9 +922,9 @@ function migrateSessions(oldSessions) {
           ipAddress: oldDeviceInfo.ipAddress,
           deviceName, // e.g. Windows 10 Chrome, Google Pixel 6, Apple iPhone 10,3
           deviceVersion,
-          UserId
+          userId
         }
-        newRecords.Device.push(Device)
+        newRecords.device.push(Device)
         oldDbIdMap.devices[deviceInfoStr] = Device.id
       }
     }
@@ -929,18 +933,18 @@ function migrateSessions(oldSessions) {
     //
     // Migrate PlaybackSession
     //
-    let MediaItemId = null
-    let mediaItemType = 'Book'
+    let mediaItemId = null
+    let mediaItemType = 'book'
     if (oldSession.mediaType === 'podcast') {
-      MediaItemId = oldDbIdMap.podcastEpisodes[oldSession.episodeId] || null
-      mediaItemType = 'PodcastEpisode'
+      mediaItemId = oldDbIdMap.podcastEpisodes[oldSession.episodeId] || null
+      mediaItemType = 'podcastEpisode'
     } else {
-      MediaItemId = oldDbIdMap.books[oldSession.libraryItemId] || null
+      mediaItemId = oldDbIdMap.books[oldSession.libraryItemId] || null
     }
 
     const PlaybackSession = {
       id: uuidv4(),
-      MediaItemId, // Can be null
+      mediaItemId, // Can be null
       mediaItemType,
       displayTitle: oldSession.displayTitle,
       displayAuthor: oldSession.displayAuthor,
@@ -952,10 +956,10 @@ function migrateSessions(oldSessions) {
       serverVersion: oldSession.deviceInfo?.serverVersion || null,
       createdAt: oldSession.startedAt,
       updatedAt: oldSession.updatedAt,
-      UserId, // Can be null
-      DeviceId
+      userId, // Can be null
+      deviceId
     }
-    newRecords.PlaybackSession.push(PlaybackSession)
+    newRecords.playbackSession.push(PlaybackSession)
 
     if (oldSession.timeListening) {
       const PlaybackSessionListenTime = {
@@ -964,17 +968,17 @@ function migrateSessions(oldSessions) {
         date: oldSession.date || dateAndTime.format(new Date(PlaybackSession.createdAt), 'YYYY-MM-DD'),
         createdAt: PlaybackSession.createdAt,
         updatedAt: PlaybackSession.updatedAt,
-        PlaybackSessionId: PlaybackSession.id
+        playbackSessionId: PlaybackSession.id
       }
-      newRecords.PlaybackSessionListenTime.push(PlaybackSessionListenTime)
+      newRecords.playbackSessionListenTime.push(PlaybackSessionListenTime)
     }
   }
 }
 
 function migrateCollections(oldCollections) {
   for (const oldCollection of oldCollections) {
-    const LibraryId = oldDbIdMap.libraries[oldCollection.libraryId]
-    if (!LibraryId) {
+    const libraryId = oldDbIdMap.libraries[oldCollection.libraryId]
+    if (!libraryId) {
       Logger.warn(`[dbMigration] migrateCollections: Library not found for collection "${oldCollection.name}" (id:${oldCollection.libraryId})`)
       continue
     }
@@ -991,42 +995,42 @@ function migrateCollections(oldCollections) {
       description: oldCollection.description,
       createdAt: oldCollection.createdAt,
       updatedAt: oldCollection.lastUpdate,
-      LibraryId
+      libraryId
     }
     oldDbIdMap.collections[oldCollection.id] = Collection.id
-    newRecords.Collection.push(Collection)
+    newRecords.collection.push(Collection)
 
-    BookIds.forEach((BookId) => {
+    BookIds.forEach((bookId) => {
       const CollectionBook = {
         id: uuidv4(),
         createdAt: Collection.createdAt,
-        BookId,
-        CollectionId: Collection.id
+        bookId,
+        collectionId: Collection.id
       }
-      newRecords.CollectionBook.push(CollectionBook)
+      newRecords.collectionBook.push(CollectionBook)
     })
   }
 }
 
 function migratePlaylists(oldPlaylists) {
   for (const oldPlaylist of oldPlaylists) {
-    const LibraryId = oldDbIdMap.libraries[oldPlaylist.libraryId]
-    if (!LibraryId) {
+    const libraryId = oldDbIdMap.libraries[oldPlaylist.libraryId]
+    if (!libraryId) {
       Logger.warn(`[dbMigration] migratePlaylists: Library not found for playlist "${oldPlaylist.name}" (id:${oldPlaylist.libraryId})`)
       continue
     }
 
-    const UserId = oldDbIdMap.users[oldPlaylist.userId]
-    if (!UserId) {
+    const userId = oldDbIdMap.users[oldPlaylist.userId]
+    if (!userId) {
       Logger.warn(`[dbMigration] migratePlaylists: User not found for playlist "${oldPlaylist.name}" (id:${oldPlaylist.userId})`)
       continue
     }
 
-    let mediaItemType = 'Book'
+    let mediaItemType = 'book'
     let MediaItemIds = []
     oldPlaylist.items.forEach((itemObj) => {
       if (itemObj.episodeId) {
-        mediaItemType = 'PodcastEpisode'
+        mediaItemType = 'podcastEpisode'
         if (oldDbIdMap.podcastEpisodes[itemObj.episodeId]) {
           MediaItemIds.push(oldDbIdMap.podcastEpisodes[itemObj.episodeId])
         }
@@ -1045,20 +1049,20 @@ function migratePlaylists(oldPlaylists) {
       description: oldPlaylist.description,
       createdAt: oldPlaylist.createdAt,
       updatedAt: oldPlaylist.lastUpdate,
-      UserId,
-      LibraryId
+      userId,
+      libraryId
     }
-    newRecords.Playlist.push(Playlist)
+    newRecords.playlist.push(Playlist)
 
-    MediaItemIds.forEach((MediaItemId) => {
+    MediaItemIds.forEach((mediaItemId) => {
       const PlaylistMediaItem = {
         id: uuidv4(),
-        MediaItemId,
+        mediaItemId,
         mediaItemType,
         createdAt: Playlist.createdAt,
-        PlaylistId: Playlist.id
+        playlistId: Playlist.id
       }
-      newRecords.PlaylistMediaItem.push(PlaylistMediaItem)
+      newRecords.playlistMediaItem.push(PlaylistMediaItem)
     })
   }
 }
@@ -1069,27 +1073,23 @@ function migrateFeeds(oldFeeds) {
       continue
     }
 
-    let entityType = null
-    let EntityId = null
+    let entityId = null
 
     if (oldFeed.entityType === 'collection') {
-      entityType = 'Collection'
-      EntityId = oldDbIdMap.collections[oldFeed.entityId]
+      entityId = oldDbIdMap.collections[oldFeed.entityId]
     } else if (oldFeed.entityType === 'libraryItem') {
-      entityType = 'LibraryItem'
-      EntityId = oldDbIdMap.libraryItems[oldFeed.entityId]
+      entityId = oldDbIdMap.libraryItems[oldFeed.entityId]
     } else if (oldFeed.entityType === 'series') {
-      entityType = 'Series'
-      EntityId = oldDbIdMap.series[oldFeed.entityId]
+      entityId = oldDbIdMap.series[oldFeed.entityId]
     }
 
-    if (!EntityId) {
-      Logger.warn(`[dbMigration] migrateFeeds: Entity not found for feed "${entityType}" (id:${oldFeed.entityId})`)
+    if (!entityId) {
+      Logger.warn(`[dbMigration] migrateFeeds: Entity not found for feed "${oldFeed.entityType}" (id:${oldFeed.entityId})`)
       continue
     }
 
-    const UserId = oldDbIdMap.users[oldFeed.userId]
-    if (!UserId) {
+    const userId = oldDbIdMap.users[oldFeed.userId]
+    if (!userId) {
       Logger.warn(`[dbMigration] migrateFeeds: User not found for feed (id:${oldFeed.userId})`)
       continue
     }
@@ -1099,8 +1099,8 @@ function migrateFeeds(oldFeeds) {
     const Feed = {
       id: uuidv4(),
       slug: oldFeed.slug,
-      entityType,
-      EntityId,
+      entityType: oldFeed.entityType,
+      entityId,
       entityUpdatedAt: oldFeed.entityUpdatedAt,
       serverAddress: oldFeed.serverAddress,
       feedURL: oldFeed.feedUrl,
@@ -1117,9 +1117,9 @@ function migrateFeeds(oldFeeds) {
       preventIndexing: !!oldFeedMeta.preventIndexing,
       createdAt: oldFeed.createdAt,
       updatedAt: oldFeed.updatedAt,
-      UserId
+      userId
     }
-    newRecords.Feed.push(Feed)
+    newRecords.feed.push(Feed)
 
     //
     // Migrate FeedEpisodes
@@ -1143,9 +1143,9 @@ function migrateFeeds(oldFeeds) {
         explicit: !!oldFeedEpisode.explicit,
         createdAt: oldFeed.createdAt,
         updatedAt: oldFeed.updatedAt,
-        FeedId: Feed.id
+        feedId: Feed.id
       }
-      newRecords.FeedEpisode.push(FeedEpisode)
+      newRecords.feedEpisode.push(FeedEpisode)
     }
   }
 }
@@ -1162,7 +1162,7 @@ function migrateSettings(oldSettings) {
       if (value === undefined) value = null
       else if (serverSettingsKey === 'sortingPrefixes') value = JSON.stringify(value)
 
-      newRecords.Setting.push({
+      newRecords.setting.push({
         key: serverSettingsKey,
         value,
         type: 0
@@ -1178,7 +1178,7 @@ function migrateSettings(oldSettings) {
       notificationDelay: notificationSettings.notificationDelay ?? 1000 // ms delay between firing notifications
     }
     for (const notificationSettingKey in cleanedCopy) {
-      newRecords.Setting.push({
+      newRecords.setting.push({
         key: notificationSettingKey,
         value: cleanedCopy[notificationSettingKey],
         type: 1
@@ -1206,7 +1206,7 @@ function migrateSettings(oldSettings) {
           createdAt: oldNotification.createdAt,
           updatedAt: oldNotification.createdAt
         }
-        newRecords.Notification.push(Notification)
+        newRecords.notification.push(Notification)
       }
     }
   }

@@ -9,7 +9,6 @@ module.exports = (sequelize) => {
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
-    // Metadata
     title: DataTypes.STRING,
     author: DataTypes.STRING,
     releaseDate: DataTypes.STRING,
@@ -32,15 +31,13 @@ module.exports = (sequelize) => {
     lastCoverSearch: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'Podcast'
+    modelName: 'podcast'
   })
 
-  const { LibraryItem, FileMetadata } = sequelize.models
-  LibraryItem.hasOne(Podcast)
-  Podcast.belongsTo(LibraryItem)
+  const { fileMetadata } = sequelize.models
 
-  FileMetadata.hasOne(Podcast, { foreignKey: 'ImageFileId' })
-  Podcast.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  fileMetadata.hasOne(Podcast, { foreignKey: 'imageFileId' })
+  Podcast.belongsTo(fileMetadata, { as: 'imageFile', foreignKey: 'imageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
   return Podcast
 }

@@ -12,7 +12,7 @@ module.exports = (sequelize) => {
     type: DataTypes.INTEGER
   }, {
     sequelize,
-    modelName: 'Setting'
+    modelName: 'setting'
   })
 
   return Setting

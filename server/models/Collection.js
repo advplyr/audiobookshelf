@@ -13,13 +13,13 @@ module.exports = (sequelize) => {
     description: DataTypes.TEXT
   }, {
     sequelize,
-    modelName: 'Collection'
+    modelName: 'collection'
   })
 
-  const { Library } = sequelize.models
+  const { library } = sequelize.models
 
-  Library.hasMany(Collection)
-  Collection.belongsTo(Library)
+  library.hasMany(Collection)
+  Collection.belongsTo(library)
 
   return Collection
 }

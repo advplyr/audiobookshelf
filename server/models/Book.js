@@ -23,18 +23,16 @@ module.exports = (sequelize) => {
     lastCoverSearch: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'Book'
+    modelName: 'book'
   })
 
-  const { LibraryItem, FileMetadata, EBookFile } = sequelize.models
-  LibraryItem.hasOne(Book)
-  Book.belongsTo(LibraryItem)
+  const { fileMetadata, eBookFile } = sequelize.models
 
-  FileMetadata.hasOne(Book, { foreignKey: 'ImageFileId ' })
-  Book.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  fileMetadata.hasOne(Book, { foreignKey: 'imageFileId' })
+  Book.belongsTo(fileMetadata, { as: 'imageFile', foreignKey: 'imageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
-  EBookFile.hasOne(Book)
-  Book.belongsTo(EBookFile)
+  eBookFile.hasOne(Book)
+  Book.belongsTo(eBookFile)
 
   return Book
 }

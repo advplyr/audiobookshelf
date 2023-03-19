@@ -25,13 +25,13 @@ module.exports = (sequelize) => {
     explicit: DataTypes.BOOLEAN
   }, {
     sequelize,
-    modelName: 'FeedEpisode'
+    modelName: 'feedEpisode'
   })
 
-  const { Feed } = sequelize.models
+  const { feed } = sequelize.models
 
-  Feed.hasMany(FeedEpisode)
-  FeedEpisode.belongsTo(Feed)
+  feed.hasMany(FeedEpisode)
+  FeedEpisode.belongsTo(feed)
 
   return FeedEpisode
 }

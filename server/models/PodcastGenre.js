@@ -11,21 +11,21 @@ module.exports = (sequelize) => {
     }
   }, {
     sequelize,
-    modelName: 'PodcastGenre',
+    modelName: 'podcastGenre',
     timestamps: false
   })
 
   // Super Many-to-Many
   // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
-  const { Podcast, Genre } = sequelize.models
-  Podcast.belongsToMany(Genre, { through: PodcastGenre })
-  Genre.belongsToMany(Podcast, { through: PodcastGenre })
+  const { podcast, genre } = sequelize.models
+  podcast.belongsToMany(genre, { through: PodcastGenre })
+  genre.belongsToMany(podcast, { through: PodcastGenre })
 
-  Podcast.hasMany(PodcastGenre)
-  PodcastGenre.belongsTo(Podcast)
+  podcast.hasMany(PodcastGenre)
+  PodcastGenre.belongsTo(podcast)
 
-  Genre.hasMany(PodcastGenre)
-  PodcastGenre.belongsTo(Genre)
+  genre.hasMany(PodcastGenre)
+  PodcastGenre.belongsTo(genre)
 
   return PodcastGenre
 }

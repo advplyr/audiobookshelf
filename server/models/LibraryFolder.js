@@ -12,12 +12,12 @@ module.exports = (sequelize) => {
     path: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'LibraryFolder'
+    modelName: 'libraryFolder'
   })
 
-  const { Library } = sequelize.models
-  Library.hasMany(LibraryFolder)
-  LibraryFolder.belongsTo(Library)
+  const { library } = sequelize.models
+  library.hasMany(LibraryFolder)
+  LibraryFolder.belongsTo(library)
 
   return LibraryFolder
 }

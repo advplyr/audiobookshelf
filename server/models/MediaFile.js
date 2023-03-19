@@ -17,13 +17,13 @@ module.exports = (sequelize) => {
     tags: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'MediaFile'
+    modelName: 'mediaFile'
   })
 
-  const { FileMetadata } = sequelize.models
+  const { fileMetadata } = sequelize.models
 
-  FileMetadata.hasOne(MediaFile, { foreignKey: 'FileMetadataId' })
-  MediaFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
+  fileMetadata.hasOne(MediaFile, { foreignKey: 'fileMetadataId' })
+  MediaFile.belongsTo(fileMetadata, { as: 'fileMetadata', foreignKey: 'fileMetadataId' })
 
   return MediaFile
 }

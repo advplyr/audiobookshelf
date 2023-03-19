@@ -18,7 +18,7 @@ module.exports = (sequelize) => {
     lastScanVersion: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'Library'
+    modelName: 'library'
   })
 
   return Library

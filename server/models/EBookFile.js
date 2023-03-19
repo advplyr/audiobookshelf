@@ -8,16 +8,17 @@ module.exports = (sequelize) => {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true
-    }
+    },
+    format: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'EBookFile'
+    modelName: 'eBookFile'
   })
 
-  const { FileMetadata } = sequelize.models
+  const { fileMetadata } = sequelize.models
 
-  FileMetadata.hasOne(EBookFile, { foreignKey: 'FileMetadataId' })
-  EBookFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
+  fileMetadata.hasOne(EBookFile, { foreignKey: 'fileMetadataId' })
+  EBookFile.belongsTo(fileMetadata, { as: 'fileMetadata', foreignKey: 'fileMetadataId' })
 
   return EBookFile
 }

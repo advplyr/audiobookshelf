@@ -22,7 +22,7 @@ module.exports = (sequelize) => {
     extraData: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'Notification'
+    modelName: 'notification'
   })
 
   return Notification

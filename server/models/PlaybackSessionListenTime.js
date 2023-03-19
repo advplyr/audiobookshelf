@@ -13,13 +13,13 @@ module.exports = (sequelize) => {
     date: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'PlaybackSessionListenTime'
+    modelName: 'playbackSessionListenTime'
   })
 
-  const { PlaybackSession } = sequelize.models
+  const { playbackSession } = sequelize.models
 
-  PlaybackSession.hasMany(PlaybackSessionListenTime)
-  PlaybackSessionListenTime.belongsTo(PlaybackSession)
+  playbackSession.hasMany(PlaybackSessionListenTime)
+  PlaybackSessionListenTime.belongsTo(playbackSession)
 
   return PlaybackSessionListenTime
 }

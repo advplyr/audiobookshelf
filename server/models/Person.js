@@ -15,12 +15,12 @@ module.exports = (sequelize) => {
     description: DataTypes.TEXT
   }, {
     sequelize,
-    modelName: 'Person'
+    modelName: 'person'
   })
 
-  const { FileMetadata } = sequelize.models
-  FileMetadata.hasMany(Person, { foreignKey: 'ImageFileId' })
-  Person.belongsTo(FileMetadata, { as: 'ImageFile', foreignKey: 'ImageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
+  const { fileMetadata } = sequelize.models
+  fileMetadata.hasMany(Person, { foreignKey: 'imageFileId' })
+  Person.belongsTo(fileMetadata, { as: 'imageFile', foreignKey: 'imageFileId' }) // Ref: https://sequelize.org/docs/v6/core-concepts/assocs/#defining-an-alias
 
   return Person
 }

@@ -17,13 +17,13 @@ module.exports = (sequelize) => {
     deviceVersion: DataTypes.STRING // e.g. Browser version or Android SDK
   }, {
     sequelize,
-    modelName: 'Device'
+    modelName: 'device'
   })
 
-  const { User } = sequelize.models
+  const { user } = sequelize.models
 
-  User.hasMany(Device)
-  Device.belongsTo(User)
+  user.hasMany(Device)
+  Device.belongsTo(user)
 
   return Device
 }

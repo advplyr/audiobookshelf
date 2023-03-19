@@ -37,13 +37,13 @@ module.exports = (sequelize) => {
     chapters: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'MediaStream'
+    modelName: 'mediaStream'
   })
 
-  const { MediaFile } = sequelize.models
+  const { mediaFile } = sequelize.models
 
-  MediaFile.hasMany(MediaStream)
-  MediaStream.belongsTo(MediaFile)
+  mediaFile.hasMany(MediaStream)
+  MediaStream.belongsTo(mediaFile)
 
   return MediaStream
 }

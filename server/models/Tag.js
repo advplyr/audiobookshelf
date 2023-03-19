@@ -13,7 +13,7 @@ module.exports = (sequelize) => {
     cleanName: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'Tag'
+    modelName: 'tag'
   })
 
   return Tag

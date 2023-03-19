@@ -13,13 +13,13 @@ module.exports = (sequelize) => {
     value: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'LibrarySetting'
+    modelName: 'librarySetting'
   })
 
-  const { Library } = sequelize.models
+  const { library } = sequelize.models
 
-  Library.hasMany(LibrarySetting)
-  LibrarySetting.belongsTo(Library)
+  library.hasMany(LibrarySetting)
+  LibrarySetting.belongsTo(library)
 
   return LibrarySetting
 }

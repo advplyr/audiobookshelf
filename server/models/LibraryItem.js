@@ -1,7 +1,13 @@
 const { DataTypes, Model } = require('sequelize')
 
 module.exports = (sequelize) => {
-  class LibraryItem extends Model { }
+  class LibraryItem extends Model {
+    getMedia(options) {
+      if (!this.mediaType) return Promise.resolve(null)
+      const mixinMethodName = `get${sequelize.uppercaseFirst(this.mediaType)}`
+      return this[mixinMethodName](options)
+    }
+  }
 
   LibraryItem.init({
     id: {
@@ -12,6 +18,7 @@ module.exports = (sequelize) => {
     ino: DataTypes.STRING,
     path: DataTypes.STRING,
     relPath: DataTypes.STRING,
+    mediaId: DataTypes.UUIDV4,
     mediaType: DataTypes.STRING,
     isFile: DataTypes.BOOLEAN,
     isMissing: DataTypes.BOOLEAN,
@@ -23,12 +30,50 @@ module.exports = (sequelize) => {
     lastScanVersion: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'LibraryItem'
+    modelName: 'libraryItem'
   })
 
-  const { LibraryFolder } = sequelize.models
-  LibraryFolder.hasMany(LibraryItem)
-  LibraryItem.belongsTo(LibraryFolder)
+  const { libraryFolder, book, podcast } = sequelize.models
+  libraryFolder.hasMany(LibraryItem)
+  LibraryItem.belongsTo(libraryFolder)
+
+  book.hasOne(LibraryItem, {
+    foreignKey: 'mediaId',
+    constraints: false,
+    scope: {
+      mediaType: 'book'
+    }
+  })
+  LibraryItem.belongsTo(book, { foreignKey: 'mediaId', constraints: false })
+
+  podcast.hasOne(LibraryItem, {
+    foreignKey: 'mediaId',
+    constraints: false,
+    scope: {
+      mediaType: 'podcast'
+    }
+  })
+  LibraryItem.belongsTo(podcast, { foreignKey: 'mediaId', constraints: false })
+
+  LibraryItem.addHook('afterFind', findResult => {
+    if (!findResult) return
+
+    if (!Array.isArray(findResult)) findResult = [findResult]
+    for (const instance of findResult) {
+      if (instance.mediaType === 'book' && instance.book !== undefined) {
+        instance.media = instance.book
+        instance.dataValues.media = instance.dataValues.book
+      } else if (instance.mediaType === 'podcast' && instance.podcast !== undefined) {
+        instance.media = instance.podcast
+        instance.dataValues.media = instance.dataValues.podcast
+      }
+      // To prevent mistakes:
+      delete instance.book
+      delete instance.dataValues.book
+      delete instance.podcast
+      delete instance.dataValues.podcast
+    }
+  })
 
   return LibraryItem
 }

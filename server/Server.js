@@ -22,6 +22,7 @@ const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
 
 const ApiRouter = require('./routers/ApiRouter')
+const ApiRouter2 = require('./routers/ApiRouter2')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
@@ -84,6 +85,7 @@ class Server {
 
     // Routers
     this.apiRouter = new ApiRouter(this)
+
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager)
     this.staticRouter = new StaticRouter(this.db)
 
@@ -102,9 +104,9 @@ class Server {
     await this.playbackSessionManager.removeOrphanStreams()
 
     // TODO: Test new db connection
-    await Database.init()
-    // await Database.createTestUser()
-    await dbMigration3.migrate()
+    const force = true
+    await Database.init(force)
+    if (force) await dbMigration3.migrate()
 
     const previousVersion = await this.db.checkPreviousVersion() // Returns null if same server version
     if (previousVersion) {
@@ -169,6 +171,7 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
+    router.use('/api/v1', new ApiRouter2(this).router)
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)

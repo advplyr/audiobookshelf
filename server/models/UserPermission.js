@@ -13,13 +13,13 @@ module.exports = (sequelize) => {
     value: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'UserPermission'
+    modelName: 'userPermission'
   })
 
-  const { User } = sequelize.models
+  const { user } = sequelize.models
 
-  User.hasMany(UserPermission)
-  UserPermission.belongsTo(User)
+  user.hasMany(UserPermission)
+  UserPermission.belongsTo(user)
 
   return UserPermission
 }

@@ -11,21 +11,21 @@ module.exports = (sequelize) => {
     }
   }, {
     sequelize,
-    modelName: 'BookAuthor',
+    modelName: 'bookAuthor',
     timestamps: false
   })
 
   // Super Many-to-Many
   // ref: https://sequelize.org/docs/v6/advanced-association-concepts/advanced-many-to-many/#the-best-of-both-worlds-the-super-many-to-many-relationship
-  const { Book, Person } = sequelize.models
-  Book.belongsToMany(Person, { through: BookAuthor })
-  Person.belongsToMany(Book, { through: BookAuthor })
+  const { book, person } = sequelize.models
+  book.belongsToMany(person, { through: BookAuthor, as: 'authors', otherKey: 'authorId' })
+  person.belongsToMany(book, { through: BookAuthor, foreignKey: 'authorId' })
 
-  Book.hasMany(BookAuthor)
-  BookAuthor.belongsTo(Book)
+  book.hasMany(BookAuthor)
+  BookAuthor.belongsTo(book)
 
-  Person.hasMany(BookAuthor)
-  BookAuthor.belongsTo(Person)
+  person.hasMany(BookAuthor, { foreignKey: 'authorId' })
+  BookAuthor.belongsTo(person, { as: 'author', foreignKey: 'authorId' })
 
   return BookAuthor
 }

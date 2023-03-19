@@ -13,7 +13,7 @@ module.exports = (sequelize) => {
     description: DataTypes.TEXT
   }, {
     sequelize,
-    modelName: 'Series'
+    modelName: 'series'
   })
 
   return Series

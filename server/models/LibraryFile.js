@@ -11,15 +11,15 @@ module.exports = (sequelize) => {
     }
   }, {
     sequelize,
-    modelName: 'LibraryFile'
+    modelName: 'libraryFile'
   })
 
-  const { LibraryItem, FileMetadata } = sequelize.models
-  LibraryItem.hasMany(LibraryFile)
-  LibraryFile.belongsTo(LibraryItem)
+  const { libraryItem, fileMetadata } = sequelize.models
+  libraryItem.hasMany(LibraryFile)
+  LibraryFile.belongsTo(libraryItem)
 
-  FileMetadata.hasOne(LibraryFile, { foreignKey: 'FileMetadataId' })
-  LibraryFile.belongsTo(FileMetadata, { as: 'FileMetadata', foreignKey: 'FileMetadataId' })
+  fileMetadata.hasOne(LibraryFile, { foreignKey: 'fileMetadataId' })
+  LibraryFile.belongsTo(fileMetadata, { as: 'fileMetadata', foreignKey: 'fileMetadataId' })
 
   return LibraryFile
 }

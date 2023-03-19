@@ -8,7 +8,7 @@ module.exports = (sequelize) => {
   class Feed extends Model {
     getEntity(options) {
       if (!this.entityType) return Promise.resolve(null)
-      const mixinMethodName = `get${this.entityType}`
+      const mixinMethodName = `get${sequelize.uppercaseFirst(this.entityType)}`
       return this[mixinMethodName](options)
     }
   }
@@ -21,7 +21,7 @@ module.exports = (sequelize) => {
     },
     slug: DataTypes.STRING,
     entityType: DataTypes.STRING,
-    EntityId: DataTypes.UUIDV4,
+    entityId: DataTypes.UUIDV4,
     entityUpdatedAt: DataTypes.DATE,
     serverAddress: DataTypes.STRING,
     feedURL: DataTypes.STRING,
@@ -38,72 +38,78 @@ module.exports = (sequelize) => {
     preventIndexing: DataTypes.BOOLEAN
   }, {
     sequelize,
-    modelName: 'Feed'
+    modelName: 'feed'
   })
 
-  const { User, LibraryItem, Collection, Series, Playlist } = sequelize.models
+  const { user, libraryItem, collection, series, playlist } = sequelize.models
 
-  User.hasMany(Feed)
-  Feed.belongsTo(User)
+  user.hasMany(Feed)
+  Feed.belongsTo(user)
 
-  LibraryItem.hasMany(Feed, {
-    foreignKey: 'EntityId',
+  libraryItem.hasMany(Feed, {
+    foreignKey: 'entityId',
     constraints: false,
     scope: {
-      entityType: 'LibraryItem'
+      entityType: 'libraryItem'
     }
   })
-  Feed.belongsTo(LibraryItem, { foreignKey: 'EntityId', constraints: false })
+  Feed.belongsTo(libraryItem, { foreignKey: 'entityId', constraints: false })
 
-  Collection.hasMany(Feed, {
-    foreignKey: 'EntityId',
+  collection.hasMany(Feed, {
+    foreignKey: 'entityId',
     constraints: false,
     scope: {
-      entityType: 'Collection'
+      entityType: 'collection'
     }
   })
-  Feed.belongsTo(Collection, { foreignKey: 'EntityId', constraints: false })
+  Feed.belongsTo(collection, { foreignKey: 'entityId', constraints: false })
 
-  Series.hasMany(Feed, {
-    foreignKey: 'EntityId',
+  series.hasMany(Feed, {
+    foreignKey: 'entityId',
     constraints: false,
     scope: {
-      entityType: 'Series'
+      entityType: 'series'
     }
   })
-  Feed.belongsTo(Series, { foreignKey: 'EntityId', constraints: false })
+  Feed.belongsTo(series, { foreignKey: 'entityId', constraints: false })
 
-  Playlist.hasMany(Feed, {
-    foreignKey: 'EntityId',
+  playlist.hasMany(Feed, {
+    foreignKey: 'entityId',
     constraints: false,
     scope: {
-      entityType: 'Playlist'
+      entityType: 'playlist'
     }
   })
-  Feed.belongsTo(Playlist, { foreignKey: 'EntityId', constraints: false })
+  Feed.belongsTo(playlist, { foreignKey: 'entityId', constraints: false })
 
   Feed.addHook('afterFind', findResult => {
+    if (!findResult) return
+
     if (!Array.isArray(findResult)) findResult = [findResult]
     for (const instance of findResult) {
-      if (instance.entityType === 'LibraryItem' && instance.LibraryItem !== undefined) {
-        instance.Entity = instance.LibraryItem
-      } else if (instance.mediaItemType === 'Collection' && instance.Collection !== undefined) {
-        instance.Entity = instance.Collection
-      } else if (instance.mediaItemType === 'Series' && instance.Series !== undefined) {
-        instance.Entity = instance.Series
-      } else if (instance.mediaItemType === 'Playlist' && instance.Playlist !== undefined) {
-        instance.Entity = instance.Playlist
+      if (instance.entityType === 'libraryItem' && instance.libraryItem !== undefined) {
+        instance.entity = instance.libraryItem
+        instance.dataValues.entity = instance.dataValues.libraryItem
+      } else if (instance.entityType === 'collection' && instance.collection !== undefined) {
+        instance.entity = instance.collection
+        instance.dataValues.entity = instance.dataValues.collection
+      } else if (instance.entityType === 'series' && instance.series !== undefined) {
+        instance.entity = instance.series
+        instance.dataValues.entity = instance.dataValues.series
+      } else if (instance.entityType === 'playlist' && instance.playlist !== undefined) {
+        instance.entity = instance.playlist
+        instance.dataValues.entity = instance.dataValues.playlist
       }
 
       // To prevent mistakes:
-      delete instance.LibraryItem
-      delete instance.dataValues.LibraryItem
-      delete instance.Collection
-      delete instance.dataValues.Collection
-      delete instance.Series
-      delete instance.dataValues.Series
-      delete instance.Playlist
-      delete instance.dataValues.Playlist
+      delete instance.libraryItem
+      delete instance.dataValues.libraryItem
+      delete instance.collection
+      delete instance.dataValues.collection
+      delete instance.series
+      delete instance.dataValues.series
+      delete instance.playlist
+      delete instance.dataValues.playlist
     }
   })
 

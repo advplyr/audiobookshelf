@@ -23,12 +23,12 @@ module.exports = (sequelize) => {
     publishedAt: DataTypes.DATE
   }, {
     sequelize,
-    modelName: 'PodcastEpisode'
+    modelName: 'podcastEpisode'
   })
 
-  const { Podcast } = sequelize.models
-  Podcast.hasMany(PodcastEpisode)
-  PodcastEpisode.belongsTo(Podcast)
+  const { podcast } = sequelize.models
+  podcast.hasMany(PodcastEpisode)
+  PodcastEpisode.belongsTo(podcast)
 
   return PodcastEpisode
 }

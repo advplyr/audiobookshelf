@@ -26,7 +26,7 @@ module.exports = (sequelize) => {
     extraData: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'User'
+    modelName: 'user'
   })
 
   return User

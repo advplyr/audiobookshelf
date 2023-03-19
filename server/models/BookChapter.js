@@ -15,13 +15,13 @@ module.exports = (sequelize) => {
     end: DataTypes.FLOAT
   }, {
     sequelize,
-    modelName: 'BookChapter'
+    modelName: 'bookChapter'
   })
 
-  const { Book } = sequelize.models
+  const { book } = sequelize.models
 
-  Book.hasMany(BookChapter)
-  BookChapter.belongsTo(Book)
+  book.hasMany(BookChapter)
+  BookChapter.belongsTo(book)
 
   return BookChapter
 }
