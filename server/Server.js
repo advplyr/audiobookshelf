@@ -104,7 +104,7 @@ class Server {
     await this.playbackSessionManager.removeOrphanStreams()
 
     // TODO: Test new db connection
-    const force = true
+    const force = false
     await Database.init(force)
     if (force) await dbMigration3.migrate()
 
