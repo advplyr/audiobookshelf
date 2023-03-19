@@ -566,6 +566,7 @@
   "PlaceholderNewFolderPath": "Путь к новой папке",
   "PlaceholderNewPlaylist": "Новое название плейлиста",
   "PlaceholderSearch": "Поиск...",
+  "PlaceholderSearchEpisode": "Search episode...",
   "ToastAccountUpdateFailed": "Не удалось обновить учетную запись",
   "ToastAccountUpdateSuccess": "Учетная запись обновлена",
   "ToastAuthorImageRemoveFailed": "Не удалось удалить изображение",

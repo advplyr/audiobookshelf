@@ -566,6 +566,7 @@
   "PlaceholderNewFolderPath": "Nueva ruta de carpeta",
   "PlaceholderNewPlaylist": "Nuevo nombre de la lista de reproducción",
   "PlaceholderSearch": "Buscando..",
+  "PlaceholderSearchEpisode": "Search episode..",
   "ToastAccountUpdateFailed": "Error al actualizar cuenta",
   "ToastAccountUpdateSuccess": "Cuenta actualizada",
   "ToastAuthorImageRemoveFailed": "Error al eliminar la imagen",
