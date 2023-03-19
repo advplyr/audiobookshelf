@@ -28,6 +28,11 @@ export default class LocalAudioPlayer extends EventEmitter {
     return this.audioTracks[this.currentTrackIndex] || {}
   }
 
+  get hslContentUrl() {
+    // the hls stream playlist is the same for all tracks
+    return this.audioTracks[0].relativeContentUrl
+  }
+
   initialize() {
     if (document.getElementById('audio-player')) {
       document.getElementById('audio-player').remove()
@@ -132,7 +137,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     if (!Hls.isSupported()) {
       console.warn('HLS is not supported - fallback to using audio element')
       this.usingNativeplayer = true
-      this.player.src = this.currentTrack.relativeContentUrl
+      this.player.src = this.hslContentUrl
       this.player.currentTime = this.startTime
       return
     }
@@ -148,7 +153,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-      this.hlsInstance.loadSource(this.currentTrack.relativeContentUrl)
+      this.hlsInstance.loadSource(this.hslContentUrl)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')
