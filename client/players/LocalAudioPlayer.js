@@ -28,11 +28,6 @@ export default class LocalAudioPlayer extends EventEmitter {
     return this.audioTracks[this.currentTrackIndex] || {}
   }
 
-  get hslContentUrl() {
-    // the hls stream playlist is the same for all tracks
-    return this.audioTracks[0].relativeContentUrl
-  }
-
   initialize() {
     if (document.getElementById('audio-player')) {
       document.getElementById('audio-player').remove()
@@ -132,12 +127,13 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   setHlsStream() {
     this.trackStartTime = 0
+    let m3u8Url = this.audioTracks[0].relativeContentUrl
 
     // iOS does not support Media Elements but allows for HLS in the native audio player
     if (!Hls.isSupported()) {
       console.warn('HLS is not supported - fallback to using audio element')
       this.usingNativeplayer = true
-      this.player.src = this.hslContentUrl
+      this.player.src = m3u8Url
       this.player.currentTime = this.startTime
       return
     }
@@ -153,7 +149,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
     this.hlsInstance.attachMedia(this.player)
     this.hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
-      this.hlsInstance.loadSource(this.hslContentUrl)
+      this.hlsInstance.loadSource(m3u8Url)
 
       this.hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('[HLS] Manifest Parsed')
