@@ -133,7 +133,7 @@ export default class LocalAudioPlayer extends EventEmitter {
     if (!Hls.isSupported()) {
       console.warn('HLS is not supported - fallback to using audio element')
       this.usingNativeplayer = true
-      this.player.src = m3u8Url
+      this.player.src = this.currentTrack.relativeContentUrl
       this.player.currentTime = this.startTime
       return
     }
