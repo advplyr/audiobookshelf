@@ -21,8 +21,9 @@ const Db = require('./Db')
 const Database = require('./Database')
 const SocketAuthority = require('./SocketAuthority')
 
+const routes = require('./routes/index')
+
 const ApiRouter = require('./routers/ApiRouter')
-const ApiRouter2 = require('./routers/ApiRouter2')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
@@ -171,7 +172,7 @@ class Server {
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 
-    router.use('/api/v1', new ApiRouter2(this).router)
+    router.use('/api/v1', routes)
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
