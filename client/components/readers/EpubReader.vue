@@ -6,7 +6,7 @@
           class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl"
           @mousedown.prevent @click="prev">chevron_left</span>
       </div>
-      <div id="frame" class="w-full" style="height: 90%">
+      <div id="frame" class="w-full" style="height: 80%">
         <div id="viewer" class="border border-gray-100 bg-white shadow-md"></div>
       </div>
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center justify-center overflow-x-hidden">
@@ -104,7 +104,7 @@ export default {
       /** @type {ePub.Rendition} */
       reader.rendition = reader.book.renderTo("viewer", {
         width: window.innerWidth - 200,
-        height: window.innerHeight * 0.9
+        height: window.innerHeight * 0.8
       });
 
       reader.rendition.display(this.userMediaProgress?.currentTime);
