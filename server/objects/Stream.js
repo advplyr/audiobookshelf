@@ -121,7 +121,7 @@ class Stream extends EventEmitter {
     return ['mp4', 'm4a', 'm4b'].includes(this.tracksAudioFileType)
   }
   get transcodeForceAAC() {
-    return !!this.transcodeOptions.forceAAC
+    return !!this.transcodeOptions.forceAAC || this.mimeTypesToForceAAC.includes(this.tracksMimeType) || this.codecsToForceAAC.includes(this.tracksCodec)
   }
 
   toJSON() {
@@ -275,7 +275,7 @@ class Stream extends EventEmitter {
     const logLevel = process.env.NODE_ENV === 'production' ? 'error' : 'warning'
 
     let audioCodec = 'copy'
-    if (this.transcodeForceAAC || this.mimeTypesToForceAAC.includes(this.tracksMimeType) || this.codecsToForceAAC.includes(this.tracksCodec)) {
+    if (this.transcodeForceAAC) {
       Logger.debug(`[Stream] Forcing AAC for tracks with mime type ${this.tracksMimeType} and codec ${this.tracksCodec}`)
       audioCodec = 'aac'
     }
