@@ -254,9 +254,92 @@ const getLibraryItemExpanded = (libraryItemId) => {
         model: Database.models.libraryFile,
         include: 'fileMetadata'
       },
+      'libraryFolder',
+      'library'
+    ]
+  })
+}
+
+const getLibraryItemsForLibrary = async (libraryId) => {
+  return Database.models.libraryItem.findAll({
+    where: {
+      libraryId
+    },
+    limit: 50,
+    order: [
+      [Database.models.book, 'title', 'DESC'],
+      [Database.models.podcast, 'title', 'DESC']
+    ],
+    include: [
       {
-        model: Database.models.libraryFolder,
-        include: 'library'
+        model: Database.models.book,
+        attributes: [
+          'id', 'title', 'subtitle', 'publishedYear', 'publishedDate', 'publisher', 'description', 'isbn', 'asin', 'language', 'explicit',
+          [Sequelize.literal('(SELECT COUNT(*) FROM "audioTracks" WHERE "audioTracks"."mediaItemId" = book.id)'), 'numAudioTracks'],
+          [Sequelize.literal('(SELECT COUNT(*) FROM "bookChapters" WHERE "bookChapters"."bookId" = book.id)'), 'numChapters']
+        ],
+        include: [
+          {
+            model: Database.models.genre,
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: Database.models.tag,
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: Database.models.person,
+            as: 'authors',
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: Database.models.person,
+            as: 'narrators',
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: Database.models.series,
+            attributes: ['id', 'name'],
+            through: {
+              attributes: ['sequence']
+            }
+          }
+        ]
+      },
+      {
+        model: Database.models.podcast,
+        attributes: [
+          'id', 'title', 'author', 'releaseDate', 'feedURL', 'imageURL', 'description', 'itunesPageURL', 'itunesId', 'itunesArtistId', 'language', 'podcastType', 'explicit', 'autoDownloadEpisodes',
+          [Sequelize.literal('(SELECT COUNT(*) FROM "podcastEpisodes" WHERE "podcastEpisodes"."podcastId" = podcast.id)'), 'numPodcastEpisodes']
+        ],
+        include: [
+          {
+            model: Database.models.genre,
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: Database.models.tag,
+            attributes: ['id', 'name'],
+            through: {
+              attributes: []
+            }
+          },
+        ]
       }
     ]
   })
@@ -265,5 +348,6 @@ const getLibraryItemExpanded = (libraryItemId) => {
 module.exports = {
   getLibraryItemMinified,
   getLibraryItemFull,
-  getLibraryItemExpanded
+  getLibraryItemExpanded,
+  getLibraryItemsForLibrary
 }

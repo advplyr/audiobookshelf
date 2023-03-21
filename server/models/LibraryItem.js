@@ -33,7 +33,10 @@ module.exports = (sequelize) => {
     modelName: 'libraryItem'
   })
 
-  const { libraryFolder, book, podcast } = sequelize.models
+  const { library, libraryFolder, book, podcast } = sequelize.models
+  library.hasMany(LibraryItem)
+  LibraryItem.belongsTo(library)
+
   libraryFolder.hasMany(LibraryItem)
   LibraryItem.belongsTo(libraryFolder)
 

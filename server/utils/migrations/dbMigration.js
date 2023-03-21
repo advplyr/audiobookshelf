@@ -601,6 +601,11 @@ function migrateLibraryItems(oldLibraryItems) {
       Logger.error(`[dbMigration] migrateLibraryItems: Old library folder id not found "${oldLibraryItem.folderId}"`)
       continue
     }
+    const libraryId = oldDbIdMap.libraries[oldLibraryItem.libraryId]
+    if (!libraryId) {
+      Logger.error(`[dbMigration] migrateLibraryItems: Old library id not found "${oldLibraryItem.libraryId}"`)
+      continue
+    }
 
     //
     // Migrate LibraryItem
@@ -622,6 +627,7 @@ function migrateLibraryItems(oldLibraryItems) {
       lastScanVersion: oldLibraryItem.scanVersion,
       createdAt: oldLibraryItem.addedAt,
       updatedAt: oldLibraryItem.updatedAt,
+      libraryId,
       libraryFolderId
     }
     oldDbIdMap.libraryItems[oldLibraryItem.id] = LibraryItem.id
