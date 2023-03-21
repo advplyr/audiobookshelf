@@ -107,18 +107,29 @@ export default {
         height: window.innerHeight * 0.9
       });
 
-      reader.rendition.display(cfi);
+      reader.rendition.display(this.userMediaProgress?.currentTime);
       reader.book.ready.then(() => {
         reader.rendition.on('relocated', reader.relocated);
         reader.rendition.on('keydown', reader.keyUp)
         document.addEventListener('keydown', reader.keyUp, false);
 
-        reader.book.locations.generate();
+        if (reader.userMediaProgress?.duration) {
+          reader.book.locations.load(reader.userMediaProgress.duration)
+        } else {
+          reader.book.locations.generate().then(() => {
+          var updatePayload = {
+            duration: reader.book.locations.save(),
+          }
+          this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload).catch((error) => {
+            console.error('Failed', error)
+          })
+        });
+        }
       });
     },
   },
   mounted() {
-    this.initEpub(this.userMediaProgress?.currentTime);
+    this.initEpub();
   },
 };
 </script>
