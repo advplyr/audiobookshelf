@@ -314,7 +314,7 @@ class Stream extends EventEmitter {
       Logger.info('')
       if (this.isResetting) {
         // AAC encode is much slower
-        const clearIsResettingTime = this.transcodeForceAAC ? 3000 : 500
+        const clearIsResettingTime = this.transcodeForceAAC ? 10000 : 500
         setTimeout(() => {
           Logger.info('[STREAM] Clearing isResetting')
           this.isResetting = false
