@@ -4,7 +4,7 @@
       <input v-model="selected" :disabled="disabled" type="checkbox" class="opacity-0 absolute" :class="!disabled ? 'cursor-pointer' : ''" />
       <svg v-if="selected" class="fill-current pointer-events-none" :class="svgClass" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z" /></svg>
     </div>
-    <div v-if="label" class="select-none text-gray-100" :class="labelClassname">{{ label }}</div>
+    <div v-if="label" class="select-none" :class="[labelClassname, disabled ? 'text-gray-400' : 'text-gray-100']">{{ label }}</div>
   </label>
 </template>
 

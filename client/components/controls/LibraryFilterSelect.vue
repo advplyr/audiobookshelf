@@ -186,6 +186,11 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelAbridged,
+          value: 'abridged',
+          sublist: false
+        },
+        {
           text: this.$strings.ButtonIssues,
           value: 'issues',
           sublist: false

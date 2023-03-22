@@ -50,7 +50,7 @@
       </div>
 
       <div class="flex flex-wrap mt-2 -mx-1">
-        <div class="w-full md:w-1/2 px-1">
+        <div class="w-full md:w-1/4 px-1">
           <ui-text-input-with-label ref="publisherInput" v-model="details.publisher" :label="$strings.LabelPublisher" />
         </div>
         <div class="w-1/2 md:w-1/4 px-1 mt-2 md:mt-0">
@@ -59,6 +59,11 @@
         <div class="flex-grow px-1 pt-6 mt-2 md:mt-0">
           <div class="flex justify-center">
             <ui-checkbox v-model="details.explicit" :label="$strings.LabelExplicit" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+          </div>
+        </div>
+        <div class="flex-grow px-1 pt-6 mt-2 md:mt-0">
+          <div class="flex justify-center">
+            <ui-checkbox v-model="details.abridged" :label="$strings.LabelAbridged" checkbox-bg="primary" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
           </div>
         </div>
       </div>
@@ -89,7 +94,8 @@ export default {
         isbn: null,
         asin: null,
         genres: [],
-        explicit: false
+        explicit: false,
+        abridged: false
       },
       newTags: []
     }
@@ -271,6 +277,7 @@ export default {
       this.details.isbn = this.mediaMetadata.isbn || null
       this.details.asin = this.mediaMetadata.asin || null
       this.details.explicit = !!this.mediaMetadata.explicit
+      this.details.abridged = !!this.mediaMetadata.abridged
       this.newTags = [...(this.media.tags || [])]
     },
     submitForm() {

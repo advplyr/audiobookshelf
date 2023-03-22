@@ -124,6 +124,14 @@
                   {{ sizePretty }}
                 </div>
               </div>
+              <div v-if="isBook" class="flex py-0.5">
+                <div class="w-32">
+                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelAbridged }}</span>
+                </div>
+                <div>
+                  {{ isAbridged ? 'Yes' : 'No' }}
+                </div>
+              </div>
             </div>
             <div class="hidden md:block flex-grow" />
           </div>
@@ -319,7 +327,10 @@ export default {
       return this.libraryItem.isInvalid
     },
     isExplicit() {
-      return this.mediaMetadata.explicit || false
+      return !!this.mediaMetadata.explicit
+    },
+    isAbridged() {
+      return !!this.mediaMetadata.abridged
     },
     invalidAudioFiles() {
       if (!this.isBook) return []

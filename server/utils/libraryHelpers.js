@@ -67,6 +67,8 @@ module.exports = {
       filtered = filtered.filter(li => li.hasIssues)
     } else if (filterBy === 'feed-open') {
       filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
+    } else if (filterBy === 'abridged') {
+      filtered = filtered.filter(li => !!li.media.metadata?.abridged)
     }
 
     return filtered
