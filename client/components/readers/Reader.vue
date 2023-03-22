@@ -1,24 +1,52 @@
 <template>
   <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-60 bg-primary text-white">
+
+    <div class="absolute top-4 left-4 z-20">
+      <span v-if="hasToC && !tocOpen" ref="tocButton" class="material-icons cursor-pointer text-2xl"
+        @click="toggleToC">menu</span>
+    </div>
+
+    <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
+      <h1 class="text-2xl mb-1" style="line-height: 1.15; font-weight: 100;">
+        <span style="font-weight: 600">{{ abTitle }}</span>
+        <span v-if="abAuthor" style="display: inline"> – </span>
+        <span v-if="abAuthor">{{ abAuthor }}</span>
+      </h1>
+    </div>
+
     <div class="absolute top-4 right-4 z-20">
-      <span class="material-icons cursor-pointer text-4xl" @click="close">close</span>
+      <span v-if="hasSettings" class="material-icons cursor-pointer text-2xl" @click="openSettings">settings</span>
+      <span class="material-icons cursor-pointer text-2xl" @click="close">close</span>
     </div>
 
-    <div class="absolute top-4 left-4">
-      <h1 class="text-2xl mb-1">{{ abTitle }}</h1>
-      <p v-if="abAuthor">by {{ abAuthor }}</p>
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl"
+      :library-item="selectedLibraryItem" />
+
+    <div ref="tocContainer" class="w-full h-full fixed inset-0 invisible ">
+      <div @click="toggleToC" ref="tocOverlay"
+        class="w-full h-full duration-500 ease-out transition-all inset-0 absolute bg-gray-900 opacity-0"></div>
+      <div @click="toggleToC" class="w-96 h-full absolute left-0" style="background: #232323">
+        <div style="padding: 10px;">
+          <ul>
+            <li v-for="chapter in chapters" :key="chapter.id">
+              <a :href="chapter.href" @click.prevent="$refs.readerComponent.goToChapter(chapter.href)">{{ chapter.label
+              }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" />
-
-    <div class="absolute bottom-2 left-2">{{ ebookType }}</div>
   </div>
 </template>
 
 <script>
 export default {
   data() {
-    return {}
+    return {
+      chapters: [],
+      tocOpen: false
+    }
   },
   watch: {
     show(newVal) {
@@ -42,6 +70,12 @@ export default {
       else if (this.ebookType === 'pdf') return 'readers-pdf-reader'
       else if (this.ebookType === 'comic') return 'readers-comic-reader'
       return null
+    },
+    hasToC() {
+      return this.isEpub
+    },
+    hasSettings() {
+      return false
     },
     abTitle() {
       return this.mediaMetadata.title
@@ -110,6 +144,14 @@ export default {
     }
   },
   methods: {
+    toggleToC() {
+      this.tocOpen = !this.tocOpen;
+      this.chapters = this.$refs.readerComponent.chapters;
+      this.$refs.tocContainer.classList.toggle('invisible')
+      this.$refs.tocOverlay.classList.toggle('opacity-0')
+      this.$refs.tocOverlay.classList.toggle('opacity-50')
+    },
+    openSettings() { },
     hotkey(action) {
       console.log('Reader hotkey', action)
       if (!this.$refs.readerComponent) return

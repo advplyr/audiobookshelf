@@ -2,15 +2,16 @@
   <div class="h-full w-full">
     <div class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden justify-center">
-        <span id="prev"
+        <span v-if="hasPrev"
           class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl"
           @mousedown.prevent @click="prev">chevron_left</span>
       </div>
       <div id="frame" class="w-full" style="height: 80%">
-        <div id="viewer" class="border border-gray-100 bg-white shadow-md"></div>
+        <div id="viewer" class="shadow-md"></div>
       </div>
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center justify-center overflow-x-hidden">
-        <span id="next" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl"
+        <span v-if="hasNext"
+          class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl"
           @mousedown.prevent @click="next">chevron_right</span>
       </div>
     </div>
@@ -21,7 +22,7 @@
 import ePub from "epubjs";
 
 /** 
- * @typedef {EpubReader}
+ * @typedef {object} EpubReader
  * @property {ePub.Book} book
  * @property {ePub.Rendition} rendition
  */
@@ -30,7 +31,7 @@ export default {
     url: String,
     libraryItem: {
       type: Object,
-      default: () => {}
+      default: () => { }
     }
   },
   data() {
@@ -42,61 +43,59 @@ export default {
     };
   },
   computed: {
-    libraryItemId() { return this.libraryItem ? this.libraryItem.id : null },
-    hasPrev() { return !this.rendition?.location.atStart },
-    hasNext() { return !this.rendition?.location.atEnd },
+    /** @returns {string} */
+    libraryItemId() { return this.libraryItem?.id },
+    hasPrev() { return !this.rendition?.location?.atStart },
+    hasNext() { return !this.rendition?.location?.atEnd },
+    /** @returns {Array<ePub.NavItem>} */
     chapters() { return this.book ? this.book.navigation.toc : [] },
-    title() { return this.book ? this.book.metadata.title : "" },
-    author() { return this.book ? this.book.metadata.creator : "" },
     userMediaProgress() {
       if (!this.libraryItemId) return
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
   },
   methods: {
-    changedChapter() { this.rendition?.display(this.selectedChapter) },
-    prev() { this.rendition?.prev() },
-    next() { this.rendition?.next() },
+    prev() { return this.rendition?.prev() },
+    next() { return this.rendition?.next() },
+    goToChapter(href) { return this.rendition?.display(href) },
     keyUp(e) {
+      const rtl = this.book.package.metadata.direction === 'rtl'
       if ((e.keyCode || e.which) == 37) {
-        this.prev();
+        return rtl ? this.next() : this.prev();
       } else if ((e.keyCode || e.which) == 39) {
-        this.next();
+        return rtl ? this.prev() : this.next();
       }
     },
+    /**
+     * @param {object} payload
+     * @param {string} payload.ebookLocation - CFI of the current location
+     * @param {string} payload.ebookLocations - list of CFI tags
+     * @param {number} payload.progress - Progress Percentage
+     */
+    updateProgress(payload) {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+        console.error('EpubReader.updateProgress failed:', error)
+      })
+    },
+    /** @param {string} location - CFI of the new location */
     relocated(location) {
-      var cfi = location.start.cfi;
-      var cfiFragment = "#" + cfi;
-
-      if(window.location.hash != cfiFragment) {
-        const url = new URL(window.location);
-        url.hash = cfiFragment;
-        history.pushState({}, '', url);
-      
-        var updatePayload = {
-          currentTime: cfi,
-        }
-
-        var percentage = this.book.locations.percentageFromCfi(cfi);
-        if (percentage) {
-          updatePayload.progress = percentage
-        }
-
-        this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload).catch((error) => {
-          console.error('Failed', error)
-        })
+      if (location.end.percentage) {
+        this.updateProgress({
+          ebookLocation: location.start.cfi,
+          progress: location.end.percentage,
+        });
+      } else {
+        this.updateProgress({
+          ebookLocation: location.start.cfi,
+        });
       }
     },
-    initEpub(cfi) {
+    initEpub() {
+      /** @type {EpubReader} */
       var reader = this;
 
       /** @type {ePub.Book} */
       reader.book = new ePub(reader.url, {
-        storage: false,
-        worker: false,
-        manager: "continuous",
-        flow: "scrolled",
-        spreads: false,
         width: window.innerWidth - 200,
         height: window.innerHeight - 50,
       });
@@ -107,23 +106,27 @@ export default {
         height: window.innerHeight * 0.8
       });
 
-      reader.rendition.display(this.userMediaProgress?.currentTime);
+      // load saved progress
+      reader.rendition.display(this.userMediaProgress?.ebookLocation || reader.book.locations.start);
+
+      // load style
+      reader.rendition.themes.default({ "*": { "color": "#fff!important" } });
+
       reader.book.ready.then(() => {
+        // set up event listeners
         reader.rendition.on('relocated', reader.relocated);
         reader.rendition.on('keydown', reader.keyUp)
         document.addEventListener('keydown', reader.keyUp, false);
 
-        if (reader.userMediaProgress?.duration) {
-          reader.book.locations.load(reader.userMediaProgress.duration)
+        // load ebook cfi locations
+        if (this.userMediaProgress?.ebookLocations) {
+          reader.book.locations.load(this.userMediaProgress?.ebookLocations)
         } else {
           reader.book.locations.generate().then(() => {
-          var updatePayload = {
-            duration: reader.book.locations.save(),
-          }
-          this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload).catch((error) => {
-            console.error('Failed', error)
-          })
-        });
+            this.updateProgress({
+              ebookLocations: reader.book.locations.save(),
+            });
+          });
         }
       });
     },
