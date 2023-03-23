@@ -472,7 +472,7 @@ export default {
       return duration - this.userMediaProgress.currentTime
     },
     progressPercent() {
-      return this.userMediaProgress ? Math.max(Math.min(1, this.userMediaProgress.progress), 0) : 0
+      return this.userMediaProgress ? Math.max(Math.min(1, Math.max(this.userMediaProgress.progress || 0, this.userMediaProgress.ebookProgress || 0)), 0) : 0
     },
     userProgressStartedAt() {
       return this.userMediaProgress ? this.userMediaProgress.startedAt : 0

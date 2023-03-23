@@ -261,7 +261,7 @@ class MeController {
 
     var itemsInProgress = []
     for (const mediaProgress of req.user.mediaProgress) {
-      if (!mediaProgress.isFinished && mediaProgress.progress > 0) {
+      if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || libraryItem.ebookProgress > 0)) {
         const libraryItem = await this.db.getLibraryItem(mediaProgress.libraryItemId)
         if (libraryItem) {
           if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {

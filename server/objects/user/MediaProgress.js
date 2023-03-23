@@ -11,7 +11,7 @@ class MediaProgress {
     this.hideFromContinueListening = false
 
     this.ebookLocation = null // current cfi tag
-    this.ebookLocations = null // list of cfi tags
+    this.ebookProgress = null // 0 to 1
 
     this.lastUpdate = null
     this.startedAt = null
@@ -33,7 +33,7 @@ class MediaProgress {
       isFinished: this.isFinished,
       hideFromContinueListening: this.hideFromContinueListening,
       ebookLocation: this.ebookLocation,
-      ebookLocations: this.ebookLocations,
+      ebookProgress: this.ebookProgress,
       lastUpdate: this.lastUpdate,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt
@@ -50,7 +50,7 @@ class MediaProgress {
     this.isFinished = !!progress.isFinished
     this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.ebookLocation = progress.ebookLocation || null
-    this.ebookLocations = progress.ebookLocations || null
+    this.ebookProgress = progress.ebookProgress
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null
@@ -70,7 +70,7 @@ class MediaProgress {
     this.isFinished = !!progress.isFinished || this.progress == 1
     this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.ebookLocation = progress.ebookLocation
-    this.ebookLocations = progress.ebookLocations
+    this.ebookProgress = Math.min(1, (progress.ebookProgress || 0))
     this.lastUpdate = Date.now()
     this.finishedAt = null
     if (this.isFinished) {

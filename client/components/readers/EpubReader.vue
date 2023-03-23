@@ -53,6 +53,7 @@ export default {
       if (!this.libraryItemId) return
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    localStorageLocationsKey() { return `ebookLocations-${this.libraryItemId}` },
   },
   methods: {
     prev() { return this.rendition?.prev() },
@@ -69,20 +70,29 @@ export default {
     /**
      * @param {object} payload
      * @param {string} payload.ebookLocation - CFI of the current location
-     * @param {string} payload.ebookLocations - list of CFI tags
-     * @param {number} payload.progress - Progress Percentage
+     * @param {string} payload.ebookProgress - eBook Progress Percentage
      */
     updateProgress(payload) {
       this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },
+    /** @param {string} locationString */
+    saveLocations(locationString) {
+      localStorage.setItem(this.localStorageLocationsKey, locationString);
+    },
+    hasSavedLocations() {
+      return localStorage.getItem(this.localStorageLocationsKey) !== null;
+    },
+    loadLocations() {
+      return localStorage.getItem(this.localStorageLocationsKey);
+    },
     /** @param {string} location - CFI of the new location */
     relocated(location) {
       if (location.end.percentage) {
         this.updateProgress({
           ebookLocation: location.start.cfi,
-          progress: location.end.percentage,
+          ebookProgress: location.end.percentage,
         });
       } else {
         this.updateProgress({
@@ -119,13 +129,11 @@ export default {
         document.addEventListener('keydown', reader.keyUp, false);
 
         // load ebook cfi locations
-        if (this.userMediaProgress?.ebookLocations) {
-          reader.book.locations.load(this.userMediaProgress?.ebookLocations)
+        if (this.hasSavedLocations()) {
+          reader.book.locations.load(this.loadLocations());
         } else {
           reader.book.locations.generate().then(() => {
-            this.updateProgress({
-              ebookLocations: reader.book.locations.save(),
-            });
+            this.saveLocations(reader.book.locations.save());
           });
         }
       });

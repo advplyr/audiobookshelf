@@ -326,7 +326,7 @@ export default {
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     userProgressPercent() {
-      return this.userProgress ? this.userProgress.progress || 0 : 0
+      return this.userProgress ? Math.max(this.userProgress.progress || 0, this.userProgress.ebookProgress || 0) : 0
     },
     itemIsFinished() {
       return this.userProgress ? !!this.userProgress.isFinished : false
