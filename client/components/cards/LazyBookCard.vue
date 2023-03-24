@@ -325,8 +325,13 @@ export default {
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    useEBookProgress() {
+      if (!this.userProgress || this.userProgress.progress) return false
+      return this.userProgress.ebookProgress > 0
+    },
     userProgressPercent() {
-      return this.userProgress ? Math.max(this.userProgress.progress || 0, this.userProgress.ebookProgress || 0) : 0
+      if (this.useEBookProgress) return Math.max(Math.min(1, this.userProgress.ebookProgress), 0)
+      return this.userProgress ? Math.max(Math.min(1, this.userProgress.progress), 0) || 0 : 0
     },
     itemIsFinished() {
       return this.userProgress ? !!this.userProgress.isFinished : false

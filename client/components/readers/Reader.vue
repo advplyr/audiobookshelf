@@ -1,13 +1,11 @@
 <template>
   <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-60 bg-primary text-white">
-
     <div class="absolute top-4 left-4 z-20">
-      <span v-if="hasToC && !tocOpen" ref="tocButton" class="material-icons cursor-pointer text-2xl"
-        @click="toggleToC">menu</span>
+      <span v-if="hasToC && !tocOpen" ref="tocButton" class="material-icons cursor-pointer text-2xl" @click="toggleToC">menu</span>
     </div>
 
     <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
-      <h1 class="text-2xl mb-1" style="line-height: 1.15; font-weight: 100;">
+      <h1 class="text-2xl mb-1" style="line-height: 1.15; font-weight: 100">
         <span style="font-weight: 600">{{ abTitle }}</span>
         <span v-if="abAuthor" style="display: inline"> – </span>
         <span v-if="abAuthor">{{ abAuthor }}</span>
@@ -19,24 +17,22 @@
       <span class="material-icons cursor-pointer text-2xl" @click="close">close</span>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl"
-      :library-item="selectedLibraryItem" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" />
 
-    <div ref="tocContainer" class="w-full h-full fixed inset-0 invisible ">
-      <div @click="toggleToC" ref="tocOverlay"
-        class="w-full h-full duration-500 ease-out transition-all inset-0 absolute bg-gray-900 opacity-0"></div>
-      <div @click="toggleToC" class="w-96 h-full absolute left-0" style="background: #232323">
-        <div style="padding: 10px;">
+    <!-- TOC side nav -->
+    <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
+    <div v-if="hasToC" class="w-72 h-full max-h-full absolute top-0 left-0 bg-bg shadow-xl transition-transform z-30" :class="tocOpen ? 'translate-x-0' : '-translate-x-72'" @click.stop.prevent="toggleToC">
+      <div class="p-4 h-full overflow-hidden">
+        <p class="text-lg font-semibold mb-2">Table of Contents</p>
+        <div class="tocContent">
           <ul>
-            <li v-for="chapter in chapters" :key="chapter.id">
-              <a :href="chapter.href" @click.prevent="$refs.readerComponent.goToChapter(chapter.href)">{{ chapter.label
-              }}</a>
+            <li v-for="chapter in chapters" :key="chapter.id" class="py-1">
+              <a :href="chapter.href" @click.prevent="$refs.readerComponent.goToChapter(chapter.href)">{{ chapter.label }}</a>
             </li>
           </ul>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -145,13 +141,10 @@ export default {
   },
   methods: {
     toggleToC() {
-      this.tocOpen = !this.tocOpen;
-      this.chapters = this.$refs.readerComponent.chapters;
-      this.$refs.tocContainer.classList.toggle('invisible')
-      this.$refs.tocOverlay.classList.toggle('opacity-0')
-      this.$refs.tocOverlay.classList.toggle('opacity-50')
+      this.tocOpen = !this.tocOpen
+      this.chapters = this.$refs.readerComponent.chapters
     },
-    openSettings() { },
+    openSettings() {},
     hotkey(action) {
       console.log('Reader hotkey', action)
       if (!this.$refs.readerComponent) return
@@ -191,5 +184,9 @@ export default {
 /* @import url(@/assets/calibre/basic.css); */
 .ebook-viewer {
   height: calc(100% - 96px);
+}
+.tocContent {
+  height: calc(100% - 36px);
+  overflow-y: auto;
 }
 </style>
