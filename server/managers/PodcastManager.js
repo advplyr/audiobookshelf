@@ -14,12 +14,14 @@ const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
+const Task = require("../objects/Task")
 
 class PodcastManager {
-  constructor(db, watcher, notificationManager) {
+  constructor(db, watcher, notificationManager, taskManager) {
     this.db = db
     this.watcher = watcher
     this.notificationManager = notificationManager
+    this.taskManager = taskManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -56,17 +58,27 @@ class PodcastManager {
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
       var newPeDl = new PodcastEpisodeDownload()
-      newPeDl.setData(newPe, libraryItem, isAutoDownload)
+      newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
     })
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
       return
     }
+
+    const task = new Task()
+    const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
+    const taskData = {
+      libraryId: podcastEpisodeDownload.libraryId,
+      libraryItemId: podcastEpisodeDownload.libraryItemId,
+    }
+    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, taskData)
+    this.taskManager.addTask(task)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
@@ -81,7 +93,7 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    var success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+    let success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
       Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
       return false
     })
@@ -90,15 +102,21 @@ class PodcastManager {
       if (!success) {
         await fs.remove(this.currentDownload.targetPath)
         this.currentDownload.setFinished(false)
+        task.setFailed('Failed to download episode')
       } else {
         Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.podcastEpisode.title}"`)
         this.currentDownload.setFinished(true)
+        task.setFinished()
       }
     } else {
+      task.setFailed('Failed to download episode')
       this.currentDownload.setFinished(false)
     }
 
+    this.taskManager.taskFinished(task)
+
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
@@ -327,6 +345,16 @@ class PodcastManager {
 
     return {
       feeds: rssFeedData
+    }
+  }
+
+  getDownloadQueueDetails(libraryId = null) {
+    let _currentDownload = this.currentDownload
+    if (libraryId && _currentDownload?.libraryId !== libraryId) _currentDownload = null
+
+    return {
+      currentDownload: _currentDownload?.toJSONForClient(),
+      queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
     }
   }
 }

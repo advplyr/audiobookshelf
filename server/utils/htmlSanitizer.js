@@ -1,10 +1,10 @@
 const sanitizeHtml = require('../libs/sanitizeHtml')
-const {entities} = require("./htmlEntities");
+const { entities } = require("./htmlEntities");
 
 function sanitize(html) {
   const sanitizerOptions = {
     allowedTags: [
-      'p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del'
+      'p', 'ol', 'ul', 'li', 'a', 'strong', 'em', 'del', 'br'
     ],
     disallowedTagsMode: 'discard',
     allowedAttributes: {

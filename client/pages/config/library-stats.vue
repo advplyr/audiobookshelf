@@ -60,6 +60,25 @@
             </div>
           </template>
         </div>
+        <div class="w-80 my-6 mx-auto">
+          <h1 class="text-2xl mb-4">{{ $strings.HeaderStatsLargestItems }}</h1>
+          <p v-if="!top10LargestItems.length">{{ $strings.MessageNoItems }}</p>
+          <template v-for="(ab, index) in top10LargestItems">
+            <div :key="index" class="w-full py-2">
+              <div class="flex items-center mb-1">
+                <p class="text-sm text-white text-opacity-70 w-44 pr-2 truncate">
+                  {{ index + 1 }}.&nbsp;&nbsp;&nbsp;&nbsp;<nuxt-link :to="`/item/${ab.id}`" class="hover:underline">{{ ab.title }}</nuxt-link>
+                </p>
+                <div class="flex-grow rounded-full h-2.5 bg-primary bg-opacity-0 overflow-hidden">
+                  <div class="bg-yellow-400 h-full rounded-full" :style="{ width: Math.round((100 * ab.size) / largestItemSize) + '%' }" />
+                </div>
+                <div class="w-4 ml-3">
+                  <p class="text-sm font-bold">{{ $bytesPretty(ab.size) }}</p>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
       </div>
     </app-settings-content>
   </div>
@@ -104,6 +123,13 @@ export default {
     longestItemDuration() {
       if (!this.top10LongestItems.length) return 0
       return this.top10LongestItems[0].duration
+    },
+    top10LargestItems() {
+      return this.libraryStats ? this.libraryStats.largestItems || [] : []
+    },
+    largestItemSize() {
+      if (!this.top10LargestItems.length) return 0
+      return this.top10LargestItems[0].size
     },
     authorsWithCount() {
       return this.libraryStats ? this.libraryStats.authorsWithCount : []

@@ -201,6 +201,7 @@ class Scanner {
       const dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
       if (!dataFound) {
         libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
+        Logger.warn(`[Scanner] Library item "${libraryItem.media.metadata.title}" is missing (inode "${libraryItem.ino}")`)
         libraryScan.resultsMissing++
         libraryItem.setMissing()
         itemsToUpdate.push(libraryItem)
@@ -792,7 +793,7 @@ class Scanner {
 
   async quickMatchBookBuildUpdatePayload(libraryItem, matchData, options) {
     // Update media metadata if not set OR overrideDetails flag
-    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'asin', 'isbn']
+    const detailKeysToUpdate = ['title', 'subtitle', 'description', 'narrator', 'publisher', 'publishedYear', 'genres', 'tags', 'language', 'explicit', 'abridged', 'asin', 'isbn']
     const updatePayload = {}
     updatePayload.metadata = {}
 
@@ -899,7 +900,7 @@ class Scanner {
       description: episodeToMatch.description || '',
       enclosure: episodeToMatch.enclosure || null,
       episode: episodeToMatch.episode || '',
-      episodeType: episodeToMatch.episodeType || '',
+      episodeType: episodeToMatch.episodeType || 'full',
       season: episodeToMatch.season || '',
       pubDate: episodeToMatch.pubDate || '',
       publishedAt: episodeToMatch.publishedAt

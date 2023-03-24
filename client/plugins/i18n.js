@@ -7,7 +7,7 @@ const defaultCode = 'en-us'
 const languageCodeMap = {
   'de': { label: 'Deutsch', dateFnsLocale: 'de' },
   'en-us': { label: 'English', dateFnsLocale: 'enUS' },
-  // 'es': { label: 'Español', dateFnsLocale: 'es' },
+  'es': { label: 'Español', dateFnsLocale: 'es' },
   'fr': { label: 'Français', dateFnsLocale: 'fr' },
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },

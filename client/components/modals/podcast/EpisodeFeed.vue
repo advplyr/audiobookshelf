@@ -6,21 +6,33 @@
       </div>
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
+      <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
+        <form @submit.prevent="submit" class="flex flex-grow">
+          <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
+        </form>
+      </div>
       <div ref="episodeContainer" id="episodes-scroll" class="w-full overflow-x-hidden overflow-y-auto">
         <div
-          v-for="(episode, index) in episodes"
+          v-for="(episode, index) in episodesList"
           :key="index"
           class="relative"
-          :class="itemEpisodeMap[episode.enclosure.url] ? 'bg-primary bg-opacity-40' : selectedEpisodes[String(index)] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
+          :class="itemEpisodeMap[episode.enclosure.url?.split('?')[0]] ? 'bg-primary bg-opacity-40' : selectedEpisodes[String(index)] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
           @click="toggleSelectEpisode(index, episode)"
         >
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <span v-if="itemEpisodeMap[episode.enclosure.url]" class="material-icons text-success text-xl">download_done</span>
+            <span v-if="itemEpisodeMap[episode.enclosure.url?.split('?')[0]]" class="material-icons text-success text-xl">download_done</span>
             <ui-checkbox v-else v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">
-            <p v-if="episode.episode" class="font-semibold text-gray-200">#{{ episode.episode }}</p>
-            <p class="break-words mb-1">{{ episode.title }}</p>
+            <div class="flex items-center font-semibold text-gray-200">
+              <div v-if="episode.season || episode.episode">#</div>
+              <div v-if="episode.season">{{ episode.season }}x</div>
+              <div v-if="episode.episode">{{ episode.episode }}</div>
+            </div>
+            <div class="flex items-center mb-1">
+              <div class="break-words">{{ episode.title }}</div>
+              <widgets-podcast-type-indicator :type="episode.episodeType" />
+            </div>
             <p v-if="episode.subtitle" class="break-words mb-1 text-sm text-gray-300 episode-subtitle">{{ episode.subtitle }}</p>
             <p class="text-xs text-gray-300">Published {{ episode.publishedAt ? $dateDistanceFromNow(episode.publishedAt) : 'Unknown' }}</p>
           </div>
@@ -52,7 +64,10 @@ export default {
     return {
       processing: false,
       selectedEpisodes: {},
-      selectAll: false
+      selectAll: false,
+      search: null,
+      searchTimeout: null,
+      searchText: null
     }
   },
   watch: {
@@ -77,7 +92,7 @@ export default {
       return this.libraryItem.media.metadata.title || 'Unknown'
     },
     allDownloaded() {
-      return !this.episodes.some((episode) => !this.itemEpisodeMap[episode.enclosure.url])
+      return !this.episodes.some((episode) => !this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]])
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
@@ -93,23 +108,39 @@ export default {
     itemEpisodeMap() {
       var map = {}
       this.itemEpisodes.forEach((item) => {
-        if (item.enclosure) map[item.enclosure.url] = true
+        if (item.enclosure) map[item.enclosure.url.split('?')[0]] = true
       })
       return map
+    },
+    episodesList() {
+      return this.episodes.filter((episode) => {
+        if (!this.searchText) return true
+        return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
+      })
     }
   },
   methods: {
+    inputUpdate() {
+      clearTimeout(this.searchTimeout)
+      this.searchTimeout = setTimeout(() => {
+        if (!this.search || !this.search.trim()) {
+          this.searchText = ''
+          return
+        }
+        this.searchText = this.search.toLowerCase().trim()
+      }, 500)
+    },
     toggleSelectAll(val) {
       for (let i = 0; i < this.episodes.length; i++) {
         const episode = this.episodes[i]
-        if (this.itemEpisodeMap[episode.enclosure.url]) this.selectedEpisodes[String(i)] = false
+        if (this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]]) this.selectedEpisodes[String(i)] = false
         else this.$set(this.selectedEpisodes, String(i), val)
       }
     },
     checkSetIsSelectedAll() {
       for (let i = 0; i < this.episodes.length; i++) {
         const episode = this.episodes[i]
-        if (!this.itemEpisodeMap[episode.enclosure.url] && !this.selectedEpisodes[String(i)]) {
+        if (!this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]] && !this.selectedEpisodes[String(i)]) {
           this.selectAll = false
           return
         }
@@ -117,7 +148,7 @@ export default {
       this.selectAll = true
     },
     toggleSelectEpisode(index, episode) {
-      if (this.itemEpisodeMap[episode.enclosure.url]) return
+      if (this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]]) return
       this.$set(this.selectedEpisodes, String(index), !this.selectedEpisodes[String(index)])
       this.checkSetIsSelectedAll()
     },

@@ -17,6 +17,7 @@ class BookMetadata {
     this.asin = null
     this.language = null
     this.explicit = false
+    this.abridged = false
 
     if (metadata) {
       this.construct(metadata)
@@ -38,6 +39,7 @@ class BookMetadata {
     this.asin = metadata.asin
     this.language = metadata.language
     this.explicit = !!metadata.explicit
+    this.abridged = !!metadata.abridged
   }
 
   toJSON() {
@@ -55,7 +57,8 @@ class BookMetadata {
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
-      explicit: this.explicit
+      explicit: this.explicit,
+      abridged: this.abridged
     }
   }
 
@@ -76,7 +79,8 @@ class BookMetadata {
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
-      explicit: this.explicit
+      explicit: this.explicit,
+      abridged: this.abridged
     }
   }
 
@@ -100,7 +104,8 @@ class BookMetadata {
       authorName: this.authorName,
       authorNameLF: this.authorNameLF,
       narratorName: this.narratorName,
-      seriesName: this.seriesName
+      seriesName: this.seriesName,
+      abridged: this.abridged
     }
   }
 

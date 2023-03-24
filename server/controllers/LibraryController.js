@@ -82,6 +82,11 @@ class LibraryController {
     return res.json(req.library)
   }
 
+  async getEpisodeDownloadQueue(req, res) {
+    const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
+    return res.json(libraryDownloadQueueDetails)
+  }
+
   async update(req, res) {
     const library = req.library
 
@@ -229,6 +234,16 @@ class LibraryController {
     if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
     if (filterSeries && !payload.sortBy) {
       sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
+      // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
+      sortArray.push({
+        asc: (li) => {
+          if (this.db.serverSettings.sortingIgnorePrefix) {
+            return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+          } else {
+            return li.collapsedSeries?.name || li.media.metadata.title
+          }
+        }
+      })
     }
 
     if (payload.sortBy) {
@@ -637,6 +652,7 @@ class LibraryController {
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
     var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
     var durationStats = libraryHelpers.getItemDurationStats(libraryItems)
+    var sizeStats = libraryHelpers.getItemSizeStats(libraryItems)
     var stats = {
       totalItems: libraryItems.length,
       totalAuthors: Object.keys(authorsWithCount).length,
@@ -645,6 +661,7 @@ class LibraryController {
       longestItems: durationStats.longestItems,
       numAudioTracks: durationStats.numAudioTracks,
       totalSize: libraryHelpers.getLibraryItemsTotalSize(libraryItems),
+      largestItems: sizeStats.largestItems,
       authorsWithCount,
       genresWithCount
     }

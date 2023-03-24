@@ -121,6 +121,10 @@ const bookMetadataMapper = {
   explicit: {
     to: (m) => m.explicit ? 'Y' : 'N',
     from: (v) => v && v.toLowerCase() == 'y'
+  },
+  abridged: {
+    to: (m) => m.abridged ? 'Y' : 'N',
+    from: (v) => v && v.toLowerCase() == 'y'
   }
 }
 

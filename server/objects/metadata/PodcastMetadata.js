@@ -15,6 +15,7 @@ class PodcastMetadata {
     this.itunesArtistId = null
     this.explicit = false
     this.language = null
+    this.type = null
 
     if (metadata) {
       this.construct(metadata)
@@ -34,6 +35,7 @@ class PodcastMetadata {
     this.itunesArtistId = metadata.itunesArtistId
     this.explicit = metadata.explicit
     this.language = metadata.language || null
+    this.type = metadata.type || 'episodic'
   }
 
   toJSON() {
@@ -49,7 +51,8 @@ class PodcastMetadata {
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
-      language: this.language
+      language: this.language,
+      type: this.type
     }
   }
 
@@ -67,7 +70,8 @@ class PodcastMetadata {
       itunesId: this.itunesId,
       itunesArtistId: this.itunesArtistId,
       explicit: this.explicit,
-      language: this.language
+      language: this.language,
+      type: this.type
     }
   }
 
@@ -112,6 +116,7 @@ class PodcastMetadata {
     this.itunesArtistId = mediaMetadata.itunesArtistId || null
     this.explicit = !!mediaMetadata.explicit
     this.language = mediaMetadata.language || null
+    this.type = mediaMetadata.type || null
     if (mediaMetadata.genres && mediaMetadata.genres.length) {
       this.genres = [...mediaMetadata.genres]
     }

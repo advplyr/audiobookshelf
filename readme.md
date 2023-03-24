@@ -49,7 +49,7 @@ Check out the [API documentation](https://api.audiobookshelf.org/)
 
 <br />
 
-<img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/LibraryStreamSquare.png" />
+<img alt="Library Screenshot" src="https://github.com/advplyr/audiobookshelf/raw/master/images/DemoLibrary.png" />
 
 <br />
 

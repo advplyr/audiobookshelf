@@ -13,6 +13,7 @@ export const state = () => ({
   playerQueueAutoPlay: true,
   playerIsFullscreen: false,
   editModalTab: 'details',
+  editPodcastModalTab: 'details',
   showEditModal: false,
   showEReader: false,
   selectedLibraryItem: null,
@@ -21,6 +22,7 @@ export const state = () => ({
   previousPath: '/',
   showExperimentalFeatures: false,
   bookshelfBookIds: [],
+  episodeTableEpisodeIds: [],
   openModal: null,
   innerModalOpen: false,
   lastBookshelfScrollData: {},
@@ -135,6 +137,9 @@ export const mutations = {
   setBookshelfBookIds(state, val) {
     state.bookshelfBookIds = val || []
   },
+  setEpisodeTableEpisodeIds(state, val) {
+    state.episodeTableEpisodeIds = val || []
+  },
   setPreviousPath(state, val) {
     state.previousPath = val
   },
@@ -197,6 +202,9 @@ export const mutations = {
   },
   setShowEditModal(state, val) {
     state.showEditModal = val
+  },
+  setEditPodcastModalTab(state, tab) {
+    state.editPodcastModalTab = tab
   },
   showEReader(state, libraryItem) {
     state.selectedLibraryItem = libraryItem

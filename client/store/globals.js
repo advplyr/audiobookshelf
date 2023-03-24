@@ -33,9 +33,48 @@ export const state = () => ({
       value: 'dd/MM/yyyy'
     },
     {
+      text: 'DD.MM.YYYY',
+      value: 'dd.MM.yyyy'
+    },
+    {
       text: 'YYYY-MM-DD',
       value: 'yyyy-MM-dd'
+    },
+    {
+      text: 'MMM do, yyyy',
+      value: 'MMM do, yyyy'
+    },
+    {
+      text: 'MMMM do, yyyy',
+      value: 'MMMM do, yyyy'
+    },
+    {
+      text: 'dd MMM yyyy',
+      value: 'dd MMM yyyy'
+    },
+    {
+      text: 'dd MMMM yyyy',
+      value: 'dd MMMM yyyy'
     }
+  ],
+  timeFormats: [
+    {
+      text: 'h:mma (am/pm)',
+      value: 'h:mma'
+    },
+    {
+      text: 'HH:mm (24-hour)',
+      value: 'HH:mm'
+    }
+  ],
+  podcastTypes: [
+    { text: 'Episodic', value: 'episodic' },
+    { text: 'Serial', value: 'serial' }
+  ],
+  episodeTypes: [
+    { text: 'Full', value: 'full' },
+    { text: 'Trailer', value: 'trailer' },
+    { text: 'Bonus', value: 'bonus' }
   ],
   libraryIcons: ['database', 'audiobookshelf', 'books-1', 'books-2', 'book-1', 'microphone-1', 'microphone-3', 'radio', 'podcast', 'rss', 'headphones', 'music', 'file-picture', 'rocket', 'power', 'star', 'heart']
 })

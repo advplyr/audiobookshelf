@@ -68,8 +68,14 @@
             </ui-tooltip>
           </div>
 
-          <div class="py-2">
+          <div class="flex-grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
+          </div>
+
+          <div class="flex-grow py-2">
+            <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-52" @input="(val) => updateSettingsKey('timeFormat', val)" />
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
           </div>
 
           <div class="py-2">
@@ -293,6 +299,17 @@ export default {
     },
     dateFormats() {
       return this.$store.state.globals.dateFormats
+    },
+    timeFormats() {
+      return this.$store.state.globals.timeFormats
+    },
+    dateExample() {
+      const date = new Date(2014, 2, 25)
+      return this.$formatJsDate(date, this.newServerSettings.dateFormat)
+    },
+    timeExample() {
+      const date = new Date(2014, 2, 25, 17, 30, 0)
+      return this.$formatJsTime(date, this.newServerSettings.timeFormat)
     }
   },
   methods: {

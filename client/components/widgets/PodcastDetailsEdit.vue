@@ -39,6 +39,11 @@
           </div>
         </div>
       </div>
+      <div class="flex mt-2 -mx-1">
+        <div class="w-1/4 px-1">
+          <ui-dropdown :label="$strings.LabelPodcastType" v-model="details.type" :items="podcastTypes" small class="max-w-52" />
+        </div>
+      </div>
     </form>
   </div>
 </template>
@@ -65,7 +70,8 @@ export default {
         itunesId: null,
         itunesArtistId: null,
         explicit: false,
-        language: null
+        language: null,
+        type: null
       },
       newTags: []
     }
@@ -93,6 +99,9 @@ export default {
     },
     filterData() {
       return this.$store.state.libraries.filterData || {}
+    },
+    podcastTypes() {
+      return this.$store.state.globals.podcastTypes || []
     }
   },
   methods: {
@@ -219,6 +228,7 @@ export default {
       this.details.itunesArtistId = this.mediaMetadata.itunesArtistId || ''
       this.details.language = this.mediaMetadata.language || ''
       this.details.explicit = !!this.mediaMetadata.explicit
+      this.details.type = this.mediaMetadata.type || 'episodic'
 
       this.newTags = [...(this.media.tags || [])]
     },

@@ -23,6 +23,22 @@ Vue.prototype.$formatJsDate = (jsdate, fnsFormat = 'MM/dd/yyyy HH:mm') => {
   if (!jsdate || !isDate(jsdate)) return ''
   return format(jsdate, fnsFormat)
 }
+Vue.prototype.$formatTime = (unixms, fnsFormat = 'HH:mm') => {
+    if (!unixms) return ''
+    return format(unixms, fnsFormat)
+}
+Vue.prototype.$formatJsTime = (jsdate, fnsFormat = 'HH:mm') => {
+    if (!jsdate || !isDate(jsdate)) return ''
+    return format(jsdate, fnsFormat)
+}
+Vue.prototype.$formatDatetime = (unixms, fnsDateFormart = 'MM/dd/yyyy', fnsTimeFormat = 'HH:mm') => {
+    if (!unixms) return ''
+    return format(unixms, `${fnsDateFormart} ${fnsTimeFormat}`)
+}
+Vue.prototype.$formatJsDatetime = (jsdate, fnsDateFormart = 'MM/dd/yyyy', fnsTimeFormat = 'HH:mm') => {
+    if (!jsdate || !isDate(jsdate)) return ''
+    return format(jsdate, `${fnsDateFormart} ${fnsTimeFormat}`)
+}
 Vue.prototype.$addDaysToToday = (daysToAdd) => {
   var date = addDays(new Date(), daysToAdd)
   if (!date || !isDate(date)) return null

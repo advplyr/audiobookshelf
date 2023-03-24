@@ -25,13 +25,13 @@
             </div>
           </td>
           <td class="text-xs font-mono hidden sm:table-cell">
-            <ui-tooltip v-if="user.lastSeen" direction="top" :text="$formatDate(user.lastSeen, 'MMMM do, yyyy HH:mm')">
+            <ui-tooltip v-if="user.lastSeen" direction="top" :text="$formatDatetime(user.lastSeen, dateFormat, timeFormat)">
               {{ $dateDistanceFromNow(user.lastSeen) }}
             </ui-tooltip>
           </td>
           <td class="text-xs font-mono hidden sm:table-cell">
-            <ui-tooltip direction="top" :text="$formatDate(user.createdAt, 'MMMM do, yyyy HH:mm')">
-              {{ $formatDate(user.createdAt, 'MMM d, yyyy') }}
+            <ui-tooltip direction="top" :text="$formatDatetime(user.createdAt, dateFormat, timeFormat)">
+              {{ $formatDate(user.createdAt, dateFormat) }}
             </ui-tooltip>
           </td>
           <td class="py-0">
@@ -74,6 +74,12 @@ export default {
       var usermap = {}
       this.$store.state.users.usersOnline.forEach((u) => (usermap[u.id] = u))
       return usermap
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {

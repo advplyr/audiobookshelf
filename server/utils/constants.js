@@ -46,7 +46,9 @@ module.exports.AudioMimeType = {
   WMA: 'audio/x-ms-wma',
   AIFF: 'audio/x-aiff',
   WEBM: 'audio/webm',
-  WEBMA: 'audio/webm'
+  WEBMA: 'audio/webm',
+  MKA: 'audio/x-matroska',
+  AWB: 'audio/amr-wb'
 }
 
 module.exports.VideoMimeType = {

@@ -7,6 +7,11 @@ class FeedMeta {
     this.feedUrl = null
     this.link = null
     this.explicit = null
+    this.type = null
+    this.language = null
+    this.preventIndexing = null
+    this.ownerName = null
+    this.ownerEmail = null
 
     if (meta) {
       this.construct(meta)
@@ -21,6 +26,11 @@ class FeedMeta {
     this.feedUrl = meta.feedUrl
     this.link = meta.link
     this.explicit = meta.explicit
+    this.type = meta.type
+    this.language = meta.language
+    this.preventIndexing = meta.preventIndexing
+    this.ownerName = meta.ownerName
+    this.ownerEmail = meta.ownerEmail
   }
 
   toJSON() {
@@ -31,7 +41,22 @@ class FeedMeta {
       imageUrl: this.imageUrl,
       feedUrl: this.feedUrl,
       link: this.link,
-      explicit: this.explicit
+      explicit: this.explicit,
+      type: this.type,
+      language: this.language,
+      preventIndexing: this.preventIndexing,
+      ownerName: this.ownerName,
+      ownerEmail: this.ownerEmail
+    }
+  }
+
+  toJSONMinified() {
+    return {
+      title: this.title,
+      description: this.description,
+      preventIndexing: this.preventIndexing,
+      ownerName: this.ownerName,
+      ownerEmail: this.ownerEmail
     }
   }
 
@@ -43,16 +68,18 @@ class FeedMeta {
       feed_url: this.feedUrl,
       site_url: this.link,
       image_url: this.imageUrl,
-      language: 'en',
       custom_namespaces: {
         'itunes': 'http://www.itunes.com/dtds/podcast-1.0.dtd',
         'psc': 'http://podlove.org/simple-chapters',
-        'podcast': 'https://podcastindex.org/namespace/1.0'
+        'podcast': 'https://podcastindex.org/namespace/1.0',
+        'googleplay': 'http://www.google.com/schemas/play-podcasts/1.0'
       },
       custom_elements: [
+        { 'language': this.language || 'en' },
         { 'author': this.author || 'advplyr' },
         { 'itunes:author': this.author || 'advplyr' },
         { 'itunes:summary': this.description || '' },
+        { 'itunes:type': this.type },
         {
           'itunes:image': {
             _attr: {
@@ -62,13 +89,13 @@ class FeedMeta {
         },
         {
           'itunes:owner': [
-            { 'itunes:name': this.author || '' },
-            { 'itunes:email': '' }
+            { 'itunes:name': this.ownerName || this.author || '' },
+            { 'itunes:email': this.ownerEmail || '' }
           ]
         },
-        {
-          "itunes:explicit": !!this.explicit
-        }
+        { 'itunes:explicit': !!this.explicit },
+        { 'itunes:block': this.preventIndexing?"Yes":"No" },
+        { 'googleplay:block': this.preventIndexing?"yes":"no" }
       ]
     }
   }

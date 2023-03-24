@@ -164,6 +164,20 @@
             <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.releaseDate || '' }}</p>
           </div>
         </div>
+        <div v-if="selectedMatchOrig.explicit != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.explicit == null }">
+          <ui-checkbox v-model="selectedMatchUsage.explicit" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.explicit != null }">
+            <ui-checkbox v-model="selectedMatch.explicit" :label="$strings.LabelExplicit" :disabled="!selectedMatchUsage.explicit" :checkbox-bg="!selectedMatchUsage.explicit ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? 'Explicit (checked)' : 'Not Explicit (unchecked)' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatchOrig.abridged != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.abridged == null }">
+          <ui-checkbox v-model="selectedMatchUsage.abridged" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.abridged != null }">
+            <ui-checkbox v-model="selectedMatch.abridged" :label="$strings.LabelAbridged" :disabled="!selectedMatchUsage.abridged" :checkbox-bg="!selectedMatchUsage.abridged ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? 'Abridged (checked)' : 'Unabridged (unchecked)' }}</p>
+          </div>
+        </div>
 
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
@@ -209,6 +223,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        abridged: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -327,6 +342,7 @@ export default {
           res.itunesPageUrl = res.pageUrl || null
           res.itunesId = res.id || null
           res.author = res.artistName || null
+          res.explicit = res.explicit || false
           return res
         })
       }
@@ -352,6 +368,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        abridged: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -468,7 +485,6 @@ export default {
           } else if (key === 'narrator') {
             updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'genres') {
-            // updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
             updatePayload.metadata.genres = [...this.selectedMatch[key]]
           } else if (key === 'tags') {
             updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())

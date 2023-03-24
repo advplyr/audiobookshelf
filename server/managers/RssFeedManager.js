@@ -188,9 +188,12 @@ class RssFeedManager {
   async openFeedForItem(user, libraryItem, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
+    const preventIndexing = options.metadataDetails?.preventIndexing ?? true
+    const ownerName = options.metadataDetails?.ownerName
+    const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromItem(user.id, slug, libraryItem, serverAddress)
+    feed.setFromItem(user.id, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
     this.feeds[feed.id] = feed
 
     Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
@@ -202,9 +205,12 @@ class RssFeedManager {
   async openFeedForCollection(user, collectionExpanded, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
+    const preventIndexing = options.metadataDetails?.preventIndexing ?? true
+    const ownerName = options.metadataDetails?.ownerName
+    const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress)
+    feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
     this.feeds[feed.id] = feed
 
     Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
@@ -216,9 +222,12 @@ class RssFeedManager {
   async openFeedForSeries(user, seriesExpanded, options) {
     const serverAddress = options.serverAddress
     const slug = options.slug
+    const preventIndexing = options.metadataDetails?.preventIndexing ?? true
+    const ownerName = options.metadataDetails?.ownerName
+    const ownerEmail = options.metadataDetails?.ownerEmail
 
     const feed = new Feed()
-    feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress)
+    feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
     this.feeds[feed.id] = feed
 
     Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)

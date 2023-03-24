@@ -296,7 +296,7 @@ class Book {
                 })
               }
             } else if (key === 'narrators') {
-              if (opfMetadata.narrators && opfMetadata.narrators.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
+              if (opfMetadata.narrators?.length && (!this.metadata.narrators.length || opfMetadataOverrideDetails)) {
                 metadataUpdatePayload.narrators = opfMetadata.narrators
               }
             } else if (key === 'series') {
@@ -356,9 +356,9 @@ class Book {
   }
 
   updateAudioTracks(orderedFileData) {
-    var index = 1
+    let index = 1
     this.audioFiles = orderedFileData.map((fileData) => {
-      var audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
+      const audioFile = this.audioFiles.find(af => af.ino === fileData.ino)
       audioFile.manuallyVerified = true
       audioFile.invalid = false
       audioFile.error = null
@@ -376,11 +376,11 @@ class Book {
     this.rebuildTracks()
   }
 
-  rebuildTracks(preferOverdriveMediaMarker) {
+  rebuildTracks() {
     Logger.debug(`[Book] Tracks being rebuilt...!`)
     this.audioFiles.sort((a, b) => a.index - b.index)
     this.missingParts = []
-    this.setChapters(preferOverdriveMediaMarker)
+    this.setChapters()
     this.checkUpdateMissingTracks()
   }
 
@@ -412,14 +412,16 @@ class Book {
     return wasUpdated
   }
 
-  setChapters(preferOverdriveMediaMarker = false) {
+  setChapters() {
+    const preferOverdriveMediaMarker = !!global.ServerSettings.scannerPreferOverdriveMediaMarker
+
     // If 1 audio file without chapters, then no chapters will be set
-    var includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
+    const includedAudioFiles = this.audioFiles.filter(af => !af.exclude)
     if (!includedAudioFiles.length) return
 
     // If overdrive media markers are present and preferred, use those instead
     if (preferOverdriveMediaMarker) {
-      var overdriveChapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
+      const overdriveChapters = parseOverdriveMediaMarkersAsChapters(includedAudioFiles)
       if (overdriveChapters) {
         Logger.info('[Book] Overdrive Media Markers and preference found! Using these for chapter definitions')
         this.chapters = overdriveChapters
@@ -460,17 +462,26 @@ class Book {
         })
       }
     } else if (includedAudioFiles.length > 1) {
+      const preferAudioMetadata = !!global.ServerSettings.scannerPreferAudioMetadata
+
       // Build chapters from audio files
       this.chapters = []
-      var currChapterId = 0
-      var currStartTime = 0
+      let currChapterId = 0
+      let currStartTime = 0
       includedAudioFiles.forEach((file) => {
         if (file.duration) {
+          let title = file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+
+          // When prefer audio metadata server setting is set then use ID3 title tag as long as it is not the same as the book title
+          if (preferAudioMetadata && file.metaTags?.tagTitle && file.metaTags?.tagTitle !== this.metadata.title) {
+            title = file.metaTags.tagTitle
+          }
+
           this.chapters.push({
             id: currChapterId++,
             start: currStartTime,
             end: currStartTime + file.duration,
-            title: file.metadata.filename ? Path.basename(file.metadata.filename, Path.extname(file.metadata.filename)) : `Chapter ${currChapterId}`
+            title
           })
           currStartTime += file.duration
         }
