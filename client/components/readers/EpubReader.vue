@@ -2,17 +2,13 @@
   <div class="h-full w-full">
     <div class="h-full flex items-center">
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden justify-center">
-        <span v-show="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
+        <span v-if="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
       </div>
-      <div id="frame" class="w-full" style="height: 650px">
-        <div id="viewer" class="border border-gray-100 bg-white shadow-md"></div>
-
-        <div class="py-4 flex justify-center" style="height: 50px">
-          <p>{{ progress }}%</p>
-        </div>
+      <div id="frame" class="w-full" style="height: 80%">
+        <div id="viewer"></div>
       </div>
       <div style="width: 100px; max-width: 100px" class="h-full flex items-center justify-center overflow-x-hidden">
-        <span v-show="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
+        <span v-if="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
       </div>
     </div>
   </div>
@@ -21,104 +17,137 @@
 <script>
 import ePub from 'epubjs'
 
+/**
+ * @typedef {object} EpubReader
+ * @property {ePub.Book} book
+ * @property {ePub.Rendition} rendition
+ */
 export default {
   props: {
-    url: String
+    url: String,
+    libraryItem: {
+      type: Object,
+      default: () => {}
+    }
   },
   data() {
     return {
+      /** @type {ePub.Book} */
       book: null,
-      rendition: null,
-      chapters: [],
-      title: '',
-      author: '',
-      progress: 0,
-      hasNext: true,
-      hasPrev: false
+      /** @type {ePub.Rendition} */
+      rendition: null
     }
   },
-  computed: {},
-  methods: {
-    changedChapter() {
-      if (this.rendition) {
-        this.rendition.display(this.selectedChapter)
-      }
+  computed: {
+    /** @returns {string} */
+    libraryItemId() {
+      return this.libraryItem?.id
     },
+    hasPrev() {
+      return !this.rendition?.location?.atStart
+    },
+    hasNext() {
+      return !this.rendition?.location?.atEnd
+    },
+    /** @returns {Array<ePub.NavItem>} */
+    chapters() {
+      return this.book ? this.book.navigation.toc : []
+    },
+    userMediaProgress() {
+      if (!this.libraryItemId) return
+      return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
+    },
+    localStorageLocationsKey() {
+      return `ebookLocations-${this.libraryItemId}`
+    }
+  },
+  methods: {
     prev() {
-      if (this.rendition) {
-        this.rendition.prev()
-      }
+      return this.rendition?.prev()
     },
     next() {
-      if (this.rendition) {
-        this.rendition.next()
+      return this.rendition?.next()
+    },
+    goToChapter(href) {
+      return this.rendition?.display(href)
+    },
+    keyUp(e) {
+      const rtl = this.book.package.metadata.direction === 'rtl'
+      if ((e.keyCode || e.which) == 37) {
+        return rtl ? this.next() : this.prev()
+      } else if ((e.keyCode || e.which) == 39) {
+        return rtl ? this.prev() : this.next()
       }
     },
-    keyUp() {
-      if ((e.keyCode || e.which) == 37) {
-        this.prev()
-      } else if ((e.keyCode || e.which) == 39) {
-        this.next()
+    /**
+     * @param {object} payload
+     * @param {string} payload.ebookLocation - CFI of the current location
+     * @param {string} payload.ebookProgress - eBook Progress Percentage
+     */
+    updateProgress(payload) {
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+        console.error('EpubReader.updateProgress failed:', error)
+      })
+    },
+    /** @param {string} locationString */
+    saveLocations(locationString) {
+      localStorage.setItem(this.localStorageLocationsKey, locationString)
+    },
+    hasSavedLocations() {
+      return localStorage.getItem(this.localStorageLocationsKey) !== null
+    },
+    loadLocations() {
+      return localStorage.getItem(this.localStorageLocationsKey)
+    },
+    /** @param {string} location - CFI of the new location */
+    relocated(location) {
+      if (location.end.percentage) {
+        this.updateProgress({
+          ebookLocation: location.start.cfi,
+          ebookProgress: location.end.percentage
+        })
+      } else {
+        this.updateProgress({
+          ebookLocation: location.start.cfi
+        })
       }
     },
     initEpub() {
-      // var book = ePub(this.url, {
-      //   requestHeaders: {
-      //     Authorization: `Bearer ${this.userToken}`
-      //   }
-      // })
-      var book = ePub(this.url)
-      this.book = book
+      /** @type {EpubReader} */
+      var reader = this
 
-      this.rendition = book.renderTo('viewer', {
+      /** @type {ePub.Book} */
+      reader.book = new ePub(reader.url, {
         width: window.innerWidth - 200,
-        height: 600,
-        ignoreClass: 'annotator-hl',
-        manager: 'continuous',
-        spread: 'always'
+        height: window.innerHeight - 50
       })
-      var displayed = this.rendition.display()
 
-      book.ready
-        .then(() => {
-          console.log('Book ready')
-          return book.locations.generate(1600)
-        })
-        .then((locations) => {
-          // console.log('Loaded locations', locations)
-          // Wait for book to be rendered to get current page
-          displayed.then(() => {
-            // Get the current CFI
-            var currentLocation = this.rendition.currentLocation()
-            if (!currentLocation.start) {
-              console.error('No Start', currentLocation)
-            } else {
-              var currentPage = book.locations.percentageFromCfi(currentLocation.start.cfi)
-              // console.log('current page', currentPage)
-            }
+      /** @type {ePub.Rendition} */
+      reader.rendition = reader.book.renderTo('viewer', {
+        width: window.innerWidth - 200,
+        height: window.innerHeight * 0.8
+      })
+
+      // load saved progress
+      reader.rendition.display(this.userMediaProgress?.ebookLocation || reader.book.locations.start)
+
+      // load style
+      reader.rendition.themes.default({ '*': { color: '#fff!important' } })
+
+      reader.book.ready.then(() => {
+        // set up event listeners
+        reader.rendition.on('relocated', reader.relocated)
+        reader.rendition.on('keydown', reader.keyUp)
+        document.addEventListener('keydown', reader.keyUp, false)
+
+        // load ebook cfi locations
+        if (this.hasSavedLocations()) {
+          reader.book.locations.load(this.loadLocations())
+        } else {
+          reader.book.locations.generate().then(() => {
+            this.saveLocations(reader.book.locations.save())
           })
-        })
-
-      book.loaded.navigation.then((toc) => {
-        var _chapters = []
-        toc.forEach((chapter) => {
-          _chapters.push(chapter)
-        })
-        this.chapters = _chapters
-      })
-      book.loaded.metadata.then((metadata) => {
-        this.author = metadata.creator
-        this.title = metadata.title
-      })
-
-      this.rendition.on('keyup', this.keyUp)
-
-      this.rendition.on('relocated', (location) => {
-        var percent = book.locations.percentageFromCfi(location.start.cfi)
-        this.progress = Math.floor(percent * 100)
-
-        this.hasNext = !location.atEnd
-        this.hasPrev = !location.atStart
+        }
       })
     }
   },
