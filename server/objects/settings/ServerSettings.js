@@ -57,6 +57,16 @@ class ServerSettings {
 
     this.version = null
 
+    // Auth settings
+    // Active auth methodes
+    this.authActiveAuthMethods = ['local']
+
+    // google-oauth20 settings
+    this.authGoogleOauth20ClientID = ''
+    this.authGoogleOauth20ClientSecret = ''
+    this.authGoogleOauth20CallbackURL = ''
+
+
     if (settings) {
       this.construct(settings)
     }
@@ -99,6 +109,30 @@ class ServerSettings {
     this.language = settings.language || 'en-us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
+
+    this.authActiveAuthMethods = settings.authActiveAuthMethods || ['local']
+    this.authGoogleOauth20ClientID = settings.authGoogleOauth20ClientID || ''
+    this.authGoogleOauth20ClientSecret = settings.authGoogleOauth20ClientSecret || ''
+    this.authGoogleOauth20CallbackURL = settings.authGoogleOauth20CallbackURL || ''
+
+    if (!Array.isArray(this.authActiveAuthMethods)) {
+      this.authActiveAuthMethods = ['local']
+    }
+
+    // remove uninitialized methods    
+    // GoogleOauth20
+    if (this.authActiveAuthMethods.includes('google-oauth20') && (
+      this.authGoogleOauth20ClientID === '' ||
+      this.authGoogleOauth20ClientSecret === '' ||
+      this.authGoogleOauth20CallbackURL === ''
+    )) {
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1);
+    }
+
+    // fallback to local    
+    if (!Array.isArray(this.authActiveAuthMethods) || this.authActiveAuthMethods.length == 0) {
+      this.authActiveAuthMethods = ['local']
+    }
 
     // Migrations
     if (settings.storeCoverWithBook != undefined) { // storeCoverWithBook was renamed to storeCoverWithItem in 2.0.0
@@ -148,13 +182,19 @@ class ServerSettings {
       dateFormat: this.dateFormat,
       language: this.language,
       logLevel: this.logLevel,
-      version: this.version
+      version: this.version,
+      authActiveAuthMethods: this.authActiveAuthMethods,
+      authGoogleOauth20ClientID: this.authGoogleOauth20ClientID, // Do not return to client
+      authGoogleOauth20ClientSecret: this.authGoogleOauth20ClientSecret, // Do not return to client
+      authGoogleOauth20CallbackURL: this.authGoogleOauth20CallbackURL
     }
   }
 
   toJSONForBrowser() {
     const json = this.toJSON()
     delete json.tokenSecret
+    delete json.authGoogleOauth20ClientID
+    delete json.authGoogleOauth20ClientSecret
     return json
   }
 

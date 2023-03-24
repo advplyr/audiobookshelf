@@ -37,6 +37,11 @@ const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
 const EBookManager = require('./managers/EBookManager')
 
+//Import the main Passport and Express-Session library
+const passport = require('passport')
+const expressSession = require('express-session')
+
+
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
@@ -48,7 +53,7 @@ class Server {
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
-    global.XAccel = process.env.USE_X_ACCEL
+    global.XAccel = process.env.USE_X_ACCELAuth
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
       fs.mkdirSync(global.ConfigPath)
@@ -92,7 +97,7 @@ class Server {
   }
 
   authMiddleware(req, res, next) {
-    this.auth.authMiddleware(req, res, next)
+    this.auth.isAuthenticated(req, res, next)
   }
 
   async init() {
@@ -141,13 +146,33 @@ class Server {
     await this.init()
 
     const app = express()
+
+    // enable express-session
+    app.use(expressSession({
+      secret: global.ServerSettings.tokenSecret,
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        // also send the cookie if were hare not on https
+        secure: false
+      },
+    }))
+    // init passport.js
+    app.use(passport.initialize())
+    // register passport in express-session
+    app.use(passport.session())
+    // config passport.js
+    this.auth.initPassportJs()
+    // use auth on all routes - not used now
+    // app.use(passport.authenticate('session'));
+
     const router = express.Router()
     app.use(global.RouterBasePath, router)
     app.disable('x-powered-by')
 
     this.server = http.createServer(app)
 
-    router.use(this.auth.cors)
+    // router.use(this.auth.cors)
     router.use(fileUpload())
     router.use(express.urlencoded({ extended: true, limit: "5mb" }));
     router.use(express.json({ limit: "5mb" }))
@@ -165,6 +190,9 @@ class Server {
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
+
+    // Auth routes
+    this.auth.initAuthRoutes(router)
 
     // EBook static file routes
     router.get('/ebook/:library/:folder/*', (req, res) => {
@@ -213,8 +241,8 @@ class Server {
     ]
     dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
 
-    router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
-    router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
+    // router.post('/login', passport.authenticate('local', this.auth.login), this.auth.loginResult.bind(this))
+    // router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
       if (this.db.hasRootUser) {
         Logger.error(`[Server] attempt to init server when server already has a root user`)
