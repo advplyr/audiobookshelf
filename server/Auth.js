@@ -48,22 +48,22 @@ class Auth {
       process.nextTick(function () {
         // only store username and id to session
         // TODO: do we want to store more info in the session?
-        return cb(null, {
+        return cb(null, JSON.stringify({
           "username": user.username,
           "id": user.id,
-        });
+        }));
       });
     });
 
     // define how to deseralize a user (use the username to get it from the database)
-    passport.deserializeUser(function (user, cb) {
-      process.nextTick(function () {
-        parsedUserInfo = JSON.parse(user)
+    passport.deserializeUser((function (user, cb) {
+      process.nextTick((function () {
+        const parsedUserInfo = JSON.parse(user)
         // TODO: do the matching on username or better on id?
         var dbUser = this.db.users.find(u => u.username.toLowerCase() === parsedUserInfo.username.toLowerCase())
         return cb(null, new User(dbUser));
-      });
-    });
+      }).bind(this));
+    }).bind(this));
   }
 
   /**
