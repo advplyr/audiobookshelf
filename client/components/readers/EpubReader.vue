@@ -89,15 +89,90 @@ export default {
         console.error('EpubReader.updateProgress failed:', error)
       })
     },
+    getAllEbookLocationData() {
+      const locations = []
+      let totalSize = 0 // Total in bytes
+
+      for (const key in localStorage) {
+        if (!localStorage.hasOwnProperty(key) || !key.startsWith('ebookLocations-')) {
+          continue
+        }
+
+        try {
+          const ebookLocations = JSON.parse(localStorage[key])
+          if (!ebookLocations.locations) throw new Error('Invalid locations object')
+
+          ebookLocations.key = key
+          ebookLocations.size = (localStorage[key].length + key.length) * 2
+          locations.push(ebookLocations)
+          totalSize += ebookLocations.size
+        } catch (error) {
+          console.error('Failed to parse ebook locations', key, error)
+          localStorage.removeItem(key)
+        }
+      }
+
+      // Sort by oldest lastAccessed first
+      locations.sort((a, b) => a.lastAccessed - b.lastAccessed)
+
+      return {
+        locations,
+        totalSize
+      }
+    },
+    /** @param {string} locationString */
+    checkSaveLocations(locationString) {
+      const maxSizeInBytes = 3000000 // Allow epub locations to take up to 3MB of space
+      const newLocationsSize = JSON.stringify({ lastAccessed: Date.now(), locations: locationString }).length * 2
+
+      // Too large overall
+      if (newLocationsSize > maxSizeInBytes) {
+        console.error('Epub locations are too large to store. Size =', newLocationsSize)
+        return
+      }
+
+      const ebookLocationsData = this.getAllEbookLocationData()
+
+      let availableSpace = maxSizeInBytes - ebookLocationsData.totalSize
+
+      // Remove epub locations until there is room for locations
+      while (availableSpace < newLocationsSize && ebookLocationsData.locations.length) {
+        const oldestLocation = ebookLocationsData.locations.shift()
+        console.log(`Removing cached locations for epub "${oldestLocation.key}" taking up ${oldestLocation.size} bytes`)
+        availableSpace += oldestLocation.size
+        localStorage.removeItem(oldestLocation.key)
+      }
+
+      console.log(`Cacheing epub locations with key "${this.localStorageLocationsKey}" taking up ${newLocationsSize} bytes`)
+      this.saveLocations(locationString)
+    },
     /** @param {string} locationString */
     saveLocations(locationString) {
-      localStorage.setItem(this.localStorageLocationsKey, locationString)
-    },
-    hasSavedLocations() {
-      return localStorage.getItem(this.localStorageLocationsKey) !== null
+      localStorage.setItem(
+        this.localStorageLocationsKey,
+        JSON.stringify({
+          lastAccessed: Date.now(),
+          locations: locationString
+        })
+      )
     },
     loadLocations() {
-      return localStorage.getItem(this.localStorageLocationsKey)
+      const locationsObjString = localStorage.getItem(this.localStorageLocationsKey)
+      if (!locationsObjString) return null
+
+      const locationsObject = JSON.parse(locationsObjString)
+
+      // Remove invalid location objects
+      if (!locationsObject.locations) {
+        console.error('Invalid epub locations stored', this.localStorageLocationsKey)
+        localStorage.removeItem(this.localStorageLocationsKey)
+        return null
+      }
+
+      // Update lastAccessed
+      this.saveLocations(locationsObject.locations)
+
+      return locationsObject.locations
     },
     /** @param {string} location - CFI of the new location */
     relocated(location) {
@@ -114,7 +189,7 @@ export default {
     },
     initEpub() {
       /** @type {EpubReader} */
-      var reader = this
+      const reader = this
 
       /** @type {ePub.Book} */
       reader.book = new ePub(reader.url, {
@@ -141,11 +216,12 @@ export default {
         document.addEventListener('keydown', reader.keyUp, false)
 
         // load ebook cfi locations
-        if (this.hasSavedLocations()) {
-          reader.book.locations.load(this.loadLocations())
+        const savedLocations = this.loadLocations()
+        if (savedLocations) {
+          reader.book.locations.load(savedLocations)
         } else {
           reader.book.locations.generate().then(() => {
-            this.saveLocations(reader.book.locations.save())
+            this.checkSaveLocations(reader.book.locations.save())
           })
         }
       })
