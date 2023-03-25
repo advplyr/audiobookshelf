@@ -73,7 +73,8 @@ function tryGrabChannelLayout(stream) {
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
-    const value = stream.tags[tags[i]] || stream.tags[tags[i].toUpperCase()]
+    const tagKey = Object.keys(stream.tags).find(t => t.toLowerCase() === tags[i].toLowerCase())
+    const value = stream.tags[tagKey]
     if (value && value.trim()) return value.trim()
   }
   return null
@@ -161,6 +162,7 @@ function parseTags(format, verbose) {
   if (verbose) {
     Logger.debug('Tags', format.tags)
   }
+
   const tags = {
     file_tag_encoder: tryGrabTags(format, 'encoder', 'tsse', 'tss'),
     file_tag_encodedby: tryGrabTags(format, 'encoded_by', 'tenc', 'ten'),
