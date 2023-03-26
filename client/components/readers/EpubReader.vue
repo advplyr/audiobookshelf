@@ -213,7 +213,6 @@ export default {
         // set up event listeners
         reader.rendition.on('relocated', reader.relocated)
         reader.rendition.on('keydown', reader.keyUp)
-        document.addEventListener('keydown', reader.keyUp, false)
 
         // load ebook cfi locations
         const savedLocations = this.loadLocations()
