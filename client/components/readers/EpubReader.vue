@@ -1,13 +1,13 @@
 <template>
   <div class="h-full w-full">
-    <div class="h-full flex items-center">
-      <div style="width: 100px; max-width: 100px" class="h-full flex items-center overflow-x-hidden justify-center">
+    <div class="h-full flex items-center justify-center">
+      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center overflow-x-hidden justify-center">
         <span v-if="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
       </div>
       <div id="frame" class="w-full" style="height: 80%">
         <div id="viewer"></div>
       </div>
-      <div style="width: 100px; max-width: 100px" class="h-full flex items-center justify-center overflow-x-hidden">
+      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center justify-center overflow-x-hidden">
         <span v-if="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
       </div>
     </div>
@@ -32,6 +32,7 @@ export default {
   },
   data() {
     return {
+      windowWidth: 0,
       /** @type {ePub.Book} */
       book: null,
       /** @type {ePub.Rendition} */
@@ -59,6 +60,10 @@ export default {
     },
     localStorageLocationsKey() {
       return `ebookLocations-${this.libraryItemId}`
+    },
+    readerWidth() {
+      if (this.windowWidth < 640) return this.windowWidth
+      return this.windowWidth - 200
     }
   },
   methods: {
@@ -197,13 +202,13 @@ export default {
 
       /** @type {ePub.Book} */
       reader.book = new ePub(reader.url, {
-        width: window.innerWidth - 200,
+        width: this.readerWidth,
         height: window.innerHeight - 50
       })
 
       /** @type {ePub.Rendition} */
       reader.rendition = reader.book.renderTo('viewer', {
-        width: window.innerWidth - 200,
+        width: this.readerWidth,
         height: window.innerHeight * 0.8
       })
 
@@ -218,6 +223,23 @@ export default {
         reader.rendition.on('relocated', reader.relocated)
         reader.rendition.on('keydown', reader.keyUp)
 
+        let touchStart = 0
+        let touchEnd = 0
+        reader.rendition.on('touchstart', (event) => {
+          touchStart = event.changedTouches[0].screenX
+        })
+
+        reader.rendition.on('touchend', (event) => {
+          touchEnd = event.changedTouches[0].screenX
+          const touchDistanceX = Math.abs(touchEnd - touchStart)
+          if (touchStart < touchEnd && touchDistanceX > 120) {
+            this.next()
+          }
+          if (touchStart > touchEnd && touchDistanceX > 120) {
+            this.prev()
+          }
+        })
+
         // load ebook cfi locations
         const savedLocations = this.loadLocations()
         if (savedLocations) {
@@ -228,9 +250,19 @@ export default {
           })
         }
       })
+    },
+    resize() {
+      this.windowWidth = window.innerWidth
+      this.rendition?.resize(this.readerWidth, window.innerHeight * 0.8)
     }
   },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.resize)
+    this.book?.destroy()
+  },
   mounted() {
+    this.windowWidth = window.innerWidth
+    window.addEventListener('resize', this.resize)
     this.initEpub()
   }
 }

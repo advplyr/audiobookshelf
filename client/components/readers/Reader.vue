@@ -5,7 +5,7 @@
     </div>
 
     <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
-      <h1 class="text-2xl mb-1" style="line-height: 1.15; font-weight: 100">
+      <h1 class="text-lg sm:text-xl md:text-2xl mb-1" style="line-height: 1.15; font-weight: 100">
         <span style="font-weight: 600">{{ abTitle }}</span>
         <span v-if="abAuthor" style="display: inline"> – </span>
         <span v-if="abAuthor">{{ abAuthor }}</span>
@@ -150,12 +150,18 @@ export default {
       if (!this.$refs.readerComponent) return
 
       if (action === this.$hotkeys.EReader.NEXT_PAGE) {
-        if (this.$refs.readerComponent.next) this.$refs.readerComponent.next()
+        this.next()
       } else if (action === this.$hotkeys.EReader.PREV_PAGE) {
-        if (this.$refs.readerComponent.prev) this.$refs.readerComponent.prev()
+        this.prev()
       } else if (action === this.$hotkeys.EReader.CLOSE) {
         this.close()
       }
+    },
+    next() {
+      if (this.$refs.readerComponent?.next) this.$refs.readerComponent.next()
+    },
+    prev() {
+      if (this.$refs.readerComponent?.prev) this.$refs.readerComponent.prev()
     },
     registerListeners() {
       this.$eventBus.$on('reader-hotkey', this.hotkey)
