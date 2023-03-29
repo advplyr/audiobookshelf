@@ -1,3 +1,4 @@
+const axios = require('axios')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
@@ -86,3 +87,77 @@ async function resizeImage(filePath, outputPath, width, height) {
   })
 }
 module.exports.resizeImage = resizeImage
+
+module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
+  return new Promise(async (resolve) => {
+    const response = await axios({
+      url: podcastEpisodeDownload.url,
+      method: 'GET',
+      responseType: 'stream',
+      timeout: 30000
+    })
+
+    const ffmpeg = Ffmpeg(response.data)
+    ffmpeg.outputOptions([
+      '-c copy',
+      '-metadata',
+      `album=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
+      '-metadata',
+      `album-sort=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
+      '-metadata',
+      `artist=${podcastEpisodeDownload.libraryItem?.media.metadata.author ?? ""}`, // Podcast Artist
+      '-metadata',
+      `artist-sort=${podcastEpisodeDownload.libraryItem?.media.metadata.author ?? ""}`, // Podcast Artist
+      '-metadata',
+      `comment=${podcastEpisodeDownload.podcastEpisode?.description ?? ""}`, // Episode Description
+      '-metadata',
+      `description=${podcastEpisodeDownload.podcastEpisode?.subtitle ?? ""}`, // Episode Subtitle
+      '-metadata',
+      `disc=${podcastEpisodeDownload.podcastEpisode?.season ?? ""}`, // Episode Season
+      '-metadata',
+      `genre=${podcastEpisodeDownload.libraryItem?.media.metadata.genres.join(';') ?? ""}`, // Podcast Genres
+      '-metadata',
+      `language=${podcastEpisodeDownload.libraryItem?.media.metadata.language ?? ""}`, // Podcast Language
+      '-metadata',
+      `MVNM=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
+      '-metadata',
+      `MVIN=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
+      '-metadata',
+      `track=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
+      '-metadata',
+      `series-part=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
+      '-metadata',
+      `podcast=1`,
+      '-metadata',
+      `title=${podcastEpisodeDownload.podcastEpisode?.title ?? ""}`, // Episode Title
+      '-metadata',
+      `title-sort=${podcastEpisodeDownload.podcastEpisode?.title ?? ""}`, // Episode Title
+      '-metadata',
+      `year=${podcastEpisodeDownload.podcastEpisode?.pubYear ?? ""}`, // Episode Pub Year
+      '-metadata',
+      `date=${podcastEpisodeDownload.podcastEpisode?.pubDate ?? ""}`, // Episode PubDate
+      '-metadata',
+      `releasedate=${podcastEpisodeDownload.podcastEpisode?.pubDate ?? ""}`, // Episode PubDate
+      '-metadata',
+      `itunes-id=${podcastEpisodeDownload.libraryItem?.media.metadata.itunesId ?? ""}`, // Podcast iTunes ID
+      '-metadata',
+      `podcast-type=${podcastEpisodeDownload.libraryItem?.media.metadata.type ?? ""}`, // Podcast Type
+      '-metadata',
+      `episode-type=${podcastEpisodeDownload.podcastEpisode?.episodeType ?? ""}` // Episode Type
+    ])
+    ffmpeg.addOutput(podcastEpisodeDownload.targetPath)
+
+    ffmpeg.on('start', (cmd) => {
+      Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Cmd: ${cmd}`)
+    })
+    ffmpeg.on('error', (err, stdout, stderr) => {
+      Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Error ${err} ${stdout} ${stderr}`)
+      resolve(false)
+    })
+    ffmpeg.on('end', () => {
+      Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Complete`)
+      resolve(podcastEpisodeDownload.targetPath)
+    })
+    ffmpeg.run()
+  })
+}

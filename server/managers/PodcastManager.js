@@ -4,11 +4,12 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const { downloadFile, removeFile } = require('../utils/fileUtils')
+const { removeFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
@@ -93,7 +94,8 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    let success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+    // Downloads episode and tags it
+    let success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
       Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
       return false
     })
@@ -126,22 +128,22 @@ class PodcastManager {
   }
 
   async scanAddPodcastEpisodeAudioFile() {
-    var libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
+    const libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
 
     // TODO: Set meta tags on new audio file
 
-    var audioFile = await this.probeAudioFile(libraryFile)
+    const audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
     }
 
-    var libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
     }
 
-    var podcastEpisode = this.currentDownload.podcastEpisode
+    const podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
     libraryItem.media.addPodcastEpisode(podcastEpisode)
     if (libraryItem.isInvalid) {

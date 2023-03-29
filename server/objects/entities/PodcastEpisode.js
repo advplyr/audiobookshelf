@@ -106,6 +106,10 @@ class PodcastEpisode {
   get enclosureUrl() {
     return this.enclosure ? this.enclosure.url : null
   }
+  get pubYear() {
+    if (!this.publishedAt) return null
+    return new Date(this.publishedAt).getFullYear()
+  }
 
   setData(data, index = 1) {
     this.id = getId('ep')
