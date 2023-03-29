@@ -339,10 +339,7 @@ class ApiRouter {
   // Helper Methods
   //
   userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    const json = user.toJSONForBrowser()
-    if (json.type === 'root' && hideRootToken) {
-      json.token = ''
-    }
+    const json = user.toJSONForBrowser(hideRootToken)
 
     json.mediaProgress = json.mediaProgress.map(lip => {
       const libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)

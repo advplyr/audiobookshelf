@@ -101,12 +101,12 @@ class User {
     }
   }
 
-  toJSONForBrowser() {
-    return {
+  toJSONForBrowser(hideRootToken = false, minimal = false) {
+    const json = {
       id: this.id,
       username: this.username,
       type: this.type,
-      token: this.token,
+      token: (this.type === 'root' && hideRootToken) ? '' : this.token,
       mediaProgress: this.mediaProgress ? this.mediaProgress.map(li => li.toJSON()) : [],
       seriesHideFromContinueListening: [...this.seriesHideFromContinueListening],
       bookmarks: this.bookmarks ? this.bookmarks.map(b => b.toJSON()) : [],
@@ -119,6 +119,11 @@ class User {
       librariesAccessible: [...this.librariesAccessible],
       itemTagsAccessible: [...this.itemTagsAccessible]
     }
+    if (minimal) {
+      delete json.mediaProgress
+      delete json.bookmarks
+    }
+    return json
   }
 
   // Data broadcasted
