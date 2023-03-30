@@ -111,7 +111,7 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       '-metadata',
       `comment=${podcastEpisodeDownload.podcastEpisode?.description ?? ""}`, // Episode Description
       '-metadata',
-      `description=${podcastEpisodeDownload.podcastEpisode?.subtitle ?? ""}`, // Episode Subtitle
+      `subtitle=${podcastEpisodeDownload.podcastEpisode?.subtitle ?? ""}`, // Episode Subtitle
       '-metadata',
       `disc=${podcastEpisodeDownload.podcastEpisode?.season ?? ""}`, // Episode Season
       '-metadata',

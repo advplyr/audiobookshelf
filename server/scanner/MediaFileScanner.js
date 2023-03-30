@@ -296,11 +296,17 @@ class MediaFileScanner {
 
         // Update audio file metadata for audio files already there
         existingAudioFiles.forEach((af) => {
-          const peAudioFile = libraryItem.media.findFileWithInode(af.ino)
-          if (peAudioFile.updateFromScan && peAudioFile.updateFromScan(af)) {
+          const podcastEpisode = libraryItem.media.findEpisodeWithInode(af.ino)
+          if (podcastEpisode?.audioFile.updateFromScan(af)) {
             hasUpdated = true
+
+            podcastEpisode.setDataFromAudioMetaTags(podcastEpisode.audioFile.metaTags, false)
           }
         })
+
+        if (libraryItem.media.setMetadataFromAudioFile(preferAudioMetadata)) {
+          hasUpdated = true
+        }
       } else if (libraryItem.mediaType === 'music') { // Music
         // Only one audio file in library item
         if (newAudioFiles.length) { // New audio file
