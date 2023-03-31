@@ -34,13 +34,25 @@
       </div>
       <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
-        <div v-if="selectedMatchOrig.cover" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
-          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
-          <div class="min-w-12 max-w-12 md:min-w-16 md:max-w-16">
-            <a :href="selectedMatch.cover" target="_blank" class="w-full bg-primary">
-              <img :src="selectedMatch.cover" class="h-full w-full object-contain" />
-            </a>
+        <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
+          <div class="flex flex-grow items-center py-2">
+            <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
+            <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
+          </div>
+
+          <div class="flex py-2">
+            <div>
+              <p class="text-center text-gray-200">New</p>
+              <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </a>
+            </div>
+            <div v-if="media.coverPath">
+              <p class="text-center text-gray-200">Current</p>
+              <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </a>
+            </div>
           </div>
         </div>
         <div v-if="selectedMatchOrig.title" class="flex items-center py-2">

@@ -2,7 +2,7 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-wrap">
       <div class="relative">
-        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
