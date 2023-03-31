@@ -504,11 +504,16 @@ class ApiRouter {
 
       // Create new authors if in payload
       if (mediaMetadata.authors && mediaMetadata.authors.length) {
-        // TODO: validate authors
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
-          if (mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
+          const authorName = (mediaMetadata.authors[i].name || '').trim()
+          if (!authorName) {
+            Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
+            continue
+          }
+
+          if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
+            let author = this.db.authors.find(au => au.checkNameEquals(authorName))
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
@@ -528,11 +533,16 @@ class ApiRouter {
 
       // Create new series if in payload
       if (mediaMetadata.series && mediaMetadata.series.length) {
-        // TODO: validate series
         const newSeries = []
         for (let i = 0; i < mediaMetadata.series.length; i++) {
-          if (mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
+          const seriesName = (mediaMetadata.series[i].name || '').trim()
+          if (!seriesName) {
+            Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
+            continue
+          }
+
+          if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
+            let seriesItem = this.db.series.find(se => se.checkNameEquals(seriesName))
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])
