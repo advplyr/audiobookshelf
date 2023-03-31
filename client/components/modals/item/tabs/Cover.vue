@@ -2,7 +2,8 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-wrap">
       <div class="relative">
-        <covers-book-cover :library-item="libraryItem" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
@@ -27,14 +28,14 @@
           </form>
         </div>
 
-        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-primary">
+        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white border-opacity-10">
           <div class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
             <div class="flex-grow" />
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
-          <div v-if="showLocalCovers" class="flex items-center justify-center">
+          <div v-if="showLocalCovers" class="flex items-center justify-center pb-2">
             <template v-for="cover in localCovers">
               <div :key="cover.path" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(cover)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
