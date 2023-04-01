@@ -4,7 +4,7 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const { removeFile } = require('../utils/fileUtils')
+const { removeFile, downloadFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
@@ -94,11 +94,22 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    // Downloads episode and tags it
-    let success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
-      Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-      return false
-    })
+
+    let success = false
+    if (this.currentDownload.urlFileExtension === 'mp3') {
+      // Download episode and tag it
+      success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    } else {
+      // Download episode only
+      success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    }
+
     if (success) {
       success = await this.scanAddPodcastEpisodeAudioFile()
       if (!success) {

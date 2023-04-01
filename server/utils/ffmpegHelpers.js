@@ -98,53 +98,44 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     })
 
     const ffmpeg = Ffmpeg(response.data)
-    ffmpeg.outputOptions([
-      '-c copy',
-      '-metadata',
-      `album=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
-      '-metadata',
-      `album-sort=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
-      '-metadata',
-      `artist=${podcastEpisodeDownload.libraryItem?.media.metadata.author ?? ""}`, // Podcast Artist
-      '-metadata',
-      `artist-sort=${podcastEpisodeDownload.libraryItem?.media.metadata.author ?? ""}`, // Podcast Artist
-      '-metadata',
-      `comment=${podcastEpisodeDownload.podcastEpisode?.description ?? ""}`, // Episode Description
-      '-metadata',
-      `subtitle=${podcastEpisodeDownload.podcastEpisode?.subtitle ?? ""}`, // Episode Subtitle
-      '-metadata',
-      `disc=${podcastEpisodeDownload.podcastEpisode?.season ?? ""}`, // Episode Season
-      '-metadata',
-      `genre=${podcastEpisodeDownload.libraryItem?.media.metadata.genres.join(';') ?? ""}`, // Podcast Genres
-      '-metadata',
-      `language=${podcastEpisodeDownload.libraryItem?.media.metadata.language ?? ""}`, // Podcast Language
-      '-metadata',
-      `MVNM=${podcastEpisodeDownload.libraryItem?.media.metadata.title ?? ""}`, // Podcast Title
-      '-metadata',
-      `MVIN=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
-      '-metadata',
-      `track=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
-      '-metadata',
-      `series-part=${podcastEpisodeDownload.podcastEpisode?.episode ?? ""}`, // Episode Number
-      '-metadata',
-      `podcast=1`,
-      '-metadata',
-      `title=${podcastEpisodeDownload.podcastEpisode?.title ?? ""}`, // Episode Title
-      '-metadata',
-      `title-sort=${podcastEpisodeDownload.podcastEpisode?.title ?? ""}`, // Episode Title
-      '-metadata',
-      `year=${podcastEpisodeDownload.podcastEpisode?.pubYear ?? ""}`, // Episode Pub Year
-      '-metadata',
-      `date=${podcastEpisodeDownload.podcastEpisode?.pubDate ?? ""}`, // Episode PubDate
-      '-metadata',
-      `releasedate=${podcastEpisodeDownload.podcastEpisode?.pubDate ?? ""}`, // Episode PubDate
-      '-metadata',
-      `itunes-id=${podcastEpisodeDownload.libraryItem?.media.metadata.itunesId ?? ""}`, // Podcast iTunes ID
-      '-metadata',
-      `podcast-type=${podcastEpisodeDownload.libraryItem?.media.metadata.type ?? ""}`, // Podcast Type
-      '-metadata',
-      `episode-type=${podcastEpisodeDownload.podcastEpisode?.episodeType ?? ""}` // Episode Type
-    ])
+    ffmpeg.outputOptions(
+      '-c', 'copy',
+      '-metadata', 'podcast=1'
+    )
+
+    const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
+    const podcastEpisode = podcastEpisodeDownload.podcastEpisode
+
+    const taggings = {
+      'album': podcastMetadata.title,
+      'album-sort': podcastMetadata.title,
+      'artist': podcastMetadata.author,
+      'artist-sort': podcastMetadata.author,
+      'comment': podcastEpisode.description,
+      'subtitle': podcastEpisode.subtitle,
+      'disc': podcastEpisode.season,
+      'genre': podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
+      'language': podcastMetadata.language,
+      'MVNM': podcastMetadata.title,
+      'MVIN': podcastEpisode.episode,
+      'track': podcastEpisode.episode,
+      'series-part': podcastEpisode.episode,
+      'title': podcastEpisode.title,
+      'title-sort': podcastEpisode.title,
+      'year': podcastEpisode.pubYear,
+      'date': podcastEpisode.pubDate,
+      'releasedate': podcastEpisode.pubDate,
+      'itunes-id': podcastMetadata.itunesId,
+      'podcast-type': podcastMetadata.type,
+      'episode-type': podcastMetadata.episodeType
+    }
+
+    for (const tag in taggings) {
+      if (taggings[tag]) {
+        ffmpeg.addOption('-metadata', `${tag}=${taggings[tag]}`)
+      }
+    }
+
     ffmpeg.addOutput(podcastEpisodeDownload.targetPath)
 
     ffmpeg.on('start', (cmd) => {

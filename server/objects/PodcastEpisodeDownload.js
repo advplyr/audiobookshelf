@@ -41,8 +41,12 @@ class PodcastEpisodeDownload {
     }
   }
 
+  get urlFileExtension() {
+    const cleanUrl = this.url.split('?')[0] // Remove query string
+    return Path.extname(cleanUrl).substring(1).toLowerCase()
+  }
   get fileExtension() {
-    const extname = Path.extname(this.url).substring(1).toLowerCase()
+    const extname = this.urlFileExtension
     if (globals.SupportedAudioTypes.includes(extname)) return extname
     return 'mp3'
   }
