@@ -58,9 +58,6 @@
           <span class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
           {{ $strings.ButtonPlay }}
         </ui-btn>
-        <ui-tooltip v-if="userIsAdminOrUp && isBookLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
-          <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
-        </ui-tooltip>
         <ui-tooltip v-if="isBookLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
@@ -75,8 +72,11 @@
         <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
-        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom">
-          <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+
+        <ui-context-menu-dropdown v-if="contextMenuItems.length && !processingBatch" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
+
+        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom" class="flex items-center">
+          <span class="material-icons text-3xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>
     </div>
@@ -160,9 +160,59 @@ export default {
     },
     isHttps() {
       return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
+    },
+    contextMenuItems() {
+      if (!this.userIsAdminOrUp) return []
+
+      const options = [
+        {
+          text: this.$strings.ButtonQuickMatch,
+          action: 'quick-match'
+        }
+      ]
+
+      if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
+        options.push({
+          text: 'Quick Embed Metadata',
+          action: 'quick-embed'
+        })
+      }
+
+      return options
     }
   },
   methods: {
+    requestBatchQuickEmbed() {
+      const payload = {
+        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$post(`/api/tools/batch/embed-metadata`, {
+                libraryItemIds: this.selectedMediaItems.map((i) => i.id)
+              })
+              .then(() => {
+                console.log('Audio metadata embed started')
+                this.cancelSelectionMode()
+              })
+              .catch((error) => {
+                console.error('Audio metadata embed failed', error)
+                const errorMsg = error.response.data || 'Failed to embed metadata'
+                this.$toast.error(errorMsg)
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction(action) {
+      if (action === 'quick-embed') {
+        this.requestBatchQuickEmbed()
+      } else if (action === 'quick-match') {
+        this.batchAutoMatchClick()
+      }
+    },
     async playSelectedItems() {
       this.$store.commit('setProcessingBatch', true)
 

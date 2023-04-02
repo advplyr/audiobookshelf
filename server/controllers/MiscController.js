@@ -90,9 +90,19 @@ class MiscController {
 
   // GET: api/tasks
   getTasks(req, res) {
-    res.json({
+    const includeArray = (req.query.include || '').split(',')
+
+    const data = {
       tasks: this.taskManager.tasks.map(t => t.toJSON())
-    })
+    }
+
+    if (includeArray.includes('queue')) {
+      data.queuedTaskData = {
+        embedMetadata: this.audioMetadataManager.getQueuedTaskData()
+      }
+    }
+
+    res.json(data)
   }
 
   // PATCH: api/settings (admin)

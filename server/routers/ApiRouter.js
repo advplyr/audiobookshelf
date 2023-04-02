@@ -271,9 +271,10 @@ class ApiRouter {
     //
     // Tools Routes (Admin and up)
     //
-    this.router.post('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.encodeM4b.bind(this))
-    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
-    this.router.post('/tools/item/:id/embed-metadata', ToolsController.itemMiddleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.encodeM4b.bind(this))
+    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
+    this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
 
     // 
     // RSS Feed Routes (Admin and up)
