@@ -171,23 +171,6 @@ class MeController {
     this.auth.userChangePassword(req, res)
   }
 
-  // TODO: Remove after mobile release v0.9.61-beta
-  // PATCH: api/me/settings
-  async updateSettings(req, res) {
-    var settingsUpdate = req.body
-    if (!settingsUpdate || !isObject(settingsUpdate)) {
-      return res.sendStatus(500)
-    }
-    var madeUpdates = req.user.updateSettings(settingsUpdate)
-    if (madeUpdates) {
-      await this.db.updateEntity('user', req.user)
-    }
-    return res.json({
-      success: true,
-      settings: req.user.settings
-    })
-  }
-
   // TODO: Deprecated. Removed from Android. Only used in iOS app now.
   // POST: api/me/sync-local-progress
   async syncLocalMediaProgress(req, res) {
