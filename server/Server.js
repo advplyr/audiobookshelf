@@ -35,7 +35,6 @@ const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
-const EBookManager = require('./managers/EBookManager')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -75,7 +74,6 @@ class Server {
     this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager, this.taskManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager)
     this.rssFeedManager = new RssFeedManager(this.db)
-    this.eBookManager = new EBookManager(this.db)
 
     this.scanner = new Scanner(this.db, this.coverManager)
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
