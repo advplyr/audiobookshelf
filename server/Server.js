@@ -119,7 +119,6 @@ class Server {
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
-    await this.abMergeManager.ensureDownloadDirPath()
 
     await this.backupManager.init()
     await this.logManager.init()

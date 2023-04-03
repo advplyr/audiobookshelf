@@ -15,8 +15,6 @@ class AbMergeManager {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
-    this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
-    this.downloadDirPathExist = false
 
     this.pendingTasks = []
   }
@@ -27,22 +25,6 @@ class AbMergeManager {
 
   cancelEncode(task) {
     return this.removeTask(task, true)
-  }
-
-  async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
-    if (this.downloadDirPathExist) return
-
-    var pathCreated = false
-    if (!(await fs.pathExists(this.downloadDirPath))) {
-      await fs.mkdir(this.downloadDirPath)
-      pathCreated = true
-    }
-
-    if (pathCreated) {
-      await filePerms.setDefault(this.downloadDirPath)
-    }
-
-    this.downloadDirPathExist = true
   }
 
   async startAudiobookMerge(user, libraryItem, options = {}) {
