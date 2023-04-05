@@ -41,7 +41,7 @@ function extractCategories(channel) {
 }
 
 function extractPodcastMetadata(channel) {
-  var metadata = {
+  const metadata = {
     image: extractImage(channel),
     categories: extractCategories(channel),
     feedUrl: null,
@@ -62,10 +62,12 @@ function extractPodcastMetadata(channel) {
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
-  var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
+  const arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
   arrayFields.forEach((key) => {
-    var cleanKey = key.split(':').pop()
-    metadata[cleanKey] = extractFirstArrayItem(channel, key)
+    const cleanKey = key.split(':').pop()
+    let value = extractFirstArrayItem(channel, key)
+    if (value && value['_']) value = value['_']
+    metadata[cleanKey] = value
   })
   return metadata
 }
@@ -107,9 +109,9 @@ function extractEpisodeData(item) {
     }
   }
 
-  var arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
-    var cleanKey = key.split(':').pop()
+    const cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)
   })
   return episode
