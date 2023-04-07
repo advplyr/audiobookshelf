@@ -46,7 +46,7 @@
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
-    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" @seek="seek" />
+    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
 
     <div class="flex">
       <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
@@ -59,7 +59,7 @@
       <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
-    <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
+    <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :playback-rate="playbackRate" :chapters="chapters" @select="selectChapter" />
   </div>
 </template>
 
@@ -90,6 +90,11 @@ export default {
       currentTime: 0,
       duration: 0,
       useChapterTrack: false
+    }
+  },
+  watch: {
+    playbackRate() {
+      this.updateTimestamp()
     }
   },
   computed: {
@@ -289,14 +294,13 @@ export default {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(percentageReady)
     },
     updateTimestamp() {
-      var ts = this.$refs.currentTimestamp
+      const ts = this.$refs.currentTimestamp
       if (!ts) {
         console.error('No timestamp el')
         return
       }
       const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
-      var currTimeClean = this.$secondsToTimestamp(time)
-      ts.innerText = currTimeClean
+      ts.innerText = this.$secondsToTimestamp(time / this.playbackRate)
     },
     setBufferTime(bufferTime) {
       if (this.$refs.trackbar) this.$refs.trackbar.setBufferTime(bufferTime)
