@@ -98,7 +98,8 @@
       </div>
 
       <div class="flex items-center">
-        <ui-btn small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-if="!isOpenSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-else small color="error" @click.stop="closeSessionClick">Close Open Session</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -157,6 +158,9 @@ export default {
     },
     timeFormat() {
       return this.$store.state.serverSettings.timeFormat
+    },
+    isOpenSession() {
+      return !!this._session.open
     }
   },
   methods: {
@@ -187,6 +191,24 @@ export default {
           console.error('Failed to delete session', error)
           var errMsg = error.response ? error.response.data || '' : ''
           this.$toast.error(errMsg || this.$strings.ToastSessionDeleteFailed)
+        })
+    },
+    closeSessionClick() {
+      this.processing = true
+      this.$axios
+        .$post(`/api/session/${this._session.id}/close`)
+        .then(() => {
+          this.$toast.success('Session closed')
+          this.show = false
+          this.$emit('closedSession')
+        })
+        .catch((error) => {
+          console.error('Failed to close session', error)
+          const errMsg = error.response?.data || ''
+          this.$toast.error(errMsg || 'Failed to close open session')
+        })
+        .finally(() => {
+          this.processing = false
         })
     }
   },

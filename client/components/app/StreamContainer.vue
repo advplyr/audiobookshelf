@@ -460,6 +460,13 @@ export default {
     showFailedProgressSyncs() {
       if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
       this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
+    },
+    sessionClosedEvent(sessionId) {
+      if (this.playerHandler.currentSessionId === sessionId) {
+        console.log('sessionClosedEvent closing current session', sessionId)
+        this.playerHandler.resetPlayer() // Closes player without reporting to server
+        this.$store.commit('setMediaPlaying', null)
+      }
     }
   },
   mounted() {
