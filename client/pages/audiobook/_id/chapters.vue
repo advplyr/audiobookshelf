@@ -41,7 +41,7 @@
                   <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
                   <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
                   <div class="flex-grow" />
-                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">close</span>
+                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">expand_less</span>
                 </div>
                 <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
               </div>
@@ -329,6 +329,7 @@ export default {
           chap.start = Math.max(0, chap.start + amount)
         }
       }
+      this.checkChapters()
     },
     editItem() {
       this.$store.commit('showEditModal', this.libraryItem)
