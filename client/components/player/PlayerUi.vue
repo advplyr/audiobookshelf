@@ -218,18 +218,14 @@ export default {
       }
     },
     increasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex >= rates.length - 1) return
-      this.playbackRate = rates[currentRateIndex + 1] || 1
-      this.playbackRateChanged(this.playbackRate)
+      if (this.playbackRate >= 10) return
+      this.playbackRate = Number((this.playbackRate + 0.1).toFixed(1))
+      this.setPlaybackRate(this.playbackRate)
     },
     decreasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex <= 0) return
-      this.playbackRate = rates[currentRateIndex - 1] || 1
-      this.playbackRateChanged(this.playbackRate)
+      if (this.playbackRate <= 0.5) return
+      this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
+      this.setPlaybackRate(this.playbackRate)
     },
     setPlaybackRate(playbackRate) {
       this.$emit('setPlaybackRate', playbackRate)
@@ -316,7 +312,7 @@ export default {
       this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
-      this.$emit('setPlaybackRate', this.playbackRate)
+      this.setPlaybackRate(this.playbackRate)
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {
