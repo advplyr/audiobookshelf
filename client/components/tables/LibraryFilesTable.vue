@@ -6,7 +6,7 @@
         <span class="text-sm font-mono">{{ files.length }}</span>
       </div>
       <div class="flex-grow" />
-      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
+      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <div class="cursor-pointer h-10 w-10 rounded-full hover:bg-black-400 flex justify-center items-center duration-500" :class="showFiles ? 'transform rotate-180' : ''">
         <span class="material-icons text-4xl">expand_more</span>
       </div>
@@ -67,6 +67,9 @@ export default {
     },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
+    },
+    userIsAdmin() {
+      return this.$store.getters['user/getIsAdminOrUp']
     }
   },
   methods: {
