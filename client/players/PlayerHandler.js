@@ -123,7 +123,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalAudioPlayer)) {
+    if (!this.isCasting && (this.player instanceof LocalAudioPlayer)) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -183,6 +183,8 @@ export default class PlayerHandler {
   }
 
   async prepare(forceTranscode = false) {
+    this.currentSessionId = null // Reset session
+
     const payload = {
       deviceInfo: {
         deviceId: this.getDeviceId()
@@ -260,6 +262,7 @@ export default class PlayerHandler {
     this.player = null
     this.playerState = 'IDLE'
     this.libraryItem = null
+    this.currentSessionId = null
     this.startTime = 0
     this.stopPlayInterval()
   }

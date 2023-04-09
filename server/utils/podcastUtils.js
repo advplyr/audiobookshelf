@@ -74,12 +74,12 @@ function extractPodcastMetadata(channel) {
 
 function extractEpisodeData(item) {
   // Episode must have url
-  if (!item.enclosure || !item.enclosure.length || !item.enclosure[0]['$'] || !item.enclosure[0]['$'].url) {
+  if (!item.enclosure?.[0]?.['$']?.url) {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
-  var episode = {
+  const episode = {
     enclosure: {
       ...item.enclosure[0]['$']
     }
@@ -89,6 +89,12 @@ function extractEpisodeData(item) {
   if (item['content:encoded']) {
     const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()
     episode.description = htmlSanitizer.sanitize(rawDescription)
+  }
+
+  // Extract chapters
+  if (item['podcast:chapters']?.[0]?.['$']?.url) {
+    episode.chaptersUrl = item['podcast:chapters'][0]['$'].url
+    episode.chaptersType = item['podcast:chapters'][0]['$'].type || 'application/json'
   }
 
   // Supposed to be the plaintext description but not always followed
@@ -133,14 +139,16 @@ function cleanEpisodeData(data) {
     duration: data.duration || '',
     explicit: data.explicit || '',
     publishedAt,
-    enclosure: data.enclosure
+    enclosure: data.enclosure,
+    chaptersUrl: data.chaptersUrl || null,
+    chaptersType: data.chaptersType || null
   }
 }
 
 function extractPodcastEpisodes(items) {
-  var episodes = []
+  const episodes = []
   items.forEach((item) => {
-    var extracted = extractEpisodeData(item)
+    const extracted = extractEpisodeData(item)
     if (extracted) {
       episodes.push(cleanEpisodeData(extracted))
     }

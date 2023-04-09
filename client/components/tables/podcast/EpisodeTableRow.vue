@@ -12,6 +12,7 @@
         <div class="flex justify-between pt-2 max-w-xl">
           <p v-if="episode.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
           <p v-if="episode.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
+          <p v-if="episode.chapters?.length" class="text-sm text-gray-300">{{ episode.chapters.length }} Chapters</p>
           <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, dateFormat) }}</p>
         </div>
 

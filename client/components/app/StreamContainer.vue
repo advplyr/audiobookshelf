@@ -120,17 +120,22 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
+    streamEpisode() {
+      if (!this.$store.state.streamEpisodeId) return null
+      const episodes = this.streamLibraryItem.media.episodes || []
+      return episodes.find((ep) => ep.id === this.$store.state.streamEpisodeId)
+    },
     libraryItemId() {
-      return this.streamLibraryItem ? this.streamLibraryItem.id : null
+      return this.streamLibraryItem?.id || null
     },
     media() {
-      return this.streamLibraryItem ? this.streamLibraryItem.media || {} : {}
+      return this.streamLibraryItem?.media || {}
     },
     isPodcast() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
+      return this.streamLibraryItem?.mediaType === 'podcast'
     },
     isMusic() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'music' : false
+      return this.streamLibraryItem?.mediaType === 'music'
     },
     isExplicit() {
       return this.mediaMetadata.explicit || false
@@ -139,6 +144,7 @@ export default {
       return this.media.metadata || {}
     },
     chapters() {
+      if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
     },
     title() {
