@@ -186,7 +186,7 @@ function parseTags(format, verbose) {
     file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin'),
     file_tag_isbn: tryGrabTags(format, 'isbn'), // custom
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
-    file_tag_asin: tryGrabTags(format, 'asin'), // custom
+    file_tag_asin: tryGrabTags(format, 'asin', 'audible_asin'), // custom
     file_tag_itunesid: tryGrabTags(format, 'itunes-id'), // custom
     file_tag_podcasttype: tryGrabTags(format, 'podcast-type'), // custom
     file_tag_episodetype: tryGrabTags(format, 'episode-type'), // custom
