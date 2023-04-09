@@ -465,6 +465,7 @@
   "MessageConfirmForceReScan": "你确定要强制重新扫描吗?",
   "MessageConfirmMarkSeriesFinished": "你确定要将此系列中的所有书籍都标记为已听完吗?",
   "MessageConfirmMarkSeriesNotFinished": "你确定要将此系列中的所有书籍都标记为未听完吗?",
+  "MessageConfirmRemoveAllChapters": "Are you sure you want to remove all chapters?",
   "MessageConfirmRemoveCollection": "您确定要移除收藏 \"{0}\"?",
   "MessageConfirmRemoveEpisode": "您确定要移除剧集 \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "你确定要移除 {0} 剧集?",

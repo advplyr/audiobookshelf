@@ -465,6 +465,7 @@
   "MessageConfirmForceReScan": "Вы уверены, что хотите принудительно выполнить повторное сканирование?",
   "MessageConfirmMarkSeriesFinished": "Вы уверены, что хотите отметить все книги этой серии как законченные?",
   "MessageConfirmMarkSeriesNotFinished": "Вы уверены, что хотите отметить все книги этой серии как незаконченные?",
+  "MessageConfirmRemoveAllChapters": "Are you sure you want to remove all chapters?",
   "MessageConfirmRemoveCollection": "Вы уверены, что хотите удалить коллекцию \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Вы уверены, что хотите удалить эпизод \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Вы уверены, что хотите удалить {0} эпизодов?",

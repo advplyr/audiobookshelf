@@ -436,12 +436,12 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const chapters = req.body.chapters || []
-    if (!chapters.length) {
+    if (!req.body.chapters) {
       Logger.error(`[LibraryItemController] Invalid payload`)
       return res.sendStatus(400)
     }
 
+    const chapters = req.body.chapters || []
     const wasUpdated = req.libraryItem.media.updateChapters(chapters)
     if (wasUpdated) {
       await this.db.updateLibraryItem(req.libraryItem)

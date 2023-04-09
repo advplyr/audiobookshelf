@@ -465,6 +465,7 @@
   "MessageConfirmForceReScan": "Jeste li sigurni da želite ponovno skenirati?",
   "MessageConfirmMarkSeriesFinished": "Are you sure you want to mark all books in this series as finished?",
   "MessageConfirmMarkSeriesNotFinished": "Are you sure you want to mark all books in this series as not finished?",
+  "MessageConfirmRemoveAllChapters": "Are you sure you want to remove all chapters?",
   "MessageConfirmRemoveCollection": "AJeste li sigurni da želite obrisati kolekciju \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Jeste li sigurni da želite obrisati epizodu \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Jeste li sigurni da želite obrisati {0} epizoda/-u?",

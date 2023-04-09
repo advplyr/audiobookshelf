@@ -465,6 +465,7 @@
   "MessageConfirmForceReScan": "Esta seguro que desea forzar re-escanear?",
   "MessageConfirmMarkSeriesFinished": "Esta seguro que desea marcar todos los libros en esta serie como terminados?",
   "MessageConfirmMarkSeriesNotFinished": "Esta seguro que desea marcar todos los libros en esta serie como no terminados?",
+  "MessageConfirmRemoveAllChapters": "Are you sure you want to remove all chapters?",
   "MessageConfirmRemoveCollection": "Esta seguro que desea remover la colección \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Esta seguro que desea remover el episodio \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Esta seguro que desea remover {0} episodios?",
