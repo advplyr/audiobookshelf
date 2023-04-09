@@ -222,6 +222,13 @@
             <ui-tooltip v-if="showRssFeedBtn" :text="$strings.LabelOpenRSSFeed" direction="top">
               <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
             </ui-tooltip>
+
+            <!-- Download -->
+            <ui-tooltip v-if="userCanDownload" :text="$strings.LabelDownload" direction="top">
+              <a :href="downloadPath" class="h-9 w-9 mx-0.5 rounded-md flex items-center justify-center relative bg-primary border border-gray-600">
+                <span class="material-icons-outlined" :style="{ fontSize: '1.4rem' }">download</span>
+              </a>
+            </ui-tooltip>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -284,6 +291,12 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    downloadPath() {
+      return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
+    },
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },

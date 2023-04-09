@@ -2,6 +2,7 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 
+const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
@@ -67,6 +68,17 @@ class LibraryItemController {
   async delete(req, res) {
     await this.handleDeleteLibraryItem(req.libraryItem)
     res.sendStatus(200)
+  }
+
+  download(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn('User attempted to download without permission', req.user)
+      return res.sendStatus(403)
+    }
+
+    const libraryItemPath = req.libraryItem.path
+    const filename = `${req.libraryItem.media.metadata.title}.zip`
+    zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
   //
