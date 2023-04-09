@@ -162,12 +162,12 @@ class LibraryItemController {
 
   // PATCH: api/items/:id/cover
   async updateCover(req, res) {
-    var libraryItem = req.libraryItem
+    const libraryItem = req.libraryItem
     if (!req.body.cover) {
-      return res.status(400).error('Invalid request no cover path')
+      return res.status(400).send('Invalid request no cover path')
     }
 
-    var validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
+    const validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
