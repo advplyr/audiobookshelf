@@ -221,7 +221,6 @@ class MediaFileScanner {
   */
   async scanMediaFiles(mediaLibraryFiles, libraryItem, libraryScan = null) {
     const preferAudioMetadata = libraryScan ? !!libraryScan.preferAudioMetadata : !!global.ServerSettings.scannerPreferAudioMetadata
-    const preferOverdriveMediaMarker = !!global.ServerSettings.scannerPreferOverdriveMediaMarker
 
     let hasUpdated = false
 
