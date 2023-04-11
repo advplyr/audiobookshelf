@@ -465,7 +465,7 @@
   "MessageConfirmForceReScan": "Êtes-vous sûr de vouloir lancer une Analyse Forcée ?",
   "MessageConfirmMarkSeriesFinished": "Êtes-vous sûr de vouloir marquer comme terminé tous les livres de cette série ?",
   "MessageConfirmMarkSeriesNotFinished": "Êtes-vous sûr de vouloir marquer comme non terminé tous les livres de cette série ?",
-  "MessageConfirmRemoveAllChapters": "Are you sure you want to remove all chapters?",
+  "MessageConfirmRemoveAllChapters": "Êtes-vous sûr de vouloir supprimer tous les chapitres ?",
   "MessageConfirmRemoveCollection": "Êtes-vous sûr de vouloir supprimer la collection « {0} » ?",
   "MessageConfirmRemoveEpisode": "Êtes-vous sûr de vouloir supprimer l’épisode « {0} » ?",
   "MessageConfirmRemoveEpisodes": "Êtes-vous sûr de vouloir supprimer {0} épisodes ?",
