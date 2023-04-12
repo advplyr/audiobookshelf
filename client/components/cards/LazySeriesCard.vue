@@ -81,13 +81,20 @@ export default {
       return this.title
     },
     displaySortLine() {
-      if (this.orderBy === 'addedAt') {
-        // return this.addedAt
-        return 'Added ' + this.$formatDate(this.addedAt, this.dateFormat)
-      } else if (this.orderBy === 'totalDuration') {
-        return 'Duration: ' + this.$elapsedPrettyExtended(this.totalDuration, false)
+      switch (this.orderBy) {
+        case 'addedAt':
+          return `${this.$strings.LabelAdded} ${this.$formatDate(this.addedAt, this.dateFormat)}`
+        case 'totalDuration':
+          return `${this.$strings.LabelDuration} ${this.$elapsedPrettyExtended(this.totalDuration, false)}` 
+        case 'lastBookUpdated':
+          const lastUpdated = Math.max(...(this.books).map(x => x.updatedAt), 0)
+          return `${this.$strings.LabelLastBookUpdated} ${this.$formatDate(lastUpdated, this.dateFormat)}`
+        case 'lastBookAdded':
+          const lastBookAdded = Math.max(...(this.books).map(x => x.addedAt), 0)
+          return `${this.$strings.LabelLastBookAdded} ${this.$formatDate(lastBookAdded, this.dateFormat)}` 
+        default:
+          return null
       }
-      return null
     },
     books() {
       return this.series ? this.series.books || [] : []

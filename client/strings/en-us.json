@@ -161,6 +161,7 @@
   "LabelAccountTypeGuest": "Guest",
   "LabelAccountTypeUser": "User",
   "LabelActivity": "Activity",
+  "LabelAdded": "Added",
   "LabelAddedAt": "Added At",
   "LabelAddToCollection": "Add to Collection",
   "LabelAddToCollectionBatch": "Add {0} Books to Collection",
