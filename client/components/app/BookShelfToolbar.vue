@@ -164,6 +164,14 @@ export default {
           value: 'addedAt'
         },
         {
+          text: this.$strings.LabelLastBookAdded,
+          value: 'lastBookAdded'
+        },
+        {
+          text: this.$strings.LabelLastBookUpdated,
+          value: 'lastBookUpdated'
+        },
+        {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
         }
