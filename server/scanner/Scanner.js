@@ -200,11 +200,22 @@ class Scanner {
       // Find library item folder with matching inode or matching path
       const dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
       if (!dataFound) {
-        libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
-        Logger.warn(`[Scanner] Library item "${libraryItem.media.metadata.title}" is missing (inode "${libraryItem.ino}")`)
-        libraryScan.resultsMissing++
-        libraryItem.setMissing()
-        itemsToUpdate.push(libraryItem)
+        // Podcast folder can have no episodes and still be valid
+        if (libraryScan.libraryMediaType === 'podcast' && await fs.pathExists(libraryItem.path)) {
+          Logger.info(`[Scanner] Library item "${libraryItem.media.metadata.title}" folder exists but has no episodes`)
+          if (libraryItem.isMissing) {
+            libraryScan.resultsUpdated++
+            libraryItem.isMissing = false
+            libraryItem.setLastScan()
+            itemsToUpdate.push(libraryItem)
+          }
+        } else {
+          libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
+          Logger.warn(`[Scanner] Library item "${libraryItem.media.metadata.title}" is missing (inode "${libraryItem.ino}")`)
+          libraryScan.resultsMissing++
+          libraryItem.setMissing()
+          itemsToUpdate.push(libraryItem)
+        }
       } else {
         const checkRes = libraryItem.checkScanData(dataFound)
         if (checkRes.newLibraryFiles.length || libraryScan.scanOptions.forceRescan) { // Item has new files

@@ -166,7 +166,7 @@ class Podcast {
   }
 
   removeFileWithInode(inode) {
-    this.episodes = this.episodes.filter(ep => ep.ino !== inode)
+    this.episodes = this.episodes.filter(ep => ep.audioFile.ino !== inode)
   }
 
   findFileWithInode(inode) {
