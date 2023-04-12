@@ -68,7 +68,7 @@ class Scanner {
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
     // TODO: Support for single media item
-    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false)
     if (!libraryItemData) {
       return ScanResult.NOTHING
     }
@@ -173,7 +173,7 @@ class Scanner {
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
       const folder = libraryScan.folders[i]
-      const itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder, this.db.serverSettings)
+      const itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder)
       libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
@@ -632,7 +632,7 @@ class Scanner {
   }
 
   async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath, isSingleMediaItem = false) {
-    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem)
     if (!libraryItemData) return null
     return this.scanNewLibraryItem(libraryItemData, libraryMediaType)
   }
