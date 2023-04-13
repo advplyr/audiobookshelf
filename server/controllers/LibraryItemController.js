@@ -482,6 +482,28 @@ class LibraryItemController {
     res.json(toneData)
   }
 
+  async deleteLibraryFile(req, res) {
+    const libraryFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.ino)
+    if (!libraryFile) {
+      Logger.error(`[LibraryItemController] Unable to delete library file. Not found. "${req.params.ino}"`)
+      return res.sendStatus(404)
+    }
+
+    await fs.remove(libraryFile.metadata.path)
+    req.libraryItem.removeLibraryFile(req.params.ino)
+
+    if (req.libraryItem.media.removeFileWithInode(req.params.ino)) {
+      // If book has no more media files then mark it as missing
+      if (req.libraryItem.mediaType === 'book' && !req.libraryItem.media.hasMediaEntities) {
+        req.libraryItem.setMissing()
+      }
+    }
+    req.libraryItem.updatedAt = Date.now()
+    await this.db.updateLibraryItem(req.libraryItem)
+    SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    res.sendStatus(200)
+  }
+
   middleware(req, res, next) {
     const item = this.db.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)
