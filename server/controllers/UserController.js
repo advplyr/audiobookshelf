@@ -11,9 +11,9 @@ class UserController {
   findAll(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
-    const users = this.db.users.map(u => this.userJsonWithItemProgressDetails(u, hideRootToken))
     res.json({
-      users: users
+      // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
+      users: this.db.users.map(u => u.toJSONForBrowser(hideRootToken, true))
     })
   }
 

@@ -7,7 +7,7 @@
       </div>
       <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
-      <ui-btn small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
+      <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <nuxt-link v-if="userCanUpdate && !isFile" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
         <ui-btn small color="primary">{{ $strings.ButtonManageTracks }}</ui-btn>
       </nuxt-link>
@@ -89,6 +89,9 @@ export default {
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
+    },
+    userIsAdmin() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures

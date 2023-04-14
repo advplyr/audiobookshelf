@@ -4,11 +4,12 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const { downloadFile, removeFile } = require('../utils/fileUtils')
+const { removeFile, downloadFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
 const prober = require('../utils/prober')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
@@ -52,15 +53,15 @@ class PodcastManager {
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    var index = libraryItem.media.episodes.length + 1
-    episodesToDownload.forEach((ep) => {
-      var newPe = new PodcastEpisode()
+    let index = libraryItem.media.episodes.length + 1
+    for (const ep of episodesToDownload) {
+      const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
-      var newPeDl = new PodcastEpisodeDownload()
+      const newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
-    })
+    }
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
@@ -93,10 +94,21 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    let success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
-      Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-      return false
-    })
+    let success = false
+    if (this.currentDownload.urlFileExtension === 'mp3') {
+      // Download episode and tag it
+      success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    } else {
+      // Download episode only
+      success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    }
+
     if (success) {
       success = await this.scanAddPodcastEpisodeAudioFile()
       if (!success) {
@@ -126,23 +138,28 @@ class PodcastManager {
   }
 
   async scanAddPodcastEpisodeAudioFile() {
-    var libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
+    const libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
 
     // TODO: Set meta tags on new audio file
 
-    var audioFile = await this.probeAudioFile(libraryFile)
+    const audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
     }
 
-    var libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
     }
 
-    var podcastEpisode = this.currentDownload.podcastEpisode
+    const podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
+
+    if (audioFile.chapters?.length) {
+      podcastEpisode.chapters = audioFile.chapters.map(ch => ({ ...ch }))
+    }
+
     libraryItem.media.addPodcastEpisode(podcastEpisode)
     if (libraryItem.isInvalid) {
       // First episode added to an empty podcast
@@ -201,13 +218,13 @@ class PodcastManager {
   }
 
   async probeAudioFile(libraryFile) {
-    var path = libraryFile.metadata.path
-    var mediaProbeData = await prober.probe(path)
+    const path = libraryFile.metadata.path
+    const mediaProbeData = await prober.probe(path)
     if (mediaProbeData.error) {
       Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return false
     }
-    var newAudioFile = new AudioFile()
+    const newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
     return newAudioFile
   }

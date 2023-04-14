@@ -73,7 +73,8 @@ function tryGrabChannelLayout(stream) {
 function tryGrabTags(stream, ...tags) {
   if (!stream.tags) return null
   for (let i = 0; i < tags.length; i++) {
-    const value = stream.tags[tags[i]] || stream.tags[tags[i].toUpperCase()]
+    const tagKey = Object.keys(stream.tags).find(t => t.toLowerCase() === tags[i].toLowerCase())
+    const value = stream.tags[tagKey]
     if (value && value.trim()) return value.trim()
   }
   return null
@@ -161,15 +162,19 @@ function parseTags(format, verbose) {
   if (verbose) {
     Logger.debug('Tags', format.tags)
   }
+
   const tags = {
     file_tag_encoder: tryGrabTags(format, 'encoder', 'tsse', 'tss'),
     file_tag_encodedby: tryGrabTags(format, 'encoded_by', 'tenc', 'ten'),
     file_tag_title: tryGrabTags(format, 'title', 'tit2', 'tt2'),
+    file_tag_titlesort: tryGrabTags(format, 'title-sort', 'tsot'),
     file_tag_subtitle: tryGrabTags(format, 'subtitle', 'tit3', 'tt3'),
     file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
     file_tag_disc: tryGrabTags(format, 'discnumber', 'disc', 'disk', 'tpos'),
     file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
+    file_tag_albumsort: tryGrabTags(format, 'album-sort', 'tsoa'),
     file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
+    file_tag_artistsort: tryGrabTags(format, 'artist-sort', 'tsop'),
     file_tag_albumartist: tryGrabTags(format, 'albumartist', 'album_artist', 'tpe2'),
     file_tag_date: tryGrabTags(format, 'date', 'tyer', 'tye'),
     file_tag_composer: tryGrabTags(format, 'composer', 'tcom', 'tcm'),
@@ -179,9 +184,12 @@ function parseTags(format, verbose) {
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
     file_tag_series: tryGrabTags(format, 'series', 'show', 'mvnm'),
     file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin'),
-    file_tag_isbn: tryGrabTags(format, 'isbn'),
+    file_tag_isbn: tryGrabTags(format, 'isbn'), // custom
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
-    file_tag_asin: tryGrabTags(format, 'asin'),
+    file_tag_asin: tryGrabTags(format, 'asin', 'audible_asin'), // custom
+    file_tag_itunesid: tryGrabTags(format, 'itunes-id'), // custom
+    file_tag_podcasttype: tryGrabTags(format, 'podcast-type'), // custom
+    file_tag_episodetype: tryGrabTags(format, 'episode-type'), // custom
     file_tag_originalyear: tryGrabTags(format, 'originalyear'),
     file_tag_releasecountry: tryGrabTags(format, 'MusicBrainz Album Release Country', 'releasecountry'),
     file_tag_releasestatus: tryGrabTags(format, 'MusicBrainz Album Status', 'releasestatus', 'musicbrainz_albumstatus'),

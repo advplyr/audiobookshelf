@@ -73,6 +73,8 @@ export default {
           return `/library/${task.data.libraryId}/podcast/download-queue`
         case 'encode-m4b':
           return `/audiobook/${task.data.libraryItemId}/manage?tool=m4b`
+        case 'embed-metadata':
+          return `/audiobook/${task.data.libraryItemId}/manage?tool=embed`
         default:
           return ''
       }

@@ -123,7 +123,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalAudioPlayer)) {
+    if (!this.isCasting && (this.player instanceof LocalAudioPlayer)) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -173,16 +173,30 @@ export default class PlayerHandler {
     this.ctx.setBufferTime(buffertime)
   }
 
+  getDeviceId() {
+    let deviceId = localStorage.getItem('absDeviceId')
+    if (!deviceId) {
+      deviceId = this.ctx.$randomId()
+      localStorage.setItem('absDeviceId', deviceId)
+    }
+    return deviceId
+  }
+
   async prepare(forceTranscode = false) {
-    var payload = {
+    this.currentSessionId = null // Reset session
+
+    const payload = {
+      deviceInfo: {
+        deviceId: this.getDeviceId()
+      },
       supportedMimeTypes: this.player.playableMimeTypes,
       mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
       forceTranscode,
       forceDirectPlay: this.isCasting || this.isVideo // TODO: add transcode support for chromecast
     }
 
-    var path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
-    var session = await this.ctx.$axios.$post(path, payload).catch((error) => {
+    const path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
+    const session = await this.ctx.$axios.$post(path, payload).catch((error) => {
       console.error('Failed to start stream', error)
     })
     this.prepareSession(session)
@@ -238,12 +252,17 @@ export default class PlayerHandler {
   closePlayer() {
     console.log('[PlayerHandler] Close Player')
     this.sendCloseSession()
+    this.resetPlayer()
+  }
+
+  resetPlayer() {
     if (this.player) {
       this.player.destroy()
     }
     this.player = null
     this.playerState = 'IDLE'
     this.libraryItem = null
+    this.currentSessionId = null
     this.startTime = 0
     this.stopPlayInterval()
   }

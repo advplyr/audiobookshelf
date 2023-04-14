@@ -2,6 +2,7 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 
+const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
@@ -67,6 +68,17 @@ class LibraryItemController {
   async delete(req, res) {
     await this.handleDeleteLibraryItem(req.libraryItem)
     res.sendStatus(200)
+  }
+
+  download(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn('User attempted to download without permission', req.user)
+      return res.sendStatus(403)
+    }
+
+    const libraryItemPath = req.libraryItem.path
+    const filename = `${req.libraryItem.media.metadata.title}.zip`
+    zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
   //
@@ -162,12 +174,12 @@ class LibraryItemController {
 
   // PATCH: api/items/:id/cover
   async updateCover(req, res) {
-    var libraryItem = req.libraryItem
+    const libraryItem = req.libraryItem
     if (!req.body.cover) {
-      return res.status(400).error('Invalid request no cover path')
+      return res.status(400).send('Invalid request no cover path')
     }
 
-    var validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
+    const validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
@@ -436,12 +448,12 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const chapters = req.body.chapters || []
-    if (!chapters.length) {
+    if (!req.body.chapters) {
       Logger.error(`[LibraryItemController] Invalid payload`)
       return res.sendStatus(400)
     }
 
+    const chapters = req.body.chapters || []
     const wasUpdated = req.libraryItem.media.updateChapters(chapters)
     if (wasUpdated) {
       await this.db.updateLibraryItem(req.libraryItem)
@@ -468,6 +480,28 @@ class LibraryItemController {
 
     const toneData = await this.scanner.probeAudioFileWithTone(audioFile)
     res.json(toneData)
+  }
+
+  async deleteLibraryFile(req, res) {
+    const libraryFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.ino)
+    if (!libraryFile) {
+      Logger.error(`[LibraryItemController] Unable to delete library file. Not found. "${req.params.ino}"`)
+      return res.sendStatus(404)
+    }
+
+    await fs.remove(libraryFile.metadata.path)
+    req.libraryItem.removeLibraryFile(req.params.ino)
+
+    if (req.libraryItem.media.removeFileWithInode(req.params.ino)) {
+      // If book has no more media files then mark it as missing
+      if (req.libraryItem.mediaType === 'book' && !req.libraryItem.media.hasMediaEntities) {
+        req.libraryItem.setMissing()
+      }
+    }
+    req.libraryItem.updatedAt = Date.now()
+    await this.db.updateLibraryItem(req.libraryItem)
+    SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    res.sendStatus(200)
   }
 
   middleware(req, res, next) {

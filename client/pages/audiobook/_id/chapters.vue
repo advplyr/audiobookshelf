@@ -21,13 +21,14 @@
           <ui-checkbox v-model="showSecondInputs" checkbox-bg="primary" small label-class="text-sm text-gray-200 pl-1" label="Show seconds" class="mx-2" />
           <div class="w-32 hidden lg:block" />
         </div>
-        <div class="flex items-center mb-3 py-1">
+        <div class="flex items-center mb-3 py-1 -mx-1">
           <div class="w-12 hidden lg:block" />
-          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
-          <ui-btn color="primary" small class="mx-2" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
+          <ui-btn v-if="chapters.length" color="primary" small class="mx-1" @click.stop="removeAllChaptersClick">{{ $strings.ButtonRemoveAll }}</ui-btn>
+          <ui-btn v-if="newChapters.length > 1" :color="showShiftTimes ? 'bg' : 'primary'" class="mx-1" small @click="showShiftTimes = !showShiftTimes">{{ $strings.ButtonShiftTimes }}</ui-btn>
+          <ui-btn color="primary" small :class="{ 'mx-1': newChapters.length > 1 }" @click="showFindChaptersModal = true">{{ $strings.ButtonLookup }}</ui-btn>
           <div class="flex-grow" />
-          <ui-btn v-if="hasChanges" small class="mx-2" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
-          <ui-btn v-if="hasChanges" color="success" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
+          <ui-btn v-if="hasChanges" small class="mx-1" @click.stop="resetChapters">{{ $strings.ButtonReset }}</ui-btn>
+          <ui-btn v-if="hasChanges" color="success" class="mx-1" :disabled="!hasChanges" small @click="saveChapters">{{ $strings.ButtonSave }}</ui-btn>
           <div class="w-32 hidden lg:block" />
         </div>
 
@@ -41,7 +42,7 @@
                   <ui-text-input v-model="shiftAmount" type="number" class="max-w-20" style="height: 30px" />
                   <ui-btn color="primary" class="mx-1" small @click="shiftChapterTimes">{{ $strings.ButtonAdd }}</ui-btn>
                   <div class="flex-grow" />
-                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">close</span>
+                  <span class="material-icons text-gray-200 hover:text-white cursor-pointer" @click="showShiftTimes = false">expand_less</span>
                 </div>
                 <p class="text-xs py-1.5 text-gray-300 max-w-md">{{ $strings.NoteChapterEditorTimes }}</p>
               </div>
@@ -329,6 +330,7 @@ export default {
           chap.start = Math.max(0, chap.start + amount)
         }
       }
+      this.checkChapters()
     },
     editItem() {
       this.$store.commit('showEditModal', this.libraryItem)
@@ -587,6 +589,45 @@ export default {
         ]
       }
       this.checkChapters()
+    },
+    removeAllChaptersClick() {
+      const payload = {
+        message: this.$strings.MessageConfirmRemoveAllChapters,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.removeAllChapters()
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    removeAllChapters() {
+      this.saving = true
+      const payload = {
+        chapters: []
+      }
+      this.$axios
+        .$post(`/api/items/${this.libraryItem.id}/chapters`, payload)
+        .then((data) => {
+          if (data.updated) {
+            this.$toast.success('Chapters removed')
+            if (this.previousRoute) {
+              this.$router.push(this.previousRoute)
+            } else {
+              this.$router.push(`/item/${this.libraryItem.id}`)
+            }
+          } else {
+            this.$toast.info(this.$strings.MessageNoUpdatesWereNecessary)
+          }
+        })
+        .catch((error) => {
+          console.error('Failed to remove chapters', error)
+          this.$toast.error('Failed to remove chapters')
+        })
+        .finally(() => {
+          this.saving = false
+        })
     }
   },
   mounted() {

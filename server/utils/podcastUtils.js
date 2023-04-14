@@ -41,7 +41,7 @@ function extractCategories(channel) {
 }
 
 function extractPodcastMetadata(channel) {
-  var metadata = {
+  const metadata = {
     image: extractImage(channel),
     categories: extractCategories(channel),
     feedUrl: null,
@@ -62,22 +62,24 @@ function extractPodcastMetadata(channel) {
     metadata.descriptionPlain = htmlSanitizer.stripAllTags(rawDescription)
   }
 
-  var arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
+  const arrayFields = ['title', 'language', 'itunes:explicit', 'itunes:author', 'pubDate', 'link', 'itunes:type']
   arrayFields.forEach((key) => {
-    var cleanKey = key.split(':').pop()
-    metadata[cleanKey] = extractFirstArrayItem(channel, key)
+    const cleanKey = key.split(':').pop()
+    let value = extractFirstArrayItem(channel, key)
+    if (value && value['_']) value = value['_']
+    metadata[cleanKey] = value
   })
   return metadata
 }
 
 function extractEpisodeData(item) {
   // Episode must have url
-  if (!item.enclosure || !item.enclosure.length || !item.enclosure[0]['$'] || !item.enclosure[0]['$'].url) {
+  if (!item.enclosure?.[0]?.['$']?.url) {
     Logger.error(`[podcastUtils] Invalid podcast episode data`)
     return null
   }
 
-  var episode = {
+  const episode = {
     enclosure: {
       ...item.enclosure[0]['$']
     }
@@ -87,6 +89,12 @@ function extractEpisodeData(item) {
   if (item['content:encoded']) {
     const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()
     episode.description = htmlSanitizer.sanitize(rawDescription)
+  }
+
+  // Extract chapters
+  if (item['podcast:chapters']?.[0]?.['$']?.url) {
+    episode.chaptersUrl = item['podcast:chapters'][0]['$'].url
+    episode.chaptersType = item['podcast:chapters'][0]['$'].type || 'application/json'
   }
 
   // Supposed to be the plaintext description but not always followed
@@ -107,9 +115,9 @@ function extractEpisodeData(item) {
     }
   }
 
-  var arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
+  const arrayFields = ['title', 'itunes:episodeType', 'itunes:season', 'itunes:episode', 'itunes:author', 'itunes:duration', 'itunes:explicit', 'itunes:subtitle']
   arrayFields.forEach((key) => {
-    var cleanKey = key.split(':').pop()
+    const cleanKey = key.split(':').pop()
     episode[cleanKey] = extractFirstArrayItem(item, key)
   })
   return episode
@@ -131,14 +139,16 @@ function cleanEpisodeData(data) {
     duration: data.duration || '',
     explicit: data.explicit || '',
     publishedAt,
-    enclosure: data.enclosure
+    enclosure: data.enclosure,
+    chaptersUrl: data.chaptersUrl || null,
+    chaptersType: data.chaptersType || null
   }
 }
 
 function extractPodcastEpisodes(items) {
-  var episodes = []
+  const episodes = []
   items.forEach((item) => {
-    var extracted = extractEpisodeData(item)
+    const extracted = extractEpisodeData(item)
     if (extracted) {
       episodes.push(cleanEpisodeData(extracted))
     }

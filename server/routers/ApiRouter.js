@@ -24,7 +24,6 @@ const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
-const EBookController = require('../controllers/EBookController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -52,7 +51,6 @@ class ApiRouter {
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
     this.taskManager = Server.taskManager
-    this.eBookManager = Server.eBookManager
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
@@ -100,6 +98,7 @@ class ApiRouter {
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
     this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
+    this.router.get('/items/:id/download', LibraryItemController.middleware.bind(this), LibraryItemController.download.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
     this.router.get('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.getCover.bind(this))
     this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))
@@ -113,6 +112,7 @@ class ApiRouter {
     this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
+    this.router.delete('/items/:id/file/:ino', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
 
     this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
     this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
@@ -176,7 +176,6 @@ class ApiRouter {
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
-    this.router.patch('/me/settings', MeController.updateSettings.bind(this)) // TODO: Deprecated. Remove after mobile release v0.9.61-beta
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this)) // TODO: Deprecated. Removed from Android. Only used in iOS app now.
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
@@ -217,6 +216,7 @@ class ApiRouter {
     //
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
     this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
+    this.router.get('/sessions/open', SessionController.getOpenSessions.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
     this.router.post('/session/local-all', SessionController.syncLocalSessions.bind(this))
     // TODO: Update these endpoints because they are only for open playback sessions
@@ -271,9 +271,10 @@ class ApiRouter {
     //
     // Tools Routes (Admin and up)
     //
-    this.router.post('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.encodeM4b.bind(this))
-    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
-    this.router.post('/tools/item/:id/embed-metadata', ToolsController.itemMiddleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.encodeM4b.bind(this))
+    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
+    this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
 
     // 
     // RSS Feed Routes (Admin and up)
@@ -282,13 +283,6 @@ class ApiRouter {
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
     this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
-
-    // 
-    // EBook Routes
-    //
-    this.router.get('/ebooks/:id/info', EBookController.middleware.bind(this), EBookController.getEbookInfo.bind(this))
-    this.router.get('/ebooks/:id/page/:page', EBookController.middleware.bind(this), EBookController.getEbookPage.bind(this))
-    this.router.get('/ebooks/:id/resource', EBookController.middleware.bind(this), EBookController.getEbookResource.bind(this))
 
     //
     // Misc Routes
@@ -339,10 +333,7 @@ class ApiRouter {
   // Helper Methods
   //
   userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    const json = user.toJSONForBrowser()
-    if (json.type === 'root' && hideRootToken) {
-      json.token = ''
-    }
+    const json = user.toJSONForBrowser(hideRootToken)
 
     json.mediaProgress = json.mediaProgress.map(lip => {
       const libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
@@ -507,11 +498,16 @@ class ApiRouter {
 
       // Create new authors if in payload
       if (mediaMetadata.authors && mediaMetadata.authors.length) {
-        // TODO: validate authors
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
-          if (mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
+          const authorName = (mediaMetadata.authors[i].name || '').trim()
+          if (!authorName) {
+            Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
+            continue
+          }
+
+          if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
+            let author = this.db.authors.find(au => au.checkNameEquals(authorName))
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
@@ -531,11 +527,16 @@ class ApiRouter {
 
       // Create new series if in payload
       if (mediaMetadata.series && mediaMetadata.series.length) {
-        // TODO: validate series
         const newSeries = []
         for (let i = 0; i < mediaMetadata.series.length; i++) {
-          if (mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
+          const seriesName = (mediaMetadata.series[i].name || '').trim()
+          if (!seriesName) {
+            Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
+            continue
+          }
+
+          if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
+            let seriesItem = this.db.series.find(se => se.checkNameEquals(seriesName))
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])

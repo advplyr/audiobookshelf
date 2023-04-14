@@ -171,23 +171,6 @@ class MeController {
     this.auth.userChangePassword(req, res)
   }
 
-  // TODO: Remove after mobile release v0.9.61-beta
-  // PATCH: api/me/settings
-  async updateSettings(req, res) {
-    var settingsUpdate = req.body
-    if (!settingsUpdate || !isObject(settingsUpdate)) {
-      return res.sendStatus(500)
-    }
-    var madeUpdates = req.user.updateSettings(settingsUpdate)
-    if (madeUpdates) {
-      await this.db.updateEntity('user', req.user)
-    }
-    return res.json({
-      success: true,
-      settings: req.user.settings
-    })
-  }
-
   // TODO: Deprecated. Removed from Android. Only used in iOS app now.
   // POST: api/me/sync-local-progress
   async syncLocalMediaProgress(req, res) {
@@ -256,13 +239,13 @@ class MeController {
   }
 
   // GET: api/me/items-in-progress
-  async getAllLibraryItemsInProgress(req, res) {
+  getAllLibraryItemsInProgress(req, res) {
     const limit = !isNaN(req.query.limit) ? Number(req.query.limit) || 25 : 25
 
-    var itemsInProgress = []
+    let itemsInProgress = []
     for (const mediaProgress of req.user.mediaProgress) {
-      if (!mediaProgress.isFinished && mediaProgress.progress > 0) {
-        const libraryItem = await this.db.getLibraryItem(mediaProgress.libraryItemId)
+      if (!mediaProgress.isFinished && (mediaProgress.progress > 0 || mediaProgress.ebookProgress > 0)) {
+        const libraryItem = this.db.getLibraryItem(mediaProgress.libraryItemId)
         if (libraryItem) {
           if (mediaProgress.episodeId && libraryItem.mediaType === 'podcast') {
             const episode = libraryItem.media.episodes.find(ep => ep.id === mediaProgress.episodeId)

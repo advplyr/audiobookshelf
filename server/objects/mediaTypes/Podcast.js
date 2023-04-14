@@ -166,13 +166,21 @@ class Podcast {
   }
 
   removeFileWithInode(inode) {
-    this.episodes = this.episodes.filter(ep => ep.ino !== inode)
+    const hasEpisode = this.episodes.some(ep => ep.audioFile.ino === inode)
+    if (hasEpisode) {
+      this.episodes = this.episodes.filter(ep => ep.audioFile.ino !== inode)
+    }
+    return hasEpisode
   }
 
   findFileWithInode(inode) {
     var episode = this.episodes.find(ep => ep.audioFile.ino === inode)
     if (episode) return episode.audioFile
     return null
+  }
+
+  findEpisodeWithInode(inode) {
+    return this.episodes.find(ep => ep.audioFile.ino === inode)
   }
 
   setData(mediaData) {
@@ -314,6 +322,14 @@ class Podcast {
 
   getEpisode(episodeId) {
     return this.episodes.find(ep => ep.id == episodeId)
+  }
+
+  // Audio file metadata tags map to podcast details
+  setMetadataFromAudioFile(overrideExistingDetails = false) {
+    if (!this.episodes.length) return false
+    const audioFile = this.episodes[0].audioFile
+    if (!audioFile?.metaTags) return false
+    return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
   }
 }
 module.exports = Podcast

@@ -62,14 +62,20 @@
     <div class="w-full h-px bg-white bg-opacity-10 my-8" />
 
     <div class="w-full max-w-4xl mx-auto">
-      <div v-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
-        <ui-checkbox v-if="!isFinished" v-model="shouldBackupAudioFiles" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
+      <!-- queued alert -->
+      <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mb-4">
+        <p class="text-lg">Audiobook is queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+      </widgets-alert>
+      <!-- metadata embed action buttons -->
+      <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
+        <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
 
         <div class="flex-grow" />
 
-        <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
       </div>
+      <!-- m4b embed action buttons -->
       <div v-else class="w-full flex items-center mb-4">
         <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
           <span class="material-icons text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
@@ -83,6 +89,7 @@
         <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
       </div>
 
+      <!-- advanced encoding options -->
       <div v-if="isM4BTool" class="overflow-hidden">
         <transition name="slide">
           <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
@@ -191,6 +198,7 @@ export default {
       cnosole.error('No audio files')
       return redirect('/?error=no audio files')
     }
+
     return {
       libraryItem
     }
@@ -200,7 +208,6 @@ export default {
       processing: false,
       audiofilesEncoding: {},
       audiofilesFinished: {},
-      isFinished: false,
       toneObject: null,
       selectedTool: 'embed',
       isCancelingEncode: false,
@@ -272,11 +279,28 @@ export default {
     isTaskFinished() {
       return this.task && this.task.isFinished
     },
+    tasks() {
+      return this.$store.getters['tasks/getTasksByLibraryItemId'](this.libraryItemId)
+    },
+    embedTask() {
+      return this.tasks.find((t) => t.action === 'embed-metadata')
+    },
+    encodeTask() {
+      return this.tasks.find((t) => t.action === 'encode-m4b')
+    },
     task() {
-      return this.$store.getters['tasks/getTaskByLibraryItemId'](this.libraryItemId)
+      if (this.isEmbedTool) return this.embedTask
+      else if (this.isM4BTool) return this.encodeTask
+      return null
     },
     taskRunning() {
       return this.task && !this.task.isFinished
+    },
+    queuedEmbedLIds() {
+      return this.$store.state.tasks.queuedEmbedLIds || []
+    },
+    isMetadataEmbedQueued() {
+      return this.queuedEmbedLIds.some((lid) => lid === this.libraryItemId)
     }
   },
   methods: {
@@ -322,7 +346,7 @@ export default {
         .catch((error) => {
           var errorMsg = error.response ? error.response.data || 'Unknown Error' : 'Unknown Error'
           this.$toast.error(errorMsg)
-          this.processing = true
+          this.processing = false
         })
     },
     embedClick() {
@@ -348,24 +372,6 @@ export default {
           console.error('Audio metadata encode failed', error)
           this.processing = false
         })
-    },
-    audioMetadataStarted(data) {
-      console.log('audio metadata started', data)
-      if (data.libraryItemId !== this.libraryItemId) return
-      this.audiofilesFinished = {}
-    },
-    audioMetadataFinished(data) {
-      console.log('audio metadata finished', data)
-      if (data.libraryItemId !== this.libraryItemId) return
-      this.processing = false
-      this.audiofilesEncoding = {}
-
-      if (data.failed) {
-        this.$toast.error(data.error)
-      } else {
-        this.isFinished = true
-        this.$toast.success('Audio file metadata updated')
-      }
     },
     audiofileMetadataStarted(data) {
       if (data.libraryItemId !== this.libraryItemId) return
@@ -412,14 +418,10 @@ export default {
   },
   mounted() {
     this.init()
-    this.$root.socket.on('audio_metadata_started', this.audioMetadataStarted)
-    this.$root.socket.on('audio_metadata_finished', this.audioMetadataFinished)
     this.$root.socket.on('audiofile_metadata_started', this.audiofileMetadataStarted)
     this.$root.socket.on('audiofile_metadata_finished', this.audiofileMetadataFinished)
   },
   beforeDestroy() {
-    this.$root.socket.off('audio_metadata_started', this.audioMetadataStarted)
-    this.$root.socket.off('audio_metadata_finished', this.audioMetadataFinished)
     this.$root.socket.off('audiofile_metadata_started', this.audiofileMetadataStarted)
     this.$root.socket.off('audiofile_metadata_finished', this.audiofileMetadataFinished)
   }

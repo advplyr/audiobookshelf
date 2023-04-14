@@ -99,14 +99,14 @@ export const getters = {
 
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
   },
-  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = null) => {
+  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = null, raw = false) => {
     if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItemId) return placeholder
     var userToken = rootGetters['user/getToken']
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}`
     }
-    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}`
   },
   getIsBatchSelectingMediaItems: (state) => {
     return state.selectedMediaItems.length

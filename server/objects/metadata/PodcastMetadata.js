@@ -136,5 +136,74 @@ class PodcastMetadata {
     }
     return hasUpdates
   }
+
+  setDataFromAudioMetaTags(audioFileMetaTags, overrideExistingDetails = false) {
+    const MetadataMapArray = [
+      {
+        tag: 'tagAlbum',
+        altTag: 'tagSeries',
+        key: 'title'
+      },
+      {
+        tag: 'tagArtist',
+        key: 'author'
+      },
+      {
+        tag: 'tagGenre',
+        key: 'genres'
+      },
+      {
+        tag: 'tagLanguage',
+        key: 'language'
+      },
+      {
+        tag: 'tagItunesId',
+        key: 'itunesId'
+      },
+      {
+        tag: 'tagPodcastType',
+        key: 'type',
+      }
+    ]
+
+    const updatePayload = {}
+
+    MetadataMapArray.forEach((mapping) => {
+      let value = audioFileMetaTags[mapping.tag]
+      let tagToUse = mapping.tag
+      if (!value && mapping.altTag) {
+        value = audioFileMetaTags[mapping.altTag]
+        tagToUse = mapping.altTag
+      }
+
+      if (value && typeof value === 'string') {
+        value = value.trim() // Trim whitespace
+
+        if (mapping.key === 'genres' && (!this.genres.length || overrideExistingDetails)) {
+          updatePayload.genres = this.parseGenresTag(value)
+          Logger.debug(`[Podcast] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload.genres.join(', ')}`)
+        } else if (!this[mapping.key] || overrideExistingDetails) {
+          updatePayload[mapping.key] = value
+          Logger.debug(`[Podcast] Mapping metadata to key ${tagToUse} => ${mapping.key}: ${updatePayload[mapping.key]}`)
+        }
+      }
+    })
+
+    if (Object.keys(updatePayload).length) {
+      return this.update(updatePayload)
+    }
+    return false
+  }
+
+  parseGenresTag(genreTag) {
+    if (!genreTag || !genreTag.length) return []
+    const separators = ['/', '//', ';']
+    for (let i = 0; i < separators.length; i++) {
+      if (genreTag.includes(separators[i])) {
+        return genreTag.split(separators[i]).map(genre => genre.trim()).filter(g => !!g)
+      }
+    }
+    return [genreTag]
+  }
 }
 module.exports = PodcastMetadata

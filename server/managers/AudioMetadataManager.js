@@ -5,18 +5,42 @@ const Logger = require('../Logger')
 
 const fs = require('../libs/fsExtra')
 
-const { secondsToTimestamp } = require('../utils/index')
 const toneHelpers = require('../utils/toneHelpers')
-const filePerms = require('../utils/filePerms')
+
+const Task = require('../objects/Task')
 
 class AudioMetadataMangaer {
   constructor(db, taskManager) {
     this.db = db
     this.taskManager = taskManager
+
+    this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
+
+    this.MAX_CONCURRENT_TASKS = 1
+    this.tasksRunning = []
+    this.tasksQueued = []
+  }
+
+  /**
+  * Get queued task data
+  * @return {Array}
+  */
+  getQueuedTaskData() {
+    return this.tasksQueued.map(t => t.data)
+  }
+
+  getIsLibraryItemQueuedOrProcessing(libraryItemId) {
+    return this.tasksQueued.some(t => t.data.libraryItemId === libraryItemId) || this.tasksRunning.some(t => t.data.libraryItemId === libraryItemId)
   }
 
   getToneMetadataObjectForApi(libraryItem) {
-    return toneHelpers.getToneMetadataObject(libraryItem)
+    return toneHelpers.getToneMetadataObject(libraryItem, libraryItem.media.chapters, libraryItem.media.tracks.length)
+  }
+
+  handleBatchEmbed(user, libraryItems, options = {}) {
+    libraryItems.forEach((li) => {
+      this.updateMetadataForItem(user, li, options)
+    })
   }
 
   async updateMetadataForItem(user, libraryItem, options = {}) {
@@ -25,99 +49,144 @@ class AudioMetadataMangaer {
 
     const audioFiles = libraryItem.media.includedAudioFiles
 
-    const itemAudioMetadataPayload = {
-      userId: user.id,
+    const task = new Task()
+
+    const itemCachePath = Path.join(this.itemsCacheDir, libraryItem.id)
+
+    // Only writing chapters for single file audiobooks
+    const chapters = (audioFiles.length == 1 || forceEmbedChapters) ? libraryItem.media.chapters.map(c => ({ ...c })) : null
+
+    // Create task
+    const taskData = {
       libraryItemId: libraryItem.id,
-      startedAt: Date.now(),
-      audioFiles: audioFiles.map(af => ({ index: af.index, ino: af.ino, filename: af.metadata.filename }))
+      libraryItemPath: libraryItem.path,
+      userId: user.id,
+      audioFiles: audioFiles.map(af => (
+        {
+          index: af.index,
+          ino: af.ino,
+          filename: af.metadata.filename,
+          path: af.metadata.path,
+          cachePath: Path.join(itemCachePath, af.metadata.filename)
+        }
+      )),
+      coverPath: libraryItem.media.coverPath,
+      metadataObject: toneHelpers.getToneMetadataObject(libraryItem, chapters, audioFiles.length),
+      itemCachePath,
+      chapters,
+      options: {
+        forceEmbedChapters,
+        backupFiles
+      }
     }
+    const taskDescription = `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`
+    task.setData('embed-metadata', 'Embedding Metadata', taskDescription, taskData)
 
-    SocketAuthority.emitter('audio_metadata_started', itemAudioMetadataPayload)
+    if (this.tasksRunning.length >= this.MAX_CONCURRENT_TASKS) {
+      Logger.info(`[AudioMetadataManager] Queueing embed metadata for audiobook "${libraryItem.media.metadata.title}"`)
+      SocketAuthority.adminEmitter('metadata_embed_queue_update', {
+        libraryItemId: libraryItem.id,
+        queued: true
+      })
+      this.tasksQueued.push(task)
+    } else {
+      this.runMetadataEmbed(task)
+    }
+  }
 
-    // Ensure folder for backup files
-    const itemCacheDir = Path.join(global.MetadataPath, `cache/items/${libraryItem.id}`)
+  async runMetadataEmbed(task) {
+    this.tasksRunning.push(task)
+    this.taskManager.addTask(task)
+
+    Logger.info(`[AudioMetadataManager] Starting metadata embed task`, task.description)
+
+    // Ensure item cache dir exists
     let cacheDirCreated = false
-    if (!await fs.pathExists(itemCacheDir)) {
-      await fs.mkdir(itemCacheDir)
-      await filePerms.setDefault(itemCacheDir, true)
+    if (!await fs.pathExists(task.data.itemCachePath)) {
+      await fs.mkdir(task.data.itemCachePath)
       cacheDirCreated = true
     }
 
-    // Write chapters file
-    const toneJsonPath = Path.join(itemCacheDir, 'metadata.json')
-
+    // Create metadata json file
+    const toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
     try {
-      const chapters = (audioFiles.length == 1 || forceEmbedChapters) ? libraryItem.media.chapters : null
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, chapters, toneJsonPath, audioFiles.length)
+      await fs.writeFile(toneJsonPath, JSON.stringify({ meta: task.data.metadataObject }, null, 2))
     } catch (error) {
       Logger.error(`[AudioMetadataManager] Write metadata.json failed`, error)
-
-      itemAudioMetadataPayload.failed = true
-      itemAudioMetadataPayload.error = 'Failed to write metadata.json'
-      SocketAuthority.emitter('audio_metadata_finished', itemAudioMetadataPayload)
+      task.setFailed('Failed to write metadata.json')
+      this.handleTaskFinished(task)
       return
     }
 
-    const results = []
-    for (const af of audioFiles) {
-      const result = await this.updateAudioFileMetadataWithTone(libraryItem, af, toneJsonPath, itemCacheDir, backupFiles)
-      results.push(result)
+    // Tag audio files
+    for (const af of task.data.audioFiles) {
+      SocketAuthority.adminEmitter('audiofile_metadata_started', {
+        libraryItemId: task.data.libraryItemId,
+        ino: af.ino
+      })
+
+      // Backup audio file
+      if (task.data.options.backupFiles) {
+        try {
+          const backupFilePath = Path.join(task.data.itemCachePath, af.filename)
+          await fs.copy(af.path, backupFilePath)
+          Logger.debug(`[AudioMetadataManager] Backed up audio file at "${backupFilePath}"`)
+        } catch (err) {
+          Logger.error(`[AudioMetadataManager] Failed to backup audio file "${af.path}"`, err)
+        }
+      }
+
+      const _toneMetadataObject = {
+        'ToneJsonFile': toneJsonPath,
+        'TrackNumber': af.index,
+      }
+
+      if (task.data.coverPath) {
+        _toneMetadataObject['CoverFile'] = task.data.coverPath
+      }
+
+      const success = await toneHelpers.tagAudioFile(af.path, _toneMetadataObject)
+      if (success) {
+        Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${af.path}"`)
+      }
+
+      SocketAuthority.adminEmitter('audiofile_metadata_finished', {
+        libraryItemId: task.data.libraryItemId,
+        ino: af.ino
+      })
     }
 
     // Remove temp cache file/folder if not backing up
-    if (!backupFiles) {
+    if (!task.data.options.backupFiles) {
       // If cache dir was created from this then remove it
       if (cacheDirCreated) {
-        await fs.remove(itemCacheDir)
+        await fs.remove(task.data.itemCachePath)
       } else {
         await fs.remove(toneJsonPath)
       }
     }
 
-    const elapsed = Date.now() - itemAudioMetadataPayload.startedAt
-    Logger.debug(`[AudioMetadataManager] Elapsed ${secondsToTimestamp(elapsed / 1000, true)}`)
-    itemAudioMetadataPayload.results = results
-    itemAudioMetadataPayload.elapsed = elapsed
-    itemAudioMetadataPayload.finishedAt = Date.now()
-    SocketAuthority.emitter('audio_metadata_finished', itemAudioMetadataPayload)
+    task.setFinished()
+    this.handleTaskFinished(task)
   }
 
-  async updateAudioFileMetadataWithTone(libraryItem, audioFile, toneJsonPath, itemCacheDir, backupFiles) {
-    const resultPayload = {
-      libraryItemId: libraryItem.id,
-      index: audioFile.index,
-      ino: audioFile.ino,
-      filename: audioFile.metadata.filename
-    }
-    SocketAuthority.emitter('audiofile_metadata_started', resultPayload)
+  handleTaskFinished(task) {
+    this.taskManager.taskFinished(task)
+    this.tasksRunning = this.tasksRunning.filter(t => t.id !== task.id)
 
-    // Backup audio file
-    if (backupFiles) {
-      try {
-        const backupFilePath = Path.join(itemCacheDir, audioFile.metadata.filename)
-        await fs.copy(audioFile.metadata.path, backupFilePath)
-        Logger.debug(`[AudioMetadataManager] Backed up audio file at "${backupFilePath}"`)
-      } catch (err) {
-        Logger.error(`[AudioMetadataManager] Failed to backup audio file "${audioFile.metadata.path}"`, err)
-      }
+    if (this.tasksRunning.length < this.MAX_CONCURRENT_TASKS && this.tasksQueued.length) {
+      Logger.info(`[AudioMetadataManager] Task finished and dequeueing next task. ${this.tasksQueued} tasks queued.`)
+      const nextTask = this.tasksQueued.shift()
+      SocketAuthority.emitter('metadata_embed_queue_update', {
+        libraryItemId: nextTask.data.libraryItemId,
+        queued: false
+      })
+      this.runMetadataEmbed(nextTask)
+    } else if (this.tasksRunning.length > 0) {
+      Logger.debug(`[AudioMetadataManager] Task finished but not dequeueing. Currently running ${this.tasksRunning.length} tasks. ${this.tasksQueued.length} tasks queued.`)
+    } else {
+      Logger.debug(`[AudioMetadataManager] Task finished and no tasks remain in queue`)
     }
-
-    const _toneMetadataObject = {
-      'ToneJsonFile': toneJsonPath,
-      'TrackNumber': audioFile.index,
-    }
-
-    if (libraryItem.media.coverPath) {
-      _toneMetadataObject['CoverFile'] = libraryItem.media.coverPath
-    }
-
-    resultPayload.success = await toneHelpers.tagAudioFile(audioFile.metadata.path, _toneMetadataObject)
-    if (resultPayload.success) {
-      Logger.info(`[AudioMetadataManager] Successfully tagged audio file "${audioFile.metadata.path}"`)
-    }
-
-    SocketAuthority.emitter('audiofile_metadata_finished', resultPayload)
-    return resultPayload
   }
 }
 module.exports = AudioMetadataMangaer

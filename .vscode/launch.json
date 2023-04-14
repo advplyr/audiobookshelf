@@ -1,0 +1,44 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug server",
+      "runtimeExecutable": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "skipFiles": [
+        "<node_internals>/**"
+      ]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug client (nuxt)",
+      "runtimeExecutable": "npm",
+      "args": [
+        "run",
+        "dev"
+      ],
+      "cwd": "${workspaceFolder}/client",
+      "skipFiles": [
+        "${workspaceFolder}/<node_internals>/**"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug server and client (nuxt)",
+      "configurations": [
+        "Debug server",
+        "Debug client (nuxt)"
+      ]
+    }
+  ]
+}

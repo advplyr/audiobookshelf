@@ -164,7 +164,7 @@
           <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p v-if="progressPercent < 1" class="leading-6">{{ $strings.LabelYourProgress }}: {{ Math.round(progressPercent * 100) }}%</p>
             <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
-            <p v-if="progressPercent < 1" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
+            <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
             <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
@@ -201,27 +201,18 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="showCollectionsButton" :text="$strings.LabelCollections" direction="top">
-              <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
-            </ui-tooltip>
-
-            <ui-tooltip v-if="!isPodcast && tracks.length" :text="$strings.LabelYourPlaylists" direction="top">
-              <ui-icon-btn icon="playlist_add" class="mx-0.5" outlined @click="playlistsClick" />
-            </ui-tooltip>
-
             <!-- Only admin or root user can download new episodes -->
             <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="bookmarks.length" :text="$strings.LabelYourBookmarks" direction="top">
-              <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
-            </ui-tooltip>
-
-            <!-- RSS feed -->
-            <ui-tooltip v-if="showRssFeedBtn" :text="$strings.LabelOpenRSSFeed" direction="top">
-              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
-            </ui-tooltip>
+            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" menu-width="148px" @action="contextMenuAction">
+              <template #default="{ showMenu, clickShowMenu, disabled }">
+                <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+                  <span class="material-icons">more_vert</span>
+                </button>
+              </template>
+            </ui-context-menu-dropdown>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -284,6 +275,12 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    downloadUrl() {
+      return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
+    },
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },
@@ -296,9 +293,6 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    isFile() {
-      return this.libraryItem.isFile
-    },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
@@ -307,6 +301,9 @@ export default {
     },
     isDeveloperMode() {
       return this.$store.state.developerMode
+    },
+    isFile() {
+      return this.libraryItem.isFile
     },
     isBook() {
       return this.libraryItem.mediaType === 'book'
@@ -482,7 +479,12 @@ export default {
       const duration = this.userMediaProgress.duration || this.duration
       return duration - this.userMediaProgress.currentTime
     },
+    useEBookProgress() {
+      if (!this.userMediaProgress || this.userMediaProgress.progress) return false
+      return this.userMediaProgress.ebookProgress > 0
+    },
     progressPercent() {
+      if (this.useEBookProgress) return Math.max(Math.min(1, this.userMediaProgress.ebookProgress), 0)
       return this.userMediaProgress ? Math.max(Math.min(1, this.userMediaProgress.progress), 0) : 0
     },
     userProgressStartedAt() {
@@ -521,12 +523,56 @@ export default {
     },
     showCollectionsButton() {
       return this.isBook && this.userCanUpdate
+    },
+    contextMenuItems() {
+      const items = []
+
+      if (this.showCollectionsButton) {
+        items.push({
+          text: this.$strings.LabelCollections,
+          action: 'collections'
+        })
+      }
+
+      if (!this.isPodcast && this.tracks.length) {
+        items.push({
+          text: this.$strings.LabelYourPlaylists,
+          action: 'playlists'
+        })
+      }
+
+      if (this.bookmarks.length) {
+        items.push({
+          text: this.$strings.LabelYourBookmarks,
+          action: 'bookmarks'
+        })
+      }
+
+      if (this.showRssFeedBtn) {
+        items.push({
+          text: this.$strings.LabelOpenRSSFeed,
+          action: 'rss-feeds'
+        })
+      }
+
+      if (this.userCanDownload) {
+        items.push({
+          text: this.$strings.LabelDownload,
+          action: 'download'
+        })
+      }
+
+      // if (this.userCanDelete) {
+      //   items.push({
+      //     text: this.$strings.ButtonDelete,
+      //     action: 'delete'
+      //   })
+      // }
+
+      return items
     }
   },
   methods: {
-    clickBookmarksBtn() {
-      this.showBookmarksModal = true
-    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
@@ -702,14 +748,6 @@ export default {
           })
       }
     },
-    collectionsClick() {
-      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
-      this.$store.commit('globals/setShowCollectionsModal', true)
-    },
-    playlistsClick() {
-      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem }])
-      this.$store.commit('globals/setShowPlaylistsModal', true)
-    },
     clickRSSFeed() {
       this.$store.commit('globals/setRSSFeedOpenCloseModal', {
         id: this.libraryItemId,
@@ -766,6 +804,54 @@ export default {
           coverPath: this.media.coverPath || null
         }
         this.$store.commit('addItemToQueue', queueItem)
+      }
+    },
+    downloadLibraryItem() {
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = this.downloadUrl
+      document.body.appendChild(a)
+      a.click()
+      setTimeout(() => {
+        a.remove()
+      })
+    },
+    deleteLibraryItem() {
+      const payload = {
+        message: 'This will delete the library item files from your file system. Are you sure?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$delete(`/api/items/${this.libraryItemId}?hard=1`)
+              .then(() => {
+                this.$toast.success('Item deleted')
+                this.$router.replace(`/library/${this.libraryId}/bookshelf`)
+              })
+              .catch((error) => {
+                console.error('Failed to delete item', error)
+                this.$toast.error('Failed to delete item')
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction(action) {
+      if (action === 'collections') {
+        this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+        this.$store.commit('globals/setShowCollectionsModal', true)
+      } else if (action === 'playlists') {
+        this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem }])
+        this.$store.commit('globals/setShowPlaylistsModal', true)
+      } else if (action === 'bookmarks') {
+        this.showBookmarksModal = true
+      } else if (action === 'rss-feeds') {
+        this.clickRSSFeed()
+      } else if (action === 'download') {
+        this.downloadLibraryItem()
+      } else if (action === 'delete') {
+        this.deleteLibraryItem()
       }
     }
   },

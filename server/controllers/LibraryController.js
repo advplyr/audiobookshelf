@@ -417,6 +417,10 @@ class LibraryController {
             return se.totalDuration
           } else if (payload.sortBy === 'addedAt') {
             return se.addedAt
+          } else if (payload.sortBy === 'lastBookUpdated') {
+            return Math.max(...(se.books).map(x => x.updatedAt), 0)
+          } else if (payload.sortBy === 'lastBookAdded') {
+            return Math.max(...(se.books).map(x => x.addedAt), 0)
           } else { // sort by name
             return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
           }
