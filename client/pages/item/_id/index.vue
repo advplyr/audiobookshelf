@@ -562,12 +562,12 @@ export default {
         })
       }
 
-      // if (this.userCanDelete) {
-      //   items.push({
-      //     text: this.$strings.ButtonDelete,
-      //     action: 'delete'
-      //   })
-      // }
+      if (this.userCanDelete) {
+        items.push({
+          text: this.$strings.ButtonDelete,
+          action: 'delete'
+        })
+      }
 
       return items
     }
@@ -818,14 +818,18 @@ export default {
     },
     deleteLibraryItem() {
       const payload = {
-        message: 'This will delete the library item files from your file system. Are you sure?',
-        callback: (confirmed) => {
+        message: 'This will delete the library item from the database and your file system. Are you sure?',
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
           if (confirmed) {
             this.$axios
-              .$delete(`/api/items/${this.libraryItemId}?hard=1`)
+              .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
                 this.$toast.success('Item deleted')
-                this.$router.replace(`/library/${this.libraryId}/bookshelf`)
+                this.$router.replace(`/library/${this.libraryId}`)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)

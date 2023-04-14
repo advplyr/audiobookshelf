@@ -66,7 +66,15 @@ class LibraryItemController {
   }
 
   async delete(req, res) {
+    const hardDelete = req.query.hard == 1 // Delete from file system
+    const libraryItemPath = req.libraryItem.path
     await this.handleDeleteLibraryItem(req.libraryItem)
+    if (hardDelete) {
+      Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
+      await fs.remove(libraryItemPath).catch((error) => {
+        Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
+      })
+    }
     res.sendStatus(200)
   }
 
@@ -292,19 +300,27 @@ class LibraryItemController {
       Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
       return res.sendStatus(403)
     }
+    const hardDelete = req.query.hard == 1 // Delete files from filesystem
 
-    var { libraryItemIds } = req.body
+    const { libraryItemIds } = req.body
     if (!libraryItemIds || !libraryItemIds.length) {
       return res.sendStatus(500)
     }
 
-    var itemsToDelete = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id))
+    const itemsToDelete = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id))
     if (!itemsToDelete.length) {
       return res.sendStatus(404)
     }
     for (let i = 0; i < itemsToDelete.length; i++) {
+      const libraryItemPath = itemsToDelete[i].path
       Logger.info(`[LibraryItemController] Deleting Library Item "${itemsToDelete[i].media.metadata.title}"`)
       await this.handleDeleteLibraryItem(itemsToDelete[i])
+      if (hardDelete) {
+        Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
+        await fs.remove(libraryItemPath).catch((error) => {
+          Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
+        })
+      }
     }
     res.sendStatus(200)
   }
@@ -489,7 +505,9 @@ class LibraryItemController {
       return res.sendStatus(404)
     }
 
-    await fs.remove(libraryFile.metadata.path)
+    await fs.remove(libraryFile.metadata.path).catch((error) => {
+      Logger.error(`[LibraryItemController] Failed to delete library file at "${libraryFile.metadata.path}"`, error)
+    })
     req.libraryItem.removeLibraryFile(req.params.ino)
 
     if (req.libraryItem.media.removeFileWithInode(req.params.ino)) {

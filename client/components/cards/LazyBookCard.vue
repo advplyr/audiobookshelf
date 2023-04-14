@@ -526,6 +526,14 @@ export default {
           }
         }
       }
+
+      if (this.userCanDelete) {
+        items.push({
+          func: 'deleteLibraryItem',
+          text: this.$strings.ButtonDelete
+        })
+      }
+
       return items
     },
     _socket() {
@@ -776,6 +784,35 @@ export default {
     openPlaylists() {
       this.store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode: this.recentEpisode }])
       this.store.commit('globals/setShowPlaylistsModal', true)
+    },
+    deleteLibraryItem() {
+      const payload = {
+        message: 'This will delete the library item from the database and your file system. Are you sure?',
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
+          if (confirmed) {
+            this.processing = true
+            const axios = this.$axios || this.$nuxt.$axios
+            axios
+              .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
+              .then(() => {
+                this.$toast.success('Item deleted')
+              })
+              .catch((error) => {
+                console.error('Failed to delete item', error)
+                this.$toast.error('Failed to delete item')
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.store.commit('globals/setConfirmPrompt', payload)
     },
     createMoreMenu() {
       if (!this.$refs.moreIcon) return
