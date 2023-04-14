@@ -5,6 +5,7 @@ const LocalStrategy = require('passport-local')
 const JwtStrategy = require('passport-jwt').Strategy;
 const ExtractJwt = require('passport-jwt').ExtractJwt;
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+var OpenIDConnectStrategy = require('passport-openidconnect');
 const User = require('./objects/user/User.js')
 
 /**
@@ -24,17 +25,52 @@ class Auth {
     if (global.ServerSettings.authActiveAuthMethods.includes("local")) {
       passport.use(new LocalStrategy(this.localAuthCheckUserPw.bind(this)))
     }
+
     // Check if we should load the google-oauth20 strategy
     if (global.ServerSettings.authActiveAuthMethods.includes("google-oauth20")) {
       passport.use(new GoogleStrategy({
         clientID: global.ServerSettings.authGoogleOauth20ClientID,
         clientSecret: global.ServerSettings.authGoogleOauth20ClientSecret,
         callbackURL: global.ServerSettings.authGoogleOauth20CallbackURL
-      }, function (accessToken, refreshToken, profile, done) {
+      }, (function (accessToken, refreshToken, profile, done) {
         // TODO: what to use as username
         // TODO: do we want to create the users which does not exist?
-        return done(null, { username: profile.emails[0].value })
-      }))
+        var user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
+
+        if (!user || !user.isActive) {
+          done(null, null)
+          return
+        }
+
+        return done(null, user)
+      }).bind(this)))
+    }
+
+    // Check if we should load the openid strategy
+    if (global.ServerSettings.authActiveAuthMethods.includes("openid")) {
+      passport.use(new OpenIDConnectStrategy({
+        issuer: global.ServerSettings.authOpenIDIssuerURL,
+        authorizationURL: global.ServerSettings.authOpenIDAuthorizationURL,
+        tokenURL: global.ServerSettings.authOpenIDTokenURL,
+        userInfoURL: global.ServerSettings.authOpenIDUserInfoURL,
+        clientID: global.ServerSettings.authOpenIDClientID,
+        clientSecret: global.ServerSettings.authOpenIDClientSecret,
+        callbackURL: global.ServerSettings.authOpenIDCallbackURL,
+        scope: ["openid", "email", "profile"],
+        skipUserProfile: false
+      },
+        (function (issuer, profile, done) {
+          // TODO: what to use as username
+          // TODO: do we want to create the users which does not exist?
+          var user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
+
+          if (!user || !user.isActive) {
+            done(null, null)
+            return
+          }
+
+          return done(null, user)
+        }).bind(this)))
     }
 
     // Load the JwtStrategy (always) -> for bearer token auth 
@@ -93,6 +129,18 @@ class Auth {
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
       passport.authenticate('google', { failureRedirect: '/login' }),
+      (function (req, res) {
+        // return the user login response json if the login was successfull
+        res.json(this.getUserLoginResponsePayload(req.user.username))
+      }).bind(this)
+    )
+
+    // openid strategy login route (this redirects to the configured openid login provider)
+    router.get('/auth/openid', passport.authenticate('openidconnect'));
+
+    // openid strategy callback route (this receives the token from the configured openid login provider)
+    router.get('/auth/openid/callback',
+      passport.authenticate('openidconnect', { failureRedirect: '/login' }),
       (function (req, res) {
         // return the user login response json if the login was successfull
         res.json(this.getUserLoginResponsePayload(req.user.username))

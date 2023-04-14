@@ -40,6 +40,7 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "passport-openidconnect": "^0.1.1",
     "socket.io": "^4.5.4",
     "xml2js": "^0.4.23"
   },

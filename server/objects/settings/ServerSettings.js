@@ -67,6 +67,14 @@ class ServerSettings {
     this.authGoogleOauth20ClientSecret = ''
     this.authGoogleOauth20CallbackURL = ''
 
+    // generic-oauth20 settings
+    this.authOpenIDIssuerURL = ''
+    this.authOpenIDAuthorizationURL = ''
+    this.authOpenIDTokenURL = ''
+    this.authOpenIDUserInfoURL = ''
+    this.authOpenIDClientID = ''
+    this.authOpenIDClientSecret = ''
+    this.authOpenIDCallbackURL = ''
 
     if (settings) {
       this.construct(settings)
@@ -117,6 +125,14 @@ class ServerSettings {
     this.authGoogleOauth20ClientSecret = settings.authGoogleOauth20ClientSecret || ''
     this.authGoogleOauth20CallbackURL = settings.authGoogleOauth20CallbackURL || ''
 
+    this.authOpenIDIssuerURL = settings.authOpenIDIssuerURL || ''
+    this.authOpenIDAuthorizationURL = settings.authOpenIDAuthorizationURL || ''
+    this.authOpenIDTokenURL = settings.authOpenIDTokenURL || ''
+    this.authOpenIDUserInfoURL = settings.authOpenIDUserInfoURL || ''
+    this.authOpenIDClientID = settings.authOpenIDClientID || ''
+    this.authOpenIDClientSecret = settings.authOpenIDClientSecret || ''
+    this.authOpenIDCallbackURL = settings.authOpenIDCallbackURL || ''
+
     if (!Array.isArray(this.authActiveAuthMethods)) {
       this.authActiveAuthMethods = ['local']
     }
@@ -129,6 +145,20 @@ class ServerSettings {
       this.authGoogleOauth20CallbackURL === ''
     )) {
       this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1);
+    }
+
+    // remove uninitialized methods    
+    // OpenID
+    if (this.authActiveAuthMethods.includes('generic-oauth20') && (
+      this.authOpenIDIssuerURL === '' ||
+      this.authOpenIDAuthorizationURL === '' ||
+      this.authOpenIDTokenURL === '' ||
+      this.authOpenIDUserInfoURL === '' ||
+      this.authOpenIDClientID === '' ||
+      this.authOpenIDClientSecret === '' ||
+      this.authOpenIDCallbackURL === ''
+    )) {
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('generic-oauth20', 0), 1);
     }
 
     // fallback to local    
@@ -189,7 +219,14 @@ class ServerSettings {
       authActiveAuthMethods: this.authActiveAuthMethods,
       authGoogleOauth20ClientID: this.authGoogleOauth20ClientID, // Do not return to client
       authGoogleOauth20ClientSecret: this.authGoogleOauth20ClientSecret, // Do not return to client
-      authGoogleOauth20CallbackURL: this.authGoogleOauth20CallbackURL
+      authGoogleOauth20CallbackURL: this.authGoogleOauth20CallbackURL,
+      authOpenIDIssuerURL: this.authOpenIDIssuerURL,
+      authOpenIDAuthorizationURL: this.authOpenIDAuthorizationURL,
+      authOpenIDTokenURL: this.authOpenIDTokenURL,
+      authOpenIDUserInfoURL: this.authOpenIDUserInfoURL,
+      authOpenIDClientID: this.authOpenIDClientID, // Do not return to client
+      authOpenIDClientSecret: this.authOpenIDClientSecret, // Do not return to client
+      authOpenIDCallbackURL: this.authOpenIDCallbackURL
     }
   }
 
@@ -198,6 +235,8 @@ class ServerSettings {
     delete json.tokenSecret
     delete json.authGoogleOauth20ClientID
     delete json.authGoogleOauth20ClientSecret
+    delete json.authOpenIDClientID
+    delete json.authOpenIDClientSecret
     return json
   }
 
