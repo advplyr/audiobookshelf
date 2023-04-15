@@ -24,14 +24,6 @@
             <th class="text-left w-20">{{ $strings.LabelSize }}</th>
             <th class="text-left w-20">{{ $strings.LabelDuration }}</th>
             <th v-if="userCanDownload" class="text-center w-20">{{ $strings.LabelDownload }}</th>
-            <th v-if="showExperimentalFeatures" class="text-center w-20">
-              <div class="flex items-center">
-                <p>Tone</p>
-                <ui-tooltip text="Experimental feature for testing Tone library metadata scan results. Results logged in browser console." class="ml-2 w-2" direction="left">
-                  <span class="material-icons-outlined text-sm">information</span>
-                </ui-tooltip>
-              </div>
-            </th>
           </tr>
           <template v-for="track in tracks">
             <tr :key="track.index">
@@ -47,9 +39,6 @@
               </td>
               <td v-if="userCanDownload" class="text-center">
                 <a :href="`${$config.routerBasePath}/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text pt-1">download</span></a>
-              </td>
-              <td v-if="showExperimentalFeatures" class="text-center">
-                <ui-icon-btn borderless :loading="toneProbing" icon="search" @click="toneProbe(track.index)" />
               </td>
             </tr>
           </template>
@@ -92,35 +81,11 @@ export default {
     },
     userIsAdmin() {
       return this.$store.getters['user/getIsAdminOrUp']
-    },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks
-    },
-    toneProbe(index) {
-      this.toneProbing = true
-
-      this.$axios
-        .$post(`/api/items/${this.libraryItemId}/tone-scan/${index}`)
-        .then((data) => {
-          console.log('Tone probe data', data)
-          if (data.error) {
-            this.$toast.error('Tone probe error: ' + data.error)
-          } else {
-            this.$toast.success('Tone probe successful! Check browser console')
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to tone probe', error)
-          this.$toast.error('Tone probe failed')
-        })
-        .finally(() => {
-          this.toneProbing = false
-        })
     }
   },
   mounted() {}
