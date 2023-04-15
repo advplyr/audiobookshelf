@@ -1,8 +1,8 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
-      <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
-        <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
+    <div class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
+      <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
+        <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
@@ -21,7 +21,7 @@
             </div>
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
+        <div class="flex-grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
@@ -231,7 +231,7 @@
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
+          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>

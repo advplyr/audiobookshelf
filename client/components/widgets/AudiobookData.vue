@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <tables-tracks-table :title="$strings.LabelStatsAudioTracks" :tracks="media.tracks" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
+    <tables-tracks-table :title="$strings.LabelStatsAudioTracks" :tracks="tracksWithAudioFile" :is-file="isFile" :library-item-id="libraryItemId" class="mt-6" />
   </div>
 </template>
 
@@ -34,6 +34,12 @@ export default {
     return {}
   },
   computed: {
+    tracksWithAudioFile() {
+      return this.media.tracks.map((track) => {
+        track.audioFile = this.media.audioFiles.find((af) => af.metadata.path === track.metadata.path)
+        return track
+      })
+    },
     missingPartChunks() {
       if (this.missingParts === 1) return this.missingParts[0]
       var chunks = []

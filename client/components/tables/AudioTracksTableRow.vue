@@ -1,15 +1,20 @@
 <template>
   <tr>
-    <td class="px-4">
-      {{ showFullPath ? file.metadata.path : file.metadata.relPath }}
+    <td class="text-center">
+      <p>{{ track.index }}</p>
     </td>
-    <td>
-      {{ $bytesPretty(file.metadata.size) }}
+    <td class="font-sans">{{ showFullPath ? track.metadata.path : track.metadata.filename }}</td>
+    <td v-if="!showFullPath" class="hidden lg:table-cell">
+      {{ track.audioFile.codec || '' }}
     </td>
-    <td class="text-xs">
-      <div class="flex items-center">
-        <p>{{ file.fileType }}</p>
-      </div>
+    <td v-if="!showFullPath" class="hidden xl:table-cell">
+      {{ $bytesPretty(track.audioFile.bitRate || 0, 0) }}
+    </td>
+    <td class="hidden md:table-cell">
+      {{ $bytesPretty(track.metadata.size) }}
+    </td>
+    <td class="hidden sm:table-cell">
+      {{ $secondsToTimestamp(track.duration) }}
     </td>
     <td v-if="contextMenuItems.length" class="text-center">
       <ui-context-menu-dropdown :items="contextMenuItems" menu-width="110px" @action="contextMenuAction" />
@@ -22,11 +27,10 @@ export default {
   props: {
     libraryItemId: String,
     showFullPath: Boolean,
-    file: {
+    track: {
       type: Object,
       default: () => {}
-    },
-    inModal: Boolean
+    }
   },
   data() {
     return {}
@@ -44,9 +48,6 @@ export default {
     userIsAdmin() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    downloadUrl() {
-      return `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(this.file.metadata.relPath).replace(/^\//, '')}?token=${this.userToken}`
-    },
     contextMenuItems() {
       const items = []
       if (this.userCanDownload) {
@@ -55,20 +56,24 @@ export default {
           action: 'download'
         })
       }
+
       if (this.userCanDelete) {
         items.push({
           text: this.$strings.ButtonDelete,
           action: 'delete'
         })
       }
-      // Currently not showing this option in the Files tab modal
-      if (this.userIsAdmin && this.file.audioFile && !this.inModal) {
+
+      if (this.userIsAdmin) {
         items.push({
           text: this.$strings.LabelMoreInfo,
           action: 'more'
         })
       }
       return items
+    },
+    downloadUrl() {
+      return `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(this.track.metadata.relPath).replace(/^\//, '')}?token=${this.userToken}`
     }
   },
   methods: {
@@ -78,7 +83,7 @@ export default {
       } else if (action === 'download') {
         this.downloadLibraryFile()
       } else if (action === 'more') {
-        this.$emit('showMore', this.file.audioFile)
+        this.$emit('showMore', this.track.audioFile)
       }
     },
     deleteLibraryFile() {
@@ -87,7 +92,7 @@ export default {
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios
-              .$delete(`/api/items/${this.libraryItemId}/file/${this.file.ino}`)
+              .$delete(`/api/items/${this.libraryItemId}/file/${this.track.audioFile.ino}`)
               .then(() => {
                 this.$toast.success('File deleted')
               })
@@ -105,7 +110,7 @@ export default {
       const a = document.createElement('a')
       a.style.display = 'none'
       a.href = this.downloadUrl
-      a.download = this.file.metadata.filename
+      a.download = this.track.metadata.filename
       document.body.appendChild(a)
       a.click()
       setTimeout(() => {

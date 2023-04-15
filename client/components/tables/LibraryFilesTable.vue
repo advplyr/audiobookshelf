@@ -18,35 +18,42 @@
             <th class="text-left px-4">{{ $strings.LabelPath }}</th>
             <th class="text-left w-24 min-w-24">{{ $strings.LabelSize }}</th>
             <th class="text-left px-4 w-24">{{ $strings.LabelType }}</th>
-            <th v-if="userCanDelete || userCanDownload" class="text-center w-16"></th>
+            <th v-if="userCanDelete || userCanDownload || (userIsAdmin && audioFiles.length && !inModal)" class="text-center w-16"></th>
           </tr>
-          <template v-for="file in files">
-            <tables-library-files-table-row :key="file.path" :libraryItemId="libraryItemId" :showFullPath="showFullPath" :file="file" />
+          <template v-for="file in filesWithAudioFile">
+            <tables-library-files-table-row :key="file.path" :libraryItemId="libraryItemId" :showFullPath="showFullPath" :file="file" :inModal="inModal" @showMore="showMore" />
           </template>
         </table>
       </div>
     </transition>
+
+    <modals-audio-file-data-modal v-model="showAudioFileDataModal" :audio-file="selectedAudioFile" />
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    files: {
-      type: Array,
-      default: () => []
+    libraryItem: {
+      type: Object,
+      default: () => {}
     },
-    libraryItemId: String,
     isMissing: Boolean,
-    expanded: Boolean // start expanded
+    expanded: Boolean, // start expanded
+    inModal: Boolean
   },
   data() {
     return {
       showFiles: false,
-      showFullPath: false
+      showFullPath: false,
+      showAudioFileDataModal: false,
+      selectedAudioFile: null
     }
   },
   computed: {
+    libraryItemId() {
+      return this.libraryItem.id
+    },
     userToken() {
       return this.$store.getters['user/getToken']
     },
@@ -58,11 +65,29 @@ export default {
     },
     userIsAdmin() {
       return this.$store.getters['user/getIsAdminOrUp']
+    },
+    files() {
+      return this.libraryItem.libraryFiles || []
+    },
+    audioFiles() {
+      return this.libraryItem.media?.audioFiles || []
+    },
+    filesWithAudioFile() {
+      return this.files.map((file) => {
+        if (file.fileType === 'audio') {
+          file.audioFile = this.audioFiles.find((af) => af.ino === file.ino)
+        }
+        return file
+      })
     }
   },
   methods: {
     clickBar() {
       this.showFiles = !this.showFiles
+    },
+    showMore(audioFile) {
+      this.selectedAudioFile = audioFile
+      this.showAudioFileDataModal = true
     }
   },
   mounted() {
