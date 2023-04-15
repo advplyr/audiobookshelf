@@ -28,6 +28,7 @@
                 <div class="flex items-center">
                   {{ title }}
                   <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-abridged-indicator v-if="isAbridged" />
                 </div>
               </h1>
 
@@ -122,14 +123,6 @@
                 </div>
                 <div>
                   {{ sizePretty }}
-                </div>
-              </div>
-              <div v-if="isBook" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelAbridged }}</span>
-                </div>
-                <div>
-                  {{ isAbridged ? 'Yes' : 'No' }}
                 </div>
               </div>
             </div>
