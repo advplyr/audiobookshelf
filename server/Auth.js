@@ -1,12 +1,11 @@
 const passport = require('passport')
 const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
-const LocalStrategy = require('passport-local')
-const JwtStrategy = require('passport-jwt').Strategy;
-const ExtractJwt = require('passport-jwt').ExtractJwt;
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-var OpenIDConnectStrategy = require('passport-openidconnect');
-const User = require('./objects/user/User.js')
+const LocalStrategy = require('./libs/passportLocal')
+const JwtStrategy = require('passport-jwt').Strategy
+const ExtractJwt = require('passport-jwt').ExtractJwt
+const GoogleStrategy = require('passport-google-oauth20').Strategy
+const OpenIDConnectStrategy = require('passport-openidconnect')
 
 /**
  * @class Class for handling all the authentication related functionality.
@@ -35,7 +34,7 @@ class Auth {
       }, (function (accessToken, refreshToken, profile, done) {
         // TODO: what to use as username
         // TODO: do we want to create the users which does not exist?
-        var user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
+        const user = this.db.users.find(u => u.username.toLowerCase() === profile.emails[0].value.toLowerCase())
 
         if (!user || !user.isActive) {
           done(null, null)
@@ -87,19 +86,19 @@ class Auth {
         return cb(null, JSON.stringify({
           "username": user.username,
           "id": user.id,
-        }));
-      });
-    });
+        }))
+      })
+    })
 
     // define how to deseralize a user (use the username to get it from the database)
     passport.deserializeUser((function (user, cb) {
       process.nextTick((function () {
         const parsedUserInfo = JSON.parse(user)
         // TODO: do the matching on username or better on id?
-        var dbUser = this.db.users.find(u => u.username.toLowerCase() === parsedUserInfo.username.toLowerCase())
-        return cb(null, new User(dbUser));
-      }).bind(this));
-    }).bind(this));
+        const dbUser = this.db.users.find(u => u.username.toLowerCase() === parsedUserInfo.username.toLowerCase())
+        return cb(null, dbUser)
+      }).bind(this))
+    }).bind(this))
   }
 
   /**
@@ -107,19 +106,11 @@ class Auth {
    * @param {express.Router} router 
    */
   initAuthRoutes(router) {
-    // just a route saying "you need to login" where we redirect e.g. after logout
-    // TODO: replace with a 401?
-    router.get('/login', function (req, res) {
-      res.send('please login')
-    })
-
     // Local strategy login route (takes username and password)
-    router.post('/login', passport.authenticate('local', {
-      failureRedirect: '/login'
-    }),
+    router.post('/login', passport.authenticate('local'),
       (function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user.username))
+        res.json(this.getUserLoginResponsePayload(req.user))
       }).bind(this)
     )
 
@@ -128,30 +119,35 @@ class Auth {
 
     // google-oauth20 strategy callback route (this receives the token from google)
     router.get('/auth/google/callback',
-      passport.authenticate('google', { failureRedirect: '/login' }),
+      passport.authenticate('google'),
       (function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user.username))
+        res.json(this.getUserLoginResponsePayload(req.user))
       }).bind(this)
     )
 
     // openid strategy login route (this redirects to the configured openid login provider)
-    router.get('/auth/openid', passport.authenticate('openidconnect'));
+    router.get('/auth/openid', passport.authenticate('openidconnect'))
 
     // openid strategy callback route (this receives the token from the configured openid login provider)
     router.get('/auth/openid/callback',
-      passport.authenticate('openidconnect', { failureRedirect: '/login' }),
+      passport.authenticate('openidconnect'),
       (function (req, res) {
         // return the user login response json if the login was successfull
-        res.json(this.getUserLoginResponsePayload(req.user.username))
+        res.json(this.getUserLoginResponsePayload(req.user))
       }).bind(this)
     )
 
     // Logout route
-    router.get('/logout', function (req, res) {
+    router.post('/logout', (req, res) => {
       // TODO: invalidate possible JWTs
-      req.logout()
-      res.redirect('/login')
+      req.logout((err) => {
+        if (err) {
+          res.sendStatus(500)
+        } else {
+          res.sendStatus(200)
+        }
+      })
     })
   }
 
@@ -177,7 +173,7 @@ class Auth {
    * @returns the token.
    */
   generateAccessToken(user) {
-    return jwt.sign({ userId: user.id, username: user.username }, global.ServerSettings.tokenSecret);
+    return jwt.sign({ userId: user.id, username: user.username }, global.ServerSettings.tokenSecret)
   }
 
   /**
@@ -206,7 +202,7 @@ class Auth {
    * @param {function} done 
    */
   jwtAuthCheck(jwt_payload, done) {
-    var user = this.db.users.find(u => u.username.toLowerCase() === jwt_payload.username.toLowerCase())
+    const user = this.db.users.find(u => u.username.toLowerCase() === jwt_payload.username.toLowerCase())
 
     if (!user || !user.isActive) {
       done(null, null)
@@ -217,13 +213,13 @@ class Auth {
   }
 
   /**
-   * Checks if a username and passpword touple is valid and the user active.
+   * Checks if a username and password tuple is valid and the user active.
    * @param {string} username 
    * @param {string} password 
    * @param {function} done 
    */
-  localAuthCheckUserPw(username, password, done) {
-    var user = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
+  async localAuthCheckUserPw(username, password, done) {
+    const user = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
 
     if (!user || !user.isActive) {
       done(null, null)
@@ -241,7 +237,7 @@ class Auth {
     }
 
     // Check password match
-    var compare = bcrypt.compareSync(password, user.pash)
+    const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       done(null, user)
       return
@@ -272,9 +268,7 @@ class Auth {
    * @param {string} username 
    * @returns {string} jsonPayload
    */
-  getUserLoginResponsePayload(username) {
-    var user = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
-    user = new User(user)
+  getUserLoginResponsePayload(user) {
     return {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),

@@ -124,7 +124,7 @@ export default {
 
       location.reload()
     },
-    setUser({ user, userDefaultLibraryId, serverSettings, Source, feeds }) {
+    setUser({ user, userDefaultLibraryId, serverSettings, Source }) {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
       this.$setServerLanguageCode(serverSettings.language)
@@ -143,17 +143,18 @@ export default {
       this.error = null
       this.processing = true
 
-      var payload = {
+      const payload = {
         username: this.username,
         password: this.password || ''
       }
-      var authRes = await this.$axios.$post('/login', payload).catch((error) => {
+      const authRes = await this.$axios.$post('/login', payload).catch((error) => {
         console.error('Failed', error.response)
         if (error.response) this.error = error.response.data
         else this.error = 'Unknown Error'
         return false
       })
-      if (authRes && authRes.error) {
+      console.log('Auth res', authRes)
+      if (authRes?.error) {
         this.error = authRes.error
       } else if (authRes) {
         this.setUser(authRes)

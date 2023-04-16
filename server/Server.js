@@ -161,7 +161,7 @@ class Server {
     // config passport.js
     this.auth.initPassportJs()
     // use auth on all routes - not used now
-    // app.use(passport.authenticate('session'));
+    // app.use(passport.authenticate('session'))
 
     const router = express.Router()
     app.use(global.RouterBasePath, router)
@@ -169,9 +169,8 @@ class Server {
 
     this.server = http.createServer(app)
 
-    // router.use(this.auth.cors)
     router.use(fileUpload())
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
     router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt

@@ -1,5 +1,4 @@
 const { BookshelfView } = require('../../utils/constants')
-const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
 class ServerSettings {
@@ -144,7 +143,7 @@ class ServerSettings {
       this.authGoogleOauth20ClientSecret === '' ||
       this.authGoogleOauth20CallbackURL === ''
     )) {
-      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1);
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('google-oauth20', 0), 1)
     }
 
     // remove uninitialized methods    
@@ -158,7 +157,7 @@ class ServerSettings {
       this.authOpenIDClientSecret === '' ||
       this.authOpenIDCallbackURL === ''
     )) {
-      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('generic-oauth20', 0), 1);
+      this.authActiveAuthMethods.splice(this.authActiveAuthMethods.indexOf('generic-oauth20', 0), 1)
     }
 
     // fallback to local    
@@ -241,10 +240,10 @@ class ServerSettings {
   }
 
   update(payload) {
-    var hasUpdates = false
+    let hasUpdates = false
     for (const key in payload) {
       if (key === 'sortingPrefixes' && payload[key] && payload[key].length) {
-        var prefixesCleaned = payload[key].filter(prefix => !!prefix).map(prefix => prefix.toLowerCase())
+        const prefixesCleaned = payload[key].filter(prefix => !!prefix).map(prefix => prefix.toLowerCase())
         if (prefixesCleaned.join(',') !== this[key].join(',')) {
           this[key] = [...prefixesCleaned]
           hasUpdates = true

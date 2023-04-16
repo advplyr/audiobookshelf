@@ -140,7 +140,7 @@ class SocketAuthority {
   // When setting up a socket connection the user needs to be associated with a socket id
   //  for this the client will send a 'auth' event that includes the users API token
   async authenticateSocket(socket, token) {
-    const user = await this.Server.auth.authenticateUser(token)
+    const user = await this.Server.db.users.find(u => u.token === token)
     if (!user) {
       Logger.error('Cannot validate socket - invalid token')
       return socket.emit('invalid_token')
