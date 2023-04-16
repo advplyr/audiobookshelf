@@ -1,8 +1,8 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
-      <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
-        <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
+    <div class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
+      <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
+        <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
@@ -21,13 +21,14 @@
             </div>
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
+        <div class="flex-grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
                 <div class="flex items-center">
                   {{ title }}
                   <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-abridged-indicator v-if="isAbridged" />
                 </div>
               </h1>
 
@@ -124,14 +125,6 @@
                   {{ sizePretty }}
                 </div>
               </div>
-              <div v-if="isBook" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelAbridged }}</span>
-                </div>
-                <div>
-                  {{ isAbridged ? 'Yes' : 'No' }}
-                </div>
-              </div>
             </div>
             <div class="hidden md:block flex-grow" />
           </div>
@@ -209,7 +202,7 @@
             <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" menu-width="148px" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
                 <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
-                  <span class="material-icons">more_vert</span>
+                  <span class="material-icons">more_horiz</span>
                 </button>
               </template>
             </ui-context-menu-dropdown>
@@ -231,7 +224,7 @@
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
+          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>
@@ -562,12 +555,12 @@ export default {
         })
       }
 
-      // if (this.userCanDelete) {
-      //   items.push({
-      //     text: this.$strings.ButtonDelete,
-      //     action: 'delete'
-      //   })
-      // }
+      if (this.userCanDelete) {
+        items.push({
+          text: this.$strings.ButtonDelete,
+          action: 'delete'
+        })
+      }
 
       return items
     }
@@ -818,14 +811,18 @@ export default {
     },
     deleteLibraryItem() {
       const payload = {
-        message: 'This will delete the library item files from your file system. Are you sure?',
-        callback: (confirmed) => {
+        message: 'This will delete the library item from the database and your file system. Are you sure?',
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
           if (confirmed) {
             this.$axios
-              .$delete(`/api/items/${this.libraryItemId}?hard=1`)
+              .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
               .then(() => {
                 this.$toast.success('Item deleted')
-                this.$router.replace(`/library/${this.libraryId}/bookshelf`)
+                this.$router.replace(`/library/${this.libraryId}`)
               })
               .catch((error) => {
                 console.error('Failed to delete item', error)

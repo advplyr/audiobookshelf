@@ -5,7 +5,6 @@
       <div class="h-5 md:h-7 w-5 md:w-7 rounded-full bg-white bg-opacity-10 flex items-center justify-center">
         <span class="text-sm font-mono">{{ tracks.length }}</span>
       </div>
-      <!-- <span class="bg-black-400 rounded-xl py-1 px-2 text-sm font-mono">{{ tracks.length }}</span> -->
       <div class="flex-grow" />
       <ui-btn v-if="userIsAdmin" small :color="showFullPath ? 'gray-600' : 'primary'" class="mr-2 hidden md:block" @click.stop="showFullPath = !showFullPath">{{ $strings.ButtonFullPath }}</ui-btn>
       <nuxt-link v-if="userCanUpdate && !isFile" :to="`/audiobook/${libraryItemId}/edit`" class="mr-2 md:mr-4" @mousedown.prevent>
@@ -21,41 +20,20 @@
           <tr>
             <th class="w-10">#</th>
             <th class="text-left">{{ $strings.LabelFilename }}</th>
-            <th class="text-left w-20">{{ $strings.LabelSize }}</th>
-            <th class="text-left w-20">{{ $strings.LabelDuration }}</th>
-            <th v-if="userCanDownload" class="text-center w-20">{{ $strings.LabelDownload }}</th>
-            <th v-if="showExperimentalFeatures" class="text-center w-20">
-              <div class="flex items-center">
-                <p>Tone</p>
-                <ui-tooltip text="Experimental feature for testing Tone library metadata scan results. Results logged in browser console." class="ml-2 w-2" direction="left">
-                  <span class="material-icons-outlined text-sm">information</span>
-                </ui-tooltip>
-              </div>
-            </th>
+            <th v-if="!showFullPath" class="text-left w-20 hidden lg:table-cell">{{ $strings.LabelCodec }}</th>
+            <th v-if="!showFullPath" class="text-left w-20 hidden xl:table-cell">{{ $strings.LabelBitrate }}</th>
+            <th class="text-left w-20 hidden md:table-cell">{{ $strings.LabelSize }}</th>
+            <th class="text-left w-20 hidden sm:table-cell">{{ $strings.LabelDuration }}</th>
+            <th class="text-center w-16"></th>
           </tr>
           <template v-for="track in tracks">
-            <tr :key="track.index">
-              <td class="text-center">
-                <p>{{ track.index }}</p>
-              </td>
-              <td class="font-sans">{{ showFullPath ? track.metadata.path : track.metadata.filename }}</td>
-              <td class="font-mono">
-                {{ $bytesPretty(track.metadata.size) }}
-              </td>
-              <td class="font-mono">
-                {{ $secondsToTimestamp(track.duration) }}
-              </td>
-              <td v-if="userCanDownload" class="text-center">
-                <a :href="`${$config.routerBasePath}/s/item/${libraryItemId}/${$encodeUriPath(track.metadata.relPath).replace(/^\//, '')}?token=${userToken}`" download><span class="material-icons icon-text pt-1">download</span></a>
-              </td>
-              <td v-if="showExperimentalFeatures" class="text-center">
-                <ui-icon-btn borderless :loading="toneProbing" icon="search" @click="toneProbe(track.index)" />
-              </td>
-            </tr>
+            <tables-audio-tracks-table-row :key="track.index" :track="track" :library-item-id="libraryItemId" :showFullPath="showFullPath" @showMore="showMore" />
           </template>
         </table>
       </div>
     </transition>
+
+    <modals-audio-file-data-modal v-model="showAudioFileDataModal" :audio-file="selectedAudioFile" />
   </div>
 </template>
 
@@ -77,50 +55,31 @@ export default {
     return {
       showTracks: false,
       showFullPath: false,
-      toneProbing: false
+      selectedAudioFile: null,
+      showAudioFileDataModal: false
     }
   },
   computed: {
-    userToken() {
-      return this.$store.getters['user/getToken']
-    },
     userCanDownload() {
       return this.$store.getters['user/getUserCanDownload']
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
+    userCanDelete() {
+      return this.$store.getters['user/getUserCanDelete']
+    },
     userIsAdmin() {
       return this.$store.getters['user/getIsAdminOrUp']
-    },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
     }
   },
   methods: {
     clickBar() {
       this.showTracks = !this.showTracks
     },
-    toneProbe(index) {
-      this.toneProbing = true
-
-      this.$axios
-        .$post(`/api/items/${this.libraryItemId}/tone-scan/${index}`)
-        .then((data) => {
-          console.log('Tone probe data', data)
-          if (data.error) {
-            this.$toast.error('Tone probe error: ' + data.error)
-          } else {
-            this.$toast.success('Tone probe successful! Check browser console')
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to tone probe', error)
-          this.$toast.error('Tone probe failed')
-        })
-        .finally(() => {
-          this.toneProbing = false
-        })
+    showMore(audioFile) {
+      this.selectedAudioFile = audioFile
+      this.showAudioFileDataModal = true
     }
   },
   mounted() {}
