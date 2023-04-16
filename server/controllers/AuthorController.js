@@ -167,18 +167,19 @@ class AuthorController {
   }
 
   async match(req, res) {
-    var authorData = null
+    let authorData = null
+    const region = req.body.region || 'us'
     if (req.body.asin) {
-      authorData = await this.authorFinder.findAuthorByASIN(req.body.asin)
+      authorData = await this.authorFinder.findAuthorByASIN(req.body.asin, region)
     } else {
-      authorData = await this.authorFinder.findAuthorByName(req.body.q)
+      authorData = await this.authorFinder.findAuthorByName(req.body.q, region)
     }
     if (!authorData) {
       return res.status(404).send('Author not found')
     }
     Logger.debug(`[AuthorController] match author with "${req.body.q || req.body.asin}"`, authorData)
 
-    var hasUpdates = false
+    let hasUpdates = false
     if (authorData.asin && req.author.asin !== authorData.asin) {
       req.author.asin = authorData.asin
       hasUpdates = true
@@ -188,7 +189,7 @@ class AuthorController {
     if (authorData.image && (!req.author.imagePath || hasUpdates)) {
       this.cacheManager.purgeImageCache(req.author.id)
 
-      var imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
+      const imageData = await this.authorFinder.saveAuthorImage(req.author.id, authorData.image)
       if (imageData) {
         req.author.imagePath = imageData.path
         hasUpdates = true
@@ -204,7 +205,7 @@ class AuthorController {
       req.author.updatedAt = Date.now()
 
       await this.db.updateEntity('author', req.author)
-      var numBooks = this.db.libraryItems.filter(li => {
+      const numBooks = this.db.libraryItems.filter(li => {
         return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
       }).length
       SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
