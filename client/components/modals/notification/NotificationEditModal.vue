@@ -10,7 +10,7 @@
         <div class="w-full px-3 py-5 md:p-12">
           <ui-dropdown v-model="newNotification.eventName" :label="$strings.LabelNotificationEvent" :items="eventOptions" class="mb-4" @input="eventOptionUpdated" />
 
-          <ui-multi-select v-model="newNotification.urls" :label="$strings.LabelNotificationAppriseURL" class="mb-2" />
+          <ui-multi-select ref="urlsInput" v-model="newNotification.urls" :label="$strings.LabelNotificationAppriseURL" class="mb-2" />
 
           <ui-text-input-with-label v-model="newNotification.titleTemplate" :label="$strings.LabelNotificationTitleTemplate" class="mb-2" />
 
@@ -103,6 +103,8 @@ export default {
       if (this.$refs.modal) this.$refs.modal.setHide()
     },
     submitForm() {
+      this.$ref.urlsInput.blur()
+      
       if (!this.newNotification.urls.length) {
         this.$toast.error('Must enter an Apprise URL')
         return
