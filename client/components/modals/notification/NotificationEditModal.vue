@@ -103,7 +103,7 @@ export default {
       if (this.$refs.modal) this.$refs.modal.setHide()
     },
     submitForm() {
-      this.$ref.urlsInput.blur()
+      this.$refs.urlsInput?.forceBlur()
       
       if (!this.newNotification.urls.length) {
         this.$toast.error('Must enter an Apprise URL')
