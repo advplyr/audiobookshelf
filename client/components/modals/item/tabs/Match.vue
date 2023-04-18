@@ -115,7 +115,7 @@
         <div v-if="selectedMatchOrig.genres && selectedMatchOrig.genres.length" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-multi-select v-model="selectedMatch.genres" :items="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" :label="$strings.LabelGenres" />
+            <ui-multi-select v-model="selectedMatch.genres" :items="genres" :disabled="!selectedMatchUsage.genres" :label="$strings.LabelGenres" />
             <p v-if="mediaMetadata.genres" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.genres.join(', ') }}</p>
           </div>
         </div>
@@ -300,6 +300,12 @@ export default {
     },
     isPodcast() {
       return this.mediaType == 'podcast'
+    },
+    genres() {
+      const filterData = this.$store.state.libraries.filterData || {}
+      const currentGenres = filterData.genres || []
+      const selectedMatchGenres = this.selectedMatch.genres || []
+      return [...new Set([...currentGenres ,...selectedMatchGenres])]
     }
   },
   methods: {
