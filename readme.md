@@ -147,7 +147,7 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 ### SWAG Reverse Proxy
 
-[See this solution](https://forums.unraid.net/topic/112698-support-audiobookshelf/?do=findComment&comment=1049637)
+LinuxServer.io now ships SWAG with reverse proxy [subdomain](https://github.com/linuxserver/reverse-proxy-confs/blob/master/audiobookshelf.subdomain.conf.sample) and [subfolder](https://github.com/linuxserver/reverse-proxy-confs/blob/master/airsonic.subfolder.conf.sample) config samples for audiobookshelf.
 
 ### Synology Reverse Proxy
 
