@@ -147,7 +147,7 @@ For this to work you must enable at least the following mods using `a2enmod`:
 
 ### SWAG Reverse Proxy
 
-LinuxServer.io now ships SWAG with reverse proxy [subdomain](https://github.com/linuxserver/reverse-proxy-confs/blob/master/audiobookshelf.subdomain.conf.sample) and [subfolder](https://github.com/linuxserver/reverse-proxy-confs/blob/master/airsonic.subfolder.conf.sample) config samples for audiobookshelf.
+[See LinuxServer.io config sample](https://github.com/linuxserver/reverse-proxy-confs/blob/master/audiobookshelf.subdomain.conf.sample)
 
 ### Synology Reverse Proxy
 
