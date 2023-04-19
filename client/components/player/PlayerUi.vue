@@ -46,7 +46,7 @@
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
-    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" @seek="seek" />
+    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
 
     <div class="flex">
       <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
@@ -59,7 +59,7 @@
       <p class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">{{ timeRemainingPretty }}</p>
     </div>
 
-    <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :chapters="chapters" @select="selectChapter" />
+    <modals-chapters-modal v-model="showChaptersModal" :current-chapter="currentChapter" :playback-rate="playbackRate" :chapters="chapters" @select="selectChapter" />
   </div>
 </template>
 
@@ -90,6 +90,11 @@ export default {
       currentTime: 0,
       duration: 0,
       useChapterTrack: false
+    }
+  },
+  watch: {
+    playbackRate() {
+      this.updateTimestamp()
     }
   },
   computed: {
@@ -213,18 +218,14 @@ export default {
       }
     },
     increasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex >= rates.length - 1) return
-      this.playbackRate = rates[currentRateIndex + 1] || 1
-      this.playbackRateChanged(this.playbackRate)
+      if (this.playbackRate >= 10) return
+      this.playbackRate = Number((this.playbackRate + 0.1).toFixed(1))
+      this.setPlaybackRate(this.playbackRate)
     },
     decreasePlaybackRate() {
-      var rates = [0.25, 0.5, 0.8, 1, 1.3, 1.5, 2, 2.5, 3]
-      var currentRateIndex = rates.findIndex((r) => r === this.playbackRate)
-      if (currentRateIndex <= 0) return
-      this.playbackRate = rates[currentRateIndex - 1] || 1
-      this.playbackRateChanged(this.playbackRate)
+      if (this.playbackRate <= 0.5) return
+      this.playbackRate = Number((this.playbackRate - 0.1).toFixed(1))
+      this.setPlaybackRate(this.playbackRate)
     },
     setPlaybackRate(playbackRate) {
       this.$emit('setPlaybackRate', playbackRate)
@@ -289,14 +290,13 @@ export default {
       if (this.$refs.trackbar) this.$refs.trackbar.setPercentageReady(percentageReady)
     },
     updateTimestamp() {
-      var ts = this.$refs.currentTimestamp
+      const ts = this.$refs.currentTimestamp
       if (!ts) {
         console.error('No timestamp el')
         return
       }
       const time = this.useChapterTrack ? Math.max(0, this.currentTime - this.currentChapterStart) : this.currentTime
-      var currTimeClean = this.$secondsToTimestamp(time)
-      ts.innerText = currTimeClean
+      ts.innerText = this.$secondsToTimestamp(time / this.playbackRate)
     },
     setBufferTime(bufferTime) {
       if (this.$refs.trackbar) this.$refs.trackbar.setBufferTime(bufferTime)
@@ -312,7 +312,7 @@ export default {
       this.useChapterTrack = this.chapters.length ? _useChapterTrack : false
 
       if (this.$refs.trackbar) this.$refs.trackbar.setUseChapterTrack(this.useChapterTrack)
-      this.$emit('setPlaybackRate', this.playbackRate)
+      this.setPlaybackRate(this.playbackRate)
     },
     settingsUpdated(settings) {
       if (settings.playbackRate && this.playbackRate !== settings.playbackRate) {

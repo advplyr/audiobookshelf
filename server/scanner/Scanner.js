@@ -68,7 +68,7 @@ class Scanner {
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {
     // TODO: Support for single media item
-    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, libraryItem.path, false)
     if (!libraryItemData) {
       return ScanResult.NOTHING
     }
@@ -173,7 +173,7 @@ class Scanner {
     // Scan each library
     for (let i = 0; i < libraryScan.folders.length; i++) {
       const folder = libraryScan.folders[i]
-      const itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder, this.db.serverSettings)
+      const itemDataFoundInFolder = await scanFolder(libraryScan.libraryMediaType, folder)
       libraryScan.addLog(LogLevel.INFO, `${itemDataFoundInFolder.length} item data found in folder "${folder.fullPath}"`)
       libraryItemDataFound = libraryItemDataFound.concat(itemDataFoundInFolder)
     }
@@ -200,11 +200,22 @@ class Scanner {
       // Find library item folder with matching inode or matching path
       const dataFound = libraryItemDataFound.find(lid => lid.ino === libraryItem.ino || comparePaths(lid.relPath, libraryItem.relPath))
       if (!dataFound) {
-        libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
-        Logger.warn(`[Scanner] Library item "${libraryItem.media.metadata.title}" is missing (inode "${libraryItem.ino}")`)
-        libraryScan.resultsMissing++
-        libraryItem.setMissing()
-        itemsToUpdate.push(libraryItem)
+        // Podcast folder can have no episodes and still be valid
+        if (libraryScan.libraryMediaType === 'podcast' && await fs.pathExists(libraryItem.path)) {
+          Logger.info(`[Scanner] Library item "${libraryItem.media.metadata.title}" folder exists but has no episodes`)
+          if (libraryItem.isMissing) {
+            libraryScan.resultsUpdated++
+            libraryItem.isMissing = false
+            libraryItem.setLastScan()
+            itemsToUpdate.push(libraryItem)
+          }
+        } else {
+          libraryScan.addLog(LogLevel.WARN, `Library Item "${libraryItem.media.metadata.title}" is missing`)
+          Logger.warn(`[Scanner] Library item "${libraryItem.media.metadata.title}" is missing (inode "${libraryItem.ino}")`)
+          libraryScan.resultsMissing++
+          libraryItem.setMissing()
+          itemsToUpdate.push(libraryItem)
+        }
       } else {
         const checkRes = libraryItem.checkScanData(dataFound)
         if (checkRes.newLibraryFiles.length || libraryScan.scanOptions.forceRescan) { // Item has new files
@@ -632,7 +643,7 @@ class Scanner {
   }
 
   async scanPotentialNewLibraryItem(libraryMediaType, folder, fullPath, isSingleMediaItem = false) {
-    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem, this.db.serverSettings)
+    const libraryItemData = await getLibraryItemFileData(libraryMediaType, folder, fullPath, isSingleMediaItem)
     if (!libraryItemData) return null
     return this.scanNewLibraryItem(libraryItemData, libraryMediaType)
   }

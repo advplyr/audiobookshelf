@@ -1,5 +1,6 @@
 class DeviceInfo {
   constructor(deviceInfo = null) {
+    this.deviceId = null
     this.ipAddress = null
 
     // From User Agent (see: https://www.npmjs.com/package/ua-parser-js)
@@ -32,6 +33,7 @@ class DeviceInfo {
 
   toJSON() {
     const obj = {
+      deviceId: this.deviceId,
       ipAddress: this.ipAddress,
       browserName: this.browserName,
       browserVersion: this.browserVersion,
@@ -60,23 +62,42 @@ class DeviceInfo {
     return `${this.osName} ${this.osVersion} / ${this.browserName}`
   }
 
+  // When client doesn't send a device id
+  getTempDeviceId() {
+    const keys = [
+      this.browserName,
+      this.browserVersion,
+      this.osName,
+      this.osVersion,
+      this.clientVersion,
+      this.manufacturer,
+      this.model,
+      this.sdkVersion,
+      this.ipAddress
+    ].map(k => k || '')
+    return 'temp-' + Buffer.from(keys.join('-'), 'utf-8').toString('base64')
+  }
+
   setData(ip, ua, clientDeviceInfo, serverVersion) {
+    this.deviceId = clientDeviceInfo?.deviceId || null
     this.ipAddress = ip || null
 
-    const uaObj = ua || {}
-    this.browserName = uaObj.browser.name || null
-    this.browserVersion = uaObj.browser.version || null
-    this.osName = uaObj.os.name || null
-    this.osVersion = uaObj.os.version || null
-    this.deviceType = uaObj.device.type || null
+    this.browserName = ua?.browser.name || null
+    this.browserVersion = ua?.browser.version || null
+    this.osName = ua?.os.name || null
+    this.osVersion = ua?.os.version || null
+    this.deviceType = ua?.device.type || null
 
-    const cdi = clientDeviceInfo || {}
-    this.clientVersion = cdi.clientVersion || null
-    this.manufacturer = cdi.manufacturer || null
-    this.model = cdi.model || null
-    this.sdkVersion = cdi.sdkVersion || null
+    this.clientVersion = clientDeviceInfo?.clientVersion || null
+    this.manufacturer = clientDeviceInfo?.manufacturer || null
+    this.model = clientDeviceInfo?.model || null
+    this.sdkVersion = clientDeviceInfo?.sdkVersion || null
 
     this.serverVersion = serverVersion || null
+
+    if (!this.deviceId) {
+      this.deviceId = this.getTempDeviceId()
+    }
   }
 }
 module.exports = DeviceInfo

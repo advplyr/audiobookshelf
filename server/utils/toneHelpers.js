@@ -73,6 +73,10 @@ module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath, tra
 }
 
 module.exports.tagAudioFile = (filePath, payload) => {
+  if (process.env.TONE_PATH) {
+    tone.TONE_PATH = process.env.TONE_PATH
+  }
+
   return tone.tag(filePath, payload).then((data) => {
     return true
   }).catch((error) => {

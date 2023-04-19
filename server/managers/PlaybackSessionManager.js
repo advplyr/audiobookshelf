@@ -14,7 +14,6 @@ const PlaybackSession = require('../objects/PlaybackSession')
 const DeviceInfo = require('../objects/DeviceInfo')
 const Stream = require('../objects/Stream')
 
-
 class PlaybackSessionManager {
   constructor(db) {
     this.db = db
@@ -31,13 +30,14 @@ class PlaybackSessionManager {
   }
   getStream(sessionId) {
     const session = this.getSession(sessionId)
-    return session ? session.stream : null
+    return session?.stream || null
   }
 
   getDeviceInfo(req) {
     const ua = uaParserJs(req.headers['user-agent'])
     const ip = requestIp.getClientIp(req)
-    const clientDeviceInfo = req.body ? req.body.deviceInfo || null : null // From mobile client
+
+    const clientDeviceInfo = req.body?.deviceInfo || null
 
     const deviceInfo = new DeviceInfo()
     deviceInfo.setData(ip, ua, clientDeviceInfo, serverVersion)
@@ -138,18 +138,6 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionRequest(user, sessionJson, res) {
-    // If server session is open for this same media item then close it
-    const userSessionForThisItem = this.sessions.find(playbackSession => {
-      if (playbackSession.userId !== user.id) return false
-      if (sessionJson.episodeId) return playbackSession.episodeId !== sessionJson.episodeId
-      return playbackSession.libraryItemId === sessionJson.libraryItemId
-    })
-    if (userSessionForThisItem) {
-      Logger.info(`[PlaybackSessionManager] syncLocalSessionRequest: Closing open session "${userSessionForThisItem.displayTitle}" for user "${user.username}"`)
-      await this.closeSession(user, userSessionForThisItem, null)
-    }
-
-    // Sync
     const result = await this.syncLocalSession(user, sessionJson)
     if (result.error) {
       res.status(500).send(result.error)
@@ -164,8 +152,8 @@ class PlaybackSessionManager {
   }
 
   async startSession(user, deviceInfo, libraryItem, episodeId, options) {
-    // Close any sessions already open for user
-    const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id)
+    // Close any sessions already open for user and device
+    const userSessions = this.sessions.filter(playbackSession => playbackSession.userId === user.id && playbackSession.deviceId === deviceInfo.deviceId)
     for (const session of userSessions) {
       Logger.info(`[PlaybackSessionManager] startSession: Closing open session "${session.displayTitle}" for user "${user.username}" (Device: ${session.deviceDescription})`)
       await this.closeSession(user, session, null)
@@ -268,6 +256,7 @@ class PlaybackSessionManager {
     }
     Logger.debug(`[PlaybackSessionManager] closeSession "${session.id}"`)
     SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, this.db.libraryItems))
+    SocketAuthority.clientEmitter(session.userId, 'user_session_closed', session.id)
     return this.removeSession(session.id)
   }
 

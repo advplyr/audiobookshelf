@@ -287,26 +287,37 @@ export default {
         })
     },
     batchDeleteClick() {
-      const audiobookText = this.numMediaItemsSelected > 1 ? `these ${this.numMediaItemsSelected} items` : 'this item'
-      const confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the items from Audiobookshelf`
-      if (confirm(confirmMsg)) {
-        this.$store.commit('setProcessingBatch', true)
-        this.$axios
-          .$post(`/api/items/batch/delete`, {
-            libraryItemIds: this.selectedMediaItems.map((i) => i.id)
-          })
-          .then(() => {
-            this.$toast.success('Batch delete success!')
-            this.$store.commit('setProcessingBatch', false)
-            this.$store.commit('globals/resetSelectedMediaItems', [])
-            this.$eventBus.$emit('bookshelf_clear_selection')
-          })
-          .catch((error) => {
-            this.$toast.error('Batch delete failed')
-            console.error('Failed to batch delete', error)
-            this.$store.commit('setProcessingBatch', false)
-          })
+      const payload = {
+        message: `This will delete ${this.numMediaItemsSelected} library items from the database and your file system. Are you sure?`,
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
+          if (confirmed) {
+            this.$store.commit('setProcessingBatch', true)
+
+            this.$axios
+              .$post(`/api/items/batch/delete?hard=${hardDelete ? 1 : 0}`, {
+                libraryItemIds: this.selectedMediaItems.map((i) => i.id)
+              })
+              .then(() => {
+                this.$toast.success('Batch delete success')
+                this.$store.commit('globals/resetSelectedMediaItems', [])
+                this.$eventBus.$emit('bookshelf_clear_selection')
+              })
+              .catch((error) => {
+                console.error('Batch delete failed', error)
+                this.$toast.error('Batch delete failed')
+              })
+              .finally(() => {
+                this.$store.commit('setProcessingBatch', false)
+              })
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     batchEditClick() {
       this.$router.push('/batch')

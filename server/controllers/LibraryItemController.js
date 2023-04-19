@@ -2,6 +2,7 @@ const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
 
+const zipHelpers = require('../utils/zipHelpers')
 const { reqSupportsWebp, isNullOrNaN } = require('../utils/index')
 const { ScanResult } = require('../utils/constants')
 
@@ -65,8 +66,27 @@ class LibraryItemController {
   }
 
   async delete(req, res) {
+    const hardDelete = req.query.hard == 1 // Delete from file system
+    const libraryItemPath = req.libraryItem.path
     await this.handleDeleteLibraryItem(req.libraryItem)
+    if (hardDelete) {
+      Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
+      await fs.remove(libraryItemPath).catch((error) => {
+        Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
+      })
+    }
     res.sendStatus(200)
+  }
+
+  download(req, res) {
+    if (!req.user.canDownload) {
+      Logger.warn('User attempted to download without permission', req.user)
+      return res.sendStatus(403)
+    }
+
+    const libraryItemPath = req.libraryItem.path
+    const filename = `${req.libraryItem.media.metadata.title}.zip`
+    zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
   //
@@ -162,12 +182,12 @@ class LibraryItemController {
 
   // PATCH: api/items/:id/cover
   async updateCover(req, res) {
-    var libraryItem = req.libraryItem
+    const libraryItem = req.libraryItem
     if (!req.body.cover) {
-      return res.status(400).error('Invalid request no cover path')
+      return res.status(400).send('Invalid request no cover path')
     }
 
-    var validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
+    const validationResult = await this.coverManager.validateCoverPath(req.body.cover, libraryItem)
     if (validationResult.error) {
       return res.status(500).send(validationResult.error)
     }
@@ -280,19 +300,27 @@ class LibraryItemController {
       Logger.warn(`[LibraryItemController] User attempted to delete without permission`, req.user)
       return res.sendStatus(403)
     }
+    const hardDelete = req.query.hard == 1 // Delete files from filesystem
 
-    var { libraryItemIds } = req.body
+    const { libraryItemIds } = req.body
     if (!libraryItemIds || !libraryItemIds.length) {
       return res.sendStatus(500)
     }
 
-    var itemsToDelete = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id))
+    const itemsToDelete = this.db.libraryItems.filter(li => libraryItemIds.includes(li.id))
     if (!itemsToDelete.length) {
       return res.sendStatus(404)
     }
     for (let i = 0; i < itemsToDelete.length; i++) {
+      const libraryItemPath = itemsToDelete[i].path
       Logger.info(`[LibraryItemController] Deleting Library Item "${itemsToDelete[i].media.metadata.title}"`)
       await this.handleDeleteLibraryItem(itemsToDelete[i])
+      if (hardDelete) {
+        Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
+        await fs.remove(libraryItemPath).catch((error) => {
+          Logger.error(`[LibraryItemController] Failed to delete library item from file system at "${libraryItemPath}"`, error)
+        })
+      }
     }
     res.sendStatus(200)
   }
@@ -436,12 +464,12 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    const chapters = req.body.chapters || []
-    if (!chapters.length) {
+    if (!req.body.chapters) {
       Logger.error(`[LibraryItemController] Invalid payload`)
       return res.sendStatus(400)
     }
 
+    const chapters = req.body.chapters || []
     const wasUpdated = req.libraryItem.media.updateChapters(chapters)
     if (wasUpdated) {
       await this.db.updateLibraryItem(req.libraryItem)
@@ -468,6 +496,30 @@ class LibraryItemController {
 
     const toneData = await this.scanner.probeAudioFileWithTone(audioFile)
     res.json(toneData)
+  }
+
+  async deleteLibraryFile(req, res) {
+    const libraryFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.ino)
+    if (!libraryFile) {
+      Logger.error(`[LibraryItemController] Unable to delete library file. Not found. "${req.params.ino}"`)
+      return res.sendStatus(404)
+    }
+
+    await fs.remove(libraryFile.metadata.path).catch((error) => {
+      Logger.error(`[LibraryItemController] Failed to delete library file at "${libraryFile.metadata.path}"`, error)
+    })
+    req.libraryItem.removeLibraryFile(req.params.ino)
+
+    if (req.libraryItem.media.removeFileWithInode(req.params.ino)) {
+      // If book has no more media files then mark it as missing
+      if (req.libraryItem.mediaType === 'book' && !req.libraryItem.media.hasMediaEntities) {
+        req.libraryItem.setMissing()
+      }
+    }
+    req.libraryItem.updatedAt = Date.now()
+    await this.db.updateLibraryItem(req.libraryItem)
+    SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    res.sendStatus(200)
   }
 
   middleware(req, res, next) {

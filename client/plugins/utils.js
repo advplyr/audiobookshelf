@@ -1,5 +1,8 @@
 import Vue from 'vue'
 import cronParser from 'cron-parser'
+import { nanoid } from 'nanoid'
+
+Vue.prototype.$randomId = () => nanoid()
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {

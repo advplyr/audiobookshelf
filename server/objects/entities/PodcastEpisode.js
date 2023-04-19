@@ -1,6 +1,6 @@
 const Path = require('path')
 const Logger = require('../../Logger')
-const { getId, cleanStringForSearch } = require('../../utils/index')
+const { getId, cleanStringForSearch, areEquivalent, copyValue } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 
@@ -18,6 +18,7 @@ class PodcastEpisode {
     this.description = null
     this.enclosure = null
     this.pubDate = null
+    this.chapters = []
 
     this.audioFile = null
     this.publishedAt = null
@@ -41,6 +42,7 @@ class PodcastEpisode {
     this.description = episode.description
     this.enclosure = episode.enclosure ? { ...episode.enclosure } : null
     this.pubDate = episode.pubDate
+    this.chapters = episode.chapters?.map(ch => ({ ...ch })) || []
     this.audioFile = new AudioFile(episode.audioFile)
     this.publishedAt = episode.publishedAt
     this.addedAt = episode.addedAt
@@ -62,6 +64,7 @@ class PodcastEpisode {
       description: this.description,
       enclosure: this.enclosure ? { ...this.enclosure } : null,
       pubDate: this.pubDate,
+      chapters: this.chapters.map(ch => ({ ...ch })),
       audioFile: this.audioFile.toJSON(),
       publishedAt: this.publishedAt,
       addedAt: this.addedAt,
@@ -82,6 +85,7 @@ class PodcastEpisode {
       description: this.description,
       enclosure: this.enclosure ? { ...this.enclosure } : null,
       pubDate: this.pubDate,
+      chapters: this.chapters.map(ch => ({ ...ch })),
       audioFile: this.audioFile.toJSON(),
       audioTrack: this.audioTrack.toJSON(),
       publishedAt: this.publishedAt,
@@ -136,6 +140,7 @@ class PodcastEpisode {
 
     this.setDataFromAudioMetaTags(audioFile.metaTags, true)
 
+    this.chapters = audioFile.chapters?.map((c) => ({ ...c }))
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
   }
@@ -143,8 +148,8 @@ class PodcastEpisode {
   update(payload) {
     let hasUpdates = false
     for (const key in this.toJSON()) {
-      if (payload[key] != undefined && payload[key] != this[key]) {
-        this[key] = payload[key]
+      if (payload[key] != undefined && !areEquivalent(payload[key], this[key])) {
+        this[key] = copyValue(payload[key])
         hasUpdates = true
       }
     }

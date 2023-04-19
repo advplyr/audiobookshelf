@@ -81,7 +81,7 @@ export default {
       sleepTimerRemaining: 0,
       sleepTimer: null,
       displayTitle: null,
-      initialPlaybackRate: 1,
+      currentPlaybackRate: 1,
       syncFailedToast: null
     }
   },
@@ -120,17 +120,22 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
+    streamEpisode() {
+      if (!this.$store.state.streamEpisodeId) return null
+      const episodes = this.streamLibraryItem.media.episodes || []
+      return episodes.find((ep) => ep.id === this.$store.state.streamEpisodeId)
+    },
     libraryItemId() {
-      return this.streamLibraryItem ? this.streamLibraryItem.id : null
+      return this.streamLibraryItem?.id || null
     },
     media() {
-      return this.streamLibraryItem ? this.streamLibraryItem.media || {} : {}
+      return this.streamLibraryItem?.media || {}
     },
     isPodcast() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
+      return this.streamLibraryItem?.mediaType === 'podcast'
     },
     isMusic() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'music' : false
+      return this.streamLibraryItem?.mediaType === 'music'
     },
     isExplicit() {
       return this.mediaMetadata.explicit || false
@@ -139,6 +144,7 @@ export default {
       return this.media.metadata || {}
     },
     chapters() {
+      if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
     },
     title() {
@@ -152,7 +158,8 @@ export default {
       return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
     },
     totalDurationPretty() {
-      return this.$secondsToTimestamp(this.totalDuration)
+      // Adjusted by playback rate
+      return this.$secondsToTimestamp(this.totalDuration / this.currentPlaybackRate)
     },
     podcastAuthor() {
       if (!this.isPodcast) return null
@@ -255,7 +262,7 @@ export default {
       this.playerHandler.setVolume(volume)
     },
     setPlaybackRate(playbackRate) {
-      this.initialPlaybackRate = playbackRate
+      this.currentPlaybackRate = playbackRate
       this.playerHandler.setPlaybackRate(playbackRate)
     },
     seek(time) {
@@ -384,7 +391,7 @@ export default {
         libraryItem: session.libraryItem,
         episodeId: session.episodeId
       })
-      this.playerHandler.prepareOpenSession(session, this.initialPlaybackRate)
+      this.playerHandler.prepareOpenSession(session, this.currentPlaybackRate)
     },
     streamOpen(session) {
       console.log(`[StreamContainer] Stream session open`, session)
@@ -451,7 +458,7 @@ export default {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })
 
-      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate, payload.startTime)
+      this.playerHandler.load(libraryItem, episodeId, true, this.currentPlaybackRate, payload.startTime)
     },
     pauseItem() {
       this.playerHandler.pause()
@@ -459,6 +466,13 @@ export default {
     showFailedProgressSyncs() {
       if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
       this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
+    },
+    sessionClosedEvent(sessionId) {
+      if (this.playerHandler.currentSessionId === sessionId) {
+        console.log('sessionClosedEvent closing current session', sessionId)
+        this.playerHandler.resetPlayer() // Closes player without reporting to server
+        this.$store.commit('setMediaPlaying', null)
+      }
     }
   },
   mounted() {

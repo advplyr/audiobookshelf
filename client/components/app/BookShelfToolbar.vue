@@ -164,6 +164,14 @@ export default {
           value: 'addedAt'
         },
         {
+          text: this.$strings.LabelLastBookAdded,
+          value: 'lastBookAdded'
+        },
+        {
+          text: this.$strings.LabelLastBookUpdated,
+          value: 'lastBookUpdated'
+        },
+        {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
         }
@@ -180,6 +188,9 @@ export default {
     },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     },
     currentLibraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
@@ -315,7 +326,11 @@ export default {
         const payload = {}
         if (author.asin) payload.asin = author.asin
         else payload.q = author.name
-        console.log('Payload', payload, 'author', author)
+
+        payload.region = 'us'
+        if (this.libraryProvider.startsWith('audible.')) {
+          payload.region = this.libraryProvider.split('.').pop() || 'us'
+        }
 
         this.$eventBus.$emit(`searching-author-${author.id}`, true)
 

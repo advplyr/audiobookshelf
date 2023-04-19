@@ -53,15 +53,15 @@ class PodcastManager {
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    var index = libraryItem.media.episodes.length + 1
-    episodesToDownload.forEach((ep) => {
-      var newPe = new PodcastEpisode()
+    let index = libraryItem.media.episodes.length + 1
+    for (const ep of episodesToDownload) {
+      const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
-      var newPeDl = new PodcastEpisodeDownload()
+      const newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
-    })
+    }
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
@@ -93,7 +93,6 @@ class PodcastManager {
       await fs.mkdir(this.currentDownload.libraryItem.path)
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
-
 
     let success = false
     if (this.currentDownload.urlFileExtension === 'mp3') {
@@ -156,6 +155,11 @@ class PodcastManager {
 
     const podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
+
+    if (audioFile.chapters?.length) {
+      podcastEpisode.chapters = audioFile.chapters.map(ch => ({ ...ch }))
+    }
+
     libraryItem.media.addPodcastEpisode(podcastEpisode)
     if (libraryItem.isInvalid) {
       // First episode added to an empty podcast
@@ -214,13 +218,13 @@ class PodcastManager {
   }
 
   async probeAudioFile(libraryFile) {
-    var path = libraryFile.metadata.path
-    var mediaProbeData = await prober.probe(path)
+    const path = libraryFile.metadata.path
+    const mediaProbeData = await prober.probe(path)
     if (mediaProbeData.error) {
       Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return false
     }
-    var newAudioFile = new AudioFile()
+    const newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
     return newAudioFile
   }

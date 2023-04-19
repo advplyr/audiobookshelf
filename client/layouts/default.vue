@@ -299,8 +299,17 @@ export default {
     userStreamUpdate(user) {
       this.$store.commit('users/updateUserOnline', user)
     },
+    userSessionClosed(sessionId) {
+      if (this.$refs.streamContainer) this.$refs.streamContainer.sessionClosedEvent(sessionId)
+    },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
+
+      if (payload.data) {
+        if (this.$store.getters['getIsMediaStreaming'](payload.data.libraryItemId, payload.data.episodeId)) {
+          // TODO: Update currently open session if being played from another device
+        }
+      }
     },
     collectionAdded(collection) {
       if (this.currentLibraryId !== collection.libraryId) return
@@ -405,6 +414,7 @@ export default {
       this.socket.on('user_online', this.userOnline)
       this.socket.on('user_offline', this.userOffline)
       this.socket.on('user_stream_update', this.userStreamUpdate)
+      this.socket.on('user_session_closed', this.userSessionClosed)
       this.socket.on('user_item_progress_updated', this.userMediaProgressUpdate)
 
       // Collection Listeners

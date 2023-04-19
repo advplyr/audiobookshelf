@@ -54,7 +54,7 @@ export default {
       quickMatchingEpisodes: false,
       search: null,
       searchTimeout: null,
-      searchText: null,
+      searchText: null
     }
   },
   watch: {
@@ -139,19 +139,25 @@ export default {
           return episodeProgress && !episodeProgress.isFinished
         })
         .sort((a, b) => {
-          if (this.sortDesc) {
-            return String(b[this.sortKey]).localeCompare(String(a[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+          let aValue = a[this.sortKey]
+          let bValue = b[this.sortKey]
+
+          // Sort episodes with no pub date as the oldest
+          if (this.sortKey === 'publishedAt') {
+            if (!aValue) aValue = Number.MAX_VALUE
+            if (!bValue) bValue = Number.MAX_VALUE
           }
-          return String(a[this.sortKey]).localeCompare(String(b[this.sortKey]), undefined, { numeric: true, sensitivity: 'base' })
+
+          if (this.sortDesc) {
+            return String(bValue).localeCompare(String(aValue), undefined, { numeric: true, sensitivity: 'base' })
+          }
+          return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: 'base' })
         })
     },
     episodesList() {
       return this.episodesSorted.filter((episode) => {
         if (!this.searchText) return true
-        return (
-            (episode.title && episode.title.toLowerCase().includes(this.searchText)) ||
-            (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
-        )
+        return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
       })
     },
     selectedIsFinished() {
