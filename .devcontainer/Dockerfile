@@ -12,4 +12,4 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 # Move tone executable to appropriate directory
-COPY --from=sandreas/tone:v0.1.2 /usr/local/bin/tone /usr/local/bin/
+COPY --from=sandreas/tone:v0.1.5 /usr/local/bin/tone /usr/local/bin/
