@@ -14,9 +14,6 @@ class AudiobookCovers {
       Logger.error('[AudiobookCovers] Cover search error', error)
       return []
     })
-    // console.log(items)
-    // return items as an array of objects, each object contains:
-    // cover: item.filename
     return items.map(item => { return { cover: item.filename } })
   }
 }
