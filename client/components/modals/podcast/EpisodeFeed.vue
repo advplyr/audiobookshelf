@@ -6,7 +6,7 @@
       </div>
     </template>
     <div ref="wrapper" id="podcast-wrapper" class="p-4 w-full text-sm py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-hidden">
-      <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
+      <div v-if="episodesCleaned.length" class="w-full py-3 mx-auto flex">
         <form @submit.prevent="submit" class="flex flex-grow">
           <ui-text-input v-model="search" @input="inputUpdate" type="search" :placeholder="$strings.PlaceholderSearchEpisode" class="flex-grow mr-2 text-sm md:text-base" />
         </form>
@@ -16,12 +16,12 @@
           v-for="(episode, index) in episodesList"
           :key="index"
           class="relative"
-          :class="itemEpisodeMap[episode.enclosure.url?.split('?')[0]] ? 'bg-primary bg-opacity-40' : selectedEpisodes[String(index)] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
-          @click="toggleSelectEpisode(index, episode)"
+          :class="itemEpisodeMap[episode.cleanUrl] ? 'bg-primary bg-opacity-40' : selectedEpisodes[episode.cleanUrl] ? 'cursor-pointer bg-success bg-opacity-10' : index % 2 == 0 ? 'cursor-pointer bg-primary bg-opacity-25 hover:bg-opacity-40' : 'cursor-pointer bg-primary bg-opacity-5 hover:bg-opacity-25'"
+          @click="toggleSelectEpisode(episode)"
         >
           <div class="absolute top-0 left-0 h-full flex items-center p-2">
-            <span v-if="itemEpisodeMap[episode.enclosure.url?.split('?')[0]]" class="material-icons text-success text-xl">download_done</span>
-            <ui-checkbox v-else v-model="selectedEpisodes[String(index)]" small checkbox-bg="primary" border-color="gray-600" />
+            <span v-if="itemEpisodeMap[episode.cleanUrl]" class="material-icons text-success text-xl">download_done</span>
+            <ui-checkbox v-else v-model="selectedEpisodes[episode.cleanUrl]" small checkbox-bg="primary" border-color="gray-600" />
           </div>
           <div class="px-8 py-2">
             <div class="flex items-center font-semibold text-gray-200">
@@ -63,6 +63,7 @@ export default {
   data() {
     return {
       processing: false,
+      episodesCleaned: [],
       selectedEpisodes: {},
       selectAll: false,
       search: null,
@@ -92,7 +93,7 @@ export default {
       return this.libraryItem.media.metadata.title || 'Unknown'
     },
     allDownloaded() {
-      return !this.episodes.some((episode) => !this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]])
+      return !this.episodesCleaned.some((episode) => !this.itemEpisodeMap[episode.cleanUrl])
     },
     episodesSelected() {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
@@ -113,7 +114,7 @@ export default {
       return map
     },
     episodesList() {
-      return this.episodes.filter((episode) => {
+      return this.episodesCleaned.filter((episode) => {
         if (!this.searchText) return true
         return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
       })
@@ -131,31 +132,29 @@ export default {
       }, 500)
     },
     toggleSelectAll(val) {
-      for (let i = 0; i < this.episodes.length; i++) {
-        const episode = this.episodes[i]
-        if (this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]]) this.selectedEpisodes[String(i)] = false
-        else this.$set(this.selectedEpisodes, String(i), val)
+      for (const episode of this.episodesCleaned) {
+        if (this.itemEpisodeMap[episode.cleanUrl]) this.selectedEpisodes[episode.cleanUrl] = false
+        else this.$set(this.selectedEpisodes, episode.cleanUrl, val)
       }
     },
     checkSetIsSelectedAll() {
-      for (let i = 0; i < this.episodes.length; i++) {
-        const episode = this.episodes[i]
-        if (!this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]] && !this.selectedEpisodes[String(i)]) {
+      for (const episode of this.episodesCleaned) {
+        if (!this.itemEpisodeMap[episode.cleanUrl] && !this.selectedEpisodes[episode.cleanUrl]) {
           this.selectAll = false
           return
         }
       }
       this.selectAll = true
     },
-    toggleSelectEpisode(index, episode) {
+    toggleSelectEpisode(episode) {
       if (this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]]) return
-      this.$set(this.selectedEpisodes, String(index), !this.selectedEpisodes[String(index)])
+      this.$set(this.selectedEpisodes, episode.cleanUrl, !this.selectedEpisodes[episode.cleanUrl])
       this.checkSetIsSelectedAll()
     },
     submit() {
       var episodesToDownload = []
       if (this.episodesSelected.length) {
-        episodesToDownload = this.episodesSelected.map((episodeIndex) => this.episodes[Number(episodeIndex)])
+        episodesToDownload = this.episodesSelected.map((cleanUrl) => this.episodesCleaned.find((ep) => ep.cleanUrl == cleanUrl))
       }
 
       var payloadSize = JSON.stringify(episodesToDownload).length
@@ -185,7 +184,15 @@ export default {
         })
     },
     init() {
-      this.episodes.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
+      this.episodesCleaned = this.episodes
+        .filter((ep) => ep.enclosure?.url)
+        .map((_ep) => {
+          return {
+            ..._ep,
+            cleanUrl: _ep.enclosure.url.split('?')[0]
+          }
+        })
+      this.episodesCleaned.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))
       this.selectAll = false
       this.selectedEpisodes = {}
     }
