@@ -49,13 +49,13 @@
     </div>
     <form @submit.prevent="submitSearchForm">
       <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-40 px-1">
+        <div class="w-45 px-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 px-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
-        <div v-show="provider != 'itunes'" class="w-72 px-1">
+        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
         <ui-btn class="mt-5 ml-1" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
@@ -128,7 +128,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return [...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN

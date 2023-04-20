@@ -63,6 +63,12 @@ export const state = () => ({
       text: 'iTunes',
       value: 'itunes'
     }
+  ],
+  coverOnlyProviders: [
+    {
+      text: 'AudiobookCovers.com',
+      value: 'audiobookcovers'
+    }
   ]
 })
 
