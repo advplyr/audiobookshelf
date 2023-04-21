@@ -25,6 +25,11 @@ module.exports = function areEquivalent(value1, value2, stack = []) {
     return true;
   }
 
+  // Truthy check to handle value1=null, value2=Object
+  if ((value1 && !value2) || (!value1 && value2)) {
+    return false
+  }
+
   const type1 = typeof value1;
 
   // Ensure types match

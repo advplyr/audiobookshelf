@@ -31,9 +31,10 @@
       <!-- mobile -->
       <ui-btn @click="saveAndClose" class="mx-2 md:hidden">{{ $strings.ButtonSave }}</ui-btn>
     </div>
-    <div v-if="enclosureUrl" class="py-4">
-      <p class="text-xs text-gray-300 font-semibold">Episode URL from RSS feed</p>
-      <a :href="enclosureUrl" target="_blank" class="text-xs text-blue-400 hover:text-blue-500 hover:underline">{{ enclosureUrl }}</a>
+    <div v-if="enclosureUrl" class="pb-4 pt-6">
+      <ui-text-input-with-label :value="enclosureUrl" readonly class="text-xs">
+        <label class="px-1 text-xs text-gray-200 font-semibold">Episode URL from RSS feed</label>
+      </ui-text-input-with-label>
     </div>
     <div v-else class="py-4">
       <p class="text-xs text-gray-300 font-semibold">Episode not linked to RSS feed episode</p>
