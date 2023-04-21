@@ -49,7 +49,7 @@
     </div>
     <form @submit.prevent="submitSearchForm">
       <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-45 px-1">
+        <div class="w-48 px-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 px-1">

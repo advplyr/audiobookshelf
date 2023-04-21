@@ -163,12 +163,8 @@ class BookFinder {
 
   async getAudiobookCoversResults(search) {
     const covers = await this.audiobookCovers.search(search)
-    if (this.verbose) Logger.debug(`AudiobookCovers Book Search Results: ${books.length || 0}`)
-    if (covers.errorCode) {
-      Logger.error(`AusiobookCovers Search Error ${books.errorCode}`)
-      return []
-    }
-    return covers
+    if (this.verbose) Logger.debug(`AudiobookCovers Search Results: ${covers.length || 0}`)
+    return covers || []
   }
 
   async getiTunesAudiobooksResults(title, author) {
@@ -206,8 +202,6 @@ class BookFinder {
       books = await this.getGoogleBooksResults(title, author)
     }
 
-    console.log(books)
-
     if (!books.length && !options.currentlyTryingCleaned) {
       var cleanedTitle = this.cleanTitleForCompares(title)
       var cleanedAuthor = this.cleanAuthorForCompares(author)
@@ -218,11 +212,13 @@ class BookFinder {
       return this.search(provider, cleanedTitle, cleanedAuthor, isbn, asin, options)
     }
 
-    if (["google", "audible", "itunes", 'fantlab'].includes(provider)) return books
+    if (provider === 'openlibrary') {
+      books.sort((a, b) => {
+        return a.totalDistance - b.totalDistance
+      })
+    }
 
-    return books.sort((a, b) => {
-      return a.totalDistance - b.totalDistance
-    })
+    return books
   }
 
   async findCovers(provider, title, author, options = {}) {
