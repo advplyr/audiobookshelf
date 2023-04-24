@@ -322,6 +322,7 @@ class Book {
       tags: this.tags.filter(t => cleanStringForSearch(t).includes(query)),
       series: this.metadata.searchSeries(query),
       authors: this.metadata.searchAuthors(query),
+      narrators: this.metadata.searchNarrators(query),
       matchKey: null,
       matchText: null
     }
@@ -336,10 +337,12 @@ class Book {
       } else if (payload.series.length) {
         payload.matchKey = 'series'
         payload.matchText = this.metadata.seriesName
-      }
-      else if (payload.tags.length) {
+      } else if (payload.tags.length) {
         payload.matchKey = 'tags'
         payload.matchText = this.tags.join(', ')
+      } else if (payload.narrators.length) {
+        payload.matchKey = 'narrators'
+        payload.matchText = this.metadata.narratorName
       }
     }
     return payload

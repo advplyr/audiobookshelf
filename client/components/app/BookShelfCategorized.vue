@@ -28,6 +28,9 @@
         <widgets-authors-slider v-else-if="shelf.type === 'authors'" :key="index + '.'" :items="shelf.entities" :height="192 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-authors-slider>
+        <widgets-narrators-slider v-else-if="shelf.type === 'narrators'" :key="index + '.'" :items="shelf.entities" :height="100 * sizeMultiplier" class="bookshelf-row pl-8 my-6">
+          <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
+        </widgets-narrators-slider>
       </template>
     </div>
     <!-- Regular bookshelf view -->
@@ -185,8 +188,8 @@ export default {
       this.shelves = categories
     },
     async setShelvesFromSearch() {
-      var shelves = []
-      if (this.results.books && this.results.books.length) {
+      const shelves = []
+      if (this.results.books?.length) {
         shelves.push({
           id: 'books',
           label: 'Books',
@@ -196,7 +199,7 @@ export default {
         })
       }
 
-      if (this.results.podcasts && this.results.podcasts.length) {
+      if (this.results.podcasts?.length) {
         shelves.push({
           id: 'podcasts',
           label: 'Podcasts',
@@ -206,7 +209,7 @@ export default {
         })
       }
 
-      if (this.results.series && this.results.series.length) {
+      if (this.results.series?.length) {
         shelves.push({
           id: 'series',
           label: 'Series',
@@ -221,7 +224,7 @@ export default {
           })
         })
       }
-      if (this.results.tags && this.results.tags.length) {
+      if (this.results.tags?.length) {
         shelves.push({
           id: 'tags',
           label: 'Tags',
@@ -236,7 +239,7 @@ export default {
           })
         })
       }
-      if (this.results.authors && this.results.authors.length) {
+      if (this.results.authors?.length) {
         shelves.push({
           id: 'authors',
           label: 'Authors',
@@ -246,6 +249,20 @@ export default {
             return {
               ...a,
               type: 'author'
+            }
+          })
+        })
+      }
+      if (this.results.narrators?.length) {
+        shelves.push({
+          id: 'narrators',
+          label: 'Narrators',
+          labelStringKey: 'LabelNarrators',
+          type: 'narrators',
+          entities: this.results.narrators.map((n) => {
+            return {
+              ...n,
+              type: 'narrator'
             }
           })
         })

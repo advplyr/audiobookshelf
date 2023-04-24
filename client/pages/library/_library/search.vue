@@ -11,27 +11,27 @@
 <script>
 export default {
   async asyncData({ store, params, redirect, query, app }) {
-    var libraryId = params.library
-    var library = await store.dispatch('libraries/fetch', libraryId)
+    const libraryId = params.library
+    const library = await store.dispatch('libraries/fetch', libraryId)
     if (!library) {
       return redirect('/oops?message=Library not found')
     }
-    var query = query.q
-    var results = await app.$axios.$get(`/api/libraries/${libraryId}/search?q=${query}`).catch((error) => {
+    let results = await app.$axios.$get(`/api/libraries/${libraryId}/search?q=${query.q}`).catch((error) => {
       console.error('Failed to search library', error)
       return null
     })
     results = {
-      podcasts: results && results.podcast ? results.podcast : null,
-      books: results && results.book ? results.book : null,
-      authors: results && results.authors.length ? results.authors : null,
-      series: results && results.series.length ? results.series : null,
-      tags: results && results.tags.length ? results.tags : null
+      podcasts: results?.podcast || [],
+      books: results?.book || [],
+      authors: results?.authors || [],
+      series: results?.series || [],
+      tags: results?.tags || [],
+      narrators: results?.narrators || []
     }
     return {
       libraryId,
       results,
-      query
+      query: query.q
     }
   },
   data() {
@@ -55,16 +55,17 @@ export default {
   },
   methods: {
     async search() {
-      var results = await this.$axios.$get(`/api/libraries/${this.libraryId}/search?q=${this.query}`).catch((error) => {
+      const results = await this.$axios.$get(`/api/libraries/${this.libraryId}/search?q=${this.query}`).catch((error) => {
         console.error('Failed to search library', error)
         return null
       })
       this.results = {
-        podcasts: results && results.podcast ? results.podcast : null,
-        books: results && results.book ? results.book : null,
-        authors: results && results.authors.length ? results.authors : null,
-        series: results && results.series.length ? results.series : null,
-        tags: results && results.tags.length ? results.tags : null
+        podcasts: results?.podcast || [],
+        books: results?.book || [],
+        authors: results?.authors || [],
+        series: results?.series || [],
+        tags: results?.tags || [],
+        narrators: results?.narrators || []
       }
       this.$nextTick(() => {
         if (this.$refs.bookshelf) {

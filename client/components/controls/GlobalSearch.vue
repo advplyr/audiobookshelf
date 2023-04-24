@@ -63,6 +63,15 @@
               </nuxt-link>
             </li>
           </template>
+
+          <p v-if="narratorResults.length" class="uppercase text-xs text-gray-400 mb-1 mt-3 px-1 font-semibold">{{ $strings.LabelNarrators }}</p>
+          <template v-for="narrator in narratorResults">
+            <li :key="narrator.name" class="text-gray-50 select-none relative cursor-pointer hover:bg-black-400 py-1" role="option" @click="clickOption">
+              <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${$encode(narrator.name)}`">
+                <cards-narrator-search-card :narrator="narrator.name" />
+              </nuxt-link>
+            </li>
+          </template>
         </template>
       </ul>
     </div>
@@ -84,6 +93,7 @@ export default {
       authorResults: [],
       seriesResults: [],
       tagResults: [],
+      narratorResults: [],
       searchTimeout: null,
       lastSearch: null
     }
@@ -114,6 +124,7 @@ export default {
       this.authorResults = []
       this.seriesResults = []
       this.tagResults = []
+      this.narratorResults = []
       this.showMenu = false
       this.isFetching = false
       this.isTyping = false
@@ -142,7 +153,7 @@ export default {
       }
       this.isFetching = true
 
-      var searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}&limit=3`).catch((error) => {
+      const searchResults = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/search?q=${value}&limit=3`).catch((error) => {
         console.error('Search error', error)
         return []
       })
@@ -155,6 +166,7 @@ export default {
       this.authorResults = searchResults.authors || []
       this.seriesResults = searchResults.series || []
       this.tagResults = searchResults.tags || []
+      this.narratorResults = searchResults.narrators || []
 
       this.isFetching = false
       if (!this.showMenu) {
