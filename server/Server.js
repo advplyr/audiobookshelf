@@ -150,7 +150,7 @@ class Server {
 
     router.use(this.auth.cors)
     router.use(fileUpload())
-    router.use(express.urlencoded({ extended: true, limit: "5mb" }));
+    router.use(express.urlencoded({ extended: true, limit: "5mb" }))
     router.use(express.json({ limit: "5mb" }))
 
     // Static path to generated nuxt
@@ -328,7 +328,7 @@ class Server {
   }
 
   // Apply the current RouterBasePath to all `<base>` tags in the client html files
-  async applyClientBasePath () {
+  async applyClientBasePath() {
     const basePath = `/${global.RouterBasePath}/`
       .replace('///', '') // convert base path `"/""` to `""`
       .replace('//', '/') // Ensure there are single `/` at the front and end
@@ -341,7 +341,7 @@ class Server {
     const currentBasePath = indexHtml.match(/routerBasePath:"([^"]*)"/)[1]
     if (currentBasePath === basePath) {
       Logger.info(`[Server] Client base path already set to ${basePath}`)
-      return;
+      return
     }
 
     // Matches e.g `href="/_nuxt/..."` or `src='/...'` or `"url":"http://localhost:3333/...`
@@ -380,7 +380,7 @@ class Server {
       await fs.writeFile(jsPath, js)
     }
 
-    Logger.info(`[Server] Client base path set to "${basePath}"`);
+    Logger.info(`[Server] Client base path set to "${basePath}"`)
   }
 
   // First time login rate limit is hit

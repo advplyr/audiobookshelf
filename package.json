@@ -32,7 +32,7 @@
   "dependencies": {
     "axios": "^0.27.2",
     "express": "^4.17.1",
-    "glob": "^10.2.1",
+    "glob": "^10.2.2",
     "graceful-fs": "^4.2.10",
     "htmlparser2": "^8.0.1",
     "node-tone": "^1.0.1",
