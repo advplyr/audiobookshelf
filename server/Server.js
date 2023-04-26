@@ -344,8 +344,11 @@ class Server {
       return
     }
 
+    const urlKeys = ["href", "src", "url", "scope", "workerUrl"].join("|");
+    const alternateBaseUris = ["http://localhost:3333"].join("|");
     // Matches e.g `href="/_nuxt/..."` or `src='/...'` or `"url":"http://localhost:3333/...`
-    const replaceUrls = new RegExp(`((?:href|src|url|scope)"?(?:=|:)\\s*["'](?:http://localhost:3333)?)${currentBasePath || "/"}([^"']*["'])`, "g")
+    // $1 = key + assignment operator + opening quote + alternate base, $2 = path + closing quotes
+    const replaceUrls = new RegExp(`((?:${urlKeys})["']?[:=]\\s*["'](?:${alternateBaseUris})?)${currentBasePath || "/"}([^"']*["'])`, "g")
     const replaceNuxtConfig = new RegExp(`<script>window.__NUXT__=.*?</script>`, "g")
     const replaceAssetPaths = new RegExp(`${currentBasePath}/(_nuxt/[^"]*|sw.js)`, "g")
 
