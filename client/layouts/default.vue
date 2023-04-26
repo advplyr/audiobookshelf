@@ -569,6 +569,7 @@ export default {
     changeLanguage(code) {
       console.log('Changed lang', code)
       this.currentLang = code
+      document.documentElement.lang = code
     }
   },
   beforeMount() {
@@ -592,6 +593,11 @@ export default {
     if (this.$route.query.error) {
       this.$toast.error(this.$route.query.error)
       this.$router.replace(this.$route.path)
+    }
+
+    // Set lang on HTML tag
+    if (this.$languageCodes?.current) {
+      document.documentElement.lang = this.$languageCodes.current
     }
   },
   beforeDestroy() {
