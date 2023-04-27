@@ -169,11 +169,10 @@ class User {
     if (this.permissions.accessAllTags === undefined) this.permissions.accessAllTags = true
     // Explicit content restriction permission added v2.0.18
     if (this.permissions.accessExplicitContent === undefined) this.permissions.accessExplicitContent = true
-    // itemTagsAccessible was renamed to itemTagsSelected in version v2.x
-    if (this.itemTagsAccessible) {
+    // itemTagsAccessible was renamed to itemTagsSelected in version v2.2.20
+    if (user.itemTagsAccessible?.length) {
       this.permissions.selectedTagsNotAccessible = false
-      this.itemTagsSelected = this.itemTagsAccessible
-      this.itemTagsAccessible = undefined
+      user.itemTagsSelected = user.itemTagsAccessible
     }
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
@@ -352,10 +351,10 @@ class User {
   checkCanAccessLibraryItemWithTags(tags) {
     if (this.permissions.accessAllTags) return true
     if (this.permissions.selectedTagsNotAccessible) {
-      if (!tags || !tags.length) return true
+      if (!tags?.length) return true
       return tags.every(tag => !this.itemTagsSelected.includes(tag))
     }
-    if (!tags || !tags.length) return false
+    if (!tags?.length) return false
     return this.itemTagsSelected.some(tag => tags.includes(tag))
   }
 
