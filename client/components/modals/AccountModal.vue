@@ -6,7 +6,7 @@
       </div>
     </template>
     <form @submit.prevent="submitForm">
-      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300">
+      <div class="px-4 w-full text-sm py-6 rounded-lg bg-bg shadow-lg border border-black-300 overflow-y-auto overflow-x-hidden"  style="min-height: 400px; max-height: 80vh">
         <div class="w-full p-8">
           <div class="flex py-2">
             <div class="w-1/2 px-2">
@@ -96,7 +96,14 @@
               </div>
             </div>
             <div v-if="!newUser.permissions.accessAllTags" class="my-4">
-              <ui-multi-select-dropdown v-model="newUser.itemTagsAccessible" :items="itemTags" :label="$strings.LabelTagsAccessibleToUser" />
+              <div class="flex items-center">
+                <ui-multi-select-dropdown v-model="newUser.itemTagsSelected" :items="itemTags" :label="tagsSelectionText" />
+                <div class="flex items-center pt-4 px-2">
+                  <p class="px-3 font-semibold" id="selected-tags-not-accessible--permissions-toggle">{{ $strings.LabelInvert }}</p>
+                  <ui-toggle-switch labeledBy="selected-tags-not-accessible--permissions-toggle" v-model="newUser.permissions.selectedTagsNotAccessible" />
+                </div>
+              </div>
+              
             </div>
           </div>
 
@@ -185,6 +192,9 @@ export default {
           value: t
         }
       })
+    },
+    tagsSelectionText() {
+      return this.newUser.permissions.selectedTagsNotAccessible ? this.$strings.LabelTagsNotAccessibleToUser : this.$strings.LabelTagsAccessibleToUser
     }
   },
   methods: {
@@ -193,8 +203,11 @@ export default {
       if (this.$refs.modal) this.$refs.modal.setHide()
     },
     accessAllTagsToggled(val) {
-      if (val && this.newUser.itemTagsAccessible.length) {
-        this.newUser.itemTagsAccessible = []
+      if (val) {
+        if (this.newUser.itemTagsSelected?.length) {
+          this.newUser.itemTagsSelected = []
+        }
+        this.newUser.permissions.selectedTagsNotAccessible = false
       }
     },
     fetchAllTags() {
@@ -226,7 +239,7 @@ export default {
         this.$toast.error('Must select at least one library')
         return
       }
-      if (!this.newUser.permissions.accessAllTags && !this.newUser.itemTagsAccessible.length) {
+      if (!this.newUser.permissions.accessAllTags && !this.newUser.itemTagsSelected.length) {
         this.$toast.error('Must select at least one tag')
         return
       }
@@ -307,12 +320,12 @@ export default {
         delete: type === 'admin',
         upload: type === 'admin',
         accessAllLibraries: true,
-        accessAllTags: true
+        accessAllTags: true,
+        selectedTagsNotAccessible: false
       }
     },
     init() {
       this.fetchAllTags()
-
       this.isNew = !this.account
       if (this.account) {
         this.newUser = {
@@ -322,9 +335,10 @@ export default {
           isActive: this.account.isActive,
           permissions: { ...this.account.permissions },
           librariesAccessible: [...(this.account.librariesAccessible || [])],
-          itemTagsAccessible: [...(this.account.itemTagsAccessible || [])]
+          itemTagsSelected: [...(this.account.itemTagsSelected || [])]
         }
       } else {
+        this.fetchAllTags()
         this.newUser = {
           username: null,
           password: null,
@@ -336,7 +350,8 @@ export default {
             delete: false,
             upload: false,
             accessAllLibraries: true,
-            accessAllTags: true
+            accessAllTags: true,
+            selectedTagsNotAccessible: false
           },
           librariesAccessible: []
         }
