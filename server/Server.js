@@ -327,13 +327,11 @@ class Server {
     }
   }
 
-  // Apply the current RouterBasePath to all `<base>` tags in the client html files
+  // Apply the current RouterBasePath to all html and js files
   async applyClientBasePath() {
-    const basePath = `/${global.RouterBasePath}/`
-      .replace('///', '') // convert base path `"/""` to `""`
-      .replace('//', '/') // Ensure there are single `/` at the front and end
-      .slice(0, -1) // Remove trailing `/`
-    const basePathSlash = `${basePath}/`
+    const basePathSlash = `/${global.RouterBasePath}/`
+      .replace(/\/\/+/, '/') // Ensure there are single `/` at the front and end
+    const basePath = basePathSlash.slice(0, -1) // Remove trailing `/`
     const distPath = Path.join(global.appRoot, '/client/dist')
 
     // Check if the client base path is already set to the current base path
@@ -356,16 +354,13 @@ class Server {
       const htmlPath = Path.join(distPath, htmlFile)
       let html = await fs.readFile(htmlPath, 'utf8')
 
-      // Replace all urls with the new base path
-      html = html.replace(replaceUrls, `$1${basePathSlash}$2`)
-
-      // Replace paths in nuxt config (inline script in html files)
-      html = html.replace(replaceNuxtConfig, (config) => {
-        config = config.replace(/routerBasePath:"([^"]*)"/, `routerBasePath:"${basePath}"`)
-        config = config.replace(/basePath:"([^"]*)"/, `basePath:"${basePathSlash}"`)
-        config = config.replace(/assetsPath:"([^"]*)"/, `assetsPath:"${basePathSlash}_nuxt/"`)
-        return config
-      })
+      html = html
+        .replace(replaceUrls, `$1${basePathSlash}$2`) // Replace all urls with the new base path
+        .replace(replaceNuxtConfig, (config) => config // Replace paths in nuxt config (inline script in html files)
+            .replace(/routerBasePath:"([^"]*)"/, `routerBasePath:"${basePath}"`)
+            .replace(/basePath:"([^"]*)"/, `basePath:"${basePathSlash}"`)
+            .replace(/assetsPath:"([^"]*)"/, `assetsPath:"${basePathSlash}_nuxt/"`)
+        )
 
       await fs.writeFile(htmlPath, html)
     }
@@ -374,11 +369,9 @@ class Server {
       const jsPath = Path.join(distPath, jsFile)
       let js = await fs.readFile(jsPath, 'utf8')
 
-      // Replace all urls with the new base path
-      js = js.replace(replaceUrls, `$1${basePathSlash}$2`)
-
-      // Replace asset paths in js files
-      js = js.replace(replaceAssetPaths, `${basePath}/$1`)
+      js = js
+        .replace(replaceUrls, `$1${basePathSlash}$2`) // Replace all urls with the new base path
+        .replace(replaceAssetPaths, `${basePath}/$1`) // Replace asset paths in js files
 
       await fs.writeFile(jsPath, js)
     }
