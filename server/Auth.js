@@ -126,12 +126,12 @@ class Auth {
 
   async login(req, res) {
     const ipAddress = requestIp.getClientIp(req)
-    var username = (req.body.username || '').toLowerCase()
-    var password = req.body.password || ''
+    const username = (req.body.username || '').toLowerCase()
+    const password = req.body.password || ''
 
-    var user = this.users.find(u => u.username.toLowerCase() === username)
+    const user = this.users.find(u => u.username.toLowerCase() === username)
 
-    if (!user || !user.isActive) {
+    if (!user?.isActive) {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
       if (req.rateLimit.remaining <= 2) {
         Logger.error(`[Auth] Failed login attempt for username ${username} from ip ${ipAddress}. Attempts: ${req.rateLimit.current}`)
@@ -145,13 +145,15 @@ class Auth {
       if (password) {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
+        Logger.info(`[Auth] ${user.username} logged in from ${ipAddress}`)
         return res.json(this.getUserLoginResponsePayload(user))
       }
     }
 
     // Check password match
-    var compare = await bcrypt.compare(password, user.pash)
+    const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
+      Logger.info(`[Auth] ${user.username} logged in from ${ipAddress}`)
       res.json(this.getUserLoginResponsePayload(user))
     } else {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
