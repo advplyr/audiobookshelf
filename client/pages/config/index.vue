@@ -44,6 +44,26 @@
             <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
           </div>
 
+          <div class="flex items-center py-2">
+            <ui-toggle-switch labeledBy="settings-show-version" v-model="newServerSettings.showVersion" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('showVersion', val)" />
+            <ui-tooltip :text="$strings.LabelSettingsVersionShowHelp">
+              <p class="pl-4">
+                <span id="settings-show-version">{{ $strings.LabelSettingsVersionShow }}</span>
+                <span class="material-icons icon-text">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
+          <div class="flex items-center py-2">
+            <ui-toggle-switch labeledBy="settings-version-check" v-model="newServerSettings.versionUpdateCheck" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('versionUpdateCheck', val)" />
+            <ui-tooltip :text="$strings.LabelSettingsVersionUpdatesCheckHelp">
+              <p class="pl-4">
+                <span id="settings-version-check">{{ $strings.LabelSettingsVersionUpdatesCheck }}</span>
+                <span class="material-icons icon-text">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+
           <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsDisplay }}</h2>
           </div>

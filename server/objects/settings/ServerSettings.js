@@ -54,6 +54,10 @@ class ServerSettings {
     this.timeFormat = 'HH:mm'
     this.language = 'en-us'
 
+    // Version
+    this.versionUpdateCheck = true
+    this.showVersion = true
+
     this.logLevel = Logger.logLevel
 
     this.version = null
@@ -95,6 +99,8 @@ class ServerSettings {
     this.sortingIgnorePrefix = !!settings.sortingIgnorePrefix
     this.sortingPrefixes = settings.sortingPrefixes || ['the']
     this.chromecastEnabled = !!settings.chromecastEnabled
+    this.versionUpdateCheck = !!settings.versionUpdateCheck
+    this.showVersion = !!settings.showVersion
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
     this.timeFormat = settings.timeFormat || 'HH:mm'
@@ -146,6 +152,8 @@ class ServerSettings {
       sortingIgnorePrefix: this.sortingIgnorePrefix,
       sortingPrefixes: [...this.sortingPrefixes],
       chromecastEnabled: this.chromecastEnabled,
+      versionUpdateCheck: this.versionUpdateCheck,
+      showVersion: this.showVersion,
       enableEReader: this.enableEReader,
       dateFormat: this.dateFormat,
       timeFormat: this.timeFormat,

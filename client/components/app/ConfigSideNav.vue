@@ -139,7 +139,7 @@ export default {
       return this.$store.state.versionData || {}
     },
     hasUpdate() {
-      return !!this.versionData.hasUpdate
+      return this.$store.getters['getServerSetting']('versionUpdateCheck') && !!this.versionData.hasUpdate
     },
     latestVersion() {
       return this.versionData.latestVersion
@@ -152,6 +152,9 @@ export default {
     },
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
+    },
+    showVersion() {
+      return this.$store.getters['getServerSetting']('showVersion')
     }
   },
   methods: {

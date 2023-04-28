@@ -67,6 +67,9 @@ export default {
     },
     appContentMarginLeft() {
       return this.isShowingSideRail ? 80 : 0
+    },
+    shouldCheckVersion() {
+      return this.$store.getters['getServerSetting']('versionUpdateCheck')
     }
   },
   methods: {
@@ -529,12 +532,14 @@ export default {
       this.$store.commit('globals/updateWindowSize', { width: window.innerWidth, height: window.innerHeight })
     },
     checkVersionUpdate() {
-      this.$store
-        .dispatch('checkForUpdate')
-        .then((res) => {
-          if (res && res.hasUpdate) this.showUpdateToast(res)
-        })
-        .catch((err) => console.error(err))
+      if (this.shouldCheckVersion) {
+        this.$store
+          .dispatch('checkForUpdate')
+          .then((res) => {
+            if (res && res.hasUpdate) this.showUpdateToast(res)
+          })
+          .catch((err) => console.error(err))
+      }
     },
     initLocalStorage() {
       // If experimental features set in local storage
