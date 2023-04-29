@@ -152,3 +152,26 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
     ffmpeg.run()
   })
 }
+
+module.exports.generateWaveform = (filepaths, start, end, res) => {
+  let ffmpeg = null
+  if (filepaths.length === 1) ffmpeg = Ffmpeg(filepaths[0])
+  else {
+    ffmpeg = Ffmpeg(`concat:${filepaths.join('|')}`)
+  }
+  ffmpeg.inputOptions('-ss', start)
+  ffmpeg.inputOptions('-to', end)
+  ffmpeg.complexFilter('aformat=channel_layouts=mono,showwavespic=s=1280x240')
+  ffmpeg.frames(1)
+  ffmpeg.format('image2pipe')
+  ffmpeg.on('start', (cmd) => {
+    Logger.debug(`[FfmpegHelpers] generateWaveform: Cmd: ${cmd}`)
+  })
+  ffmpeg.on('error', (error) => {
+    Logger.error(`[FfmpegHelpers] generateWaveform: Error`, error)
+  }).on('end', () => {
+    Logger.debug(`[FfmpegHelpers] generateWaveform finished`)
+  }).pipe(res, {
+    end: true
+  })
+}

@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 class ToolsController {
   constructor() { }
@@ -96,6 +97,32 @@ class ToolsController {
     }
     this.audioMetadataManager.handleBatchEmbed(req.user, libraryItems, options)
     res.sendStatus(200)
+  }
+
+  getAudioFileWaveform(req, res) {
+    let start = Number(req.query.start || 0)
+    let end = Number(req.query.end || 0)
+    if (isNaN(start) || isNaN(end) || start < 0 || end > req.libraryItem.media.duration || end <= start || end - start < 5) {
+      return res.status(400).send('Invalid start/end query params')
+    }
+
+    const paths = []
+    let currentTime = 0
+    let startOffset = 0
+    for (const track of req.libraryItem.media.tracks) {
+      currentTime += track.duration
+      if (currentTime > start) {
+        if (!paths.length) startOffset = track.startOffset
+        paths.push(track.metadata.path)
+      }
+      if (currentTime > end) {
+        break
+      }
+    }
+    start -= startOffset
+    end -= startOffset
+
+    ffmpegHelpers.generateWaveform(paths, start, end, res)
   }
 
   middleware(req, res, next) {

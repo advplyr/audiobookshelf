@@ -94,8 +94,15 @@
                     <span class="material-icons-outlined text-lg">error_outline</span>
                   </button>
                 </ui-tooltip>
+
+                <button class="w-7 h-7 rounded-full flex items-center justify-center text-white" @click="setShowWaveform(chapter.id)">
+                  <span class="material-icons-outlined text-lg">graphic_eq</span>
+                </button>
               </div>
             </div>
+          </div>
+          <div v-if="showWaveform[chapter.id]" :key="`${chapter.id}-waveform`">
+            <img :src="`${baseUrl}/api/tools/item/${libraryItem.id}/waveform?start=${Math.max(0, chapter.start - 10)}&end=${Math.min(mediaDuration, chapter.start + 10)}&token=${userToken}`" />
           </div>
         </template>
       </div>
@@ -246,7 +253,8 @@ export default {
       chapterData: null,
       showSecondInputs: false,
       audibleRegions: ['US', 'CA', 'UK', 'AU', 'FR', 'DE', 'JP', 'IT', 'IN', 'ES'],
-      hasChanges: false
+      hasChanges: false,
+      showWaveform: {}
     }
   },
   computed: {
@@ -255,6 +263,9 @@ export default {
     },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    baseUrl() {
+      return process.env.serverUrl
     },
     media() {
       return this.libraryItem.media || {}
@@ -288,6 +299,9 @@ export default {
     }
   },
   methods: {
+    setShowWaveform(chapterId) {
+      this.$set(this.showWaveform, chapterId, true)
+    },
     setChaptersFromTracks() {
       let currentStartTime = 0
       let index = 0
