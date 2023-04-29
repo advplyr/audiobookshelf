@@ -4,6 +4,7 @@ const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
 const Audnexus = require('../providers/Audnexus')
 const FantLab = require('../providers/FantLab')
+const AudiobookCovers = require('../providers/AudiobookCovers')
 const Logger = require('../Logger')
 const { levenshteinDistance } = require('../utils/index')
 
@@ -15,6 +16,7 @@ class BookFinder {
     this.iTunesApi = new iTunes()
     this.audnexus = new Audnexus()
     this.fantLab = new FantLab()
+    this.audiobookCovers = new AudiobookCovers()
 
     this.verbose = false
   }
@@ -159,6 +161,12 @@ class BookFinder {
     return books
   }
 
+  async getAudiobookCoversResults(search) {
+    const covers = await this.audiobookCovers.search(search)
+    if (this.verbose) Logger.debug(`AudiobookCovers Search Results: ${covers.length || 0}`)
+    return covers || []
+  }
+
   async getiTunesAudiobooksResults(title, author) {
     return this.iTunesApi.searchAudiobooks(title)
   }
@@ -187,6 +195,8 @@ class BookFinder {
       books = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'fantlab') {
       books = await this.getFantLabResults(title, author)
+    } else if (provider === 'audiobookcovers') {
+      books = await this.getAudiobookCoversResults(title)
     }
     else {
       books = await this.getGoogleBooksResults(title, author)
@@ -202,11 +212,13 @@ class BookFinder {
       return this.search(provider, cleanedTitle, cleanedAuthor, isbn, asin, options)
     }
 
-    if (["google", "audible", "itunes", 'fantlab'].includes(provider)) return books
+    if (provider === 'openlibrary') {
+      books.sort((a, b) => {
+        return a.totalDistance - b.totalDistance
+      })
+    }
 
-    return books.sort((a, b) => {
-      return a.totalDistance - b.totalDistance
-    })
+    return books
   }
 
   async findCovers(provider, title, author, options = {}) {

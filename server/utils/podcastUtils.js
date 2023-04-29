@@ -85,6 +85,8 @@ function extractEpisodeData(item) {
     }
   }
 
+  episode.enclosure.url = episode.enclosure.url.trim()
+
   // Full description with html
   if (item['content:encoded']) {
     const rawDescription = (extractFirstArrayItem(item, 'content:encoded') || '').trim()

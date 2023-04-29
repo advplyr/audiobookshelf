@@ -20,16 +20,16 @@ class AuthorFinder {
     })
   }
 
-  findAuthorByASIN(asin) {
+  findAuthorByASIN(asin, region) {
     if (!asin) return null
-    return this.audnexus.findAuthorByASIN(asin)
+    return this.audnexus.findAuthorByASIN(asin, region)
   }
 
-  async findAuthorByName(name, options = {}) {
+  async findAuthorByName(name, region, options = {}) {
     if (!name) return null
     const maxLevenshtein = !isNaN(options.maxLevenshtein) ? Number(options.maxLevenshtein) : 3
 
-    var author = await this.audnexus.findAuthorByName(name, maxLevenshtein)
+    const author = await this.audnexus.findAuthorByName(name, region, maxLevenshtein)
     if (!author || !author.name) {
       return null
     }

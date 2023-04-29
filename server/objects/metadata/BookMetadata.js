@@ -381,6 +381,9 @@ class BookMetadata {
   searchAuthors(query) {
     return this.authors.filter(au => cleanStringForSearch(au.name).includes(query))
   }
+  searchNarrators(query) {
+    return this.narrators.filter(n => cleanStringForSearch(n).includes(query))
+  }
   searchQuery(query) { // Returns key if match is found
     const keysToCheck = ['title', 'asin', 'isbn']
     for (const key of keysToCheck) {

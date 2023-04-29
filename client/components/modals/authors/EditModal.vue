@@ -85,6 +85,12 @@ export default {
     },
     title() {
       return this.$strings.HeaderUpdateAuthor
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     }
   },
   methods: {
@@ -150,6 +156,11 @@ export default {
       const payload = {}
       if (this.authorCopy.asin) payload.asin = this.authorCopy.asin
       else payload.q = this.authorCopy.name
+
+      payload.region = 'us'
+      if (this.libraryProvider.startsWith('audible.')) {
+        payload.region = this.libraryProvider.split('.').pop() || 'us'
+      }
 
       var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, payload).catch((error) => {
         console.error('Failed', error)

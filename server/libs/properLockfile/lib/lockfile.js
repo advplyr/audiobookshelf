@@ -118,6 +118,7 @@ function updateLock(file, options) {
             // the lockfile was deleted or we are over the threshold
             if (err) {
                 if (err.code === 'ENOENT' || isOverThreshold) {
+                    console.error(`lockfile "${file}" compromised. stat code=${err.code}, isOverThreshold=${isOverThreshold}`)
                     return setLockAsCompromised(file, lock, Object.assign(err, { code: 'ECOMPROMISED' }));
                 }
 
@@ -129,6 +130,7 @@ function updateLock(file, options) {
             const isMtimeOurs = lock.mtime.getTime() === stat.mtime.getTime();
 
             if (!isMtimeOurs) {
+                console.error(`lockfile "${file}" compromised. mtime is not ours`)
                 return setLockAsCompromised(
                     file,
                     lock,
@@ -152,6 +154,7 @@ function updateLock(file, options) {
                 // the lockfile was deleted or we are over the threshold
                 if (err) {
                     if (err.code === 'ENOENT' || isOverThreshold) {
+                        console.error(`lockfile "${file}" compromised. utimes code=${err.code}, isOverThreshold=${isOverThreshold}`)
                         return setLockAsCompromised(file, lock, Object.assign(err, { code: 'ECOMPROMISED' }));
                     }
 

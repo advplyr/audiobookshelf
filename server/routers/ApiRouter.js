@@ -410,6 +410,12 @@ class ApiRouter {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
     }
 
+    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+    if (await fs.pathExists(itemMetadataPath)) {
+      Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
+      await fs.remove(itemMetadataPath)
+    }
+
     await this.db.removeLibraryItem(libraryItem.id)
     SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
   }

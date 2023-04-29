@@ -1,6 +1,6 @@
 {
   "name": "audiobookshelf",
-  "version": "2.2.18",
+  "version": "2.2.19",
   "description": "Self-hosted audiobook and podcast server",
   "main": "index.js",
   "scripts": {
@@ -41,7 +41,7 @@
     "passport-jwt": "^4.0.1",
     "passport-openidconnect": "^0.1.1",
     "socket.io": "^4.5.4",
-    "xml2js": "^0.4.23"
+    "xml2js": "^0.5.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.20"
