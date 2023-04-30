@@ -48,18 +48,6 @@
       <Mode>rw</Mode>
     </Volume>
   </Data>
-  <Environment>
-    <Variable>
-      <Value>99</Value>
-      <Name>AUDIOBOOKSHELF_UID</Name>
-      <Mode/>
-    </Variable>
-    <Variable>
-      <Value>100</Value>
-      <Name>AUDIOBOOKSHELF_GID</Name>
-      <Mode/>
-    </Variable>
-  </Environment>
   <Labels/>
   <Config Name="Audiobooks" Target="/audiobooks" Default="" Mode="rw" Description="Container Path: /audiobooks" Type="Path" Display="always" Required="true" Mask="false" />
   <Config Name="Config" Target="/config" Default="/mnt/user/appdata/audiobookshelf/config/" Mode="rw" Description="Container Path: /config" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/audiobookshelf/config/</Config>

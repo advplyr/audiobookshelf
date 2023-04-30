@@ -596,6 +596,7 @@ class LibraryController {
 
     const itemMatches = []
     const authorMatches = {}
+    const narratorMatches = {}
     const seriesMatches = {}
     const tagMatches = {}
 
@@ -608,7 +609,7 @@ class LibraryController {
           matchText: queryResult.matchText
         })
       }
-      if (queryResult.series && queryResult.series.length) {
+      if (queryResult.series?.length) {
         queryResult.series.forEach((se) => {
           if (!seriesMatches[se.id]) {
             const _series = this.db.series.find(_se => _se.id === se.id)
@@ -618,7 +619,7 @@ class LibraryController {
           }
         })
       }
-      if (queryResult.authors && queryResult.authors.length) {
+      if (queryResult.authors?.length) {
         queryResult.authors.forEach((au) => {
           if (!authorMatches[au.id]) {
             const _author = this.db.authors.find(_au => _au.id === au.id)
@@ -631,12 +632,21 @@ class LibraryController {
           }
         })
       }
-      if (queryResult.tags && queryResult.tags.length) {
+      if (queryResult.tags?.length) {
         queryResult.tags.forEach((tag) => {
           if (!tagMatches[tag]) {
             tagMatches[tag] = { name: tag, books: [li.toJSON()] }
           } else {
             tagMatches[tag].books.push(li.toJSON())
+          }
+        })
+      }
+      if (queryResult.narrators?.length) {
+        queryResult.narrators.forEach((narrator) => {
+          if (!narratorMatches[narrator]) {
+            narratorMatches[narrator] = { name: narrator, books: [li.toJSON()] }
+          } else {
+            narratorMatches[narrator].books.push(li.toJSON())
           }
         })
       }
@@ -646,7 +656,8 @@ class LibraryController {
       [itemKey]: itemMatches.slice(0, maxResults),
       tags: Object.values(tagMatches).slice(0, maxResults),
       authors: Object.values(authorMatches).slice(0, maxResults),
-      series: Object.values(seriesMatches).slice(0, maxResults)
+      series: Object.values(seriesMatches).slice(0, maxResults),
+      narrators: Object.values(narratorMatches).slice(0, maxResults)
     }
     res.json(results)
   }

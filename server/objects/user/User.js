@@ -20,7 +20,7 @@ class User {
 
     this.permissions = {}
     this.librariesAccessible = [] // Library IDs (Empty if ALL libraries)
-    this.itemTagsAccessible = [] // Empty if ALL item tags accessible
+    this.itemTagsSelected = [] // Empty if ALL item tags accessible
 
     if (user) {
       this.construct(user)
@@ -86,7 +86,7 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsAccessible: [...this.itemTagsAccessible]
+      itemTagsSelected: [...this.itemTagsSelected]
     }
   }
 
@@ -105,7 +105,7 @@ class User {
       createdAt: this.createdAt,
       permissions: this.permissions,
       librariesAccessible: [...this.librariesAccessible],
-      itemTagsAccessible: [...this.itemTagsAccessible]
+      itemTagsSelected: [...this.itemTagsSelected]
     }
     if (minimal) {
       delete json.mediaProgress
@@ -169,9 +169,14 @@ class User {
     if (this.permissions.accessAllTags === undefined) this.permissions.accessAllTags = true
     // Explicit content restriction permission added v2.0.18
     if (this.permissions.accessExplicitContent === undefined) this.permissions.accessExplicitContent = true
+    // itemTagsAccessible was renamed to itemTagsSelected in version v2.2.20
+    if (user.itemTagsAccessible?.length) {
+      this.permissions.selectedTagsNotAccessible = false
+      user.itemTagsSelected = user.itemTagsAccessible
+    }
 
     this.librariesAccessible = [...(user.librariesAccessible || [])]
-    this.itemTagsAccessible = [...(user.itemTagsAccessible || [])]
+    this.itemTagsSelected = [...(user.itemTagsSelected || [])]
   }
 
   update(payload) {
@@ -228,19 +233,21 @@ class User {
     // Update accessible tags
     if (this.permissions.accessAllTags) {
       // Access all tags
-      if (this.itemTagsAccessible.length) {
-        this.itemTagsAccessible = []
+      if (this.itemTagsSelected.length) {
+        this.itemTagsSelected = []
+        this.permissions.selectedTagsNotAccessible = false
         hasUpdates = true
       }
-    } else if (payload.itemTagsAccessible !== undefined) {
-      if (payload.itemTagsAccessible.length) {
-        if (payload.itemTagsAccessible.join(',') !== this.itemTagsAccessible.join(',')) {
+    } else if (payload.itemTagsSelected !== undefined) {
+      if (payload.itemTagsSelected.length) {
+        if (payload.itemTagsSelected.join(',') !== this.itemTagsSelected.join(',')) {
           hasUpdates = true
-          this.itemTagsAccessible = [...payload.itemTagsAccessible]
+          this.itemTagsSelected = [...payload.itemTagsSelected]
         }
-      } else if (this.itemTagsAccessible.length > 0) {
+      } else if (this.itemTagsSelected.length > 0) {
         hasUpdates = true
-        this.itemTagsAccessible = []
+        this.itemTagsSelected = []
+        this.permissions.selectedTagsNotAccessible = false
       }
     }
     return hasUpdates
@@ -343,8 +350,12 @@ class User {
 
   checkCanAccessLibraryItemWithTags(tags) {
     if (this.permissions.accessAllTags) return true
-    if (!tags || !tags.length) return false
-    return this.itemTagsAccessible.some(tag => tags.includes(tag))
+    if (this.permissions.selectedTagsNotAccessible) {
+      if (!tags?.length) return true
+      return tags.every(tag => !this.itemTagsSelected.includes(tag))
+    }
+    if (!tags?.length) return false
+    return this.itemTagsSelected.some(tag => tags.includes(tag))
   }
 
   checkCanAccessLibraryItem(libraryItem) {
