@@ -221,6 +221,32 @@ class BookMetadata {
     })
   }
 
+  /**
+   * Update narrator name if narrator is in book
+   * @param {String} oldNarratorName - Narrator name to get updated
+   * @param {String} newNarratorName - Updated narrator name
+   * @return {Boolean} True if narrator was updated
+   */
+  updateNarrator(oldNarratorName, newNarratorName) {
+    if (!this.hasNarrator(oldNarratorName)) return false
+    this.narrators = this.narrators.filter(n => n !== oldNarratorName)
+    if (!this.hasNarrator(newNarratorName)) {
+      this.narrators.push(newNarratorName)
+    }
+    return true
+  }
+
+  /**
+   * Remove narrator name if narrator is in book
+   * @param {String} narratorName - Narrator name to remove
+   * @return {Boolean} True if narrator was updated
+   */
+  removeNarrator(narratorName) {
+    if (!this.hasNarrator(narratorName)) return false
+    this.narrators = this.narrators.filter(n => n !== narratorName)
+    return true
+  }
+
   setData(scanMediaData = {}) {
     this.title = scanMediaData.title || null
     this.subtitle = scanMediaData.subtitle || null

@@ -112,7 +112,7 @@ input[type=number] {
   background-color: #373838;
 }
 
-.tracksTable tr:hover {
+.tracksTable tr:hover:not(:has(th)) {
   background-color: #474747;
 }
 
