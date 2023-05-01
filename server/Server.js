@@ -139,7 +139,9 @@ class Server {
   async start() {
     Logger.info('=== Starting Server ===')
     await this.init()
-    this.clientRouter.start()
+    if (process.env.NODE_ENV !== 'development') {
+      this.clientRouter.start()
+    }
 
     const app = express()
     const router = express.Router()

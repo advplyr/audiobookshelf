@@ -13,17 +13,18 @@ class ClientRouter {
     this.client = null
     this.router = express()
     this.router.disable('x-powered-by')
-    this.init()
   }
 
-  init () {
+  init() {
     const target = `http://localhost:${this.clientPort}${this.routerBasePath || '/'}`
     this.router.use(createProxyMiddleware({ target, changeOrigin: true }));
 
     Logger.info(`[Client] Proxying requests to client on port :${this.clientPort}`)
   }
 
-  start () {
+  start() {
+    this.init()
+
     const clientDir = Path.join(this.appRoot, '/client')
     const clientPath = Path.join(clientDir, '/node_modules/@nuxt/cli/bin/nuxt-cli.js')
     this.client = childProcess.fork(clientPath, ["start"], { cwd: clientDir, stdio: 'pipe' })
@@ -44,7 +45,7 @@ class ClientRouter {
     })
   }
 
-  stop () {
+  stop() {
     if (this.client) {
       this.client.off('exit')
       this.client.kill()
