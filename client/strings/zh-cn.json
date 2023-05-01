@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "您确定要移除收藏 \"{0}\"?",
   "MessageConfirmRemoveEpisode": "您确定要移除剧集 \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "你确定要移除 {0} 剧集?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "你确定要移除播放列表 \"{0}\"?",
   "MessageConfirmRenameGenre": "你确定要将所有项目流派 \"{0}\" 重命名到 \"{1}\"?",
   "MessageConfirmRenameGenreMergeNote": "注意: 该流派已经存在, 因此它们将被合并.",
