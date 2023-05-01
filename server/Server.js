@@ -22,6 +22,7 @@ const SocketAuthority = require('./SocketAuthority')
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
+const ClientRouter = require('./routers/ClientRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
 const CoverManager = require('./managers/CoverManager')
@@ -37,7 +38,7 @@ const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, CLIENT_PORT) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -47,6 +48,7 @@ class Server {
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
+    global.ClientPort = CLIENT_PORT
     global.XAccel = process.env.USE_X_ACCEL
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
@@ -82,6 +84,7 @@ class Server {
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager)
     this.staticRouter = new StaticRouter(this.db)
+    this.clientRouter = new ClientRouter(global.appRoot, global.ClientPort, global.RouterBasePath)
 
     Logger.logManager = this.logManager
 
@@ -136,6 +139,7 @@ class Server {
   async start() {
     Logger.info('=== Starting Server ===')
     await this.init()
+    this.clientRouter.start()
 
     const app = express()
     const router = express.Router()
@@ -148,10 +152,6 @@ class Server {
     router.use(fileUpload())
     router.use(express.urlencoded({ extended: true, limit: "5mb" }));
     router.use(express.json({ limit: "5mb" }))
-
-    // Static path to generated nuxt
-    const distPath = Path.join(global.appRoot, '/client/dist')
-    router.use(express.static(distPath))
 
     // Metadata folder static path
     router.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
@@ -188,28 +188,6 @@ class Server {
       this.rssFeedManager.getFeedItem(req, res)
     })
 
-    // Client dynamic routes
-    const dyanimicRoutes = [
-      '/item/:id',
-      '/author/:id',
-      '/audiobook/:id/chapters',
-      '/audiobook/:id/edit',
-      '/audiobook/:id/manage',
-      '/library/:library',
-      '/library/:library/search',
-      '/library/:library/bookshelf/:id?',
-      '/library/:library/authors',
-      '/library/:library/series/:id?',
-      '/library/:library/podcast/search',
-      '/library/:library/podcast/latest',
-      '/config/users/:id',
-      '/config/users/:id/sessions',
-      '/config/item-metadata-utils/:id',
-      '/collection/:id',
-      '/playlist/:id'
-    ]
-    dyanimicRoutes.forEach((route) => router.get(route, (req, res) => res.sendFile(Path.join(distPath, 'index.html'))))
-
     router.post('/login', this.getLoginRateLimiter(), (req, res) => this.auth.login(req, res))
     router.post('/logout', this.authMiddleware.bind(this), this.logout.bind(this))
     router.post('/init', (req, res) => {
@@ -237,6 +215,9 @@ class Server {
       res.json({ success: true })
     })
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
+
+    // Serve client on all other routes, 404 will be handled by client
+    router.use(this.clientRouter.router)
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)
@@ -348,7 +329,8 @@ class Server {
   }
 
   async stop() {
-    await this.watcher.close()
+    this.watcher.close()
+    this.clientRouter.stop()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {
