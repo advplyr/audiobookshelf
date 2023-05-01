@@ -3,6 +3,9 @@ node_modules
 npm-debug.log
 .git
 .gitignore
+.devcontainer/
+.github/
+.vscode/
 /config
 /audiobooks
 /audiobooks2
@@ -13,4 +16,5 @@ test/
 /client/.nuxt/
 /client/dist/
 /dist/
+/build/
 /deploy/
