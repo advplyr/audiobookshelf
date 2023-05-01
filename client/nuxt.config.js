@@ -1,9 +1,9 @@
 const pkg = require('./package.json')
 
-module.exports = {
+module.exports = ({ command }) => ({
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
-  target: 'static',
+  target: 'server',
   dev: process.env.NODE_ENV !== 'production',
   env: {
     serverUrl: process.env.NODE_ENV === 'production' ? process.env.ROUTER_BASE_PATH || '' : 'http://localhost:3333',
@@ -26,19 +26,12 @@ module.exports = {
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: '' }
-    ],
-    script: [
-      {
-        src: (process.env.ROUTER_BASE_PATH || '') + '/libs/sortable.js'
-      }
-    ],
-    link: [
-      { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
     ]
   },
 
   router: {
-    base: process.env.ROUTER_BASE_PATH || ''
+    // We must specify `./` during build to support dynamic router base paths (https://github.com/nuxt/nuxt/issues/10088)
+    base: command == 'build' ? './' : process.env.ROUTER_BASE_PATH || ''
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -46,10 +39,14 @@ module.exports = {
     '@/assets/app.css'
   ],
 
+  favicon: '/favicon.ico',
+
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
+    '@/plugins/sortable.js',
+    '@/plugins/favicon.js',
     '@/plugins/axios.js',
     '@/plugins/toast.js',
     '@/plugins/utils.js',
@@ -71,13 +68,21 @@ module.exports = {
   modules: [
     'nuxt-socket-io',
     '@nuxtjs/axios',
-    '@nuxtjs/proxy'
+    '@nuxtjs/proxy',
+    '@/modules/rewritePwaManifest.js'
   ],
 
   proxy: {
-    '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } },
-    '/ebook/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' + process.env : '/' },
+    [`${process.env.ROUTER_BASE_PATH || ''}/dev/`]: {
+      target: `http://localhost:3333${process.env.ROUTER_BASE_PATH || ''}`,
+      pathRewrite: { [`^${process.env.ROUTER_BASE_PATH || ''}/dev/`]: process.env.ROUTER_BASE_PATH || '' }
+    },
+    [`${process.env.ROUTER_BASE_PATH || ''}/ebook/`]: {
+      target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
+    },
+    [`${process.env.ROUTER_BASE_PATH || ''}/s/`]: {
+      target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
+    }
   },
 
   io: {
@@ -106,17 +111,18 @@ module.exports = {
       nativeUI: true
     },
     manifest: {
+      publicPath: `${(process.env.ROUTER_BASE_PATH || '')}_nuxt`,
       name: 'Audiobookshelf',
       short_name: 'Audiobookshelf',
       display: 'standalone',
       background_color: '#373838',
       icons: [
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon.svg',
+          src: '/icon.svg',
           sizes: "any"
         },
         {
-          src: (process.env.ROUTER_BASE_PATH || '') + '/icon64.png',
+          src: '/icon64.png',
           type: "image/png",
           sizes: "64x64"
         }
@@ -146,7 +152,7 @@ module.exports = {
     }
   },
   server: {
-    port: process.env.NODE_ENV === 'production' ? 80 : 3000,
+    port: process.env.CLIENT_PORT || 3000,
     host: '0.0.0.0'
   },
 
@@ -157,4 +163,4 @@ module.exports = {
  * See: [Issue tracker](https://github.com/nuxt-community/tailwindcss-module/issues/480)
  */
   devServerHandlers: [],
-}
+})

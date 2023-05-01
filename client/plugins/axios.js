@@ -16,6 +16,11 @@ export default function ({ $axios, store, $config }) {
       config.url = `/dev${config.url}`
       console.log('Making request to ' + config.url)
     }
+
+    console.log($config)
+    if ($config.routerBasePath) {
+      config.url = `${$config.routerBasePath}${config.url}`
+    }
   })
 
   $axios.onError(error => {
