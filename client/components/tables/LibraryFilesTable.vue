@@ -70,6 +70,9 @@ export default {
       return this.libraryItem.libraryFiles || []
     },
     audioFiles() {
+      if (this.libraryItem.mediaType === 'podcast') {
+        return this.libraryItem.media?.episodes.map((ep) => ep.audioFile) || []
+      }
       return this.libraryItem.media?.audioFiles || []
     },
     filesWithAudioFile() {

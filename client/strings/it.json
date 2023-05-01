@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "Sei sicuro di voler rimuovere la Raccolta \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Sei sicuro di voler rimuovere l'episodio \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Sei sicuro di voler rimuovere  {0} episodi?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Sei sicuro di voler rimuovere la tua playlist \"{0}\"?",
   "MessageConfirmRenameGenre": "Sei sicuro di voler rinominare il genere \"{0}\" in \"{1}\" per tutti gli oggetti?",
   "MessageConfirmRenameGenreMergeNote": "Note: Questo genere esiste già quindi verra unito.",

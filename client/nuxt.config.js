@@ -45,7 +45,6 @@ module.exports = ({ command }) => ({
   plugins: [
     '@/plugins/constants.js',
     '@/plugins/init.client.js',
-    '@/plugins/sortable.js',
     '@/plugins/favicon.js',
     '@/plugins/axios.js',
     '@/plugins/toast.js',

@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "Czy na pewno chcesz usunąć kolekcję \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Czy na pewno chcesz usunąć odcinek \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Czy na pewno chcesz usunąć {0} odcinki?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Are you sure you want to remove your playlist \"{0}\"?",
   "MessageConfirmRenameGenre": "Are you sure you want to rename genre \"{0}\" to \"{1}\" for all items?",
   "MessageConfirmRenameGenreMergeNote": "Note: This genre already exists so they will be merged.",

@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "Sind Sie sicher, dass Sie die Sammlung \"{0}\" löschen wollen?",
   "MessageConfirmRemoveEpisode": "Sind Sie sicher, dass Sie die Episode \"{0}\" löschen möchten?",
   "MessageConfirmRemoveEpisodes": "Sind Sie sicher, dass Sie {0} Episoden löschen wollen?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Sind Sie sicher, dass Sie die Wiedergabeliste \"{0}\" entfernen möchten?",
   "MessageConfirmRenameGenre": "Sind Sie sicher, dass Sie die Kategorie \"{0}\" in \"{1}\" für alle Hörbücher/Podcasts umbenennen wollen?",
   "MessageConfirmRenameGenreMergeNote": "Hinweis: Kategorie existiert bereits -> Kategorien werden zusammengelegt.",

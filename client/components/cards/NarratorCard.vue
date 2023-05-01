@@ -1,8 +1,8 @@
 <template>
   <nuxt-link :to="`/library/${currentLibraryId}/bookshelf?filter=narrators.${$encode(narrator.name)}`">
     <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
-      <div class="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none opacity-20">
-        <span class="material-icons-outlined text-8xl">record_voice_over</span>
+      <div class="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none opacity-40">
+        <span class="material-icons-outlined text-[10rem]">record_voice_over</span>
       </div>
 
       <!-- Narrator name & num books overlay -->

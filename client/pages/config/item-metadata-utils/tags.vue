@@ -17,8 +17,8 @@
           <ui-text-input v-else v-model="newTagName" />
           <div class="flex-grow" />
           <template v-if="editingTag !== tag">
-            <ui-icon-btn v-if="editingTag !== tag" icon="edit" borderless :size="8" icon-font-size="1.1rem" class="mx-1" @click="editTagClick(tag)" />
-            <ui-icon-btn v-if="editingTag !== tag" icon="delete" borderless :size="8" icon-font-size="1.1rem" @click="removeTagClick(tag)" />
+            <ui-icon-btn icon="edit" borderless :size="8" icon-font-size="1.1rem" class="mx-1" @click="editTagClick(tag)" />
+            <ui-icon-btn icon="delete" borderless :size="8" icon-font-size="1.1rem" @click="removeTagClick(tag)" />
           </template>
           <template v-else>
             <ui-btn color="success" small class="mx-2" @click.stop="saveTagClick">{{ $strings.ButtonSave }}</ui-btn>

@@ -47,84 +47,7 @@
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
 
-              <div v-if="narrator" class="flex py-0.5 mt-4">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
-                </div>
-                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
-                  <template v-for="(narrator, index) in narrators">
-                    <nuxt-link :key="narrator" :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link
-                    ><span :key="index" v-if="index < narrators.length - 1">,&nbsp;</span>
-                  </template>
-                </div>
-              </div>
-              <div v-if="publishedYear" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
-                </div>
-                <div>
-                  {{ publishedYear }}
-                </div>
-              </div>
-              <div v-if="musicAlbum" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Album</span>
-                </div>
-                <div>
-                  {{ musicAlbum }}
-                </div>
-              </div>
-              <div v-if="musicAlbumArtist" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Album Artist</span>
-                </div>
-                <div>
-                  {{ musicAlbumArtist }}
-                </div>
-              </div>
-              <div v-if="musicTrackPretty" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Track</span>
-                </div>
-                <div>
-                  {{ musicTrackPretty }}
-                </div>
-              </div>
-              <div v-if="musicDiscPretty" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Disc</span>
-                </div>
-                <div>
-                  {{ musicDiscPretty }}
-                </div>
-              </div>
-              <div class="flex py-0.5" v-if="genres.length">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
-                </div>
-                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
-                  <template v-for="(genre, index) in genres">
-                    <nuxt-link :key="genre" :to="`/library/${libraryId}/bookshelf?filter=genres.${$encode(genre)}`" class="hover:underline">{{ genre }}</nuxt-link
-                    ><span :key="index" v-if="index < genres.length - 1">,&nbsp;</span>
-                  </template>
-                </div>
-              </div>
-              <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
-                </div>
-                <div>
-                  {{ durationPretty }}
-                </div>
-              </div>
-              <div class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
-                </div>
-                <div>
-                  {{ sizePretty }}
-                </div>
-              </div>
+              <content-library-item-details :library-item="libraryItem" />
             </div>
             <div class="hidden md:block flex-grow" />
           </div>
@@ -339,9 +262,6 @@ export default {
     libraryId() {
       return this.libraryItem.libraryId
     },
-    folderId() {
-      return this.libraryItem.folderId
-    },
     libraryItemId() {
       return this.libraryItem.id
     },
@@ -367,18 +287,9 @@ export default {
     title() {
       return this.mediaMetadata.title || 'No Title'
     },
-    publishedYear() {
-      return this.mediaMetadata.publishedYear
-    },
-    narrator() {
-      return this.mediaMetadata.narratorName
-    },
     bookSubtitle() {
       if (this.isPodcast) return null
       return this.mediaMetadata.subtitle
-    },
-    genres() {
-      return this.mediaMetadata.genres || []
     },
     podcastAuthor() {
       return this.mediaMetadata.author || ''
@@ -388,25 +299,6 @@ export default {
     },
     musicArtists() {
       return this.mediaMetadata.artists || []
-    },
-    musicAlbum() {
-      return this.mediaMetadata.album || ''
-    },
-    musicAlbumArtist() {
-      return this.mediaMetadata.albumArtist || ''
-    },
-    musicTrackPretty() {
-      if (!this.mediaMetadata.trackNumber) return null
-      if (!this.mediaMetadata.trackTotal) return this.mediaMetadata.trackNumber
-      return `${this.mediaMetadata.trackNumber} / ${this.mediaMetadata.trackTotal}`
-    },
-    musicDiscPretty() {
-      if (!this.mediaMetadata.discNumber) return null
-      if (!this.mediaMetadata.discTotal) return this.mediaMetadata.discNumber
-      return `${this.mediaMetadata.discNumber} / ${this.mediaMetadata.discTotal}`
-    },
-    narrators() {
-      return this.mediaMetadata.narrators || []
     },
     series() {
       return this.mediaMetadata.series || []
@@ -421,25 +313,9 @@ export default {
         }
       })
     },
-    durationPretty() {
-      if (this.isPodcast) return this.$elapsedPrettyExtended(this.totalPodcastDuration)
-
-      if (!this.tracks.length && !this.audioFile) return 'N/A'
-      if (this.audioFile) return this.$elapsedPrettyExtended(this.duration)
-      return this.$elapsedPretty(this.duration)
-    },
     duration() {
       if (!this.tracks.length && !this.audioFile) return 0
       return this.media.duration
-    },
-    totalPodcastDuration() {
-      if (!this.podcastEpisodes.length) return 0
-      let totalDuration = 0
-      this.podcastEpisodes.forEach((ep) => (totalDuration += ep.duration || 0))
-      return totalDuration
-    },
-    sizePretty() {
-      return this.$bytesPretty(this.media.size)
     },
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
