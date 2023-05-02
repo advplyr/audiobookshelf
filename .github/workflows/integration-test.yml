@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: setup nade
+      - name: setup node
         uses: actions/setup-node@v3
         with:
           node-version: 16
@@ -27,7 +27,7 @@ jobs:
 
       - name: build client
         working-directory: client
-        run: npm run generate
+        run: npm run build
 
       - name: get server dependencies
         run: npm ci --only=production

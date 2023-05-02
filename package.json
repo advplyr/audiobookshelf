@@ -19,7 +19,11 @@
   "bin": "prod.js",
   "pkg": {
     "assets": [
-      "client/dist/**/*",
+      "client/.nuxt/**/*",
+      "client/node_modules/**/*",
+      "client/nuxt.config.js",
+      "client/package.json",
+      "client/modules/**/*",
       "server/Db.js"
     ],
     "scripts": [
