@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --watch server index.js",
     "start": "node index.js",
-    "client": "cd client && npm ci && npm run generate",
+    "client": "cd client && npm ci && npm run build",
     "prod": "npm run client && npm ci && node prod.js",
     "build-win": "npm run client && pkg -t node16-win-x64 -o ./dist/win/audiobookshelf -C GZip .",
     "build-linux": "build/linuxpackager",
@@ -24,6 +24,7 @@
       "client/nuxt.config.js",
       "client/package.json",
       "client/modules/**/*",
+      "client/static/**/*",
       "server/Db.js"
     ],
     "scripts": [
