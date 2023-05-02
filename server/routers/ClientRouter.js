@@ -3,9 +3,8 @@ const Path = require('path')
 const Logger = require('../Logger')
 
 class ClientRouter {
-  constructor(appRoot, clientPort = 3000, routerBasePath = '') {
+  constructor(appRoot, routerBasePath = '') {
     this.appRoot = appRoot
-    this.clientPort = clientPort
     this.routerBasePath = routerBasePath
 
     this.client = null

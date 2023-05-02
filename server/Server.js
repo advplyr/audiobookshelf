@@ -83,7 +83,7 @@ class Server {
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager)
     this.staticRouter = new StaticRouter(this.db)
-    this.clientRouter = new ClientRouter(global.appRoot, global.ClientPort, global.RouterBasePath)
+    this.clientRouter = new ClientRouter(global.appRoot, global.RouterBasePath)
 
     Logger.logManager = this.logManager
 
