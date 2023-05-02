@@ -33,13 +33,12 @@ export default function rewritePwaManifest () {
 
       const currentBasePath = manifest.start_url.split('?')[0]
 
-      if (currentBasePath !== routerBasePath) {
+      if (currentBasePath !== (routerBasePath || '/')) {
         // Rewrite start_url and icons paths
-        manifest.start_url = `${routerBasePath || '/'}${manifest.start_url.slice(currentBasePath.length)}`
+        manifest.start_url = `${routerBasePath}${manifest.start_url.slice(currentBasePath.length)}`
         for (const icon of manifest.icons) {
-          icon.src = currentBasePath.startsWith('.')
-            ? `${routerBasePath}${icon.src}` // Initially, the start_url is `./`
-            : `${routerBasePath}/${icon.src.slice(currentBasePath.length)}`
+          const path = icon.src.startsWith('/') ? icon.src.slice(currentBasePath.length) : icon.src
+          icon.src = `${routerBasePath}${path}`
         }
 
         // Update manifest file

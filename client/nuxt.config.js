@@ -117,11 +117,11 @@ module.exports = ({ command }) => ({
       background_color: '#373838',
       icons: [
         {
-          src: '/icon.svg',
+          src: 'icon.svg',
           sizes: "any"
         },
         {
-          src: '/icon64.png',
+          src: 'icon64.png',
           type: "image/png",
           sizes: "64x64"
         }
@@ -151,7 +151,7 @@ module.exports = ({ command }) => ({
     }
   },
   server: {
-    port: process.env.CLIENT_PORT || 3000,
+    port: process.env.NODE_ENV === 'production' ? 80 : 3000,
     host: '0.0.0.0'
   },
 

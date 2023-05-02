@@ -38,7 +38,7 @@ const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
 
 class Server {
-  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, CLIENT_PORT) {
+  constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
     this.Port = PORT
     this.Host = HOST
     global.Source = SOURCE
@@ -48,7 +48,6 @@ class Server {
     global.ConfigPath = fileUtils.filePathToPOSIX(Path.normalize(CONFIG_PATH))
     global.MetadataPath = fileUtils.filePathToPOSIX(Path.normalize(METADATA_PATH))
     global.RouterBasePath = ROUTER_BASE_PATH
-    global.ClientPort = CLIENT_PORT
     global.XAccel = process.env.USE_X_ACCEL
 
     if (!fs.pathExistsSync(global.ConfigPath)) {
@@ -219,7 +218,7 @@ class Server {
     app.get('/healthcheck', (req, res) => res.sendStatus(200))
 
     // Serve client on all other routes, 404 will be handled by client
-    router.use(this.clientRouter.router)
+    app.use(this.clientRouter.router)
 
     this.server.listen(this.Port, this.Host, () => {
       if (this.Host) Logger.info(`Listening on http://${this.Host}:${this.Port}`)

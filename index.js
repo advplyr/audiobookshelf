@@ -12,7 +12,6 @@ if (isDev) {
   if (devEnv.FFProbePath) process.env.FFPROBE_PATH = devEnv.FFProbePath
   process.env.SOURCE = 'local'
   process.env.ROUTER_BASE_PATH = devEnv.RouterBasePath || ''
-  process.env.CLIENT_PORT = devEnv.ClientPort || 8080
 }
 
 const PORT = process.env.PORT || 80
@@ -23,9 +22,8 @@ const UID = process.env.AUDIOBOOKSHELF_UID
 const GID = process.env.AUDIOBOOKSHELF_GID
 const SOURCE = process.env.SOURCE || 'docker'
 const ROUTER_BASE_PATH = process.env.ROUTER_BASE_PATH || ''
-const CLIENT_PORT = process.env.CLIENT_PORT || 3000
 
 console.log('Config', CONFIG_PATH, METADATA_PATH)
 
-const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH, CLIENT_PORT)
+const Server = new server(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH)
 Server.start()

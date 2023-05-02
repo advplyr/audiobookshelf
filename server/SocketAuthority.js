@@ -68,12 +68,12 @@ class SocketAuthority {
   initialize(Server) {
     this.Server = Server
 
-    this.io = new SocketIO.Server(this.Server.server, {
+    this.io = (new SocketIO.Server(this.Server.server, {
       cors: {
         origin: '*',
         methods: ["GET", "POST"]
       }
-    })
+    })).of(global.RouterBasePath || "/")
     this.io.on('connection', (socket) => {
       this.clients[socket.id] = {
         id: socket.id,

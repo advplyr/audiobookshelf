@@ -1,7 +1,5 @@
 const express = require('express')
 const Path = require('path')
-const childProcess = require('child_process')
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const Logger = require('../Logger')
 
 class ClientRouter {
@@ -15,40 +13,26 @@ class ClientRouter {
     this.router.disable('x-powered-by')
   }
 
-  init() {
-    const target = `http://localhost:${this.clientPort}${this.routerBasePath || '/'}`
-    this.router.use(createProxyMiddleware({ target, changeOrigin: true }));
-
-    Logger.info(`[Client] Proxying requests to client on port :${this.clientPort}`)
-  }
-
-  start() {
-    this.init()
-
+  async init () {
     const clientDir = Path.join(this.appRoot, '/client')
-    const clientPath = Path.join(clientDir, '/node_modules/@nuxt/cli/bin/nuxt-cli.js')
-    this.client = childProcess.fork(clientPath, ["start"], { cwd: clientDir, stdio: 'pipe' })
-
-    Logger.info(`[Client] Client started under port :${this.clientPort}`)
-
-    this.client.stdout.on('data', (data) => {
-      Logger.info('[Client]', data.toString().trim())
-    })
-
-    this.client.stderr.on('data', (data) => {
-      Logger.error('[Client]', data.toString().trim())
-    })
-
-    this.client.on('exit', () => {
-      Logger.info('[Client] Client exited unexpectedly, restarting...')
-      this.start()
-    })
+    const { loadNuxt } = require(Path.resolve(clientDir, 'node_modules/nuxt'))
+    this.client = await loadNuxt({ rootDir: clientDir, for: 'start' })
   }
 
-  stop() {
+  async start () {
+    Logger.info('[Client] Starting')
+    await this.init()
+
+    this.router.use(this.client.render)
+
+    this.client.hook('error', (err) => Logger.error('[Client]', err))
+    this.client.ready().then(() => Logger.info('[Client] Ready'))
+  }
+
+  async stop () {
     if (this.client) {
-      this.client.off('exit')
-      this.client.kill()
+      await this.client.close()
+      Logger.info('[Client] Stopped')
     } else {
       Logger.error('Client not running')
     }
