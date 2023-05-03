@@ -19,6 +19,14 @@
         {{ publishedYear }}
       </div>
     </div>
+    <div v-if="publisher" class="flex py-0.5">
+      <div class="w-32">
+        <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
+      </div>
+      <div>
+        {{ publisher }}
+      </div>
+    </div>
     <div v-if="musicAlbum" class="flex py-0.5">
       <div class="w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">Album</span>
@@ -148,6 +156,9 @@ export default {
     },
     authors() {
       return this.mediaMetadata.authors || []
+    },
+    publisher() {
+      return this.mediaMetadata.publisher || ''
     },
     musicArtists() {
       return this.mediaMetadata.artists || []
