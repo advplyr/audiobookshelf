@@ -11,6 +11,7 @@ const languageCodeMap = {
   'fr': { label: 'Français', dateFnsLocale: 'fr' },
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
+  'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
   'zh-cn': { label: '简体中文 (Simplified Chinese)', dateFnsLocale: 'zhCN' },
@@ -74,10 +75,9 @@ async function loadi18n(code) {
   for (const key in Vue.prototype.$strings) {
     Vue.prototype.$strings[key] = strings[key] || translations[defaultCode][key]
   }
-  console.log(`dateFnsLocale = ${languageCodeMap[code].dateFnsLocale}`)
+
   Vue.prototype.$setDateFnsLocale(languageCodeMap[code].dateFnsLocale)
 
-  console.log('i18n strings=', Vue.prototype.$strings)
   this.$eventBus.$emit('change-lang', code)
   return true
 }
