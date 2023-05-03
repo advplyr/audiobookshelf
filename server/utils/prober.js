@@ -183,7 +183,7 @@ function parseTags(format, verbose) {
     file_tag_description: tryGrabTags(format, 'description', 'desc'),
     file_tag_genre: tryGrabTags(format, 'genre', 'tcon', 'tco'),
     file_tag_series: tryGrabTags(format, 'series', 'show', 'mvnm'),
-    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin'),
+    file_tag_seriespart: tryGrabTags(format, 'series-part', 'episode_id', 'mvin', 'part'),
     file_tag_isbn: tryGrabTags(format, 'isbn'), // custom
     file_tag_language: tryGrabTags(format, 'language', 'lang'),
     file_tag_asin: tryGrabTags(format, 'asin', 'audible_asin'), // custom
