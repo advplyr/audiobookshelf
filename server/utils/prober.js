@@ -170,7 +170,7 @@ function parseTags(format, verbose) {
     file_tag_titlesort: tryGrabTags(format, 'title-sort', 'tsot'),
     file_tag_subtitle: tryGrabTags(format, 'subtitle', 'tit3', 'tt3'),
     file_tag_track: tryGrabTags(format, 'track', 'trck', 'trk'),
-    file_tag_disc: tryGrabTags(format, 'discnumber', 'disc', 'disk', 'tpos'),
+    file_tag_disc: tryGrabTags(format, 'discnumber', 'disc', 'disk', 'tpos', 'tpa'),
     file_tag_album: tryGrabTags(format, 'album', 'talb', 'tal'),
     file_tag_albumsort: tryGrabTags(format, 'album-sort', 'tsoa'),
     file_tag_artist: tryGrabTags(format, 'artist', 'tpe1', 'tp1'),
