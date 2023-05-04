@@ -1,26 +1,26 @@
 <template>
-  <div class="h-full w-full">
-    <div class="h-full flex items-center justify-center">
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center overflow-x-hidden justify-center">
-        <span v-if="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
+  <div class="w-full h-full">
+    <div class="flex items-center justify-center h-full">
+      <div style="width: 100px; max-width: 100px" class="items-center justify-center hidden h-full overflow-x-hidden sm:flex">
+        <span v-if="hasPrev" class="text-6xl text-white text-opacity-50 cursor-pointer material-icons hover:text-opacity-80" @mousedown.prevent @click="prev">chevron_left</span>
       </div>
       <div id="frame" class="w-full" style="height: 80%">
         <div id="viewer"></div>
       </div>
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center justify-center overflow-x-hidden">
-        <span v-if="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
+      <div style="width: 100px; max-width: 100px" class="items-center justify-center hidden h-full overflow-x-hidden sm:flex">
+        <span v-if="hasNext" class="text-6xl text-white text-opacity-50 cursor-pointer material-icons hover:text-opacity-80" @mousedown.prevent @click="next">chevron_right</span>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import ePub from 'epubjs'
+import { Epub, Rendition, NavItem } from 'epubjs'
 
 /**
  * @typedef {object} EpubReader
- * @property {ePub.Book} book
- * @property {ePub.Rendition} rendition
+ * @property {Epub} book
+ * @property {Rendition} rendition
  */
 export default {
   props: {
@@ -33,9 +33,9 @@ export default {
   data() {
     return {
       windowWidth: 0,
-      /** @type {ePub.Book} */
+      /** @type {Epub} */
       book: null,
-      /** @type {ePub.Rendition} */
+      /** @type {Rendition} */
       rendition: null
     }
   },
@@ -50,7 +50,7 @@ export default {
     hasNext() {
       return !this.rendition?.location?.atEnd
     },
-    /** @returns {Array<ePub.NavItem>} */
+    /** @returns {Array<NavItem>} */
     chapters() {
       return this.book ? this.book.navigation.toc : []
     },
@@ -200,13 +200,13 @@ export default {
       /** @type {EpubReader} */
       const reader = this
 
-      /** @type {ePub.Book} */
+      /** @type {Epub} */
       reader.book = new ePub(reader.url, {
         width: this.readerWidth,
         height: window.innerHeight - 50
       })
 
-      /** @type {ePub.Rendition} */
+      /** @type {Rendition} */
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
         height: window.innerHeight * 0.8

@@ -23,16 +23,12 @@ RUN apk update && \
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY package* ./
-COPY --from=build /client/package*.json client/
 
 RUN npm ci --omit=dev
-RUN cd client && npm ci --omit=dev && cd ..
 
 COPY index.js package* ./
 COPY server server
-COPY --from=build /client/nuxt.config.js* client/
-COPY --from=build /client/.nuxt client/.nuxt
-COPY --from=build /client/modules client/modules
+COPY --from=build /client/.output ./client/.output
 
 EXPOSE 80
 HEALTHCHECK \

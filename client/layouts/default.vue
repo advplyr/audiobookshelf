@@ -368,7 +368,7 @@ export default {
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
-        channel: this.$config.routerBasePath,
+        channel: this.$config.public.routerBasePath,
         persist: 'main',
         teardown: false,
         transports: ['websocket'],

@@ -18,8 +18,8 @@ export default function ({ $axios, store, $config }) {
     }
 
     console.log($config)
-    if ($config.routerBasePath) {
-      config.url = `${$config.routerBasePath}${config.url}`
+    if ($config.public.routerBasePath) {
+      config.url = `${$config.public.routerBasePath}${config.url}`
     }
   })
 

@@ -14,6 +14,7 @@ npm-debug.log
 dev.js
 test/
 /client/.nuxt/
+/client/.output/
 /client/dist/
 /dist/
 /build/

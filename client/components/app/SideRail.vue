@@ -114,12 +114,12 @@
     </nuxt-link>
 
     <div class="w-full h-12 px-1 py-2 border-t border-black border-opacity-20 absolute left-0" :style="{ bottom: streamLibraryItem ? '240px' : '65px' }">
-      <p class="underline font-mono text-xs text-center text-gray-300 leading-3 mb-1" @click="clickChangelog">v{{ $config.version }}</p>
-      <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xxs text-center block leading-3">Update</a>
-      <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
-    </div>
+        <p class="underline font-mono text-xs text-center text-gray-300 leading-3 mb-1" @click="clickChangelog">v{{ $config.public.version }}</p>
+        <a v-if="hasUpdate" :href="githubTagUrl" target="_blank" class="text-warning text-xxs text-center block leading-3">Update</a>
+        <p v-else class="text-xxs text-gray-400 leading-3 text-center italic">{{ Source }}</p>
+      </div>
 
-    <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
+      <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.public.version" />
   </div>
 </template>
 

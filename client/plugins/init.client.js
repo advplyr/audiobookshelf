@@ -182,5 +182,5 @@ export default ({ app, store }, inject) => {
   inject('eventBus', new Vue())
   inject('isDev', process.env.NODE_ENV !== 'production')
 
-  store.commit('setRouterBasePath', app.$config.routerBasePath)
+  store.commit('setRouterBasePath', app.$config.public.routerBasePath)
 }

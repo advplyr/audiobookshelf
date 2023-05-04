@@ -4,26 +4,26 @@
   "description": "Self-hosted audiobook and podcast client",
   "main": "index.js",
   "scripts": {
-    "dev": "nuxt",
-    "dev2": "nuxt --hostname localhost --port 1337",
-    "build": "nuxt build",
-    "start": "nuxt start",
-    "generate": "nuxt generate"
+    "dev": "nuxi dev",
+    "dev2": "nuxi dev --hostname localhost --port 1337",
+    "build": "nuxi build",
+    "start": "nuxi preview",
+    "generate": "nuxi generate"
   },
   "author": "advplyr",
   "license": "ISC",
   "dependencies": {
+    "@nuxt/bridge": "npm:@nuxt/bridge-edge@^3.0.0-28051151.e88ad64",
     "@nuxtjs/axios": "^5.13.6",
-    "@nuxtjs/proxy": "^2.1.0",
     "core-js": "^3.16.0",
     "cron-parser": "^4.7.1",
     "date-fns": "^2.25.0",
-    "epubjs": "^0.3.88",
-    "glob": "^10.2.2",
+    "epubjs": "^0.5.0-alpha.0",
     "hls.js": "^1.0.7",
     "libarchive.js": "^1.3.0",
-    "nuxt": "^2.15.8",
+    "nuxt": "^2.16.3",
     "nuxt-socket-io": "^1.1.18",
+    "pwa-nuxt-bridge": "^5.0.1",
     "trix": "^1.3.1",
     "v-click-outside": "^3.1.2",
     "vue-pdf": "^4.2.0",
@@ -31,10 +31,9 @@
     "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
-    "@nuxt/postcss8": "^1.1.3",
-    "@nuxtjs/pwa": "^3.3.5",
-    "@nuxtjs/tailwindcss": "^4.2.1",
+    "@nuxtjs/tailwindcss": "^6.6.7",
     "autoprefixer": "^10.4.7",
+    "minimatch": "^8.0.4",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.1.4"
   }

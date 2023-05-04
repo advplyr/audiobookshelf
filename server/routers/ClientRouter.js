@@ -1,4 +1,5 @@
 const express = require('express')
+const mime = require('mime-types')
 const Path = require('path')
 const Logger = require('../Logger')
 
@@ -14,18 +15,15 @@ class ClientRouter {
 
   async init () {
     const clientDir = Path.join(this.appRoot, '/client')
-    const { loadNuxt } = require(Path.resolve(clientDir, 'node_modules/nuxt'))
-    this.client = await loadNuxt({ rootDir: clientDir, for: 'start' })
+    const { handler } = await import(Path.join(clientDir, '.output/server/index.mjs'))
+    this.client = handler
   }
 
   async start () {
     Logger.info('[Client] Starting')
     await this.init()
 
-    this.router.use(this.client.render)
-
-    this.client.hook('error', (err) => Logger.error('[Client]', err))
-    this.client.ready().then(() => Logger.info('[Client] Ready'))
+    this.router.use('/', this.client)
   }
 
   async stop () {

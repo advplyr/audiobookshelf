@@ -9,6 +9,7 @@
 /metadata/
 test/
 /client/.nuxt/
+/client/.output/
 /client/dist/
 /dist/
 /deploy/

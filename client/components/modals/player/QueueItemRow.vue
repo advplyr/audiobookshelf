@@ -55,7 +55,7 @@ export default {
       return this.item.coverPath
     },
     coverUrl() {
-      if (!this.coverPath) return `${this.$config.routerBasePath}/book_placeholder.jpg`
+      if (!this.coverPath) return `${this.$config.public.routerBasePath}/book_placeholder.jpg`
       return this.$store.getters['globals/getLibraryItemCoverSrcById'](this.libraryItemId)
     },
     bookCoverAspectRatio() {

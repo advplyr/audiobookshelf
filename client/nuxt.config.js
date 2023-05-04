@@ -1,6 +1,8 @@
+const { defineNuxtConfig } = require('@nuxt/bridge')
+import { fromNodeMiddleware } from 'h3';
 const pkg = require('./package.json')
 
-module.exports = ({ command }) => ({
+module.exports = defineNuxtConfig({
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
   target: 'server',
@@ -11,9 +13,11 @@ module.exports = ({ command }) => ({
   },
   telemetry: false,
 
-  publicRuntimeConfig: {
-    version: pkg.version,
-    routerBasePath: process.env.ROUTER_BASE_PATH || ''
+  runtimeConfig: {
+    public: {
+      version: pkg.version,
+      routerBasePath: process.env.ROUTER_BASE_PATH || ''
+    }
   },
 
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -31,7 +35,7 @@ module.exports = ({ command }) => ({
 
   router: {
     // We must specify `./` during build to support dynamic router base paths (https://github.com/nuxt/nuxt/issues/10088)
-    base: command == 'build' ? './' : process.env.ROUTER_BASE_PATH || ''
+    base: process.env.ROUTER_BASE_PATH || ''
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -59,30 +63,15 @@ module.exports = ({ command }) => ({
   buildModules: [
     // https://go.nuxtjs.dev/tailwindcss
     '@nuxtjs/tailwindcss',
-    '@nuxtjs/pwa',
-    '@nuxt/postcss8'
+    'pwa-nuxt-bridge',
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     'nuxt-socket-io',
     '@nuxtjs/axios',
-    '@nuxtjs/proxy',
-    '@/modules/rewritePwaManifest.js'
+    // '@/modules/rewritePwaManifest.js'
   ],
-
-  proxy: {
-    [`${process.env.ROUTER_BASE_PATH || ''}/dev/`]: {
-      target: `http://localhost:3333${process.env.ROUTER_BASE_PATH || ''}`,
-      pathRewrite: { [`^${process.env.ROUTER_BASE_PATH || ''}/dev/`]: process.env.ROUTER_BASE_PATH || '' }
-    },
-    [`${process.env.ROUTER_BASE_PATH || ''}/ebook/`]: {
-      target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
-    },
-    [`${process.env.ROUTER_BASE_PATH || ''}/s/`]: {
-      target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
-    }
-  },
 
   io: {
     sockets: [{
@@ -138,9 +127,11 @@ module.exports = ({ command }) => ({
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {
     postcss: {
-      plugins: {
-        tailwindcss: {},
-        autoprefixer: {},
+      postcssOptions: {
+        plugins: {
+          tailwindcss: {},
+          autoprefixer: {},
+        },
       },
     }
   },
@@ -153,6 +144,34 @@ module.exports = ({ command }) => ({
   server: {
     port: process.env.NODE_ENV === 'production' ? 80 : 3000,
     host: '0.0.0.0'
+  },
+
+  bridge: {
+    capi: false,
+    scriptSetup: false
+  },
+
+  nitro: {
+    preset: './nitro.preset.js',
+    devProxy: {
+      [`${process.env.ROUTER_BASE_PATH || ''}/dev/`]: {
+        target: `http://localhost:3333${process.env.ROUTER_BASE_PATH || ''}`,
+        pathRewrite: { [`^${process.env.ROUTER_BASE_PATH || ''}/dev/`]: process.env.ROUTER_BASE_PATH || '' }
+      },
+      [`${process.env.ROUTER_BASE_PATH || ''}/ebook/`]: {
+        target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
+      },
+      [`${process.env.ROUTER_BASE_PATH || ''}/s/`]: {
+        target: (process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '') + `${process.env.ROUTER_BASE_PATH || ''}/`
+      }
+    }
+  },
+
+  hooks: {
+    // 'nitro:config': (config) => {
+    //   console.log('nitro:config', config)
+    //   process.exit(0)
+    // },
   },
 
   /**

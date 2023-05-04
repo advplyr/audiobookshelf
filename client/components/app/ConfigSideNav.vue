@@ -10,12 +10,12 @@
         <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
-      <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.version" />
-    </div>
+        <modals-changelog-view-modal v-model="showChangelogModal" :changelog="currentVersionChangelog" :currentVersion="$config.public.version" />
+      </div>
 
-    <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
-      <div class="flex justify-between">
-        <p class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.version }}</p>
+      <div class="w-44 h-12 px-4 border-t bg-bg border-black border-opacity-20 fixed left-0 flex flex-col justify-center" :class="wrapperClass" :style="{ bottom: streamLibraryItem ? '160px' : '0px' }">
+        <div class="flex justify-between">
+          <p class="underline font-mono text-sm" @click="clickChangelog">v{{ $config.public.version }}</p>
 
         <p class="font-mono text-xs text-gray-300 italic">{{ Source }}</p>
       </div>
