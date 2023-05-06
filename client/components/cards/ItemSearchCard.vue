@@ -5,7 +5,7 @@
       <p v-if="matchKey !== 'title'" class="truncate text-sm">{{ title }}</p>
       <p v-else class="truncate text-sm" v-html="matchHtml" />
 
-      <p v-if="matchKey === 'subtitle'" class="truncate text-xs text-gray-300">{{ matchHtml }}</p>
+      <p v-if="matchKey === 'subtitle'" class="truncate text-xs text-gray-300" v-html="matchHtml" />
 
       <p v-if="matchKey !== 'authors'" class="text-xs text-gray-200 truncate">by {{ authorName }}</p>
       <p v-else class="truncate text-xs text-gray-200" v-html="matchHtml" />
@@ -61,7 +61,6 @@ export default {
     },
     matchHtml() {
       if (!this.matchText || !this.search) return ''
-      if (this.matchKey === 'subtitle') return ''
 
       // This used to highlight the part of the search found
       //        but with removing commas periods etc this is no longer plausible
@@ -69,6 +68,7 @@ export default {
 
       if (this.matchKey === 'episode') return `<p class="truncate">${this.$strings.LabelEpisode}: ${html}</p>`
       if (this.matchKey === 'tags') return `<p class="truncate">${this.$strings.LabelTags}: ${html}</p>`
+      if (this.matchKey === 'subtitle') return `<p class="truncate">${html}</p>`
       if (this.matchKey === 'authors') return `by ${html}`
       if (this.matchKey === 'isbn') return `<p class="truncate">ISBN: ${html}</p>`
       if (this.matchKey === 'asin') return `<p class="truncate">ASIN: ${html}</p>`

@@ -411,7 +411,7 @@ class BookMetadata {
     return this.narrators.filter(n => cleanStringForSearch(n).includes(query))
   }
   searchQuery(query) { // Returns key if match is found
-    const keysToCheck = ['title', 'asin', 'isbn']
+    const keysToCheck = ['title', 'asin', 'isbn', 'subtitle']
     for (const key of keysToCheck) {
       if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
         return {
