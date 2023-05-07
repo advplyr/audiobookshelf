@@ -366,9 +366,8 @@ export default {
         navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
         navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
         navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
-        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionPreviousTrack)
-        const hasNextChapter = this.$refs.audioPlayer && this.$refs.audioPlayer.hasNextChapter
-        navigator.mediaSession.setActionHandler('nexttrack', hasNextChapter ? this.mediaSessionNextTrack : null)
+        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionSeekBackward)
+        navigator.mediaSession.setActionHandler('nexttrack', this.mediaSessionSeekForward)
       } else {
         console.warn('Media session not available')
       }
