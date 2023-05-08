@@ -2,11 +2,11 @@
   "name": "audiobookshelf-client",
   "version": "2.2.19",
   "description": "Self-hosted audiobook and podcast client",
-  "main": "index.js",
+  "main": ".output/server/index.js",
   "scripts": {
     "dev": "nuxi dev",
     "dev2": "nuxi dev --hostname localhost --port 1337",
-    "build": "nuxi build",
+    "build": "nuxi build && node esbuild.js",
     "start": "nuxi preview",
     "generate": "nuxi generate"
   },
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@nuxtjs/tailwindcss": "^6.6.7",
     "autoprefixer": "^10.4.7",
+    "esbuild": "^0.17.18",
     "minimatch": "^8.0.4",
     "postcss": "^8.3.6",
     "tailwindcss": "^3.1.4"

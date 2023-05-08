@@ -331,7 +331,6 @@ class Server {
 
   async stop() {
     this.watcher.close()
-    this.clientRouter.stop()
     Logger.info('Watcher Closed')
 
     return new Promise((resolve) => {

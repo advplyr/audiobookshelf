@@ -14,4 +14,4 @@ const handler = listener
   );
 }
 
-export { useRuntimeConfig, getRouteRules, handler, listener, useNitroApp };
+export { useRuntimeConfig, getRouteRules, handler, listener, useNitroApp }

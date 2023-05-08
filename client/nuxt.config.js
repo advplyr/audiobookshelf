@@ -1,5 +1,4 @@
 const { defineNuxtConfig } = require('@nuxt/bridge')
-import { fromNodeMiddleware } from 'h3';
 const pkg = require('./package.json')
 
 module.exports = defineNuxtConfig({
