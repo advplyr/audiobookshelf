@@ -232,6 +232,20 @@ Bookshelf Label
   -webkit-box-orient: vertical;
 }
 
+.episode-subtitle-long {
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-height: 16px;
+  /* fallback */
+  max-height: 72px;
+  /* fallback */
+  -webkit-line-clamp: 6;
+  /* number of lines to show */
+  -webkit-box-orient: vertical;
+}
+
 
 /* Padding for toastification toasts in the top right to not cover appbar/toolbar */
 .app-bar-and-toolbar .Vue-Toastification__container.top-right {
