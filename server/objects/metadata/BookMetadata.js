@@ -27,9 +27,9 @@ class BookMetadata {
   construct(metadata) {
     this.title = metadata.title
     this.subtitle = metadata.subtitle
-    this.authors = (metadata.authors && metadata.authors.map) ? metadata.authors.map(a => ({ ...a })) : []
-    this.narrators = metadata.narrators ? [...metadata.narrators] : []
-    this.series = (metadata.series && metadata.series.map) ? metadata.series.map(s => ({ ...s })) : []
+    this.authors = (metadata.authors?.map) ? metadata.authors.map(a => ({ ...a })) : []
+    this.narrators = metadata.narrators ? [...metadata.narrators].filter(n => n) : []
+    this.series = (metadata.series?.map) ? metadata.series.map(s => ({ ...s })) : []
     this.genres = metadata.genres ? [...metadata.genres] : []
     this.publishedYear = metadata.publishedYear || null
     this.publishedDate = metadata.publishedDate || null
@@ -230,7 +230,7 @@ class BookMetadata {
   updateNarrator(oldNarratorName, newNarratorName) {
     if (!this.hasNarrator(oldNarratorName)) return false
     this.narrators = this.narrators.filter(n => n !== oldNarratorName)
-    if (!this.hasNarrator(newNarratorName)) {
+    if (newNarratorName && !this.hasNarrator(newNarratorName)) {
       this.narrators.push(newNarratorName)
     }
     return true

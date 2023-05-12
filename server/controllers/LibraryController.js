@@ -709,9 +709,11 @@ class LibraryController {
   async getNarrators(req, res) {
     const narrators = {}
     req.libraryItems.forEach((li) => {
-      if (li.media.metadata.narrators && li.media.metadata.narrators.length) {
+      if (li.media.metadata.narrators?.length) {
         li.media.metadata.narrators.forEach((n) => {
-          if (!narrators[n]) {
+          if (typeof n !== 'string') {
+            Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${li.media.metadata.title}"`)
+          } else if (!narrators[n]) {
             narrators[n] = {
               id: encodeURIComponent(Buffer.from(n).toString('base64')),
               name: n,
