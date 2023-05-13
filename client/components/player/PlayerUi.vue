@@ -46,7 +46,7 @@
       <player-playback-controls :loading="loading" :seek-loading="seekLoading" :playback-rate.sync="playbackRate" :paused="paused" :has-next-chapter="hasNextChapter" @prevChapter="prevChapter" @nextChapter="nextChapter" @jumpForward="jumpForward" @jumpBackward="jumpBackward" @setPlaybackRate="setPlaybackRate" @playPause="playPause" />
     </div>
 
-    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" @seek="seek" />
+    <player-track-bar ref="trackbar" :loading="loading" :chapters="chapters" :duration="duration" :current-chapter="currentChapter" :playback-rate="playbackRate" :is-finished="isFinished" @seek="seek" />
 
     <div class="flex">
       <p ref="currentTimestamp" class="font-mono text-xxs sm:text-sm text-gray-100 pointer-events-auto">00:00:00</p>
@@ -78,7 +78,8 @@ export default {
     },
     sleepTimerSet: Boolean,
     sleepTimerRemaining: Number,
-    isPodcast: Boolean
+    isPodcast: Boolean,
+    isFinished: Boolean
   },
   data() {
     return {

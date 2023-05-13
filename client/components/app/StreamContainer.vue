@@ -41,6 +41,7 @@
       :sleep-timer-set="sleepTimerSet"
       :sleep-timer-remaining="sleepTimerRemaining"
       :is-podcast="isPodcast"
+      :is-finished="isFinished"
       @playPause="playPause"
       @jumpForward="jumpForward"
       @jumpBackward="jumpBackward"
@@ -82,7 +83,8 @@ export default {
       sleepTimer: null,
       displayTitle: null,
       currentPlaybackRate: 1,
-      syncFailedToast: null
+      syncFailedToast: null,
+      isFinished: false
     }
   },
   computed: {
@@ -203,6 +205,7 @@ export default {
     },
     setPlaying(isPlaying) {
       this.isPlaying = isPlaying
+      this.isFinished = !this.playerHandler.syncProgress
       this.$store.commit('setIsPlaying', isPlaying)
       this.updateMediaSessionPlaybackState()
     },

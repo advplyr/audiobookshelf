@@ -173,7 +173,7 @@ class PlaybackSessionManager {
       }
     }
     const newPlaybackSession = new PlaybackSession()
-    newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, episodeId)
+    newPlaybackSession.setData(libraryItem, user, mediaPlayer, deviceInfo, userStartTime, userProgress.isFinished, episodeId)
 
     if (libraryItem.mediaType === 'video') {
       if (shouldDirectPlay) {

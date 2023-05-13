@@ -1,7 +1,7 @@
 <template>
   <div class="relative">
     <!-- Track -->
-    <div ref="track" class="w-full h-2 bg-gray-700 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
+    <div ref="track" :class="isFinished ? 'bg-yellow-400' : 'bg-gray-700'" class="w-full h-2 relative cursor-pointer transform duration-100 hover:scale-y-125 overflow-hidden" @mousemove="mousemoveTrack" @mouseleave="mouseleaveTrack" @click.stop="clickTrack">
       <div ref="readyTrack" class="h-full bg-gray-600 absolute top-0 left-0 pointer-events-none" />
       <div ref="bufferTrack" class="h-full bg-gray-500 absolute top-0 left-0 pointer-events-none" />
       <div ref="playedTrack" class="h-full bg-gray-200 absolute top-0 left-0 pointer-events-none" />
@@ -39,7 +39,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    playbackRate: Number
+    playbackRate: Number,
+    isFinished: Boolean
   },
   data() {
     return {

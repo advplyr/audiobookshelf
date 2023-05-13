@@ -27,6 +27,7 @@ export default class PlayerHandler {
     this.listeningTimeSinceSync = 0
 
     this.playInterval = null
+    this.syncProgress = true
   }
 
   get isCasting() {
@@ -218,6 +219,7 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.failedProgressSyncs = 0
     this.startTime = this.startTimeOverride !== undefined ? this.startTimeOverride : session.currentTime
+    this.syncProgress = !session.isFinished
     this.currentSessionId = session.id
     this.displayTitle = session.displayTitle
     this.displayAuthor = session.displayAuthor
@@ -300,7 +302,7 @@ export default class PlayerHandler {
     if (this.player) {
       const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
       // When opening player and quickly closing dont save progress
-      if (listeningTimeToAdd > 20 || this.lastSyncTime > 0) {
+      if (this.syncProgress && (listeningTimeToAdd > 20 || this.lastSyncTime > 0)) {
         syncData = {
           timeListened: listeningTimeToAdd,
           duration: this.getDuration(),
@@ -316,7 +318,7 @@ export default class PlayerHandler {
   }
 
   sendProgressSync(currentTime) {
-    if (this.isMusic) return
+    if (this.isMusic || !this.syncProgress) return
 
     const diffSinceLastSync = Math.abs(this.lastSyncTime - currentTime)
     if (diffSinceLastSync < 1) return

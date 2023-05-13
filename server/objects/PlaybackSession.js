@@ -32,6 +32,7 @@ class PlaybackSession {
     this.timeListening = null
     this.startTime = null // media current time at start of playback
     this.currentTime = 0 // Last current time set
+    this.isFinished = null
 
     this.startedAt = null
     this.updatedAt = null
@@ -69,6 +70,7 @@ class PlaybackSession {
       timeListening: this.timeListening,
       startTime: this.startTime,
       currentTime: this.currentTime,
+      isFinished: this.isFinished,
       startedAt: this.startedAt,
       updatedAt: this.updatedAt
     }
@@ -96,6 +98,7 @@ class PlaybackSession {
       timeListening: this.timeListening,
       startTime: this.startTime,
       currentTime: this.currentTime,
+      isFinished: this.isFinished,
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map(at => at.toJSON()),
@@ -136,6 +139,7 @@ class PlaybackSession {
     this.timeListening = session.timeListening || null
     this.startTime = session.startTime || 0
     this.currentTime = session.currentTime || 0
+    this.currentTime = session.isFinished || null
 
     this.startedAt = session.startedAt
     this.updatedAt = session.updatedAt || null
@@ -169,7 +173,7 @@ class PlaybackSession {
     }
   }
 
-  setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, episodeId = null) {
+  setData(libraryItem, user, mediaPlayer, deviceInfo, startTime, isFinished, episodeId = null) {
     this.id = getId('play')
     this.userId = user.id
     this.libraryId = libraryItem.libraryId
@@ -194,6 +198,7 @@ class PlaybackSession {
     this.timeListening = 0
     this.startTime = startTime
     this.currentTime = startTime
+    this.isFinished = isFinished
 
     this.date = date.format(new Date(), 'YYYY-MM-DD')
     this.dayOfWeek = date.format(new Date(), 'dddd')
