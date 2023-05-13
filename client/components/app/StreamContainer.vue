@@ -15,7 +15,7 @@
             <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
             <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
             <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
-              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}?library=${libraryId}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
             </div>
             <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
             <widgets-explicit-indicator :explicit="isExplicit"></widgets-explicit-indicator>

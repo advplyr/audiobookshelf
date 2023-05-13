@@ -43,14 +43,18 @@
 
 <script>
 export default {
-  async asyncData({ store, app, params, redirect }) {
-    const author = await app.$axios.$get(`/api/authors/${params.id}?library=${store.state.libraries.currentLibraryId}&include=items,series`).catch((error) => {
+  async asyncData({ store, app, params, redirect, query }) {
+    const author = await app.$axios.$get(`/api/authors/${params.id}?library=${query.library || store.state.libraries.currentLibraryId}&include=items,series`).catch((error) => {
       console.error('Failed to get author', error)
       return null
     })
 
     if (!author) {
       return redirect(`/library/${store.state.libraries.currentLibraryId}/authors`)
+    }
+
+    if (query.library) {
+      store.commit('libraries/setCurrentLibrary', query.library)
     }
 
     return {

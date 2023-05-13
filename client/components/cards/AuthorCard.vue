@@ -1,5 +1,5 @@
 <template>
-  <nuxt-link :to="`/author/${author.id}`">
+  <nuxt-link :to="`/author/${author.id}?library=${currentLibraryId}`">
     <div @mouseover="mouseover" @mouseleave="mouseleave">
       <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
         <!-- Image or placeholder -->
