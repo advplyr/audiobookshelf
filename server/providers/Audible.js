@@ -13,7 +13,7 @@ class Audible {
             'de': '.de',
             'jp': '.co.jp',
             'it': '.it',
-            'in': '.co.in',
+            'in': '.in',
             'es': '.es'
         }
     }
