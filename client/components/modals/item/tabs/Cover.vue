@@ -128,7 +128,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return [...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
+      return [{ text: 'All', value: 'all' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -288,7 +288,7 @@ export default {
     },
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
-      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
+      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor || ''}`
       if (this.isPodcast) searchQuery += '&podcast=1'
       return searchQuery
     },

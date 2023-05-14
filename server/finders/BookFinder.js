@@ -18,6 +18,8 @@ class BookFinder {
     this.fantLab = new FantLab()
     this.audiobookCovers = new AudiobookCovers()
 
+    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
+
     this.verbose = false
   }
 
@@ -183,7 +185,7 @@ class BookFinder {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
-    Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
+    Logger.debug(`Book Search: title: "${title}", author: "${author || ''}", provider: ${provider}`)
 
     if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
@@ -222,19 +224,29 @@ class BookFinder {
   }
 
   async findCovers(provider, title, author, options = {}) {
-    var searchResults = await this.search(provider, title, author, options)
+    let searchResults = []
+
+    if (provider === 'all') {
+      for (const providerString of this.providers) {
+        const providerResults = await this.search(providerString, title, author, options)
+        Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
+        searchResults.push(...providerResults)
+      }
+    } else {
+      searchResults = await this.search(provider, title, author, options)
+    }
     Logger.debug(`[BookFinder] FindCovers search results: ${searchResults.length}`)
 
-    var covers = []
+    const covers = []
     searchResults.forEach((result) => {
       if (result.covers && result.covers.length) {
-        covers = covers.concat(result.covers)
+        covers.push(...result.covers)
       }
       if (result.cover) {
         covers.push(result.cover)
       }
     })
-    return covers
+    return [...(new Set(covers))]
   }
 
   findChapters(asin, region) {
