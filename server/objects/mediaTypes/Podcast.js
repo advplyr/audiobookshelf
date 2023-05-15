@@ -94,6 +94,13 @@ class Podcast {
     }
   }
 
+  toJSONForMetadataFile() {
+    return {
+      tags: [...this.tags],
+      metadata: this.metadata.toJSON()
+    }
+  }
+
   get size() {
     var total = 0
     this.episodes.forEach((ep) => total += ep.size)
@@ -199,10 +206,11 @@ class Podcast {
     let metadataUpdatePayload = {}
     let tagsUpdated = false
 
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
     if (metadataAbs) {
+      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
       const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast')
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast', isJSON)
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
 

@@ -1,5 +1,4 @@
 const { BookshelfView } = require('../../utils/constants')
-const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
 class ServerSettings {
@@ -21,6 +20,7 @@ class ServerSettings {
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
     this.storeMetadataWithItem = false
+    this.metadataFileFormat = 'json'
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -77,6 +77,7 @@ class ServerSettings {
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
+    this.metadataFileFormat = settings.metadataFileFormat || 'json'
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -112,6 +113,16 @@ class ServerSettings {
     if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
       this.homeBookshelfView = settings.bookshelfView
     }
+    if (settings.metadataFileFormat == undefined) { // metadataFileFormat was added in 2.2.21
+      // All users using old settings will stay abs until changed
+      this.metadataFileFormat = 'abs'
+    }
+
+    // Validation
+    if (!['abs', 'json'].includes(this.metadataFileFormat)) {
+      Logger.error(`[ServerSettings] construct: Invalid metadataFileFormat ${this.metadataFileFormat}`)
+      this.metadataFileFormat = 'json'
+    }
 
     if (this.logLevel !== Logger.logLevel) {
       Logger.setLogLevel(this.logLevel)
@@ -133,6 +144,7 @@ class ServerSettings {
       scannerUseTone: this.scannerUseTone,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
+      metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,

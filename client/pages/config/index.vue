@@ -39,9 +39,13 @@
             <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
           </div>
 
-          <div class="flex items-center py-2">
+          <div class="flex items-center py-2 mb-2">
             <ui-toggle-switch labeledBy="settings-chromecast-support" v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
             <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
+          </div>
+
+          <div class="w-44 mb-2">
+            <ui-dropdown v-model="newServerSettings.metadataFileFormat" small :items="metadataFileFormats" label="Metadata File Format" @input="(val) => updateSettingsKey('metadataFileFormat', val)" :disabled="updatingServerSettings" />
           </div>
 
           <div class="pt-4">
@@ -272,7 +276,17 @@ export default {
       useBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
-      showConfirmPurgeCache: false
+      showConfirmPurgeCache: false,
+      metadataFileFormats: [
+        {
+          text: '.json',
+          value: 'json'
+        },
+        {
+          text: '.abs',
+          value: 'abs'
+        }
+      ]
     }
   },
   watch: {

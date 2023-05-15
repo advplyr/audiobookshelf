@@ -109,6 +109,16 @@ class BookMetadata {
     }
   }
 
+  toJSONForMetadataFile() {
+    const json = this.toJSON()
+    json.authors = json.authors.map(au => au.name)
+    json.series = json.series.map(se => {
+      if (!se.sequence) return se.name
+      return `${se.name} #${se.sequence}`
+    })
+    return json
+  }
+
   clone() {
     return new BookMetadata(this.toJSON())
   }
@@ -191,8 +201,9 @@ class BookMetadata {
   }
 
   update(payload) {
-    var json = this.toJSON()
-    var hasUpdates = false
+    const json = this.toJSON()
+    let hasUpdates = false
+
     for (const key in json) {
       if (payload[key] !== undefined) {
         if (!areEquivalent(payload[key], json[key])) {
@@ -373,8 +384,10 @@ class BookMetadata {
     const parsed = parseNameString.parse(authorsTag)
     if (!parsed) return []
     return (parsed.names || []).map((au) => {
+      const findAuthor = this.authors.find(_au => _au.name == au)
+
       return {
-        id: `new-${Math.floor(Math.random() * 1000000)}`,
+        id: findAuthor?.id || `new-${Math.floor(Math.random() * 1000000)}`,
         name: au
       }
     })

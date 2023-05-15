@@ -2,7 +2,7 @@ const fs = require('../libs/fsExtra')
 const filePerms = require('./filePerms')
 const package = require('../../package.json')
 const Logger = require('../Logger')
-const { getId, copyValue } = require('./index')
+const { getId } = require('./index')
 
 
 const CurrentAbMetadataVersion = 2
@@ -328,11 +328,11 @@ function parseAbMetadataText(text, mediaType) {
 module.exports.parse = parseAbMetadataText
 
 function checkUpdatedBookAuthors(abmetadataAuthors, authors) {
-  var finalAuthors = []
-  var hasUpdates = false
+  const finalAuthors = []
+  let hasUpdates = false
 
   abmetadataAuthors.forEach((authorName) => {
-    var findAuthor = authors.find(au => au.name.toLowerCase() == authorName.toLowerCase())
+    const findAuthor = authors.find(au => au.name.toLowerCase() == authorName.toLowerCase())
     if (!findAuthor) {
       hasUpdates = true
       finalAuthors.push({
@@ -397,18 +397,54 @@ function checkArraysChanged(abmetadataArray, mediaArray) {
   return abmetadataArray.join(',') != mediaArray.join(',')
 }
 
+function parseJsonMetadataText(text) {
+  try {
+    const abmetadataData = JSON.parse(text)
+    if (abmetadataData.metadata?.series?.length) {
+      abmetadataData.metadata.series = abmetadataData.metadata.series.map(series => {
+        let sequence = null
+        let name = series
+        // Series sequence match any characters after " #" other than whitespace and another #
+        //  e.g. "Name #1a" is valid. "Name #1#a" or "Name #1 a" is not valid.
+        const matchResults = series.match(/ #([^#\s]+)$/) // Pull out sequence #
+        if (matchResults && matchResults.length && matchResults.length > 1) {
+          sequence = matchResults[1] // Group 1
+          name = series.replace(matchResults[0], '')
+        }
+        return {
+          name,
+          sequence
+        }
+      })
+    }
+    return abmetadataData
+  } catch (error) {
+    Logger.error(`[abmetadataGenerator] Invalid metadata.json JSON`, error)
+    return null
+  }
+}
+
 // Input text from abmetadata file and return object of media changes
 //  only returns object of changes. empty object means no changes
-function parseAndCheckForUpdates(text, media, mediaType) {
+function parseAndCheckForUpdates(text, media, mediaType, isJSON) {
   if (!text || !media || !media.metadata || !mediaType) {
     Logger.error(`Invalid inputs to parseAndCheckForUpdates`)
     return null
   }
+
   const mediaMetadata = media.metadata
   const metadataUpdatePayload = {} // Only updated key/values
 
-  const abmetadataData = parseAbMetadataText(text, mediaType)
+  let abmetadataData = null
+
+  if (isJSON) {
+    abmetadataData = parseJsonMetadataText(text)
+  } else {
+    abmetadataData = parseAbMetadataText(text, mediaType)
+  }
+
   if (!abmetadataData || !abmetadataData.metadata) {
+    Logger.error(`[abmetadataGenerator] Invalid metadata file`)
     return null
   }
 

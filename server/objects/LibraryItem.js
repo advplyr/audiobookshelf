@@ -499,14 +499,37 @@ class LibraryItem {
       // Make sure metadata book dir exists
       await fs.ensureDir(metadataPath)
     }
-    metadataPath = Path.join(metadataPath, 'metadata.abs')
 
-    return abmetadataGenerator.generate(this, metadataPath).then((success) => {
-      this.isSavingMetadata = false
-      if (!success) Logger.error(`[LibraryItem] Failed saving abmetadata to "${metadataPath}"`)
-      else Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataPath}"`)
-      return success
-    })
+    const metadataFileFormat = global.ServerSettings.metadataFileFormat
+    const metadataFilePath = Path.join(metadataPath, `metadata.${metadataFileFormat}`)
+
+    if (metadataFileFormat === 'json') {
+      // Remove metadata.abs if it exists
+      if (await fs.pathExists(Path.join(metadataPath, `metadata.abs`))) {
+        Logger.debug(`[LibraryItem] Removing metadata.abs for item "${this.media.metadata.title}"`)
+        await fs.remove(Path.join(metadataPath, `metadata.abs`))
+      }
+
+      return fs.writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2)).then(() => {
+        return true
+      }).catch((error) => {
+        Logger.error(`[LibraryItem] Failed to save json file at "${metadataFilePath}"`, error)
+        return false
+      })
+    } else {
+      // Remove metadata.json if it exists
+      if (await fs.pathExists(Path.join(metadataPath, `metadata.json`))) {
+        Logger.debug(`[LibraryItem] Removing metadata.json for item "${this.media.metadata.title}"`)
+        await fs.remove(Path.join(metadataPath, `metadata.json`))
+      }
+
+      return abmetadataGenerator.generate(this, metadataFilePath).then((success) => {
+        this.isSavingMetadata = false
+        if (!success) Logger.error(`[LibraryItem] Failed saving abmetadata to "${metadataFilePath}"`)
+        else Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
+        return success
+      })
+    }
   }
 
   removeLibraryFile(ino) {

@@ -89,6 +89,14 @@ class Book {
     }
   }
 
+  toJSONForMetadataFile() {
+    return {
+      tags: [...this.tags],
+      chapters: this.chapters.map(c => ({ ...c })),
+      metadata: this.metadata.toJSONForMetadataFile()
+    }
+  }
+
   get size() {
     var total = 0
     this.audioFiles.forEach((af) => total += af.metadata.size)
@@ -248,11 +256,12 @@ class Book {
       }
     }
 
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
     if (metadataAbs) {
-      Logger.debug(`[Book] Found metadata.abs file for "${this.metadata.title}"`)
+      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
+      Logger.debug(`[Book] Found ${metadataAbs.metadata.filename} file for "${this.metadata.title}"`)
       const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book')
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book', isJSON)
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
 
