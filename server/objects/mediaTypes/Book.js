@@ -237,7 +237,7 @@ class Book {
   // Look for desc.txt, reader.txt, metadata.abs and opf file then update details if found
   async syncMetadataFiles(textMetadataFiles, opfMetadataOverrideDetails) {
     let metadataUpdatePayload = {}
-    let tagsUpdated = false
+    let hasUpdated = false
 
     const descTxt = textMetadataFiles.find(lf => lf.metadata.filename === 'desc.txt')
     if (descTxt) {
@@ -256,18 +256,25 @@ class Book {
       }
     }
 
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
-    if (metadataAbs) {
-      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
-      Logger.debug(`[Book] Found ${metadataAbs.metadata.filename} file for "${this.metadata.title}"`)
-      const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book', isJSON)
+    const metadataIsJSON = global.ServerSettings.metadataFileFormat === 'json'
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataJson = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.json')
+
+    const metadataFile = metadataIsJSON ? metadataJson : metadataAbs
+    if (metadataFile) {
+      Logger.debug(`[Book] Found ${metadataFile.metadata.filename} file for "${this.metadata.title}"`)
+      const metadataText = await readTextFile(metadataFile.metadata.path)
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'book', metadataIsJSON)
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Book] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
 
         if (abmetadataUpdates.tags) { // Set media tags if updated
           this.tags = abmetadataUpdates.tags
-          tagsUpdated = true
+          hasUpdated = true
+        }
+        if (abmetadataUpdates.chapters) { // Set chapters if updated
+          this.chapters = abmetadataUpdates.chapters
+          hasUpdated = true
         }
         if (abmetadataUpdates.metadata) {
           metadataUpdatePayload = {
@@ -276,6 +283,9 @@ class Book {
           }
         }
       }
+    } else if (metadataAbs || metadataJson) { // Has different metadata file format so mark as updated
+      Logger.debug(`[Book] Found different format metadata file ${(metadataAbs || metadataJson).metadata.filename}, expecting .${global.ServerSettings.metadataFileFormat} for "${this.metadata.title}"`)
+      hasUpdated = true
     }
 
     const metadataOpf = textMetadataFiles.find(lf => lf.isOPFFile || lf.metadata.filename === 'metadata.xml')
@@ -289,7 +299,7 @@ class Book {
             if (key === 'tags') { // Add tags only if tags are empty
               if (opfMetadata.tags.length && (!this.tags.length || opfMetadataOverrideDetails)) {
                 this.tags = opfMetadata.tags
-                tagsUpdated = true
+                hasUpdated = true
               }
             } else if (key === 'genres') { // Add genres only if genres are empty
               if (opfMetadata.genres.length && (!this.metadata.genres.length || opfMetadataOverrideDetails)) {
@@ -321,9 +331,9 @@ class Book {
     }
 
     if (Object.keys(metadataUpdatePayload).length) {
-      return this.metadata.update(metadataUpdatePayload) || tagsUpdated
+      return this.metadata.update(metadataUpdatePayload) || hasUpdated
     }
-    return tagsUpdated
+    return hasUpdated
   }
 
   searchQuery(query) {

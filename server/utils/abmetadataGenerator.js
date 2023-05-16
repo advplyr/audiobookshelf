@@ -3,6 +3,7 @@ const filePerms = require('./filePerms')
 const package = require('../../package.json')
 const Logger = require('../Logger')
 const { getId } = require('./index')
+const areEquivalent = require('../utils/areEquivalent')
 
 
 const CurrentAbMetadataVersion = 2
@@ -424,6 +425,33 @@ function parseJsonMetadataText(text) {
   }
 }
 
+function cleanChaptersArray(chaptersArray, mediaTitle) {
+  const chapters = []
+  let index = 0
+  for (const chap of chaptersArray) {
+    if (chap.start === null || isNaN(chap.start)) {
+      Logger.error(`[abmetadataGenerator] Invalid chapter start time ${chap.start} for "${mediaTitle}" metadata file`)
+      return null
+    }
+    if (chap.end === null || isNaN(chap.end)) {
+      Logger.error(`[abmetadataGenerator] Invalid chapter end time ${chap.end} for "${mediaTitle}" metadata file`)
+      return null
+    }
+    if (!chap.title || typeof chap.title !== 'string') {
+      Logger.error(`[abmetadataGenerator] Invalid chapter title ${chap.title} for "${mediaTitle}" metadata file`)
+      return null
+    }
+
+    chapters.push({
+      id: index++,
+      start: chap.start,
+      end: chap.end,
+      title: chap.title
+    })
+  }
+  return chapters
+}
+
 // Input text from abmetadata file and return object of media changes
 //  only returns object of changes. empty object means no changes
 function parseAndCheckForUpdates(text, media, mediaType, isJSON) {
@@ -474,6 +502,15 @@ function parseAndCheckForUpdates(text, media, mediaType, isJSON) {
   if (abmetadataData.tags) {
     if (checkArraysChanged(abmetadataData.tags, media.tags)) {
       updatePayload.tags = abmetadataData.tags
+    }
+  }
+
+  if (abmetadataData.chapters && mediaType === 'book') {
+    const abmetadataChaptersCleaned = cleanChaptersArray(abmetadataData.chapters)
+    if (abmetadataChaptersCleaned) {
+      if (!areEquivalent(abmetadataChaptersCleaned, media.chapters)) {
+        updatePayload.chapters = abmetadataChaptersCleaned
+      }
     }
   }
 

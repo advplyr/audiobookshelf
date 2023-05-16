@@ -45,7 +45,7 @@
           </div>
 
           <div class="w-44 mb-2">
-            <ui-dropdown v-model="newServerSettings.metadataFileFormat" small :items="metadataFileFormats" label="Metadata File Format" @input="(val) => updateSettingsKey('metadataFileFormat', val)" :disabled="updatingServerSettings" />
+            <ui-dropdown v-model="newServerSettings.metadataFileFormat" small :items="metadataFileFormats" label="Metadata File Format" @input="updateMetadataFileFormat" :disabled="updatingServerSettings" />
           </div>
 
           <div class="pt-4">
@@ -355,6 +355,10 @@ export default {
     updateServerLanguage(val) {
       this.updateSettingsKey('language', val)
     },
+    updateMetadataFileFormat(val) {
+      if (this.serverSettings.metadataFileFormat === val) return
+      this.updateSettingsKey('metadataFileFormat', val)
+    },
     updateSettingsKey(key, val) {
       this.updateServerSettings({
         [key]: val
@@ -364,8 +368,7 @@ export default {
       this.updatingServerSettings = true
       this.$store
         .dispatch('updateServerSettings', payload)
-        .then((success) => {
-          console.log('Updated Server Settings', success)
+        .then(() => {
           this.updatingServerSettings = false
           this.$toast.success('Server settings updated')
 

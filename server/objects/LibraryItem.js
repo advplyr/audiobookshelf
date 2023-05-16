@@ -9,6 +9,7 @@ const Podcast = require('./mediaTypes/Podcast')
 const Video = require('./mediaTypes/Video')
 const Music = require('./mediaTypes/Music')
 const { areEquivalent, copyValue, getId, cleanStringForSearch } = require('../utils/index')
+const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class LibraryItem {
   constructor(libraryItem = null) {
@@ -368,7 +369,7 @@ class LibraryItem {
       const fileFoundCheck = this.checkFileFound(lf, true)
       if (fileFoundCheck === null) {
         newLibraryFiles.push(lf)
-      } else if (fileFoundCheck && lf.metadata.format !== 'abs') { // Ignore abs file updates
+      } else if (fileFoundCheck && lf.metadata.format !== 'abs' && lf.metadata.filename !== 'metadata.json') { // Ignore abs file updates
         hasUpdated = true
         existingLibraryFiles.push(lf)
       } else {
@@ -502,17 +503,26 @@ class LibraryItem {
 
     const metadataFileFormat = global.ServerSettings.metadataFileFormat
     const metadataFilePath = Path.join(metadataPath, `metadata.${metadataFileFormat}`)
-
     if (metadataFileFormat === 'json') {
       // Remove metadata.abs if it exists
       if (await fs.pathExists(Path.join(metadataPath, `metadata.abs`))) {
         Logger.debug(`[LibraryItem] Removing metadata.abs for item "${this.media.metadata.title}"`)
         await fs.remove(Path.join(metadataPath, `metadata.abs`))
+        this.libraryFiles = this.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.abs`)))
       }
 
-      return fs.writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2)).then(() => {
+      return fs.writeFile(metadataFilePath, JSON.stringify(this.media.toJSONForMetadataFile(), null, 2)).then(async () => {
+        this.isSavingMetadata = false
+        // Add metadata.json to libraryFiles array if it is new
+        if (global.ServerSettings.storeMetadataWithItem && !this.libraryFiles.some(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))) {
+          const newLibraryFile = new LibraryFile()
+          await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
+          this.libraryFiles.push(newLibraryFile)
+        }
+
         return true
       }).catch((error) => {
+        this.isSavingMetadata = false
         Logger.error(`[LibraryItem] Failed to save json file at "${metadataFilePath}"`, error)
         return false
       })
@@ -521,12 +531,22 @@ class LibraryItem {
       if (await fs.pathExists(Path.join(metadataPath, `metadata.json`))) {
         Logger.debug(`[LibraryItem] Removing metadata.json for item "${this.media.metadata.title}"`)
         await fs.remove(Path.join(metadataPath, `metadata.json`))
+        this.libraryFiles = this.libraryFiles.filter(lf => lf.metadata.path !== filePathToPOSIX(Path.join(metadataPath, `metadata.json`)))
       }
 
-      return abmetadataGenerator.generate(this, metadataFilePath).then((success) => {
+      return abmetadataGenerator.generate(this, metadataFilePath).then(async (success) => {
         this.isSavingMetadata = false
         if (!success) Logger.error(`[LibraryItem] Failed saving abmetadata to "${metadataFilePath}"`)
-        else Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
+        else {
+          // Add metadata.abs to libraryFiles array if it is new
+          if (global.ServerSettings.storeMetadataWithItem && !this.libraryFiles.some(lf => lf.metadata.path === filePathToPOSIX(metadataFilePath))) {
+            const newLibraryFile = new LibraryFile()
+            await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.abs`)
+            this.libraryFiles.push(newLibraryFile)
+          }
+
+          Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
+        }
         return success
       })
     }

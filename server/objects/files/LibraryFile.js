@@ -1,5 +1,5 @@
 const Path = require('path')
-const { getFileTimestampsWithIno } = require('../../utils/fileUtils')
+const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileUtils')
 const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
@@ -59,8 +59,8 @@ class LibraryFile {
     var fileMetadata = new FileMetadata()
     fileMetadata.setData(fileTsData)
     fileMetadata.filename = Path.basename(relPath)
-    fileMetadata.path = path
-    fileMetadata.relPath = relPath
+    fileMetadata.path = filePathToPOSIX(path)
+    fileMetadata.relPath = filePathToPOSIX(relPath)
     fileMetadata.ext = Path.extname(relPath)
     this.ino = fileTsData.ino
     this.metadata = fileMetadata

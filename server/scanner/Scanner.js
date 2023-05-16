@@ -111,8 +111,8 @@ class Scanner {
     }
 
     if (hasUpdated) {
-      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
       await this.db.updateLibraryItem(libraryItem)
+      SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
       return ScanResult.UPDATED
     }
     return ScanResult.UPTODATE
