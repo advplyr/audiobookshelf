@@ -4,6 +4,8 @@ const { parseString } = require("xml2js")
 const areEquivalent = require('./areEquivalent')
 
 const levenshteinDistance = (str1, str2, caseSensitive = false) => {
+  str1 = String(str1)
+  str2 = String(str2)
   if (!caseSensitive) {
     str1 = str1.toLowerCase()
     str2 = str2.toLowerCase()
