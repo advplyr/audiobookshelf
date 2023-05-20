@@ -46,11 +46,11 @@ class MediaProgress {
     this.episodeId = progress.episodeId
     this.duration = progress.duration || 0
     this.progress = progress.progress
-    this.currentTime = progress.currentTime
+    this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished
     this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.ebookLocation = progress.ebookLocation || null
-    this.ebookProgress = progress.ebookProgress
+    this.ebookProgress = progress.ebookProgress || null
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null
