@@ -602,10 +602,11 @@ export default {
       }
     },
     clearProgressClick() {
+      if (!this.userMediaProgress) return
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$delete(`/api/me/progress/${this.libraryItemId}`)
+          .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)
