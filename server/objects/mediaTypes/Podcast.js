@@ -339,5 +339,9 @@ class Podcast {
     if (!audioFile?.metaTags) return false
     return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
   }
+
+  getChapters(episodeId) {
+    return this.getEpisode(episodeId)?.chapters?.map(ch => ({ ...ch })) || []
+  }
 }
 module.exports = Podcast

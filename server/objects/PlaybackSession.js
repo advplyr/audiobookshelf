@@ -177,7 +177,7 @@ class PlaybackSession {
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
-    this.chapters = (libraryItem.media.chapters || []).map(c => ({ ...c })) // Only book mediaType has chapters
+    this.chapters = libraryItem.media.getChapters(episodeId)
     this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath

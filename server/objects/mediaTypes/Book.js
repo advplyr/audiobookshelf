@@ -528,5 +528,9 @@ class Book {
   getPlaybackAuthor() {
     return this.metadata.authorName
   }
+
+  getChapters() {
+    return this.chapters?.map(ch => ({ ...ch })) || []
+  }
 }
 module.exports = Book
