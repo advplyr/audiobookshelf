@@ -76,6 +76,10 @@
       <div ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
+
+      <div v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }">
+        <span class="text-white/80" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ ebookFormat }}</span>
+      </div>
     </div>
 
     <!-- Processing/loading spinner overlay -->
@@ -221,7 +225,7 @@ export default {
     libraryId() {
       return this._libraryItem.libraryId
     },
-    hasEbook() {
+    ebookFormat() {
       return this.media.ebookFormat
     },
     numTracks() {
@@ -360,13 +364,13 @@ export default {
       return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
-      return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
     },
     isMissing() {
       return this._libraryItem.isMissing
@@ -865,7 +869,8 @@ export default {
       this.createMoreMenu()
     },
     async clickReadEBook() {
-      var libraryItem = await this.$axios.$get(`/api/items/${this.libraryItemId}?expanded=1`).catch((error) => {
+      const axios = this.$axios || this.$nuxt.$axios
+      var libraryItem = await axios.$get(`/api/items/${this.libraryItemId}?expanded=1`).catch((error) => {
         console.error('Failed to get lirbary item', this.libraryItemId)
         return null
       })
