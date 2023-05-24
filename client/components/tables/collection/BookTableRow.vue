@@ -1,16 +1,18 @@
 <template>
   <div class="w-full px-1 md:px-2 py-2 overflow-hidden relative" @mouseover="mouseover" @mouseleave="mouseleave" :class="isHovering ? 'bg-white bg-opacity-5' : ''">
-    <div v-if="book" class="flex h-16 md:h-20">
+    <div v-if="book" class="flex h-18 md:h-[5.5rem]">
       <div class="w-10 min-w-10 md:w-16 md:max-w-16 h-full">
         <div class="flex h-full items-center justify-center">
           <span class="material-icons drag-handle text-lg md:text-xl">menu</span>
         </div>
       </div>
-      <div class="h-full relative flex items-center" :style="{ width: coverWidth + 'px', minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }">
-        <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
-        <div class="absolute top-0 left-0 bg-black bg-opacity-50 flex items-center justify-center h-full w-full z-10" v-show="isHovering && showPlayBtn">
-          <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
-            <span class="material-icons text-2xl">play_arrow</span>
+      <div class="h-full flex items-center" :style="{ width: coverWidth + 'px', minWidth: coverWidth + 'px', maxWidth: coverWidth + 'px' }">
+        <div class="relative" :style="{ height: coverHeight + 'px', minHeight: coverHeight + 'px', maxHeight: coverHeight + 'px' }">
+          <covers-book-cover :library-item="book" :width="coverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+          <div class="absolute top-0 left-0 flex items-center justify-center bg-black bg-opacity-50 h-full w-full z-10" v-show="isHovering && showPlayBtn">
+            <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-40 cursor-pointer" @click="playClick">
+              <span class="material-icons text-2xl">play_arrow</span>
+            </div>
           </div>
         </div>
       </div>
@@ -18,6 +20,9 @@
         <div>
           <div class="truncate max-w-48 md:max-w-md">
             <nuxt-link :to="`/item/${book.id}`" class="truncate hover:underline text-sm md:text-base">{{ bookTitle }}</nuxt-link>
+          </div>
+          <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
+            <nuxt-link v-for="_series in seriesList" :key="_series.id" :to="`/library/${book.libraryId}/series/${_series.id}`" class="hover:underline font-sans text-gray-300"> {{ _series.text }}</nuxt-link>
           </div>
           <div class="truncate max-w-48 md:max-w-md text-xs md:text-sm text-gray-300">
             <template v-for="(author, index) in bookAuthors">
@@ -96,6 +101,19 @@ export default {
     bookDuration() {
       return this.$elapsedPretty(this.media.duration)
     },
+    series() {
+      return this.mediaMetadata.series || []
+    },
+    seriesList() {
+      return this.series.map((se) => {
+        let text = se.name
+        if (se.sequence) text += ` #${se.sequence}`
+        return {
+          ...se,
+          text
+        }
+      })
+    },
     isMissing() {
       return this.book.isMissing
     },
@@ -116,6 +134,9 @@ export default {
     },
     coverSize() {
       return this.$store.state.globals.isMobile ? 30 : 50
+    },
+    coverHeight() {
+      return this.coverSize * 1.6
     },
     coverWidth() {
       if (this.bookCoverAspectRatio === 1) return this.coverSize * 1.6
