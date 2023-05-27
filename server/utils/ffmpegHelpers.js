@@ -95,7 +95,12 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
       method: 'GET',
       responseType: 'stream',
       timeout: 30000
+    }).catch((error) => {
+      Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
+      return null
     })
+    if (!response) return resolve(false)
+
 
     const ffmpeg = Ffmpeg(response.data)
     ffmpeg.outputOptions(
