@@ -337,8 +337,9 @@ export default {
     },
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
-      // TODO: Check if audiobook would be on this shelf
-      if (!this.search) {
+
+      const isThisLibrary = !libraryItems.some((li) => li.libraryId !== this.currentLibraryId)
+      if (!this.search && isThisLibrary) {
         this.fetchCategories()
       }
     },
@@ -346,6 +347,14 @@ export default {
       items.forEach((li) => {
         this.libraryItemUpdated(li)
       })
+    },
+    episodeAdded(episodeWithLibraryItem) {
+      console.log('Podcast episode added', episodeWithLibraryItem)
+
+      const isThisLibrary = episodeWithLibraryItem.libraryItem?.libraryId === this.currentLibraryId
+      if (!this.search && isThisLibrary) {
+        this.fetchCategories()
+      }
     },
     removeAllSeriesFromContinueSeries(seriesIds) {
       this.shelves.forEach((shelf) => {
@@ -407,6 +416,7 @@ export default {
         this.$root.socket.on('item_removed', this.libraryItemRemoved)
         this.$root.socket.on('items_updated', this.libraryItemsUpdated)
         this.$root.socket.on('items_added', this.libraryItemsAdded)
+        this.$root.socket.on('episode_added', this.episodeAdded)
       } else {
         console.error('Error socket not initialized')
       }
@@ -421,6 +431,7 @@ export default {
         this.$root.socket.off('item_removed', this.libraryItemRemoved)
         this.$root.socket.off('items_updated', this.libraryItemsUpdated)
         this.$root.socket.off('items_added', this.libraryItemsAdded)
+        this.$root.socket.off('episode_added', this.episodeAdded)
       } else {
         console.error('Error socket not initialized')
       }

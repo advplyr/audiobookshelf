@@ -140,8 +140,6 @@ class PodcastManager {
   async scanAddPodcastEpisodeAudioFile() {
     const libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
 
-    // TODO: Set meta tags on new audio file
-
     const audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
@@ -178,6 +176,9 @@ class PodcastManager {
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    const podcastEpisodeExpanded = podcastEpisode.toJSONExpanded()
+    podcastEpisodeExpanded.libraryItem = libraryItem.toJSONExpanded()
+    SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
 
     if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
       this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
