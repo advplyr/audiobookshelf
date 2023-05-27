@@ -46,7 +46,7 @@ class AbMergeManager {
       toneJsonObject: null
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
-    task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
+    task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
     this.taskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 

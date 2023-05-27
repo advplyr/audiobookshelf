@@ -75,7 +75,7 @@ class Server {
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager)
     this.rssFeedManager = new RssFeedManager(this.db)
 
-    this.scanner = new Scanner(this.db, this.coverManager)
+    this.scanner = new Scanner(this.db, this.coverManager, this.taskManager)
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers

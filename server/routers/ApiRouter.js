@@ -96,6 +96,11 @@ class ApiRouter {
     //
     // Item Routes
     //
+    this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
+    this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
+    this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
+    this.router.post('/items/batch/quickmatch', LibraryItemController.batchQuickMatch.bind(this))
+    this.router.post('/items/batch/scan', LibraryItemController.batchScan.bind(this))
     this.router.delete('/items/all', LibraryItemController.deleteAll.bind(this))
 
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
@@ -116,11 +121,6 @@ class ApiRouter {
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
     this.router.delete('/items/:id/file/:ino', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
-
-    this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
-    this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
-    this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
-    this.router.post('/items/batch/quickmatch', LibraryItemController.batchQuickMatch.bind(this))
 
     //
     // User Routes

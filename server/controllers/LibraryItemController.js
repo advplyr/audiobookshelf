@@ -379,20 +379,23 @@ class LibraryItemController {
       return res.sendStatus(403)
     }
 
-    var itemsUpdated = 0
-    var itemsUnmatched = 0
+    let itemsUpdated = 0
+    let itemsUnmatched = 0
 
-    var matchData = req.body
-    var options = matchData.options || {}
-    var items = matchData.libraryItemIds
-    if (!items || !items.length) {
-      return res.sendStatus(500)
+    const options = req.body.options || {}
+    if (!req.body.libraryItemIds?.length) {
+      return res.sendStatus(400)
     }
+
+    const libraryItems = req.body.libraryItemIds.map(lid => this.db.getLibraryItem(lid)).filter(li => li)
+    if (!libraryItems?.length) {
+      return res.sendStatus(400)
+    }
+
     res.sendStatus(200)
 
-    for (let i = 0; i < items.length; i++) {
-      var libraryItem = this.db.libraryItems.find(_li => _li.id === items[i])
-      var matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
+    for (const libraryItem of libraryItems) {
+      const matchResult = await this.scanner.quickMatchLibraryItem(libraryItem, options)
       if (matchResult.updated) {
         itemsUpdated++
       } else if (matchResult.warning) {
@@ -400,12 +403,39 @@ class LibraryItemController {
       }
     }
 
-    var result = {
+    const result = {
       success: itemsUpdated > 0,
       updates: itemsUpdated,
       unmatched: itemsUnmatched
     }
     SocketAuthority.clientEmitter(req.user.id, 'batch_quickmatch_complete', result)
+  }
+
+  // POST: api/items/batch/scan
+  async batchScan(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.warn('User other than admin attempted to batch scan library items', req.user)
+      return res.sendStatus(403)
+    }
+
+    if (!req.body.libraryItemIds?.length) {
+      return res.sendStatus(400)
+    }
+
+    const libraryItems = req.body.libraryItemIds.map(lid => this.db.getLibraryItem(lid)).filter(li => li)
+    if (!libraryItems?.length) {
+      return res.sendStatus(400)
+    }
+
+    res.sendStatus(200)
+
+    for (const libraryItem of libraryItems) {
+      if (libraryItem.isFile) {
+        Logger.warn(`[LibraryItemController] Re-scanning file library items not yet supported`)
+      } else {
+        await this.scanner.scanLibraryItemByRequest(libraryItem)
+      }
+    }
   }
 
   // DELETE: api/items/all
@@ -432,7 +462,7 @@ class LibraryItemController {
       return res.sendStatus(500)
     }
 
-    var result = await this.scanner.scanLibraryItemById(req.libraryItem.id)
+    const result = await this.scanner.scanLibraryItemByRequest(req.libraryItem)
     res.json({
       result: Object.keys(ScanResult).find(key => ScanResult[key] == result)
     })

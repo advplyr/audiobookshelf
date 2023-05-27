@@ -78,7 +78,7 @@ class PodcastManager {
       libraryId: podcastEpisodeDownload.libraryId,
       libraryItemId: podcastEpisodeDownload.libraryItemId,
     }
-    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, taskData)
+    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
     this.taskManager.addTask(task)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())

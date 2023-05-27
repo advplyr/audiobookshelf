@@ -19,11 +19,13 @@ const ScanOptions = require('./ScanOptions')
 
 const Author = require('../objects/entities/Author')
 const Series = require('../objects/entities/Series')
+const Task = require('../objects/Task')
 
 class Scanner {
-  constructor(db, coverManager) {
+  constructor(db, coverManager, taskManager) {
     this.db = db
     this.coverManager = coverManager
+    this.taskManager = taskManager
 
     this.cancelLibraryScan = {}
     this.librariesScanning = []
@@ -46,12 +48,24 @@ class Scanner {
     this.cancelLibraryScan[libraryId] = true
   }
 
-  async scanLibraryItemById(libraryItemId) {
-    const libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
-    if (!libraryItem) {
-      Logger.error(`[Scanner] Scan libraryItem by id not found ${libraryItemId}`)
-      return ScanResult.NOTHING
+  getScanResultDescription(result) {
+    switch (result) {
+      case ScanResult.ADDED:
+        return 'Added to library'
+      case ScanResult.NOTHING:
+        return 'No updates necessary'
+      case ScanResult.REMOVED:
+        return 'Removed from library'
+      case ScanResult.UPDATED:
+        return 'Item was updated'
+      case ScanResult.UPTODATE:
+        return 'No updates necessary'
+      default:
+        return ''
     }
+  }
+
+  async scanLibraryItemByRequest(libraryItem) {
     const library = this.db.libraries.find(lib => lib.id === libraryItem.libraryId)
     if (!library) {
       Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
@@ -63,7 +77,21 @@ class Scanner {
       return ScanResult.NOTHING
     }
     Logger.info(`[Scanner] Scanning Library Item "${libraryItem.media.metadata.title}"`)
-    return this.scanLibraryItem(library.mediaType, folder, libraryItem)
+
+    const task = new Task()
+    task.setData('scan-item', `Scan ${libraryItem.media.metadata.title}`, '', true, {
+      libraryItemId: libraryItem.id,
+      libraryId: library.id,
+      mediaType: library.mediaType
+    })
+    this.taskManager.addTask(task)
+
+    const result = await this.scanLibraryItem(library.mediaType, folder, libraryItem)
+
+    task.setFinished(this.getScanResultDescription(result))
+    this.taskManager.taskFinished(task)
+
+    return result
   }
 
   async scanLibraryItem(libraryMediaType, folder, libraryItem) {

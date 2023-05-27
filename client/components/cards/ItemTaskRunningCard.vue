@@ -1,8 +1,10 @@
 <template>
-  <div class="flex items-center h-full px-1 overflow-hidden">
-    <div class="h-5 w-5 min-w-5 text-lg mr-1.5 flex items-center justify-center">
-      <span v-if="isFinished" :class="taskIconStatus" class="material-icons text-base">{{actionIcon}}</span>
+  <div class="flex items-center px-1 overflow-hidden">
+    <div class="w-8 flex items-center justify-center">
+      <!-- <div class="text-lg"> -->
+      <span v-if="isFinished" :class="taskIconStatus" class="material-icons text-base">{{ actionIcon }}</span>
       <widgets-loading-spinner v-else />
+      <!-- </div> -->
     </div>
     <div class="flex-grow px-2 taskRunningCardContent">
       <p class="truncate text-sm">{{ title }}</p>
@@ -36,10 +38,13 @@ export default {
       return this.task.details || 'Unknown'
     },
     isFinished() {
-      return this.task.isFinished || false
+      return !!this.task.isFinished
     },
     isFailed() {
-      return this.task.isFailed || false
+      return !!this.task.isFailed
+    },
+    isSuccess() {
+      return this.isFinished && !this.isFailed
     },
     failedMessage() {
       return this.task.error || ''
@@ -48,6 +53,11 @@ export default {
       return this.task.action || ''
     },
     actionIcon() {
+      if (this.isFailed) {
+        return 'error'
+      } else if (this.isSuccess) {
+        return 'done'
+      }
       switch (this.action) {
         case 'download-podcast-episode':
           return 'cloud_download'
@@ -68,16 +78,15 @@ export default {
       return ''
     }
   },
-  methods: {
-  },
+  methods: {},
   mounted() {}
 }
 </script>
 
 <style>
 .taskRunningCardContent {
-  width: calc(100% - 80px);
-  height: 75px;
+  width: calc(100% - 84px);
+  height: 60px;
   display: flex;
   flex-direction: column;
   justify-content: center;
