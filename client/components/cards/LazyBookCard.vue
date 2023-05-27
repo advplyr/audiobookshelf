@@ -329,6 +329,9 @@ export default {
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    isEBookOnly() {
+      return !this.numTracks && this.ebookFormat
+    },
     useEBookProgress() {
       if (!this.userProgress || this.userProgress.progress) return false
       return this.userProgress.ebookProgress > 0
@@ -445,6 +448,7 @@ export default {
           }
         ]
         if (this.continueListeningShelf) {
+
           items.push({
             func: 'removeFromContinueListening',
             text: this.$strings.ButtonRemoveFromContinueListening
@@ -512,7 +516,7 @@ export default {
       if (this.continueListeningShelf) {
         items.push({
           func: 'removeFromContinueListening',
-          text: this.$strings.ButtonRemoveFromContinueListening
+          text: this.isEBookOnly ? this.$strings.ButtonRemoveFromContinueReading : this.$strings.ButtonRemoveFromContinueListening
         })
       }
       if (!this.isPodcast) {
