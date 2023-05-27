@@ -48,8 +48,7 @@ class MeController {
 
   // DELETE: api/me/progress/:id
   async removeMediaProgress(req, res) {
-    var wasRemoved = req.user.removeMediaProgress(req.params.id)
-    if (!wasRemoved) {
+    if (!req.user.removeMediaProgress(req.params.id)) {
       return res.sendStatus(200)
     }
     await this.db.updateEntity('user', req.user)

@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "Вы уверены, что хотите удалить коллекцию \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Вы уверены, что хотите удалить эпизод \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Вы уверены, что хотите удалить {0} эпизодов?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Вы уверены, что хотите удалить плейлист \"{0}\"?",
   "MessageConfirmRenameGenre": "Вы уверены, что хотите переименовать жанр \"{0}\" в \"{1}\" для всех элементов?",
   "MessageConfirmRenameGenreMergeNote": "Примечание: Этот жанр уже существует, поэтому они будут объединены.",

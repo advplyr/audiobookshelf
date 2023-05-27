@@ -112,7 +112,7 @@ class AbMergeManager {
     let toneJsonPath = null
     try {
       toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1)
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1, 'audio/mp4')
     } catch (error) {
       Logger.error(`[AbMergeManager] Write metadata.json failed`, error)
       toneJsonPath = null

@@ -27,11 +27,7 @@ module.exports = {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: '' }
     ],
-    script: [
-      {
-        src: (process.env.ROUTER_BASE_PATH || '') + '/libs/sortable.js'
-      }
-    ],
+    script: [],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
     ]

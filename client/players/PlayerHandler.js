@@ -24,7 +24,6 @@ export default class PlayerHandler {
 
     this.failedProgressSyncs = 0
     this.lastSyncTime = 0
-    this.lastSyncedAt = 0
     this.listeningTimeSinceSync = 0
 
     this.playInterval = null
@@ -210,6 +209,8 @@ export default class PlayerHandler {
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
     this.startTimeOverride = undefined
+    this.lastSyncTime = 0
+    this.listeningTimeSinceSync = 0
 
     this.prepareSession(session)
   }
@@ -287,7 +288,8 @@ export default class PlayerHandler {
       const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
-      if (this.listeningTimeSinceSync >= 5) {
+      const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 5 : 20
+      if (this.listeningTimeSinceSync >= TimeToWaitBeforeSync) {
         this.sendProgressSync(currentTime)
       }
     }, 1000)
@@ -297,13 +299,17 @@ export default class PlayerHandler {
     let syncData = null
     if (this.player) {
       const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
-      syncData = {
-        timeListened: listeningTimeToAdd,
-        duration: this.getDuration(),
-        currentTime: this.getCurrentTime()
+      // When opening player and quickly closing dont save progress
+      if (listeningTimeToAdd > 20 || this.lastSyncTime > 0) {
+        syncData = {
+          timeListened: listeningTimeToAdd,
+          duration: this.getDuration(),
+          currentTime: this.getCurrentTime()
+        }
       }
     }
     this.listeningTimeSinceSync = 0
+    this.lastSyncTime = 0
     return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 1000 }).catch((error) => {
       console.error('Failed to close session', error)
     })
@@ -322,6 +328,7 @@ export default class PlayerHandler {
       duration: this.getDuration(),
       currentTime
     }
+
     this.listeningTimeSinceSync = 0
     this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 3000 }).then(() => {
       this.failedProgressSyncs = 0

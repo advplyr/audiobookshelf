@@ -17,10 +17,10 @@
       <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 pt-4 md:min-w-32">
-            <ui-file-input ref="fileInput" @change="fileUploadSelected"
-              ><span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span
-              ><span class="material-icons text-2xl inline-block md:!hidden">upload</span></ui-file-input
-            >
+            <ui-file-input ref="fileInput" @change="fileUploadSelected">
+              <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
+              <span class="material-icons text-2xl inline-block md:!hidden">upload</span>
+            </ui-file-input>
           </div>
           <form @submit.prevent="submitForm" class="flex flex-grow">
             <ui-text-input-with-label v-model="imageUrl" :label="$strings.LabelCoverImageURL" />
@@ -128,7 +128,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return [...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
+      return [{ text: 'All', value: 'all' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -223,7 +223,7 @@ export default {
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-provider') || 'google'
+      else this.provider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
     },
     removeCover() {
       if (!this.media.coverPath) {
@@ -288,13 +288,13 @@ export default {
     },
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
-      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
+      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor || ''}`
       if (this.isPodcast) searchQuery += '&podcast=1'
       return searchQuery
     },
     persistProvider() {
       try {
-        localStorage.setItem('book-provider', this.provider)
+        localStorage.setItem('book-cover-provider', this.provider)
       } catch (error) {
         console.error('PersistProvider', error)
       }

@@ -132,7 +132,7 @@ class CronManager {
     for (const libraryItem of libraryItems) {
       const keepAutoDownloading = await this.podcastManager.runEpisodeCheck(libraryItem)
       if (!keepAutoDownloading) { // auto download was disabled
-        podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter(lid => lid !== libraryItemId) // Filter it out
+        podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter(lid => lid !== libraryItem.id) // Filter it out
       }
     }
 

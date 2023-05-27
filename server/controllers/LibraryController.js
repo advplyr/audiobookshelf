@@ -684,13 +684,12 @@ class LibraryController {
   }
 
   async getAuthors(req, res) {
-    var libraryItems = req.libraryItems
-    var authors = {}
-    libraryItems.forEach((li) => {
+    const authors = {}
+    req.libraryItems.forEach((li) => {
       if (li.media.metadata.authors && li.media.metadata.authors.length) {
         li.media.metadata.authors.forEach((au) => {
           if (!authors[au.id]) {
-            var _author = this.db.authors.find(_au => _au.id === au.id)
+            const _author = this.db.authors.find(_au => _au.id === au.id)
             if (_author) {
               authors[au.id] = _author.toJSON()
               authors[au.id].numBooks = 1
@@ -704,6 +703,85 @@ class LibraryController {
 
     res.json({
       authors: naturalSort(Object.values(authors)).asc(au => au.name)
+    })
+  }
+
+  async getNarrators(req, res) {
+    const narrators = {}
+    req.libraryItems.forEach((li) => {
+      if (li.media.metadata.narrators?.length) {
+        li.media.metadata.narrators.forEach((n) => {
+          if (typeof n !== 'string') {
+            Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${li.media.metadata.title}"`)
+          } else if (!narrators[n]) {
+            narrators[n] = {
+              id: encodeURIComponent(Buffer.from(n).toString('base64')),
+              name: n,
+              numBooks: 1
+            }
+          } else {
+            narrators[n].numBooks++
+          }
+        })
+      }
+    })
+
+    res.json({
+      narrators: naturalSort(Object.values(narrators)).asc(n => n.name)
+    })
+  }
+
+  async updateNarrator(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to update narrator`)
+      return res.sendStatus(403)
+    }
+
+    const narratorName = libraryHelpers.decode(req.params.narratorId)
+    const updatedName = req.body.name
+    if (!updatedName) {
+      return res.status(400).send('Invalid request payload. Name not specified.')
+    }
+
+    const itemsUpdated = []
+    for (const libraryItem of req.libraryItems) {
+      if (libraryItem.media.metadata.updateNarrator(narratorName, updatedName)) {
+        itemsUpdated.push(libraryItem)
+      }
+    }
+
+    if (itemsUpdated.length) {
+      await this.db.updateLibraryItems(itemsUpdated)
+      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+    }
+
+    res.json({
+      updated: itemsUpdated.length
+    })
+  }
+
+  async removeNarrator(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to remove narrator`)
+      return res.sendStatus(403)
+    }
+
+    const narratorName = libraryHelpers.decode(req.params.narratorId)
+
+    const itemsUpdated = []
+    for (const libraryItem of req.libraryItems) {
+      if (libraryItem.media.metadata.removeNarrator(narratorName)) {
+        itemsUpdated.push(libraryItem)
+      }
+    }
+
+    if (itemsUpdated.length) {
+      await this.db.updateLibraryItems(itemsUpdated)
+      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+    }
+
+    res.json({
+      updated: itemsUpdated.length
     })
   }
 
@@ -776,7 +854,7 @@ class LibraryController {
       return res.sendStatus(404)
     }
 
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    const library = this.db.libraries.find(lib => lib.id === req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }

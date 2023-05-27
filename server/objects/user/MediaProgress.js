@@ -10,7 +10,7 @@ class MediaProgress {
     this.isFinished = false
     this.hideFromContinueListening = false
 
-    this.ebookLocation = null // current cfi tag
+    this.ebookLocation = null // cfi tag for epub, page number for pdf
     this.ebookProgress = null // 0 to 1
 
     this.lastUpdate = null
@@ -46,11 +46,11 @@ class MediaProgress {
     this.episodeId = progress.episodeId
     this.duration = progress.duration || 0
     this.progress = progress.progress
-    this.currentTime = progress.currentTime
+    this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished
     this.hideFromContinueListening = !!progress.hideFromContinueListening
     this.ebookLocation = progress.ebookLocation || null
-    this.ebookProgress = progress.ebookProgress
+    this.ebookProgress = progress.ebookProgress || null
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null

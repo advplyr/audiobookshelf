@@ -2,9 +2,12 @@ const tone = require('node-tone')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 
-function getToneMetadataObject(libraryItem, chapters, trackTotal) {
+function getToneMetadataObject(libraryItem, chapters, trackTotal, mimeType = null) {
   const bookMetadata = libraryItem.media.metadata
   const coverPath = libraryItem.media.coverPath
+
+  const isMp4 = mimeType === 'audio/mp4'
+  const isMp3 = mimeType === 'audio/mpeg'
 
   const metadataObject = {
     'album': bookMetadata.title || '',
@@ -28,10 +31,24 @@ function getToneMetadataObject(libraryItem, chapters, trackTotal) {
     metadataObject['composer'] = bookMetadata.narratorName
   }
   if (bookMetadata.firstSeriesName) {
+    if (!isMp3) {
+      metadataObject.additionalFields['----:com.pilabor.tone:SERIES'] = bookMetadata.firstSeriesName
+    }
     metadataObject['movementName'] = bookMetadata.firstSeriesName
   }
   if (bookMetadata.firstSeriesSequence) {
-    metadataObject['movement'] = bookMetadata.firstSeriesSequence
+    // Non-mp3 
+    if (!isMp3) {
+      metadataObject.additionalFields['----:com.pilabor.tone:PART'] = bookMetadata.firstSeriesSequence
+    }
+    // MP3 Files with non-integer sequence
+    const isNonIntegerSequence = String(bookMetadata.firstSeriesSequence).includes('.') || isNaN(bookMetadata.firstSeriesSequence)
+    if (isMp3 && isNonIntegerSequence) {
+      metadataObject.additionalFields['PART'] = bookMetadata.firstSeriesSequence
+    }
+    if (!isNonIntegerSequence) {
+      metadataObject['movement'] = bookMetadata.firstSeriesSequence
+    }
   }
   if (bookMetadata.genres.length) {
     metadataObject['genre'] = bookMetadata.genres.join('/')
@@ -40,7 +57,12 @@ function getToneMetadataObject(libraryItem, chapters, trackTotal) {
     metadataObject['publisher'] = bookMetadata.publisher
   }
   if (bookMetadata.asin) {
-    metadataObject.additionalFields['asin'] = bookMetadata.asin
+    if (!isMp3) {
+      metadataObject.additionalFields['----:com.pilabor.tone:AUDIBLE_ASIN'] = bookMetadata.asin
+    }
+    if (!isMp4) {
+      metadataObject.additionalFields['asin'] = bookMetadata.asin
+    }
   }
   if (bookMetadata.isbn) {
     metadataObject.additionalFields['isbn'] = bookMetadata.isbn
@@ -67,8 +89,8 @@ function getToneMetadataObject(libraryItem, chapters, trackTotal) {
 }
 module.exports.getToneMetadataObject = getToneMetadataObject
 
-module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath, trackTotal) => {
-  const metadataObject = getToneMetadataObject(libraryItem, chapters, trackTotal)
+module.exports.writeToneMetadataJsonFile = (libraryItem, chapters, filePath, trackTotal, mimeType) => {
+  const metadataObject = getToneMetadataObject(libraryItem, chapters, trackTotal, mimeType)
   return fs.writeFile(filePath, JSON.stringify({ meta: metadataObject }, null, 2))
 }
 

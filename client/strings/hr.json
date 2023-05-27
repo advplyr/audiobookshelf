@@ -483,6 +483,7 @@
   "MessageConfirmRemoveCollection": "AJeste li sigurni da želite obrisati kolekciju \"{0}\"?",
   "MessageConfirmRemoveEpisode": "Jeste li sigurni da želite obrisati epizodu \"{0}\"?",
   "MessageConfirmRemoveEpisodes": "Jeste li sigurni da želite obrisati {0} epizoda/-u?",
+  "MessageConfirmRemoveNarrator": "Are you sure you want to remove narrator \"{0}\"?",
   "MessageConfirmRemovePlaylist": "Are you sure you want to remove your playlist \"{0}\"?",
   "MessageConfirmRenameGenre": "Are you sure you want to rename genre \"{0}\" to \"{1}\" for all items?",
   "MessageConfirmRenameGenreMergeNote": "Note: This genre already exists so they will be merged.",
