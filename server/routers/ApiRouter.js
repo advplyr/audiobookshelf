@@ -197,6 +197,7 @@ class ApiRouter {
     // File System Routes
     //
     this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
+    this.router.post('/filesystem/pathexists', FileSystemController.checkPathExists.bind(this))
 
     //
     // Author Routes

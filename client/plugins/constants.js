@@ -4,7 +4,7 @@ const SupportedFileTypes = {
   ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   info: ['nfo'],
   text: ['txt'],
-  metadata: ['opf', 'abs']
+  metadata: ['opf', 'abs', 'xml', 'json']
 }
 
 const DownloadStatus = {

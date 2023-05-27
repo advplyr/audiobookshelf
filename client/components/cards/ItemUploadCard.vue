@@ -114,6 +114,7 @@ export default {
       var files = this.item.itemFiles.concat(this.item.otherFiles)
       return {
         index: this.item.index,
+        directory: this.directory,
         ...this.itemData,
         files
       }
