@@ -142,6 +142,9 @@ class Book {
   get numTracks() {
     return this.tracks.length
   }
+  get isEBookOnly() {
+    return this.ebookFile && !this.numTracks
+  }
 
   update(payload) {
     const json = this.toJSON()

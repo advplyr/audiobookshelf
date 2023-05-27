@@ -57,7 +57,7 @@ class MediaProgress {
   }
 
   get inProgress() {
-    return !this.isFinished && (this.progress > 0 || this.ebookLocation != null)
+    return !this.isFinished && (this.progress > 0 || (this.ebookLocation != null && this.ebookProgress > 0))
   }
 
   setData(libraryItemId, progress, episodeId = null) {

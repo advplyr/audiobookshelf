@@ -346,71 +346,77 @@ module.exports = {
         label: 'Continue Listening',
         labelStringKey: 'LabelContinueListening',
         type: isPodcastLibrary ? 'episode' : mediaType,
-        entities: [],
-        category: 'recentlyListened'
+        entities: []
+      },
+      {
+        id: 'continue-reading',
+        label: 'Continue Reading',
+        labelStringKey: 'LabelContinueReading',
+        type: 'book',
+        entities: []
       },
       {
         id: 'continue-series',
         label: 'Continue Series',
         labelStringKey: 'LabelContinueSeries',
         type: mediaType,
-        entities: [],
-        category: 'continueSeries'
+        entities: []
       },
       {
         id: 'episodes-recently-added',
         label: 'Newest Episodes',
         labelStringKey: 'LabelNewestEpisodes',
         type: 'episode',
-        entities: [],
-        category: 'newestEpisodes'
+        entities: []
       },
       {
         id: 'recently-added',
         label: 'Recently Added',
         labelStringKey: 'LabelRecentlyAdded',
         type: mediaType,
-        entities: [],
-        category: 'newestItems'
+        entities: []
       },
       {
         id: 'recent-series',
         label: 'Recent Series',
         labelStringKey: 'LabelRecentSeries',
         type: 'series',
-        entities: [],
-        category: 'newestSeries'
+        entities: []
       },
       {
         id: 'recommended',
         label: 'Recommended',
         labelStringKey: 'LabelRecommended',
         type: mediaType,
-        entities: [],
-        category: 'recommended'
+        entities: []
       },
       {
         id: 'listen-again',
         label: 'Listen Again',
         labelStringKey: 'LabelListenAgain',
         type: isPodcastLibrary ? 'episode' : mediaType,
-        entities: [],
-        category: 'recentlyFinished'
+        entities: []
+      },
+      {
+        id: 'read-again',
+        label: 'Read Again',
+        labelStringKey: 'LabelReadAgain',
+        type: 'book',
+        entities: []
       },
       {
         id: 'newest-authors',
         label: 'Newest Authors',
         labelStringKey: 'LabelNewestAuthors',
         type: 'authors',
-        entities: [],
-        category: 'newestAuthors'
+        entities: []
       }
     ]
 
     const categoryMap = {}
     shelves.forEach((shelf) => {
-      categoryMap[shelf.category] = {
-        category: shelf.category,
+      categoryMap[shelf.id] = {
+        id: shelf.id,
         biggest: 0,
         smallest: 0,
         items: []
@@ -427,21 +433,21 @@ module.exports = {
     const notStartedBooks = []
 
     for (const libraryItem of libraryItems) {
-      if (libraryItem.addedAt > categoryMap.newestItems.smallest) {
+      if (libraryItem.addedAt > categoryMap['recently-added'].smallest) {
 
-        const indexToPut = categoryMap.newestItems.items.findIndex(i => libraryItem.addedAt > i.addedAt)
+        const indexToPut = categoryMap['recently-added'].items.findIndex(i => libraryItem.addedAt > i.addedAt)
         if (indexToPut >= 0) {
-          categoryMap.newestItems.items.splice(indexToPut, 0, libraryItem.toJSONMinified())
+          categoryMap['recently-added'].items.splice(indexToPut, 0, libraryItem.toJSONMinified())
         } else {
-          categoryMap.newestItems.items.push(libraryItem.toJSONMinified())
+          categoryMap['recently-added'].items.push(libraryItem.toJSONMinified())
         }
 
-        if (categoryMap.newestItems.items.length > maxEntitiesPerShelf) {
+        if (categoryMap['recently-added'].items.length > maxEntitiesPerShelf) {
           // Remove last item
-          categoryMap.newestItems.items.pop()
-          categoryMap.newestItems.smallest = categoryMap.newestItems.items[categoryMap.newestItems.items.length - 1].addedAt
+          categoryMap['recently-added'].items.pop()
+          categoryMap['recently-added'].smallest = categoryMap['recently-added'].items[categoryMap['recently-added'].items.length - 1].addedAt
         }
-        categoryMap.newestItems.biggest = categoryMap.newestItems.items[0].addedAt
+        categoryMap['recently-added'].biggest = categoryMap['recently-added'].items[0].addedAt
       }
 
       const allItemProgress = user.getAllMediaProgressForLibraryItem(libraryItem.id)
@@ -450,74 +456,74 @@ module.exports = {
         const podcastEpisodes = libraryItem.media.episodes || []
         for (const episode of podcastEpisodes) {
           // Newest episodes
-          if (episode.addedAt > categoryMap.newestEpisodes.smallest) {
+          if (episode.addedAt > categoryMap['episodes-recently-added'].smallest) {
             const libraryItemWithEpisode = {
               ...libraryItem.toJSONMinified(),
               recentEpisode: episode.toJSON()
             }
 
-            const indexToPut = categoryMap.newestEpisodes.items.findIndex(i => episode.addedAt > i.recentEpisode.addedAt)
+            const indexToPut = categoryMap['episodes-recently-added'].items.findIndex(i => episode.addedAt > i.recentEpisode.addedAt)
             if (indexToPut >= 0) {
-              categoryMap.newestEpisodes.items.splice(indexToPut, 0, libraryItemWithEpisode)
+              categoryMap['episodes-recently-added'].items.splice(indexToPut, 0, libraryItemWithEpisode)
             } else {
-              categoryMap.newestEpisodes.items.push(libraryItemWithEpisode)
+              categoryMap['episodes-recently-added'].items.push(libraryItemWithEpisode)
             }
 
-            if (categoryMap.newestEpisodes.items.length > maxEntitiesPerShelf) {
+            if (categoryMap['episodes-recently-added'].items.length > maxEntitiesPerShelf) {
               // Remove last item
-              categoryMap.newestEpisodes.items.pop()
-              categoryMap.newestEpisodes.smallest = categoryMap.newestEpisodes.items[categoryMap.newestEpisodes.items.length - 1].recentEpisode.addedAt
+              categoryMap['episodes-recently-added'].items.pop()
+              categoryMap['episodes-recently-added'].smallest = categoryMap['episodes-recently-added'].items[categoryMap['episodes-recently-added'].items.length - 1].recentEpisode.addedAt
             }
-            categoryMap.newestEpisodes.biggest = categoryMap.newestEpisodes.items[0].recentEpisode.addedAt
+            categoryMap['episodes-recently-added'].biggest = categoryMap['episodes-recently-added'].items[0].recentEpisode.addedAt
           }
 
           // Episode recently listened and finished
           const mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
           if (mediaProgress) {
             if (mediaProgress.isFinished) {
-              if (mediaProgress.finishedAt > categoryMap.recentlyFinished.smallest) { // Item belongs on shelf
+              if (mediaProgress.finishedAt > categoryMap['listen-again'].smallest) { // Item belongs on shelf
                 const libraryItemWithEpisode = {
                   ...libraryItem.toJSONMinified(),
                   recentEpisode: episode.toJSON(),
                   finishedAt: mediaProgress.finishedAt
                 }
 
-                const indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+                const indexToPut = categoryMap['listen-again'].items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
                 if (indexToPut >= 0) {
-                  categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemWithEpisode)
+                  categoryMap['listen-again'].items.splice(indexToPut, 0, libraryItemWithEpisode)
                 } else {
-                  categoryMap.recentlyFinished.items.push(libraryItemWithEpisode)
+                  categoryMap['listen-again'].items.push(libraryItemWithEpisode)
                 }
 
-                if (categoryMap.recentlyFinished.items.length > maxEntitiesPerShelf) {
+                if (categoryMap['listen-again'].items.length > maxEntitiesPerShelf) {
                   // Remove last item
-                  categoryMap.recentlyFinished.items.pop()
-                  categoryMap.recentlyFinished.smallest = categoryMap.recentlyFinished.items[categoryMap.recentlyFinished.items.length - 1].finishedAt
+                  categoryMap['listen-again'].items.pop()
+                  categoryMap['listen-again'].smallest = categoryMap['listen-again'].items[categoryMap['listen-again'].items.length - 1].finishedAt
                 }
-                categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
+                categoryMap['listen-again'].biggest = categoryMap['listen-again'].items[0].finishedAt
               }
             } else if (mediaProgress.inProgress && !mediaProgress.hideFromContinueListening) { // Handle most recently listened
-              if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
+              if (mediaProgress.lastUpdate > categoryMap['continue-listening'].smallest) { // Item belongs on shelf
                 const libraryItemWithEpisode = {
                   ...libraryItem.toJSONMinified(),
                   recentEpisode: episode.toJSON(),
                   progressLastUpdate: mediaProgress.lastUpdate
                 }
 
-                const indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+                const indexToPut = categoryMap['continue-listening'].items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
                 if (indexToPut >= 0) {
-                  categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemWithEpisode)
+                  categoryMap['continue-listening'].items.splice(indexToPut, 0, libraryItemWithEpisode)
                 } else {
-                  categoryMap.recentlyListened.items.push(libraryItemWithEpisode)
+                  categoryMap['continue-listening'].items.push(libraryItemWithEpisode)
                 }
 
-                if (categoryMap.recentlyListened.items.length > maxEntitiesPerShelf) {
+                if (categoryMap['continue-listening'].items.length > maxEntitiesPerShelf) {
                   // Remove last item
-                  categoryMap.recentlyListened.items.pop()
-                  categoryMap.recentlyListened.smallest = categoryMap.recentlyListened.items[categoryMap.recentlyListened.items.length - 1].progressLastUpdate
+                  categoryMap['continue-listening'].items.pop()
+                  categoryMap['continue-listening'].smallest = categoryMap['continue-listening'].items[categoryMap['continue-listening'].items.length - 1].progressLastUpdate
                 }
 
-                categoryMap.recentlyListened.biggest = categoryMap.recentlyListened.items[0].progressLastUpdate
+                categoryMap['continue-listening'].biggest = categoryMap['continue-listening'].items[0].progressLastUpdate
               }
             }
           }
@@ -568,21 +574,21 @@ module.exports = {
                 }
                 seriesMap[librarySeries.id] = series
 
-                if (series.addedAt > categoryMap.newestSeries.smallest) {
-                  const indexToPut = categoryMap.newestSeries.items.findIndex(i => series.addedAt > i.addedAt)
+                if (series.addedAt > categoryMap['recent-series'].smallest) {
+                  const indexToPut = categoryMap['recent-series'].items.findIndex(i => series.addedAt > i.addedAt)
                   if (indexToPut >= 0) {
-                    categoryMap.newestSeries.items.splice(indexToPut, 0, series)
+                    categoryMap['recent-series'].items.splice(indexToPut, 0, series)
                   } else {
-                    categoryMap.newestSeries.items.push(series)
+                    categoryMap['recent-series'].items.push(series)
                   }
 
                   // Max series is 5
-                  if (categoryMap.newestSeries.items.length > 5) {
-                    categoryMap.newestSeries.items.pop()
-                    categoryMap.newestSeries.smallest = categoryMap.newestSeries.items[categoryMap.newestSeries.items.length - 1].addedAt
+                  if (categoryMap['recent-series'].items.length > 5) {
+                    categoryMap['recent-series'].items.pop()
+                    categoryMap['recent-series'].smallest = categoryMap['recent-series'].items[categoryMap['recent-series'].items.length - 1].addedAt
                   }
 
-                  categoryMap.newestSeries.biggest = categoryMap.newestSeries.items[0].addedAt
+                  categoryMap['recent-series'].biggest = categoryMap['recent-series'].items[0].addedAt
                 }
               }
             } else {
@@ -624,22 +630,22 @@ module.exports = {
                   numBooks: 1
                 }
 
-                if (author.addedAt > categoryMap.newestAuthors.smallest) {
+                if (author.addedAt > categoryMap['newest-authors'].smallest) {
 
-                  const indexToPut = categoryMap.newestAuthors.items.findIndex(i => author.addedAt > i.addedAt)
+                  const indexToPut = categoryMap['newest-authors'].items.findIndex(i => author.addedAt > i.addedAt)
                   if (indexToPut >= 0) {
-                    categoryMap.newestAuthors.items.splice(indexToPut, 0, author)
+                    categoryMap['newest-authors'].items.splice(indexToPut, 0, author)
                   } else {
-                    categoryMap.newestAuthors.items.push(author)
+                    categoryMap['newest-authors'].items.push(author)
                   }
 
                   // Max authors is 10
-                  if (categoryMap.newestAuthors.items.length > 10) {
-                    categoryMap.newestAuthors.items.pop()
-                    categoryMap.newestAuthors.smallest = categoryMap.newestAuthors.items[categoryMap.newestAuthors.items.length - 1].addedAt
+                  if (categoryMap['newest-authors'].items.length > 10) {
+                    categoryMap['newest-authors'].items.pop()
+                    categoryMap['newest-authors'].smallest = categoryMap['newest-authors'].items[categoryMap['newest-authors'].items.length - 1].addedAt
                   }
 
-                  categoryMap.newestAuthors.biggest = categoryMap.newestAuthors.items[0].addedAt
+                  categoryMap['newest-authors'].biggest = categoryMap['newest-authors'].items[0].addedAt
                 }
 
                 authorMap[libraryAuthor.id] = author
@@ -652,46 +658,50 @@ module.exports = {
 
         // Book listening and finished
         if (mediaProgress) {
+          const categoryId = libraryItem.media.isEBookOnly ? 'read-again' : 'listen-again'
+
           // Handle most recently finished
           if (mediaProgress.isFinished) {
-            if (mediaProgress.finishedAt > categoryMap.recentlyFinished.smallest) { // Item belongs on shelf
+            if (mediaProgress.finishedAt > categoryMap[categoryId].smallest) { // Item belongs on shelf
               const libraryItemObj = {
                 ...libraryItem.toJSONMinified(),
                 finishedAt: mediaProgress.finishedAt
               }
 
-              const indexToPut = categoryMap.recentlyFinished.items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
+              const indexToPut = categoryMap[categoryId].items.findIndex(i => mediaProgress.finishedAt > i.finishedAt)
               if (indexToPut >= 0) {
-                categoryMap.recentlyFinished.items.splice(indexToPut, 0, libraryItemObj)
+                categoryMap[categoryId].items.splice(indexToPut, 0, libraryItemObj)
               } else {
-                categoryMap.recentlyFinished.items.push(libraryItemObj)
+                categoryMap[categoryId].items.push(libraryItemObj)
               }
-              if (categoryMap.recentlyFinished.items.length > maxEntitiesPerShelf) {
+              if (categoryMap[categoryId].items.length > maxEntitiesPerShelf) {
                 // Remove last item
-                categoryMap.recentlyFinished.items.pop()
-                categoryMap.recentlyFinished.smallest = categoryMap.recentlyFinished.items[categoryMap.recentlyFinished.items.length - 1].finishedAt
+                categoryMap[categoryId].items.pop()
+                categoryMap[categoryId].smallest = categoryMap[categoryId].items[categoryMap[categoryId].items.length - 1].finishedAt
               }
-              categoryMap.recentlyFinished.biggest = categoryMap.recentlyFinished.items[0].finishedAt
+              categoryMap[categoryId].biggest = categoryMap[categoryId].items[0].finishedAt
             }
           } else if (mediaProgress.inProgress && !mediaProgress.hideFromContinueListening) { // Handle most recently listened
-            if (mediaProgress.lastUpdate > categoryMap.recentlyListened.smallest) { // Item belongs on shelf
+            const categoryId = libraryItem.media.isEBookOnly ? 'continue-reading' : 'continue-listening'
+
+            if (mediaProgress.lastUpdate > categoryMap[categoryId].smallest) { // Item belongs on shelf
               const libraryItemObj = {
                 ...libraryItem.toJSONMinified(),
                 progressLastUpdate: mediaProgress.lastUpdate
               }
 
-              const indexToPut = categoryMap.recentlyListened.items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
+              const indexToPut = categoryMap[categoryId].items.findIndex(i => mediaProgress.lastUpdate > i.progressLastUpdate)
               if (indexToPut >= 0) {
-                categoryMap.recentlyListened.items.splice(indexToPut, 0, libraryItemObj)
+                categoryMap[categoryId].items.splice(indexToPut, 0, libraryItemObj)
               } else { // Should only happen when array is < max
-                categoryMap.recentlyListened.items.push(libraryItemObj)
+                categoryMap[categoryId].items.push(libraryItemObj)
               }
-              if (categoryMap.recentlyListened.items.length > maxEntitiesPerShelf) {
+              if (categoryMap[categoryId].items.length > maxEntitiesPerShelf) {
                 // Remove last item
-                categoryMap.recentlyListened.items.pop()
-                categoryMap.recentlyListened.smallest = categoryMap.recentlyListened.items[categoryMap.recentlyListened.items.length - 1].progressLastUpdate
+                categoryMap[categoryId].items.pop()
+                categoryMap[categoryId].smallest = categoryMap[categoryId].items[categoryMap[categoryId].items.length - 1].progressLastUpdate
               }
-              categoryMap.recentlyListened.biggest = categoryMap.recentlyListened.items[0].progressLastUpdate
+              categoryMap[categoryId].biggest = categoryMap[categoryId].items[0].progressLastUpdate
             }
           }
         }
@@ -719,12 +729,12 @@ module.exports = {
             sequence: nextBookInSeries.seriesSequence
           }
 
-          const indexToPut = categoryMap.continueSeries.items.findIndex(i => i.prevBookInProgressLastUpdate < bookForContinueSeries.prevBookInProgressLastUpdate)
-          if (!categoryMap.continueSeries.items.find(book => book.id === bookForContinueSeries.id)) {
+          const indexToPut = categoryMap['continue-series'].items.findIndex(i => i.prevBookInProgressLastUpdate < bookForContinueSeries.prevBookInProgressLastUpdate)
+          if (!categoryMap['continue-series'].items.find(book => book.id === bookForContinueSeries.id)) {
             if (indexToPut >= 0) {
-              categoryMap.continueSeries.items.splice(indexToPut, 0, bookForContinueSeries)
-            } else if (categoryMap.continueSeries.items.length < 10) { // Max 10 books
-              categoryMap.continueSeries.items.push(bookForContinueSeries)
+              categoryMap['continue-series'].items.splice(indexToPut, 0, bookForContinueSeries)
+            } else if (categoryMap['continue-series'].items.length < 10) { // Max 10 books
+              categoryMap['continue-series'].items.push(bookForContinueSeries)
             }
           }
         }
@@ -802,8 +812,8 @@ module.exports = {
     }
 
     // Sort series books by sequence
-    if (categoryMap.newestSeries.items.length) {
-      for (const seriesItem of categoryMap.newestSeries.items) {
+    if (categoryMap['recent-series'].items.length) {
+      for (const seriesItem of categoryMap['recent-series'].items) {
         seriesItem.books = naturalSort(seriesItem.books).asc(li => li.seriesSequence)
       }
     }
@@ -811,7 +821,7 @@ module.exports = {
     const categoriesWithItems = Object.values(categoryMap).filter(cat => cat.items.length)
 
     return categoriesWithItems.map(cat => {
-      const shelf = shelves.find(s => s.category === cat.category)
+      const shelf = shelves.find(s => s.id === cat.id)
       shelf.entities = cat.items
 
       // Add rssFeed to entities if query string "include=rssfeed" was on request
