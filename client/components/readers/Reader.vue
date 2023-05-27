@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="w-screen h-screen fixed top-0 left-0 z-60 bg-primary text-white">
+  <div v-if="show" id="reader" class="absolute top-0 left-0 w-full z-60 bg-primary text-white" :class="{ 'reader-player-open': !!streamLibraryItem }">
     <div class="absolute top-4 left-4 z-20">
       <span v-if="hasToC && !tocOpen" ref="tocButton" class="material-icons cursor-pointer text-2xl" @click="toggleToC">menu</span>
     </div>
@@ -17,7 +17,7 @@
       <span class="material-icons cursor-pointer text-2xl" @click="close">close</span>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" />
 
     <!-- TOC side nav -->
     <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
@@ -71,6 +71,9 @@ export default {
       else if (this.ebookType === 'pdf') return 'readers-pdf-reader'
       else if (this.ebookType === 'comic') return 'readers-comic-reader'
       return null
+    },
+    streamLibraryItem() {
+      return this.$store.state.streamLibraryItem
     },
     hasToC() {
       return this.isEpub
@@ -191,11 +194,19 @@ export default {
 </script>
 
 <style>
-.ebook-viewer {
-  height: calc(100% - 96px);
-}
 .tocContent {
   height: calc(100% - 36px);
   overflow-y: auto;
+}
+#reader {
+  height: 100%;
+}
+#reader.reader-player-open {
+  height: calc(100% - 164px);
+}
+@media (max-height: 400px) {
+  #reader.reader-player-open {
+    height: 100%;
+  }
 }
 </style>

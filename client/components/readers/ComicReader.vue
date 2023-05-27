@@ -1,11 +1,11 @@
 <template>
   <div class="w-full h-full">
-    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 right-20 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-52">
+    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-8 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-52">
       <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index)">
         <p class="text-sm truncate">{{ file }}</p>
       </div>
     </div>
-    <div v-show="showInfoMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 right-10 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-96">
+    <div v-show="showInfoMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-20 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-96">
       <div v-for="key in comicMetadataKeys" :key="key" class="w-full px-2 py-1">
         <p class="text-xs">
           <strong>{{ key }}</strong
@@ -14,17 +14,17 @@
       </div>
     </div>
 
-    <div v-if="comicMetadata" class="absolute top-0 right-52 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showInfoMenu = !showInfoMenu">
+    <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showInfoMenu = !showInfoMenu">
       <span class="material-icons text-xl">more</span>
     </div>
-    <div class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" style="right: 156px" @mousedown.prevent @click.stop.prevent="showPageMenu = !showPageMenu">
+    <div class="absolute top-0 left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showPageMenu = !showPageMenu">
       <span class="material-icons text-xl">menu</span>
     </div>
-    <div class="absolute top-0 right-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+    <div class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
       <p class="font-mono">{{ page + 1 }} / {{ numPages }}</p>
     </div>
 
-    <div class="overflow-hidden m-auto comicwrapper relative">
+    <div class="overflow-hidden w-full h-full relative">
       <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
@@ -36,17 +36,13 @@
         </div>
       </div>
       <div class="h-full flex justify-center">
-        <img v-if="mainImg" :src="mainImg" class="object-contain comicimg" />
+        <img v-if="mainImg" :src="mainImg" class="object-contain h-full m-auto" />
       </div>
 
       <div v-show="loading" class="w-full h-full absolute top-0 left-0 flex items-center justify-center z-10">
         <ui-loading-indicator />
       </div>
     </div>
-
-    <!-- <div v-show="loading" class="w-screen h-screen absolute top-0 left-0 bg-black bg-opacity-20 flex items-center justify-center">
-      <ui-loading-indicator />
-    </div> -->
   </div>
 </template>
 
@@ -61,7 +57,12 @@ Archive.init({
 
 export default {
   props: {
-    url: String
+    url: String,
+    libraryItem: {
+      type: Object,
+      default: () => {}
+    },
+    playerOpen: Boolean
   },
   data() {
     return {
@@ -249,15 +250,6 @@ export default {
 
 <style scoped>
 .pagemenu {
-  max-height: calc(100vh - 60px);
-}
-.comicimg {
-  height: calc(100vh - 40px);
-  margin: auto;
-}
-.comicwrapper {
-  width: 100vw;
-  height: calc(100vh - 40px);
-  margin-top: 20px;
+  max-height: calc(100% - 48px);
 }
 </style>

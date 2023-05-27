@@ -35,7 +35,7 @@ export const getters = {
     return state.serverSettings[key]
   },
   getLibraryItemIdStreaming: state => {
-    return state.streamLibraryItem ? state.streamLibraryItem.id : null
+    return state.streamLibraryItem?.id || null
   },
   getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
     if (!state.streamLibraryItem) return false
