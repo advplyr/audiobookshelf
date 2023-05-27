@@ -130,6 +130,8 @@ class PlaybackSessionManager {
       const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
+        sessionId: session.id,
+        deviceDescription: session.deviceDescription,
         data: itemProgress.toJSON()
       })
     }
@@ -239,6 +241,8 @@ class PlaybackSessionManager {
       const itemProgress = user.getMediaProgress(session.libraryItemId, session.episodeId)
       SocketAuthority.clientEmitter(user.id, 'user_item_progress_updated', {
         id: itemProgress.id,
+        sessionId: session.id,
+        deviceDescription: session.deviceDescription,
         data: itemProgress.toJSON()
       })
     }
@@ -306,7 +310,7 @@ class PlaybackSessionManager {
   //  See https://github.com/advplyr/audiobookshelf/issues/868
   // Remove playback sessions with listening time too high
   async removeInvalidSessions() {
-    const selectFunc = (session) => isNaN(session.timeListening) || Number(session.timeListening) > 3600000000
+    const selectFunc = (session) => isNaN(session.timeListening) || Number(session.timeListening) > 36000000
     const numSessionsRemoved = await this.db.removeEntities('session', selectFunc, true)
     if (numSessionsRemoved) {
       Logger.info(`[PlaybackSessionManager] Removed ${numSessionsRemoved} invalid playback sessions`)

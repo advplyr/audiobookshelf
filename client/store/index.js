@@ -6,6 +6,7 @@ export const state = () => ({
   Source: null,
   versionData: null,
   serverSettings: null,
+  playbackSessionId: null,
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
@@ -149,6 +150,9 @@ export const mutations = {
   setServerSettings(state, settings) {
     if (!settings) return
     state.serverSettings = settings
+  },
+  setPlaybackSessionId(state, playbackSessionId) {
+    state.playbackSessionId = playbackSessionId
   },
   setMediaPlaying(state, payload) {
     if (!payload) {

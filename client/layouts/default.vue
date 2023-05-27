@@ -35,7 +35,9 @@ export default {
       isSocketConnected: false,
       isFirstSocketConnection: true,
       socketConnectionToastId: null,
-      currentLang: null
+      currentLang: null,
+      multiSessionOtherSessionId: null, // Used for multiple sessions open warning toast
+      multiSessionCurrentSessionId: null // Used for multiple sessions open warning toast
     }
   },
   watch: {
@@ -300,14 +302,27 @@ export default {
       this.$store.commit('users/updateUserOnline', user)
     },
     userSessionClosed(sessionId) {
+      // If this session or other session is closed then dismiss multiple sessions warning toast
+      if (sessionId === this.multiSessionOtherSessionId || this.multiSessionCurrentSessionId === sessionId) {
+        this.multiSessionOtherSessionId = null
+        this.multiSessionCurrentSessionId = null
+        this.$toast.dismiss('multiple-sessions')
+      }
       if (this.$refs.streamContainer) this.$refs.streamContainer.sessionClosedEvent(sessionId)
     },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
 
       if (payload.data) {
-        if (this.$store.getters['getIsMediaStreaming'](payload.data.libraryItemId, payload.data.episodeId)) {
-          // TODO: Update currently open session if being played from another device
+        if (this.$store.getters['getIsMediaStreaming'](payload.data.libraryItemId, payload.data.episodeId) && this.$store.state.playbackSessionId !== payload.sessionId) {
+          this.multiSessionOtherSessionId = payload.sessionId
+          this.multiSessionCurrentSessionId = this.$store.state.playbackSessionId
+          console.log(`Media progress was updated from another session (${this.multiSessionOtherSessionId}) for currently open media. Device description=${payload.deviceDescription}. Current session id=${this.multiSessionCurrentSessionId}`)
+          if (this.$store.state.streamIsPlaying) {
+            this.$toast.update('multiple-sessions', { content: `Another session is open for this item on device ${payload.deviceDescription}`, options: { timeout: 20000, type: 'warning', pauseOnFocusLoss: false } }, true)
+          } else {
+            this.$eventBus.$emit('playback-time-update', payload.data.currentTime)
+          }
         }
       }
     },

@@ -268,6 +268,10 @@ export default {
     seek(time) {
       this.playerHandler.seek(time)
     },
+    playbackTimeUpdate(time) {
+      // When updating progress from another session
+      this.playerHandler.seek(time, false)
+    },
     setCurrentTime(time) {
       this.currentTime = time
       if (this.$refs.audioPlayer) {
@@ -477,12 +481,14 @@ export default {
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
     this.$eventBus.$on('playback-seek', this.seek)
+    this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
     this.$eventBus.$off('playback-seek', this.seek)
+    this.$eventBus.$off('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }
