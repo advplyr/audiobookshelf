@@ -236,7 +236,7 @@ export default {
       reader.rendition.display(this.userMediaProgress?.ebookLocation || reader.book.locations.start)
 
       // load style
-      reader.rendition.themes.default({ '*': { color: '#fff!important' } })
+      reader.rendition.themes.default({ '*': { color: '#fff!important', 'background-color': 'rgb(35 35 35)!important' } })
 
       reader.book.ready.then(() => {
         // set up event listeners
