@@ -109,7 +109,7 @@ class PodcastEpisode {
   }
   get size() { return this.audioFile.metadata.size }
   get enclosureUrl() {
-    return this.enclosure ? this.enclosure.url : null
+    return this.enclosure?.url || null
   }
   get pubYear() {
     if (!this.publishedAt) return null

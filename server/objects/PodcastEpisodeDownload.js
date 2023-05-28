@@ -15,6 +15,8 @@ class PodcastEpisodeDownload {
     this.isFinished = false
     this.failed = false
 
+    this.appendEpisodeId = false
+
     this.startedAt = null
     this.createdAt = null
     this.finishedAt = null
@@ -29,6 +31,7 @@ class PodcastEpisodeDownload {
       libraryId: this.libraryId || null,
       isFinished: this.isFinished,
       failed: this.failed,
+      appendEpisodeId: this.appendEpisodeId,
       startedAt: this.startedAt,
       createdAt: this.createdAt,
       finishedAt: this.finishedAt,
@@ -52,7 +55,9 @@ class PodcastEpisodeDownload {
   }
 
   get targetFilename() {
-    return sanitizeFilename(`${this.podcastEpisode.title}.${this.fileExtension}`)
+    const appendage = this.appendEpisodeId ? ` (${this.podcastEpisode.id})` : ''
+    const filename = `${this.podcastEpisode.title}${appendage}.${this.fileExtension}`
+    return sanitizeFilename(filename)
   }
   get targetPath() {
     return Path.join(this.libraryItem.path, this.targetFilename)

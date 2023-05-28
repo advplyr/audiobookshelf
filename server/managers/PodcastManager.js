@@ -84,6 +84,13 @@ class PodcastManager {
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
 
+    // If this file already exists then append the episode id to the filename
+    //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
+    //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
+    if (await fs.pathExists(this.currentDownload.targetPath)) {
+      this.currentDownload.appendEpisodeId = true
+    }
+
     // Ignores all added files to this dir
     this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
 
