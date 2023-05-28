@@ -57,7 +57,6 @@ Archive.init({
 
 export default {
   props: {
-    url: String,
     libraryItem: {
       type: Object,
       default: () => {}
@@ -88,6 +87,15 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    libraryItemId() {
+      return this.libraryItem?.id
+    },
+    ebookUrl() {
+      return `/api/items/${this.libraryItemId}/ebook`
+    },
     comicMetadataKeys() {
       return this.comicMetadata ? Object.keys(this.comicMetadata) : []
     },
@@ -146,10 +154,11 @@ export default {
     },
     async extract() {
       this.loading = true
-      console.log('Extracting', this.url)
-
-      var buff = await this.$axios.$get(this.url, {
-        responseType: 'blob'
+      var buff = await this.$axios.$get(this.ebookUrl, {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${this.userToken}`
+        }
       })
       const archive = await Archive.open(buff)
       const originalFilesObject = await archive.getFilesObject()

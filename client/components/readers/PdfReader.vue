@@ -23,7 +23,7 @@
       <div class="flex items-center justify-center">
         <div :style="{ width: pdfWidth + 'px', height: pdfHeight + 'px' }" class="overflow-auto">
           <div v-if="loadedRatio > 0 && loadedRatio < 1" style="background-color: green; color: white; text-align: center" :style="{ width: loadedRatio * 100 + '%' }">{{ Math.floor(loadedRatio * 100) }}%</div>
-          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="url" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
+          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="pdfDocInitParams" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
         </div>
       </div>
     </div>
@@ -41,7 +41,6 @@ export default {
     pdf
   },
   props: {
-    url: String,
     libraryItem: {
       type: Object,
       default: () => {}
@@ -60,6 +59,9 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     libraryItemId() {
       return this.libraryItem?.id
     },
@@ -94,6 +96,14 @@ export default {
     },
     savedPage() {
       return Number(this.userMediaProgress?.ebookLocation || 0)
+    },
+    pdfDocInitParams() {
+      return {
+        url: `/api/items/${this.libraryItemId}/ebook`,
+        httpHeaders: {
+          Authorization: `Bearer ${this.userToken}`
+        }
+      }
     }
   },
   methods: {

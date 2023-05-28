@@ -15,7 +15,6 @@ import defaultCss from '@/assets/ebooks/basic.js'
 
 export default {
   props: {
-    url: String,
     libraryItem: {
       type: Object,
       default: () => {}
@@ -25,7 +24,17 @@ export default {
   data() {
     return {}
   },
-  computed: {},
+  computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    libraryItemId() {
+      return this.libraryItem?.id
+    },
+    ebookUrl() {
+      return `/api/items/${this.libraryItemId}/ebook`
+    }
+  },
   methods: {
     addHtmlCss() {
       let iframe = document.getElementsByTagName('iframe')[0]
@@ -83,8 +92,11 @@ export default {
     },
     async initMobi() {
       // Fetch mobi file as blob
-      var buff = await this.$axios.$get(this.url, {
-        responseType: 'blob'
+      var buff = await this.$axios.$get(this.ebookUrl, {
+        responseType: 'blob',
+        headers: {
+          Authorization: `Bearer ${this.userToken}`
+        }
       })
       var reader = new FileReader()
       reader.onload = async (event) => {

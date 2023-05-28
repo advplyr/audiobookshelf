@@ -165,6 +165,7 @@ class Server {
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
+    // TODO: Deprecated as of 2.2.21 edge
     router.get('/ebook/:library/:folder/*', (req, res) => {
       const library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)

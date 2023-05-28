@@ -24,7 +24,6 @@ import ePub from 'epubjs'
  */
 export default {
   props: {
-    url: String,
     libraryItem: {
       type: Object,
       default: () => {}
@@ -47,6 +46,9 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     /** @returns {string} */
     libraryItemId() {
       return this.libraryItem?.id
@@ -75,6 +77,9 @@ export default {
     readerHeight() {
       if (this.windowHeight < 400 || !this.playerOpen) return this.windowHeight
       return this.windowHeight - 164
+    },
+    epubUrl() {
+      return `/api/items/${this.libraryItemId}/ebook`
     }
   },
   methods: {
@@ -212,9 +217,13 @@ export default {
       const reader = this
 
       /** @type {ePub.Book} */
-      reader.book = new ePub(reader.url, {
+      reader.book = new ePub(reader.epubUrl, {
         width: this.readerWidth,
-        height: this.readerHeight - 50
+        height: this.readerHeight - 50,
+        openAs: 'epub',
+        requestHeaders: {
+          Authorization: `Bearer ${this.userToken}`
+        }
       })
 
       /** @type {ePub.Rendition} */

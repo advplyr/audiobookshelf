@@ -17,7 +17,7 @@
       <span class="material-icons cursor-pointer text-2xl" @click="close">close</span>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :url="ebookUrl" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" />
 
     <!-- TOC side nav -->
     <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
@@ -127,21 +127,6 @@ export default {
     },
     isComic() {
       return this.ebookFormat == 'cbz' || this.ebookFormat == 'cbr'
-    },
-    ebookUrl() {
-      if (!this.ebookFile) return null
-      let filepath = ''
-      if (this.selectedLibraryItem.isFile) {
-        filepath = this.$encodeUriPath(this.ebookFile.metadata.filename)
-      } else {
-        const itemRelPath = this.selectedLibraryItem.relPath
-        if (itemRelPath.startsWith('/')) itemRelPath = itemRelPath.slice(1)
-        const relPath = this.ebookFile.metadata.relPath
-        if (relPath.startsWith('/')) relPath = relPath.slice(1)
-
-        filepath = this.$encodeUriPath(`${itemRelPath}/${relPath}`)
-      }
-      return `/ebook/${this.libraryId}/${this.folderId}/${filepath}`
     },
     userToken() {
       return this.$store.getters['user/getToken']

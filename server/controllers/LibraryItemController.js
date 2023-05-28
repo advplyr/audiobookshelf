@@ -1,3 +1,4 @@
+const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
@@ -550,6 +551,16 @@ class LibraryItemController {
     await this.db.updateLibraryItem(req.libraryItem)
     SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
     res.sendStatus(200)
+  }
+
+  async getEBookFile(req, res) {
+    const ebookFile = req.libraryItem.media.ebookFile
+    if (!ebookFile) {
+      Logger.error(`[LibraryItemController] No ebookFile for library item "${req.libraryItem.media.metadata.title}"`)
+      return res.sendStatus(404)
+    }
+    const ebookFilePath = ebookFile.metadata.path
+    res.sendFile(ebookFilePath)
   }
 
   middleware(req, res, next) {
