@@ -73,7 +73,7 @@ export default {
       return items
     },
     downloadUrl() {
-      return `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(this.track.metadata.relPath).replace(/^\//, '')}?token=${this.userToken}`
+      return `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${this.track.audioFile.ino}/download?token=${this.userToken}`
     }
   },
   methods: {

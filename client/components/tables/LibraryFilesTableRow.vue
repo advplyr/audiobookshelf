@@ -45,7 +45,7 @@ export default {
       return this.$store.getters['user/getIsAdminOrUp']
     },
     downloadUrl() {
-      return `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(this.file.metadata.relPath).replace(/^\//, '')}?token=${this.userToken}`
+      return `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${this.file.ino}/download?token=${this.userToken}`
     },
     contextMenuItems() {
       const items = []

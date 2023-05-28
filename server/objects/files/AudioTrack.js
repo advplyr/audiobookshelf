@@ -31,6 +31,7 @@ class AudioTrack {
     this.startOffset = startOffset
     this.duration = audioFile.duration
     this.title = audioFile.metadata.filename || ''
+    // TODO: Switch to /api/items/:id/file/:fileid
     this.contentUrl = Path.join(`${global.RouterBasePath}/s/item/${itemId}`, encodeUriPath(audioFile.metadata.relPath))
     this.mimeType = audioFile.mimeType
     this.codec = audioFile.codec || null

@@ -3,6 +3,7 @@ const Path = require('path')
 const Logger = require('../Logger')
 const { getAudioMimeTypeFromExtname } = require('../utils/fileUtils')
 
+// TODO: Deprecated as of 2.2.21 edge
 class StaticRouter {
   constructor(db) {
     this.db = db

@@ -36,10 +36,10 @@
           </div>
 
           <div v-if="showLocalCovers" class="flex items-center justify-center pb-2">
-            <template v-for="cover in localCovers">
-              <div :key="cover.path" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(cover)">
+            <template v-for="localCoverFile in localCovers">
+              <div :key="localCoverFile.ino" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="localCoverFile.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(localCoverFile)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
-                  <covers-preview-cover :src="`${cover.localPath}?token=${userToken}`" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+                  <covers-preview-cover :src="localCoverFile.localPath" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </div>
               </div>
             </template>
@@ -169,8 +169,8 @@ export default {
       return this.libraryFiles
         .filter((f) => f.fileType === 'image')
         .map((file) => {
-          var _file = { ...file }
-          _file.localPath = `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}`
+          const _file = { ...file }
+          _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
     }

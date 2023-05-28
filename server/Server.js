@@ -162,6 +162,8 @@ class Server {
 
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+
+    // TODO: Deprecated as of 2.2.21 edge
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
