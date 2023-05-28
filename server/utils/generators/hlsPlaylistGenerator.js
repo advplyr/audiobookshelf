@@ -1,4 +1,4 @@
-const fs = require('../libs/fsExtra')
+const fs = require('../../libs/fsExtra')
 
 function getPlaylistStr(segmentName, duration, segmentLength, hlsSegmentType, token) {
   var ext = hlsSegmentType === 'fmp4' ? 'm4s' : 'ts'

@@ -8,6 +8,7 @@ const { removeFile, downloadFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
+const opmlGenerator = require('../utils/generators/opmlGenerator')
 const prober = require('../utils/prober')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
@@ -371,6 +372,10 @@ class PodcastManager {
     return {
       feeds: rssFeedData
     }
+  }
+
+  generateOPMLFileText(libraryItems) {
+    return opmlGenerator.generate(libraryItems)
   }
 
   getDownloadQueueDetails(libraryId = null) {

@@ -90,7 +90,7 @@ class ApiRouter {
     this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
-
+    this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
@@ -236,7 +236,7 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.post('/podcasts/opml', PodcastController.getOPMLFeeds.bind(this))
+    this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))

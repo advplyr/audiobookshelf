@@ -102,15 +102,7 @@ export default {
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
     downloadLibraryFile() {
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = this.downloadUrl
-      a.download = this.file.metadata.filename
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        a.remove()
-      })
+      this.$downloadFile(this.downloadUrl, this.file.metadata.filename)
     }
   },
   mounted() {}

@@ -677,14 +677,7 @@ export default {
       }
     },
     downloadLibraryItem() {
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = this.downloadUrl
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        a.remove()
-      })
+      this.$downloadFile(this.downloadUrl)
     },
     deleteLibraryItem() {
       const payload = {

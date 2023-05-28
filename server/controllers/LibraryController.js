@@ -848,6 +848,12 @@ class LibraryController {
     res.json(payload)
   }
 
+  getOPMLFile(req, res) {
+    const opmlText = this.podcastManager.generateOPMLFileText(req.libraryItems)
+    res.type('application/xml')
+    res.send(opmlText)
+  }
+
   middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)

@@ -109,7 +109,7 @@ class PodcastController {
     res.json({ podcast })
   }
 
-  async getOPMLFeeds(req, res) {
+  async getFeedsFromOPMLText(req, res) {
     if (!req.body.opmlText) {
       return res.sendStatus(400)
     }
