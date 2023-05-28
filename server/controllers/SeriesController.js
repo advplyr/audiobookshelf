@@ -11,7 +11,7 @@ class SeriesController {
 
     // Add progress map with isFinished flag
     if (include.includes('progress')) {
-      const libraryItemsInSeries = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(seriesJson.id))
+      const libraryItemsInSeries = req.libraryItemsInSeries
       const libraryItemsFinished = libraryItemsInSeries.filter(li => {
         const mediaProgress = req.user.getMediaProgress(li.id)
         return mediaProgress && mediaProgress.isFinished
@@ -55,6 +55,12 @@ class SeriesController {
     const series = this.db.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)
 
+    const libraryItemsInSeries = this.db.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+    if (libraryItemsInSeries.some(li => !req.user.checkCanAccessLibrary(li.libraryId))) {
+      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to the library`, req.user)
+      return res.sendStatus(403)
+    }
+
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[SeriesController] User attempted to delete without permission`, req.user)
       return res.sendStatus(403)
@@ -64,6 +70,7 @@ class SeriesController {
     }
 
     req.series = series
+    req.libraryItemsInSeries = libraryItemsInSeries
     next()
   }
 }
