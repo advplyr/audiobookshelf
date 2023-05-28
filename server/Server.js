@@ -11,6 +11,7 @@ const { version } = require('../package.json')
 const dbMigration = require('./utils/dbMigration')
 const filePerms = require('./utils/filePerms')
 const fileUtils = require('./utils/fileUtils')
+const globals = require('./utils/globals')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -170,7 +171,23 @@ class Server {
       const folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
 
-      const remainingPath = req.params['0']
+      // Replace backslashes with forward slashes
+      const remainingPath = req.params['0'].replace(/\\/g, '/')
+
+      // Prevent path traversal
+      //  e.g. ../../etc/passwd
+      if (/\/?\.?\.\//.test(remainingPath)) {
+        Logger.error(`[Server] Invalid path to get ebook "${remainingPath}"`)
+        return res.sendStatus(403)
+      }
+
+      // Check file ext is a valid ebook file
+      const filext = (Path.extname(remainingPath) || '').slice(1).toLowerCase()
+      if (!globals.SupportedEbookTypes.includes(filext)) {
+        Logger.error(`[Server] Invalid ebook file ext requested "${remainingPath}"`)
+        return res.sendStatus(403)
+      }
+
       const fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })
