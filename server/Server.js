@@ -25,6 +25,7 @@ const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
+const EmailManager = require('./managers/EmailManager')
 const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -66,6 +67,7 @@ class Server {
     // Managers
     this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager(this.db)
+    this.emailManager = new EmailManager(this.db)
     this.backupManager = new BackupManager(this.db)
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()

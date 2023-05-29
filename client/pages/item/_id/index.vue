@@ -431,6 +431,19 @@ export default {
         })
       }
 
+      if (this.ebookFile && this.$store.state.libraries.ereaderDevices?.length) {
+        items.push({
+          text: this.$strings.LabelSendEbookToDevice,
+          subitems: this.$store.state.libraries.ereaderDevices.map((d) => {
+            return {
+              text: d.name,
+              action: 'sendToDevice',
+              data: d.name
+            }
+          })
+        })
+      }
+
       if (this.userCanDelete) {
         items.push({
           text: this.$strings.ButtonDelete,
@@ -704,7 +717,35 @@ export default {
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
-    contextMenuAction(action) {
+    sendToDevice(deviceName) {
+      const payload = {
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFile.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            this.$axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send e-book to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction({ action, data }) {
       if (action === 'collections') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShowCollectionsModal', true)
@@ -719,6 +760,8 @@ export default {
         this.downloadLibraryItem()
       } else if (action === 'delete') {
         this.deleteLibraryItem()
+      } else if (action === 'sendToDevice') {
+        this.sendToDevice(data)
       }
     }
   },

@@ -211,7 +211,7 @@ export default {
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'quick-embed') {
         this.requestBatchQuickEmbed()
       } else if (action === 'quick-match') {

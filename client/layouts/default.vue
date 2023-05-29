@@ -380,6 +380,11 @@ export default {
     adminMessageEvt(message) {
       this.$toast.info(message)
     },
+    ereaderDevicesUpdated(data) {
+      if (!data?.ereaderDevices) return
+
+      this.$store.commit('libraries/setEReaderDevices', data.ereaderDevices)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -451,6 +456,9 @@ export default {
       this.socket.on('task_started', this.taskStarted)
       this.socket.on('task_finished', this.taskFinished)
       this.socket.on('metadata_embed_queue_update', this.metadataEmbedQueueUpdate)
+
+      // EReader Device Listeners
+      this.socket.on('ereader-devices-updated', this.ereaderDevicesUpdated)
 
       this.socket.on('backup_applied', this.backupApplied)
 

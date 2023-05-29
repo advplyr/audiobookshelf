@@ -296,7 +296,7 @@ export default {
     }
   },
   methods: {
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'export-opml') {
         this.exportOPML()
       }
@@ -304,7 +304,7 @@ export default {
     exportOPML() {
       this.$downloadFile(`/api/libraries/${this.currentLibraryId}/opml?token=${this.$store.getters['user/getToken']}`, null, true)
     },
-    seriesContextMenuAction(action) {
+    seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
       } else if (action === 're-add-to-continue-listening') {

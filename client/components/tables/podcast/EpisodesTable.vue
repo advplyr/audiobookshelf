@@ -185,7 +185,7 @@ export default {
         this.searchText = this.search.toLowerCase().trim()
       }, 500)
     },
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'quick-match-episodes') {
         if (this.quickMatchingEpisodes) return
 

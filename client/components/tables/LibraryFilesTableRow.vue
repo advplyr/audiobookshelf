@@ -72,7 +72,7 @@ export default {
     }
   },
   methods: {
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'delete') {
         this.deleteLibraryFile()
       } else if (action === 'download') {

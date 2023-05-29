@@ -7,9 +7,19 @@
     </slot>
 
     <transition name="menu">
-      <div v-show="showMenu" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg max-h-56 rounded-md py-1 overflow-auto focus:outline-none sm:text-sm" :style="{ width: menuWidth }">
+      <div v-show="showMenu" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg rounded-md py-1 focus:outline-none sm:text-sm" :style="{ width: menuWidth }">
         <template v-for="(item, index) in items">
-          <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.action)">
+          <template v-if="item.subitems">
+            <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-default" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>
+              <p>{{ item.text }}</p>
+            </div>
+            <div v-if="mouseoverItemIndex === index" :key="`subitems-${index}`" @mouseover="mouseoverSubItemMenu(index)" @mouseleave="mouseleaveSubItemMenu(index)" class="absolute w-36 bg-bg rounded-md border border-black-200 shadow-lg z-50 -ml-px" :style="{ left: menuWidth, top: index * 29 + 'px' }">
+              <div v-for="(subitem, subitemindex) in item.subitems" :key="`subitem-${subitemindex}`" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(subitem.action, subitem.data)">
+                <p>{{ subitem.text }}</p>
+              </div>
+            </div>
+          </template>
+          <div v-else :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.action)">
             <p>{{ item.text }}</p>
           </div>
         </template>
@@ -42,11 +52,31 @@ export default {
         events: ['mousedown'],
         isActive: true
       },
-      showMenu: false
+      showMenu: false,
+      mouseoverItemIndex: null,
+      isOverSubItemMenu: false
     }
   },
   computed: {},
   methods: {
+    mouseoverSubItemMenu(index) {
+      this.isOverSubItemMenu = true
+    },
+    mouseleaveSubItemMenu(index) {
+      setTimeout(() => {
+        if (this.isOverSubItemMenu && this.mouseoverItemIndex === index) this.mouseoverItemIndex = null
+      }, 1)
+    },
+    mouseoverItem(index) {
+      this.isOverSubItemMenu = false
+      this.mouseoverItemIndex = index
+    },
+    mouseleaveItem(index) {
+      setTimeout(() => {
+        if (this.isOverSubItemMenu) return
+        if (this.mouseoverItemIndex === index) this.mouseoverItemIndex = null
+      }, 1)
+    },
     clickShowMenu() {
       if (this.disabled) return
       this.showMenu = !this.showMenu
@@ -54,10 +84,10 @@ export default {
     clickedOutside() {
       this.showMenu = false
     },
-    clickAction(action) {
+    clickAction(action, data) {
       if (this.disabled) return
       this.showMenu = false
-      this.$emit('action', action)
+      this.$emit('action', { action, data })
     }
   },
   mounted() {}

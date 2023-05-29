@@ -107,7 +107,7 @@ export default {
       const payload = {
         newRoot: { ...this.newRoot }
       }
-      var success = await this.$axios
+      const success = await this.$axios
         .$post('/init', payload)
         .then(() => true)
         .catch((error) => {
@@ -124,9 +124,10 @@ export default {
 
       location.reload()
     },
-    setUser({ user, userDefaultLibraryId, serverSettings, Source, feeds }) {
+    setUser({ user, userDefaultLibraryId, serverSettings, Source, ereaderDevices }) {
       this.$store.commit('setServerSettings', serverSettings)
       this.$store.commit('setSource', Source)
+      this.$store.commit('libraries/setEReaderDevices', ereaderDevices)
       this.$setServerLanguageCode(serverSettings.language)
 
       if (serverSettings.chromecastEnabled) {

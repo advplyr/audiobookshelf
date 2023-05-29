@@ -120,6 +120,7 @@ class Auth {
       user: user.toJSONForBrowser(),
       userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
       serverSettings: this.db.serverSettings.toJSONForBrowser(),
+      ereaderDevices: this.db.emailSettings.getEReaderDevices(user),
       Source: global.Source
     }
   }

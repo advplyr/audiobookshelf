@@ -12,6 +12,7 @@ const Author = require('./objects/entities/Author')
 const Series = require('./objects/entities/Series')
 const ServerSettings = require('./objects/settings/ServerSettings')
 const NotificationSettings = require('./objects/settings/NotificationSettings')
+const EmailSettings = require('./objects/settings/EmailSettings')
 const PlaybackSession = require('./objects/PlaybackSession')
 
 class Db {
@@ -49,6 +50,7 @@ class Db {
 
     this.serverSettings = null
     this.notificationSettings = null
+    this.emailSettings = null
 
     // Stores previous version only if upgraded
     this.previousVersion = null
@@ -156,6 +158,10 @@ class Db {
       this.notificationSettings = new NotificationSettings()
       await this.insertEntity('settings', this.notificationSettings)
     }
+    if (!this.emailSettings) {
+      this.emailSettings = new EmailSettings()
+      await this.insertEntity('settings', this.emailSettings)
+    }
     global.ServerSettings = this.serverSettings.toJSON()
   }
 
@@ -201,6 +207,11 @@ class Db {
         const notificationSettings = this.settings.find(s => s.id === 'notification-settings')
         if (notificationSettings) {
           this.notificationSettings = new NotificationSettings(notificationSettings)
+        }
+
+        const emailSettings = this.settings.find(s => s.id === 'email-settings')
+        if (emailSettings) {
+          this.emailSettings = new EmailSettings(emailSettings)
         }
       }
     })

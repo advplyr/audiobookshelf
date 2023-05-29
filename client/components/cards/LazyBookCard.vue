@@ -448,7 +448,6 @@ export default {
           }
         ]
         if (this.continueListeningShelf) {
-
           items.push({
             func: 'removeFromContinueListening',
             text: this.$strings.ButtonRemoveFromContinueListening
@@ -488,6 +487,18 @@ export default {
           items.push({
             func: 'openPlaylists',
             text: this.$strings.LabelAddToPlaylist
+          })
+        }
+        if (this.ebookFormat && this.store.state.libraries.ereaderDevices?.length) {
+          items.push({
+            text: this.$strings.LabelSendEbookToDevice,
+            subitems: this.store.state.libraries.ereaderDevices.map((d) => {
+              return {
+                text: d.name,
+                func: 'sendToDevice',
+                data: d.name
+              }
+            })
           })
         }
       }
@@ -720,6 +731,37 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
+    sendToDevice(deviceName) {
+      // More menu func
+      const payload = {
+        // message: `Are you sure you want to send ${this.ebookFormat} ebook "${this.title}" to device "${deviceName}"?`,
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            const axios = this.$axios || this.$nuxt.$axios
+            axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send e-book to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.store.commit('globals/setConfirmPrompt', payload)
+    },
     removeSeriesFromContinueListening() {
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
@@ -833,8 +875,8 @@ export default {
           items: this.moreMenuItems
         },
         created() {
-          this.$on('action', (func) => {
-            if (_this[func]) _this[func]()
+          this.$on('action', (action) => {
+            if (action.func && _this[action.func]) _this[action.func](action.data)
           })
           this.$on('close', () => {
             _this.isMoreMenuOpen = false

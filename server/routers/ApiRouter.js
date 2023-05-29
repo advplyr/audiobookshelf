@@ -20,6 +20,7 @@ const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
 const NotificationController = require('../controllers/NotificationController')
+const EmailController = require('../controllers/EmailController')
 const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
@@ -50,6 +51,7 @@ class ApiRouter {
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
+    this.emailManager = Server.emailManager
     this.taskManager = Server.taskManager
 
     this.bookFinder = new BookFinder()
@@ -258,6 +260,15 @@ class ApiRouter {
     this.router.delete('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.deleteNotification.bind(this))
     this.router.patch('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.updateNotification.bind(this))
     this.router.get('/notifications/:id/test', NotificationController.middleware.bind(this), NotificationController.sendNotificationTest.bind(this))
+
+    //
+    // Email Routes (Admin and up)
+    //
+    this.router.get('/emails/settings', EmailController.middleware.bind(this), EmailController.getSettings.bind(this))
+    this.router.patch('/emails/settings', EmailController.middleware.bind(this), EmailController.updateSettings.bind(this))
+    this.router.post('/emails/test', EmailController.middleware.bind(this), EmailController.sendTest.bind(this))
+    this.router.post('/emails/ereader-devices', EmailController.middleware.bind(this), EmailController.updateEReaderDevices.bind(this))
+    this.router.post('/emails/send-ebook-to-device', EmailController.middleware.bind(this), EmailController.sendEBookToDevice.bind(this))
 
     //
     // Search Routes
