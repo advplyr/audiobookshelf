@@ -377,7 +377,7 @@
   "LabelSettingsExperimentalFeaturesHelp": "Funktionen welche sich in der Entwicklung befinden, benötigen Ihr Feedback und Ihre Hilfe beim Testen. Klicken Sie hier, um die Github-Diskussion zu öffnen.",
   "LabelSettingsFindCovers": "Suche Titelbilder",
   "LabelSettingsFindCoversHelp": "Wenn Ihr Medium kein eingebettetes Titelbild oder kein Titelbild im Ordner hat, versucht der Scanner, ein Titelbild online zu finden.<br>Hinweis: Dies verlängert die Scandauer",
-  "LabelSettingsHomePageBookshelfView": "Starseite verwendet die Bücherregalansicht",
+  "LabelSettingsHomePageBookshelfView": "Startseite verwendet die Bücherregalansicht",
   "LabelSettingsLibraryBookshelfView": "Bibliothek verwendet die Bücherregalansicht",
   "LabelSettingsOverdriveMediaMarkers": "Verwende Overdrive Media Marker für Kapitel",
   "LabelSettingsOverdriveMediaMarkersHelp": "MP3-Dateien von Overdrive werden mit eingebetteten Kapitel-Timings als benutzerdefinierte Metadaten geliefert. Wenn Sie dies aktivieren, werden diese Markierungen automatisch für die Kapiteltaktung verwendet",
