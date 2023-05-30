@@ -74,7 +74,9 @@ class SessionController {
 
   // POST: api/session/:id/close
   close(req, res) {
-    this.playbackSessionManager.closeSessionRequest(req.user, req.session, req.body, res)
+    let syncData = req.body
+    if (syncData && !Object.keys(syncData).length) syncData = null
+    this.playbackSessionManager.closeSessionRequest(req.user, req.session, syncData, res)
   }
 
   // DELETE: api/session/:id
