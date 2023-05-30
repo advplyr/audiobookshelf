@@ -14,12 +14,12 @@
       </div>
     </button>
 
-    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none text-sm libraryFilterMenu">
       <ul v-show="!sublist" class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in selectItems">
           <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item)">
             <div class="flex items-center justify-between">
-              <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
+              <span class="font-normal ml-3 block truncate text-sm">{{ item.text }}</span>
             </div>
             <div v-if="item.sublist" class="absolute right-1 top-0 bottom-0 h-full flex items-center">
               <span class="material-icons text-2xl">arrow_right</span>
@@ -445,3 +445,9 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.libraryFilterMenu {
+  max-height: calc(100vh - 125px);
+}
+</style>

@@ -197,8 +197,8 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .globalSearchMenu {
-  max-height: 80vh;
+  max-height: calc(100vh - 75px);
 }
 </style>
