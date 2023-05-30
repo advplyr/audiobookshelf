@@ -750,7 +750,7 @@ export default {
                 this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
               })
               .catch((error) => {
-                console.error('Failed to send e-book to device', error)
+                console.error('Failed to send ebook to device', error)
                 this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
               })
               .finally(() => {

@@ -18,7 +18,7 @@ module.exports = {
     if (group) {
       const filterVal = filterBy.replace(`${group}.`, '')
       const filter = this.decode(filterVal)
-      if (group === 'genres') filtered = filtered.filter(li => li.media.metadata && li.media.metadata.genres.includes(filter))
+      if (group === 'genres') filtered = filtered.filter(li => li.media.metadata.genres?.includes(filter))
       else if (group === 'tags') filtered = filtered.filter(li => li.media.tags.includes(filter))
       else if (group === 'series') {
         if (filter === 'no-series') filtered = filtered.filter(li => li.isBook && !li.media.metadata.series.length)
@@ -58,7 +58,7 @@ module.exports = {
           }
         })
       } else if (group === 'languages') {
-        filtered = filtered.filter(li => li.media.metadata && li.media.metadata.language === filter)
+        filtered = filtered.filter(li => li.media.metadata.language === filter)
       } else if (group === 'tracks') {
         if (filter === 'single') filtered = filtered.filter(li => li.isBook && li.media.numTracks === 1)
         else if (filter === 'multi') filtered = filtered.filter(li => li.isBook && li.media.numTracks > 1)
@@ -69,6 +69,8 @@ module.exports = {
       filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
     } else if (filterBy === 'abridged') {
       filtered = filtered.filter(li => !!li.media.metadata?.abridged)
+    } else if (filterBy === 'ebook') {
+      filtered = filtered.filter(li => li.media.ebookFile)
     }
 
     return filtered
@@ -82,12 +84,12 @@ module.exports = {
       var filterVal = filterBy.replace(`${group}.`, '')
       var filter = this.decode(filterVal)
 
-      if (group === 'genres') return libraryItem.media.metadata && libraryItem.media.metadata.genres.includes(filter)
+      if (group === 'genres') return libraryItem.media.metadata.genres.includes(filter)
       else if (group === 'tags') return libraryItem.media.tags.includes(filter)
-      else if (group === 'authors') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasAuthor(filter)
-      else if (group === 'narrators') return libraryItem.mediaType === 'book' && libraryItem.media.metadata.hasNarrator(filter)
+      else if (group === 'authors') return libraryItem.isBook && libraryItem.media.metadata.hasAuthor(filter)
+      else if (group === 'narrators') return libraryItem.isBook && libraryItem.media.metadata.hasNarrator(filter)
       else if (group === 'languages') {
-        return libraryItem.media.metadata && libraryItem.media.metadata.language === filter
+        return libraryItem.media.metadata.language === filter
       }
     }
     return true

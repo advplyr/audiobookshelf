@@ -186,6 +186,11 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelEbook,
+          value: 'ebook',
+          sublist: false
+        },
+        {
           text: this.$strings.LabelAbridged,
           value: 'abridged',
           sublist: false
