@@ -117,9 +117,11 @@ Add this to the site config file on your Apache server after you have changed th
 
 For this to work you must enable at least the following mods using `a2enmod`:
   - `ssl`
-  - `proxy_module`
-  - `proxy_wstunnel_module`
-  - `rewrite_module`
+  - `proxy`
+  - `proxy_http`
+  - `proxy_balancer`
+  - `proxy_wstunnel`
+  - `rewrite`
 
 ```bash
 <IfModule mod_ssl.c>
@@ -142,6 +144,26 @@ For this to work you must enable at least the following mods using `a2enmod`:
     SSLCertificateKeyFile /path/to/key/file
 </VirtualHost>
 </IfModule>
+```
+
+Some SSL certificates like those signed by Let's Encrypt require ACME validation. To allow Let's Encrypt to write and confirm 
+the ACME challenge, edit your VirtualHost definition to prevent proxying traffic that queries `/.well-known` and instead
+serve that directly:
+```bash
+<VirtualHost *:443>
+    # ...
+
+    # create the directory structure  /.well-known/acme-challenges
+    # within DocumentRoot and give the HTTP user recursive write
+    # access to it.
+    DocumentRoot /path/to/local/directory
+    
+    ProxyPreserveHost On
+    ProxyPass /.well-known !
+    ProxyPass / http://localhost:<audiobookshelf_port>/
+    
+    # ...
+</VirtualHost>    
 ```
 
 
