@@ -148,7 +148,10 @@ class Server {
     this.server = http.createServer(app)
 
     router.use(this.auth.cors)
-    router.use(fileUpload())
+    router.use(fileUpload({
+      defCharset: 'utf8',
+      defParamCharset: 'utf8'
+    }))
     router.use(express.urlencoded({ extended: true, limit: "5mb" }));
     router.use(express.json({ limit: "5mb" }))
 
