@@ -83,7 +83,8 @@ class Stream extends EventEmitter {
       AudioMimeType.AIFF,
       AudioMimeType.WEBM,
       AudioMimeType.WEBMA,
-      AudioMimeType.AWB
+      AudioMimeType.AWB,
+      AudioMimeType.CAF
     ]
   }
   get codecsToForceAAC() {
