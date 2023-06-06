@@ -67,6 +67,12 @@ export default {
       if (!this.libraryItemId) return
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    savedEbookLocation() {
+      if (!this.userMediaProgress?.ebookLocation) return null
+      // Validate ebookLocation is an epubcfi
+      if (!String(this.userMediaProgress.ebookLocation).startsWith('epubcfi')) return null
+      return this.userMediaProgress.ebookLocation
+    },
     localStorageLocationsKey() {
       return `ebookLocations-${this.libraryItemId}`
     },
@@ -197,7 +203,7 @@ export default {
     },
     /** @param {string} location - CFI of the new location */
     relocated(location) {
-      if (this.userMediaProgress?.ebookLocation === location.start.cfi) {
+      if (this.savedEbookLocation === location.start.cfi) {
         return
       }
 
@@ -233,7 +239,7 @@ export default {
       })
 
       // load saved progress
-      reader.rendition.display(this.userMediaProgress?.ebookLocation || reader.book.locations.start)
+      reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
 
       // load style
       reader.rendition.themes.default({ '*': { color: '#fff!important', 'background-color': 'rgb(35 35 35)!important' } })

@@ -437,16 +437,19 @@ class LibraryItem {
 
     if (this.mediaType === 'book') {
       // Add/update ebook file (ebooks that were removed are removed in checkScanData)
-      this.libraryFiles.forEach((lf) => {
-        if (lf.fileType === 'ebook') {
-          if (!this.media.ebookFile) {
-            this.media.setEbookFile(lf)
-            hasUpdated = true
-          } else if (this.media.ebookFile.ino == lf.ino && this.media.ebookFile.updateFromLibraryFile(lf)) { // Update existing ebookFile
-            hasUpdated = true
-          }
+      if (this.media.ebookFile) {
+        const matchingLibraryFile = this.libraryFiles.find(lf => lf.ino === this.media.ebookFile.ino)
+        if (matchingLibraryFile && this.media.ebookFile.updateFromLibraryFile(matchingLibraryFile)) {
+          hasUpdated = true
         }
-      })
+      } else {
+        // Prefer epub ebook then fallback to first other ebook file
+        const ebookLibraryFile = this.libraryFiles.find(lf => lf.isEBookFile && lf.metadata.format === 'epub') || this.libraryFiles.find(lf => lf.isEBookFile)
+        if (ebookLibraryFile) {
+          this.media.setEbookFile(ebookLibraryFile)
+          hasUpdated = true
+        }
+      }
     }
 
     // Set cover image if not set

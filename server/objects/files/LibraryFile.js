@@ -50,6 +50,10 @@ class LibraryFile {
     return this.fileType === 'audio' || this.fileType === 'ebook' || this.fileType === 'video'
   }
 
+  get isEBookFile() {
+    return this.fileType === 'ebook'
+  }
+
   get isOPFFile() {
     return this.metadata.ext === '.opf'
   }

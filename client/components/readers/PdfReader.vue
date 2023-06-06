@@ -95,7 +95,9 @@ export default {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     savedPage() {
-      return Number(this.userMediaProgress?.ebookLocation || 0)
+      // Validate ebookLocation is a number
+      if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
+      return Number(this.userMediaProgress.ebookLocation)
     },
     pdfDocInitParams() {
       return {
