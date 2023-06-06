@@ -152,6 +152,7 @@ class Server {
       defCharset: 'utf8',
       defParamCharset: 'utf8',
       useTempFiles: true,
+      tempFileDir: Path.join(global.MetadataPath, 'tmp')
     }))
     router.use(express.urlencoded({ extended: true, limit: "5mb" }));
     router.use(express.json({ limit: "5mb" }))
