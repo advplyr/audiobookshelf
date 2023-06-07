@@ -122,7 +122,7 @@
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" menu-width="148px" @action="contextMenuAction">
+            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
                 <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
                   <span class="material-icons">more_horiz</span>

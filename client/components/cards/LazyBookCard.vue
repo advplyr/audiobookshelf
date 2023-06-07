@@ -888,7 +888,7 @@ export default {
       var wrapperBox = this.$refs.moreIcon.getBoundingClientRect()
       var el = instance.$el
 
-      var elHeight = this.moreMenuItems.length * 28 + 2
+      var elHeight = this.moreMenuItems.length * 28 + 10
       var elWidth = 130
 
       var bottomOfIcon = wrapperBox.top + wrapperBox.height

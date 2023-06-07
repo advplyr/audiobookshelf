@@ -17,7 +17,7 @@
       {{ $secondsToTimestamp(track.duration) }}
     </td>
     <td v-if="contextMenuItems.length" class="text-center">
-      <ui-context-menu-dropdown :items="contextMenuItems" menu-width="110px" @action="contextMenuAction" />
+      <ui-context-menu-dropdown :items="contextMenuItems" :menu-width="110" @action="contextMenuAction" />
     </td>
   </tr>
 </template>

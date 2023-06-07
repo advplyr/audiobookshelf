@@ -82,7 +82,7 @@
         <!-- issues page remove all button -->
         <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
 
-        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" menu-width="110px" class="ml-2" @action="contextMenuAction" />
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
