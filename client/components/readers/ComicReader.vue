@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
     <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-8 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-52">
-      <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index)">
+      <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index + 1)">
         <p class="text-sm truncate">{{ file }}</p>
       </div>
     </div>
@@ -14,14 +14,14 @@
       </div>
     </div>
 
-    <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showInfoMenu = !showInfoMenu">
+    <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
       <span class="material-icons text-xl">more</span>
     </div>
-    <div class="absolute top-0 left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="showPageMenu = !showPageMenu">
+    <div v-if="numPages" class="absolute top-0 left-8 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowPageMenu">
       <span class="material-icons text-xl">menu</span>
     </div>
-    <div class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
-      <p class="font-mono">{{ page + 1 }} / {{ numPages }}</p>
+    <div v-if="numPages" class="absolute top-0 right-16 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center z-20">
+      <p class="font-mono">{{ page }} / {{ numPages }}</p>
     </div>
 
     <div class="overflow-hidden w-full h-full relative">
@@ -104,9 +104,43 @@ export default {
     },
     canGoPrev() {
       return this.page > 0
+    },
+    userMediaProgress() {
+      if (!this.libraryItemId) return
+      return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
+    },
+    savedPage() {
+      // Validate ebookLocation is a number
+      if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
+      return Number(this.userMediaProgress.ebookLocation)
     }
   },
   methods: {
+    clickShowPageMenu() {
+      this.showInfoMenu = false
+      this.showPageMenu = !this.showPageMenu
+    },
+    clickShowInfoMenu() {
+      this.showPageMenu = false
+      this.showInfoMenu = !this.showInfoMenu
+    },
+    updateProgress() {
+      if (!this.numPages) {
+        console.error('Num pages not loaded')
+        return
+      }
+      if (this.savedPage === this.page) {
+        return
+      }
+
+      const payload = {
+        ebookLocation: this.page,
+        ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
+      }
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+        console.error('EpubReader.updateProgress failed:', error)
+      })
+    },
     clickOutside() {
       if (this.showPageMenu) this.showPageMenu = false
       if (this.showInfoMenu) this.showInfoMenu = false
@@ -119,12 +153,15 @@ export default {
       if (!this.canGoPrev) return
       this.setPage(this.page - 1)
     },
-    setPage(index) {
-      if (index < 0 || index > this.numPages - 1) {
+    setPage(page) {
+      if (page <= 0 || page > this.numPages) {
         return
       }
-      var filename = this.pages[index]
-      this.page = index
+      this.showPageMenu = false
+      this.showInfoMenu = false
+      const filename = this.pages[page - 1]
+      this.page = page
+      this.updateProgress()
       return this.extractFile(filename)
     },
     setLoadTimeout() {
@@ -176,7 +213,9 @@ export default {
 
       if (this.pages.length) {
         this.loading = false
-        await this.setPage(0)
+
+        const startPage = this.savedPage > 0 && this.savedPage <= this.numPages ? this.savedPage : 1
+        await this.setPage(startPage)
         this.loadedFirstPage = true
       } else {
         this.$toast.error('Unable to extract pages')

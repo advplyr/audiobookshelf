@@ -130,7 +130,7 @@ export default {
       })
     },
     loadedEvt() {
-      if (this.savedPage && this.savedPage > 0 && this.savedPage <= this.numPages) {
+      if (this.savedPage > 0 && this.savedPage <= this.numPages) {
         this.page = this.savedPage
       }
     },
