@@ -110,7 +110,7 @@ module.exports = {
       if (filter === 'not-started' && itemProgress) return false
     }
 
-    if (!someBookIsUnfinished && filter === 'not-finished') { // Completely finished series
+    if (!someBookIsUnfinished && (filter === 'not-finished' || filter === 'in-progress')) { // Completely finished series
       return false
     } else if (!someBookHasProgress && filter === 'in-progress') { // Series not started
       return false
