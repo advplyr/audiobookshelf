@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full">
-    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-8 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400 w-52">
-      <div v-for="(file, index) in pages" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index + 1)">
+    <div v-show="showPageMenu" v-click-outside="clickOutside" class="pagemenu absolute top-9 left-8 rounded-md overflow-y-auto bg-bg shadow-lg z-20 border border-gray-400" :style="{ width: pageMenuWidth + 'px' }">
+      <div v-for="(file, index) in cleanedPageNames" :key="file" class="w-full cursor-pointer hover:bg-black-200 px-2 py-1" :class="page === index ? 'bg-black-200' : ''" @click="setPage(index + 1)">
         <p class="text-sm truncate">{{ file }}</p>
       </div>
     </div>
@@ -14,6 +14,9 @@
       </div>
     </div>
 
+    <a v-if="pages && numPages" :href="mainImg" :download="pages[page - 1]" class="absolute top-0 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" :class="comicMetadata ? 'left-32' : 'left-20'">
+      <span class="material-icons text-xl">download</span>
+    </a>
     <div v-if="comicMetadata" class="absolute top-0 left-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 hover:bg-black-200 cursor-pointer rounded-b-md w-10 h-9 flex items-center justify-center text-center z-20" @mousedown.prevent @click.stop.prevent="clickShowInfoMenu">
       <span class="material-icons text-xl">more</span>
     </div>
@@ -25,12 +28,12 @@
     </div>
 
     <div class="overflow-hidden w-full h-full relative">
-      <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
+      <div v-show="canGoPrev" class="absolute top-0 left-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="prev" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_back_ios</span>
         </div>
       </div>
-      <div v-show="canGoNext" class="absolute top-0 right-0 h-full w-1/2 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
+      <div v-show="canGoNext" class="absolute top-0 right-0 h-full w-1/2 lg:w-1/3 hover:opacity-100 opacity-0 z-10 cursor-pointer" @click.stop.prevent="next" @mousedown.prevent>
         <div class="flex items-center justify-center h-full w-1/2 ml-auto">
           <span v-show="loadedFirstPage" class="material-icons text-5xl text-white cursor-pointer text-opacity-30 hover:text-opacity-90">arrow_forward_ios</span>
         </div>
@@ -71,6 +74,7 @@ export default {
       mainImg: null,
       page: 0,
       numPages: 0,
+      pageMenuWidth: 256,
       showPageMenu: false,
       showInfoMenu: false,
       loadTimeout: null,
@@ -113,6 +117,18 @@ export default {
       // Validate ebookLocation is a number
       if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
       return Number(this.userMediaProgress.ebookLocation)
+    },
+    cleanedPageNames() {
+      return (
+        this.pages?.map((p) => {
+          if (p.length > 50) {
+            let firstHalf = p.slice(0, 22)
+            let lastHalf = p.slice(p.length - 23)
+            return `${firstHalf} ... ${lastHalf}`
+          }
+          return p
+        }) || []
+      )
     }
   },
   methods: {
@@ -138,7 +154,7 @@ export default {
         ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
       }
       this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
-        console.error('EpubReader.updateProgress failed:', error)
+        console.error('ComicReader.updateProgress failed:', error)
       })
     },
     clickOutside() {
@@ -210,6 +226,23 @@ export default {
       if (xmlFile) await this.extractXmlFile(xmlFile)
 
       this.numPages = this.pages.length
+
+      // Calculate page menu size
+      const largestFilename = this.cleanedPageNames
+        .map((p) => p)
+        .sort((a, b) => a.length - b.length)
+        .pop()
+      const pEl = document.createElement('p')
+      pEl.innerText = largestFilename
+      pEl.style.fontSize = '0.875rem'
+      pEl.style.opacity = 0
+      pEl.style.position = 'absolute'
+      document.body.appendChild(pEl)
+      const textWidth = pEl.getBoundingClientRect()?.width
+      if (textWidth) {
+        this.pageMenuWidth = textWidth + (16 + 5 + 2 + 5)
+      }
+      pEl.remove()
 
       if (this.pages.length) {
         this.loading = false
