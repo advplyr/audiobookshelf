@@ -127,6 +127,7 @@ export default class LocalAudioPlayer extends EventEmitter {
 
   setHlsStream() {
     this.trackStartTime = 0
+    this.currentTrackIndex = 0
 
     // iOS does not support Media Elements but allows for HLS in the native audio player
     if (!Hls.isSupported()) {

@@ -46,8 +46,20 @@
             >{{ $strings.ButtonOpenManager }}
             <span class="material-icons text-lg ml-2">launch</span>
           </ui-btn>
+
+          <ui-btn v-if="!isMetadataEmbedQueued && !isEmbedTaskRunning" class="w-full mt-4" small @click.stop="quickEmbed">Quick Embed</ui-btn>
         </div>
       </div>
+
+      <!-- queued alert -->
+      <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mt-4">
+        <p class="text-lg">Queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+      </widgets-alert>
+
+      <!-- processing alert -->
+      <widgets-alert v-if="isEmbedTaskRunning" type="warning" class="mt-4">
+        <p class="text-lg">Currently embedding metadata</p>
+      </widgets-alert>
     </div>
 
     
@@ -92,10 +104,10 @@ export default {
       return this.$store.getters['user/getIsAdminOrUp']
     },
     libraryItemId() {
-      return this.libraryItem ? this.libraryItem.id : null
+      return this.libraryItem?.id || null
     },
     media() {
-      return this.libraryItem ? this.libraryItem.media || {} : {}
+      return this.libraryItem?.media || {}
     },
     mediaTracks() {
       return this.media.tracks || []
@@ -113,9 +125,49 @@ export default {
     showMp3Split() {
       if (!this.mediaTracks.length) return false
       return this.isSingleM4b && this.chapters.length
+    },
+    queuedEmbedLIds() {
+      return this.$store.state.tasks.queuedEmbedLIds || []
+    },
+    isMetadataEmbedQueued() {
+      return this.queuedEmbedLIds.some((lid) => lid === this.libraryItemId)
+    },
+    tasks() {
+      return this.$store.getters['tasks/getTasksByLibraryItemId'](this.libraryItemId)
+    },
+    embedTask() {
+      return this.tasks.find((t) => t.action === 'embed-metadata')
+    },
+    encodeTask() {
+      return this.tasks.find((t) => t.action === 'encode-m4b')
+    },
+    isEmbedTaskRunning() {
+      return this.embedTask && !this.embedTask?.isFinished
+    },
+    isEncodeTaskRunning() {
+      return this.encodeTask && !this.encodeTask?.isFinished
     }
   },
-  methods: {},
-  mounted() {}
+  methods: {
+    quickEmbed() {
+      const payload = {
+        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$post(`/api/tools/item/${this.libraryItemId}/embed-metadata`)
+              .then(() => {
+                console.log('Audio metadata encode started')
+              })
+              .catch((error) => {
+                console.error('Audio metadata encode failed', error)
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    }
+  }
 }
 </script>

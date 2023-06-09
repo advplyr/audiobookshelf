@@ -1,8 +1,8 @@
 <template>
   <div id="page-wrapper" class="bg-bg page overflow-hidden" :class="streamLibraryItem ? 'streaming' : ''">
-    <div class="w-full h-full overflow-y-auto px-2 py-6 md:p-8">
-      <div class="flex flex-col md:flex-row max-w-6xl mx-auto">
-        <div class="w-full flex justify-center md:block md:w-52" style="min-width: 208px">
+    <div class="w-full h-full overflow-y-auto px-2 py-6 lg:p-8">
+      <div class="flex flex-col lg:flex-row max-w-6xl mx-auto">
+        <div class="w-full flex justify-center lg:block lg:w-52" style="min-width: 208px">
           <div class="relative" style="height: fit-content">
             <covers-book-cover :library-item="libraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="bookCoverAspectRatio" />
 
@@ -21,11 +21,15 @@
             </div>
           </div>
         </div>
-        <div class="flex-grow px-2 py-6 md:py-0 md:px-10">
+        <div class="flex-grow px-2 py-6 lg:py-0 md:px-10">
           <div class="flex justify-center">
             <div class="mb-4">
               <h1 class="text-2xl md:text-3xl font-semibold">
-                {{ title }}
+                <div class="flex items-center">
+                  {{ title }}
+                  <widgets-explicit-indicator :explicit="isExplicit" />
+                  <widgets-abridged-indicator v-if="isAbridged" />
+                </div>
               </h1>
 
               <p v-if="bookSubtitle" class="text-gray-200 text-xl md:text-2xl">{{ bookSubtitle }}</p>
@@ -38,89 +42,12 @@
                   <nuxt-link v-for="(artist, index) in musicArtists" :key="index" :to="`/artist/${$encode(artist)}`" class="hover:underline">{{ artist }}<span v-if="index < musicArtists.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else-if="authors.length" class="mb-2 mt-0.5 text-gray-200 text-lg md:text-xl max-w-[calc(100vw-2rem)] overflow-hidden overflow-ellipsis">
-                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+                  by <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}?library=${libraryItem.libraryId}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
                 </p>
                 <p v-else class="mb-2 mt-0.5 text-gray-200 text-xl">by Unknown</p>
               </template>
 
-              <div v-if="narrator" class="flex py-0.5 mt-4">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
-                </div>
-                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
-                  <template v-for="(narrator, index) in narrators">
-                    <nuxt-link :key="narrator" :to="`/library/${libraryId}/bookshelf?filter=narrators.${$encode(narrator)}`" class="hover:underline">{{ narrator }}</nuxt-link
-                    ><span :key="index" v-if="index < narrators.length - 1">,&nbsp;</span>
-                  </template>
-                </div>
-              </div>
-              <div v-if="publishedYear" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
-                </div>
-                <div>
-                  {{ publishedYear }}
-                </div>
-              </div>
-              <div v-if="musicAlbum" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Album</span>
-                </div>
-                <div>
-                  {{ musicAlbum }}
-                </div>
-              </div>
-              <div v-if="musicAlbumArtist" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Album Artist</span>
-                </div>
-                <div>
-                  {{ musicAlbumArtist }}
-                </div>
-              </div>
-              <div v-if="musicTrackPretty" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Track</span>
-                </div>
-                <div>
-                  {{ musicTrackPretty }}
-                </div>
-              </div>
-              <div v-if="musicDiscPretty" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">Disc</span>
-                </div>
-                <div>
-                  {{ musicDiscPretty }}
-                </div>
-              </div>
-              <div class="flex py-0.5" v-if="genres.length">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
-                </div>
-                <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
-                  <template v-for="(genre, index) in genres">
-                    <nuxt-link :key="genre" :to="`/library/${libraryId}/bookshelf?filter=genres.${$encode(genre)}`" class="hover:underline">{{ genre }}</nuxt-link
-                    ><span :key="index" v-if="index < genres.length - 1">,&nbsp;</span>
-                  </template>
-                </div>
-              </div>
-              <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
-                </div>
-                <div>
-                  {{ durationPretty }}
-                </div>
-              </div>
-              <div class="flex py-0.5">
-                <div class="w-32">
-                  <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
-                </div>
-                <div>
-                  {{ sizePretty }}
-                </div>
-              </div>
+              <content-library-item-details :library-item="libraryItem" />
             </div>
             <div class="hidden md:block flex-grow" />
           </div>
@@ -153,7 +80,7 @@
           <div v-if="!isPodcast && progressPercent > 0" class="px-4 py-2 mt-4 bg-primary text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0" :class="resettingProgress ? 'opacity-25' : ''">
             <p v-if="progressPercent < 1" class="leading-6">{{ $strings.LabelYourProgress }}: {{ Math.round(progressPercent * 100) }}%</p>
             <p v-else class="text-xs">{{ $strings.LabelFinished }} {{ $formatDate(userProgressFinishedAt, dateFormat) }}</p>
-            <p v-if="progressPercent < 1" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
+            <p v-if="progressPercent < 1 && !useEBookProgress" class="text-gray-200 text-xs">{{ $getString('LabelTimeRemaining', [$elapsedPretty(userTimeRemaining)]) }}</p>
             <p class="text-gray-400 text-xs pt-1">{{ $strings.LabelStarted }} {{ $formatDate(userProgressStartedAt, dateFormat) }}</p>
 
             <div v-if="!resettingProgress" class="absolute -top-1.5 -right-1.5 p-1 w-5 h-5 rounded-full bg-bg hover:bg-error border border-primary flex items-center justify-center cursor-pointer" @click.stop="clearProgressClick">
@@ -190,27 +117,18 @@
               <ui-read-icon-btn :disabled="isProcessingReadUpdate" :is-read="userIsFinished" class="mx-0.5" @click="toggleFinished" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="showCollectionsButton" :text="$strings.LabelCollections" direction="top">
-              <ui-icon-btn icon="collections_bookmark" class="mx-0.5" outlined @click="collectionsClick" />
-            </ui-tooltip>
-
-            <ui-tooltip v-if="!isPodcast && tracks.length" :text="$strings.LabelYourPlaylists" direction="top">
-              <ui-icon-btn icon="playlist_add" class="mx-0.5" outlined @click="playlistsClick" />
-            </ui-tooltip>
-
             <!-- Only admin or root user can download new episodes -->
             <ui-tooltip v-if="isPodcast && userIsAdminOrUp" :text="$strings.LabelFindEpisodes" direction="top">
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <ui-tooltip v-if="bookmarks.length" :text="$strings.LabelYourBookmarks" direction="top">
-              <ui-icon-btn :icon="bookmarks.length ? 'bookmarks' : 'bookmark_border'" class="mx-0.5" @click="clickBookmarksBtn" />
-            </ui-tooltip>
-
-            <!-- RSS feed -->
-            <ui-tooltip v-if="showRssFeedBtn" :text="$strings.LabelOpenRSSFeed" direction="top">
-              <ui-icon-btn icon="rss_feed" class="mx-0.5" :bg-color="rssFeed ? 'success' : 'primary'" outlined @click="clickRSSFeed" />
-            </ui-tooltip>
+            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
+              <template #default="{ showMenu, clickShowMenu, disabled }">
+                <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
+                  <span class="material-icons">more_horiz</span>
+                </button>
+              </template>
+            </ui-context-menu-dropdown>
           </div>
 
           <div class="my-4 max-w-2xl">
@@ -229,7 +147,7 @@
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item-id="libraryItemId" :files="libraryFiles" class="mt-6" />
+          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>
@@ -273,6 +191,12 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    downloadUrl() {
+      return `${process.env.serverUrl}/api/items/${this.libraryItemId}/download?token=${this.userToken}`
+    },
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },
@@ -285,9 +209,6 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    isFile() {
-      return this.libraryItem.isFile
-    },
     bookCoverAspectRatio() {
       return this.$store.getters['libraries/getBookCoverAspectRatio']
     },
@@ -296,6 +217,9 @@ export default {
     },
     isDeveloperMode() {
       return this.$store.state.developerMode
+    },
+    isFile() {
+      return this.libraryItem.isFile
     },
     isBook() {
       return this.libraryItem.mediaType === 'book'
@@ -315,6 +239,12 @@ export default {
     isInvalid() {
       return this.libraryItem.isInvalid
     },
+    isExplicit() {
+      return !!this.mediaMetadata.explicit
+    },
+    isAbridged() {
+      return !!this.mediaMetadata.abridged
+    },
     invalidAudioFiles() {
       if (!this.isBook) return []
       return this.libraryItem.media.audioFiles.filter((af) => af.invalid)
@@ -331,9 +261,6 @@ export default {
     },
     libraryId() {
       return this.libraryItem.libraryId
-    },
-    folderId() {
-      return this.libraryItem.folderId
     },
     libraryItemId() {
       return this.libraryItem.id
@@ -360,18 +287,9 @@ export default {
     title() {
       return this.mediaMetadata.title || 'No Title'
     },
-    publishedYear() {
-      return this.mediaMetadata.publishedYear
-    },
-    narrator() {
-      return this.mediaMetadata.narratorName
-    },
     bookSubtitle() {
       if (this.isPodcast) return null
       return this.mediaMetadata.subtitle
-    },
-    genres() {
-      return this.mediaMetadata.genres || []
     },
     podcastAuthor() {
       return this.mediaMetadata.author || ''
@@ -381,25 +299,6 @@ export default {
     },
     musicArtists() {
       return this.mediaMetadata.artists || []
-    },
-    musicAlbum() {
-      return this.mediaMetadata.album || ''
-    },
-    musicAlbumArtist() {
-      return this.mediaMetadata.albumArtist || ''
-    },
-    musicTrackPretty() {
-      if (!this.mediaMetadata.trackNumber) return null
-      if (!this.mediaMetadata.trackTotal) return this.mediaMetadata.trackNumber
-      return `${this.mediaMetadata.trackNumber} / ${this.mediaMetadata.trackTotal}`
-    },
-    musicDiscPretty() {
-      if (!this.mediaMetadata.discNumber) return null
-      if (!this.mediaMetadata.discTotal) return this.mediaMetadata.discNumber
-      return `${this.mediaMetadata.discNumber} / ${this.mediaMetadata.discTotal}`
-    },
-    narrators() {
-      return this.mediaMetadata.narrators || []
     },
     series() {
       return this.mediaMetadata.series || []
@@ -414,25 +313,9 @@ export default {
         }
       })
     },
-    durationPretty() {
-      if (this.isPodcast) return this.$elapsedPrettyExtended(this.totalPodcastDuration)
-
-      if (!this.tracks.length && !this.audioFile) return 'N/A'
-      if (this.audioFile) return this.$elapsedPrettyExtended(this.duration)
-      return this.$elapsedPretty(this.duration)
-    },
     duration() {
       if (!this.tracks.length && !this.audioFile) return 0
       return this.media.duration
-    },
-    totalPodcastDuration() {
-      if (!this.podcastEpisodes.length) return 0
-      let totalDuration = 0
-      this.podcastEpisodes.forEach((ep) => (totalDuration += ep.duration || 0))
-      return totalDuration
-    },
-    sizePretty() {
-      return this.$bytesPretty(this.media.size)
     },
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
@@ -465,7 +348,12 @@ export default {
       const duration = this.userMediaProgress.duration || this.duration
       return duration - this.userMediaProgress.currentTime
     },
+    useEBookProgress() {
+      if (!this.userMediaProgress || this.userMediaProgress.progress) return false
+      return this.userMediaProgress.ebookProgress > 0
+    },
     progressPercent() {
+      if (this.useEBookProgress) return Math.max(Math.min(1, this.userMediaProgress.ebookProgress), 0)
       return this.userMediaProgress ? Math.max(Math.min(1, this.userMediaProgress.progress), 0) : 0
     },
     userProgressStartedAt() {
@@ -504,12 +392,69 @@ export default {
     },
     showCollectionsButton() {
       return this.isBook && this.userCanUpdate
+    },
+    contextMenuItems() {
+      const items = []
+
+      if (this.showCollectionsButton) {
+        items.push({
+          text: this.$strings.LabelCollections,
+          action: 'collections'
+        })
+      }
+
+      if (!this.isPodcast && this.tracks.length) {
+        items.push({
+          text: this.$strings.LabelYourPlaylists,
+          action: 'playlists'
+        })
+      }
+
+      if (this.bookmarks.length) {
+        items.push({
+          text: this.$strings.LabelYourBookmarks,
+          action: 'bookmarks'
+        })
+      }
+
+      if (this.showRssFeedBtn) {
+        items.push({
+          text: this.$strings.LabelOpenRSSFeed,
+          action: 'rss-feeds'
+        })
+      }
+
+      if (this.userCanDownload) {
+        items.push({
+          text: this.$strings.LabelDownload,
+          action: 'download'
+        })
+      }
+
+      if (this.ebookFile && this.$store.state.libraries.ereaderDevices?.length) {
+        items.push({
+          text: this.$strings.LabelSendEbookToDevice,
+          subitems: this.$store.state.libraries.ereaderDevices.map((d) => {
+            return {
+              text: d.name,
+              action: 'sendToDevice',
+              data: d.name
+            }
+          })
+        })
+      }
+
+      if (this.userCanDelete) {
+        items.push({
+          text: this.$strings.ButtonDelete,
+          action: 'delete'
+        })
+      }
+
+      return items
     }
   },
   methods: {
-    clickBookmarksBtn() {
-      this.showBookmarksModal = true
-    },
     selectBookmark(bookmark) {
       if (!bookmark) return
       if (this.isStreaming) {
@@ -632,7 +577,7 @@ export default {
               episodeId: episode.id,
               title: episode.title,
               subtitle: this.title,
-              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+              caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
               duration: episode.audioFile.duration || null,
               coverPath: this.libraryItem.media.coverPath || null
             })
@@ -670,10 +615,11 @@ export default {
       }
     },
     clearProgressClick() {
+      if (!this.userMediaProgress) return
       if (confirm(`Are you sure you want to reset your progress?`)) {
         this.resettingProgress = true
         this.$axios
-          .$delete(`/api/me/progress/${this.libraryItemId}`)
+          .$delete(`/api/me/progress/${this.userMediaProgress.id}`)
           .then(() => {
             console.log('Progress reset complete')
             this.$toast.success(`Your progress was reset`)
@@ -684,14 +630,6 @@ export default {
             this.resettingProgress = false
           })
       }
-    },
-    collectionsClick() {
-      this.$store.commit('setSelectedLibraryItem', this.libraryItem)
-      this.$store.commit('globals/setShowCollectionsModal', true)
-    },
-    playlistsClick() {
-      this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem }])
-      this.$store.commit('globals/setShowPlaylistsModal', true)
     },
     clickRSSFeed() {
       this.$store.commit('globals/setRSSFeedOpenCloseModal', {
@@ -750,12 +688,86 @@ export default {
         }
         this.$store.commit('addItemToQueue', queueItem)
       }
+    },
+    downloadLibraryItem() {
+      this.$downloadFile(this.downloadUrl)
+    },
+    deleteLibraryItem() {
+      const payload = {
+        message: 'This will delete the library item from the database and your file system. Are you sure?',
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
+          if (confirmed) {
+            this.$axios
+              .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
+              .then(() => {
+                this.$toast.success('Item deleted')
+                this.$router.replace(`/library/${this.libraryId}`)
+              })
+              .catch((error) => {
+                console.error('Failed to delete item', error)
+                this.$toast.error('Failed to delete item')
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    sendToDevice(deviceName) {
+      const payload = {
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFile.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            this.$axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send ebook to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction({ action, data }) {
+      if (action === 'collections') {
+        this.$store.commit('setSelectedLibraryItem', this.libraryItem)
+        this.$store.commit('globals/setShowCollectionsModal', true)
+      } else if (action === 'playlists') {
+        this.$store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem }])
+        this.$store.commit('globals/setShowPlaylistsModal', true)
+      } else if (action === 'bookmarks') {
+        this.showBookmarksModal = true
+      } else if (action === 'rss-feeds') {
+        this.clickRSSFeed()
+      } else if (action === 'download') {
+        this.downloadLibraryItem()
+      } else if (action === 'delete') {
+        this.deleteLibraryItem()
+      } else if (action === 'sendToDevice') {
+        this.sendToDevice(data)
+      }
     }
   },
   mounted() {
-    if (this.libraryItem.episodesDownloading) {
-      this.episodeDownloadsQueued = this.libraryItem.episodesDownloading || []
-    }
+    this.episodeDownloadsQueued = this.libraryItem.episodeDownloadsQueued || []
+    this.episodesDownloading = this.libraryItem.episodesDownloading || []
 
     // use this items library id as the current
     if (this.libraryId) {

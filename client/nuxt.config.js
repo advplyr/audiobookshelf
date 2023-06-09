@@ -27,11 +27,7 @@ module.exports = {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { hid: 'description', name: 'description', content: '' }
     ],
-    script: [
-      {
-        src: (process.env.ROUTER_BASE_PATH || '') + '/libs/sortable.js'
-      }
-    ],
+    script: [],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: (process.env.ROUTER_BASE_PATH || '') + '/favicon.ico' }
     ]
@@ -75,9 +71,8 @@ module.exports = {
   ],
 
   proxy: {
-    '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } },
-    '/ebook/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
-    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' + process.env : '/' },
+    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
+    '/api/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' }
   },
 
   io: {

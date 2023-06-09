@@ -82,6 +82,11 @@ class LibraryController {
     return res.json(req.library)
   }
 
+  async getEpisodeDownloadQueue(req, res) {
+    const libraryDownloadQueueDetails = this.podcastManager.getDownloadQueueDetails(req.library.id)
+    return res.json(libraryDownloadQueueDetails)
+  }
+
   async update(req, res) {
     const library = req.library
 
@@ -229,6 +234,16 @@ class LibraryController {
     if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
     if (filterSeries && !payload.sortBy) {
       sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
+      // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
+      sortArray.push({
+        asc: (li) => {
+          if (this.db.serverSettings.sortingIgnorePrefix) {
+            return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
+          } else {
+            return li.collapsedSeries?.name || li.media.metadata.title
+          }
+        }
+      })
     }
 
     if (payload.sortBy) {
@@ -402,6 +417,10 @@ class LibraryController {
             return se.totalDuration
           } else if (payload.sortBy === 'addedAt') {
             return se.addedAt
+          } else if (payload.sortBy === 'lastBookUpdated') {
+            return Math.max(...(se.books).map(x => x.updatedAt), 0)
+          } else if (payload.sortBy === 'lastBookAdded') {
+            return Math.max(...(se.books).map(x => x.addedAt), 0)
           } else { // sort by name
             return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
           }
@@ -577,6 +596,7 @@ class LibraryController {
 
     const itemMatches = []
     const authorMatches = {}
+    const narratorMatches = {}
     const seriesMatches = {}
     const tagMatches = {}
 
@@ -589,7 +609,7 @@ class LibraryController {
           matchText: queryResult.matchText
         })
       }
-      if (queryResult.series && queryResult.series.length) {
+      if (queryResult.series?.length) {
         queryResult.series.forEach((se) => {
           if (!seriesMatches[se.id]) {
             const _series = this.db.series.find(_se => _se.id === se.id)
@@ -599,7 +619,7 @@ class LibraryController {
           }
         })
       }
-      if (queryResult.authors && queryResult.authors.length) {
+      if (queryResult.authors?.length) {
         queryResult.authors.forEach((au) => {
           if (!authorMatches[au.id]) {
             const _author = this.db.authors.find(_au => _au.id === au.id)
@@ -612,12 +632,21 @@ class LibraryController {
           }
         })
       }
-      if (queryResult.tags && queryResult.tags.length) {
+      if (queryResult.tags?.length) {
         queryResult.tags.forEach((tag) => {
           if (!tagMatches[tag]) {
             tagMatches[tag] = { name: tag, books: [li.toJSON()] }
           } else {
             tagMatches[tag].books.push(li.toJSON())
+          }
+        })
+      }
+      if (queryResult.narrators?.length) {
+        queryResult.narrators.forEach((narrator) => {
+          if (!narratorMatches[narrator]) {
+            narratorMatches[narrator] = { name: narrator, books: [li.toJSON()] }
+          } else {
+            narratorMatches[narrator].books.push(li.toJSON())
           }
         })
       }
@@ -627,7 +656,8 @@ class LibraryController {
       [itemKey]: itemMatches.slice(0, maxResults),
       tags: Object.values(tagMatches).slice(0, maxResults),
       authors: Object.values(authorMatches).slice(0, maxResults),
-      series: Object.values(seriesMatches).slice(0, maxResults)
+      series: Object.values(seriesMatches).slice(0, maxResults),
+      narrators: Object.values(narratorMatches).slice(0, maxResults)
     }
     res.json(results)
   }
@@ -637,6 +667,7 @@ class LibraryController {
     var authorsWithCount = libraryHelpers.getAuthorsWithCount(libraryItems)
     var genresWithCount = libraryHelpers.getGenresWithCount(libraryItems)
     var durationStats = libraryHelpers.getItemDurationStats(libraryItems)
+    var sizeStats = libraryHelpers.getItemSizeStats(libraryItems)
     var stats = {
       totalItems: libraryItems.length,
       totalAuthors: Object.keys(authorsWithCount).length,
@@ -645,6 +676,7 @@ class LibraryController {
       longestItems: durationStats.longestItems,
       numAudioTracks: durationStats.numAudioTracks,
       totalSize: libraryHelpers.getLibraryItemsTotalSize(libraryItems),
+      largestItems: sizeStats.largestItems,
       authorsWithCount,
       genresWithCount
     }
@@ -652,13 +684,12 @@ class LibraryController {
   }
 
   async getAuthors(req, res) {
-    var libraryItems = req.libraryItems
-    var authors = {}
-    libraryItems.forEach((li) => {
+    const authors = {}
+    req.libraryItems.forEach((li) => {
       if (li.media.metadata.authors && li.media.metadata.authors.length) {
         li.media.metadata.authors.forEach((au) => {
           if (!authors[au.id]) {
-            var _author = this.db.authors.find(_au => _au.id === au.id)
+            const _author = this.db.authors.find(_au => _au.id === au.id)
             if (_author) {
               authors[au.id] = _author.toJSON()
               authors[au.id].numBooks = 1
@@ -672,6 +703,85 @@ class LibraryController {
 
     res.json({
       authors: naturalSort(Object.values(authors)).asc(au => au.name)
+    })
+  }
+
+  async getNarrators(req, res) {
+    const narrators = {}
+    req.libraryItems.forEach((li) => {
+      if (li.media.metadata.narrators?.length) {
+        li.media.metadata.narrators.forEach((n) => {
+          if (typeof n !== 'string') {
+            Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${li.media.metadata.title}"`)
+          } else if (!narrators[n]) {
+            narrators[n] = {
+              id: encodeURIComponent(Buffer.from(n).toString('base64')),
+              name: n,
+              numBooks: 1
+            }
+          } else {
+            narrators[n].numBooks++
+          }
+        })
+      }
+    })
+
+    res.json({
+      narrators: naturalSort(Object.values(narrators)).asc(n => n.name)
+    })
+  }
+
+  async updateNarrator(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to update narrator`)
+      return res.sendStatus(403)
+    }
+
+    const narratorName = libraryHelpers.decode(req.params.narratorId)
+    const updatedName = req.body.name
+    if (!updatedName) {
+      return res.status(400).send('Invalid request payload. Name not specified.')
+    }
+
+    const itemsUpdated = []
+    for (const libraryItem of req.libraryItems) {
+      if (libraryItem.media.metadata.updateNarrator(narratorName, updatedName)) {
+        itemsUpdated.push(libraryItem)
+      }
+    }
+
+    if (itemsUpdated.length) {
+      await this.db.updateLibraryItems(itemsUpdated)
+      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+    }
+
+    res.json({
+      updated: itemsUpdated.length
+    })
+  }
+
+  async removeNarrator(req, res) {
+    if (!req.user.canUpdate) {
+      Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to remove narrator`)
+      return res.sendStatus(403)
+    }
+
+    const narratorName = libraryHelpers.decode(req.params.narratorId)
+
+    const itemsUpdated = []
+    for (const libraryItem of req.libraryItems) {
+      if (libraryItem.media.metadata.removeNarrator(narratorName)) {
+        itemsUpdated.push(libraryItem)
+      }
+    }
+
+    if (itemsUpdated.length) {
+      await this.db.updateLibraryItems(itemsUpdated)
+      SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
+    }
+
+    res.json({
+      updated: itemsUpdated.length
     })
   }
 
@@ -738,13 +848,19 @@ class LibraryController {
     res.json(payload)
   }
 
+  getOPMLFile(req, res) {
+    const opmlText = this.podcastManager.generateOPMLFileText(req.libraryItems)
+    res.type('application/xml')
+    res.send(opmlText)
+  }
+
   middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(404)
     }
 
-    var library = this.db.libraries.find(lib => lib.id === req.params.id)
+    const library = this.db.libraries.find(lib => lib.id === req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }

@@ -7,9 +7,12 @@
 
     <!-- Alternative bookshelf title/author/sort -->
     <div v-if="isAlternativeBookshelfView || isAuthorBookshelfView" class="absolute left-0 z-50 w-full" :style="{ bottom: `-${titleDisplayBottomOffset}rem` }">
-      <p class="truncate" :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
-        {{ displayTitle }}
-      </p>
+      <div :style="{ fontSize: 0.9 * sizeMultiplier + 'rem' }">
+        <div class="flex items-center">
+          <span class="truncate">{{ displayTitle }}</span>
+          <widgets-explicit-indicator :explicit="isExplicit" />
+        </div>
+      </div>
       <p class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displayLineTwo || '&nbsp;' }}</p>
       <p v-if="displaySortLine" class="truncate text-gray-400" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ displaySortLine }}</p>
     </div>
@@ -73,6 +76,10 @@
       <div ref="moreIcon" v-show="!isSelectionMode && moreMenuItems.length" class="hidden md:block absolute cursor-pointer hover:text-yellow-300 300 hover:scale-125 transform duration-150" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem' }" @click.stop.prevent="clickShowMore">
         <span class="material-icons" :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">more_vert</span>
       </div>
+
+      <div v-if="ebookFormat" class="absolute" :style="{ bottom: 0.375 * sizeMultiplier + 'rem', left: 0.375 * sizeMultiplier + 'rem' }">
+        <span class="text-white/80" :style="{ fontSize: 0.8 * sizeMultiplier + 'rem' }">{{ ebookFormat }}</span>
+      </div>
     </div>
 
     <!-- Processing/loading spinner overlay -->
@@ -102,8 +109,10 @@
     </div>
 
     <!-- Podcast Episode # -->
-    <div v-if="recentEpisodeNumber && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
-      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">Episode #{{ recentEpisodeNumber }}</p>
+    <div v-if="recentEpisodeNumber !== null && !isHovering && !isSelectionMode && !processing" class="absolute rounded-lg bg-black bg-opacity-90 box-shadow-md z-10" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', padding: `${0.1 * sizeMultiplier}rem ${0.25 * sizeMultiplier}rem` }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">
+        Episode<span v-if="recentEpisodeNumber"> #{{ recentEpisodeNumber }}</span>
+      </p>
     </div>
 
     <!-- Podcast Num Episodes -->
@@ -193,6 +202,9 @@ export default {
     isMusic() {
       return this.mediaType === 'music'
     },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
+    },
     placeholderUrl() {
       const config = this.$config || this.$nuxt.$config
       return `${config.routerBasePath}/book_placeholder.jpg`
@@ -213,7 +225,7 @@ export default {
     libraryId() {
       return this._libraryItem.libraryId
     },
-    hasEbook() {
+    ebookFormat() {
       return this.media.ebookFormat
     },
     numTracks() {
@@ -236,7 +248,7 @@ export default {
       if (this.recentEpisode.episode) {
         return this.recentEpisode.episode.replace(/^#/, '')
       }
-      return this.recentEpisode.index
+      return ''
     },
     collapsedSeries() {
       // Only added to item object when collapseSeries is enabled
@@ -244,14 +256,14 @@ export default {
     },
     booksInSeries() {
       // Only added to item object when collapseSeries is enabled
-      return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
+      return this.collapsedSeries?.numBooks || 0
     },
     seriesSequenceList() {
-      return this.collapsedSeries ? this.collapsedSeries.seriesSequenceList : null
+      return this.collapsedSeries?.seriesSequenceList || null
     },
     libraryItemIdsInSeries() {
       // Only added to item object when collapseSeries is enabled
-      return this.collapsedSeries ? this.collapsedSeries.libraryItemIds || [] : []
+      return this.collapsedSeries?.libraryItemIds || []
     },
     hasCover() {
       return !!this.media.coverPath
@@ -317,8 +329,16 @@ export default {
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    isEBookOnly() {
+      return !this.numTracks && this.ebookFormat
+    },
+    useEBookProgress() {
+      if (!this.userProgress || this.userProgress.progress) return false
+      return this.userProgress.ebookProgress > 0
+    },
     userProgressPercent() {
-      return this.userProgress ? this.userProgress.progress || 0 : 0
+      if (this.useEBookProgress) return Math.max(Math.min(1, this.userProgress.ebookProgress), 0)
+      return this.userProgress ? Math.max(Math.min(1, this.userProgress.progress), 0) || 0 : 0
     },
     itemIsFinished() {
       return this.userProgress ? !!this.userProgress.isFinished : false
@@ -347,13 +367,13 @@ export default {
       return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
-      return !this.isSelectionMode && !this.showPlayButton && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.hasEbook && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
     },
     isMissing() {
       return this._libraryItem.isMissing
@@ -469,6 +489,18 @@ export default {
             text: this.$strings.LabelAddToPlaylist
           })
         }
+        if (this.ebookFormat && this.store.state.libraries.ereaderDevices?.length) {
+          items.push({
+            text: this.$strings.LabelSendEbookToDevice,
+            subitems: this.store.state.libraries.ereaderDevices.map((d) => {
+              return {
+                text: d.name,
+                func: 'sendToDevice',
+                data: d.name
+              }
+            })
+          })
+        }
       }
       if (this.userCanUpdate) {
         items.push({
@@ -495,7 +527,7 @@ export default {
       if (this.continueListeningShelf) {
         items.push({
           func: 'removeFromContinueListening',
-          text: this.$strings.ButtonRemoveFromContinueListening
+          text: this.isEBookOnly ? this.$strings.ButtonRemoveFromContinueReading : this.$strings.ButtonRemoveFromContinueListening
         })
       }
       if (!this.isPodcast) {
@@ -513,6 +545,14 @@ export default {
           }
         }
       }
+
+      if (this.userCanDelete) {
+        items.push({
+          func: 'deleteLibraryItem',
+          text: this.$strings.ButtonDelete
+        })
+      }
+
       return items
     },
     _socket() {
@@ -691,6 +731,37 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
+    sendToDevice(deviceName) {
+      // More menu func
+      const payload = {
+        // message: `Are you sure you want to send ${this.ebookFormat} ebook "${this.title}" to device "${deviceName}"?`,
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            const axios = this.$axios || this.$nuxt.$axios
+            axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send ebook to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.store.commit('globals/setConfirmPrompt', payload)
+    },
     removeSeriesFromContinueListening() {
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
@@ -734,7 +805,7 @@ export default {
           episodeId: this.recentEpisode.id,
           title: this.recentEpisode.title,
           subtitle: this.mediaMetadata.title,
-          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+          caption: this.recentEpisode.publishedAt ? `Published ${this.$formatDate(this.recentEpisode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
           duration: this.recentEpisode.audioFile.duration || null,
           coverPath: this.media.coverPath || null
         }
@@ -764,6 +835,35 @@ export default {
       this.store.commit('globals/setSelectedPlaylistItems', [{ libraryItem: this.libraryItem, episode: this.recentEpisode }])
       this.store.commit('globals/setShowPlaylistsModal', true)
     },
+    deleteLibraryItem() {
+      const payload = {
+        message: 'This will delete the library item from the database and your file system. Are you sure?',
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
+          if (confirmed) {
+            this.processing = true
+            const axios = this.$axios || this.$nuxt.$axios
+            axios
+              .$delete(`/api/items/${this.libraryItemId}?hard=${hardDelete ? 1 : 0}`)
+              .then(() => {
+                this.$toast.success('Item deleted')
+              })
+              .catch((error) => {
+                console.error('Failed to delete item', error)
+                this.$toast.error('Failed to delete item')
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.store.commit('globals/setConfirmPrompt', payload)
+    },
     createMoreMenu() {
       if (!this.$refs.moreIcon) return
 
@@ -775,8 +875,8 @@ export default {
           items: this.moreMenuItems
         },
         created() {
-          this.$on('action', (func) => {
-            if (_this[func]) _this[func]()
+          this.$on('action', (action) => {
+            if (action.func && _this[action.func]) _this[action.func](action.data)
           })
           this.$on('close', () => {
             _this.isMoreMenuOpen = false
@@ -788,7 +888,7 @@ export default {
       var wrapperBox = this.$refs.moreIcon.getBoundingClientRect()
       var el = instance.$el
 
-      var elHeight = this.moreMenuItems.length * 28 + 2
+      var elHeight = this.moreMenuItems.length * 28 + 10
       var elWidth = 130
 
       var bottomOfIcon = wrapperBox.top + wrapperBox.height
@@ -815,7 +915,8 @@ export default {
       this.createMoreMenu()
     },
     async clickReadEBook() {
-      var libraryItem = await this.$axios.$get(`/api/items/${this.libraryItemId}?expanded=1`).catch((error) => {
+      const axios = this.$axios || this.$nuxt.$axios
+      var libraryItem = await axios.$get(`/api/items/${this.libraryItemId}?expanded=1`).catch((error) => {
         console.error('Failed to get lirbary item', this.libraryItemId)
         return null
       })
@@ -858,7 +959,7 @@ export default {
                   episodeId: episode.id,
                   title: episode.title,
                   subtitle: this.mediaMetadata.title,
-                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, 'MMM do, yyyy')}` : 'Unknown publish date',
+                  caption: episode.publishedAt ? `Published ${this.$formatDate(episode.publishedAt, this.dateFormat)}` : 'Unknown publish date',
                   duration: episode.audioFile.duration || null,
                   coverPath: this.media.coverPath || null
                 })

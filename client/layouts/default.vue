@@ -35,7 +35,9 @@ export default {
       isSocketConnected: false,
       isFirstSocketConnection: true,
       socketConnectionToastId: null,
-      currentLang: null
+      currentLang: null,
+      multiSessionOtherSessionId: null, // Used for multiple sessions open warning toast
+      multiSessionCurrentSessionId: null // Used for multiple sessions open warning toast
     }
   },
   watch: {
@@ -278,6 +280,13 @@ export default {
       console.log('Task finished', task)
       this.$store.commit('tasks/addUpdateTask', task)
     },
+    metadataEmbedQueueUpdate(data) {
+      if (data.queued) {
+        this.$store.commit('tasks/addQueuedEmbedLId', data.libraryItemId)
+      } else {
+        this.$store.commit('tasks/removeQueuedEmbedLId', data.libraryItemId)
+      }
+    },
     userUpdated(user) {
       if (this.$store.state.user.user.id === user.id) {
         this.$store.commit('user/setUser', user)
@@ -292,8 +301,30 @@ export default {
     userStreamUpdate(user) {
       this.$store.commit('users/updateUserOnline', user)
     },
+    userSessionClosed(sessionId) {
+      // If this session or other session is closed then dismiss multiple sessions warning toast
+      if (sessionId === this.multiSessionOtherSessionId || this.multiSessionCurrentSessionId === sessionId) {
+        this.multiSessionOtherSessionId = null
+        this.multiSessionCurrentSessionId = null
+        this.$toast.dismiss('multiple-sessions')
+      }
+      if (this.$refs.streamContainer) this.$refs.streamContainer.sessionClosedEvent(sessionId)
+    },
     userMediaProgressUpdate(payload) {
       this.$store.commit('user/updateMediaProgress', payload)
+
+      if (payload.data) {
+        if (this.$store.getters['getIsMediaStreaming'](payload.data.libraryItemId, payload.data.episodeId) && this.$store.state.playbackSessionId !== payload.sessionId) {
+          this.multiSessionOtherSessionId = payload.sessionId
+          this.multiSessionCurrentSessionId = this.$store.state.playbackSessionId
+          console.log(`Media progress was updated from another session (${this.multiSessionOtherSessionId}) for currently open media. Device description=${payload.deviceDescription}. Current session id=${this.multiSessionCurrentSessionId}`)
+          if (this.$store.state.streamIsPlaying) {
+            this.$toast.update('multiple-sessions', { content: `Another session is open for this item on device ${payload.deviceDescription}`, options: { timeout: 20000, type: 'warning', pauseOnFocusLoss: false } }, true)
+          } else {
+            this.$eventBus.$emit('playback-time-update', payload.data.currentTime)
+          }
+        }
+      }
     },
     collectionAdded(collection) {
       if (this.currentLibraryId !== collection.libraryId) return
@@ -349,6 +380,11 @@ export default {
     adminMessageEvt(message) {
       this.$toast.info(message)
     },
+    ereaderDevicesUpdated(data) {
+      if (!data?.ereaderDevices) return
+
+      this.$store.commit('libraries/setEReaderDevices', data.ereaderDevices)
+    },
     initializeSocket() {
       this.socket = this.$nuxtSocket({
         name: process.env.NODE_ENV === 'development' ? 'dev' : 'prod',
@@ -398,6 +434,7 @@ export default {
       this.socket.on('user_online', this.userOnline)
       this.socket.on('user_offline', this.userOffline)
       this.socket.on('user_stream_update', this.userStreamUpdate)
+      this.socket.on('user_session_closed', this.userSessionClosed)
       this.socket.on('user_item_progress_updated', this.userMediaProgressUpdate)
 
       // Collection Listeners
@@ -418,6 +455,10 @@ export default {
       // Task Listeners
       this.socket.on('task_started', this.taskStarted)
       this.socket.on('task_finished', this.taskFinished)
+      this.socket.on('metadata_embed_queue_update', this.metadataEmbedQueueUpdate)
+
+      // EReader Device Listeners
+      this.socket.on('ereader-devices-updated', this.ereaderDevicesUpdated)
 
       this.socket.on('backup_applied', this.backupApplied)
 
@@ -450,9 +491,9 @@ export default {
       }
     },
     checkActiveElementIsInput() {
-      var activeElement = document.activeElement
-      var inputs = ['input', 'select', 'button', 'textarea']
-      return activeElement && inputs.indexOf(activeElement.tagName.toLowerCase()) !== -1
+      const activeElement = document.activeElement
+      const inputs = ['input', 'select', 'button', 'textarea', 'trix-editor']
+      return activeElement && inputs.some((i) => i === activeElement.tagName.toLowerCase())
     },
     getHotkeyName(e) {
       var keyCode = e.keyCode || e.which
@@ -531,11 +572,17 @@ export default {
     },
     loadTasks() {
       this.$axios
-        .$get('/api/tasks')
+        .$get('/api/tasks?include=queue')
         .then((payload) => {
           console.log('Fetched tasks', payload)
           if (payload.tasks) {
             this.$store.commit('tasks/setTasks', payload.tasks)
+          }
+          if (payload.queuedTaskData?.embedMetadata?.length) {
+            this.$store.commit(
+              'tasks/setQueuedEmbedLIds',
+              payload.queuedTaskData.embedMetadata.map((td) => td.libraryItemId)
+            )
           }
         })
         .catch((error) => {
@@ -545,6 +592,7 @@ export default {
     changeLanguage(code) {
       console.log('Changed lang', code)
       this.currentLang = code
+      document.documentElement.lang = code
     }
   },
   beforeMount() {
@@ -568,6 +616,11 @@ export default {
     if (this.$route.query.error) {
       this.$toast.error(this.$route.query.error)
       this.$router.replace(this.$route.path)
+    }
+
+    // Set lang on HTML tag
+    if (this.$languageCodes?.current) {
+      document.documentElement.lang = this.$languageCodes.current
     }
   },
   beforeDestroy() {

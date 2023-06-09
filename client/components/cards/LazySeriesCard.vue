@@ -7,7 +7,7 @@
 
     <div class="absolute z-10 top-1.5 right-1.5 rounded-md leading-3 text-sm p-1 font-semibold text-white flex items-center justify-center" style="background-color: #cd9d49dd">{{ books.length }}</div>
 
-    <div v-if="isSeriesFinished" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b bg-success w-full" />
+    <div v-if="seriesPercentInProgress > 0" class="absolute bottom-0 left-0 h-1 shadow-sm max-w-full z-10 rounded-b w-full" :class="isSeriesFinished ? 'bg-success' : 'bg-yellow-400'" :style="{ width: seriesPercentInProgress * 100 + '%' }" />
 
     <div v-if="hasValidCovers" class="bg-black bg-opacity-60 absolute top-0 left-0 w-full h-full flex items-center justify-center text-center transition-opacity" :class="isHovering ? '' : 'opacity-0'" :style="{ padding: `${sizeMultiplier}rem` }">
       <p :style="{ fontSize: 1.2 * sizeMultiplier + 'rem' }">{{ displayTitle }}</p>
@@ -81,13 +81,20 @@ export default {
       return this.title
     },
     displaySortLine() {
-      if (this.orderBy === 'addedAt') {
-        // return this.addedAt
-        return 'Added ' + this.$formatDate(this.addedAt, this.dateFormat)
-      } else if (this.orderBy === 'totalDuration') {
-        return 'Duration: ' + this.$elapsedPrettyExtended(this.totalDuration, false)
+      switch (this.orderBy) {
+        case 'addedAt':
+          return `${this.$strings.LabelAdded} ${this.$formatDate(this.addedAt, this.dateFormat)}`
+        case 'totalDuration':
+          return `${this.$strings.LabelDuration} ${this.$elapsedPrettyExtended(this.totalDuration, false)}`
+        case 'lastBookUpdated':
+          const lastUpdated = Math.max(...this.books.map((x) => x.updatedAt), 0)
+          return `${this.$strings.LabelLastBookUpdated} ${this.$formatDate(lastUpdated, this.dateFormat)}`
+        case 'lastBookAdded':
+          const lastBookAdded = Math.max(...this.books.map((x) => x.addedAt), 0)
+          return `${this.$strings.LabelLastBookAdded} ${this.$formatDate(lastBookAdded, this.dateFormat)}`
+        default:
+          return null
       }
-      return null
     },
     books() {
       return this.series ? this.series.books || [] : []
@@ -107,6 +114,14 @@ export default {
     },
     seriesBooksFinished() {
       return this.seriesBookProgress.filter((p) => p.isFinished)
+    },
+    hasSeriesBookInProgress() {
+      return this.seriesBookProgress.some((p) => !p.isFinished && p.progress > 0)
+    },
+    seriesPercentInProgress() {
+      let totalFinishedAndInProgress = this.seriesBooksFinished.length
+      if (this.hasSeriesBookInProgress) totalFinishedAndInProgress += 1
+      return Math.min(1, Math.max(0, totalFinishedAndInProgress / this.books.length))
     },
     isSeriesFinished() {
       return this.books.length === this.seriesBooksFinished.length

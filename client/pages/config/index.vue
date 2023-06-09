@@ -39,9 +39,13 @@
             <ui-multi-select v-model="newServerSettings.sortingPrefixes" small :items="newServerSettings.sortingPrefixes" :label="$strings.LabelPrefixesToIgnore" @input="updateSortingPrefixes" :disabled="updatingServerSettings" />
           </div>
 
-          <div class="flex items-center py-2">
+          <div class="flex items-center py-2 mb-2">
             <ui-toggle-switch labeledBy="settings-chromecast-support" v-model="newServerSettings.chromecastEnabled" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('chromecastEnabled', val)" />
             <p class="pl-4" id="settings-chromecast-support">{{ $strings.LabelSettingsChromecastSupport }}</p>
+          </div>
+
+          <div class="w-44 mb-2">
+            <ui-dropdown v-model="newServerSettings.metadataFileFormat" small :items="metadataFileFormats" label="Metadata File Format" @input="updateMetadataFileFormat" :disabled="updatingServerSettings" />
           </div>
 
           <div class="pt-4">
@@ -68,8 +72,14 @@
             </ui-tooltip>
           </div>
 
-          <div class="py-2">
+          <div class="flex-grow py-2">
             <ui-dropdown :label="$strings.LabelSettingsDateFormat" v-model="newServerSettings.dateFormat" :items="dateFormats" small class="max-w-52" @input="(val) => updateSettingsKey('dateFormat', val)" />
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ dateExample }}</p>
+          </div>
+
+          <div class="flex-grow py-2">
+            <ui-dropdown :label="$strings.LabelSettingsTimeFormat" v-model="newServerSettings.timeFormat" :items="timeFormats" small class="max-w-52" @input="(val) => updateSettingsKey('timeFormat', val)" />
+            <p class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelExample }}: {{ timeExample }}</p>
           </div>
 
           <div class="py-2">
@@ -276,7 +286,17 @@ export default {
       useBookshelfView: false,
       isPurgingCache: false,
       newServerSettings: {},
-      showConfirmPurgeCache: false
+      showConfirmPurgeCache: false,
+      metadataFileFormats: [
+        {
+          text: '.json',
+          value: 'json'
+        },
+        {
+          text: '.abs',
+          value: 'abs'
+        }
+      ]
     }
   },
   watch: {
@@ -311,6 +331,17 @@ export default {
     },
     dateFormats() {
       return this.$store.state.globals.dateFormats
+    },
+    timeFormats() {
+      return this.$store.state.globals.timeFormats
+    },
+    dateExample() {
+      const date = new Date(2014, 2, 25)
+      return this.$formatJsDate(date, this.newServerSettings.dateFormat)
+    },
+    timeExample() {
+      const date = new Date(2014, 2, 25, 17, 30, 0)
+      return this.$formatJsTime(date, this.newServerSettings.timeFormat)
     }
   },
   methods: {
@@ -346,6 +377,10 @@ export default {
       this.updateSettingsKey('defaultRenameString', this.newServerSettings.defaultRenameString)
       this.$store.commit('setDefaultRenameString', this.newServerSettings.defaultRenameString)
     },
+    updateMetadataFileFormat(val) {
+      if (this.serverSettings.metadataFileFormat === val) return
+      this.updateSettingsKey('metadataFileFormat', val)
+    },
     updateSettingsKey(key, val) {
       this.updateServerSettings({
         [key]: val
@@ -355,8 +390,7 @@ export default {
       this.updatingServerSettings = true
       this.$store
         .dispatch('updateServerSettings', payload)
-        .then((success) => {
-          console.log('Updated Server Settings', success)
+        .then(() => {
           this.updatingServerSettings = false
           this.$toast.success('Server settings updated')
 

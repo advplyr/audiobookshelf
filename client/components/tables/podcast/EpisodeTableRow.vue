@@ -2,16 +2,17 @@
   <div class="w-full px-2 py-3 overflow-hidden relative border-b border-white border-opacity-10" @mouseover="mouseover" @mouseleave="mouseleave">
     <div v-if="episode" class="flex items-center cursor-pointer" :class="{ 'opacity-70': isSelected || selectionMode }" @click="clickedEpisode">
       <div class="flex-grow px-2">
-        <p class="text-sm font-semibold">
-          {{ title }}
-        </p>
+        <div class="flex items-center">
+          <span class="text-sm font-semibold">{{ title }}</span>
+          <widgets-podcast-type-indicator :type="episode.episodeType" />
+        </div>
 
-        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5">{{ subtitle }}</p>
-
+        <p class="text-sm text-gray-200 episode-subtitle mt-1.5 mb-0.5" v-html="subtitle"></p>
         <div class="flex justify-between pt-2 max-w-xl">
           <p v-if="episode.season" class="text-sm text-gray-300">Season #{{ episode.season }}</p>
           <p v-if="episode.episode" class="text-sm text-gray-300">Episode #{{ episode.episode }}</p>
-          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, 'MMM do, yyyy') }}</p>
+          <p v-if="episode.chapters?.length" class="text-sm text-gray-300">{{ episode.chapters.length }} Chapters</p>
+          <p v-if="publishedAt" class="text-sm text-gray-300">Published {{ $formatDate(publishedAt, dateFormat) }}</p>
         </div>
 
         <div class="flex items-center pt-2">
@@ -19,10 +20,6 @@
             <span class="material-icons text-2xl" :class="streamIsPlaying ? '' : 'text-success'">{{ streamIsPlaying ? 'pause' : 'play_arrow' }}</span>
             <p class="pl-2 pr-1 text-sm font-semibold">{{ timeRemaining }}</p>
           </button>
-
-          <!-- <button v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" class="h-8 w-8 flex justify-center items-center mx-2" :class="isQueued ? 'text-success' : ''" @click.stop="queueBtnClick">
-            <span class="material-icons-outlined">{{ isQueued ? 'playlist_add_check' : 'queue' }}</span>
-          </button> -->
 
           <ui-tooltip v-if="libraryItemIdStreaming && !isStreamingFromDifferentLibrary" :text="isQueued ? $strings.MessageRemoveFromPlayerQueue : $strings.MessageAddToPlayerQueue" :class="isQueued ? 'text-success' : ''" direction="top">
             <ui-icon-btn :icon="isQueued ? 'playlist_add_check' : 'playlist_play'" borderless @click="queueBtnClick" />
@@ -87,7 +84,7 @@ export default {
       return this.episode.title || ''
     },
     subtitle() {
-      return this.episode.subtitle || ''
+      return this.episode.subtitle || this.description
     },
     description() {
       return this.episode.description || ''
@@ -128,6 +125,9 @@ export default {
     },
     publishedAt() {
       return this.episode.publishedAt
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
     }
   },
   methods: {

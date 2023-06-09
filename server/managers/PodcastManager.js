@@ -4,22 +4,26 @@ const SocketAuthority = require('../SocketAuthority')
 const fs = require('../libs/fsExtra')
 
 const { getPodcastFeed } = require('../utils/podcastUtils')
-const { downloadFile, removeFile } = require('../utils/fileUtils')
+const { removeFile, downloadFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
+const opmlGenerator = require('../utils/generators/opmlGenerator')
 const prober = require('../utils/prober')
+const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
 const LibraryFile = require('../objects/files/LibraryFile')
 const PodcastEpisodeDownload = require('../objects/PodcastEpisodeDownload')
 const PodcastEpisode = require('../objects/entities/PodcastEpisode')
 const AudioFile = require('../objects/files/AudioFile')
+const Task = require("../objects/Task")
 
 class PodcastManager {
-  constructor(db, watcher, notificationManager) {
+  constructor(db, watcher, notificationManager, taskManager) {
     this.db = db
     this.watcher = watcher
     this.notificationManager = notificationManager
+    this.taskManager = taskManager
 
     this.downloadQueue = []
     this.currentDownload = null
@@ -50,26 +54,43 @@ class PodcastManager {
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    var index = libraryItem.media.episodes.length + 1
-    episodesToDownload.forEach((ep) => {
-      var newPe = new PodcastEpisode()
+    let index = libraryItem.media.episodes.length + 1
+    for (const ep of episodesToDownload) {
+      const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
-      var newPeDl = new PodcastEpisodeDownload()
-      newPeDl.setData(newPe, libraryItem, isAutoDownload)
+      const newPeDl = new PodcastEpisodeDownload()
+      newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
-    })
+    }
   }
 
   async startPodcastEpisodeDownload(podcastEpisodeDownload) {
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
     if (this.currentDownload) {
       this.downloadQueue.push(podcastEpisodeDownload)
       SocketAuthority.emitter('episode_download_queued', podcastEpisodeDownload.toJSONForClient())
       return
     }
 
+    const task = new Task()
+    const taskDescription = `Downloading episode "${podcastEpisodeDownload.podcastEpisode.title}".`
+    const taskData = {
+      libraryId: podcastEpisodeDownload.libraryId,
+      libraryItemId: podcastEpisodeDownload.libraryItemId,
+    }
+    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
+    this.taskManager.addTask(task)
+
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
+
+    // If this file already exists then append the episode id to the filename
+    //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
+    //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
+    if (await fs.pathExists(this.currentDownload.targetPath)) {
+      this.currentDownload.appendEpisodeId = true
+    }
 
     // Ignores all added files to this dir
     this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
@@ -81,24 +102,41 @@ class PodcastManager {
       await filePerms.setDefault(this.currentDownload.libraryItem.path)
     }
 
-    var success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
-      Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
-      return false
-    })
+    let success = false
+    if (this.currentDownload.urlFileExtension === 'mp3') {
+      // Download episode and tag it
+      success = await ffmpegHelpers.downloadPodcastEpisode(this.currentDownload).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    } else {
+      // Download episode only
+      success = await downloadFile(this.currentDownload.url, this.currentDownload.targetPath).then(() => true).catch((error) => {
+        Logger.error(`[PodcastManager] Podcast Episode download failed`, error)
+        return false
+      })
+    }
+
     if (success) {
       success = await this.scanAddPodcastEpisodeAudioFile()
       if (!success) {
         await fs.remove(this.currentDownload.targetPath)
         this.currentDownload.setFinished(false)
+        task.setFailed('Failed to download episode')
       } else {
         Logger.info(`[PodcastManager] Successfully downloaded podcast episode "${this.currentDownload.podcastEpisode.title}"`)
         this.currentDownload.setFinished(true)
+        task.setFinished()
       }
     } else {
+      task.setFailed('Failed to download episode')
       this.currentDownload.setFinished(false)
     }
 
+    this.taskManager.taskFinished(task)
+
     SocketAuthority.emitter('episode_download_finished', this.currentDownload.toJSONForClient())
+    SocketAuthority.emitter('episode_download_queue_updated', this.getDownloadQueueDetails())
 
     this.watcher.removeIgnoreDir(this.currentDownload.libraryItem.path)
     this.currentDownload = null
@@ -108,23 +146,26 @@ class PodcastManager {
   }
 
   async scanAddPodcastEpisodeAudioFile() {
-    var libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
+    const libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
 
-    // TODO: Set meta tags on new audio file
-
-    var audioFile = await this.probeAudioFile(libraryFile)
+    const audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
     }
 
-    var libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
     }
 
-    var podcastEpisode = this.currentDownload.podcastEpisode
+    const podcastEpisode = this.currentDownload.podcastEpisode
     podcastEpisode.audioFile = audioFile
+
+    if (audioFile.chapters?.length) {
+      podcastEpisode.chapters = audioFile.chapters.map(ch => ({ ...ch }))
+    }
+
     libraryItem.media.addPodcastEpisode(podcastEpisode)
     if (libraryItem.isInvalid) {
       // First episode added to an empty podcast
@@ -143,6 +184,9 @@ class PodcastManager {
     libraryItem.updatedAt = Date.now()
     await this.db.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    const podcastEpisodeExpanded = podcastEpisode.toJSONExpanded()
+    podcastEpisodeExpanded.libraryItem = libraryItem.toJSONExpanded()
+    SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
 
     if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
       this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
@@ -183,13 +227,13 @@ class PodcastManager {
   }
 
   async probeAudioFile(libraryFile) {
-    var path = libraryFile.metadata.path
-    var mediaProbeData = await prober.probe(path)
+    const path = libraryFile.metadata.path
+    const mediaProbeData = await prober.probe(path)
     if (mediaProbeData.error) {
       Logger.error(`[PodcastManager] Podcast Episode downloaded but failed to probe "${path}"`, mediaProbeData.error)
       return false
     }
-    var newAudioFile = new AudioFile()
+    const newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
     return newAudioFile
   }
@@ -327,6 +371,20 @@ class PodcastManager {
 
     return {
       feeds: rssFeedData
+    }
+  }
+
+  generateOPMLFileText(libraryItems) {
+    return opmlGenerator.generate(libraryItems)
+  }
+
+  getDownloadQueueDetails(libraryId = null) {
+    let _currentDownload = this.currentDownload
+    if (libraryId && _currentDownload?.libraryId !== libraryId) _currentDownload = null
+
+    return {
+      currentDownload: _currentDownload?.toJSONForClient(),
+      queue: this.downloadQueue.filter(item => !libraryId || item.libraryId === libraryId).map(item => item.toJSONForClient())
     }
   }
 }

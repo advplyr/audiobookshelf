@@ -10,7 +10,7 @@ const Ffmpeg = require('../libs/fluentFfmpeg')
 const { secondsToTimestamp } = require('../utils/index')
 const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const { AudioMimeType } = require('../utils/constants')
-const hlsPlaylistGenerator = require('../utils/hlsPlaylistGenerator')
+const hlsPlaylistGenerator = require('../utils/generators/hlsPlaylistGenerator')
 const AudioTrack = require('./files/AudioTrack')
 
 class Stream extends EventEmitter {
@@ -82,7 +82,9 @@ class Stream extends EventEmitter {
       AudioMimeType.WMA,
       AudioMimeType.AIFF,
       AudioMimeType.WEBM,
-      AudioMimeType.WEBMA
+      AudioMimeType.WEBMA,
+      AudioMimeType.AWB,
+      AudioMimeType.CAF
     ]
   }
   get codecsToForceAAC() {

@@ -4,6 +4,7 @@ const Audible = require('../providers/Audible')
 const iTunes = require('../providers/iTunes')
 const Audnexus = require('../providers/Audnexus')
 const FantLab = require('../providers/FantLab')
+const AudiobookCovers = require('../providers/AudiobookCovers')
 const Logger = require('../Logger')
 const { levenshteinDistance } = require('../utils/index')
 
@@ -15,6 +16,9 @@ class BookFinder {
     this.iTunesApi = new iTunes()
     this.audnexus = new Audnexus()
     this.fantLab = new FantLab()
+    this.audiobookCovers = new AudiobookCovers()
+
+    this.providers = ['google', 'itunes', 'openlibrary', 'fantlab', 'audiobookcovers', 'audible', 'audible.ca', 'audible.uk', 'audible.au', 'audible.fr', 'audible.de', 'audible.jp', 'audible.it', 'audible.in', 'audible.es']
 
     this.verbose = false
   }
@@ -159,6 +163,12 @@ class BookFinder {
     return books
   }
 
+  async getAudiobookCoversResults(search) {
+    const covers = await this.audiobookCovers.search(search)
+    if (this.verbose) Logger.debug(`AudiobookCovers Search Results: ${covers.length || 0}`)
+    return covers || []
+  }
+
   async getiTunesAudiobooksResults(title, author) {
     return this.iTunesApi.searchAudiobooks(title)
   }
@@ -175,7 +185,7 @@ class BookFinder {
     var books = []
     var maxTitleDistance = !isNaN(options.titleDistance) ? Number(options.titleDistance) : 4
     var maxAuthorDistance = !isNaN(options.authorDistance) ? Number(options.authorDistance) : 4
-    Logger.debug(`Book Search: title: "${title}", author: "${author}", provider: ${provider}`)
+    Logger.debug(`Book Search: title: "${title}", author: "${author || ''}", provider: ${provider}`)
 
     if (provider === 'google') {
       books = await this.getGoogleBooksResults(title, author)
@@ -187,6 +197,8 @@ class BookFinder {
       books = await this.getOpenLibResults(title, author, maxTitleDistance, maxAuthorDistance)
     } else if (provider === 'fantlab') {
       books = await this.getFantLabResults(title, author)
+    } else if (provider === 'audiobookcovers') {
+      books = await this.getAudiobookCoversResults(title)
     }
     else {
       books = await this.getGoogleBooksResults(title, author)
@@ -202,27 +214,39 @@ class BookFinder {
       return this.search(provider, cleanedTitle, cleanedAuthor, isbn, asin, options)
     }
 
-    if (["google", "audible", "itunes", 'fantlab'].includes(provider)) return books
+    if (provider === 'openlibrary') {
+      books.sort((a, b) => {
+        return a.totalDistance - b.totalDistance
+      })
+    }
 
-    return books.sort((a, b) => {
-      return a.totalDistance - b.totalDistance
-    })
+    return books
   }
 
   async findCovers(provider, title, author, options = {}) {
-    var searchResults = await this.search(provider, title, author, options)
+    let searchResults = []
+
+    if (provider === 'all') {
+      for (const providerString of this.providers) {
+        const providerResults = await this.search(providerString, title, author, options)
+        Logger.debug(`[BookFinder] Found ${providerResults.length} covers from ${providerString}`)
+        searchResults.push(...providerResults)
+      }
+    } else {
+      searchResults = await this.search(provider, title, author, options)
+    }
     Logger.debug(`[BookFinder] FindCovers search results: ${searchResults.length}`)
 
-    var covers = []
+    const covers = []
     searchResults.forEach((result) => {
       if (result.covers && result.covers.length) {
-        covers = covers.concat(result.covers)
+        covers.push(...result.covers)
       }
       if (result.cover) {
         covers.push(result.cover)
       }
     })
-    return covers
+    return [...(new Set(covers))]
   }
 
   findChapters(asin, region) {

@@ -28,6 +28,7 @@ class VideoTrack {
     this.index = videoFile.index
     this.duration = videoFile.duration
     this.title = videoFile.metadata.filename || ''
+    // TODO: Switch to /api/items/:id/file/:fileid
     this.contentUrl = Path.join(`${global.RouterBasePath}/s/item/${itemId}`, encodeUriPath(videoFile.metadata.relPath))
     this.mimeType = videoFile.mimeType
     this.codec = videoFile.codec

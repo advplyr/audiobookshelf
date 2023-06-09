@@ -1,5 +1,4 @@
 const { BookshelfView } = require('../../utils/constants')
-const { isNullOrNaN } = require('../../utils')
 const Logger = require('../../Logger')
 
 class ServerSettings {
@@ -22,6 +21,7 @@ class ServerSettings {
     this.storeCoverWithItem = false
     this.storeMetadataWithItem = false
     this.defaultRenameString = "$bookAuthor/$bookTitle"
+    this.metadataFileFormat = 'json'
 
     // Security/Rate limits
     this.rateLimitLoginRequests = 10
@@ -52,6 +52,7 @@ class ServerSettings {
     this.chromecastEnabled = false
     this.enableEReader = false
     this.dateFormat = 'MM/dd/yyyy'
+    this.timeFormat = 'HH:mm'
     this.language = 'en-us'
 
     this.logLevel = Logger.logLevel
@@ -78,6 +79,7 @@ class ServerSettings {
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
     this.defaultRenameString = settings.defaultRenameString || "$bookAuthor/$bookTitle"
+    this.metadataFileFormat = settings.metadataFileFormat || 'json'
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
     this.rateLimitLoginWindow = !isNaN(settings.rateLimitLoginWindow) ? Number(settings.rateLimitLoginWindow) : 10 * 60 * 1000 // 10 Minutes
@@ -98,6 +100,7 @@ class ServerSettings {
     this.chromecastEnabled = !!settings.chromecastEnabled
     this.enableEReader = !!settings.enableEReader
     this.dateFormat = settings.dateFormat || 'MM/dd/yyyy'
+    this.timeFormat = settings.timeFormat || 'HH:mm'
     this.language = settings.language || 'en-us'
     this.logLevel = settings.logLevel || Logger.logLevel
     this.version = settings.version || null
@@ -111,6 +114,16 @@ class ServerSettings {
     }
     if (settings.homeBookshelfView == undefined) { // homeBookshelfView was added in 2.1.3
       this.homeBookshelfView = settings.bookshelfView
+    }
+    if (settings.metadataFileFormat == undefined) { // metadataFileFormat was added in 2.2.21
+      // All users using old settings will stay abs until changed
+      this.metadataFileFormat = 'abs'
+    }
+
+    // Validation
+    if (!['abs', 'json'].includes(this.metadataFileFormat)) {
+      Logger.error(`[ServerSettings] construct: Invalid metadataFileFormat ${this.metadataFileFormat}`)
+      this.metadataFileFormat = 'json'
     }
 
     if (this.logLevel !== Logger.logLevel) {
@@ -134,6 +147,7 @@ class ServerSettings {
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
       defaultRenameString: this.defaultRenameString,
+      metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,
       backupSchedule: this.backupSchedule,
@@ -149,6 +163,7 @@ class ServerSettings {
       chromecastEnabled: this.chromecastEnabled,
       enableEReader: this.enableEReader,
       dateFormat: this.dateFormat,
+      timeFormat: this.timeFormat,
       language: this.language,
       logLevel: this.logLevel,
       version: this.version

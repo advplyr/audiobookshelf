@@ -2,7 +2,8 @@
   <div class="w-full h-full overflow-hidden overflow-y-auto px-2 sm:px-4 py-6 relative">
     <div class="flex flex-wrap">
       <div class="relative">
-        <covers-book-cover :library-item="libraryItem" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+        <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="120" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+
         <!-- book cover overlay -->
         <div v-if="media.coverPath" class="absolute top-0 left-0 w-full h-full z-10 opacity-0 hover:opacity-100 transition-opacity duration-100">
           <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-black-600 to-transparent" />
@@ -16,10 +17,10 @@
       <div class="flex-grow sm:pl-2 md:pl-6 sm:pr-2 mt-2 md:mt-0">
         <div class="flex items-center">
           <div v-if="userCanUpload" class="w-10 md:w-40 pr-2 pt-4 md:min-w-32">
-            <ui-file-input ref="fileInput" @change="fileUploadSelected"
-              ><span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span
-              ><span class="material-icons text-2xl inline-block md:!hidden">upload</span></ui-file-input
-            >
+            <ui-file-input ref="fileInput" @change="fileUploadSelected">
+              <span class="hidden md:inline-block">{{ $strings.ButtonUploadCover }}</span>
+              <span class="material-icons text-2xl inline-block md:!hidden">upload</span>
+            </ui-file-input>
           </div>
           <form @submit.prevent="submitForm" class="flex flex-grow">
             <ui-text-input-with-label v-model="imageUrl" :label="$strings.LabelCoverImageURL" />
@@ -27,18 +28,18 @@
           </form>
         </div>
 
-        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-primary">
+        <div v-if="localCovers.length" class="mb-4 mt-6 border-t border-b border-white border-opacity-10">
           <div class="flex items-center justify-center py-2">
             <p>{{ localCovers.length }} local image{{ localCovers.length !== 1 ? 's' : '' }}</p>
             <div class="flex-grow" />
             <ui-btn small @click="showLocalCovers = !showLocalCovers">{{ showLocalCovers ? $strings.ButtonHide : $strings.ButtonShow }}</ui-btn>
           </div>
 
-          <div v-if="showLocalCovers" class="flex items-center justify-center">
-            <template v-for="cover in localCovers">
-              <div :key="cover.path" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="cover.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(cover)">
+          <div v-if="showLocalCovers" class="flex items-center justify-center pb-2">
+            <template v-for="localCoverFile in localCovers">
+              <div :key="localCoverFile.ino" class="m-0.5 mb-5 border-2 border-transparent hover:border-yellow-300 cursor-pointer" :class="localCoverFile.metadata.path === coverPath ? 'border-yellow-300' : ''" @click="setCover(localCoverFile)">
                 <div class="h-24 bg-primary" :style="{ width: 96 / bookCoverAspectRatio + 'px' }">
-                  <covers-preview-cover :src="`${cover.localPath}?token=${userToken}`" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+                  <covers-preview-cover :src="localCoverFile.localPath" :width="96 / bookCoverAspectRatio" :book-cover-aspect-ratio="bookCoverAspectRatio" />
                 </div>
               </div>
             </template>
@@ -48,13 +49,13 @@
     </div>
     <form @submit.prevent="submitSearchForm">
       <div class="flex items-center justify-start -mx-1 h-20">
-        <div class="w-40 px-1">
+        <div class="w-48 px-1">
           <ui-dropdown v-model="provider" :items="providers" :label="$strings.LabelProvider" small />
         </div>
         <div class="w-72 px-1">
           <ui-text-input-with-label v-model="searchTitle" :label="searchTitleLabel" :placeholder="$strings.PlaceholderSearch" />
         </div>
-        <div v-show="provider != 'itunes'" class="w-72 px-1">
+        <div v-show="provider != 'itunes' && provider != 'audiobookcovers'" class="w-72 px-1">
           <ui-text-input-with-label v-model="searchAuthor" :label="$strings.LabelAuthor" />
         </div>
         <ui-btn class="mt-5 ml-1" type="submit">{{ $strings.ButtonSearch }}</ui-btn>
@@ -127,7 +128,7 @@ export default {
     },
     providers() {
       if (this.isPodcast) return this.$store.state.scanners.podcastProviders
-      return this.$store.state.scanners.providers
+      return [{ text: 'All', value: 'all' }, ...this.$store.state.scanners.providers, ...this.$store.state.scanners.coverOnlyProviders]
     },
     searchTitleLabel() {
       if (this.provider.startsWith('audible')) return this.$strings.LabelSearchTitleOrASIN
@@ -168,8 +169,8 @@ export default {
       return this.libraryFiles
         .filter((f) => f.fileType === 'image')
         .map((file) => {
-          var _file = { ...file }
-          _file.localPath = `${process.env.serverUrl}/s/item/${this.libraryItemId}/${this.$encodeUriPath(file.metadata.relPath).replace(/^\//, '')}`
+          const _file = { ...file }
+          _file.localPath = `${process.env.serverUrl}/api/items/${this.libraryItemId}/file/${file.ino}?token=${this.userToken}`
           return _file
         })
     }
@@ -222,7 +223,7 @@ export default {
       this.searchTitle = this.mediaMetadata.title || ''
       this.searchAuthor = this.mediaMetadata.authorName || ''
       if (this.isPodcast) this.provider = 'itunes'
-      else this.provider = localStorage.getItem('book-provider') || 'google'
+      else this.provider = localStorage.getItem('book-cover-provider') || localStorage.getItem('book-provider') || 'google'
     },
     removeCover() {
       if (!this.media.coverPath) {
@@ -287,13 +288,13 @@ export default {
     },
     getSearchQuery() {
       var searchQuery = `provider=${this.provider}&title=${this.searchTitle}`
-      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor}`
+      if (this.searchAuthor) searchQuery += `&author=${this.searchAuthor || ''}`
       if (this.isPodcast) searchQuery += '&podcast=1'
       return searchQuery
     },
     persistProvider() {
       try {
-        localStorage.setItem('book-provider', this.provider)
+        localStorage.setItem('book-cover-provider', this.provider)
       } catch (error) {
         console.error('PersistProvider', error)
       }

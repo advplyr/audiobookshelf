@@ -64,13 +64,25 @@
 
         <div class="flex-grow hidden sm:inline-block" />
 
+        <!-- collapse series checkbox -->
         <ui-checkbox v-if="isLibraryPage && isBookLibrary && !isBatchSelecting" v-model="settings.collapseSeries" :label="$strings.LabelCollapseSeries" checkbox-bg="bg" check-color="white" small class="mr-2" @input="updateCollapseSeries" />
+
+        <!-- library filter select -->
         <controls-library-filter-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.filterBy" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateFilter" />
+
+        <!-- library sort select -->
         <controls-library-sort-select v-if="isLibraryPage && !isBatchSelecting" v-model="settings.orderBy" :descending.sync="settings.orderDesc" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateOrder" />
+
+        <!-- series filter select -->
         <controls-library-filter-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesFilterBy" is-series class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesFilter" />
+
+        <!-- series sort select -->
         <controls-sort-select v-if="isSeriesPage && !isBatchSelecting" v-model="settings.seriesSortBy" :descending.sync="settings.seriesSortDesc" :items="seriesSortItems" class="w-36 sm:w-44 md:w-48 h-7.5 ml-1 sm:ml-4" @change="updateSeriesSort" />
 
+        <!-- issues page remove all button -->
         <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
+
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
@@ -154,6 +166,14 @@ export default {
           value: 'addedAt'
         },
         {
+          text: this.$strings.LabelLastBookAdded,
+          value: 'lastBookAdded'
+        },
+        {
+          text: this.$strings.LabelLastBookUpdated,
+          value: 'lastBookUpdated'
+        },
+        {
           text: this.$strings.LabelTotalDuration,
           value: 'totalDuration'
         }
@@ -168,8 +188,14 @@ export default {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     },
     currentLibraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
@@ -255,10 +281,30 @@ export default {
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
+    },
+    contextMenuItems() {
+      const items = []
+
+      if (this.isPodcastLibrary && this.isLibraryPage && this.userCanDownload) {
+        items.push({
+          text: 'Export OPML',
+          action: 'export-opml'
+        })
+      }
+
+      return items
     }
   },
   methods: {
-    seriesContextMenuAction(action) {
+    contextMenuAction({ action }) {
+      if (action === 'export-opml') {
+        this.exportOPML()
+      }
+    },
+    exportOPML() {
+      this.$downloadFile(`/api/libraries/${this.currentLibraryId}/opml?token=${this.$store.getters['user/getToken']}`, null, true)
+    },
+    seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
       } else if (action === 're-add-to-continue-listening') {
@@ -305,7 +351,11 @@ export default {
         const payload = {}
         if (author.asin) payload.asin = author.asin
         else payload.q = author.name
-        console.log('Payload', payload, 'author', author)
+
+        payload.region = 'us'
+        if (this.libraryProvider.startsWith('audible.')) {
+          payload.region = this.libraryProvider.split('.').pop() || 'us'
+        }
 
         this.$eventBus.$emit(`searching-author-${author.id}`, true)
 

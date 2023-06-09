@@ -175,7 +175,7 @@ function cleanFileObjects(libraryItemPath, files) {
 }
 
 // Scan folder
-async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
+async function scanFolder(libraryMediaType, folder) {
   const folderPath = filePathToPOSIX(folder.fullPath)
 
   const pathExists = await fs.pathExists(folderPath)
@@ -216,7 +216,7 @@ async function scanFolder(libraryMediaType, folder, serverSettings = {}) {
       fileObjs = await cleanFileObjects(folderPath, [libraryItemPath])
       isFile = true
     } else {
-      libraryItemData = getDataFromMediaDir(libraryMediaType, folderPath, libraryItemPath, serverSettings, libraryItemGrouping[libraryItemPath])
+      libraryItemData = getDataFromMediaDir(libraryMediaType, folderPath, libraryItemPath)
       fileObjs = await cleanFileObjects(libraryItemData.path, libraryItemGrouping[libraryItemPath])
     }
 
@@ -347,19 +347,18 @@ function getPodcastDataFromDir(folderPath, relPath) {
   }
 }
 
-function getDataFromMediaDir(libraryMediaType, folderPath, relPath, serverSettings, fileNames) {
+function getDataFromMediaDir(libraryMediaType, folderPath, relPath) {
   if (libraryMediaType === 'podcast') {
     return getPodcastDataFromDir(folderPath, relPath)
   } else if (libraryMediaType === 'book') {
-    var parseSubtitle = !!serverSettings.scannerParseSubtitle
-    return getBookDataFromDir(folderPath, relPath, parseSubtitle)
+    return getBookDataFromDir(folderPath, relPath, !!global.ServerSettings.scannerParseSubtitle)
   } else {
     return getPodcastDataFromDir(folderPath, relPath)
   }
 }
 
 // Called from Scanner.js
-async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, isSingleMediaItem, serverSettings = {}) {
+async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath, isSingleMediaItem) {
   libraryItemPath = filePathToPOSIX(libraryItemPath)
   const folderFullPath = filePathToPOSIX(folder.fullPath)
 
@@ -384,8 +383,7 @@ async function getLibraryItemFileData(libraryMediaType, folder, libraryItemPath,
     }
   } else {
     fileItems = await recurseFiles(libraryItemPath)
-    const fileNames = fileItems.map(i => i.name)
-    libraryItemData = getDataFromMediaDir(libraryMediaType, folderFullPath, libraryItemDir, serverSettings, fileNames)
+    libraryItemData = getDataFromMediaDir(libraryMediaType, folderFullPath, libraryItemDir)
   }
 
   const libraryItemDirStats = await getFileTimestampsWithIno(libraryItemData.path)

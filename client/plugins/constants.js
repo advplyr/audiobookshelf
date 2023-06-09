@@ -1,10 +1,10 @@
 const SupportedFileTypes = {
   image: ['png', 'jpg', 'jpeg', 'webp'],
-  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'oga', 'mp4', 'aac', 'wma', 'aiff', 'wav', 'webm', 'webma'],
+  audio: ['m4b', 'mp3', 'm4a', 'flac', 'opus', 'ogg', 'oga', 'mp4', 'aac', 'wma', 'aiff', 'wav', 'webm', 'webma', 'mka', 'awb', 'caf'],
   ebook: ['epub', 'pdf', 'mobi', 'azw3', 'cbr', 'cbz'],
   info: ['nfo'],
   text: ['txt'],
-  metadata: ['opf', 'abs']
+  metadata: ['opf', 'abs', 'xml', 'json']
 }
 
 const DownloadStatus = {

@@ -1,22 +1,25 @@
 <template>
-  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 sm:h-44 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
+  <div v-if="streamLibraryItem" id="streamContainer" class="w-full fixed bottom-0 left-0 right-0 h-48 md:h-40 z-50 bg-primary px-2 md:px-4 pb-1 md:pb-4 pt-2">
     <div id="videoDock" />
     <nuxt-link v-if="!playerHandler.isVideo" :to="`/item/${streamLibraryItem.id}`" class="absolute left-2 top-2 md:left-4 cursor-pointer">
       <covers-book-cover :library-item="streamLibraryItem" :width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" />
     </nuxt-link>
     <div class="flex items-start mb-6 md:mb-0" :class="playerHandler.isVideo ? 'ml-4 pl-96' : isSquareCover ? 'pl-18 sm:pl-24' : 'pl-12 sm:pl-16'">
-      <div>
-        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg">
+      <div class="min-w-0">
+        <nuxt-link :to="`/item/${streamLibraryItem.id}`" class="hover:underline cursor-pointer text-sm sm:text-lg block truncate">
           {{ title }}
         </nuxt-link>
         <div v-if="!playerHandler.isVideo" class="text-gray-400 flex items-center">
           <span class="material-icons text-sm">person</span>
-          <p v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</p>
-          <p v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</p>
-          <p v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
-            <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
-          </p>
-          <p v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</p>
+          <div class="flex items-center">
+            <div v-if="podcastAuthor" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ podcastAuthor }}</div>
+            <div v-else-if="musicArtists" class="pl-1 sm:pl-1.5 text-xs sm:text-base">{{ musicArtists }}</div>
+            <div v-else-if="authors.length" class="pl-1 sm:pl-1.5 text-xs sm:text-base">
+              <nuxt-link v-for="(author, index) in authors" :key="index" :to="`/author/${author.id}?library=${libraryId}`" class="hover:underline">{{ author.name }}<span v-if="index < authors.length - 1">,&nbsp;</span></nuxt-link>
+            </div>
+            <div v-else class="text-xs sm:text-base cursor-pointer pl-1 sm:pl-1.5">{{ $strings.LabelUnknown }}</div>
+            <widgets-explicit-indicator :explicit="isExplicit"></widgets-explicit-indicator>
+          </div>
         </div>
 
         <div class="text-gray-400 flex items-center">
@@ -78,7 +81,7 @@ export default {
       sleepTimerRemaining: 0,
       sleepTimer: null,
       displayTitle: null,
-      initialPlaybackRate: 1,
+      currentPlaybackRate: 1,
       syncFailedToast: null
     }
   },
@@ -117,22 +120,31 @@ export default {
     streamLibraryItem() {
       return this.$store.state.streamLibraryItem
     },
+    streamEpisode() {
+      if (!this.$store.state.streamEpisodeId) return null
+      const episodes = this.streamLibraryItem.media.episodes || []
+      return episodes.find((ep) => ep.id === this.$store.state.streamEpisodeId)
+    },
     libraryItemId() {
-      return this.streamLibraryItem ? this.streamLibraryItem.id : null
+      return this.streamLibraryItem?.id || null
     },
     media() {
-      return this.streamLibraryItem ? this.streamLibraryItem.media || {} : {}
+      return this.streamLibraryItem?.media || {}
     },
     isPodcast() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'podcast' : false
+      return this.streamLibraryItem?.mediaType === 'podcast'
     },
     isMusic() {
-      return this.streamLibraryItem ? this.streamLibraryItem.mediaType === 'music' : false
+      return this.streamLibraryItem?.mediaType === 'music'
+    },
+    isExplicit() {
+      return this.mediaMetadata.explicit || false
     },
     mediaMetadata() {
       return this.media.metadata || {}
     },
     chapters() {
+      if (this.streamEpisode) return this.streamEpisode.chapters || []
       return this.media.chapters || []
     },
     title() {
@@ -146,7 +158,8 @@ export default {
       return this.streamLibraryItem ? this.streamLibraryItem.libraryId : null
     },
     totalDurationPretty() {
-      return this.$secondsToTimestamp(this.totalDuration)
+      // Adjusted by playback rate
+      return this.$secondsToTimestamp(this.totalDuration / this.currentPlaybackRate)
     },
     podcastAuthor() {
       if (!this.isPodcast) return null
@@ -249,11 +262,15 @@ export default {
       this.playerHandler.setVolume(volume)
     },
     setPlaybackRate(playbackRate) {
-      this.initialPlaybackRate = playbackRate
+      this.currentPlaybackRate = playbackRate
       this.playerHandler.setPlaybackRate(playbackRate)
     },
     seek(time) {
       this.playerHandler.seek(time)
+    },
+    playbackTimeUpdate(time) {
+      // When updating progress from another session
+      this.playerHandler.seek(time, false)
     },
     setCurrentTime(time) {
       this.currentTime = time
@@ -353,9 +370,8 @@ export default {
         navigator.mediaSession.setActionHandler('seekbackward', this.mediaSessionSeekBackward)
         navigator.mediaSession.setActionHandler('seekforward', this.mediaSessionSeekForward)
         navigator.mediaSession.setActionHandler('seekto', this.mediaSessionSeekTo)
-        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionPreviousTrack)
-        const hasNextChapter = this.$refs.audioPlayer && this.$refs.audioPlayer.hasNextChapter
-        navigator.mediaSession.setActionHandler('nexttrack', hasNextChapter ? this.mediaSessionNextTrack : null)
+        navigator.mediaSession.setActionHandler('previoustrack', this.mediaSessionSeekBackward)
+        navigator.mediaSession.setActionHandler('nexttrack', this.mediaSessionSeekForward)
       } else {
         console.warn('Media session not available')
       }
@@ -378,7 +394,7 @@ export default {
         libraryItem: session.libraryItem,
         episodeId: session.episodeId
       })
-      this.playerHandler.prepareOpenSession(session, this.initialPlaybackRate)
+      this.playerHandler.prepareOpenSession(session, this.currentPlaybackRate)
     },
     streamOpen(session) {
       console.log(`[StreamContainer] Stream session open`, session)
@@ -445,7 +461,7 @@ export default {
         if (this.$refs.audioPlayer) this.$refs.audioPlayer.checkUpdateChapterTrack()
       })
 
-      this.playerHandler.load(libraryItem, episodeId, true, this.initialPlaybackRate, payload.startTime)
+      this.playerHandler.load(libraryItem, episodeId, true, this.currentPlaybackRate, payload.startTime)
     },
     pauseItem() {
       this.playerHandler.pause()
@@ -453,17 +469,26 @@ export default {
     showFailedProgressSyncs() {
       if (!isNaN(this.syncFailedToast)) this.$toast.dismiss(this.syncFailedToast)
       this.syncFailedToast = this.$toast('Progress is not being synced. Restart playback', { timeout: false, type: 'error' })
+    },
+    sessionClosedEvent(sessionId) {
+      if (this.playerHandler.currentSessionId === sessionId) {
+        console.log('sessionClosedEvent closing current session', sessionId)
+        this.playerHandler.resetPlayer() // Closes player without reporting to server
+        this.$store.commit('setMediaPlaying', null)
+      }
     }
   },
   mounted() {
     this.$eventBus.$on('cast-session-active', this.castSessionActive)
     this.$eventBus.$on('playback-seek', this.seek)
+    this.$eventBus.$on('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$on('play-item', this.playLibraryItem)
     this.$eventBus.$on('pause-item', this.pauseItem)
   },
   beforeDestroy() {
     this.$eventBus.$off('cast-session-active', this.castSessionActive)
     this.$eventBus.$off('playback-seek', this.seek)
+    this.$eventBus.$off('playback-time-update', this.playbackTimeUpdate)
     this.$eventBus.$off('play-item', this.playLibraryItem)
     this.$eventBus.$off('pause-item', this.pauseItem)
   }

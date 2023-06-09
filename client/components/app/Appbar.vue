@@ -15,14 +15,14 @@
         <controls-global-search v-if="currentLibrary" class="mr-1 sm:mr-0" />
         <div class="flex-grow" />
 
-        <widgets-notification-widget class="hidden md:block" />
-
         <ui-tooltip v-if="isChromecastInitialized && !isHttps" direction="bottom" text="Casting requires a secure connection" class="flex items-center">
           <span class="material-icons-outlined text-2xl text-warning text-opacity-50"> cast </span>
         </ui-tooltip>
         <div v-if="isChromecastInitialized" class="w-6 min-w-6 h-6 ml-2 mr-1 sm:mx-2 cursor-pointer">
           <google-cast-launcher></google-cast-launcher>
         </div>
+
+        <widgets-notification-widget class="hidden md:block" />
 
         <nuxt-link v-if="currentLibrary" to="/config/stats" class="hover:text-gray-200 cursor-pointer w-8 h-8 hidden sm:flex items-center justify-center mx-1">
           <ui-tooltip :text="$strings.HeaderYourStats" direction="bottom" class="flex items-center">
@@ -58,9 +58,6 @@
           <span class="material-icons text-2xl -ml-2 pr-1 text-white">play_arrow</span>
           {{ $strings.ButtonPlay }}
         </ui-btn>
-        <ui-tooltip v-if="userIsAdminOrUp && isBookLibrary" :text="$strings.ButtonQuickMatch" direction="bottom">
-          <ui-icon-btn :disabled="processingBatch" icon="auto_awesome" @click="batchAutoMatchClick" class="mx-1.5" />
-        </ui-tooltip>
         <ui-tooltip v-if="isBookLibrary" :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
           <ui-read-icon-btn :disabled="processingBatch" :is-read="selectedIsFinished" @click="toggleBatchRead" class="mx-1.5" />
         </ui-tooltip>
@@ -75,8 +72,11 @@
         <ui-tooltip v-if="userCanDelete" :text="$strings.ButtonRemove" direction="bottom">
           <ui-icon-btn :disabled="processingBatch" icon="delete" bg-color="error" class="mx-1.5" @click="batchDeleteClick" />
         </ui-tooltip>
-        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom">
-          <span class="material-icons text-4xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
+
+        <ui-context-menu-dropdown v-if="contextMenuItems.length && !processingBatch" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
+
+        <ui-tooltip :text="$strings.LabelDeselectAll" direction="bottom" class="flex items-center">
+          <span class="material-icons text-3xl px-4 hover:text-gray-100 cursor-pointer" :class="processingBatch ? 'text-gray-400' : ''" @click="cancelSelectionMode">close</span>
         </ui-tooltip>
       </div>
     </div>
@@ -160,9 +160,90 @@ export default {
     },
     isHttps() {
       return location.protocol === 'https:' || process.env.NODE_ENV === 'development'
+    },
+    contextMenuItems() {
+      if (!this.userIsAdminOrUp) return []
+
+      const options = [
+        {
+          text: this.$strings.ButtonQuickMatch,
+          action: 'quick-match'
+        }
+      ]
+
+      if (!this.isPodcastLibrary && this.selectedMediaItemsArePlayable) {
+        options.push({
+          text: 'Quick Embed Metadata',
+          action: 'quick-embed'
+        })
+      }
+
+      options.push({
+        text: 'Re-Scan',
+        action: 'rescan'
+      })
+
+      return options
     }
   },
   methods: {
+    requestBatchQuickEmbed() {
+      const payload = {
+        message: 'Warning! Quick embed will not backup your audio files. Make sure that you have a backup of your audio files. <br><br>Would you like to continue?',
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$post(`/api/tools/batch/embed-metadata`, {
+                libraryItemIds: this.selectedMediaItems.map((i) => i.id)
+              })
+              .then(() => {
+                console.log('Audio metadata embed started')
+                this.cancelSelectionMode()
+              })
+              .catch((error) => {
+                console.error('Audio metadata embed failed', error)
+                const errorMsg = error.response.data || 'Failed to embed metadata'
+                this.$toast.error(errorMsg)
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction({ action }) {
+      if (action === 'quick-embed') {
+        this.requestBatchQuickEmbed()
+      } else if (action === 'quick-match') {
+        this.batchAutoMatchClick()
+      } else if (action === 'rescan') {
+        this.batchRescan()
+      }
+    },
+    async batchRescan() {
+      const payload = {
+        message: `Are you sure you want to re-scan ${this.selectedMediaItems.length} items?`,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.$axios
+              .$post(`/api/items/batch/scan`, {
+                libraryItemIds: this.selectedMediaItems.map((i) => i.id)
+              })
+              .then(() => {
+                console.log('Batch Re-Scan started')
+                this.cancelSelectionMode()
+              })
+              .catch((error) => {
+                console.error('Batch Re-Scan failed', error)
+                const errorMsg = error.response.data || 'Failed to batch re-scan'
+                this.$toast.error(errorMsg)
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
     async playSelectedItems() {
       this.$store.commit('setProcessingBatch', true)
 
@@ -237,26 +318,37 @@ export default {
         })
     },
     batchDeleteClick() {
-      const audiobookText = this.numMediaItemsSelected > 1 ? `these ${this.numMediaItemsSelected} items` : 'this item'
-      const confirmMsg = `Are you sure you want to remove ${audiobookText}?\n\n*Does not delete your files, only removes the items from Audiobookshelf`
-      if (confirm(confirmMsg)) {
-        this.$store.commit('setProcessingBatch', true)
-        this.$axios
-          .$post(`/api/items/batch/delete`, {
-            libraryItemIds: this.selectedMediaItems.map((i) => i.id)
-          })
-          .then(() => {
-            this.$toast.success('Batch delete success!')
-            this.$store.commit('setProcessingBatch', false)
-            this.$store.commit('globals/resetSelectedMediaItems', [])
-            this.$eventBus.$emit('bookshelf_clear_selection')
-          })
-          .catch((error) => {
-            this.$toast.error('Batch delete failed')
-            console.error('Failed to batch delete', error)
-            this.$store.commit('setProcessingBatch', false)
-          })
+      const payload = {
+        message: `This will delete ${this.numMediaItemsSelected} library items from the database and your file system. Are you sure?`,
+        checkboxLabel: 'Delete from file system. Uncheck to only remove from database.',
+        yesButtonText: this.$strings.ButtonDelete,
+        yesButtonColor: 'error',
+        checkboxDefaultValue: true,
+        callback: (confirmed, hardDelete) => {
+          if (confirmed) {
+            this.$store.commit('setProcessingBatch', true)
+
+            this.$axios
+              .$post(`/api/items/batch/delete?hard=${hardDelete ? 1 : 0}`, {
+                libraryItemIds: this.selectedMediaItems.map((i) => i.id)
+              })
+              .then(() => {
+                this.$toast.success('Batch delete success')
+                this.$store.commit('globals/resetSelectedMediaItems', [])
+                this.$eventBus.$emit('bookshelf_clear_selection')
+              })
+              .catch((error) => {
+                console.error('Batch delete failed', error)
+                this.$toast.error('Batch delete failed')
+              })
+              .finally(() => {
+                this.$store.commit('setProcessingBatch', false)
+              })
+          }
+        },
+        type: 'yesNo'
       }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     batchEditClick() {
       this.$router.push('/batch')

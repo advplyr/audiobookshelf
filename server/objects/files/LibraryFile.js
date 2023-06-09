@@ -1,5 +1,5 @@
 const Path = require('path')
-const { getFileTimestampsWithIno } = require('../../utils/fileUtils')
+const { getFileTimestampsWithIno, filePathToPOSIX } = require('../../utils/fileUtils')
 const globals = require('../../utils/globals')
 const FileMetadata = require('../metadata/FileMetadata')
 
@@ -50,6 +50,10 @@ class LibraryFile {
     return this.fileType === 'audio' || this.fileType === 'ebook' || this.fileType === 'video'
   }
 
+  get isEBookFile() {
+    return this.fileType === 'ebook'
+  }
+
   get isOPFFile() {
     return this.metadata.ext === '.opf'
   }
@@ -59,8 +63,8 @@ class LibraryFile {
     var fileMetadata = new FileMetadata()
     fileMetadata.setData(fileTsData)
     fileMetadata.filename = Path.basename(relPath)
-    fileMetadata.path = path
-    fileMetadata.relPath = relPath
+    fileMetadata.path = filePathToPOSIX(path)
+    fileMetadata.relPath = filePathToPOSIX(relPath)
     fileMetadata.ext = Path.extname(relPath)
     this.ino = fileTsData.ino
     this.metadata = fileMetadata

@@ -2,7 +2,7 @@ const Logger = require('../../Logger')
 const PodcastEpisode = require('../entities/PodcastEpisode')
 const PodcastMetadata = require('../metadata/PodcastMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
-const abmetadataGenerator = require('../../utils/abmetadataGenerator')
+const abmetadataGenerator = require('../../utils/generators/abmetadataGenerator')
 const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
 const { createNewSortInstance } = require('../../libs/fastSort')
 const naturalSort = createNewSortInstance({
@@ -94,6 +94,13 @@ class Podcast {
     }
   }
 
+  toJSONForMetadataFile() {
+    return {
+      tags: [...this.tags],
+      metadata: this.metadata.toJSON()
+    }
+  }
+
   get size() {
     var total = 0
     this.episodes.forEach((ep) => total += ep.size)
@@ -166,13 +173,21 @@ class Podcast {
   }
 
   removeFileWithInode(inode) {
-    this.episodes = this.episodes.filter(ep => ep.ino !== inode)
+    const hasEpisode = this.episodes.some(ep => ep.audioFile.ino === inode)
+    if (hasEpisode) {
+      this.episodes = this.episodes.filter(ep => ep.audioFile.ino !== inode)
+    }
+    return hasEpisode
   }
 
   findFileWithInode(inode) {
     var episode = this.episodes.find(ep => ep.audioFile.ino === inode)
     if (episode) return episode.audioFile
     return null
+  }
+
+  findEpisodeWithInode(inode) {
+    return this.episodes.find(ep => ep.audioFile.ino === inode)
   }
 
   setData(mediaData) {
@@ -191,10 +206,11 @@ class Podcast {
     let metadataUpdatePayload = {}
     let tagsUpdated = false
 
-    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs')
+    const metadataAbs = textMetadataFiles.find(lf => lf.metadata.filename === 'metadata.abs' || lf.metadata.filename === 'metadata.json')
     if (metadataAbs) {
+      const isJSON = metadataAbs.metadata.filename === 'metadata.json'
       const metadataText = await readTextFile(metadataAbs.metadata.path)
-      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast')
+      const abmetadataUpdates = abmetadataGenerator.parseAndCheckForUpdates(metadataText, this, 'podcast', isJSON)
       if (abmetadataUpdates && Object.keys(abmetadataUpdates).length) {
         Logger.debug(`[Podcast] "${this.metadata.title}" changes found in metadata.abs file`, abmetadataUpdates)
 
@@ -314,6 +330,18 @@ class Podcast {
 
   getEpisode(episodeId) {
     return this.episodes.find(ep => ep.id == episodeId)
+  }
+
+  // Audio file metadata tags map to podcast details
+  setMetadataFromAudioFile(overrideExistingDetails = false) {
+    if (!this.episodes.length) return false
+    const audioFile = this.episodes[0].audioFile
+    if (!audioFile?.metaTags) return false
+    return this.metadata.setDataFromAudioMetaTags(audioFile.metaTags, overrideExistingDetails)
+  }
+
+  getChapters(episodeId) {
+    return this.getEpisode(episodeId)?.chapters?.map(ch => ({ ...ch })) || []
   }
 }
 module.exports = Podcast

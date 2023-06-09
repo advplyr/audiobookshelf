@@ -24,7 +24,6 @@ export default class PlayerHandler {
 
     this.failedProgressSyncs = 0
     this.lastSyncTime = 0
-    this.lastSyncedAt = 0
     this.listeningTimeSinceSync = 0
 
     this.playInterval = null
@@ -51,6 +50,11 @@ export default class PlayerHandler {
   get episode() {
     if (!this.episodeId) return null
     return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
+  }
+
+  setSessionId(sessionId) {
+    this.currentSessionId = sessionId
+    this.ctx.$store.commit('setPlaybackSessionId', sessionId)
   }
 
   load(libraryItem, episodeId, playWhenReady, playbackRate, startTimeOverride = undefined) {
@@ -123,7 +127,7 @@ export default class PlayerHandler {
 
   playerError() {
     // Switch to HLS stream on error
-    if (!this.isCasting && !this.currentStreamId && (this.player instanceof LocalAudioPlayer)) {
+    if (!this.isCasting && (this.player instanceof LocalAudioPlayer)) {
       console.log(`[PlayerHandler] Audio player error switching to HLS stream`)
       this.prepare(true)
     }
@@ -173,16 +177,30 @@ export default class PlayerHandler {
     this.ctx.setBufferTime(buffertime)
   }
 
+  getDeviceId() {
+    let deviceId = localStorage.getItem('absDeviceId')
+    if (!deviceId) {
+      deviceId = this.ctx.$randomId()
+      localStorage.setItem('absDeviceId', deviceId)
+    }
+    return deviceId
+  }
+
   async prepare(forceTranscode = false) {
-    var payload = {
+    this.setSessionId(null) // Reset session
+
+    const payload = {
+      deviceInfo: {
+        deviceId: this.getDeviceId()
+      },
       supportedMimeTypes: this.player.playableMimeTypes,
       mediaPlayer: this.isCasting ? 'chromecast' : 'html5',
       forceTranscode,
       forceDirectPlay: this.isCasting || this.isVideo // TODO: add transcode support for chromecast
     }
 
-    var path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
-    var session = await this.ctx.$axios.$post(path, payload).catch((error) => {
+    const path = this.episodeId ? `/api/items/${this.libraryItem.id}/play/${this.episodeId}` : `/api/items/${this.libraryItem.id}/play`
+    const session = await this.ctx.$axios.$post(path, payload).catch((error) => {
       console.error('Failed to start stream', error)
     })
     this.prepareSession(session)
@@ -196,6 +214,8 @@ export default class PlayerHandler {
     this.playWhenReady = false
     this.initialPlaybackRate = playbackRate
     this.startTimeOverride = undefined
+    this.lastSyncTime = 0
+    this.listeningTimeSinceSync = 0
 
     this.prepareSession(session)
   }
@@ -203,7 +223,7 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.failedProgressSyncs = 0
     this.startTime = this.startTimeOverride !== undefined ? this.startTimeOverride : session.currentTime
-    this.currentSessionId = session.id
+    this.setSessionId(session.id)
     this.displayTitle = session.displayTitle
     this.displayAuthor = session.displayAuthor
 
@@ -238,12 +258,17 @@ export default class PlayerHandler {
   closePlayer() {
     console.log('[PlayerHandler] Close Player')
     this.sendCloseSession()
+    this.resetPlayer()
+  }
+
+  resetPlayer() {
     if (this.player) {
       this.player.destroy()
     }
     this.player = null
     this.playerState = 'IDLE'
     this.libraryItem = null
+    this.setSessionId(null)
     this.startTime = 0
     this.stopPlayInterval()
   }
@@ -268,7 +293,8 @@ export default class PlayerHandler {
       const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
-      if (this.listeningTimeSinceSync >= 5) {
+      const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 5 : 20
+      if (this.listeningTimeSinceSync >= TimeToWaitBeforeSync) {
         this.sendProgressSync(currentTime)
       }
     }, 1000)
@@ -278,13 +304,17 @@ export default class PlayerHandler {
     let syncData = null
     if (this.player) {
       const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
-      syncData = {
-        timeListened: listeningTimeToAdd,
-        duration: this.getDuration(),
-        currentTime: this.getCurrentTime()
+      // When opening player and quickly closing dont save progress
+      if (listeningTimeToAdd > 20) {
+        syncData = {
+          timeListened: listeningTimeToAdd,
+          duration: this.getDuration(),
+          currentTime: this.getCurrentTime()
+        }
       }
     }
     this.listeningTimeSinceSync = 0
+    this.lastSyncTime = 0
     return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 1000 }).catch((error) => {
       console.error('Failed to close session', error)
     })
@@ -303,6 +333,7 @@ export default class PlayerHandler {
       duration: this.getDuration(),
       currentTime
     }
+
     this.listeningTimeSinceSync = 0
     this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 3000 }).then(() => {
       this.failedProgressSyncs = 0
@@ -364,13 +395,13 @@ export default class PlayerHandler {
     this.player.setPlaybackRate(playbackRate)
   }
 
-  seek(time) {
+  seek(time, shouldSync = true) {
     if (!this.player) return
     this.player.seek(time, this.playerPlaying)
     this.ctx.setCurrentTime(time)
 
     // Update progress if paused
-    if (!this.playerPlaying) {
+    if (!this.playerPlaying && shouldSync) {
       this.sendProgressSync(time)
     }
   }

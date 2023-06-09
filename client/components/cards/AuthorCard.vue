@@ -1,5 +1,5 @@
 <template>
-  <nuxt-link :to="`/author/${author.id}`">
+  <nuxt-link :to="`/author/${author.id}?library=${currentLibraryId}`">
     <div @mouseover="mouseover" @mouseleave="mouseleave">
       <div :style="{ width: width + 'px', height: height + 'px' }" class="bg-primary box-shadow-book rounded-md relative overflow-hidden">
         <!-- Image or placeholder -->
@@ -77,6 +77,12 @@ export default {
     },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
+    },
+    currentLibraryId() {
+      return this.$store.state.libraries.currentLibraryId
+    },
+    libraryProvider() {
+      return this.$store.getters['libraries/getLibraryProvider'](this.currentLibraryId) || 'google'
     }
   },
   methods: {
@@ -91,6 +97,11 @@ export default {
       const payload = {}
       if (this.asin) payload.asin = this.asin
       else payload.q = this.name
+
+      payload.region = 'us'
+      if (this.libraryProvider.startsWith('audible.')) {
+        payload.region = this.libraryProvider.split('.').pop() || 'us'
+      }
 
       var response = await this.$axios.$post(`/api/authors/${this.authorId}/match`, payload).catch((error) => {
         console.error('Failed', error)

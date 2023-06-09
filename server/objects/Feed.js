@@ -70,17 +70,19 @@ class Feed {
       id: this.id,
       entityType: this.entityType,
       entityId: this.entityId,
-      feedUrl: this.feedUrl
+      feedUrl: this.feedUrl,
+      meta: this.meta.toJSONMinified(),
     }
   }
 
   getEpisodePath(id) {
     var episode = this.episodes.find(ep => ep.id === id)
+    console.log('getEpisodePath=', id, episode)
     if (!episode) return null
     return episode.fullPath
   }
 
-  setFromItem(userId, slug, libraryItem, serverAddress) {
+  setFromItem(userId, slug, libraryItem, serverAddress, preventIndexing = true, ownerName = null, ownerEmail = null) {
     const media = libraryItem.media
     const mediaMetadata = media.metadata
     const isPodcast = libraryItem.mediaType === 'podcast'
@@ -106,6 +108,11 @@ class Feed {
     this.meta.feedUrl = feedUrl
     this.meta.link = `${serverAddress}/item/${libraryItem.id}`
     this.meta.explicit = !!mediaMetadata.explicit
+    this.meta.type = mediaMetadata.type
+    this.meta.language = mediaMetadata.language
+    this.meta.preventIndexing = preventIndexing
+    this.meta.ownerName = ownerName
+    this.meta.ownerEmail = ownerEmail
 
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES
@@ -142,6 +149,8 @@ class Feed {
     this.meta.author = author
     this.meta.imageUrl = media.coverPath ? `${this.serverAddress}/feed/${this.slug}/cover` : `${this.serverAddress}/Logo.png`
     this.meta.explicit = !!mediaMetadata.explicit
+    this.meta.type = mediaMetadata.type
+    this.meta.language = mediaMetadata.language
 
     this.episodes = []
     if (isPodcast) { // PODCAST EPISODES

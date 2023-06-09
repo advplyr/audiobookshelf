@@ -1,3 +1,4 @@
+const axios = require('axios')
 const Ffmpeg = require('../libs/fluentFfmpeg')
 const fs = require('../libs/fsExtra')
 const Path = require('path')
@@ -86,3 +87,73 @@ async function resizeImage(filePath, outputPath, width, height) {
   })
 }
 module.exports.resizeImage = resizeImage
+
+module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
+  return new Promise(async (resolve) => {
+    const response = await axios({
+      url: podcastEpisodeDownload.url,
+      method: 'GET',
+      responseType: 'stream',
+      timeout: 30000
+    }).catch((error) => {
+      Logger.error(`[ffmpegHelpers] Failed to download podcast episode with url "${podcastEpisodeDownload.url}"`, error)
+      return null
+    })
+    if (!response) return resolve(false)
+
+
+    const ffmpeg = Ffmpeg(response.data)
+    ffmpeg.outputOptions(
+      '-c', 'copy',
+      '-metadata', 'podcast=1'
+    )
+
+    const podcastMetadata = podcastEpisodeDownload.libraryItem.media.metadata
+    const podcastEpisode = podcastEpisodeDownload.podcastEpisode
+
+    const taggings = {
+      'album': podcastMetadata.title,
+      'album-sort': podcastMetadata.title,
+      'artist': podcastMetadata.author,
+      'artist-sort': podcastMetadata.author,
+      'comment': podcastEpisode.description,
+      'subtitle': podcastEpisode.subtitle,
+      'disc': podcastEpisode.season,
+      'genre': podcastMetadata.genres.length ? podcastMetadata.genres.join(';') : null,
+      'language': podcastMetadata.language,
+      'MVNM': podcastMetadata.title,
+      'MVIN': podcastEpisode.episode,
+      'track': podcastEpisode.episode,
+      'series-part': podcastEpisode.episode,
+      'title': podcastEpisode.title,
+      'title-sort': podcastEpisode.title,
+      'year': podcastEpisode.pubYear,
+      'date': podcastEpisode.pubDate,
+      'releasedate': podcastEpisode.pubDate,
+      'itunes-id': podcastMetadata.itunesId,
+      'podcast-type': podcastMetadata.type,
+      'episode-type': podcastMetadata.episodeType
+    }
+
+    for (const tag in taggings) {
+      if (taggings[tag]) {
+        ffmpeg.addOption('-metadata', `${tag}=${taggings[tag]}`)
+      }
+    }
+
+    ffmpeg.addOutput(podcastEpisodeDownload.targetPath)
+
+    ffmpeg.on('start', (cmd) => {
+      Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Cmd: ${cmd}`)
+    })
+    ffmpeg.on('error', (err, stdout, stderr) => {
+      Logger.error(`[FfmpegHelpers] downloadPodcastEpisode: Error ${err} ${stdout} ${stderr}`)
+      resolve(false)
+    })
+    ffmpeg.on('end', () => {
+      Logger.debug(`[FfmpegHelpers] downloadPodcastEpisode: Complete`)
+      resolve(podcastEpisodeDownload.targetPath)
+    })
+    ffmpeg.run()
+  })
+}

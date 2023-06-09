@@ -92,7 +92,6 @@ module.exports.setDefault = (path, silent = false) => {
   const gid = global.Gid
   return new Promise((resolve) => {
     if (isNaN(uid) || isNaN(gid)) {
-      if (!silent) Logger.debug('Not modifying permissions since no uid/gid is specified')
       return resolve()
     }
     if (!silent) Logger.debug(`Setting permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)
@@ -107,7 +106,6 @@ module.exports.setDefaultDirSync = (path, silent = false) => {
   const uid = global.Uid
   const gid = global.Gid
   if (isNaN(uid) || isNaN(gid)) {
-    if (!silent) Logger.debug('Not modifying permissions since no uid/gid is specified')
     return true
   }
   if (!silent) Logger.debug(`[FilePerms] Setting dir permission "${mode}" for uid ${uid} and gid ${gid} | "${path}"`)

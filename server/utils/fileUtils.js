@@ -174,20 +174,24 @@ async function recurseFiles(path, relPathToReplace = null) {
 }
 module.exports.recurseFiles = recurseFiles
 
-module.exports.downloadFile = async (url, filepath) => {
-  Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+module.exports.downloadFile = (url, filepath) => {
+  return new Promise(async (resolve, reject) => {
+    Logger.debug(`[fileUtils] Downloading file to ${filepath}`)
+    axios({
+      url,
+      method: 'GET',
+      responseType: 'stream',
+      timeout: 30000
+    }).then((response) => {
+      const writer = fs.createWriteStream(filepath)
+      response.data.pipe(writer)
 
-  const writer = fs.createWriteStream(filepath)
-  const response = await axios({
-    url,
-    method: 'GET',
-    responseType: 'stream',
-    timeout: 30000
-  })
-  response.data.pipe(writer)
-  return new Promise((resolve, reject) => {
-    writer.on('finish', resolve)
-    writer.on('error', reject)
+      writer.on('finish', resolve)
+      writer.on('error', reject)
+    }).catch((err) => {
+      Logger.error(`[fileUtils] Failed to download file "${filepath}"`, err)
+      reject(err)
+    })
   })
 }
 

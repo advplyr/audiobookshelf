@@ -13,13 +13,13 @@ class Audible {
             'de': '.de',
             'jp': '.co.jp',
             'it': '.it',
-            'in': '.co.in',
+            'in': '.in',
             'es': '.es'
         }
     }
 
     cleanResult(item) {
-        const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin } = item
+        const { title, subtitle, asin, authors, narrators, publisherName, summary, releaseDate, image, genres, seriesPrimary, seriesSecondary, language, runtimeLengthMin, formatType } = item
 
         const series = []
         if (seriesPrimary) {
@@ -54,7 +54,8 @@ class Audible {
             language: language ? language.charAt(0).toUpperCase() + language.slice(1) : null,
             duration: runtimeLengthMin && !isNaN(runtimeLengthMin) ? Number(runtimeLengthMin) : 0,
             region: item.region || null,
-            rating: item.rating || null
+            rating: item.rating || null,
+            abridged: formatType === 'abridged'
         }
     }
 

@@ -6,6 +6,7 @@ export const state = () => ({
   Source: null,
   versionData: null,
   serverSettings: null,
+  playbackSessionId: null,
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
@@ -13,6 +14,7 @@ export const state = () => ({
   playerQueueAutoPlay: true,
   playerIsFullscreen: false,
   editModalTab: 'details',
+  editPodcastModalTab: 'details',
   showEditModal: false,
   showEReader: false,
   selectedLibraryItem: null,
@@ -22,6 +24,7 @@ export const state = () => ({
   showExperimentalFeatures: false,
   defaultRenameString: '',
   bookshelfBookIds: [],
+  episodeTableEpisodeIds: [],
   openModal: null,
   innerModalOpen: false,
   lastBookshelfScrollData: {},
@@ -34,7 +37,7 @@ export const getters = {
     return state.serverSettings[key]
   },
   getLibraryItemIdStreaming: state => {
-    return state.streamLibraryItem ? state.streamLibraryItem.id : null
+    return state.streamLibraryItem?.id || null
   },
   getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
     if (!state.streamLibraryItem) return false
@@ -136,6 +139,9 @@ export const mutations = {
   setBookshelfBookIds(state, val) {
     state.bookshelfBookIds = val || []
   },
+  setEpisodeTableEpisodeIds(state, val) {
+    state.episodeTableEpisodeIds = val || []
+  },
   setPreviousPath(state, val) {
     state.previousPath = val
   },
@@ -145,6 +151,9 @@ export const mutations = {
   setServerSettings(state, settings) {
     if (!settings) return
     state.serverSettings = settings
+  },
+  setPlaybackSessionId(state, playbackSessionId) {
+    state.playbackSessionId = playbackSessionId
   },
   setMediaPlaying(state, payload) {
     if (!payload) {
@@ -198,6 +207,9 @@ export const mutations = {
   },
   setShowEditModal(state, val) {
     state.showEditModal = val
+  },
+  setEditPodcastModalTab(state, tab) {
+    state.editPodcastModalTab = tab
   },
   showEReader(state, libraryItem) {
     state.selectedLibraryItem = libraryItem

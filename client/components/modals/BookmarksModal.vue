@@ -73,6 +73,12 @@ export default {
     },
     canCreateBookmark() {
       return !this.bookmarks.find((bm) => bm.time === this.currentTime)
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
     }
   },
   methods: {
@@ -111,7 +117,7 @@ export default {
     },
     submitCreateBookmark() {
       if (!this.newBookmarkTitle) {
-        this.newBookmarkTitle = this.$formatDate(Date.now(), 'MMM dd, yyyy HH:mm')
+        this.newBookmarkTitle = this.$formatDatetime(Date.now(), this.dateFormat, this.timeFormat)
       }
       var bookmark = {
         title: this.newBookmarkTitle,

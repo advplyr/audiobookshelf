@@ -28,7 +28,11 @@
         </div>
       </div>
       <div v-else class="px-4 flex-grow">
-        <h1>{{ book.title }}</h1>
+        <h1>
+          <div class="flex items-center">
+            {{ book.title }}<widgets-explicit-indicator :explicit="book.explicit" />
+          </div>
+        </h1>
         <p class="text-base text-gray-300 whitespace-nowrap truncate">by {{ book.author }}</p>
         <p v-if="book.genres" class="text-xs text-gray-400 leading-5">{{ book.genres.join(', ') }}</p>
         <p class="text-xs text-gray-400 leading-5">{{ book.trackCount }} Episodes</p>

@@ -11,6 +11,7 @@ const { version } = require('../package.json')
 const dbMigration = require('./utils/dbMigration')
 const filePerms = require('./utils/filePerms')
 const fileUtils = require('./utils/fileUtils')
+const globals = require('./utils/globals')
 const Logger = require('./Logger')
 
 const Auth = require('./Auth')
@@ -24,6 +25,7 @@ const HlsRouter = require('./routers/HlsRouter')
 const StaticRouter = require('./routers/StaticRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
+const EmailManager = require('./managers/EmailManager')
 const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
@@ -36,7 +38,6 @@ const LibraryItemFolderManager = require('./managers/LibraryItemFolderManager')
 const RssFeedManager = require('./managers/RssFeedManager')
 const CronManager = require('./managers/CronManager')
 const TaskManager = require('./managers/TaskManager')
-const EBookManager = require('./managers/EBookManager')
 
 class Server {
   constructor(SOURCE, PORT, HOST, UID, GID, CONFIG_PATH, METADATA_PATH, ROUTER_BASE_PATH) {
@@ -67,19 +68,19 @@ class Server {
     // Managers
     this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager(this.db)
+    this.emailManager = new EmailManager(this.db)
     this.backupManager = new BackupManager(this.db)
     this.logManager = new LogManager(this.db)
     this.cacheManager = new CacheManager()
     this.abMergeManager = new AbMergeManager(this.db, this.taskManager)
     this.playbackSessionManager = new PlaybackSessionManager(this.db)
     this.coverManager = new CoverManager(this.db, this.cacheManager)
-    this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager)
+    this.podcastManager = new PodcastManager(this.db, this.watcher, this.notificationManager, this.taskManager)
     this.audioMetadataManager = new AudioMetadataMangaer(this.db, this.taskManager)
     this.folderRenameManager = new LibraryItemFolderManager(this.db, this.watcher)
     this.rssFeedManager = new RssFeedManager(this.db)
-    this.eBookManager = new EBookManager(this.db)
 
-    this.scanner = new Scanner(this.db, this.coverManager)
+    this.scanner = new Scanner(this.db, this.coverManager, this.taskManager)
     this.cronManager = new CronManager(this.db, this.scanner, this.podcastManager)
 
     // Routers
@@ -121,7 +122,6 @@ class Server {
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.playbackSessionManager.removeInvalidSessions()
     await this.cacheManager.ensureCachePaths()
-    await this.abMergeManager.ensureDownloadDirPath()
 
     await this.backupManager.init()
     await this.logManager.init()
@@ -150,7 +150,12 @@ class Server {
     this.server = http.createServer(app)
 
     router.use(this.auth.cors)
-    router.use(fileUpload())
+    router.use(fileUpload({
+      defCharset: 'utf8',
+      defParamCharset: 'utf8',
+      useTempFiles: true,
+      tempFileDir: Path.join(global.MetadataPath, 'tmp')
+    }))
     router.use(express.urlencoded({ extended: true, limit: "5mb" }));
     router.use(express.json({ limit: "5mb" }))
 
@@ -166,16 +171,35 @@ class Server {
 
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
+
+    // TODO: Deprecated as of 2.2.21 edge
     router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
 
     // EBook static file routes
+    // TODO: Deprecated as of 2.2.21 edge
     router.get('/ebook/:library/:folder/*', (req, res) => {
       const library = this.db.libraries.find(lib => lib.id === req.params.library)
       if (!library) return res.sendStatus(404)
       const folder = library.folders.find(fol => fol.id === req.params.folder)
       if (!folder) return res.status(404).send('Folder not found')
 
-      const remainingPath = req.params['0']
+      // Replace backslashes with forward slashes
+      const remainingPath = req.params['0'].replace(/\\/g, '/')
+
+      // Prevent path traversal
+      //  e.g. ../../etc/passwd
+      if (/\/?\.?\.\//.test(remainingPath)) {
+        Logger.error(`[Server] Invalid path to get ebook "${remainingPath}"`)
+        return res.sendStatus(403)
+      }
+
+      // Check file ext is a valid ebook file
+      const filext = (Path.extname(remainingPath) || '').slice(1).toLowerCase()
+      if (!globals.SupportedEbookTypes.includes(filext)) {
+        Logger.error(`[Server] Invalid ebook file ext requested "${remainingPath}"`)
+        return res.sendStatus(403)
+      }
+
       const fullPath = Path.join(folder.fullPath, remainingPath)
       res.sendFile(fullPath)
     })

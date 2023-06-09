@@ -112,7 +112,7 @@ input[type=number] {
   background-color: #373838;
 }
 
-.tracksTable tr:hover {
+.tracksTable tr:hover:not(:has(th)) {
   background-color: #474747;
 }
 
@@ -228,6 +228,20 @@ Bookshelf Label
   max-height: 32px;
   /* fallback */
   -webkit-line-clamp: 2;
+  /* number of lines to show */
+  -webkit-box-orient: vertical;
+}
+
+.episode-subtitle-long {
+  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-height: 16px;
+  /* fallback */
+  max-height: 72px;
+  /* fallback */
+  -webkit-line-clamp: 6;
   /* number of lines to show */
   -webkit-box-orient: vertical;
 }

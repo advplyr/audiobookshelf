@@ -17,6 +17,7 @@ class BookMetadata {
     this.asin = null
     this.language = null
     this.explicit = false
+    this.abridged = false
 
     if (metadata) {
       this.construct(metadata)
@@ -26,9 +27,9 @@ class BookMetadata {
   construct(metadata) {
     this.title = metadata.title
     this.subtitle = metadata.subtitle
-    this.authors = (metadata.authors && metadata.authors.map) ? metadata.authors.map(a => ({ ...a })) : []
-    this.narrators = metadata.narrators ? [...metadata.narrators] : []
-    this.series = (metadata.series && metadata.series.map) ? metadata.series.map(s => ({ ...s })) : []
+    this.authors = (metadata.authors?.map) ? metadata.authors.map(a => ({ ...a })) : []
+    this.narrators = metadata.narrators ? [...metadata.narrators].filter(n => n) : []
+    this.series = (metadata.series?.map) ? metadata.series.map(s => ({ ...s })) : []
     this.genres = metadata.genres ? [...metadata.genres] : []
     this.publishedYear = metadata.publishedYear || null
     this.publishedDate = metadata.publishedDate || null
@@ -38,6 +39,7 @@ class BookMetadata {
     this.asin = metadata.asin
     this.language = metadata.language
     this.explicit = !!metadata.explicit
+    this.abridged = !!metadata.abridged
   }
 
   toJSON() {
@@ -55,7 +57,8 @@ class BookMetadata {
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
-      explicit: this.explicit
+      explicit: this.explicit,
+      abridged: this.abridged
     }
   }
 
@@ -76,7 +79,8 @@ class BookMetadata {
       isbn: this.isbn,
       asin: this.asin,
       language: this.language,
-      explicit: this.explicit
+      explicit: this.explicit,
+      abridged: this.abridged
     }
   }
 
@@ -100,8 +104,19 @@ class BookMetadata {
       authorName: this.authorName,
       authorNameLF: this.authorNameLF,
       narratorName: this.narratorName,
-      seriesName: this.seriesName
+      seriesName: this.seriesName,
+      abridged: this.abridged
     }
+  }
+
+  toJSONForMetadataFile() {
+    const json = this.toJSON()
+    json.authors = json.authors.map(au => au.name)
+    json.series = json.series.map(se => {
+      if (!se.sequence) return se.name
+      return `${se.name} #${se.sequence}`
+    })
+    return json
   }
 
   clone() {
@@ -209,8 +224,9 @@ class BookMetadata {
     }
   }
   update(payload) {
-    var json = this.toJSON()
-    var hasUpdates = false
+    const json = this.toJSON()
+    let hasUpdates = false
+
     for (const key in json) {
       if (payload[key] !== undefined) {
         if (!areEquivalent(payload[key], json[key])) {
@@ -237,6 +253,32 @@ class BookMetadata {
       id: newAuthor.id,
       name: newAuthor.name
     })
+  }
+
+  /**
+   * Update narrator name if narrator is in book
+   * @param {String} oldNarratorName - Narrator name to get updated
+   * @param {String} newNarratorName - Updated narrator name
+   * @return {Boolean} True if narrator was updated
+   */
+  updateNarrator(oldNarratorName, newNarratorName) {
+    if (!this.hasNarrator(oldNarratorName)) return false
+    this.narrators = this.narrators.filter(n => n !== oldNarratorName)
+    if (newNarratorName && !this.hasNarrator(newNarratorName)) {
+      this.narrators.push(newNarratorName)
+    }
+    return true
+  }
+
+  /**
+   * Remove narrator name if narrator is in book
+   * @param {String} narratorName - Narrator name to remove
+   * @return {Boolean} True if narrator was updated
+   */
+  removeNarrator(narratorName) {
+    if (!this.hasNarrator(narratorName)) return false
+    this.narrators = this.narrators.filter(n => n !== narratorName)
+    return true
   }
 
   setData(scanMediaData = {}) {
@@ -365,8 +407,10 @@ class BookMetadata {
     const parsed = parseNameString.parse(authorsTag)
     if (!parsed) return []
     return (parsed.names || []).map((au) => {
+      const findAuthor = this.authors.find(_au => _au.name == au)
+
       return {
-        id: `new-${Math.floor(Math.random() * 1000000)}`,
+        id: findAuthor?.id || `new-${Math.floor(Math.random() * 1000000)}`,
         name: au
       }
     })
@@ -399,8 +443,11 @@ class BookMetadata {
   searchAuthors(query) {
     return this.authors.filter(au => cleanStringForSearch(au.name).includes(query))
   }
+  searchNarrators(query) {
+    return this.narrators.filter(n => cleanStringForSearch(n).includes(query))
+  }
   searchQuery(query) { // Returns key if match is found
-    const keysToCheck = ['title', 'asin', 'isbn']
+    const keysToCheck = ['title', 'asin', 'isbn', 'subtitle']
     for (const key of keysToCheck) {
       if (this[key] && cleanStringForSearch(String(this[key])).includes(query)) {
         return {

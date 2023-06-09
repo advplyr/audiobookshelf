@@ -6,7 +6,7 @@ RUN npm ci && npm cache clean --force
 RUN npm run generate
 
 ### STAGE 1: Build server ###
-FROM sandreas/tone:v0.1.2 AS tone
+FROM sandreas/tone:v0.1.5 AS tone
 FROM node:16-alpine
 
 ENV NODE_ENV=production
@@ -29,4 +29,4 @@ HEALTHCHECK \
     --timeout=3s \
     --start-period=10s \
     CMD curl -f http://127.0.0.1/healthcheck || exit 1
-CMD ["npm", "start"]
+CMD ["node", "index.js"]

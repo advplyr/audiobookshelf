@@ -34,13 +34,25 @@
       </div>
       <ui-checkbox v-model="selectAll" checkbox-bg="bg" @input="selectAllToggled" />
       <form @submit.prevent="submitMatchUpdate">
-        <div v-if="selectedMatchOrig.cover" class="flex items-center py-2">
-          <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
-          <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
-          <div class="min-w-12 max-w-12 md:min-w-16 md:max-w-16">
-            <a :href="selectedMatch.cover" target="_blank" class="w-full bg-primary">
-              <img :src="selectedMatch.cover" class="h-full w-full object-contain" />
-            </a>
+        <div v-if="selectedMatchOrig.cover" class="flex flex-wrap md:flex-nowrap items-center justify-center">
+          <div class="flex flex-grow items-center py-2">
+            <ui-checkbox v-model="selectedMatchUsage.cover" checkbox-bg="bg" @input="checkboxToggled" />
+            <ui-text-input-with-label v-model="selectedMatch.cover" :disabled="!selectedMatchUsage.cover" readonly :label="$strings.LabelCover" class="flex-grow mx-4" />
+          </div>
+
+          <div class="flex py-2">
+            <div>
+              <p class="text-center text-gray-200">New</p>
+              <a :href="selectedMatch.cover" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="selectedMatch.cover" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </a>
+            </div>
+            <div v-if="media.coverPath">
+              <p class="text-center text-gray-200">Current</p>
+              <a :href="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" target="_blank" class="bg-primary">
+                <covers-preview-cover :src="$store.getters['globals/getLibraryItemCoverSrcById'](libraryItemId, null, true)" :width="100" :book-cover-aspect-ratio="bookCoverAspectRatio" />
+              </a>
+            </div>
           </div>
         </div>
         <div v-if="selectedMatchOrig.title" class="flex items-center py-2">
@@ -103,7 +115,7 @@
         <div v-if="selectedMatchOrig.genres && selectedMatchOrig.genres.length" class="flex items-center py-2">
           <ui-checkbox v-model="selectedMatchUsage.genres" checkbox-bg="bg" @input="checkboxToggled" />
           <div class="flex-grow ml-4">
-            <ui-multi-select v-model="selectedMatch.genres" :items="selectedMatch.genres" :disabled="!selectedMatchUsage.genres" :label="$strings.LabelGenres" />
+            <ui-multi-select v-model="selectedMatch.genres" :items="genres" :disabled="!selectedMatchUsage.genres" :label="$strings.LabelGenres" />
             <p v-if="mediaMetadata.genres" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.genres.join(', ') }}</p>
           </div>
         </div>
@@ -164,6 +176,20 @@
             <p v-if="mediaMetadata.releaseDate" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.releaseDate || '' }}</p>
           </div>
         </div>
+        <div v-if="selectedMatchOrig.explicit != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.explicit == null }">
+          <ui-checkbox v-model="selectedMatchUsage.explicit" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.explicit != null }">
+            <ui-checkbox v-model="selectedMatch.explicit" :label="$strings.LabelExplicit" :disabled="!selectedMatchUsage.explicit" :checkbox-bg="!selectedMatchUsage.explicit ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <p v-if="mediaMetadata.explicit != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.explicit ? 'Explicit (checked)' : 'Not Explicit (unchecked)' }}</p>
+          </div>
+        </div>
+        <div v-if="selectedMatchOrig.abridged != null" class="flex items-center pb-2" :class="{ 'pt-2': mediaMetadata.abridged == null }">
+          <ui-checkbox v-model="selectedMatchUsage.abridged" checkbox-bg="bg" @input="checkboxToggled" />
+          <div class="flex-grow ml-4" :class="{ 'pt-4': mediaMetadata.abridged != null }">
+            <ui-checkbox v-model="selectedMatch.abridged" :label="$strings.LabelAbridged" :disabled="!selectedMatchUsage.abridged" :checkbox-bg="!selectedMatchUsage.abridged ? 'bg' : 'primary'" border-color="gray-600" label-class="pl-2 text-base font-semibold" />
+            <p v-if="mediaMetadata.abridged != null" class="text-xs ml-1 text-white text-opacity-60">{{ $strings.LabelCurrently }} {{ mediaMetadata.abridged ? 'Abridged (checked)' : 'Unabridged (unchecked)' }}</p>
+          </div>
+        </div>
 
         <div class="flex items-center justify-end py-2">
           <ui-btn color="success" type="submit">{{ $strings.ButtonSubmit }}</ui-btn>
@@ -209,6 +235,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        abridged: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -273,6 +300,12 @@ export default {
     },
     isPodcast() {
       return this.mediaType == 'podcast'
+    },
+    genres() {
+      const filterData = this.$store.state.libraries.filterData || {}
+      const currentGenres = filterData.genres || []
+      const selectedMatchGenres = this.selectedMatch.genres || []
+      return [...new Set([...currentGenres ,...selectedMatchGenres])]
     }
   },
   methods: {
@@ -327,6 +360,7 @@ export default {
           res.itunesPageUrl = res.pageUrl || null
           res.itunesId = res.id || null
           res.author = res.artistName || null
+          res.explicit = res.explicit || false
           return res
         })
       }
@@ -352,6 +386,7 @@ export default {
         explicit: true,
         asin: true,
         isbn: true,
+        abridged: true,
         // Podcast specific
         itunesPageUrl: true,
         itunesId: true,
@@ -468,7 +503,6 @@ export default {
           } else if (key === 'narrator') {
             updatePayload.metadata.narrators = this.selectedMatch[key].split(',').map((v) => v.trim())
           } else if (key === 'genres') {
-            // updatePayload.metadata.genres = this.selectedMatch[key].split(',').map((v) => v.trim())
             updatePayload.metadata.genres = [...this.selectedMatch[key]]
           } else if (key === 'tags') {
             updatePayload.tags = this.selectedMatch[key].split(',').map((v) => v.trim())

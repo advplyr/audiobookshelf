@@ -15,8 +15,6 @@ class AbMergeManager {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
-    this.downloadDirPath = Path.join(global.MetadataPath, 'downloads')
-    this.downloadDirPathExist = false
 
     this.pendingTasks = []
   }
@@ -27,22 +25,6 @@ class AbMergeManager {
 
   cancelEncode(task) {
     return this.removeTask(task, true)
-  }
-
-  async ensureDownloadDirPath() { // Creates download path if necessary and sets owner and permissions
-    if (this.downloadDirPathExist) return
-
-    var pathCreated = false
-    if (!(await fs.pathExists(this.downloadDirPath))) {
-      await fs.mkdir(this.downloadDirPath)
-      pathCreated = true
-    }
-
-    if (pathCreated) {
-      await filePerms.setDefault(this.downloadDirPath)
-    }
-
-    this.downloadDirPathExist = true
   }
 
   async startAudiobookMerge(user, libraryItem, options = {}) {
@@ -64,7 +46,7 @@ class AbMergeManager {
       toneJsonObject: null
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
-    task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
+    task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
     this.taskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
@@ -130,7 +112,7 @@ class AbMergeManager {
     let toneJsonPath = null
     try {
       toneJsonPath = Path.join(task.data.itemCachePath, 'metadata.json')
-      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1)
+      await toneHelpers.writeToneMetadataJsonFile(libraryItem, libraryItem.media.chapters, toneJsonPath, 1, 'audio/mp4')
     } catch (error) {
       Logger.error(`[AbMergeManager] Write metadata.json failed`, error)
       toneJsonPath = null

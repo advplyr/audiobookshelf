@@ -9,10 +9,14 @@
     <div ref="container" class="w-full rounded-lg bg-primary box-shadow-md overflow-y-auto overflow-x-hidden" style="max-height: 80vh">
       <div v-if="!timerSet" class="w-full">
         <template v-for="time in sleepTimes">
-          <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-bg relative" @click="setTime(time)">
+          <div :key="time.text" class="flex items-center px-6 py-3 justify-center cursor-pointer hover:bg-bg relative" @click="setTime(time.seconds)">
             <p class="text-xl text-center">{{ time.text }}</p>
           </div>
         </template>
+        <form class="flex items-center justify-center px-6 py-3" @submit.prevent="submitCustomTime">
+          <ui-text-input v-model="customTime" type="number" step="any" min="0.1" placeholder="Time in minutes" class="w-48" />
+          <ui-btn color="success" type="submit" :padding-x="0" class="h-9 w-12 flex items-center justify-center ml-1">Set</ui-btn>
+        </form>
       </div>
       <div v-else class="w-full p-4">
         <div class="mb-4 flex items-center justify-center">
@@ -48,18 +52,27 @@ export default {
   },
   data() {
     return {
+      customTime: null,
       sleepTimes: [
-        {
-          seconds: 10,
-          text: '10 seconds'
-        },
         {
           seconds: 60 * 5,
           text: '5 minutes'
         },
         {
+          seconds: 60 * 15,
+          text: '15 minutes'
+        },
+        {
+          seconds: 60 * 20,
+          text: '20 minutes'
+        },
+        {
           seconds: 60 * 30,
           text: '30 minutes'
+        },
+        {
+          seconds: 60 * 45,
+          text: '45 minutes'
         },
         {
           seconds: 60 * 60,
@@ -72,10 +85,6 @@ export default {
         {
           seconds: 60 * 120,
           text: '2 hours'
-        },
-        {
-          seconds: 60 * 180,
-          text: '3 hours'
         }
       ]
     }
@@ -97,8 +106,17 @@ export default {
     }
   },
   methods: {
-    setTime(time) {
-      this.$emit('set', time.seconds)
+    submitCustomTime() {
+      if (!this.customTime || isNaN(this.customTime) || Number(this.customTime) <= 0) {
+        this.customTime = null
+        return
+      }
+
+      const timeInSeconds = Math.round(Number(this.customTime) * 60)
+      this.setTime(timeInSeconds)
+    },
+    setTime(seconds) {
+      this.$emit('set', seconds)
     },
     increment(amount) {
       this.$emit('increment', amount)

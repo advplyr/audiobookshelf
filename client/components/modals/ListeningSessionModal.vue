@@ -19,13 +19,13 @@
           <div class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelStartedAt }}</div>
             <div class="px-1">
-              {{ $formatDate(_session.startedAt, 'MMMM do, yyyy HH:mm') }}
+              {{ $formatDatetime(_session.startedAt, dateFormat, timeFormat) }}
             </div>
           </div>
           <div class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelUpdatedAt }}</div>
             <div class="px-1">
-              {{ $formatDate(_session.updatedAt, 'MMMM do, yyyy HH:mm') }}
+              {{ $formatDatetime(_session.updatedAt, dateFormat, timeFormat) }}
             </div>
           </div>
           <div class="flex items-center -mx-1 mb-1">
@@ -98,7 +98,8 @@
       </div>
 
       <div class="flex items-center">
-        <ui-btn small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-if="!isOpenSession" small color="error" @click.stop="deleteSessionClick">{{ $strings.ButtonDelete }}</ui-btn>
+        <ui-btn v-else small color="error" @click.stop="closeSessionClick">Close Open Session</ui-btn>
       </div>
     </div>
   </modals-modal>
@@ -151,6 +152,15 @@ export default {
       else if (playMethod === this.$constants.PlayMethod.DIRECTSTREAM) return 'Direct Stream'
       else if (playMethod === this.$constants.PlayMethod.LOCAL) return 'Local'
       return 'Unknown'
+    },
+    dateFormat() {
+      return this.$store.state.serverSettings.dateFormat
+    },
+    timeFormat() {
+      return this.$store.state.serverSettings.timeFormat
+    },
+    isOpenSession() {
+      return !!this._session.open
     }
   },
   methods: {
@@ -181,6 +191,24 @@ export default {
           console.error('Failed to delete session', error)
           var errMsg = error.response ? error.response.data || '' : ''
           this.$toast.error(errMsg || this.$strings.ToastSessionDeleteFailed)
+        })
+    },
+    closeSessionClick() {
+      this.processing = true
+      this.$axios
+        .$post(`/api/session/${this._session.id}/close`)
+        .then(() => {
+          this.$toast.success('Session closed')
+          this.show = false
+          this.$emit('closedSession')
+        })
+        .catch((error) => {
+          console.error('Failed to close session', error)
+          const errMsg = error.response?.data || ''
+          this.$toast.error(errMsg || 'Failed to close open session')
+        })
+        .finally(() => {
+          this.processing = false
         })
     }
   },

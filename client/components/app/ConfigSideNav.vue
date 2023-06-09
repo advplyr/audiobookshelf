@@ -5,8 +5,8 @@
         <span class="material-icons text-2xl">arrow_back</span>
       </div>
 
-      <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-4 h-12 border-b border-primary border-opacity-30 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
-        <p>{{ route.title }}</p>
+      <nuxt-link v-for="route in configRoutes" :key="route.id" :to="route.path" class="w-full px-3 h-12 border-b border-primary border-opacity-30 flex items-center cursor-pointer relative" :class="routeName === route.id ? 'bg-primary bg-opacity-70' : 'hover:bg-primary hover:bg-opacity-30'">
+        <p class="leading-4">{{ route.title }}</p>
         <div v-show="routeName === route.iod" class="h-full w-0.5 bg-yellow-400 absolute top-0 left-0" />
       </nuxt-link>
 
@@ -89,6 +89,11 @@ export default {
           id: 'config-notifications',
           title: this.$strings.HeaderNotifications,
           path: '/config/notifications'
+        },
+        {
+          id: 'config-email',
+          title: this.$strings.HeaderEmail,
+          path: '/config/email'
         },
         {
           id: 'config-item-metadata-utils',

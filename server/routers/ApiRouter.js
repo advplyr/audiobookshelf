@@ -20,11 +20,11 @@ const AuthorController = require('../controllers/AuthorController')
 const SessionController = require('../controllers/SessionController')
 const PodcastController = require('../controllers/PodcastController')
 const NotificationController = require('../controllers/NotificationController')
+const EmailController = require('../controllers/EmailController')
 const SearchController = require('../controllers/SearchController')
 const CacheController = require('../controllers/CacheController')
 const ToolsController = require('../controllers/ToolsController')
 const RSSFeedController = require('../controllers/RSSFeedController')
-const EBookController = require('../controllers/EBookController')
 const MiscController = require('../controllers/MiscController')
 
 const BookFinder = require('../finders/BookFinder')
@@ -52,8 +52,8 @@ class ApiRouter {
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
+    this.emailManager = Server.emailManager
     this.taskManager = Server.taskManager
-    this.eBookManager = Server.eBookManager
 
     this.bookFinder = new BookFinder()
     this.authorFinder = new AuthorFinder()
@@ -77,6 +77,7 @@ class ApiRouter {
 
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
+    this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))
     this.router.get('/libraries/:id/series', LibraryController.middleware.bind(this), LibraryController.getAllSeriesForLibrary.bind(this))
     this.router.get('/libraries/:id/collections', LibraryController.middleware.bind(this), LibraryController.getCollectionsForLibrary.bind(this))
     this.router.get('/libraries/:id/playlists', LibraryController.middleware.bind(this), LibraryController.getUserPlaylistsForLibrary.bind(this))
@@ -86,20 +87,29 @@ class ApiRouter {
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
     this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
+    this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), LibraryController.getNarrators.bind(this))
+    this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.updateNarrator.bind(this))
+    this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.removeNarrator.bind(this))
     this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
-
+    this.router.get('/libraries/:id/opml', LibraryController.middleware.bind(this), LibraryController.getOPMLFile.bind(this))
     this.router.post('/libraries/order', LibraryController.reorder.bind(this))
 
     //
     // Item Routes
     //
+    this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
+    this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
+    this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
+    this.router.post('/items/batch/quickmatch', LibraryItemController.batchQuickMatch.bind(this))
+    this.router.post('/items/batch/scan', LibraryItemController.batchScan.bind(this))
     this.router.delete('/items/all', LibraryItemController.deleteAll.bind(this))
 
     this.router.get('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.findOne.bind(this))
     this.router.patch('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.update.bind(this))
     this.router.delete('/items/:id', LibraryItemController.middleware.bind(this), LibraryItemController.delete.bind(this))
+    this.router.get('/items/:id/download', LibraryItemController.middleware.bind(this), LibraryItemController.download.bind(this))
     this.router.patch('/items/:id/media', LibraryItemController.middleware.bind(this), LibraryItemController.updateMedia.bind(this))
     this.router.get('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.getCover.bind(this))
     this.router.post('/items/:id/cover', LibraryItemController.middleware.bind(this), LibraryItemController.uploadCover.bind(this))
@@ -113,11 +123,10 @@ class ApiRouter {
     this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
     this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
-
-    this.router.post('/items/batch/delete', LibraryItemController.batchDelete.bind(this))
-    this.router.post('/items/batch/update', LibraryItemController.batchUpdate.bind(this))
-    this.router.post('/items/batch/get', LibraryItemController.batchGet.bind(this))
-    this.router.post('/items/batch/quickmatch', LibraryItemController.batchQuickMatch.bind(this))
+    this.router.get('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getLibraryFile.bind(this))
+    this.router.delete('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
+    this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))
+    this.router.get('/items/:id/ebook', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
 
     //
     // User Routes
@@ -176,7 +185,6 @@ class ApiRouter {
     this.router.patch('/me/item/:id/bookmark', MeController.updateBookmark.bind(this))
     this.router.delete('/me/item/:id/bookmark/:time', MeController.removeBookmark.bind(this))
     this.router.patch('/me/password', MeController.updatePassword.bind(this))
-    this.router.patch('/me/settings', MeController.updateSettings.bind(this)) // TODO: Deprecated. Remove after mobile release v0.9.61-beta
     this.router.post('/me/sync-local-progress', MeController.syncLocalMediaProgress.bind(this)) // TODO: Deprecated. Removed from Android. Only used in iOS app now.
     this.router.get('/me/items-in-progress', MeController.getAllLibraryItemsInProgress.bind(this))
     this.router.get('/me/series/:id/remove-from-continue-listening', MeController.removeSeriesFromContinueListening.bind(this))
@@ -195,6 +203,7 @@ class ApiRouter {
     // File System Routes
     //
     this.router.get('/filesystem', FileSystemController.getPaths.bind(this))
+    this.router.post('/filesystem/pathexists', FileSystemController.checkPathExists.bind(this))
 
     //
     // Author Routes
@@ -217,6 +226,7 @@ class ApiRouter {
     //
     this.router.get('/sessions', SessionController.getAllWithUserData.bind(this))
     this.router.delete('/sessions/:id', SessionController.middleware.bind(this), SessionController.delete.bind(this))
+    this.router.get('/sessions/open', SessionController.getOpenSessions.bind(this))
     this.router.post('/session/local', SessionController.syncLocal.bind(this))
     this.router.post('/session/local-all', SessionController.syncLocalSessions.bind(this))
     // TODO: Update these endpoints because they are only for open playback sessions
@@ -229,13 +239,14 @@ class ApiRouter {
     //
     this.router.post('/podcasts', PodcastController.create.bind(this))
     this.router.post('/podcasts/feed', PodcastController.getPodcastFeed.bind(this))
-    this.router.post('/podcasts/opml', PodcastController.getOPMLFeeds.bind(this))
+    this.router.post('/podcasts/opml', PodcastController.getFeedsFromOPMLText.bind(this))
     this.router.get('/podcasts/:id/checknew', PodcastController.middleware.bind(this), PodcastController.checkNewEpisodes.bind(this))
     this.router.get('/podcasts/:id/downloads', PodcastController.middleware.bind(this), PodcastController.getEpisodeDownloads.bind(this))
     this.router.get('/podcasts/:id/clear-queue', PodcastController.middleware.bind(this), PodcastController.clearEpisodeDownloadQueue.bind(this))
     this.router.get('/podcasts/:id/search-episode', PodcastController.middleware.bind(this), PodcastController.findEpisode.bind(this))
     this.router.post('/podcasts/:id/download-episodes', PodcastController.middleware.bind(this), PodcastController.downloadEpisodes.bind(this))
     this.router.post('/podcasts/:id/match-episodes', PodcastController.middleware.bind(this), PodcastController.quickMatchEpisodes.bind(this))
+    this.router.get('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.getEpisode.bind(this))
     this.router.patch('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.updateEpisode.bind(this))
     this.router.delete('/podcasts/:id/episode/:episodeId', PodcastController.middleware.bind(this), PodcastController.removeEpisode.bind(this))
 
@@ -250,6 +261,15 @@ class ApiRouter {
     this.router.delete('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.deleteNotification.bind(this))
     this.router.patch('/notifications/:id', NotificationController.middleware.bind(this), NotificationController.updateNotification.bind(this))
     this.router.get('/notifications/:id/test', NotificationController.middleware.bind(this), NotificationController.sendNotificationTest.bind(this))
+
+    //
+    // Email Routes (Admin and up)
+    //
+    this.router.get('/emails/settings', EmailController.middleware.bind(this), EmailController.getSettings.bind(this))
+    this.router.patch('/emails/settings', EmailController.middleware.bind(this), EmailController.updateSettings.bind(this))
+    this.router.post('/emails/test', EmailController.middleware.bind(this), EmailController.sendTest.bind(this))
+    this.router.post('/emails/ereader-devices', EmailController.middleware.bind(this), EmailController.updateEReaderDevices.bind(this))
+    this.router.post('/emails/send-ebook-to-device', EmailController.middleware.bind(this), EmailController.sendEBookToDevice.bind(this))
 
     //
     // Search Routes
@@ -270,9 +290,10 @@ class ApiRouter {
     //
     // Tools Routes (Admin and up)
     //
-    this.router.post('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.encodeM4b.bind(this))
-    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.itemMiddleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
-    this.router.post('/tools/item/:id/embed-metadata', ToolsController.itemMiddleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.encodeM4b.bind(this))
+    this.router.delete('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
+    this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
+    this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
     this.router.post('/tools/item/:id/renameFolder', ToolsController.itemMiddleware.bind(this), ToolsController.renameBookFolder.bind(this))
     this.router.get('/tools/item/:id/renameFolder', ToolsController.itemMiddleware.bind(this), ToolsController.testRenameBookFolder.bind(this))
 
@@ -283,13 +304,6 @@ class ApiRouter {
     this.router.post('/feeds/collection/:collectionId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForCollection.bind(this))
     this.router.post('/feeds/series/:seriesId/open', RSSFeedController.middleware.bind(this), RSSFeedController.openRSSFeedForSeries.bind(this))
     this.router.post('/feeds/:id/close', RSSFeedController.middleware.bind(this), RSSFeedController.closeRSSFeed.bind(this))
-
-    // 
-    // EBook Routes
-    //
-    this.router.get('/ebooks/:id/info', EBookController.middleware.bind(this), EBookController.getEbookInfo.bind(this))
-    this.router.get('/ebooks/:id/page/:page', EBookController.middleware.bind(this), EBookController.getEbookPage.bind(this))
-    this.router.get('/ebooks/:id/resource', EBookController.middleware.bind(this), EBookController.getEbookResource.bind(this))
 
     //
     // Misc Routes
@@ -340,10 +354,7 @@ class ApiRouter {
   // Helper Methods
   //
   userJsonWithItemProgressDetails(user, hideRootToken = false) {
-    const json = user.toJSONForBrowser()
-    if (json.type === 'root' && hideRootToken) {
-      json.token = ''
-    }
+    const json = user.toJSONForBrowser(hideRootToken)
 
     json.mediaProgress = json.mediaProgress.map(lip => {
       const libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
@@ -418,6 +429,12 @@ class ApiRouter {
     // purge cover cache
     if (libraryItem.media.coverPath) {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
+    }
+
+    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+    if (await fs.pathExists(itemMetadataPath)) {
+      Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
+      await fs.remove(itemMetadataPath)
     }
 
     await this.db.removeLibraryItem(libraryItem.id)
@@ -508,11 +525,16 @@ class ApiRouter {
 
       // Create new authors if in payload
       if (mediaMetadata.authors && mediaMetadata.authors.length) {
-        // TODO: validate authors
         const newAuthors = []
         for (let i = 0; i < mediaMetadata.authors.length; i++) {
-          if (mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = this.db.authors.find(au => au.checkNameEquals(mediaMetadata.authors[i].name))
+          const authorName = (mediaMetadata.authors[i].name || '').trim()
+          if (!authorName) {
+            Logger.error(`[ApiRouter] Invalid author object, no name`, mediaMetadata.authors[i])
+            continue
+          }
+
+          if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
+            let author = this.db.authors.find(au => au.checkNameEquals(authorName))
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
@@ -532,11 +554,16 @@ class ApiRouter {
 
       // Create new series if in payload
       if (mediaMetadata.series && mediaMetadata.series.length) {
-        // TODO: validate series
         const newSeries = []
         for (let i = 0; i < mediaMetadata.series.length; i++) {
-          if (mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = this.db.series.find(se => se.checkNameEquals(mediaMetadata.series[i].name))
+          const seriesName = (mediaMetadata.series[i].name || '').trim()
+          if (!seriesName) {
+            Logger.error(`[ApiRouter] Invalid series object, no name`, mediaMetadata.series[i])
+            continue
+          }
+
+          if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
+            let seriesItem = this.db.series.find(se => se.checkNameEquals(seriesName))
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])

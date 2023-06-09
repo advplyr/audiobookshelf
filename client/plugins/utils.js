@@ -1,4 +1,8 @@
 import Vue from 'vue'
+import cronParser from 'cron-parser'
+import { nanoid } from 'nanoid'
+
+Vue.prototype.$randomId = () => nanoid()
 
 Vue.prototype.$bytesPretty = (bytes, decimals = 2) => {
   if (isNaN(bytes) || bytes == 0) {
@@ -134,6 +138,30 @@ Vue.prototype.$parseCronExpression = (expression) => {
   return {
     description: `Run every ${weekdayText} at ${pieces[1]}:${pieces[0].padStart(2, '0')}`
   }
+}
+
+Vue.prototype.$getNextScheduledDate = (expression) => {
+  const interval = cronParser.parseExpression(expression);
+  return interval.next().toDate()
+}
+
+Vue.prototype.$downloadFile = (url, filename = null, openInNewTab = false) => {
+  const a = document.createElement('a')
+  a.style.display = 'none'
+  a.href = url
+
+  if (filename) {
+    a.download = filename
+  }
+  if (openInNewTab) {
+    a.target = '_blank'
+  }
+
+  document.body.appendChild(a)
+  a.click()
+  setTimeout(() => {
+    a.remove()
+  })
 }
 
 export function supplant(str, subs) {

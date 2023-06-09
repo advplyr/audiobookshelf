@@ -109,7 +109,7 @@ class PodcastController {
     res.json({ podcast })
   }
 
-  async getOPMLFeeds(req, res) {
+  async getFeedsFromOPMLText(req, res) {
     if (!req.body.opmlText) {
       return res.sendStatus(400)
     }
@@ -223,6 +223,20 @@ class PodcastController {
     }
 
     res.json(libraryItem.toJSONExpanded())
+  }
+
+  // GET: api/podcasts/:id/episode/:episodeId
+  async getEpisode(req, res) {
+    const episodeId = req.params.episodeId
+    const libraryItem = req.libraryItem
+
+    const episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    if (!episode) {
+      Logger.error(`[PodcastController] getEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
+      return res.sendStatus(404)
+    }
+
+    res.json(episode)
   }
 
   // DELETE: api/podcasts/:id/episode/:episodeId

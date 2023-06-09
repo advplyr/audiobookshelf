@@ -11,7 +11,8 @@ export const state = () => ({
   filterData: null,
   numUserPlaylists: 0,
   collections: [],
-  userPlaylists: []
+  userPlaylists: [],
+  ereaderDevices: []
 })
 
 export const getters = {
@@ -339,5 +340,8 @@ export const mutations = {
   removeUserPlaylist(state, playlist) {
     state.userPlaylists = state.userPlaylists.filter(p => p.id !== playlist.id)
     state.numUserPlaylists = state.userPlaylists.length
+  },
+  setEReaderDevices(state, ereaderDevices) {
+    state.ereaderDevices = ereaderDevices
   }
 }

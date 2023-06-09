@@ -10,6 +10,9 @@ class MediaProgress {
     this.isFinished = false
     this.hideFromContinueListening = false
 
+    this.ebookLocation = null // cfi tag for epub, page number for pdf
+    this.ebookProgress = null // 0 to 1
+
     this.lastUpdate = null
     this.startedAt = null
     this.finishedAt = null
@@ -29,6 +32,8 @@ class MediaProgress {
       currentTime: this.currentTime,
       isFinished: this.isFinished,
       hideFromContinueListening: this.hideFromContinueListening,
+      ebookLocation: this.ebookLocation,
+      ebookProgress: this.ebookProgress,
       lastUpdate: this.lastUpdate,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt
@@ -41,16 +46,18 @@ class MediaProgress {
     this.episodeId = progress.episodeId
     this.duration = progress.duration || 0
     this.progress = progress.progress
-    this.currentTime = progress.currentTime
+    this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished
     this.hideFromContinueListening = !!progress.hideFromContinueListening
+    this.ebookLocation = progress.ebookLocation || null
+    this.ebookProgress = progress.ebookProgress || null
     this.lastUpdate = progress.lastUpdate
     this.startedAt = progress.startedAt
     this.finishedAt = progress.finishedAt || null
   }
 
   get inProgress() {
-    return !this.isFinished && this.progress > 0
+    return !this.isFinished && (this.progress > 0 || (this.ebookLocation != null && this.ebookProgress > 0))
   }
 
   setData(libraryItemId, progress, episodeId = null) {
@@ -62,6 +69,8 @@ class MediaProgress {
     this.currentTime = progress.currentTime || 0
     this.isFinished = !!progress.isFinished || this.progress == 1
     this.hideFromContinueListening = !!progress.hideFromContinueListening
+    this.ebookLocation = progress.ebookLocation
+    this.ebookProgress = Math.min(1, (progress.ebookProgress || 0))
     this.lastUpdate = Date.now()
     this.finishedAt = null
     if (this.isFinished) {

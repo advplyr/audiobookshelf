@@ -11,15 +11,19 @@
       </div>
     </div>
 
-    <div class="absolute top-0 right-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 rounded-b-md px-2 h-9 flex items-center text-center">
+    <div class="absolute top-0 right-20 bg-bg text-gray-100 border-b border-l border-r border-gray-400 z-20 rounded-b-md px-2 h-9 flex items-center text-center">
       <p class="font-mono">{{ page }} / {{ numPages }}</p>
+    </div>
+    <div class="absolute top-0 right-40 bg-bg text-gray-100 border-b border-l border-r border-gray-400 z-20 rounded-b-md px-2 h-9 flex items-center text-center">
+      <ui-icon-btn icon="zoom_out" :size="8" :disabled="!canScaleDown" borderless class="mr-px" @click="zoomOut" />
+      <ui-icon-btn icon="zoom_in" :size="8" :disabled="!canScaleUp" borderless class="ml-px" @click="zoomIn" />
     </div>
 
     <div :style="{ height: pdfHeight + 'px' }" class="overflow-hidden m-auto">
       <div class="flex items-center justify-center">
-        <div :style="{ width: pdfWidth + 'px', height: pdfHeight + 'px' }" class="w-full h-full overflow-auto">
+        <div :style="{ width: pdfWidth + 'px', height: pdfHeight + 'px' }" class="overflow-auto">
           <div v-if="loadedRatio > 0 && loadedRatio < 1" style="background-color: green; color: white; text-align: center" :style="{ width: loadedRatio * 100 + '%' }">{{ Math.floor(loadedRatio * 100) }}%</div>
-          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="url" :page="page" :rotate="rotate" @progress="loadedRatio = $event" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event"></pdf>
+          <pdf ref="pdf" class="m-auto z-10 border border-black border-opacity-20 shadow-md" :src="pdfDocInitParams" :page="page" :rotate="rotate" @progress="progressEvt" @error="error" @num-pages="numPagesLoaded" @link-clicked="page = $event" @loaded="loadedEvt"></pdf>
         </div>
       </div>
     </div>
@@ -30,17 +34,24 @@
 </template>
 
 <script>
-import pdf from 'vue-pdf'
+import pdf from '@teckel/vue-pdf'
 
 export default {
   components: {
     pdf
   },
   props: {
-    url: String
+    libraryItem: {
+      type: Object,
+      default: () => {}
+    },
+    playerOpen: Boolean
   },
   data() {
     return {
+      windowWidth: 0,
+      windowHeight: 0,
+      scale: 1,
       rotate: 0,
       loadedRatio: 0,
       page: 1,
@@ -48,35 +59,112 @@ export default {
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
+    libraryItemId() {
+      return this.libraryItem?.id
+    },
+    fitToPageWidth() {
+      return this.pdfHeight * 0.6
+    },
     pdfWidth() {
-      return this.pdfHeight * 0.6667
+      return this.fitToPageWidth * this.scale
     },
     pdfHeight() {
-      return window.innerHeight - 120
+      if (this.windowHeight < 400 || !this.playerOpen) return this.windowHeight - 120
+      return this.windowHeight - 284
+    },
+    maxScale() {
+      return Math.floor((this.windowWidth * 10) / this.fitToPageWidth) / 10
     },
     canGoNext() {
       return this.page < this.numPages
     },
     canGoPrev() {
       return this.page > 1
+    },
+    canScaleUp() {
+      return this.scale < this.maxScale
+    },
+    canScaleDown() {
+      return this.scale > 1
+    },
+    userMediaProgress() {
+      if (!this.libraryItemId) return
+      return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
+    },
+    savedPage() {
+      // Validate ebookLocation is a number
+      if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
+      return Number(this.userMediaProgress.ebookLocation)
+    },
+    pdfDocInitParams() {
+      return {
+        url: `/api/items/${this.libraryItemId}/ebook`,
+        httpHeaders: {
+          Authorization: `Bearer ${this.userToken}`
+        }
+      }
     }
   },
   methods: {
+    zoomIn() {
+      this.scale += 0.1
+    },
+    zoomOut() {
+      this.scale -= 0.1
+    },
+    updateProgress() {
+      if (!this.numPages) {
+        console.error('Num pages not loaded')
+        return
+      }
+
+      const payload = {
+        ebookLocation: this.page,
+        ebookProgress: Math.max(0, Math.min(1, (Number(this.page) - 1) / Number(this.numPages)))
+      }
+      this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
+        console.error('EpubReader.updateProgress failed:', error)
+      })
+    },
+    loadedEvt() {
+      if (this.savedPage > 0 && this.savedPage <= this.numPages) {
+        this.page = this.savedPage
+      }
+    },
+    progressEvt(progress) {
+      this.loadedRatio = progress
+    },
     numPagesLoaded(e) {
       this.numPages = e
     },
     prev() {
       if (this.page <= 1) return
       this.page--
+      this.updateProgress()
     },
     next() {
       if (this.page >= this.numPages) return
       this.page++
+      this.updateProgress()
     },
     error(err) {
       console.error(err)
+    },
+    resize() {
+      this.windowWidth = window.innerWidth
+      this.windowHeight = window.innerHeight
     }
   },
-  mounted() {}
+  mounted() {
+    this.windowWidth = window.innerWidth
+    this.windowHeight = window.innerHeight
+    window.addEventListener('resize', this.resize)
+  },
+  beforeDestroy() {
+    window.removeEventListener('resize', this.resize)
+  }
 }
 </script>

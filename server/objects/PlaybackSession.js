@@ -55,7 +55,7 @@ class PlaybackSession {
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
-      mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      mediaMetadata: this.mediaMetadata?.toJSON() || null,
       chapters: (this.chapters || []).map(c => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
@@ -63,7 +63,7 @@ class PlaybackSession {
       duration: this.duration,
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
-      deviceInfo: this.deviceInfo ? this.deviceInfo.toJSON() : null,
+      deviceInfo: this.deviceInfo?.toJSON() || null,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
@@ -82,7 +82,7 @@ class PlaybackSession {
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
       mediaType: this.mediaType,
-      mediaMetadata: this.mediaMetadata ? this.mediaMetadata.toJSON() : null,
+      mediaMetadata: this.mediaMetadata?.toJSON() || null,
       chapters: (this.chapters || []).map(c => ({ ...c })),
       displayTitle: this.displayTitle,
       displayAuthor: this.displayAuthor,
@@ -90,7 +90,7 @@ class PlaybackSession {
       duration: this.duration,
       playMethod: this.playMethod,
       mediaPlayer: this.mediaPlayer,
-      deviceInfo: this.deviceInfo ? this.deviceInfo.toJSON() : null,
+      deviceInfo: this.deviceInfo?.toJSON() || null,
       date: this.date,
       dayOfWeek: this.dayOfWeek,
       timeListening: this.timeListening,
@@ -151,6 +151,10 @@ class PlaybackSession {
     return Math.max(0, Math.min(this.currentTime / this.duration, 1))
   }
 
+  get deviceId() {
+    return this.deviceInfo?.deviceId
+  }
+
   get deviceDescription() {
     if (!this.deviceInfo) return 'No Device Info'
     return this.deviceInfo.deviceDescription
@@ -173,7 +177,7 @@ class PlaybackSession {
     this.episodeId = episodeId
     this.mediaType = libraryItem.mediaType
     this.mediaMetadata = libraryItem.media.metadata.clone()
-    this.chapters = (libraryItem.media.chapters || []).map(c => ({ ...c })) // Only book mediaType has chapters
+    this.chapters = libraryItem.media.getChapters(episodeId)
     this.displayTitle = libraryItem.media.getPlaybackTitle(episodeId)
     this.displayAuthor = libraryItem.media.getPlaybackAuthor()
     this.coverPath = libraryItem.media.coverPath

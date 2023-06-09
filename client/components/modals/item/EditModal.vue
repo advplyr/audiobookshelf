@@ -74,6 +74,9 @@ export default {
         this.$store.commit('setEditModalTab', val)
       }
     },
+    height() {
+      return Math.min(this.availableHeight, 650)
+    },
     tabs() {
       return [
         {
@@ -136,6 +139,18 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
+    selectedLibraryItem() {
+      return this.$store.state.selectedLibraryItem || {}
+    },
+    selectedLibraryItemId() {
+      return this.selectedLibraryItem.id
+    },
+    media() {
+      return this.libraryItem?.media || {}
+    },
+    mediaMetadata() {
+      return this.media.metadata || {}
+    },
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
@@ -144,15 +159,13 @@ export default {
         if (tab.admin && !this.userIsAdminOrUp) return false
 
         if (tab.id === 'tools' && this.isMissing) return false
+        if (tab.id === 'chapters' && this.isEBookOnly) return false
 
         if ((tab.id === 'tools' || tab.id === 'files') && this.userCanDownload) return true
         if (tab.id !== 'tools' && tab.id !== 'files' && this.userCanUpdate) return true
         if (tab.id === 'match' && this.userCanUpdate) return true
         return false
       })
-    },
-    height() {
-      return Math.min(this.availableHeight, 650)
     },
     tabName() {
       var _tab = this.tabs.find((t) => t.id === this.selectedTab)
@@ -161,20 +174,11 @@ export default {
     isMissing() {
       return this.selectedLibraryItem.isMissing
     },
-    selectedLibraryItem() {
-      return this.$store.state.selectedLibraryItem || {}
-    },
-    selectedLibraryItemId() {
-      return this.selectedLibraryItem.id
-    },
-    media() {
-      return this.libraryItem ? this.libraryItem.media || {} : {}
-    },
-    mediaMetadata() {
-      return this.media.metadata || {}
+    isEBookOnly() {
+      return this.media.ebookFile && !this.media.tracks?.length
     },
     mediaType() {
-      return this.libraryItem ? this.libraryItem.mediaType : null
+      return this.libraryItem?.mediaType || null
     },
     title() {
       return this.mediaMetadata.title || 'No Title'
