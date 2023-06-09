@@ -62,6 +62,24 @@
       </widgets-alert>
     </div>
 
+    
+    <!-- Rename Folders -->
+    <div v-if="userIsAdminOrUp" class="w-full border border-black-200 p-4 my-8">
+      <div class="flex items-center">
+        <div>
+          <p class="text-lg">{{ $strings.LabelToolsRenamer }}</p>
+          <p class="max-w-sm text-sm pt-2 text-gray-300">{{ $strings.LabelToolsRenamerDescription }}</p>
+        </div>
+        <div class="flex-grow" />
+        <div>
+          <ui-btn :to="`/audiobook/${libraryItemId}/manage?tool=renamer`" class="flex items-center"
+            >{{ $strings.ButtonOpenManager }}
+            <span class="material-icons text-lg ml-2">launch</span>
+          </ui-btn>
+        </div>
+      </div>
+    </div>
+
     <p v-if="!mediaTracks.length" class="text-lg text-center my-8">{{ $strings.MessageNoAudioTracks }}</p>
   </div>
 </template>
@@ -81,6 +99,9 @@ export default {
   computed: {
     showExperimentalFeatures() {
       return this.$store.state.showExperimentalFeatures
+    },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
     },
     libraryItemId() {
       return this.libraryItem?.id || null

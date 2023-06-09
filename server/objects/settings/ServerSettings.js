@@ -20,6 +20,7 @@ class ServerSettings {
     // Metadata - choose to store inside users library item folder
     this.storeCoverWithItem = false
     this.storeMetadataWithItem = false
+    this.defaultRenameString = "$bookAuthor/$bookTitle"
     this.metadataFileFormat = 'json'
 
     // Security/Rate limits
@@ -77,6 +78,7 @@ class ServerSettings {
 
     this.storeCoverWithItem = !!settings.storeCoverWithItem
     this.storeMetadataWithItem = !!settings.storeMetadataWithItem
+    this.defaultRenameString = settings.defaultRenameString || "$bookAuthor/$bookTitle"
     this.metadataFileFormat = settings.metadataFileFormat || 'json'
 
     this.rateLimitLoginRequests = !isNaN(settings.rateLimitLoginRequests) ? Number(settings.rateLimitLoginRequests) : 10
@@ -144,6 +146,7 @@ class ServerSettings {
       scannerUseTone: this.scannerUseTone,
       storeCoverWithItem: this.storeCoverWithItem,
       storeMetadataWithItem: this.storeMetadataWithItem,
+      defaultRenameString: this.defaultRenameString,
       metadataFileFormat: this.metadataFileFormat,
       rateLimitLoginRequests: this.rateLimitLoginRequests,
       rateLimitLoginWindow: this.rateLimitLoginWindow,

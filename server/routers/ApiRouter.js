@@ -48,6 +48,7 @@ class ApiRouter {
     this.cacheManager = Server.cacheManager
     this.podcastManager = Server.podcastManager
     this.audioMetadataManager = Server.audioMetadataManager
+    this.folderRenameManager = Server.folderRenameManager
     this.rssFeedManager = Server.rssFeedManager
     this.cronManager = Server.cronManager
     this.notificationManager = Server.notificationManager
@@ -293,6 +294,8 @@ class ApiRouter {
     this.router.delete('/tools/item/:id/encode-m4b', ToolsController.middleware.bind(this), ToolsController.cancelM4bEncode.bind(this))
     this.router.post('/tools/item/:id/embed-metadata', ToolsController.middleware.bind(this), ToolsController.embedAudioFileMetadata.bind(this))
     this.router.post('/tools/batch/embed-metadata', ToolsController.middleware.bind(this), ToolsController.batchEmbedMetadata.bind(this))
+    this.router.post('/tools/item/:id/renameFolder', ToolsController.middleware.bind(this), ToolsController.renameBookFolder.bind(this))
+    this.router.get('/tools/item/:id/renameFolder', ToolsController.middleware.bind(this), ToolsController.testRenameBookFolder.bind(this))
 
     // 
     // RSS Feed Routes (Admin and up)

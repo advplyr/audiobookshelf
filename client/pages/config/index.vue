@@ -192,6 +192,16 @@
             </ui-tooltip>
           </div>
 
+          <div class="flex items-center py-2">
+            <ui-text-input-with-label ref="defaultRenameString" v-model="newServerSettings.defaultRenameString" :disabled="updatingServerSettings" :label="$strings.LabelSettingsRenameString" @blur="() => updateDefaultRenameString()" class="m-2 max-w-100" />
+            <ui-tooltip :text="$strings.LabelSettingsRenameStringHelp">
+              <p class="pl-4">
+                <span id="settings-sorting-ignore-prefixes"></span>
+                <span class="material-icons icon-text">info_outlined</span>
+              </p>
+            </ui-tooltip>
+          </div>
+          
           <!-- <div class="flex items-center py-2">
             <ui-toggle-switch v-model="newServerSettings.scannerUseTone" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseTone', val)" />
             <ui-tooltip text="Tone library for metadata">
@@ -311,6 +321,14 @@ export default {
         this.$store.commit('setExperimentalFeatures', val)
       }
     },
+    defaultRenameString: {
+      get() {
+        return this.$store.state.defaultRenameString
+      },
+      set(val) {
+        this.$store.commit('defaultRenameString', val)
+      }
+    },
     dateFormats() {
       return this.$store.state.globals.dateFormats
     },
@@ -354,6 +372,10 @@ export default {
     },
     updateServerLanguage(val) {
       this.updateSettingsKey('language', val)
+    },
+    updateDefaultRenameString(){
+      this.updateSettingsKey('defaultRenameString', this.newServerSettings.defaultRenameString)
+      this.$store.commit('setDefaultRenameString', this.newServerSettings.defaultRenameString)
     },
     updateMetadataFileFormat(val) {
       if (this.serverSettings.metadataFileFormat === val) return
