@@ -10,87 +10,30 @@
         </div>
       </div>
     </div>
-
     <div v-if="isM4BorEmbedTool">
       <div class="flex justify-center">
         <div class="w-full max-w-2xl">
           <p class="text-xl mb-1">{{ $strings.HeaderMetadataToEmbed }}</p>
           <p class="mb-2 text-base text-gray-300">audiobookshelf uses <a href="https://github.com/sandreas/tone" target="_blank" class="hover:underline text-blue-400 hover:text-blue-300">tone</a> to write metadata.</p>
         </div>
-        <div class="w-full max-h-72 overflow-auto">
-          <template v-for="(value, key, index) in toneObject">
-            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
-              <div class="w-1/3 font-semibold">{{ key }}</div>
-              <div class="w-2/3">
-                {{ value }}
+        <div class="w-full max-w-2xl"></div>
+      </div>
+
+      <div class="flex justify-center flex-wrap">
+        <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
+          <div class="flex py-2 px-4">
+            <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelMetaTag }}</div>
+            <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
+          </div>
+          <div class="w-full max-h-72 overflow-auto">
+            <template v-for="(value, key, index) in toneObject">
+              <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
+                <div class="w-1/3 font-semibold">{{ key }}</div>
+                <div class="w-2/3">
+                  {{ value }}
+                </div>
               </div>
-            </div>
-          </template>
-        </div>
-      </div>
-      <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
-          <div class="flex-grow text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelChapterTitle }}</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelStart }}</div>
-          <div class="w-24 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelEnd }}</div>
-        </div>
-        <div class="w-full max-h-72 overflow-auto">
-          <p v-if="!metadataChapters.length" class="py-5 text-center text-gray-200">{{ $strings.MessageNoChapters }}</p>
-          <template v-for="(chapter, index) in metadataChapters">
-            <div :key="index" class="flex py-1 px-4 text-sm" :class="index % 2 === 1 ? 'bg-primary bg-opacity-25' : ''">
-              <div class="flex-grow font-semibold">{{ chapter.title }}</div>
-              <div class="w-24">
-                {{ $secondsToTimestamp(chapter.start) }}
-              </div>
-              <div class="w-24">
-                {{ $secondsToTimestamp(chapter.end) }}
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
-
-    <div class="w-full h-px bg-white bg-opacity-10 my-8" />
-
-    <div class="w-full max-w-4xl mx-auto">
-      <!-- queued alert -->
-      <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mb-4">
-        <p class="text-lg">Audiobook is queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
-      </widgets-alert>
-      <!-- metadata embed action buttons -->
-      <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
-        <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
-
-        <div class="flex-grow" />
-
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
-        <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
-      </div>
-      <!-- m4b embed action buttons -->
-      <div v-else class="w-full flex items-center mb-4">
-        <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
-          <span class="material-icons text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
-        </button>
-
-        <div class="flex-grow" />
-
-        <ui-btn v-if="!isTaskFinished && processing" color="error" :loading="isCancelingEncode" class="mr-2" @click.stop="cancelEncodeClick">{{ $strings.ButtonCancelEncode }}</ui-btn>
-        <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="encodeM4bClick">{{ $strings.ButtonStartM4BEncode }}</ui-btn>
-        <p v-else-if="taskFailed" class="text-error text-lg font-semibold">{{ $strings.MessageM4BFailed }} {{ taskError }}</p>
-        <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
-      </div>
-
-      <!-- advanced encoding options -->
-      <div v-if="isM4BTool" class="overflow-hidden">
-        <transition name="slide">
-          <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
-            <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 64k)'" class="m-2 max-w-40" />
-              <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" />
-              <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" />
-            </div>
-            <p class="text-sm text-warning">Warning: Do not update these settings unless you are familiar with ffmpeg encoding options.</p>
+            </template>
           </div>
         </div>
         <div class="w-full max-w-2xl border border-white border-opacity-10 bg-bg mx-2">
@@ -119,14 +62,20 @@
       <div class="w-full h-px bg-white bg-opacity-10 my-8" />
 
       <div class="w-full max-w-4xl mx-auto">
-        <div v-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
-          <ui-checkbox v-if="!isFinished" v-model="shouldBackupAudioFiles" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
+        <!-- queued alert -->
+        <widgets-alert v-if="isMetadataEmbedQueued" type="warning" class="mb-4">
+          <p class="text-lg">Audiobook is queued for metadata embed ({{ queuedEmbedLIds.length }} in queue)</p>
+        </widgets-alert>
+        <!-- metadata embed action buttons -->
+        <div v-else-if="isEmbedTool" class="w-full flex justify-end items-center mb-4">
+          <ui-checkbox v-if="!isTaskFinished" v-model="shouldBackupAudioFiles" :disabled="processing" label="Backup audio files" medium checkbox-bg="bg" label-class="pl-2 text-base md:text-lg" @input="toggleBackupAudioFiles" />
 
           <div class="flex-grow" />
 
-          <ui-btn v-if="!isFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
+          <ui-btn v-if="!isTaskFinished" color="primary" :loading="processing" @click.stop="embedClick">{{ $strings.ButtonStartMetadataEmbed }}</ui-btn>
           <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageEmbedFinished }}</p>
         </div>
+        <!-- m4b embed action buttons -->
         <div v-else class="w-full flex items-center mb-4">
           <button :disabled="processing" class="text-sm uppercase text-gray-200 flex items-center pt-px pl-1 pr-2 hover:bg-white/5 rounded-md" @click="showEncodeOptions = !showEncodeOptions">
             <span class="material-icons text-xl">{{ showEncodeOptions ? 'check_box' : 'check_box_outline_blank' }}</span> <span class="pl-1">Use Advanced Options</span>
@@ -140,6 +89,7 @@
           <p v-else class="text-success text-lg font-semibold">{{ $strings.MessageM4BFinished }}</p>
         </div>
 
+        <!-- advanced encoding options -->
         <div v-if="isM4BTool" class="overflow-hidden">
           <transition name="slide">
             <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
@@ -221,8 +171,7 @@
         </div>
       </div>
     </div>
-
-    <div v-if="isRenameTool">
+    <div v-else-if="isRenameTool">
       <div class="flex justify-left">
         <div class="w-full max-w-2xl">
           <p class="text-xl mb-1">{{ $strings.HeaderRenameTool }}</p>
@@ -230,47 +179,47 @@
             <ui-text-input-with-label ref="userRenameFormat" v-model="renameFormat" :label="'Format for Rename'" class="m-2 max-w-100" />
           </div>
           <div class="flex items-start mb-2">
-            <ui-btn color="primary" :loading="processing" @click.stop="previewRenameClick">{{$strings.ButtonPreviewRename}}</ui-btn>
+            <ui-btn color="primary" :loading="processing" @click.stop="previewRenameClick">{{ $strings.ButtonPreviewRename }}</ui-btn>
           </div>
           <div class="flex items-start mb-2">
             <span class="material-icons text-base text-warning pt-1">star</span>
-            {{ $strings.LabelCurrent }} {{ $strings.LabelPath }}: <span ref="currentRelPath" class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">...{{this.directorySeperatorChar}}{{ libraryItemRelPath }}{{this.directorySeperatorChar}}</span>
+            {{ $strings.LabelCurrent }} {{ $strings.LabelPath }}: <span ref="currentRelPath" class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">...{{ this.directorySeperatorChar }}{{ libraryItemRelPath }}{{ this.directorySeperatorChar }}</span>
           </div>
           <div class="flex items-start mb-2">
             <span class="material-icons text-base text-warning pt-1">star</span>
-            {{ $strings.LabelNew }} {{ $strings.LabelPath }}: <span ref="newFolderRelPath" class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">...{{this.directorySeperatorChar}}{{ libraryItemRelPath }}{{this.directorySeperatorChar}}</span>
+            {{ $strings.LabelNew }} {{ $strings.LabelPath }}: <span ref="newFolderRelPath" class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono">...{{ this.directorySeperatorChar }}{{ libraryItemRelPath }}{{ this.directorySeperatorChar }}</span>
           </div>
           <div class="flex items-start mb-2">
-            <ui-btn ref="executeRenameButton" :loading="processing" color="primary" @click.stop="renameClick">{{$strings.ButtonExecuteRename}}</ui-btn>
+            <ui-btn ref="executeRenameButton" :loading="processing" color="primary" @click.stop="renameClick">{{ $strings.ButtonExecuteRename }}</ui-btn>
           </div>
           <div class="flex items-start mb-2">
             <span ref="renameStatus" class="rounded-md bg-neutral-600 text-sm text-white py-0.5 px-1 font-mono"></span>
           </div>
         </div>
-      
-      <div class="w-full max-w-2xl">
-        <div class="flex py-2 px-4 bg-primary bg-opacity-25">
-          <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelKey }}</div>
-          <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
-        </div>
-        <div class="flex py-1 px-4 text-sm" >
+
+        <div class="w-full max-w-2xl">
+          <div class="flex py-2 px-4 bg-primary bg-opacity-25">
+            <div class="w-1/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelKey }}</div>
+            <div class="w-2/3 text-xs font-semibold uppercase text-gray-200">{{ $strings.LabelValue }}</div>
+          </div>
+          <div class="flex py-1 px-4 text-sm">
             <div class="w-1/3 font-semibold">/</div>
             <div class="w-2/3">
-              {{$strings.LabelDirectorySeperator}}
+              {{ $strings.LabelDirectorySeperator }}
             </div>
           </div>
-        <template v-for="(value, key, index) in sampleFormatObject">
-          <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
-            <div class="w-1/3 font-semibold">${{ key.replace('lbr','[').replace('rbr',']') }}</div>
-            <div class="w-2/3">
-              {{ value }}
+          <template v-for="(value, key, index) in sampleFormatObject">
+            <div :key="key" class="flex py-1 px-4 text-sm" :class="index % 2 === 0 ? 'bg-primary bg-opacity-25' : ''">
+              <div class="w-1/3 font-semibold">${{ key.replace('lbr', '[').replace('rbr', ']') }}</div>
+              <div class="w-2/3">
+                {{ value }}
+              </div>
             </div>
-          </div>
-        </template>
+          </template>
         </div>
       </div>
     </div>
-</div>
+  </div>
 </template>
 
 <script>
@@ -474,25 +423,25 @@ export default {
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
-    async previewRenameClick(){
+    async previewRenameClick() {
       this.processing = true
       const renameObject = await this.$axios
-        .$get(`/api/tools/item/${this.libraryItemId}/renameFolder?strFormat=${this.renameFormat}${this.sampleFormatObject==null ? '&includeSampleTemplate=1' : ''}`)
+        .$get(`/api/tools/item/${this.libraryItemId}/renameFolder?strFormat=${this.renameFormat}${this.sampleFormatObject == null ? '&includeSampleTemplate=1' : ''}`)
         .then((renameObject) => {
           return renameObject
         })
         .catch((error) => {
           console.error('Failed to Rename', error)
         })
-        this.directorySeperatorChar = renameObject.directorySeperatorChar
-        this.$refs.newFolderRelPath.setHTML('...' + this.directorySeperatorChar + renameObject.newRelativeDirectory + this.directorySeperatorChar)
-        if(renameObject.templateSample){
-          this.sampleFormatObject = renameObject.templateSample
-        }
-        this.processing = false
+      this.directorySeperatorChar = renameObject.directorySeperatorChar
+      this.$refs.newFolderRelPath.setHTML('...' + this.directorySeperatorChar + renameObject.newRelativeDirectory + this.directorySeperatorChar)
+      if (renameObject.templateSample) {
+        this.sampleFormatObject = renameObject.templateSample
+      }
+      this.processing = false
     },
-    async renameClick(){
-        const renameObject = await this.$axios
+    async renameClick() {
+      const renameObject = await this.$axios
         .$post(`/api/tools/item/${this.libraryItemId}/renameFolder?strFormat=${this.renameFormat}`)
         .then((renameObject) => {
           return renameObject
@@ -500,14 +449,13 @@ export default {
         .catch((error) => {
           console.error('Failed to Rename', error)
         })
-        if(renameObject.success){
-          this.$refs.renameStatus.setHTML('Folder for Book updated to ...' + this.directorySeperatorChar + renameObject.details.newRelativeDirectory + this.directorySeperatorChar + ' from ' + renameObject.details.oldRelativeDirectory)
-          this.$refs.currentRelPath.setHTML('...' + this.directorySeperatorChar + renameObject.details.newRelativeDirectory + this.directorySeperatorChar)
-        }
-        else{
-          this.$refs.renameStatus.setHTML('Failed to Rename: ' + JSON.stringify(renameObject.details))
-        }
-        this.processing = false
+      if (renameObject.success) {
+        this.$refs.renameStatus.setHTML('Folder for Book updated to ...' + this.directorySeperatorChar + renameObject.details.newRelativeDirectory + this.directorySeperatorChar + ' from ' + renameObject.details.oldRelativeDirectory)
+        this.$refs.currentRelPath.setHTML('...' + this.directorySeperatorChar + renameObject.details.newRelativeDirectory + this.directorySeperatorChar)
+      } else {
+        this.$refs.renameStatus.setHTML('Failed to Rename: ' + JSON.stringify(renameObject.details))
+      }
+      this.processing = false
     },
     updateAudioFileMetadata() {
       this.processing = true
@@ -533,7 +481,7 @@ export default {
     selectedToolUpdated() {
       let newurl = window.location.protocol + '//' + window.location.host + window.location.pathname + `?tool=${this.selectedTool}`
       window.history.replaceState({ path: newurl }, '', newurl)
-      if(this.selectedTool == 'renamer'){
+      if (this.selectedTool == 'renamer') {
         this.previewRenameClick()
       }
     },
@@ -545,8 +493,7 @@ export default {
         } else {
           this.selectedToolUpdated()
         }
-      }
-      else if (this.$route.query.tool === 'renamer') {
+      } else if (this.$route.query.tool === 'renamer') {
         if (this.availableTools.some((t) => t.value === 'renamer')) {
           this.previewRenameClick()
           this.selectedTool = 'renamer'
@@ -554,14 +501,12 @@ export default {
           this.selectedToolUpdated()
         }
       }
-
       if (this.task) this.taskUpdated(this.task)
 
       const shouldBackupAudioFiles = localStorage.getItem('embedMetadataShouldBackup')
       this.shouldBackupAudioFiles = shouldBackupAudioFiles != 0
       const defaultRenameString = localStorage.getItem('defaultRenameString')
       this.renameFormat = defaultRenameString ? defaultRenameString : '$authorName/$bookName'
-      debugger
     },
     fetchToneObject() {
       this.$axios
