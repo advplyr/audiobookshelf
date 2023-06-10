@@ -459,6 +459,14 @@ class LibraryItem {
         if (matchingLibraryFile && this.media.ebookFile.updateFromLibraryFile(matchingLibraryFile)) {
           hasUpdated = true
         }
+        // Set any other ebook files as supplementary
+        const suppEbookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile && !lf.isSupplementary && this.media.ebookFile.ino !== lf.ino)
+        if (suppEbookLibraryFiles.length) {
+          for (const libraryFile of suppEbookLibraryFiles) {
+            libraryFile.isSupplementary = true
+          }
+          hasUpdated = true
+        }
       } else {
         const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile && !lf.isSupplementary)
 
