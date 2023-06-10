@@ -560,12 +560,6 @@ export default {
         .catch((err) => console.error(err))
     },
     initLocalStorage() {
-      // If experimental features set in local storage
-      var experimentalFeaturesSaved = localStorage.getItem('experimental')
-      if (experimentalFeaturesSaved === '1') {
-        this.$store.commit('setExperimentalFeatures', true)
-      }
-
       // Queue auto play
       var playerQueueAutoPlay = localStorage.getItem('playerQueueAutoPlay')
       this.$store.commit('setPlayerQueueAutoPlay', playerQueueAutoPlay !== '0')
