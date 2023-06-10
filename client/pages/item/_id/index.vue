@@ -52,13 +52,6 @@
             <div class="hidden md:block flex-grow" />
           </div>
 
-          <!-- Alerts -->
-          <div v-show="showExperimentalReadAlert" class="bg-error p-4 rounded-xl flex items-center">
-            <span class="material-icons text-2xl">warning_amber</span>
-            <p v-if="userIsAdminOrUp" class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader can be enabled in config.</p>
-            <p v-else class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader must be enabled by a server admin.</p>
-          </div>
-
           <!-- Podcast episode downloads queue -->
           <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
@@ -202,12 +195,6 @@ export default {
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
-    enableEReader() {
-      return this.$store.getters['getServerSetting']('enableEReader')
-    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -259,7 +246,7 @@ export default {
       return this.tracks.length
     },
     showReadButton() {
-      return this.ebookFile && (this.showExperimentalFeatures || this.enableEReader)
+      return this.ebookFile
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -334,9 +321,6 @@ export default {
     audioFile() {
       // Music track
       return this.media.audioFile
-    },
-    showExperimentalReadAlert() {
-      return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures && !this.enableEReader
     },
     description() {
       return this.mediaMetadata.description || ''

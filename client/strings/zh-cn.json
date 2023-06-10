@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "禁用监视程序",
   "LabelSettingsDisableWatcherForLibrary": "禁用媒体库的文件夹监视程序",
   "LabelSettingsDisableWatcherHelp": "检测到文件更改时禁用自动添加和更新项目. *需要重启服务器",
-  "LabelSettingsEnableEReader": "为所有用户启用电子阅读器",
-  "LabelSettingsEnableEReaderHelp": "电子阅读器仍在开发中，但可以使用此设置向所有用户打开它（或使用 \"实验功能\" 切换仅供你使用）",
   "LabelSettingsExperimentalFeatures": "实验功能",
   "LabelSettingsExperimentalFeaturesHelp": "开发中的功能需要你的反馈并帮助测试. 点击打开 github 讨论.",
   "LabelSettingsFindCovers": "查找封面",

@@ -166,7 +166,8 @@
             </ui-tooltip>
           </div>
 
-          <div class="pt-4">
+          <!-- old experimental features -->
+          <!-- <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
           </div>
 
@@ -178,26 +179,6 @@
                 <a :aria-label="$strings.LabelSettingsExperimentalFeaturesHelp" href="https://github.com/advplyr/audiobookshelf/discussions/75" target="_blank">
                   <span class="material-icons icon-text">info_outlined</span>
                 </a>
-              </p>
-            </ui-tooltip>
-          </div>
-
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-enable-e-reader" v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
-              <p class="pl-4">
-                <span id="settings-enable-e-reader">{{ $strings.LabelSettingsEnableEReader }}</span>
-                <span class="material-icons icon-text">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div>
-
-          <!-- <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerUseTone" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseTone', val)" />
-            <ui-tooltip text="Tone library for metadata">
-              <p class="pl-4">
-                Use Tone library for metadata
-                <span class="material-icons icon-text">info_outlined</span>
               </p>
             </ui-tooltip>
           </div> -->
@@ -302,14 +283,6 @@ export default {
     },
     providers() {
       return this.$store.state.scanners.providers
-    },
-    showExperimentalFeatures: {
-      get() {
-        return this.$store.state.showExperimentalFeatures
-      },
-      set(val) {
-        this.$store.commit('setExperimentalFeatures', val)
-      }
     },
     dateFormats() {
       return this.$store.state.globals.dateFormats

@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Watcher uitschakelen",
   "LabelSettingsDisableWatcherForLibrary": "Map-watcher voor bibliotheek uitschakelen",
   "LabelSettingsDisableWatcherHelp": "Schakelt het automatisch toevoegen/bijwerken van onderdelen wanneer bestandswijzigingen gedetecteerd zijn uit. *Vereist herstart server",
-  "LabelSettingsEnableEReader": "E-reader inschakelen voor alle gebruikers",
-  "LabelSettingsEnableEReaderHelp": "E-reader is nog in ontwikkeling, maar gebruik deze instelling om het beschikbaar te maken voor al je gebruikers (of gebruik de \"Experimentele functies\"-schakelaar voor eigen gebruik)",
   "LabelSettingsExperimentalFeatures": "Experimentele functies",
   "LabelSettingsExperimentalFeaturesHelp": "Functies in ontwikkeling die je feedback en testing kunnen gebruiken. Klik om de Github-discussie te openen.",
   "LabelSettingsFindCovers": "Zoek covers",

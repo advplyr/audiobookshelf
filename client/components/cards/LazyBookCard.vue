@@ -174,12 +174,6 @@ export default {
     dateFormat() {
       return this.store.state.serverSettings.dateFormat
     },
-    showExperimentalFeatures() {
-      return this.store.state.showExperimentalFeatures
-    },
-    enableEReader() {
-      return this.store.getters['getServerSetting']('enableEReader')
-    },
     _libraryItem() {
       return this.libraryItem || {}
     },
@@ -367,13 +361,13 @@ export default {
       return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
-      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && this.ebookFormat
     },
     isMissing() {
       return this._libraryItem.isMissing

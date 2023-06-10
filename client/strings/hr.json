@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Isključi Watchera",
   "LabelSettingsDisableWatcherForLibrary": "Isključi folder watchera za biblioteku",
   "LabelSettingsDisableWatcherHelp": "Isključi automatsko dodavanje/aktualiziranje stavci ako su promjene prepoznate. *Potreban restart servera",
-  "LabelSettingsEnableEReader": "Uključi e-readere za sve korisnike",
-  "LabelSettingsEnableEReaderHelp": "E-reader je i dalje rad u tijeku, ali s ovom postavkom ga možete uključiti za sve korisnike (ili koristi \"Eksperimentalni features\" toggle da bi uključio postavku samo za sebe)",
   "LabelSettingsExperimentalFeatures": "Eksperimentalni features",
   "LabelSettingsExperimentalFeaturesHelp": "Features u razvoju trebaju vaš feedback i pomoć pri testiranju. Klikni da odeš to Github discussionsa.",
   "LabelSettingsFindCovers": "Pronađi covers",

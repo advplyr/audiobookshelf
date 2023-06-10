@@ -65,9 +65,6 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },

@@ -32,7 +32,7 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 * Chapter editor and chapter lookup (using [Audnexus API](https://audnex.us/))
 * Merge your audio files into a single m4b
 * Embed metadata and cover image into your audio files (using [Tone](https://github.com/sandreas/tone))
-* Basic ebook support and e-reader *(experimental)*
+* Basic ebook support and ereader
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 

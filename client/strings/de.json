@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Überwachung deaktivieren",
   "LabelSettingsDisableWatcherForLibrary": "Ordnerüberwachung für die Bibliothek deaktivieren",
   "LabelSettingsDisableWatcherHelp": "Deaktiviert das automatische Hinzufügen/Aktualisieren von Elementen, wenn Dateiänderungen erkannt werden. *Erfordert einen Server-Neustart",
-  "LabelSettingsEnableEReader": "E-Reader für alle Benutzer aktivieren",
-  "LabelSettingsEnableEReaderHelp": "Der E-Reader befindet sich noch in der Entwicklung, aber mit dieser Einstellung können Sie ihn für alle Benutzer aktivieren (oder aktivieren Sie die Option \"Experimentelle Funktionen\", dann Sie ihn nur selbst verwenden)",
   "LabelSettingsExperimentalFeatures": "Experimentelle Funktionen",
   "LabelSettingsExperimentalFeaturesHelp": "Funktionen welche sich in der Entwicklung befinden, benötigen Ihr Feedback und Ihre Hilfe beim Testen. Klicken Sie hier, um die Github-Diskussion zu öffnen.",
   "LabelSettingsFindCovers": "Suche Titelbilder",

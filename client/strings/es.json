@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Deshabilitar Watcher",
   "LabelSettingsDisableWatcherForLibrary": "Deshabilitar Watcher de Carpetas para esta biblioteca",
   "LabelSettingsDisableWatcherHelp": "Deshabilitar la función automática de agregar/actualizar los elementos, cuando se detecta cambio en los archivos. *Require Reiniciar el Servidor",
-  "LabelSettingsEnableEReader": "Habilitar e-reader para todos los usuarios",
-  "LabelSettingsEnableEReaderHelp": "E-reader sigue en proceso, pero use esta configuración para hacerlo disponible a todos los usuarios. (o use las \"Funciones Experimentales\" para habilitarla para solo este usuario)",
   "LabelSettingsExperimentalFeatures": "Funciones Experimentales",
   "LabelSettingsExperimentalFeaturesHelp": "Funciones en desarrollo sobre las que esperamos sus comentarios y experiencia. Haga click aquí para abrir una conversación en Github.",
   "LabelSettingsFindCovers": "Buscar Portadas",

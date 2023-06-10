@@ -23,7 +23,6 @@ export const state = () => ({
   developerMode: false,
   processingBatch: false,
   previousPath: '/',
-  showExperimentalFeatures: false,
   bookshelfBookIds: [],
   episodeTableEpisodeIds: [],
   openModal: null,
@@ -230,10 +229,6 @@ export const mutations = {
   },
   setProcessingBatch(state, val) {
     state.processingBatch = val
-  },
-  setExperimentalFeatures(state, val) {
-    state.showExperimentalFeatures = val
-    localStorage.setItem('experimental', val ? 1 : 0)
   },
   setOpenModal(state, val) {
     state.openModal = val

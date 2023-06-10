@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Désactiver la surveillance",
   "LabelSettingsDisableWatcherForLibrary": "Désactiver la surveillance des dossiers pour la bibliothèque",
   "LabelSettingsDisableWatcherHelp": "Désactive la mise à jour automatique lorsque les fichiers changent. *Nécessite un redémarrage*",
-  "LabelSettingsEnableEReader": "Active E-reader pour tous les utilisateurs",
-  "LabelSettingsEnableEReaderHelp": "E-reader est toujours en cours de développement, mais ce paramètre l’active pour tous les utilisateurs (ou utiliser l’interrupteur « Fonctionnalités expérimentales » pour l’activer seulement pour vous)",
   "LabelSettingsExperimentalFeatures": "Fonctionnalités expérimentales",
   "LabelSettingsExperimentalFeaturesHelp": "Fonctionnalités en cours de développement sur lesquelles nous attendons votre retour et expérience. Cliquez pour ouvrir la discussion Github.",
   "LabelSettingsFindCovers": "Chercher des couvertures de livre",

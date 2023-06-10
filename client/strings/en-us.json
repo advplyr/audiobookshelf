@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Disable Watcher",
   "LabelSettingsDisableWatcherForLibrary": "Disable folder watcher for library",
   "LabelSettingsDisableWatcherHelp": "Disables the automatic adding/updating of items when file changes are detected. *Requires server restart",
-  "LabelSettingsEnableEReader": "Enable e-reader for all users",
-  "LabelSettingsEnableEReaderHelp": "E-reader is still a work in progress, but use this setting to open it up to all your users (or use the \"Experimental Features\" toggle just for use by you)",
   "LabelSettingsExperimentalFeatures": "Experimental features",
   "LabelSettingsExperimentalFeaturesHelp": "Features in development that could use your feedback and help testing. Click to open github discussion.",
   "LabelSettingsFindCovers": "Find covers",

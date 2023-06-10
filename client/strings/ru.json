@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Отключить отслеживание",
   "LabelSettingsDisableWatcherForLibrary": "Отключить отслеживание для библиотеки",
   "LabelSettingsDisableWatcherHelp": "Отключает автоматическое добавление/обновление элементов, когда обнаружено изменение файлов. *Требуется перезапуск сервера",
-  "LabelSettingsEnableEReader": "Включить e-reader для всех пользователей",
-  "LabelSettingsEnableEReaderHelp": "E-reader все еще находится в стадии разработки, используйте эту настройку, чтобы открыть его для всех ваших пользователей (Только для Вас используйте переключатель \"Экспериментальные Функции\")",
   "LabelSettingsExperimentalFeatures": "Экспериментальные функции",
   "LabelSettingsExperimentalFeaturesHelp": "Функционал в разработке на который Вы могли бы дать отзыв или помочь в тестировании. Нажмите для открытия обсуждения на github.",
   "LabelSettingsFindCovers": "Найти обложки",

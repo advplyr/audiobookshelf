@@ -127,9 +127,6 @@ export default {
         }
       ]
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
@@ -154,7 +151,6 @@ export default {
     availableTabs() {
       if (!this.userCanUpdate && !this.userCanDownload) return []
       return this.tabs.filter((tab) => {
-        if (tab.experimental && !this.showExperimentalFeatures) return false
         if (tab.mediaType && this.mediaType !== tab.mediaType) return false
         if (tab.admin && !this.userIsAdminOrUp) return false
 

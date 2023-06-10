@@ -380,8 +380,6 @@
   "LabelSettingsDisableWatcher": "Wyłącz monitorowanie",
   "LabelSettingsDisableWatcherForLibrary": "Wyłącz monitorowanie folderów dla biblioteki",
   "LabelSettingsDisableWatcherHelp": "Wyłącz automatyczne dodawanie/aktualizowanie elementów po wykryciu zmian w plikach. *Wymaga restartu serwera",
-  "LabelSettingsEnableEReader": "Włącz e-czytnika dla wszystkich użytkowników",
-  "LabelSettingsEnableEReaderHelp": "E-czytnik jest wciąż w fazie rozwoju, ale użyj tego ustawienia, aby udostępnić go wszystkim użytkownikom (lub użyj przełącznika \"Funkcje eksperymentalne\" aby włączyć funkcję tylko dla Ciebie)",
   "LabelSettingsExperimentalFeatures": "Funkcje eksperymentalne",
   "LabelSettingsExperimentalFeaturesHelp": "Funkcje w trakcie rozwoju, które mogą zyskanć na Twojej opinii i pomocy w testowaniu. Kliknij, aby otworzyć dyskusję na githubie.",
   "LabelSettingsFindCovers": "Szukanie okładek",
