@@ -1,6 +1,6 @@
 <template>
   <div ref="wrapper" class="relative" v-click-outside="clickOutside">
-    <button type="button" class="relative w-full h-full border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none sm:text-sm cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
+    <button type="button" class="relative w-full h-full border border-gray-500 hover:border-gray-400 rounded shadow-sm pl-3 pr-3 py-0 text-left focus:outline-none cursor-pointer" aria-haspopup="listbox" aria-expanded="true" aria-labelledby="listbox-label" @click.prevent="showMenu = !showMenu">
       <span class="flex items-center justify-between">
         <span class="block truncate text-xs">{{ selectedText }}</span>
       </span>
@@ -14,12 +14,17 @@
       </div>
     </button>
 
-    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+    <div v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-sm ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none">
       <ul class="h-full w-full" role="listbox" aria-labelledby="listbox-label">
         <template v-for="item in items">
-          <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item)">
+          <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="option" @click="clickedOption(item)">
             <div class="flex items-center justify-between">
-              <span class="font-normal ml-3 block truncate text-sm md:text-base">{{ item.text }}</span>
+              <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
+            </div>
+
+            <!-- selected checkmark icon -->
+            <div v-if="item.value === selected" class="absolute inset-y-0 right-2 h-full flex items-center pointer-events-none">
+              <span class="material-icons text-base text-yellow-400">check</span>
             </div>
           </li>
         </template>

@@ -13,7 +13,7 @@
       <div v-show="showMenu" ref="menuWrapper" class="absolute right-0 mt-1 z-10 bg-bg border border-black-200 shadow-lg rounded-md py-1 focus:outline-none sm:text-sm" :style="{ width: menuWidth + 'px' }">
         <template v-for="(item, index) in items">
           <template v-if="item.subitems">
-            <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-default" :class="{ 'bg-white/5': mouseoverItemIndex == index }" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>
+            <div :key="index" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-default" :class="{ 'bg-white/5': mouseoverItemIndex == index }" @mouseover="mouseoverItem(index)" @mouseleave="mouseleaveItem(index)" @click.stop>
               <p>{{ item.text }}</p>
             </div>
             <div
@@ -25,12 +25,12 @@
               :class="openSubMenuLeft ? 'rounded-l-md' : 'rounded-r-md'"
               :style="{ left: submenuLeftPos + 'px', top: index * 28 + 'px', width: submenuWidth + 'px' }"
             >
-              <div v-for="(subitem, subitemindex) in item.subitems" :key="`subitem-${subitemindex}`" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(subitem.action, subitem.data)">
+              <div v-for="(subitem, subitemindex) in item.subitems" :key="`subitem-${subitemindex}`" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-pointer" @click.stop="clickAction(subitem.action, subitem.data)">
                 <p>{{ subitem.text }}</p>
               </div>
             </div>
           </template>
-          <div v-else :key="index" class="flex items-center px-2 py-1.5 hover:bg-white hover:bg-opacity-5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.action)">
+          <div v-else :key="index" class="flex items-center px-2 py-1.5 hover:bg-white/5 text-white text-xs cursor-pointer" @click.stop="clickAction(item.action)">
             <p class="text-left">{{ item.text }}</p>
           </div>
         </template>
