@@ -88,7 +88,7 @@ export default {
     },
     deleteLibraryFile() {
       const payload = {
-        message: 'This will delete the file from your file system. Are you sure?',
+        message: this.$strings.MessageConfirmDeleteFile,
         callback: (confirmed) => {
           if (confirmed) {
             this.$axios

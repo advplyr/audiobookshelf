@@ -19,7 +19,8 @@ export default {
       type: Object,
       default: () => {}
     },
-    playerOpen: Boolean
+    playerOpen: Boolean,
+    fileId: String
   },
   data() {
     return {}
@@ -32,6 +33,9 @@ export default {
       return this.libraryItem?.id
     },
     ebookUrl() {
+      if (this.fileId) {
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+      }
       return `/api/items/${this.libraryItemId}/ebook`
     }
   },

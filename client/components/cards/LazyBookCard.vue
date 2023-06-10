@@ -921,7 +921,7 @@ export default {
         return null
       })
       if (!libraryItem) return
-      this.store.commit('showEReader', libraryItem)
+      this.store.commit('showEReader', { libraryItem, keepProgress: true })
     },
     selectBtnClick(evt) {
       if (this.processingBatch) return

@@ -147,7 +147,9 @@
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item="libraryItem" class="mt-6" />
+          <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
+
+          <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>
@@ -319,6 +321,9 @@ export default {
     },
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
+    },
+    ebookFiles() {
+      return this.libraryFiles.filter((lf) => lf.fileType === 'ebook')
     },
     ebookFile() {
       return this.media.ebookFile
@@ -519,7 +524,7 @@ export default {
       this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'cover' })
     },
     openEbook() {
-      this.$store.commit('showEReader', this.libraryItem)
+      this.$store.commit('showEReader', { libraryItem: this.libraryItem, keepProgress: true })
     },
     toggleFinished(confirmed = false) {
       if (!this.userIsFinished && this.progressPercent > 0 && !confirmed) {

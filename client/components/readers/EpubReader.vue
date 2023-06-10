@@ -28,7 +28,9 @@ export default {
       type: Object,
       default: () => {}
     },
-    playerOpen: Boolean
+    playerOpen: Boolean,
+    keepProgress: Boolean,
+    fileId: String
   },
   data() {
     return {
@@ -68,6 +70,7 @@ export default {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     savedEbookLocation() {
+      if (!this.keepProgress) return null
       if (!this.userMediaProgress?.ebookLocation) return null
       // Validate ebookLocation is an epubcfi
       if (!String(this.userMediaProgress.ebookLocation).startsWith('epubcfi')) return null
@@ -84,7 +87,10 @@ export default {
       if (this.windowHeight < 400 || !this.playerOpen) return this.windowHeight
       return this.windowHeight - 164
     },
-    epubUrl() {
+    ebookUrl() {
+      if (this.fileId) {
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+      }
       return `/api/items/${this.libraryItemId}/ebook`
     }
   },
@@ -112,6 +118,7 @@ export default {
      * @param {string} payload.ebookProgress - eBook Progress Percentage
      */
     updateProgress(payload) {
+      if (!this.keepProgress) return
       this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
@@ -223,7 +230,7 @@ export default {
       const reader = this
 
       /** @type {ePub.Book} */
-      reader.book = new ePub(reader.epubUrl, {
+      reader.book = new ePub(reader.ebookUrl, {
         width: this.readerWidth,
         height: this.readerHeight - 50,
         openAs: 'epub',
@@ -242,7 +249,7 @@ export default {
       reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
 
       // load style
-      reader.rendition.themes.default({ '*': { color: '#fff!important', 'background-color': 'rgb(35 35 35)!important' } })
+      reader.rendition.themes.default({ '*': { color: '#fff!important', 'background-color': 'rgb(35 35 35)!important' }, a: { color: '#fff!important' } })
 
       reader.book.ready.then(() => {
         // set up event listeners

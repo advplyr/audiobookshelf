@@ -125,7 +125,8 @@ class ApiRouter {
     this.router.get('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getLibraryFile.bind(this))
     this.router.delete('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
     this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))
-    this.router.get('/items/:id/ebook', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
+    this.router.get('/items/:id/ebook/:fileid?', LibraryItemController.middleware.bind(this), LibraryItemController.getEBookFile.bind(this))
+    this.router.patch('/items/:id/ebook/:fileid/status', LibraryItemController.middleware.bind(this), LibraryItemController.updateEbookFileStatus.bind(this))
 
     //
     // User Routes

@@ -370,10 +370,20 @@ class Book {
     return payload
   }
 
-  setEbookFile(libraryFile) {
-    var ebookFile = new EBookFile()
-    ebookFile.setData(libraryFile)
-    this.ebookFile = ebookFile
+  /**
+   * Set the EBookFile from a LibraryFile
+   * If null then ebookFile will be removed from the book
+   * 
+   * @param {LibraryFile} [libraryFile] 
+   */
+  setEbookFile(libraryFile = null) {
+    if (!libraryFile) {
+      this.ebookFile = null
+    } else {
+      const ebookFile = new EBookFile()
+      ebookFile.setData(libraryFile)
+      this.ebookFile = ebookFile
+    }
   }
 
   addAudioFile(audioFile) {

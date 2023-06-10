@@ -33,6 +33,9 @@ class Library {
   get isMusic() {
     return this.mediaType === 'music'
   }
+  get isBook() {
+    return this.mediaType === 'book'
+  }
 
   construct(library) {
     this.id = library.id

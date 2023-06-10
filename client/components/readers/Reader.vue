@@ -17,7 +17,7 @@
       <span class="material-icons cursor-pointer text-2xl" @click="close">close</span>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" />
 
     <!-- TOC side nav -->
     <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
@@ -103,10 +103,18 @@ export default {
       return this.selectedLibraryItem.folderId
     },
     ebookFile() {
+      // ebook file id is passed when reading a supplementary ebook
+      if (this.ebookFileId) {
+        return this.selectedLibraryItem.libraryFiles.find((lf) => lf.ino === this.ebookFileId)
+      }
       return this.media.ebookFile
     },
     ebookFormat() {
       if (!this.ebookFile) return null
+      // Use file extension for supplementary ebook
+      if (!this.ebookFile.ebookFormat) {
+        return this.ebookFile.metadata.ext.toLowerCase().slice(1)
+      }
       return this.ebookFile.ebookFormat
     },
     ebookType() {
@@ -130,6 +138,12 @@ export default {
     },
     userToken() {
       return this.$store.getters['user/getToken']
+    },
+    keepProgress() {
+      return this.$store.state.ereaderKeepProgress
+    },
+    ebookFileId() {
+      return this.$store.state.ereaderFileId
     }
   },
   methods: {

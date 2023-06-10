@@ -7,6 +7,7 @@ class LibraryFile {
   constructor(file) {
     this.ino = null
     this.metadata = null
+    this.isSupplementary = null
     this.addedAt = null
     this.updatedAt = null
 
@@ -18,6 +19,7 @@ class LibraryFile {
   construct(file) {
     this.ino = file.ino
     this.metadata = new FileMetadata(file.metadata)
+    this.isSupplementary = file.isSupplementary === undefined ? null : file.isSupplementary
     this.addedAt = file.addedAt
     this.updatedAt = file.updatedAt
   }
@@ -26,6 +28,7 @@ class LibraryFile {
     return {
       ino: this.ino,
       metadata: this.metadata.toJSON(),
+      isSupplementary: this.isSupplementary,
       addedAt: this.addedAt,
       updatedAt: this.updatedAt,
       fileType: this.fileType

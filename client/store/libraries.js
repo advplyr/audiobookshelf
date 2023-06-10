@@ -57,6 +57,9 @@ export const getters = {
     if (!getters.getCurrentLibrarySettings || isNaN(getters.getCurrentLibrarySettings.coverAspectRatio)) return 1
     return getters.getCurrentLibrarySettings.coverAspectRatio === Constants.BookCoverAspectRatio.STANDARD ? 1.6 : 1
   },
+  getLibraryIsAudiobooksOnly: (state, getters) => {
+    return !!getters.getCurrentLibrarySettings?.audiobooksOnly
+  },
   getCollection: state => id => {
     return state.collections.find(c => c.id === id)
   },

@@ -45,7 +45,9 @@ export default {
       type: Object,
       default: () => {}
     },
-    playerOpen: Boolean
+    playerOpen: Boolean,
+    keepProgress: Boolean,
+    fileId: String
   },
   data() {
     return {
@@ -95,13 +97,21 @@ export default {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     savedPage() {
+      if (!this.keepProgress) return 0
+
       // Validate ebookLocation is a number
       if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
       return Number(this.userMediaProgress.ebookLocation)
     },
+    ebookUrl() {
+      if (this.fileId) {
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+      }
+      return `/api/items/${this.libraryItemId}/ebook`
+    },
     pdfDocInitParams() {
       return {
-        url: `/api/items/${this.libraryItemId}/ebook`,
+        url: this.ebookUrl,
         httpHeaders: {
           Authorization: `Bearer ${this.userToken}`
         }
@@ -116,6 +126,7 @@ export default {
       this.scale -= 0.1
     },
     updateProgress() {
+      if (!this.keepProgress) return
       if (!this.numPages) {
         console.error('Num pages not loaded')
         return

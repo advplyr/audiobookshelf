@@ -611,13 +611,26 @@ class LibraryItemController {
   }
 
   /**
-   * GET api/items/:id/ebook
+   * GET api/items/:id/ebook/:fileid?
+   * fileid is the inode value stored in LibraryFile.ino or EBookFile.ino
+   * fileid is only required when reading a supplementary ebook
+   * when no fileid is passed in the primary ebook will be returned
    * 
    * @param {express.Request} req
    * @param {express.Response} res 
    */
   async getEBookFile(req, res) {
-    const ebookFile = req.libraryItem.media.ebookFile
+    let ebookFile = null
+    if (req.params.fileid) {
+      ebookFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.fileid)
+      if (!ebookFile?.isEBookFile) {
+        Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
+        return res.status(400).send('Invalid ebook file id')
+      }
+    } else {
+      ebookFile = req.libraryItem.media.ebookFile
+    }
+
     if (!ebookFile) {
       Logger.error(`[LibraryItemController] No ebookFile for library item "${req.libraryItem.media.metadata.title}"`)
       return res.sendStatus(404)
@@ -630,6 +643,37 @@ class LibraryItemController {
     }
 
     res.sendFile(ebookFilePath)
+  }
+
+  /**
+   * PATCH api/items/:id/ebook/:fileid/status
+   * toggle the status of an ebook file.
+   * if an ebook file is the primary ebook, then it will be changed to supplementary
+   * if an ebook file is supplementary, then it will be changed to primary
+   * 
+   * @param {express.Request} req
+   * @param {express.Response} res 
+   */
+  async updateEbookFileStatus(req, res) {
+    const ebookLibraryFile = req.libraryItem.libraryFiles.find(lf => lf.ino === req.params.fileid)
+    if (!ebookLibraryFile?.isEBookFile) {
+      Logger.error(`[LibraryItemController] Invalid ebook file id "${req.params.fileid}"`)
+      return res.status(400).send('Invalid ebook file id')
+    }
+
+    if (ebookLibraryFile.isSupplementary) {
+      Logger.info(`[LibraryItemController] Updating ebook file "${ebookLibraryFile.metadata.filename}" to primary`)
+      req.libraryItem.setPrimaryEbook(ebookLibraryFile)
+    } else {
+      Logger.info(`[LibraryItemController] Updating ebook file "${ebookLibraryFile.metadata.filename}" to supplementary`)
+      ebookLibraryFile.isSupplementary = true
+      req.libraryItem.setPrimaryEbook(null)
+    }
+
+    req.libraryItem.updatedAt = Date.now()
+    await this.db.updateLibraryItem(req.libraryItem)
+    SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
+    res.sendStatus(200)
   }
 
   middleware(req, res, next) {

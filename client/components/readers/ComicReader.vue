@@ -64,7 +64,9 @@ export default {
       type: Object,
       default: () => {}
     },
-    playerOpen: Boolean
+    playerOpen: Boolean,
+    keepProgress: Boolean,
+    fileId: String
   },
   data() {
     return {
@@ -98,6 +100,9 @@ export default {
       return this.libraryItem?.id
     },
     ebookUrl() {
+      if (this.fileId) {
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+      }
       return `/api/items/${this.libraryItemId}/ebook`
     },
     comicMetadataKeys() {
@@ -114,6 +119,8 @@ export default {
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
     savedPage() {
+      if (!this.keepProgress) return 0
+
       // Validate ebookLocation is a number
       if (!this.userMediaProgress?.ebookLocation || isNaN(this.userMediaProgress.ebookLocation)) return 0
       return Number(this.userMediaProgress.ebookLocation)
@@ -141,6 +148,8 @@ export default {
       this.showInfoMenu = !this.showInfoMenu
     },
     updateProgress() {
+      if (!this.keepProgress) return
+
       if (!this.numPages) {
         console.error('Num pages not loaded')
         return

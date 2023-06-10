@@ -80,6 +80,16 @@ class LibraryItem {
     this.media.libraryItemId = this.id
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
+
+    // Migration for v2.2.23 to set ebook library files as supplementary
+    if (this.isBook && this.media.ebookFile) {
+      for (const libraryFile of this.libraryFiles) {
+        if (libraryFile.isEBookFile && libraryFile.isSupplementary === null) {
+          libraryFile.isSupplementary = this.media.ebookFile.ino !== libraryFile.ino
+        }
+      }
+    }
+
   }
 
   toJSON() {
@@ -432,21 +442,30 @@ class LibraryItem {
   }
 
   // Set metadata from files
-  async syncFiles(preferOpfMetadata) {
+  async syncFiles(preferOpfMetadata, librarySettings) {
     let hasUpdated = false
 
-    if (this.mediaType === 'book') {
-      // Add/update ebook file (ebooks that were removed are removed in checkScanData)
-      if (this.media.ebookFile) {
+    if (this.isBook) {
+      // Add/update ebook files (ebooks that were removed are removed in checkScanData)
+      if (librarySettings.audiobooksOnly) {
+        hasUpdated = this.media.ebookFile
+        if (hasUpdated) {
+          // If library was set to audiobooks only then set primary ebook as supplementary
+          Logger.info(`[LibraryItem] Library is audiobooks only so setting ebook "${this.media.ebookFile.metadata.filename}" as supplementary`)
+        }
+        this.setPrimaryEbook(null)
+      } else if (this.media.ebookFile) {
         const matchingLibraryFile = this.libraryFiles.find(lf => lf.ino === this.media.ebookFile.ino)
         if (matchingLibraryFile && this.media.ebookFile.updateFromLibraryFile(matchingLibraryFile)) {
           hasUpdated = true
         }
       } else {
+        const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile && !lf.isSupplementary)
+
         // Prefer epub ebook then fallback to first other ebook file
-        const ebookLibraryFile = this.libraryFiles.find(lf => lf.isEBookFile && lf.metadata.format === 'epub') || this.libraryFiles.find(lf => lf.isEBookFile)
+        const ebookLibraryFile = ebookLibraryFiles.find(lf => lf.metadata.format === 'epub') || ebookLibraryFiles[0]
         if (ebookLibraryFile) {
-          this.media.setEbookFile(ebookLibraryFile)
+          this.setPrimaryEbook(ebookLibraryFile)
           hasUpdated = true
         }
       }
@@ -564,6 +583,21 @@ class LibraryItem {
       return true
     }
     return false
+  }
+
+  /**
+   * Set the EBookFile from a LibraryFile
+   * If null then ebookFile will be removed from the book
+   * all ebook library files that are not primary are marked as supplementary
+   * 
+   * @param {LibraryFile} [libraryFile] 
+   */
+  setPrimaryEbook(ebookLibraryFile = null) {
+    const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile)
+    for (const libraryFile of ebookLibraryFiles) {
+      libraryFile.isSupplementary = ebookLibraryFile?.ino !== libraryFile.ino
+    }
+    this.media.setEbookFile(ebookLibraryFile)
   }
 }
 module.exports = LibraryItem

@@ -3,7 +3,7 @@ const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
 const Logger = require('../Logger')
-const Folder = require('../objects/Folder')
+const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
 const filePerms = require('../utils/filePerms')
 const { getId, secondsToTimestamp } = require('../utils/index')
@@ -12,10 +12,7 @@ class LibraryScan {
   constructor() {
     this.id = null
     this.type = null
-    this.libraryId = null
-    this.libraryName = null
-    this.libraryMediaType = null
-    this.folders = null
+    this.library = null
     this.verbose = false
 
     this.scanOptions = null
@@ -30,6 +27,11 @@ class LibraryScan {
 
     this.logs = []
   }
+
+  get libraryId() { return this.library.id }
+  get libraryName() { return this.library.name }
+  get libraryMediaType() { return this.library.mediaType }
+  get folders() { return this.library.folders }
 
   get _scanOptions() { return this.scanOptions || {} }
   get forceRescan() { return !!this._scanOptions.forceRescan }
@@ -70,10 +72,7 @@ class LibraryScan {
     return {
       id: this.id,
       type: this.type,
-      libraryId: this.libraryId,
-      libraryName: this.libraryName,
-      libraryMediaType: this.libraryMediaType,
-      folders: this.folders.map(f => f.toJSON()),
+      library: this.library.toJSON(),
       scanOptions: this.scanOptions ? this.scanOptions.toJSON() : null,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
@@ -87,10 +86,7 @@ class LibraryScan {
   setData(library, scanOptions, type = 'scan') {
     this.id = getId('lscan')
     this.type = type
-    this.libraryId = library.id
-    this.libraryName = library.name
-    this.libraryMediaType = library.mediaType
-    this.folders = library.folders.map(folder => new Folder(folder.toJSON()))
+    this.library = new Library(library.toJSON()) // clone library
 
     this.scanOptions = scanOptions
 
