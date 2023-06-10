@@ -13,7 +13,7 @@ module.exports = {
   getFilteredLibraryItems(libraryItems, filterBy, user, feedsArray) {
     let filtered = libraryItems
 
-    const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages', 'tracks']
+    const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages', 'tracks', 'ebooks']
     const group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
       const filterVal = filterBy.replace(`${group}.`, '')
@@ -62,6 +62,9 @@ module.exports = {
       } else if (group === 'tracks') {
         if (filter === 'single') filtered = filtered.filter(li => li.isBook && li.media.numTracks === 1)
         else if (filter === 'multi') filtered = filtered.filter(li => li.isBook && li.media.numTracks > 1)
+      } else if (group === 'ebooks') {
+        if (filter === 'ebook') filtered = filtered.filter(li => li.media.ebookFile)
+        else if (filter === 'supplementary') filtered = filtered.filter(li => li.libraryFiles.some(lf => lf.isEBookFile && lf.ino !== li.media.ebookFile?.ino))
       }
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(li => li.hasIssues)

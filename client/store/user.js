@@ -80,7 +80,7 @@ export const actions = {
       if (state.settings.orderBy == 'media.metadata.publishedYear') {
         settingsUpdate.orderBy = 'media.metadata.title'
       }
-      const invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues']
+      const invalidFilters = ['series', 'authors', 'narrators', 'languages', 'progress', 'issues', 'ebooks', 'abridged']
       const filterByFirstPart = (state.settings.filterBy || '').split('.').shift()
       if (invalidFilters.includes(filterByFirstPart)) {
         settingsUpdate.filterBy = 'all'

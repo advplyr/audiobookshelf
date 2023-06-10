@@ -188,9 +188,9 @@ export default {
           sublist: true
         },
         {
-          text: this.$strings.LabelEbook,
-          value: 'ebook',
-          sublist: false
+          text: this.$strings.LabelEbooks,
+          value: 'ebooks',
+          sublist: true
         },
         {
           text: this.$strings.LabelAbridged,
@@ -338,6 +338,18 @@ export default {
         {
           id: 'multi',
           name: this.$strings.LabelTracksMultiTrack
+        }
+      ]
+    },
+    ebooks() {
+      return [
+        {
+          id: 'ebook',
+          name: this.$strings.LabelHasEbook
+        },
+        {
+          id: 'supplementary',
+          name: this.$strings.LabelHasSupplementaryEbook
         }
       ]
     },
