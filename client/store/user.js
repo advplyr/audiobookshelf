@@ -33,22 +33,22 @@ export const getters = {
     return state.user.bookmarks.filter(bm => bm.libraryItemId === libraryItemId)
   },
   getUserSetting: (state) => (key) => {
-    return state.settings ? state.settings[key] : null
+    return state.settings?.[key] || null
   },
   getUserCanUpdate: (state) => {
-    return state.user && state.user.permissions ? !!state.user.permissions.update : false
+    return !!state.user?.permissions?.update
   },
   getUserCanDelete: (state) => {
-    return state.user && state.user.permissions ? !!state.user.permissions.delete : false
+    return !!state.user?.permissions?.delete
   },
   getUserCanDownload: (state) => {
-    return state.user && state.user.permissions ? !!state.user.permissions.download : false
+    return !!state.user?.permissions?.download
   },
   getUserCanUpload: (state) => {
-    return state.user && state.user.permissions ? !!state.user.permissions.upload : false
+    return !!state.user?.permissions?.upload
   },
   getUserCanAccessAllLibraries: (state) => {
-    return state.user && state.user.permissions ? !!state.user.permissions.accessAllLibraries : false
+    return !!state.user?.permissions?.accessAllLibraries
   },
   getLibrariesAccessible: (state, getters) => {
     if (!state.user) return []

@@ -20,7 +20,7 @@
             <th class="text-left px-4 w-24">
               {{ $strings.LabelRead }} <ui-tooltip :text="$strings.LabelReadEbookWithoutProgress" direction="top" class="inline-block"><span class="material-icons-outlined text-sm align-middle">info</span></ui-tooltip>
             </th>
-            <th v-if="userCanDelete || userCanDownload || userIsAdmin" class="text-center w-16"></th>
+            <th v-if="showMoreColumn" class="text-center w-16"></th>
           </tr>
           <template v-for="file in ebookFiles">
             <tables-ebook-files-table-row :key="file.path" :libraryItemId="libraryItemId" :showFullPath="showFullPath" :file="file" @read="readEbook" />
@@ -58,20 +58,20 @@ export default {
     userCanDelete() {
       return this.$store.getters['user/getUserCanDelete']
     },
+    userCanUpdate() {
+      return this.$store.getters['user/getUserCanUpdate']
+    },
     userIsAdmin() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
+    libraryIsAudiobooksOnly() {
+      return this.$store.getters['libraries/getLibraryIsAudiobooksOnly']
+    },
+    showMoreColumn() {
+      return this.userCanDelete || this.userCanDownload || (this.userCanUpdate && !this.libraryIsAudiobooksOnly)
+    },
     ebookFiles() {
       return (this.libraryItem.libraryFiles || []).filter((lf) => lf.fileType === 'ebook')
-    },
-    ebookFileIno() {
-      return this.libraryItem.media.ebookFile?.ino
-    },
-    audioFiles() {
-      if (this.libraryItem.mediaType === 'podcast') {
-        return this.libraryItem.media?.episodes.map((ep) => ep.audioFile) || []
-      }
-      return this.libraryItem.media?.audioFiles || []
     }
   },
   methods: {
