@@ -109,10 +109,10 @@ export default {
       return this.comicMetadata ? Object.keys(this.comicMetadata) : []
     },
     canGoNext() {
-      return this.page < this.numPages - 1
+      return this.page < this.numPages
     },
     canGoPrev() {
-      return this.page > 0
+      return this.page > 1
     },
     userMediaProgress() {
       if (!this.libraryItemId) return
