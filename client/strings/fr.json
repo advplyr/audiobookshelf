@@ -230,6 +230,7 @@
   "LabelEmailSettingsFromAddress": "Expéditeur",
   "LabelEmailSettingsSecure": "Sécurisé",
   "LabelEmailSettingsSecureHelp": "Si coché, la connexion utilisera TLS lors de la connexion au serveur. Sinon TLS est utilisé si le serveur prend en charge l'extension STARTTLS. Dans la plupart des cas, cochez si vous vous connectez au port 465. Décochez pour le port 587 ou 25. (source: nodemailer.com/smtp/#authentication)",
+  "LabelEmailSettingsTestAddress": "Test Address",
   "LabelEmbeddedCover": "Couverture du livre intégrée",
   "LabelEnable": "Activer",
   "LabelEnd": "Fin",
