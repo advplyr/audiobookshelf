@@ -34,6 +34,9 @@
           <div class="w-full md:w-1/2 px-1">
             <ui-text-input-with-label ref="fromInput" v-model="newSettings.fromAddress" :disabled="savingSettings" :label="$strings.LabelEmailSettingsFromAddress" />
           </div>
+          <div class="w-full md:w-1/2 px-1">
+            <ui-text-input-with-label ref="testInput" v-model="newSettings.testAddress" :disabled="savingSettings" :label="$strings.LabelEmailSettingsTestAddress" />
+          </div>
         </div>
 
         <div class="flex items-center justify-between pt-4">
@@ -93,6 +96,7 @@ export default {
         secure: true,
         user: null,
         pass: null,
+        testAddress: null,
         fromAddress: null
       },
       newEReaderDevice: {
@@ -196,6 +200,7 @@ export default {
         secure: this.newSettings.secure,
         user: this.newSettings.user,
         pass: this.newSettings.pass,
+        testAddress: this.newSettings.testAddress,
         fromAddress: this.newSettings.fromAddress
       }
       this.savingSettings = true

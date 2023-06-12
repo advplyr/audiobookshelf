@@ -228,6 +228,7 @@
   "LabelEdit": "Modifica",
   "LabelEmail": "Email",
   "LabelEmailSettingsFromAddress": "From Address",
+  "LabelEmailSettingsTestAddress": "Test Address",
   "LabelEmailSettingsSecure": "Secure",
   "LabelEmailSettingsSecureHelp": "If true the connection will use TLS when connecting to server. If false then TLS is used if server supports the STARTTLS extension. In most cases set this value to true if you are connecting to port 465. For port 587 or 25 keep it false. (from nodemailer.com/smtp/#authentication)",
   "LabelEmbeddedCover": "Embedded Cover",

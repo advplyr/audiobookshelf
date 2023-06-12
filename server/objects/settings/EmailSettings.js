@@ -10,6 +10,7 @@ class EmailSettings {
     this.secure = true
     this.user = null
     this.pass = null
+    this.testAddress = null
     this.fromAddress = null
 
     // Array of { name:String, email:String }
@@ -26,6 +27,7 @@ class EmailSettings {
     this.secure = !!settings.secure
     this.user = settings.user
     this.pass = settings.pass
+    this.testAddress = settings.testAddress
     this.fromAddress = settings.fromAddress
     this.ereaderDevices = settings.ereaderDevices?.map(d => ({ ...d })) || []
   }
@@ -38,6 +40,7 @@ class EmailSettings {
       secure: this.secure,
       user: this.user,
       pass: this.pass,
+      testAddress: this.testAddress,
       fromAddress: this.fromAddress,
       ereaderDevices: this.ereaderDevices.map(d => ({ ...d }))
     }
