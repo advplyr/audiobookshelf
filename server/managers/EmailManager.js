@@ -26,7 +26,7 @@ class EmailManager {
 
     transporter.sendMail({
       from: this.db.emailSettings.fromAddress,
-      to: this.db.emailSettings.testAddress,
+      to: this.db.emailSettings.testAddress || this.db.emailSettings.fromAddress,
       subject: 'Test email from Audiobookshelf',
       text: 'Success!'
     }).then((result) => {

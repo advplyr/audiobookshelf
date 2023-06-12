@@ -40,7 +40,8 @@
         </div>
 
         <div class="flex items-center justify-between pt-4">
-          <ui-btn :loading="sendingTest" :disabled="savingSettings || !newSettings.host" type="button" @click="sendTestClick">{{ $strings.ButtonTest }}</ui-btn>
+          <ui-btn v-if="hasUpdates" :disabled="savingSettings" type="button" @click="resetChanges">{{ $strings.ButtonReset }}</ui-btn>
+          <ui-btn v-else :loading="sendingTest" :disabled="savingSettings || !newSettings.host" type="button" @click="sendTestClick">{{ $strings.ButtonTest }}</ui-btn>
           <ui-btn :loading="savingSettings" :disabled="!hasUpdates" type="submit">{{ $strings.ButtonSave }}</ui-btn>
         </div>
       </form>
@@ -121,6 +122,11 @@ export default {
     }
   },
   methods: {
+    resetChanges() {
+      this.newSettings = {
+        ...this.settings
+      }
+    },
     editDeviceClick(device) {
       this.selectedEReaderDevice = device
       this.showEReaderDeviceModal = true
