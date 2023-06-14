@@ -1,15 +1,15 @@
 <template>
   <div id="epub-reader" class="h-full w-full">
     <div class="h-full flex items-center justify-center">
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center overflow-x-hidden justify-center">
-        <span v-if="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
-      </div>
+      <button type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
+        <span v-if="hasPrev" class="material-icons text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
+      </button>
       <div id="frame" class="w-full" style="height: 80%">
         <div id="viewer"></div>
       </div>
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center justify-center overflow-x-hidden">
-        <span v-if="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
-      </div>
+      <button type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
+        <span v-if="hasNext" class="material-icons text-6xl" @mousedown.prevent @click="next">chevron_right</span>
+      </button>
     </div>
   </div>
 </template>
@@ -39,7 +39,13 @@ export default {
       /** @type {ePub.Book} */
       book: null,
       /** @type {ePub.Rendition} */
-      rendition: null
+      rendition: null,
+      ereaderSettings: {
+        theme: 'dark',
+        fontScale: 100,
+        lineSpacing: 115,
+        spread: 'auto'
+      }
     }
   },
   watch: {
@@ -92,9 +98,40 @@ export default {
         return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
       }
       return `/api/items/${this.libraryItemId}/ebook`
+    },
+    themeRules() {
+      const isDark = this.ereaderSettings.theme === 'dark'
+      const fontColor = isDark ? '#fff' : '#000'
+      const backgroundColor = isDark ? 'rgb(35 35 35)' : 'rgb(255, 255, 255)'
+
+      const lineSpacing = this.ereaderSettings.lineSpacing / 100
+
+      const fontScale = this.ereaderSettings.fontScale / 100
+
+      return {
+        '*': {
+          color: `${fontColor}!important`,
+          'background-color': `${backgroundColor}!important`,
+          'line-height': lineSpacing * fontScale + 'rem!important'
+        },
+        a: {
+          color: `${fontColor}!important`
+        }
+      }
     }
   },
   methods: {
+    updateSettings(settings) {
+      this.ereaderSettings = settings
+
+      if (!this.rendition) return
+
+      this.applyTheme()
+
+      const fontScale = settings.fontScale || 100
+      this.rendition.themes.fontSize(`${fontScale}%`)
+      this.rendition.spread(settings.spread || 'auto')
+    },
     prev() {
       return this.rendition?.prev()
     },
@@ -242,14 +279,16 @@ export default {
       /** @type {ePub.Rendition} */
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
-        height: this.readerHeight * 0.8
+        height: this.readerHeight * 0.8,
+        spread: 'auto'
       })
 
       // load saved progress
       reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
 
-      // load style
-      reader.rendition.themes.default({ '*': { color: '#fff!important', 'background-color': 'rgb(35 35 35)!important' }, a: { color: '#fff!important' } })
+      reader.rendition.on('rendered', () => {
+        this.applyTheme()
+      })
 
       reader.book.ready.then(() => {
         // set up event listeners
@@ -288,6 +327,12 @@ export default {
       this.windowWidth = window.innerWidth
       this.windowHeight = window.innerHeight
       this.rendition?.resize(this.readerWidth, this.readerHeight * 0.8)
+    },
+    applyTheme() {
+      if (!this.rendition) return
+      this.rendition.getContents().forEach((c) => {
+        c.addStylesheetRules(this.themeRules)
+      })
     }
   },
   mounted() {

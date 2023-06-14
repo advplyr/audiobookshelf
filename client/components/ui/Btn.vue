@@ -73,7 +73,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .btn::before {
   content: '';
   position: absolute;
