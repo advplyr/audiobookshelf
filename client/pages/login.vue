@@ -74,9 +74,17 @@ export default {
           } else {
             this.$router.replace('/oops?message=No libraries available')
           }
-        } else if (this.$route.query.redirect) {
-          this.$router.replace(this.$route.query.redirect)
         } else {
+          if (this.$route.query.redirect) {
+            const isAdminUser = this.$store.getters['user/getIsAdminOrUp']
+            const redirect = this.$route.query.redirect
+            // If not admin user then do not redirect to config pages other than your stats
+            if (isAdminUser || !redirect.startsWith('/config/') || redirect === '/config/stats') {
+              this.$router.replace(redirect)
+              return
+            }
+          }
+
           this.$router.replace(`/library/${this.$store.state.libraries.currentLibraryId}`)
         }
       }
@@ -144,17 +152,17 @@ export default {
       this.error = null
       this.processing = true
 
-      var payload = {
+      const payload = {
         username: this.username,
         password: this.password || ''
       }
-      var authRes = await this.$axios.$post('/login', payload).catch((error) => {
+      const authRes = await this.$axios.$post('/login', payload).catch((error) => {
         console.error('Failed', error.response)
         if (error.response) this.error = error.response.data
         else this.error = 'Unknown Error'
         return false
       })
-      if (authRes && authRes.error) {
+      if (authRes?.error) {
         this.error = authRes.error
       } else if (authRes) {
         this.setUser(authRes)
@@ -162,7 +170,7 @@ export default {
       this.processing = false
     },
     checkAuth() {
-      var token = localStorage.getItem('token')
+      const token = localStorage.getItem('token')
       if (!token) return false
 
       this.processing = true

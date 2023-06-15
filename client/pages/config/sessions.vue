@@ -104,7 +104,12 @@
 
 <script>
 export default {
-  async asyncData({ params, redirect, app }) {
+  async asyncData({ store, redirect, app }) {
+    if (!store.getters['user/getIsAdminOrUp']) {
+      redirect('/')
+      return
+    }
+
     const users = await app.$axios
       .$get('/api/users')
       .then((res) => {

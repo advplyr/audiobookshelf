@@ -9,6 +9,11 @@
 
 <script>
 export default {
+  asyncData({ store, redirect }) {
+    if (!store.getters['user/getIsAdminOrUp']) {
+      redirect('/')
+    }
+  },
   data() {
     return {
       showLibraryModal: false,

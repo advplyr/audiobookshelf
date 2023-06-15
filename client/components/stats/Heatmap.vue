@@ -235,7 +235,6 @@ export default {
           style: `transform:translate(${x}px,${y}px);background-color:${bgColor};outline:1px solid ${outlineColor};outline-offset:-1px;`
         })
       }
-      console.log('Data', this.data)
 
       this.monthLabels = []
       var lastMonth = null

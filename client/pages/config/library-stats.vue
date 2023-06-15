@@ -87,6 +87,11 @@
 <script>
 export default {
   asyncData({ redirect, store }) {
+    if (!store.getters['user/getIsAdminOrUp']) {
+      redirect('/')
+      return
+    }
+
     if (!store.state.libraries.currentLibraryId) {
       return redirect('/config')
     }
