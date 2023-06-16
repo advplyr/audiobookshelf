@@ -34,7 +34,7 @@
             <span class="material-icons text-2xl">arrow_back</span>
           </button>
 
-          <p class="text-lg font-semibold ml-2">Table of Contents</p>
+          <p class="text-lg font-semibold ml-2">{{ $strings.HeaderTableOfContents }}</p>
         </div>
         <div class="tocContent">
           <ul>
@@ -54,31 +54,31 @@
     <modals-modal v-model="showSettings" name="ereader-settings-modal" :width="500" :height="'unset'" :processing="false">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-3/4 overflow-hidden">
-          <p class="text-xl md:text-3xl text-white truncate">Ereader Settings</p>
+          <p class="text-xl md:text-3xl text-white truncate">{{ $strings.HeaderEreaderSettings }}</p>
         </div>
       </template>
       <div class="p-2 md:p-8 w-full text-base py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
         <div class="flex items-center mb-4">
           <div class="w-40">
-            <p class="text-lg">Theme:</p>
+            <p class="text-lg">{{ $strings.LabelTheme }}:</p>
           </div>
           <ui-toggle-btns v-model="ereaderSettings.theme" :items="themeItems" @input="settingsUpdated" />
         </div>
         <div class="flex items-center mb-4">
           <div class="w-40">
-            <p class="text-lg">Font scale:</p>
+            <p class="text-lg">{{ $strings.LabelFontScale }}:</p>
           </div>
           <ui-range-input v-model="ereaderSettings.fontScale" :min="5" :max="300" :step="5" @input="settingsUpdated" />
         </div>
         <div class="flex items-center mb-4">
           <div class="w-40">
-            <p class="text-lg">Line spacing:</p>
+            <p class="text-lg">{{ $strings.LabelLineSpacing }}:</p>
           </div>
           <ui-range-input v-model="ereaderSettings.lineSpacing" :min="100" :max="300" :step="5" @input="settingsUpdated" />
         </div>
         <div class="flex items-center">
           <div class="w-40">
-            <p class="text-lg">Spread:</p>
+            <p class="text-lg">{{ $strings.LabelLayout }}:</p>
           </div>
           <ui-toggle-btns v-model="ereaderSettings.spread" :items="spreadItems" @input="settingsUpdated" />
         </div>
@@ -99,27 +99,7 @@ export default {
         fontScale: 100,
         lineSpacing: 115,
         spread: 'auto'
-      },
-      themeItems: [
-        {
-          text: 'Dark',
-          value: 'dark'
-        },
-        {
-          text: 'Light',
-          value: 'light'
-        }
-      ],
-      spreadItems: [
-        {
-          text: 'Single page',
-          value: 'none'
-        },
-        {
-          text: 'Split page',
-          value: 'auto'
-        }
-      ]
+      }
     }
   },
   watch: {
@@ -137,6 +117,30 @@ export default {
       set(val) {
         this.$store.commit('setShowEReader', val)
       }
+    },
+    spreadItems() {
+      return [
+        {
+          text: this.$strings.LabelLayoutSinglePage,
+          value: 'none'
+        },
+        {
+          text: this.$strings.LabelLayoutSplitPage,
+          value: 'auto'
+        }
+      ]
+    },
+    themeItems() {
+      return [
+        {
+          text: this.$strings.LabelThemeDark,
+          value: 'dark'
+        },
+        {
+          text: this.$strings.LabelThemeLight,
+          value: 'light'
+        }
+      ]
     },
     componentName() {
       if (this.ebookType === 'epub') return 'readers-epub-reader'

@@ -51,7 +51,7 @@
       </div>
     </app-settings-content>
 
-    <app-settings-content :header-text="$strings.HeaderEReaderDevices" showAddButton :description="''" @clicked="addNewDeviceClick">
+    <app-settings-content :header-text="$strings.HeaderEreaderDevices" showAddButton :description="''" @clicked="addNewDeviceClick">
       <table v-if="existingEReaderDevices.length" class="tracksTable my-4">
         <tr>
           <th class="text-left">{{ $strings.LabelName }}</th>
