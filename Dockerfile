@@ -14,19 +14,24 @@ RUN apk update && \
     apk add --no-cache --update \
     curl \
     tzdata \
-    ffmpeg
+    ffmpeg \
+    bash \
+    jq \
+    shadow \
+    su-exec \
+    dumb-init && \
+    usermod --shell /bin/bash node && \
+    rm -rf /var/cache/apk/*
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
 COPY index.js package* /
 COPY server server
+COPY --chmod=755 entrypoint.sh /entrypoint.sh
 
 RUN npm ci --only=production
 
-EXPOSE 80
-HEALTHCHECK \
-    --interval=30s \
-    --timeout=3s \
-    --start-period=10s \
-    CMD curl -f http://127.0.0.1/healthcheck || exit 1
+ENTRYPOINT [ "/entrypoint.sh" ]
 CMD ["node", "index.js"]
+
+EXPOSE 80
