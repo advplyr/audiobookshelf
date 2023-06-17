@@ -27,6 +27,11 @@ groupmod -o -g ${PGID} node
 usermod -o -u ${PUID} node
 
 chown -R node:node \
+    /client \
+    /index.js \
+    /package* \
+    /server
+chown -R node:node \
     /config \
     /metadata
 chown node:node \
