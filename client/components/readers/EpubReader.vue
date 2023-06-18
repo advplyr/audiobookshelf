@@ -280,7 +280,10 @@ export default {
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
         height: this.readerHeight * 0.8,
-        spread: 'auto'
+        spread: 'auto',
+        snap: true,
+        manager: 'continuous',
+        flow: 'paginated'
       })
 
       // load saved progress
@@ -295,21 +298,11 @@ export default {
         reader.rendition.on('relocated', reader.relocated)
         reader.rendition.on('keydown', reader.keyUp)
 
-        let touchStart = 0
-        let touchEnd = 0
         reader.rendition.on('touchstart', (event) => {
-          touchStart = event.changedTouches[0].screenX
+          this.$emit('touchstart', event)
         })
-
         reader.rendition.on('touchend', (event) => {
-          touchEnd = event.changedTouches[0].screenX
-          const touchDistanceX = Math.abs(touchEnd - touchStart)
-          if (touchStart < touchEnd && touchDistanceX > 120) {
-            this.next()
-          }
-          if (touchStart > touchEnd && touchDistanceX > 120) {
-            this.prev()
-          }
+          this.$emit('touchend', event)
         })
 
         // load ebook cfi locations

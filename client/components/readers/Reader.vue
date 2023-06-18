@@ -10,10 +10,10 @@
     </div>
 
     <div class="absolute top-4 left-1/2 transform -translate-x-1/2">
-      <h1 class="text-lg sm:text-xl md:text-2xl mb-1" style="line-height: 1.15; font-weight: 100">
+      <h1 :data-type="ebookType" class="text-lg sm:text-xl md:text-2xl mb-1 data-[type=comic]:hidden" style="line-height: 1.15; font-weight: 100">
         <span style="font-weight: 600">{{ abTitle }}</span>
-        <span v-if="abAuthor" style="display: inline"> – </span>
-        <span v-if="abAuthor">{{ abAuthor }}</span>
+        <span v-if="abAuthor" class="hidden md:inline"> – </span>
+        <span v-if="abAuthor" class="hidden md:inline">{{ abAuthor }}</span>
       </h1>
     </div>
 
@@ -23,7 +23,7 @@
       </button>
     </div>
 
-    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" @hook:mounted="readerMounted" />
+    <component v-if="componentName" ref="readerComponent" :is="componentName" :library-item="selectedLibraryItem" :player-open="!!streamLibraryItem" :keep-progress="keepProgress" :file-id="ebookFileId" @touchstart="touchstart" @touchend="touchend" @hook:mounted="readerMounted" />
 
     <!-- TOC side nav -->
     <div v-if="tocOpen" class="w-full h-full fixed inset-0 bg-black/20 z-20" @click.stop.prevent="toggleToC"></div>
@@ -58,7 +58,7 @@
           <p class="text-xl md:text-3xl text-white truncate">{{ $strings.HeaderEreaderSettings }}</p>
         </div>
       </template>
-      <div class="p-2 md:p-8 w-full text-base py-2 rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
+      <div class="px-2 py-4 md:p-8 w-full text-base rounded-lg bg-bg shadow-lg border border-black-300 relative overflow-x-hidden overflow-y-auto" style="max-height: 80vh">
         <div class="flex items-center mb-4">
           <div class="w-40">
             <p class="text-lg">{{ $strings.LabelTheme }}:</p>
@@ -92,6 +92,12 @@
 export default {
   data() {
     return {
+      touchstartX: 0,
+      touchstartY: 0,
+      touchendX: 0,
+      touchendY: 0,
+      touchstartTime: 0,
+      touchIdentifier: null,
       chapters: [],
       tocOpen: false,
       showSettings: false,
@@ -262,11 +268,61 @@ export default {
     prev() {
       if (this.$refs.readerComponent?.prev) this.$refs.readerComponent.prev()
     },
+    handleGesture() {
+      // Touch must be less than 1s. Must be > 60px drag and X distance > Y distance
+      const touchTimeMs = Date.now() - this.touchstartTime
+      if (touchTimeMs >= 1000) {
+        console.log('Touch too long', touchTimeMs)
+        return
+      }
+
+      const touchDistanceX = Math.abs(this.touchendX - this.touchstartX)
+      const touchDistanceY = Math.abs(this.touchendY - this.touchstartY)
+      const touchDistance = Math.sqrt(Math.pow(this.touchstartX - this.touchendX, 2) + Math.pow(this.touchstartY - this.touchendY, 2))
+      if (touchDistance < 60) {
+        return
+      }
+
+      if (touchDistanceX < 60 || touchDistanceY > touchDistanceX) {
+        return
+      }
+
+      if (this.touchendX < this.touchstartX) {
+        this.next()
+      }
+      if (this.touchendX > this.touchstartX) {
+        this.prev()
+      }
+    },
+    touchstart(e) {
+      // Ignore rapid touch
+      if (this.touchstartTime && Date.now() - this.touchstartTime < 250) {
+        return
+      }
+
+      this.touchstartX = e.touches[0].screenX
+      this.touchstartY = e.touches[0].screenY
+      this.touchstartTime = Date.now()
+      this.touchIdentifier = e.touches[0].identifier
+    },
+    touchend(e) {
+      if (this.touchIdentifier !== e.changedTouches[0].identifier) {
+        return
+      }
+
+      this.touchendX = e.changedTouches[0].screenX
+      this.touchendY = e.changedTouches[0].screenY
+      this.handleGesture()
+    },
     registerListeners() {
       this.$eventBus.$on('reader-hotkey', this.hotkey)
+      document.body.addEventListener('touchstart', this.touchstart)
+      document.body.addEventListener('touchend', this.touchend)
     },
     unregisterListeners() {
       this.$eventBus.$off('reader-hotkey', this.hotkey)
+      document.body.removeEventListener('touchstart', this.touchstart)
+      document.body.removeEventListener('touchend', this.touchend)
     },
     loadEreaderSettings() {
       try {
