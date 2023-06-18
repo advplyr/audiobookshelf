@@ -69,7 +69,7 @@ export default {
     },
     /** @returns {Array<ePub.NavItem>} */
     chapters() {
-      return this.book ? this.book.navigation.toc : []
+      return this.book?.navigation?.toc || []
     },
     userMediaProgress() {
       if (!this.libraryItemId) return

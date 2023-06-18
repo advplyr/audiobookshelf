@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" id="reader" :data-theme="ereaderSettings.theme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black" :class="{ 'reader-player-open': !!streamLibraryItem }">
+  <div v-if="show" id="reader" :data-theme="ereaderTheme" class="group absolute top-0 left-0 w-full z-60 data-[theme=dark]:bg-primary data-[theme=dark]:text-white data-[theme=light]:bg-white data-[theme=light]:text-black" :class="{ 'reader-player-open': !!streamLibraryItem }">
     <div class="absolute top-4 left-4 z-20 flex items-center">
       <button v-if="isEpub" @click="toggleToC" type="button" aria-label="Table of contents menu" class="inline-flex opacity-80 hover:opacity-100">
         <span class="material-icons text-2xl">menu</span>
@@ -51,6 +51,7 @@
       </div>
     </div>
 
+    <!-- ereader settings modal -->
     <modals-modal v-model="showSettings" name="ereader-settings-modal" :width="500" :height="'unset'" :processing="false">
       <template #outer>
         <div class="absolute top-0 left-0 p-5 w-3/4 overflow-hidden">
@@ -117,6 +118,10 @@ export default {
       set(val) {
         this.$store.commit('setShowEReader', val)
       }
+    },
+    ereaderTheme() {
+      if (this.isEpub) return this.ereaderSettings.theme
+      return 'dark'
     },
     spreadItems() {
       return [
