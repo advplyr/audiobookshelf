@@ -112,17 +112,17 @@
         <div class="flex text-xs uppercase text-gray-300 font-semibold mb-2">
           <div class="flex-grow">{{ $strings.LabelFilename }}</div>
           <div class="w-20">{{ $strings.LabelDuration }}</div>
-          <div class="w-20 text-center">{{ $strings.HeaderChapters }}</div>
+          <div class="w-20 hidden md:block text-center">{{ $strings.HeaderChapters }}</div>
         </div>
         <template v-for="track in audioTracks">
           <div :key="track.ino" class="flex items-center py-2" :class="currentTrackIndex === track.index && isPlayingChapter ? 'bg-success bg-opacity-10' : ''">
-            <div class="flex-grow">
+            <div class="flex-grow max-w-[calc(100%-80px)] pr-2">
               <p class="text-xs truncate max-w-sm">{{ track.metadata.filename }}</p>
             </div>
             <div class="w-20" style="min-width: 80px">
               <p class="text-xs font-mono text-gray-200">{{ $secondsToTimestamp(Math.round(track.duration), false, true) }}</p>
             </div>
-            <div class="w-20 flex justify-center" style="min-width: 80px">
+            <div class="w-20 hidden md:flex justify-center" style="min-width: 80px">
               <span v-if="(track.chapters || []).length" class="material-icons text-success text-sm">check</span>
             </div>
           </div>
