@@ -1,84 +1,99 @@
 <template>
   <modals-modal v-model="show" name="audiofile-data-modal" :width="700" :height="'unset'">
     <div v-if="audioFile" ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
-      <p class="text-base text-gray-200">{{ metadata.filename }}</p>
-
-      <div class="w-full h-px bg-white bg-opacity-10 my-4" />
-
-      <ui-text-input-with-label :value="metadata.path" readonly :label="$strings.LabelPath" class="mb-4 text-sm" />
-
-      <div class="flex flex-col sm:flex-row text-sm">
-        <div class="w-full sm:w-1/2">
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelSize }}
-            </p>
-            <p>{{ $bytesPretty(metadata.size) }}</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelDuration }}
-            </p>
-            <p>{{ $secondsToTimestamp(audioFile.duration) }}</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">{{ $strings.LabelFormat }}</p>
-            <p>{{ audioFile.format }}</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelChapters }}
-            </p>
-            <p>{{ audioFile.chapters?.length || 0 }}</p>
-          </div>
-          <div v-if="audioFile.embeddedCoverArt" class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelEmbeddedCover }}
-            </p>
-            <p>{{ audioFile.embeddedCoverArt || '' }}</p>
-          </div>
-        </div>
-        <div class="w-full sm:w-1/2">
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelCodec }}
-            </p>
-            <p>{{ audioFile.codec }}</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelChannels }}
-            </p>
-            <p>{{ audioFile.channels }} ({{ audioFile.channelLayout }})</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelBitrate }}
-            </p>
-            <p>{{ $bytesPretty(audioFile.bitRate || 0, 0) }}</p>
-          </div>
-          <div class="flex mb-1">
-            <p class="w-32 text-black-50">{{ $strings.LabelTimeBase }}</p>
-            <p>{{ audioFile.timeBase }}</p>
-          </div>
-          <div v-if="audioFile.language" class="flex mb-1">
-            <p class="w-32 text-black-50">
-              {{ $strings.LabelLanguage }}
-            </p>
-            <p>{{ audioFile.language || '' }}</p>
-          </div>
-        </div>
+      <div class="flex items-center justify-between">
+        <p class="text-base text-gray-200 truncate">{{ metadata.filename }}</p>
+        <ui-btn v-if="ffprobeData" small class="ml-2" @click="ffprobeData = null">{{ $strings.ButtonReset }}</ui-btn>
+        <ui-btn v-else-if="userIsAdminOrUp" small :loading="probingFile" class="ml-2" @click="getFFProbeData">Probe Audio File</ui-btn>
       </div>
 
       <div class="w-full h-px bg-white bg-opacity-10 my-4" />
 
-      <p class="font-bold mb-2">{{ $strings.LabelMetaTags }}</p>
+      <template v-if="!ffprobeData">
+        <ui-text-input-with-label :value="metadata.path" readonly :label="$strings.LabelPath" class="mb-4 text-sm" />
 
-      <div v-for="(value, key) in metaTags" :key="key" class="flex mb-1 text-sm">
-        <p class="w-32 min-w-32 text-black-50 mb-1">
-          {{ key.replace('tag', '') }}
-        </p>
-        <p>{{ value }}</p>
+        <div class="flex flex-col sm:flex-row text-sm">
+          <div class="w-full sm:w-1/2">
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelSize }}
+              </p>
+              <p>{{ $bytesPretty(metadata.size) }}</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelDuration }}
+              </p>
+              <p>{{ $secondsToTimestamp(audioFile.duration) }}</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">{{ $strings.LabelFormat }}</p>
+              <p>{{ audioFile.format }}</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelChapters }}
+              </p>
+              <p>{{ audioFile.chapters?.length || 0 }}</p>
+            </div>
+            <div v-if="audioFile.embeddedCoverArt" class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelEmbeddedCover }}
+              </p>
+              <p>{{ audioFile.embeddedCoverArt || '' }}</p>
+            </div>
+          </div>
+          <div class="w-full sm:w-1/2">
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelCodec }}
+              </p>
+              <p>{{ audioFile.codec }}</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelChannels }}
+              </p>
+              <p>{{ audioFile.channels }} ({{ audioFile.channelLayout }})</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelBitrate }}
+              </p>
+              <p>{{ $bytesPretty(audioFile.bitRate || 0, 0) }}</p>
+            </div>
+            <div class="flex mb-1">
+              <p class="w-32 text-black-50">{{ $strings.LabelTimeBase }}</p>
+              <p>{{ audioFile.timeBase }}</p>
+            </div>
+            <div v-if="audioFile.language" class="flex mb-1">
+              <p class="w-32 text-black-50">
+                {{ $strings.LabelLanguage }}
+              </p>
+              <p>{{ audioFile.language || '' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full h-px bg-white bg-opacity-10 my-4" />
+
+        <p class="font-bold mb-2">{{ $strings.LabelMetaTags }}</p>
+
+        <div v-for="(value, key) in metaTags" :key="key" class="flex mb-1 text-sm">
+          <p class="w-32 min-w-32 text-black-50 mb-1">
+            {{ key.replace('tag', '') }}
+          </p>
+          <p>{{ value }}</p>
+        </div>
+      </template>
+      <div v-else class="w-full">
+        <div class="relative">
+          <ui-textarea-with-label :value="prettyFfprobeData" readonly :rows="30" class="text-xs" />
+
+          <button class="absolute top-4 right-4" :class="copiedToClipboard ? 'text-success' : 'text-white/50 hover:text-white/80'" @click.stop="copyFfprobeData">
+            <span class="material-icons">{{ copiedToClipboard ? 'check' : 'content_copy' }}</span>
+          </button>
+        </div>
       </div>
     </div>
   </modals-modal>
@@ -91,10 +106,24 @@ export default {
     audioFile: {
       type: Object,
       default: () => {}
-    }
+    },
+    libraryItemId: String
   },
   data() {
-    return {}
+    return {
+      probingFile: false,
+      ffprobeData: null,
+      copiedToClipboard: false
+    }
+  },
+  watch: {
+    show(newVal) {
+      if (newVal) {
+        this.ffprobeData = null
+        this.copiedToClipboard = false
+        this.probingFile = false
+      }
+    }
   },
   computed: {
     show: {
@@ -110,9 +139,36 @@ export default {
     },
     metaTags() {
       return this.audioFile?.metaTags || {}
+    },
+    userIsAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
+    prettyFfprobeData() {
+      if (!this.ffprobeData) return ''
+      return JSON.stringify(this.ffprobeData, null, 2)
     }
   },
-  methods: {},
+  methods: {
+    getFFProbeData() {
+      this.probingFile = true
+      this.$axios
+        .$get(`/api/items/${this.libraryItemId}/ffprobe/${this.audioFile.ino}`)
+        .then((data) => {
+          console.log('Got ffprobe data', data)
+          this.ffprobeData = data
+        })
+        .catch((error) => {
+          console.error('Failed to get ffprobe data', error)
+          this.$toast.error('FFProbe failed')
+        })
+        .finally(() => {
+          this.probingFile = false
+        })
+    },
+    async copyFfprobeData() {
+      this.copiedToClipboard = await this.$copyToClipboard(this.prettyFfprobeData)
+    }
+  },
   mounted() {}
 }
 </script>

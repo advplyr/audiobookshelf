@@ -472,7 +472,7 @@ class LibraryItemController {
 
   getToneMetadataObject(req, res) {
     if (!req.user.isAdminOrUp) {
-      Logger.error(`[LibraryItemController] Non-root user attempted to get tone metadata object`, req.user)
+      Logger.error(`[LibraryItemController] Non-admin user attempted to get tone metadata object`, req.user)
       return res.sendStatus(403)
     }
 
@@ -514,20 +514,31 @@ class LibraryItemController {
     })
   }
 
-  async toneScan(req, res) {
-    if (!req.libraryItem.media.audioFiles.length) {
-      return res.sendStatus(404)
+  /**
+   * GET api/items/:id/ffprobe/:fileid
+   * FFProbe JSON result from audio file
+   * 
+   * @param {express.Request} req
+   * @param {express.Response} res 
+   */
+  async getFFprobeData(req, res) {
+    if (!req.user.isAdminOrUp) {
+      Logger.error(`[LibraryItemController] Non-admin user attempted to get ffprobe data`, req.user)
+      return res.sendStatus(403)
+    }
+    if (req.libraryFile.fileType !== 'audio') {
+      Logger.error(`[LibraryItemController] Invalid filetype "${req.libraryFile.fileType}" for fileid "${req.params.fileid}". Expected audio file`)
+      return res.sendStatus(400)
     }
 
-    const audioFileIndex = isNullOrNaN(req.params.index) ? 1 : Number(req.params.index)
-    const audioFile = req.libraryItem.media.audioFiles.find(af => af.index === audioFileIndex)
+    const audioFile = req.libraryItem.media.findFileWithInode(req.params.fileid)
     if (!audioFile) {
-      Logger.error(`[LibraryItemController] toneScan: Audio file not found with index ${audioFileIndex}`)
+      Logger.error(`[LibraryItemController] Audio file not found with inode value ${req.params.fileid}`)
       return res.sendStatus(404)
     }
 
-    const toneData = await this.scanner.probeAudioFileWithTone(audioFile)
-    res.json(toneData)
+    const ffprobeData = await this.scanner.probeAudioFile(audioFile)
+    res.json(ffprobeData)
   }
 
   /**

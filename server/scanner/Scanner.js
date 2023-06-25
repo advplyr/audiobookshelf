@@ -1034,8 +1034,8 @@ class Scanner {
     SocketAuthority.emitter('scan_complete', libraryScan.getScanEmitData)
   }
 
-  probeAudioFileWithTone(audioFile) {
-    return MediaFileScanner.probeAudioFileWithTone(audioFile)
+  probeAudioFile(audioFile) {
+    return MediaFileScanner.probeAudioFile(audioFile)
   }
 }
 module.exports = Scanner

@@ -121,7 +121,7 @@ class ApiRouter {
     this.router.post('/items/:id/scan', LibraryItemController.middleware.bind(this), LibraryItemController.scan.bind(this))
     this.router.get('/items/:id/tone-object', LibraryItemController.middleware.bind(this), LibraryItemController.getToneMetadataObject.bind(this))
     this.router.post('/items/:id/chapters', LibraryItemController.middleware.bind(this), LibraryItemController.updateMediaChapters.bind(this))
-    this.router.post('/items/:id/tone-scan/:index?', LibraryItemController.middleware.bind(this), LibraryItemController.toneScan.bind(this))
+    this.router.get('/items/:id/ffprobe/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getFFprobeData.bind(this))
     this.router.get('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.getLibraryFile.bind(this))
     this.router.delete('/items/:id/file/:fileid', LibraryItemController.middleware.bind(this), LibraryItemController.deleteLibraryFile.bind(this))
     this.router.get('/items/:id/file/:fileid/download', LibraryItemController.middleware.bind(this), LibraryItemController.downloadLibraryFile.bind(this))

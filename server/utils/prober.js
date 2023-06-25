@@ -309,3 +309,23 @@ function probe(filepath, verbose = false) {
     })
 }
 module.exports.probe = probe
+
+/**
+ * Ffprobe for audio file path
+ * 
+ * @param {string} filepath
+ * @returns {Object} ffprobe json output
+ */
+function rawProbe(filepath) {
+  if (process.env.FFPROBE_PATH) {
+    ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
+  }
+
+  return ffprobe(filepath)
+    .catch((err) => {
+      return {
+        error: err
+      }
+    })
+}
+module.exports.rawProbe = rawProbe

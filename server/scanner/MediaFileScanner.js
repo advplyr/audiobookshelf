@@ -59,14 +59,7 @@ class MediaFileScanner {
   async scan(mediaType, libraryFile, mediaMetadataFromScan, verbose = false) {
     const probeStart = Date.now()
 
-    let probeData = null
-    // TODO: Temp not using tone for probing until more testing can be done
-    // if (global.ServerSettings.scannerUseTone) {
-    //   Logger.debug(`[MediaFileScanner] using tone to probe audio file "${libraryFile.metadata.path}"`)
-    //   probeData = await toneProber.probe(libraryFile.metadata.path, true)
-    // } else {
-    probeData = await prober.probe(libraryFile.metadata.path, verbose)
-    // }
+    const probeData = await prober.probe(libraryFile.metadata.path, verbose)
 
     if (probeData.error) {
       Logger.error(`[MediaFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
@@ -332,9 +325,9 @@ class MediaFileScanner {
     return hasUpdated
   }
 
-  probeAudioFileWithTone(audioFile) {
-    Logger.debug(`[MediaFileScanner] using tone to probe audio file "${audioFile.metadata.path}"`)
-    return toneProber.rawProbe(audioFile.metadata.path)
+  probeAudioFile(audioFile) {
+    Logger.debug(`[MediaFileScanner] Running ffprobe for audio file at "${audioFile.metadata.path}"`)
+    return prober.rawProbe(audioFile.metadata.path)
   }
 }
 module.exports = new MediaFileScanner()

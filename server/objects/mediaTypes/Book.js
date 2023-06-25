@@ -198,6 +198,7 @@ class Book {
     this.coverPath = coverPath
     return true
   }
+
   removeFileWithInode(inode) {
     if (this.audioFiles.some(af => af.ino === inode)) {
       this.audioFiles = this.audioFiles.filter(af => af.ino !== inode)
@@ -210,8 +211,13 @@ class Book {
     return false
   }
 
+  /**
+   * Get audio file or ebook file from inode
+   * @param {string} inode 
+   * @returns {(AudioFile|EBookFile|null)}
+   */
   findFileWithInode(inode) {
-    var audioFile = this.audioFiles.find(af => af.ino === inode)
+    const audioFile = this.audioFiles.find(af => af.ino === inode)
     if (audioFile) return audioFile
     if (this.ebookFile && this.ebookFile.ino === inode) return this.ebookFile
     return null

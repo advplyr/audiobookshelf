@@ -24,20 +24,20 @@ Vue.prototype.$formatJsDate = (jsdate, fnsFormat = 'MM/dd/yyyy HH:mm') => {
   return format(jsdate, fnsFormat)
 }
 Vue.prototype.$formatTime = (unixms, fnsFormat = 'HH:mm') => {
-    if (!unixms) return ''
-    return format(unixms, fnsFormat)
+  if (!unixms) return ''
+  return format(unixms, fnsFormat)
 }
 Vue.prototype.$formatJsTime = (jsdate, fnsFormat = 'HH:mm') => {
-    if (!jsdate || !isDate(jsdate)) return ''
-    return format(jsdate, fnsFormat)
+  if (!jsdate || !isDate(jsdate)) return ''
+  return format(jsdate, fnsFormat)
 }
 Vue.prototype.$formatDatetime = (unixms, fnsDateFormart = 'MM/dd/yyyy', fnsTimeFormat = 'HH:mm') => {
-    if (!unixms) return ''
-    return format(unixms, `${fnsDateFormart} ${fnsTimeFormat}`)
+  if (!unixms) return ''
+  return format(unixms, `${fnsDateFormart} ${fnsTimeFormat}`)
 }
 Vue.prototype.$formatJsDatetime = (jsdate, fnsDateFormart = 'MM/dd/yyyy', fnsTimeFormat = 'HH:mm') => {
-    if (!jsdate || !isDate(jsdate)) return ''
-    return format(jsdate, `${fnsDateFormart} ${fnsTimeFormat}`)
+  if (!jsdate || !isDate(jsdate)) return ''
+  return format(jsdate, `${fnsDateFormart} ${fnsTimeFormat}`)
 }
 Vue.prototype.$addDaysToToday = (daysToAdd) => {
   var date = addDays(new Date(), daysToAdd)
@@ -132,8 +132,10 @@ Vue.prototype.$copyToClipboard = (str, ctx) => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(str).then(() => {
         if (ctx) ctx.$toast.success('Copied to clipboard')
+        resolve(true)
       }, (err) => {
         console.error('Clipboard copy failed', str, err)
+        resolve(false)
       })
     } else {
       const el = document.createElement('textarea')
@@ -147,6 +149,7 @@ Vue.prototype.$copyToClipboard = (str, ctx) => {
       document.body.removeChild(el)
 
       if (ctx) ctx.$toast.success('Copied to clipboard')
+      resolve(true)
     }
   })
 }
