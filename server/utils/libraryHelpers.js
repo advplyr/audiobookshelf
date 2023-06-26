@@ -460,8 +460,10 @@ module.exports = {
         // Podcast categories
         const podcastEpisodes = libraryItem.media.episodes || []
         for (const episode of podcastEpisodes) {
+          const mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
+
           // Newest episodes
-          if (episode.addedAt > categoryMap['episodes-recently-added'].smallest) {
+          if (!mediaProgress?.isFinished && episode.addedAt > categoryMap['episodes-recently-added'].smallest) {
             const libraryItemWithEpisode = {
               ...libraryItem.toJSONMinified(),
               recentEpisode: episode.toJSON()
@@ -483,7 +485,6 @@ module.exports = {
           }
 
           // Episode recently listened and finished
-          const mediaProgress = allItemProgress.find(mp => mp.episodeId === episode.id)
           if (mediaProgress) {
             if (mediaProgress.isFinished) {
               if (mediaProgress.finishedAt > categoryMap['listen-again'].smallest) { // Item belongs on shelf
