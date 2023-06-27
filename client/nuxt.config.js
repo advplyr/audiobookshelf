@@ -71,7 +71,6 @@ module.exports = {
   ],
 
   proxy: {
-    '/s/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
     '/api/': { target: process.env.NODE_ENV !== 'production' ? 'http://localhost:3333' : '/' },
     '/dev/': { target: 'http://localhost:3333', pathRewrite: { '^/dev/': '' } }
   },

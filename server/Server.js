@@ -22,7 +22,6 @@ const SocketAuthority = require('./SocketAuthority')
 
 const ApiRouter = require('./routers/ApiRouter')
 const HlsRouter = require('./routers/HlsRouter')
-const StaticRouter = require('./routers/StaticRouter')
 
 const NotificationManager = require('./managers/NotificationManager')
 const EmailManager = require('./managers/EmailManager')
@@ -84,7 +83,6 @@ class Server {
     // Routers
     this.apiRouter = new ApiRouter(this)
     this.hlsRouter = new HlsRouter(this.db, this.auth, this.playbackSessionManager)
-    this.staticRouter = new StaticRouter(this.db)
 
     Logger.logManager = this.logManager
 
@@ -169,38 +167,6 @@ class Server {
 
     router.use('/api', this.authMiddleware.bind(this), this.apiRouter.router)
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
-
-    // TODO: Deprecated as of 2.2.21 edge
-    router.use('/s', this.authMiddleware.bind(this), this.staticRouter.router)
-
-    // EBook static file routes
-    // TODO: Deprecated as of 2.2.21 edge
-    router.get('/ebook/:library/:folder/*', (req, res) => {
-      const library = this.db.libraries.find(lib => lib.id === req.params.library)
-      if (!library) return res.sendStatus(404)
-      const folder = library.folders.find(fol => fol.id === req.params.folder)
-      if (!folder) return res.status(404).send('Folder not found')
-
-      // Replace backslashes with forward slashes
-      const remainingPath = req.params['0'].replace(/\\/g, '/')
-
-      // Prevent path traversal
-      //  e.g. ../../etc/passwd
-      if (/\/?\.?\.\//.test(remainingPath)) {
-        Logger.error(`[Server] Invalid path to get ebook "${remainingPath}"`)
-        return res.sendStatus(403)
-      }
-
-      // Check file ext is a valid ebook file
-      const filext = (Path.extname(remainingPath) || '').slice(1).toLowerCase()
-      if (!globals.SupportedEbookTypes.includes(filext)) {
-        Logger.error(`[Server] Invalid ebook file ext requested "${remainingPath}"`)
-        return res.sendStatus(403)
-      }
-
-      const fullPath = Path.join(folder.fullPath, remainingPath)
-      res.sendFile(fullPath)
-    })
 
     // RSS Feed temp route
     router.get('/feed/:id', (req, res) => {
