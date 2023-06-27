@@ -31,7 +31,7 @@ class BackupManager {
   }
 
   async init() {
-    var backupsDirExists = await fs.pathExists(this.BackupPath)
+    const backupsDirExists = await fs.pathExists(this.BackupPath)
     if (!backupsDirExists) {
       await fs.ensureDir(this.BackupPath)
       await filePerms.setDefault(this.BackupPath)

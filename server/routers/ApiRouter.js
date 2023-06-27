@@ -196,6 +196,7 @@ class ApiRouter {
     this.router.get('/backups', BackupController.middleware.bind(this), BackupController.getAll.bind(this))
     this.router.post('/backups', BackupController.middleware.bind(this), BackupController.create.bind(this))
     this.router.delete('/backups/:id', BackupController.middleware.bind(this), BackupController.delete.bind(this))
+    this.router.get('/backups/:id/download', BackupController.middleware.bind(this), BackupController.download.bind(this))
     this.router.get('/backups/:id/apply', BackupController.middleware.bind(this), BackupController.apply.bind(this))
     this.router.post('/backups/upload', BackupController.middleware.bind(this), BackupController.upload.bind(this))
 

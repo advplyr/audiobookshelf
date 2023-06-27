@@ -159,9 +159,6 @@ class Server {
     const distPath = Path.join(global.appRoot, '/client/dist')
     router.use(express.static(distPath))
 
-    // Metadata folder static path
-    router.use('/metadata', this.authMiddleware.bind(this), express.static(global.MetadataPath))
-
     // Static folder
     router.use(express.static(Path.join(global.appRoot, 'static')))
 

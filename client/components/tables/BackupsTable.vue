@@ -23,12 +23,13 @@
             <div class="w-full flex flex-row items-center justify-center">
               <ui-btn v-if="backup.serverVersion" small color="primary" @click="applyBackup(backup)">{{ $strings.ButtonRestore }}</ui-btn>
 
-              <a v-if="backup.serverVersion" :href="`/metadata/${$encodeUriPath(backup.path)}?token=${userToken}`" class="mx-1 pt-1 hover:text-opacity-100 text-opacity-70 text-white" download><span class="material-icons text-xl">download</span></a>
+              <button v-if="backup.serverVersion" aria-label="Download Backup" class="inline-flex material-icons text-xl mx-1 mt-1 text-white/70 hover:text-white/100" @click.stop="downloadBackup(backup)">download</button>
+
               <ui-tooltip v-else text="This backup was created with an old version of audiobookshelf no longer supported" direction="bottom" class="mx-2 flex items-center">
                 <span class="material-icons-outlined text-2xl text-error">error_outline</span>
               </ui-tooltip>
 
-              <span class="material-icons text-xl hover:text-error hover:text-opacity-100 text-opacity-70 text-white cursor-pointer mx-1" @click="deleteBackupClick(backup)">delete</span>
+              <button v-if="backup.serverVersion" aria-label="Delete Backup" class="inline-flex material-icons text-xl mx-1 text-white/70 hover:text-error" @click="deleteBackupClick(backup)">delete</button>
             </div>
           </td>
         </tr>
@@ -80,6 +81,9 @@ export default {
     }
   },
   methods: {
+    downloadBackup(backup) {
+      this.$downloadFile(`${process.env.serverUrl}/api/backups/${backup.id}/download?token=${this.userToken}`)
+    },
     confirm() {
       this.showConfirmApply = false
 
