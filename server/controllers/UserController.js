@@ -8,12 +8,24 @@ const { getId, toNumber } = require('../utils/index')
 class UserController {
   constructor() { }
 
-  findAll(req, res) {
+  async findAll(req, res) {
     if (!req.user.isAdminOrUp) return res.sendStatus(403)
     const hideRootToken = !req.user.isRoot
+
+    const includes = (req.query.include || '').split(',').map(i => i.trim())
+
+    // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
+    const users = this.db.users.map(u => u.toJSONForBrowser(hideRootToken, true))
+
+    if (includes.includes('latestSession')) {
+      for (const user of users) {
+        const userSessions = await this.db.selectUserSessions(user.id)
+        user.latestSession = userSessions.sort((a, b) => b.updatedAt - a.updatedAt).shift() || null
+      }
+    }
+
     res.json({
-      // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-      users: this.db.users.map(u => u.toJSONForBrowser(hideRootToken, true))
+      users
     })
   }
 
