@@ -209,7 +209,7 @@ class LibraryController {
     // If also filtering by series, will not collapse the filtered series as this would lead
     // to series having a collapsed series that is just that series.
     if (payload.collapseseries) {
-      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series, filterSeries)
+      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series, filterSeries, req.library.settings.hideSingleBookSeries)
 
       if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
         libraryItems = collapsedItems
@@ -405,7 +405,7 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified)
+    let series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified, req.library.settings.hideSingleBookSeries)
 
     const direction = payload.sortDesc ? 'desc' : 'asc'
     series = naturalSort(series).by([
@@ -544,12 +544,10 @@ class LibraryController {
   // api/libraries/:id/personalized
   // New and improved personalized call only loops through library items once
   async getLibraryUserPersonalizedOptimal(req, res) {
-    const mediaType = req.library.mediaType
-    const libraryItems = req.libraryItems
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
-    const categories = libraryHelpers.buildPersonalizedShelves(this, req.user, libraryItems, mediaType, limitPerShelf, include)
+    const categories = libraryHelpers.buildPersonalizedShelves(this, req.user, req.libraryItems, req.library, limitPerShelf, include)
     res.json(categories)
   }
 

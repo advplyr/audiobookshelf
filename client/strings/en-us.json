@@ -395,6 +395,8 @@
   "LabelSettingsExperimentalFeaturesHelp": "Features in development that could use your feedback and help testing. Click to open github discussion.",
   "LabelSettingsFindCovers": "Find covers",
   "LabelSettingsFindCoversHelp": "If your audiobook does not have an embedded cover or a cover image inside the folder, the scanner will attempt to find a cover.<br>Note: This will extend scan time",
+  "LabelSettingsHideSingleBookSeries": "Hide single book series",
+  "LabelSettingsHideSingleBookSeriesHelp": "Series that have a single book will be hidden from the series page and home page shelves.",
   "LabelSettingsHomePageBookshelfView": "Home page use bookshelf view",
   "LabelSettingsLibraryBookshelfView": "Library use bookshelf view",
   "LabelSettingsOverdriveMediaMarkers": "Use Overdrive Media Markers for chapters",

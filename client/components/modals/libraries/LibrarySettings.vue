@@ -38,6 +38,17 @@
         <p class="pl-4 text-base">{{ $strings.LabelSettingsSkipMatchingBooksWithISBN }}</p>
       </div>
     </div>
+    <div v-if="isBookLibrary" class="py-3">
+      <div class="flex items-center">
+        <ui-toggle-switch v-model="hideSingleBookSeries" @input="formUpdated" />
+        <ui-tooltip :text="$strings.LabelSettingsHideSingleBookSeriesHelp">
+          <p class="pl-4 text-base">
+            {{ $strings.LabelSettingsHideSingleBookSeries }}
+            <span class="material-icons icon-text text-sm">info_outlined</span>
+          </p>
+        </ui-tooltip>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -57,7 +68,8 @@ export default {
       disableWatcher: false,
       skipMatchingMediaWithAsin: false,
       skipMatchingMediaWithIsbn: false,
-      audiobooksOnly: false
+      audiobooksOnly: false,
+      hideSingleBookSeries: false
     }
   },
   computed: {
@@ -86,7 +98,8 @@ export default {
           disableWatcher: !!this.disableWatcher,
           skipMatchingMediaWithAsin: !!this.skipMatchingMediaWithAsin,
           skipMatchingMediaWithIsbn: !!this.skipMatchingMediaWithIsbn,
-          audiobooksOnly: !!this.audiobooksOnly
+          audiobooksOnly: !!this.audiobooksOnly,
+          hideSingleBookSeries: !!this.hideSingleBookSeries
         }
       }
     },
@@ -99,6 +112,7 @@ export default {
       this.skipMatchingMediaWithAsin = !!this.librarySettings.skipMatchingMediaWithAsin
       this.skipMatchingMediaWithIsbn = !!this.librarySettings.skipMatchingMediaWithIsbn
       this.audiobooksOnly = !!this.librarySettings.audiobooksOnly
+      this.hideSingleBookSeries = !!this.librarySettings.hideSingleBookSeries
     }
   },
   mounted() {

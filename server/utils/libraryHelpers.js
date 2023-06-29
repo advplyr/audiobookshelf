@@ -168,7 +168,7 @@ module.exports = {
     return data
   },
 
-  getSeriesFromBooks(books, allSeries, filterSeries, filterBy, user, minified = false) {
+  getSeriesFromBooks(books, allSeries, filterSeries, filterBy, user, minified, hideSingleBookSeries) {
     const _series = {}
     const seriesToFilterOut = {}
     books.forEach((libraryItem) => {
@@ -217,6 +217,11 @@ module.exports = {
     })
 
     let seriesItems = Object.values(_series)
+
+    // Library setting to hide series with only 1 book
+    if (hideSingleBookSeries) {
+      seriesItems = seriesItems.filter(se => se.books.length > 1)
+    }
 
     // check progress filter
     if (filterBy && filterBy.startsWith('progress.') && user) {
@@ -312,11 +317,11 @@ module.exports = {
   },
 
 
-  collapseBookSeries(libraryItems, series, filterSeries) {
+  collapseBookSeries(libraryItems, series, filterSeries, hideSingleBookSeries) {
     // Get series from the library items. If this list is being collapsed after filtering for a series,
     // don't collapse that series, only books that are in other series.
     const seriesObjects = this
-      .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true)
+      .getSeriesFromBooks(libraryItems, series, filterSeries, null, null, true, hideSingleBookSeries)
       .filter(s => s.id != filterSeries)
 
     const filteredLibraryItems = []
@@ -341,9 +346,11 @@ module.exports = {
     return filteredLibraryItems
   },
 
-  buildPersonalizedShelves(ctx, user, libraryItems, mediaType, maxEntitiesPerShelf, include) {
+  buildPersonalizedShelves(ctx, user, libraryItems, library, maxEntitiesPerShelf, include) {
+    const mediaType = library.mediaType
     const isPodcastLibrary = mediaType === 'podcast'
     const includeRssFeed = include.includes('rssfeed')
+    const hideSingleBookSeries = library.settings.hideSingleBookSeries
 
     const shelves = [
       {
@@ -580,21 +587,11 @@ module.exports = {
                 }
                 seriesMap[librarySeries.id] = series
 
-                if (series.addedAt > categoryMap['recent-series'].smallest) {
-                  const indexToPut = categoryMap['recent-series'].items.findIndex(i => series.addedAt > i.addedAt)
-                  if (indexToPut >= 0) {
-                    categoryMap['recent-series'].items.splice(indexToPut, 0, series)
-                  } else {
-                    categoryMap['recent-series'].items.push(series)
-                  }
-
-                  // Max series is 5
-                  if (categoryMap['recent-series'].items.length > 5) {
-                    categoryMap['recent-series'].items.pop()
-                    categoryMap['recent-series'].smallest = categoryMap['recent-series'].items[categoryMap['recent-series'].items.length - 1].addedAt
-                  }
-
-                  categoryMap['recent-series'].biggest = categoryMap['recent-series'].items[0].addedAt
+                const indexToPut = categoryMap['recent-series'].items.findIndex(i => series.addedAt > i.addedAt)
+                if (indexToPut >= 0) {
+                  categoryMap['recent-series'].items.splice(indexToPut, 0, series)
+                } else {
+                  categoryMap['recent-series'].items.push(series)
                 }
               }
             } else {
@@ -819,6 +816,12 @@ module.exports = {
 
     // Sort series books by sequence
     if (categoryMap['recent-series'].items.length) {
+      if (hideSingleBookSeries) {
+        categoryMap['recent-series'].items = categoryMap['recent-series'].items.filter(seriesItem => seriesItem.books.length > 1)
+      }
+      // Limit series shown to 5
+      categoryMap['recent-series'].items = categoryMap['recent-series'].items.slice(0, 5)
+
       for (const seriesItem of categoryMap['recent-series'].items) {
         seriesItem.books = naturalSort(seriesItem.books).asc(li => li.seriesSequence)
       }

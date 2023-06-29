@@ -8,6 +8,7 @@ class LibrarySettings {
     this.skipMatchingMediaWithIsbn = false
     this.autoScanCronExpression = null
     this.audiobooksOnly = false
+    this.hideSingleBookSeries = false // Do not show series that only have 1 book 
 
     if (settings) {
       this.construct(settings)
@@ -21,6 +22,7 @@ class LibrarySettings {
     this.skipMatchingMediaWithIsbn = !!settings.skipMatchingMediaWithIsbn
     this.autoScanCronExpression = settings.autoScanCronExpression || null
     this.audiobooksOnly = !!settings.audiobooksOnly
+    this.hideSingleBookSeries = !!settings.hideSingleBookSeries
   }
 
   toJSON() {
@@ -30,7 +32,8 @@ class LibrarySettings {
       skipMatchingMediaWithAsin: this.skipMatchingMediaWithAsin,
       skipMatchingMediaWithIsbn: this.skipMatchingMediaWithIsbn,
       autoScanCronExpression: this.autoScanCronExpression,
-      audiobooksOnly: this.audiobooksOnly
+      audiobooksOnly: this.audiobooksOnly,
+      hideSingleBookSeries: this.hideSingleBookSeries
     }
   }
 
