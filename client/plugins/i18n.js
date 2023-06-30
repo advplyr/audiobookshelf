@@ -34,7 +34,7 @@ Vue.prototype.$strings = { ...enUsStrings }
 
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
-  if (subs && Array.isArray(subs) && subs.length) {
+  if (subs?.length && Array.isArray(subs)) {
     return supplant(Vue.prototype.$strings[key], subs)
   }
   return Vue.prototype.$strings[key]

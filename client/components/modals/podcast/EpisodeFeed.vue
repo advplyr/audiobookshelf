@@ -39,7 +39,7 @@
         </div>
       </div>
       <div class="flex justify-end pt-4">
-        <ui-checkbox v-if="!allDownloaded" v-model="selectAll" @input="toggleSelectAll" label="Select all episodes" small checkbox-bg="primary" border-color="gray-600" class="mx-8" />
+        <ui-checkbox v-if="!allDownloaded" v-model="selectAll" @input="toggleSelectAll" :label="selectAllLabel" small checkbox-bg="primary" border-color="gray-600" class="mx-8" />
         <ui-btn v-if="!allDownloaded" :disabled="!episodesSelected.length" @click="submit">{{ buttonText }}</ui-btn>
         <p v-else class="text-success text-base px-2 py-4">All episodes are downloaded</p>
       </div>
@@ -99,15 +99,16 @@ export default {
       return Object.keys(this.selectedEpisodes).filter((key) => !!this.selectedEpisodes[key])
     },
     buttonText() {
-      if (!this.episodesSelected.length) return 'No Episodes Selected'
-      return `Download ${this.episodesSelected.length} Episode${this.episodesSelected.length > 1 ? 's' : ''}`
+      if (!this.episodesSelected.length) return this.$strings.LabelNoEpisodesSelected
+      if (this.episodesSelected.length === 1) return `${this.$strings.LabelDownload} ${this.$strings.LabelEpisode.toLowerCase()}`
+      return this.$getString('LabelDownloadNEpisodes', [this.episodesSelected.length])
     },
     itemEpisodes() {
       if (!this.libraryItem) return []
       return this.libraryItem.media.episodes || []
     },
     itemEpisodeMap() {
-      var map = {}
+      const map = {}
       this.itemEpisodes.forEach((item) => {
         if (item.enclosure) map[item.enclosure.url.split('?')[0]] = true
       })
@@ -116,29 +117,38 @@ export default {
     episodesList() {
       return this.episodesCleaned.filter((episode) => {
         if (!this.searchText) return true
-        return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
+        return episode.title?.toLowerCase().includes(this.searchText) || episode.subtitle?.toLowerCase().includes(this.searchText)
       })
+    },
+    selectAllLabel() {
+      if (this.episodesList.length === this.episodesCleaned.length) {
+        return this.$strings.LabelSelectAllEpisodes
+      }
+      const episodesNotDownloaded = this.episodesList.filter((ep) => !this.itemEpisodeMap[ep.cleanUrl]).length
+      return this.$getString('LabelSelectEpisodesShowing', [episodesNotDownloaded])
     }
   },
   methods: {
     inputUpdate() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {
-        if (!this.search || !this.search.trim()) {
+        if (!this.search?.trim()) {
           this.searchText = ''
+          this.checkSetIsSelectedAll()
           return
         }
         this.searchText = this.search.toLowerCase().trim()
+        this.checkSetIsSelectedAll()
       }, 500)
     },
     toggleSelectAll(val) {
-      for (const episode of this.episodesCleaned) {
+      for (const episode of this.episodesList) {
         if (this.itemEpisodeMap[episode.cleanUrl]) this.selectedEpisodes[episode.cleanUrl] = false
         else this.$set(this.selectedEpisodes, episode.cleanUrl, val)
       }
     },
     checkSetIsSelectedAll() {
-      for (const episode of this.episodesCleaned) {
+      for (const episode of this.episodesList) {
         if (!this.itemEpisodeMap[episode.cleanUrl] && !this.selectedEpisodes[episode.cleanUrl]) {
           this.selectAll = false
           return
@@ -147,19 +157,19 @@ export default {
       this.selectAll = true
     },
     toggleSelectEpisode(episode) {
-      if (this.itemEpisodeMap[episode.enclosure.url?.split('?')[0]]) return
+      if (this.itemEpisodeMap[episode.cleanUrl]) return
       this.$set(this.selectedEpisodes, episode.cleanUrl, !this.selectedEpisodes[episode.cleanUrl])
       this.checkSetIsSelectedAll()
     },
     submit() {
-      var episodesToDownload = []
+      let episodesToDownload = []
       if (this.episodesSelected.length) {
         episodesToDownload = this.episodesSelected.map((cleanUrl) => this.episodesCleaned.find((ep) => ep.cleanUrl == cleanUrl))
       }
 
-      var payloadSize = JSON.stringify(episodesToDownload).length
-      var sizeInMb = payloadSize / 1024 / 1024
-      var sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
+      const payloadSize = JSON.stringify(episodesToDownload).length
+      const sizeInMb = payloadSize / 1024 / 1024
+      const sizeInMbPretty = sizeInMb.toFixed(2) + 'MB'
       console.log('Request size', sizeInMb)
       if (sizeInMb > 4.99) {
         return this.$toast.error(`Request is too large (${sizeInMbPretty}) should be < 5Mb`)
@@ -174,10 +184,9 @@ export default {
           this.show = false
         })
         .catch((error) => {
-          var errorMsg = error.response && error.response.data ? error.response.data : 'Failed to download episodes'
           console.error('Failed to download episodes', error)
           this.processing = false
-          this.$toast.error(errorMsg)
+          this.$toast.error(error.response?.data || 'Failed to download episodes')
 
           this.selectedEpisodes = {}
           this.selectAll = false
