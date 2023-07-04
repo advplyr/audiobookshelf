@@ -154,7 +154,7 @@ export default {
       }
       this.deletingDeviceName = device.name
       this.$axios
-        .$patch(`/emails/ereader-devices`, payload)
+        .$post(`/api/emails/ereader-devices`, payload)
         .then((data) => {
           this.ereaderDevicesUpdated(data.ereaderDevices)
           this.$toast.success('Device deleted')
