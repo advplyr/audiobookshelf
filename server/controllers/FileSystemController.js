@@ -1,5 +1,6 @@
 const Path = require('path')
 const Logger = require('../Logger')
+const Database = require('../Database')
 const fs = require('../libs/fsExtra')
 
 class FileSystemController {
@@ -16,7 +17,7 @@ class FileSystemController {
     })
 
     // Do not include existing mapped library paths in response
-    this.db.libraries.forEach(lib => {
+    Database.libraries.forEach(lib => {
       lib.folders.forEach((folder) => {
         let dir = folder.fullPath
         if (dir.includes(global.appRoot)) dir = dir.replace(global.appRoot, '')

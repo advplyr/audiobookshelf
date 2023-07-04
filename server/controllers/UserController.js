@@ -1,9 +1,11 @@
+const uuidv4 = require("uuid").v4
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const User = require('../objects/user/User')
 
-const { getId, toNumber } = require('../utils/index')
+const { toNumber } = require('../utils/index')
 
 class UserController {
   constructor() { }
@@ -15,11 +17,11 @@ class UserController {
     const includes = (req.query.include || '').split(',').map(i => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-    const users = this.db.users.map(u => u.toJSONForBrowser(hideRootToken, true))
+    const users = Database.users.map(u => u.toJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
-        const userSessions = await this.db.selectUserSessions(user.id)
+        const userSessions = await Database.getPlaybackSessions({ userId: user.id })
         user.latestSession = userSessions.sort((a, b) => b.updatedAt - a.updatedAt).shift() || null
       }
     }
@@ -35,7 +37,7 @@ class UserController {
       return res.sendStatus(403)
     }
 
-    const user = this.db.users.find(u => u.id === req.params.id)
+    const user = Database.users.find(u => u.id === req.params.id)
     if (!user) {
       return res.sendStatus(404)
     }
@@ -47,18 +49,19 @@ class UserController {
     var account = req.body
 
     var username = account.username
-    var usernameExists = this.db.users.find(u => u.username.toLowerCase() === username.toLowerCase())
+    var usernameExists = Database.users.find(u => u.username.toLowerCase() === username.toLowerCase())
     if (usernameExists) {
       return res.status(500).send('Username already taken')
     }
 
-    account.id = getId('usr')
+    account.id = uuidv4()
     account.pash = await this.auth.hashPass(account.password)
     delete account.password
     account.token = await this.auth.generateAccessToken({ userId: account.id, username })
     account.createdAt = Date.now()
-    var newUser = new User(account)
-    var success = await this.db.insertEntity('user', newUser)
+    const newUser = new User(account)
+
+    const success = await Database.createUser(newUser)
     if (success) {
       SocketAuthority.adminEmitter('user_added', newUser.toJSONForBrowser())
       res.json({
@@ -81,7 +84,7 @@ class UserController {
     var shouldUpdateToken = false
 
     if (account.username !== undefined && account.username !== user.username) {
-      var usernameExists = this.db.users.find(u => u.username.toLowerCase() === account.username.toLowerCase())
+      var usernameExists = Database.users.find(u => u.username.toLowerCase() === account.username.toLowerCase())
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -94,13 +97,12 @@ class UserController {
       delete account.password
     }
 
-    var hasUpdated = user.update(account)
-    if (hasUpdated) {
+    if (user.update(account)) {
       if (shouldUpdateToken) {
         user.token = await this.auth.generateAccessToken({ userId: user.id, username: user.username })
         Logger.info(`[UserController] User ${user.username} was generated a new api token`)
       }
-      await this.db.updateEntity('user', user)
+      await Database.updateUser(user)
       SocketAuthority.clientEmitter(req.user.id, 'user_updated', user.toJSONForBrowser())
     }
 
@@ -124,13 +126,13 @@ class UserController {
     // Todo: check if user is logged in and cancel streams
 
     // Remove user playlists
-    const userPlaylists = this.db.playlists.filter(p => p.userId === user.id)
+    const userPlaylists = Database.playlists.filter(p => p.userId === user.id)
     for (const playlist of userPlaylists) {
-      await this.db.removeEntity('playlist', playlist.id)
+      await Database.removePlaylist(playlist.id)
     }
 
     const userJson = user.toJSONForBrowser()
-    await this.db.removeEntity('user', user.id)
+    await Database.removeUser(user.id)
     SocketAuthority.adminEmitter('user_removed', userJson)
     res.json({
       success: true
@@ -165,37 +167,39 @@ class UserController {
   }
 
   // POST: api/users/:id/purge-media-progress
+  // TODO: Remove
   async purgeMediaProgress(req, res) {
-    const user = req.reqUser
+    return res.sendStatus(404)
+    // const user = req.reqUser
 
-    if (user.type === 'root' && !req.user.isRoot) {
-      Logger.error(`[UserController] Admin user attempted to purge media progress of root user`, req.user.username)
-      return res.sendStatus(403)
-    }
+    // if (user.type === 'root' && !req.user.isRoot) {
+    //   Logger.error(`[UserController] Admin user attempted to purge media progress of root user`, req.user.username)
+    //   return res.sendStatus(403)
+    // }
 
-    var progressPurged = 0
-    user.mediaProgress = user.mediaProgress.filter(mp => {
-      const libraryItem = this.db.libraryItems.find(li => li.id === mp.libraryItemId)
-      if (!libraryItem) {
-        progressPurged++
-        return false
-      } else if (mp.episodeId) {
-        const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(mp.episodeId) : null
-        if (!episode) { // Episode not found
-          progressPurged++
-          return false
-        }
-      }
-      return true
-    })
+    // var progressPurged = 0
+    // user.mediaProgress = user.mediaProgress.filter(mp => {
+    //   const libraryItem = Database.libraryItems.find(li => li.id === mp.libraryItemId)
+    //   if (!libraryItem) {
+    //     progressPurged++
+    //     return false
+    //   } else if (mp.episodeId) {
+    //     const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(mp.episodeId) : null
+    //     if (!episode) { // Episode not found
+    //       progressPurged++
+    //       return false
+    //     }
+    //   }
+    //   return true
+    // })
 
-    if (progressPurged) {
-      Logger.info(`[UserController] Purged ${progressPurged} media progress for user ${user.username}`)
-      await this.db.updateEntity('user', user)
-      SocketAuthority.adminEmitter('user_updated', user.toJSONForBrowser())
-    }
+    // if (progressPurged) {
+    //   Logger.info(`[UserController] Purged ${progressPurged} media progress for user ${user.username}`)
+    //   await this.db.updateEntity('user', user)
+    //   SocketAuthority.adminEmitter('user_updated', user.toJSONForBrowser())
+    // }
 
-    res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
+    // res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
   }
 
   // POST: api/users/online (admin)
@@ -218,7 +222,7 @@ class UserController {
     }
 
     if (req.params.id) {
-      req.reqUser = this.db.users.find(u => u.id === req.params.id)
+      req.reqUser = Database.users.find(u => u.id === req.params.id)
       if (!req.reqUser) {
         return res.sendStatus(404)
       }

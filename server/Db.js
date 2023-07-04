@@ -243,9 +243,6 @@ class Db {
   getLibraryItem(id) {
     return this.libraryItems.find(li => li.id === id)
   }
-  getLibraryItemsInLibrary(libraryId) {
-    return this.libraryItems.filter(li => li.libraryId === libraryId)
-  }
 
   async updateLibraryItem(libraryItem) {
     return this.updateLibraryItems([libraryItem])
@@ -269,26 +266,6 @@ class Db {
     })
   }
 
-  async insertLibraryItem(libraryItem) {
-    return this.insertLibraryItems([libraryItem])
-  }
-
-  async insertLibraryItems(libraryItems) {
-    await Promise.all(libraryItems.map(async (li) => {
-      if (li && li.saveMetadata) return li.saveMetadata()
-      return null
-    }))
-
-    return this.libraryItemsDb.insert(libraryItems).then((results) => {
-      Logger.debug(`[DB] Library Items inserted ${results.inserted}`)
-      this.libraryItems = this.libraryItems.concat(libraryItems)
-      return true
-    }).catch((error) => {
-      Logger.error(`[DB] Library Items insert failed ${error}`)
-      return false
-    })
-  }
-
   removeLibraryItem(id) {
     return this.libraryItemsDb.delete((record) => record.id === id).then((results) => {
       Logger.debug(`[DB] Deleted Library Items: ${results.deleted}`)
@@ -301,14 +278,6 @@ class Db {
   updateServerSettings() {
     global.ServerSettings = this.serverSettings.toJSON()
     return this.updateEntity('settings', this.serverSettings)
-  }
-
-  getAllEntities(entityName) {
-    const entityDb = this.getEntityDb(entityName)
-    return entityDb.select(() => true).then((results) => results.data).catch((error) => {
-      Logger.error(`[DB] Failed to get all ${entityName}`, error)
-      return null
-    })
   }
 
   insertEntities(entityName, entities) {
@@ -463,15 +432,6 @@ class Db {
     })
   }
 
-  getAllSessions(selectFunc = () => true) {
-    return this.sessionsDb.select(selectFunc).then((results) => {
-      return results.data || []
-    }).catch((error) => {
-      Logger.error('[Db] Failed to select sessions', error)
-      return []
-    })
-  }
-
   getPlaybackSession(id) {
     return this.sessionsDb.select((pb) => pb.id == id).then((results) => {
       if (results.data.length) {
@@ -481,15 +441,6 @@ class Db {
     }).catch((error) => {
       Logger.error('Failed to get session', error)
       return null
-    })
-  }
-
-  selectUserSessions(userId) {
-    return this.sessionsDb.select((session) => session.userId === userId).then((results) => {
-      return results.data || []
-    }).catch((error) => {
-      Logger.error(`[Db] Failed to select user sessions "${userId}"`, error)
-      return []
     })
   }
 

@@ -1,5 +1,6 @@
 const SocketIO = require('socket.io')
 const Logger = require('./Logger')
+const Database = require('./Database')
 
 class SocketAuthority {
   constructor() {
@@ -18,7 +19,7 @@ class SocketAuthority {
         onlineUsersMap[client.user.id].connections++
       } else {
         onlineUsersMap[client.user.id] = {
-          ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems),
+          ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems),
           connections: 1
         }
       }
@@ -107,7 +108,7 @@ class SocketAuthority {
           delete this.clients[socket.id]
         } else {
           Logger.debug('[Server] User Offline ' + _client.user.username)
-          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
+          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
 
           const disconnectTime = Date.now() - _client.connected_at
           Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
@@ -160,11 +161,11 @@ class SocketAuthority {
 
     Logger.debug(`[Server] User Online ${client.user.username}`)
 
-    this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, this.Server.db.libraryItems))
+    this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
 
     // Update user lastSeen
     user.lastSeen = Date.now()
-    await this.Server.db.updateEntity('user', user)
+    await Database.updateUser(user)
 
     const initialPayload = {
       userId: client.user.id,
@@ -186,7 +187,7 @@ class SocketAuthority {
 
       if (client.user) {
         Logger.debug('[Server] User Offline ' + client.user.username)
-        this.adminEmitter('user_offline', client.user.toJSONForPublic(null, this.Server.db.libraryItems))
+        this.adminEmitter('user_offline', client.user.toJSONForPublic(null, Database.libraryItems))
       }
 
       delete this.clients[socketId].user

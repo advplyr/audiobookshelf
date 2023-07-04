@@ -1,5 +1,5 @@
 const Path = require('path')
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 const { sanitizeFilename } = require('../utils/fileUtils')
 const globals = require('../utils/globals')
 
@@ -70,7 +70,7 @@ class PodcastEpisodeDownload {
   }
 
   setData(podcastEpisode, libraryItem, isAutoDownload, libraryId) {
-    this.id = getId('epdl')
+    this.id = uuidv4()
     this.podcastEpisode = podcastEpisode
 
     const url = podcastEpisode.enclosure.url

@@ -1,14 +1,11 @@
 const nodemailer = require('nodemailer')
 const Logger = require("../Logger")
-const SocketAuthority = require('../SocketAuthority')
 
 class EmailManager {
-  constructor(db) {
-    this.db = db
-  }
+  constructor() { }
 
   getTransporter() {
-    return nodemailer.createTransport(this.db.emailSettings.getTransportObject())
+    return nodemailer.createTransport(Database.emailSettings.getTransportObject())
   }
 
   async sendTest(res) {
@@ -25,8 +22,8 @@ class EmailManager {
     }
 
     transporter.sendMail({
-      from: this.db.emailSettings.fromAddress,
-      to: this.db.emailSettings.testAddress || this.db.emailSettings.fromAddress,
+      from: Database.emailSettings.fromAddress,
+      to: Database.emailSettings.testAddress || Database.emailSettings.fromAddress,
       subject: 'Test email from Audiobookshelf',
       text: 'Success!'
     }).then((result) => {
@@ -52,7 +49,7 @@ class EmailManager {
     }
 
     transporter.sendMail({
-      from: this.db.emailSettings.fromAddress,
+      from: Database.emailSettings.fromAddress,
       to: device.email,
       subject: "Here is your Ebook!",
       html: '<div dir="auto"></div>',

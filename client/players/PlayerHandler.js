@@ -191,6 +191,7 @@ export default class PlayerHandler {
 
     const payload = {
       deviceInfo: {
+        clientName: 'Abs Web',
         deviceId: this.getDeviceId()
       },
       supportedMimeTypes: this.player.playableMimeTypes,

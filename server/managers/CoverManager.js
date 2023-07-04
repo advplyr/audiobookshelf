@@ -10,15 +10,14 @@ const { downloadFile, filePathToPOSIX } = require('../utils/fileUtils')
 const { extractCoverArt } = require('../utils/ffmpegHelpers')
 
 class CoverManager {
-  constructor(db, cacheManager) {
-    this.db = db
+  constructor(cacheManager) {
     this.cacheManager = cacheManager
 
     this.ItemMetadataPath = Path.posix.join(global.MetadataPath, 'items')
   }
 
   getCoverDirectory(libraryItem) {
-    if (this.db.serverSettings.storeCoverWithItem && !libraryItem.isFile && !libraryItem.isMusic) {
+    if (global.ServerSettings.storeCoverWithItem && !libraryItem.isFile && !libraryItem.isMusic) {
       return libraryItem.path
     } else {
       return Path.posix.join(this.ItemMetadataPath, libraryItem.id)

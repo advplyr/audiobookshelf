@@ -2,6 +2,7 @@ const express = require('express')
 const Path = require('path')
 
 const Logger = require('../Logger')
+const Database = require('../Database')
 const SocketAuthority = require('../SocketAuthority')
 
 const fs = require('../libs/fsExtra')
@@ -37,7 +38,6 @@ const Series = require('../objects/entities/Series')
 
 class ApiRouter {
   constructor(Server) {
-    this.db = Server.db
     this.auth = Server.auth
     this.scanner = Server.scanner
     this.playbackSessionManager = Server.playbackSessionManager
@@ -356,7 +356,7 @@ class ApiRouter {
     const json = user.toJSONForBrowser(hideRootToken)
 
     json.mediaProgress = json.mediaProgress.map(lip => {
-      const libraryItem = this.db.libraryItems.find(li => li.id === lip.libraryItemId)
+      const libraryItem = Database.libraryItems.find(li => li.id === lip.libraryItemId)
       if (!libraryItem) {
         Logger.warn('[ApiRouter] Library item not found for users progress ' + lip.libraryItemId)
         lip.media = null
@@ -381,11 +381,10 @@ class ApiRouter {
   }
 
   async handleDeleteLibraryItem(libraryItem) {
-    // Remove libraryItem from users
-    for (let i = 0; i < this.db.users.length; i++) {
-      const user = this.db.users[i]
-      if (user.removeMediaProgressForLibraryItem(libraryItem.id)) {
-        await this.db.updateEntity('user', user)
+    // Remove media progress for this library item from all users
+    for (const user of Database.users) {
+      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItem.id)) {
+        await Database.removeMediaProgress(mediaProgress.id)
       }
     }
 
@@ -393,12 +392,12 @@ class ApiRouter {
 
     if (libraryItem.isBook) {
       // remove book from collections
-      const collectionsWithBook = this.db.collections.filter(c => c.books.includes(libraryItem.id))
+      const collectionsWithBook = Database.collections.filter(c => c.books.includes(libraryItem.id))
       for (let i = 0; i < collectionsWithBook.length; i++) {
         const collection = collectionsWithBook[i]
         collection.removeBook(libraryItem.id)
-        await this.db.updateEntity('collection', collection)
-        SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(this.db.libraryItems))
+        await Database.removeCollectionBook(collection.id, libraryItem.media.id)
+        SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(Database.libraryItems))
       }
 
       // Check remove empty series
@@ -406,7 +405,7 @@ class ApiRouter {
     }
 
     // remove item from playlists
-    const playlistsWithItem = this.db.playlists.filter(p => p.hasItemsForLibraryItem(libraryItem.id))
+    const playlistsWithItem = Database.playlists.filter(p => p.hasItemsForLibraryItem(libraryItem.id))
     for (let i = 0; i < playlistsWithItem.length; i++) {
       const playlist = playlistsWithItem[i]
       playlist.removeItemsForLibraryItem(libraryItem.id)
@@ -414,11 +413,12 @@ class ApiRouter {
       // If playlist is now empty then remove it
       if (!playlist.items.length) {
         Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
-        await this.db.removeEntity('playlist', playlist.id)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(this.db.libraryItems))
+        await Database.removePlaylist(playlist.id)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(Database.libraryItems))
       } else {
-        await this.db.updateEntity('playlist', playlist)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(this.db.libraryItems))
+        await Database.updatePlaylist(playlist)
+
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
       }
     }
 
@@ -436,7 +436,7 @@ class ApiRouter {
       await fs.remove(itemMetadataPath)
     }
 
-    await this.db.removeLibraryItem(libraryItem.id)
+    await Database.removeLibraryItem(libraryItem.id)
     SocketAuthority.emitter('item_removed', libraryItem.toJSONExpanded())
   }
 
@@ -444,27 +444,27 @@ class ApiRouter {
     if (!seriesToCheck || !seriesToCheck.length) return
 
     for (const series of seriesToCheck) {
-      const otherLibraryItemsInSeries = this.db.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))
+      const otherLibraryItemsInSeries = Database.libraryItems.filter(li => li.id !== excludeLibraryItemId && li.isBook && li.media.metadata.hasSeries(series.id))
       if (!otherLibraryItemsInSeries.length) {
         // Close open RSS feed for series
         await this.rssFeedManager.closeFeedForEntityId(series.id)
         Logger.debug(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
-        await this.db.removeEntity('series', series.id)
+        await Database.removeSeries(series.id)
         // TODO: Socket events for series?
       }
     }
   }
 
   async getUserListeningSessionsHelper(userId) {
-    const userSessions = await this.db.selectUserSessions(userId)
+    const userSessions = await Database.getPlaybackSessions({ userId })
     return userSessions.sort((a, b) => b.updatedAt - a.updatedAt)
   }
 
   async getAllSessionsWithUserData() {
-    const sessions = await this.db.getAllSessions()
+    const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
     return sessions.map(se => {
-      const user = this.db.users.find(u => u.id === se.userId)
+      const user = Database.users.find(u => u.id === se.userId)
       return {
         ...se,
         user: user ? { id: user.id, username: user.username } : null
@@ -533,7 +533,7 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = this.db.authors.find(au => au.checkNameEquals(authorName))
+            let author = Database.authors.find(au => au.checkNameEquals(authorName))
             if (!author) {
               author = new Author()
               author.setData(mediaMetadata.authors[i])
@@ -546,7 +546,7 @@ class ApiRouter {
           }
         }
         if (newAuthors.length) {
-          await this.db.insertEntities('author', newAuthors)
+          await Database.createBulkAuthors(newAuthors)
           SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
         }
       }
@@ -562,7 +562,7 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = this.db.series.find(se => se.checkNameEquals(seriesName))
+            let seriesItem = Database.series.find(se => se.checkNameEquals(seriesName))
             if (!seriesItem) {
               seriesItem = new Series()
               seriesItem.setData(mediaMetadata.series[i])
@@ -575,7 +575,7 @@ class ApiRouter {
           }
         }
         if (newSeries.length) {
-          await this.db.insertEntities('series', newSeries)
+          await Database.createBulkSeries(newSeries)
           SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
         }
       }

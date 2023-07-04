@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { getId } = require('../../utils/index')
+const uuidv4 = require("uuid").v4
 const { checkNamesAreEqual } = require('../../utils/parsers/parseNameString')
 
 class Author {
@@ -53,7 +53,7 @@ class Author {
   }
 
   setData(data) {
-    this.id = getId('aut')
+    this.id = uuidv4()
     this.name = data.name
     this.description = data.description || null
     this.asin = data.asin || null

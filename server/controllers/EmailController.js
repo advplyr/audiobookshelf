@@ -1,22 +1,23 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 class EmailController {
   constructor() { }
 
   getSettings(req, res) {
     res.json({
-      settings: this.db.emailSettings
+      settings: Database.emailSettings
     })
   }
 
   async updateSettings(req, res) {
-    const updated = this.db.emailSettings.update(req.body)
+    const updated = Database.emailSettings.update(req.body)
     if (updated) {
-      await this.db.updateEntity('settings', this.db.emailSettings)
+      await Database.updateSetting(Database.emailSettings)
     }
     res.json({
-      settings: this.db.emailSettings
+      settings: Database.emailSettings
     })
   }
 
@@ -36,24 +37,24 @@ class EmailController {
       }
     }
 
-    const updated = this.db.emailSettings.update({
+    const updated = Database.emailSettings.update({
       ereaderDevices
     })
     if (updated) {
-      await this.db.updateEntity('settings', this.db.emailSettings)
+      await Database.updateSetting(Database.emailSettings)
       SocketAuthority.adminEmitter('ereader-devices-updated', {
-        ereaderDevices: this.db.emailSettings.ereaderDevices
+        ereaderDevices: Database.emailSettings.ereaderDevices
       })
     }
     res.json({
-      ereaderDevices: this.db.emailSettings.ereaderDevices
+      ereaderDevices: Database.emailSettings.ereaderDevices
     })
   }
 
   async sendEBookToDevice(req, res) {
     Logger.debug(`[EmailController] Send ebook to device request for libraryItemId=${req.body.libraryItemId}, deviceName=${req.body.deviceName}`)
 
-    const libraryItem = this.db.getLibraryItem(req.body.libraryItemId)
+    const libraryItem = Database.getLibraryItem(req.body.libraryItemId)
     if (!libraryItem) {
       return res.status(404).send('Library item not found')
     }
@@ -67,7 +68,7 @@ class EmailController {
       return res.status(404).send('EBook file not found')
     }
 
-    const device = this.db.emailSettings.getEReaderDevice(req.body.deviceName)
+    const device = Database.emailSettings.getEReaderDevice(req.body.deviceName)
     if (!device) {
       return res.status(404).send('E-reader device not found')
     }

@@ -11,6 +11,7 @@ const naturalSort = createNewSortInstance({
 
 class Podcast {
   constructor(podcast) {
+    this.id = null
     this.libraryItemId = null
     this.metadata = null
     this.coverPath = null
@@ -32,6 +33,7 @@ class Podcast {
   }
 
   construct(podcast) {
+    this.id = podcast.id
     this.libraryItemId = podcast.libraryItemId
     this.metadata = new PodcastMetadata(podcast.metadata)
     this.coverPath = podcast.coverPath
@@ -50,6 +52,7 @@ class Podcast {
 
   toJSON() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
@@ -65,6 +68,7 @@ class Podcast {
 
   toJSONMinified() {
     return {
+      id: this.id,
       metadata: this.metadata.toJSONMinified(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -80,6 +84,7 @@ class Podcast {
 
   toJSONExpanded() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
@@ -284,8 +289,9 @@ class Podcast {
   }
 
   addNewEpisodeFromAudioFile(audioFile, index) {
-    var pe = new PodcastEpisode()
+    const pe = new PodcastEpisode()
     pe.libraryItemId = this.libraryItemId
+    pe.podcastId = this.id
     audioFile.index = 1 // Only 1 audio file per episode
     pe.setDataFromAudioFile(audioFile, index)
     this.episodes.push(pe)

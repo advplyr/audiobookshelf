@@ -1,4 +1,4 @@
-const { getId } = require('../../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Series {
   constructor(series) {
@@ -40,7 +40,7 @@ class Series {
   }
 
   setData(data) {
-    this.id = getId('ser')
+    this.id = uuidv4()
     this.name = data.name
     this.description = data.description || null
     this.addedAt = Date.now()

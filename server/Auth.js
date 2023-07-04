@@ -2,21 +2,10 @@ const bcrypt = require('./libs/bcryptjs')
 const jwt = require('./libs/jsonwebtoken')
 const requestIp = require('./libs/requestIp')
 const Logger = require('./Logger')
+const Database = require('./Database')
 
 class Auth {
-  constructor(db) {
-    this.db = db
-
-    this.user = null
-  }
-
-  get username() {
-    return this.user ? this.user.username : 'nobody'
-  }
-
-  get users() {
-    return this.db.users
-  }
+  constructor() { }
 
   cors(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*')
@@ -35,20 +24,20 @@ class Auth {
   async initTokenSecret() {
     if (process.env.TOKEN_SECRET) { // User can supply their own token secret
       Logger.debug(`[Auth] Setting token secret - using user passed in TOKEN_SECRET env var`)
-      this.db.serverSettings.tokenSecret = process.env.TOKEN_SECRET
+      Database.serverSettings.tokenSecret = process.env.TOKEN_SECRET
     } else {
       Logger.debug(`[Auth] Setting token secret - using random bytes`)
-      this.db.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
+      Database.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
     }
-    await this.db.updateServerSettings()
+    await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    if (this.db.users.length) {
-      for (const user of this.db.users) {
+    if (Database.users.length) {
+      for (const user of Database.users) {
         user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
         Logger.warn(`[Auth] User ${user.username} api token has been updated using new token secret`)
       }
-      await this.db.updateEntities('user', this.db.users)
+      await Database.updateBulkUsers(Database.users)
     }
   }
 
@@ -68,7 +57,7 @@ class Auth {
       return res.sendStatus(401)
     }
 
-    var user = await this.verifyToken(token)
+    const user = await this.verifyToken(token)
     if (!user) {
       Logger.error('Verify Token User Not Found', token)
       return res.sendStatus(404)
@@ -95,7 +84,7 @@ class Auth {
   }
 
   generateAccessToken(payload) {
-    return jwt.sign(payload, global.ServerSettings.tokenSecret);
+    return jwt.sign(payload, Database.serverSettings.tokenSecret)
   }
 
   authenticateUser(token) {
@@ -104,12 +93,12 @@ class Auth {
 
   verifyToken(token) {
     return new Promise((resolve) => {
-      jwt.verify(token, global.ServerSettings.tokenSecret, (err, payload) => {
+      jwt.verify(token, Database.serverSettings.tokenSecret, (err, payload) => {
         if (!payload || err) {
           Logger.error('JWT Verify Token Failed', err)
           return resolve(null)
         }
-        const user = this.users.find(u => u.id === payload.userId && u.username === payload.username)
+        const user = Database.users.find(u => (u.id === payload.userId || u.oldUserId === payload.userId) && u.username === payload.username)
         resolve(user || null)
       })
     })
@@ -118,9 +107,9 @@ class Auth {
   getUserLoginResponsePayload(user) {
     return {
       user: user.toJSONForBrowser(),
-      userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSONForBrowser(),
-      ereaderDevices: this.db.emailSettings.getEReaderDevices(user),
+      userDefaultLibraryId: user.getDefaultLibraryId(Database.libraries),
+      serverSettings: Database.serverSettings.toJSONForBrowser(),
+      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
       Source: global.Source
     }
   }
@@ -130,7 +119,7 @@ class Auth {
     const username = (req.body.username || '').toLowerCase()
     const password = req.body.password || ''
 
-    const user = this.users.find(u => u.username.toLowerCase() === username)
+    const user = Database.users.find(u => u.username.toLowerCase() === username)
 
     if (!user?.isActive) {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
@@ -142,7 +131,7 @@ class Auth {
     }
 
     // Check passwordless root user
-    if (user.id === 'root' && (!user.pash || user.pash === '')) {
+    if (user.type === 'root' && (!user.pash || user.pash === '')) {
       if (password) {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
@@ -166,15 +155,6 @@ class Auth {
     }
   }
 
-  // Not in use now
-  lockUser(user) {
-    user.isLocked = true
-    return this.db.updateEntity('user', user).catch((error) => {
-      Logger.error('[Auth] Failed to lock user', user.username, error)
-      return false
-    })
-  }
-
   comparePassword(password, user) {
     if (user.type === 'root' && !password && !user.pash) return true
     if (!password || !user.pash) return false
@@ -184,7 +164,7 @@ class Auth {
   async userChangePassword(req, res) {
     var { password, newPassword } = req.body
     newPassword = newPassword || ''
-    var matchingUser = this.users.find(u => u.id === req.user.id)
+    const matchingUser = Database.users.find(u => u.id === req.user.id)
 
     // Only root can have an empty password
     if (matchingUser.type !== 'root' && !newPassword) {
@@ -193,14 +173,14 @@ class Auth {
       })
     }
 
-    var compare = await this.comparePassword(password, matchingUser)
+    const compare = await this.comparePassword(password, matchingUser)
     if (!compare) {
       return res.json({
         error: 'Invalid password'
       })
     }
 
-    var pw = ''
+    let pw = ''
     if (newPassword) {
       pw = await this.hashPass(newPassword)
       if (!pw) {
@@ -211,7 +191,8 @@ class Auth {
     }
 
     matchingUser.pash = pw
-    var success = await this.db.updateEntity('user', matchingUser)
+
+    const success = await Database.updateUser(matchingUser)
     if (success) {
       res.json({
         success: true

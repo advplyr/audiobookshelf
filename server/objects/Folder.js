@@ -1,4 +1,4 @@
-const { getId } = require("../utils")
+const uuidv4 = require("uuid").v4
 
 class Folder {
   constructor(folder = null) {
@@ -29,7 +29,7 @@ class Folder {
   }
 
   setData(data) {
-    this.id = data.id ? data.id : getId('fol')
+    this.id = data.id || uuidv4()
     this.fullPath = data.fullPath
     this.libraryId = data.libraryId
     this.addedAt = Date.now()

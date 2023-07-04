@@ -1,5 +1,5 @@
 const Logger = require('../Logger')
-const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 class RSSFeedController {
   constructor() { }
@@ -8,7 +8,7 @@ class RSSFeedController {
   async openRSSFeedForItem(req, res) {
     const options = req.body || {}
 
-    const item = this.db.libraryItems.find(li => li.id === req.params.itemId)
+    const item = Database.libraryItems.find(li => li.id === req.params.itemId)
     if (!item) return res.sendStatus(404)
 
     // Check user can access this library item
@@ -45,7 +45,7 @@ class RSSFeedController {
   async openRSSFeedForCollection(req, res) {
     const options = req.body || {}
 
-    const collection = this.db.collections.find(li => li.id === req.params.collectionId)
+    const collection = Database.collections.find(li => li.id === req.params.collectionId)
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist
@@ -60,7 +60,7 @@ class RSSFeedController {
       return res.status(400).send('Slug already in use')
     }
 
-    const collectionExpanded = collection.toJSONExpanded(this.db.libraryItems)
+    const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
     const collectionItemsWithTracks = collectionExpanded.books.filter(li => li.media.tracks.length)
 
     // Check collection has audio tracks
@@ -79,7 +79,7 @@ class RSSFeedController {
   async openRSSFeedForSeries(req, res) {
     const options = req.body || {}
 
-    const series = this.db.series.find(se => se.id === req.params.seriesId)
+    const series = Database.series.find(se => se.id === req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     // Check request body options exist
@@ -96,7 +96,7 @@ class RSSFeedController {
 
     const seriesJson = series.toJSON()
     // Get books in series that have audio tracks
-    seriesJson.books = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+    seriesJson.books = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
 
     // Check series has audio tracks
     if (!seriesJson.books.length) {

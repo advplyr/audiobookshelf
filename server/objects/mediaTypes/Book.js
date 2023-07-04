@@ -12,6 +12,7 @@ const EBookFile = require('../files/EBookFile')
 
 class Book {
   constructor(book) {
+    this.id = null
     this.libraryItemId = null
     this.metadata = null
 
@@ -32,6 +33,7 @@ class Book {
   }
 
   construct(book) {
+    this.id = book.id
     this.libraryItemId = book.libraryItemId
     this.metadata = new BookMetadata(book.metadata)
     this.coverPath = book.coverPath
@@ -46,6 +48,7 @@ class Book {
 
   toJSON() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
@@ -59,6 +62,7 @@ class Book {
 
   toJSONMinified() {
     return {
+      id: this.id,
       metadata: this.metadata.toJSONMinified(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -75,6 +79,7 @@ class Book {
 
   toJSONExpanded() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
