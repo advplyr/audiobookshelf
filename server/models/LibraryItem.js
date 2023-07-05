@@ -287,8 +287,6 @@ module.exports = (sequelize) => {
         birthtime: oldLibraryItem.birthtimeMs,
         lastScan: oldLibraryItem.lastScan,
         lastScanVersion: oldLibraryItem.scanVersion,
-        createdAt: oldLibraryItem.addedAt,
-        updatedAt: oldLibraryItem.updatedAt,
         libraryId: oldLibraryItem.libraryId,
         libraryFolderId: oldLibraryItem.folderId,
         libraryFiles: oldLibraryItem.libraryFiles?.map(lf => lf.toJSON()) || []

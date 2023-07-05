@@ -24,6 +24,26 @@ module.exports = (sequelize) => {
         fullPath: this.filePath
       }
     }
+
+    static getFromOld(oldFeedEpisode) {
+      return {
+        id: oldFeedEpisode.id,
+        title: oldFeedEpisode.title,
+        author: oldFeedEpisode.author,
+        description: oldFeedEpisode.description,
+        siteURL: oldFeedEpisode.link,
+        enclosureURL: oldFeedEpisode.enclosure?.url || null,
+        enclosureType: oldFeedEpisode.enclosure?.type || null,
+        enclosureSize: oldFeedEpisode.enclosure?.size || null,
+        pubDate: oldFeedEpisode.pubDate,
+        season: oldFeedEpisode.season || null,
+        episode: oldFeedEpisode.episode || null,
+        episodeType: oldFeedEpisode.episodeType || null,
+        duration: oldFeedEpisode.duration,
+        filePath: oldFeedEpisode.fullPath,
+        explicit: !!oldFeedEpisode.explicit
+      }
+    }
   }
 
   FeedEpisode.init({

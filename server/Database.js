@@ -106,7 +106,7 @@ class Database {
     require('./models/FeedEpisode')(this.sequelize)
     require('./models/Setting')(this.sequelize)
 
-    return this.sequelize.sync({ force })
+    return this.sequelize.sync({ force, alter: false })
   }
 
   async loadData(force = false) {
@@ -354,12 +354,13 @@ class Database {
     this.libraryItems = this.libraryItems.filter(li => li.id !== libraryItemId)
   }
 
-  createFeed(oldFeed) {
-    // TODO: Implement
+  async createFeed(oldFeed) {
+    await this.models.feed.fullCreateFromOld(oldFeed)
+    this.feeds.push(oldFeed)
   }
 
   updateFeed(oldFeed) {
-    // TODO: Implement
+    return this.models.feed.fullUpdateFromOld(oldFeed)
   }
 
   async removeFeed(feedId) {

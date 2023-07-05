@@ -52,8 +52,6 @@ module.exports = (sequelize) => {
         enclosureSize: oldEpisode.enclosure?.length || null,
         enclosureType: oldEpisode.enclosure?.type || null,
         publishedAt: oldEpisode.publishedAt,
-        createdAt: oldEpisode.addedAt,
-        updatedAt: oldEpisode.updatedAt,
         podcastId: oldEpisode.podcastId,
         audioFile: oldEpisode.audioFile?.toJSON() || null,
         chapters: oldEpisode.chapters
@@ -88,7 +86,9 @@ module.exports = (sequelize) => {
   })
 
   const { podcast } = sequelize.models
-  podcast.hasMany(PodcastEpisode)
+  podcast.hasMany(PodcastEpisode, {
+    onDelete: 'CASCADE'
+  })
   PodcastEpisode.belongsTo(podcast)
 
   return PodcastEpisode

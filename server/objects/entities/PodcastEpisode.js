@@ -153,8 +153,13 @@ class PodcastEpisode {
   update(payload) {
     let hasUpdates = false
     for (const key in this.toJSON()) {
-      if (payload[key] != undefined && !areEquivalent(payload[key], this[key])) {
-        this[key] = copyValue(payload[key])
+      let newValue = payload[key]
+      if (newValue === "") newValue = null
+      let existingValue = this[key]
+      if (existingValue === "") existingValue = null
+
+      if (newValue != undefined && !areEquivalent(newValue, existingValue)) {
+        this[key] = copyValue(newValue)
         hasUpdates = true
       }
     }

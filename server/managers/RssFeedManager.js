@@ -29,7 +29,7 @@ class RssFeedManager {
       }
     } else if (feedObj.entityType === 'series') {
       const series = Database.series.find(s => s.id === feedObj.entityId)
-      const hasSeriesBook = Database.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+      const hasSeriesBook = series ? Database.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length) : false
       if (!hasSeriesBook) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found or has no audio tracks`)
         return false
@@ -42,16 +42,15 @@ class RssFeedManager {
   }
 
   async init() {
-    const feedObjects = Database.feeds
-    if (!feedObjects?.length) return
+    const feeds = Database.feeds
+    if (!feeds?.length) return
 
-    for (const feedObj of feedObjects) {
+    for (const feed of feeds) {
       // Remove invalid feeds
-      if (!this.validateFeedEntity(feedObj)) {
-        await Database.removeFeed(feedObj.id)
+      if (!this.validateFeedEntity(feed)) {
+        await Database.removeFeed(feed.id)
       }
 
-      const feed = new Feed(feedObj)
       this.feeds[feed.id] = feed
       Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
     }

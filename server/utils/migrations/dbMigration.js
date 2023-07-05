@@ -169,6 +169,8 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
   //
   const oldEpisodes = oldPodcast.episodes || []
   for (const oldEpisode of oldEpisodes) {
+    oldEpisode.audioFile.index = 1
+
     const PodcastEpisode = {
       id: uuidv4(),
       index: oldEpisode.index,

@@ -1,3 +1,4 @@
+const uuidv4 = require("uuid").v4
 const date = require('../libs/dateAndTime')
 const { secondsToTimestamp } = require('../utils/index')
 
@@ -97,13 +98,11 @@ class FeedEpisode {
   setFromAudiobookTrack(libraryItem, serverAddress, slug, audioTrack, meta, additionalOffset = null) {
     // Example: <pubDate>Fri, 04 Feb 2015 00:00:00 GMT</pubDate>
     let timeOffset = isNaN(audioTrack.index) ? 0 : (Number(audioTrack.index) * 1000) // Offset pubdate to ensure correct order
-    let episodeId = String(audioTrack.index)
+    let episodeId = uuidv4()
 
     // Additional offset can be used for collections/series
     if (additionalOffset !== null && !isNaN(additionalOffset)) {
       timeOffset += Number(additionalOffset) * 1000
-
-      episodeId = String(additionalOffset) + '-' + episodeId
     }
 
     // e.g. Track 1 will have a pub date before Track 2

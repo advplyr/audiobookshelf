@@ -32,7 +32,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
 
   // Truthy check to handle value1=null, value2=Object
   if ((value1 && !value2) || (!value1 && value2)) {
-    console.log('value1/value2 falsy mismatch', value1, value2)
+    // console.log('value1/value2 falsy mismatch', value1, value2)
     return false
   }
 
@@ -40,7 +40,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
 
   // Ensure types match
   if (type1 !== typeof value2) {
-    console.log('type diff', type1, typeof value2)
+    // console.log('type diff', type1, typeof value2)
     return false
   }
 
@@ -63,7 +63,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   if (type1 === 'bigint' || type1 === 'boolean' ||
     type1 === 'function' || type1 === 'string' ||
     type1 === 'symbol') {
-    console.log('no match for values', value1, value2)
+    // console.log('no match for values', value1, value2)
     return false
   }
 
@@ -93,20 +93,17 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   // Handle arrays
   if (Array.isArray(value1)) {
     if (!Array.isArray(value2)) {
-      console.log('value2 is not array but value1 is', value1, value2)
       return false
     }
 
     const length = value1.length
 
     if (length !== value2.length) {
-      console.log('array length diff', length)
       return false
     }
 
     for (let i = 0; i < length; i++) {
       if (!areEquivalent(value1[i], value2[i], numToString, stack)) {
-        console.log('2 array items are not equiv', value1[i], value2[i])
         return false
       }
     }
@@ -121,7 +118,6 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   const numKeys = keys1.length
 
   if (keys2.length !== numKeys) {
-    console.log('Key length is diff', keys2.length, numKeys)
     return false
   }
 
@@ -139,7 +135,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   // Ensure perfect match across all keys
   for (let i = 0; i < numKeys; i++) {
     if (keys1[i] !== keys2[i]) {
-      console.log('object key is not equiv', keys1[i], keys2[i])
+      // console.log('object key is not equiv', keys1[i], keys2[i])
       return false
     }
   }
@@ -147,7 +143,7 @@ module.exports = function areEquivalent(value1, value2, numToString = false, sta
   // Ensure perfect match across all values
   for (let i = 0; i < numKeys; i++) {
     if (!areEquivalent(value1[keys1[i]], value2[keys1[i]], numToString, stack)) {
-      console.log('2 subobjects not equiv', keys1[i], value1[keys1[i]], value2[keys1[i]])
+      // console.log('2 subobjects not equiv', keys1[i], value1[keys1[i]], value2[keys1[i]])
       return false
     }
   }

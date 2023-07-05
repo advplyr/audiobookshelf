@@ -80,8 +80,6 @@ module.exports = (sequelize) => {
         id: oldCollection.id,
         name: oldCollection.name,
         description: oldCollection.description,
-        createdAt: oldCollection.createdAt,
-        updatedAt: oldCollection.lastUpdate,
         libraryId: oldCollection.libraryId
       }
     }

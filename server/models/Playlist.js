@@ -104,8 +104,6 @@ module.exports = (sequelize) => {
         id: oldPlaylist.id,
         name: oldPlaylist.name,
         description: oldPlaylist.description,
-        createdAt: oldPlaylist.createdAt,
-        updatedAt: oldPlaylist.lastUpdate,
         userId: oldPlaylist.userId,
         libraryId: oldPlaylist.libraryId
       }

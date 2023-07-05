@@ -1,5 +1,6 @@
 const { DataTypes, Model } = require('sequelize')
 const oldFeed = require('../objects/Feed')
+const areEquivalent = require('../utils/areEquivalent')
 /*
  * Polymorphic association: https://sequelize.org/docs/v6/advanced-association-concepts/polymorphic-associations/
  * Feeds can be created from LibraryItem, Collection, Playlist or Series
@@ -24,6 +25,7 @@ module.exports = (sequelize) => {
         userId: feedExpanded.userId,
         entityType: feedExpanded.entityType,
         entityId: feedExpanded.entityId,
+        entityUpdatedAt: feedExpanded.entityUpdatedAt?.valueOf() || null,
         meta: {
           title: feedExpanded.title,
           description: feedExpanded.description,
@@ -52,6 +54,92 @@ module.exports = (sequelize) => {
           id: feedId
         }
       })
+    }
+
+    static async fullCreateFromOld(oldFeed) {
+      const feedObj = this.getFromOld(oldFeed)
+      const newFeed = await this.create(feedObj)
+
+      if (oldFeed.episodes?.length) {
+        for (const oldFeedEpisode of oldFeed.episodes) {
+          const feedEpisode = sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
+          feedEpisode.feedId = newFeed.id
+          await sequelize.models.feedEpisode.create(feedEpisode)
+        }
+      }
+    }
+
+    static async fullUpdateFromOld(oldFeed) {
+      const oldFeedEpisodes = oldFeed.episodes || []
+      const feedObj = this.getFromOld(oldFeed)
+
+      const existingFeed = await this.findByPk(feedObj.id, {
+        include: sequelize.models.feedEpisode
+      })
+      if (!existingFeed) return false
+
+      let hasUpdates = false
+      for (const feedEpisode of existingFeed.feedEpisodes) {
+        const oldFeedEpisode = oldFeedEpisodes.find(ep => ep.id === feedEpisode.id)
+        // Episode removed
+        if (!oldFeedEpisode) {
+          feedEpisode.destroy()
+        } else {
+          let episodeHasUpdates = false
+          const oldFeedEpisodeCleaned = sequelize.models.feedEpisode.getFromOld(oldFeedEpisode)
+          for (const key in oldFeedEpisodeCleaned) {
+            if (!areEquivalent(oldFeedEpisodeCleaned[key], feedEpisode[key])) {
+              episodeHasUpdates = true
+            }
+          }
+          if (episodeHasUpdates) {
+            await feedEpisode.update(oldFeedEpisodeCleaned)
+            hasUpdates = true
+          }
+        }
+      }
+
+      let feedHasUpdates = false
+      for (const key in feedObj) {
+        let existingValue = existingFeed[key]
+        if (existingValue instanceof Date) existingValue = existingValue.valueOf()
+
+        if (!areEquivalent(existingValue, feedObj[key])) {
+          feedHasUpdates = true
+        }
+      }
+
+      if (feedHasUpdates) {
+        await existingFeed.update(feedObj)
+        hasUpdates = true
+      }
+
+      return hasUpdates
+    }
+
+    static getFromOld(oldFeed) {
+      const oldFeedMeta = oldFeed.meta || {}
+      return {
+        id: oldFeed.id,
+        slug: oldFeed.slug,
+        entityType: oldFeed.entityType,
+        entityId: oldFeed.entityId,
+        entityUpdatedAt: oldFeed.entityUpdatedAt,
+        serverAddress: oldFeed.serverAddress,
+        feedURL: oldFeed.feedUrl,
+        imageURL: oldFeedMeta.imageUrl,
+        siteURL: oldFeedMeta.link,
+        title: oldFeedMeta.title,
+        description: oldFeedMeta.description,
+        author: oldFeedMeta.author,
+        podcastType: oldFeedMeta.type || null,
+        language: oldFeedMeta.language || null,
+        ownerName: oldFeedMeta.ownerName || null,
+        ownerEmail: oldFeedMeta.ownerEmail || null,
+        explicit: !!oldFeedMeta.explicit,
+        preventIndexing: !!oldFeedMeta.preventIndexing,
+        userId: oldFeed.userId
+      }
     }
 
     getEntity(options) {
