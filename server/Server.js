@@ -157,15 +157,15 @@ class Server {
     router.use('/hls', this.authMiddleware.bind(this), this.hlsRouter.router)
 
     // RSS Feed temp route
-    router.get('/feed/:id', (req, res) => {
-      Logger.info(`[Server] Requesting rss feed ${req.params.id}`)
+    router.get('/feed/:slug', (req, res) => {
+      Logger.info(`[Server] Requesting rss feed ${req.params.slug}`)
       this.rssFeedManager.getFeed(req, res)
     })
-    router.get('/feed/:id/cover', (req, res) => {
+    router.get('/feed/:slug/cover', (req, res) => {
       this.rssFeedManager.getFeedCover(req, res)
     })
-    router.get('/feed/:id/item/:episodeId/*', (req, res) => {
-      Logger.debug(`[Server] Requesting rss feed episode ${req.params.id}/${req.params.episodeId}`)
+    router.get('/feed/:slug/item/:episodeId/*', (req, res) => {
+      Logger.debug(`[Server] Requesting rss feed episode ${req.params.slug}/${req.params.episodeId}`)
       this.rssFeedManager.getFeedItem(req, res)
     })
 

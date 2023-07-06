@@ -8,13 +8,7 @@ const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
 
 class RssFeedManager {
-  constructor() {
-    this.feeds = {}
-  }
-
-  get feedsArray() {
-    return Object.values(this.feeds)
-  }
+  constructor() { }
 
   validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
@@ -42,32 +36,30 @@ class RssFeedManager {
   }
 
   async init() {
-    const feeds = Database.feeds
-    if (!feeds?.length) return
-
-    for (const feed of feeds) {
+    for (const feed of Database.feeds) {
       // Remove invalid feeds
       if (!this.validateFeedEntity(feed)) {
         await Database.removeFeed(feed.id)
       }
-
-      this.feeds[feed.id] = feed
-      Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
     }
   }
 
   findFeedForEntityId(entityId) {
-    return Object.values(this.feeds).find(feed => feed.entityId === entityId)
+    return Database.feeds.find(feed => feed.entityId === entityId)
   }
 
-  findFeed(feedId) {
-    return this.feeds[feedId] || null
+  findFeedBySlug(slug) {
+    return Database.feeds.find(feed => feed.slug === slug)
+  }
+
+  findFeed(id) {
+    return Database.feeds.find(feed => feed.id === id)
   }
 
   async getFeed(req, res) {
-    const feed = this.feeds[req.params.id]
+    const feed = this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.warn(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
@@ -143,9 +135,9 @@ class RssFeedManager {
   }
 
   getFeedItem(req, res) {
-    const feed = this.feeds[req.params.id]
+    const feed = this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
@@ -159,9 +151,9 @@ class RssFeedManager {
   }
 
   getFeedCover(req, res) {
-    const feed = this.feeds[req.params.id]
+    const feed = this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
@@ -186,9 +178,8 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromItem(user.id, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
@@ -203,9 +194,8 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
@@ -220,9 +210,8 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
     await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
@@ -232,13 +221,17 @@ class RssFeedManager {
     if (!feed) return
     await Database.removeFeed(feed.id)
     SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
-    delete this.feeds[feed.id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
   }
 
-  closeRssFeed(id) {
-    if (!this.feeds[id]) return
-    return this.handleCloseFeed(this.feeds[id])
+  async closeRssFeed(req, res) {
+    const feed = this.findFeed(req.params.id)
+    if (!feed) {
+      Logger.error(`[RssFeedManager] RSS feed not found with id "${req.params.id}"`)
+      return res.sendStatus(404)
+    }
+    await this.handleCloseFeed(feed)
+    res.sendStatus(200)
   }
 
   closeFeedForEntityId(entityId) {

@@ -201,7 +201,7 @@ class LibraryController {
     // Step 1 - Filter the retrieved library items
     let filterSeries = null
     if (payload.filterBy) {
-      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
+      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, Database.feeds)
       payload.total = libraryItems.length
 
       // Determining if we are filtering titles by a series, and if so, which series

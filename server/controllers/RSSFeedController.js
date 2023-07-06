@@ -30,7 +30,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.feeds[options.slug]) {
+    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -55,7 +55,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.feeds[options.slug]) {
+    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -89,7 +89,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.feeds[options.slug]) {
+    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -111,24 +111,14 @@ class RSSFeedController {
   }
 
   // POST: api/feeds/:id/close
-  async closeRSSFeed(req, res) {
-    await this.rssFeedManager.closeRssFeed(req.params.id)
-
-    res.sendStatus(200)
+  closeRSSFeed(req, res) {
+    this.rssFeedManager.closeRssFeed(req, res)
   }
 
   middleware(req, res, next) {
     if (!req.user.isAdminOrUp) { // Only admins can manage rss feeds
       Logger.error(`[RSSFeedController] Non-admin user attempted to make a request to an RSS feed route`, req.user.username)
       return res.sendStatus(403)
-    }
-
-    if (req.params.id) {
-      const feed = this.rssFeedManager.findFeed(req.params.id)
-      if (!feed) {
-        Logger.error(`[RSSFeedController] RSS feed not found with id "${req.params.id}"`)
-        return res.sendStatus(404)
-      }
     }
 
     next()
