@@ -303,13 +303,13 @@ export default {
       this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
-          this.$toast.success('Batch update success!')
+          this.$toast.success(this.$strings.ToastBatchUpdateSuccess)
           this.$store.commit('setProcessingBatch', false)
           this.$store.commit('globals/resetSelectedMediaItems', [])
           this.$eventBus.$emit('bookshelf_clear_selection')
         })
         .catch((error) => {
-          this.$toast.error('Batch update failed')
+          this.$toast.error(this.$strings.ToastBatchUpdateFailed)
           console.error('Failed to batch update read/not read', error)
           this.$store.commit('setProcessingBatch', false)
         })
