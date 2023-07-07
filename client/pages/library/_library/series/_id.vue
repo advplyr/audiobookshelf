@@ -19,7 +19,7 @@ export default {
       return redirect(`/library/${libraryId}`)
     }
 
-    const series = await app.$axios.$get(`/api/series/${params.id}?include=progress,rssfeed`).catch((error) => {
+    const series = await app.$axios.$get(`/api/libraries/${library.id}/series/${params.id}?include=progress,rssfeed`).catch((error) => {
       console.error('Failed', error)
       return false
     })

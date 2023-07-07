@@ -4,6 +4,16 @@ const SocketAuthority = require('../SocketAuthority')
 class SeriesController {
   constructor() { }
 
+  /**
+   * @deprecated
+   * /api/series/:id
+   * 
+   * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
+   * Series are not library specific so we need to know what the library id is 
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
   async findOne(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim()).filter(v => !!v)
 
@@ -28,7 +38,7 @@ class SeriesController {
       seriesJson.rssFeed = feedObj?.toJSONMinified() || null
     }
 
-    return res.json(seriesJson)
+    res.json(seriesJson)
   }
 
   async search(req, res) {
@@ -55,9 +65,13 @@ class SeriesController {
     const series = this.db.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)
 
-    const libraryItemsInSeries = this.db.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
-    if (libraryItemsInSeries.some(li => !req.user.checkCanAccessLibrary(li.libraryId))) {
-      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to the library`, req.user)
+    /**
+     * Filter out any library items not accessible to user
+     */
+    const libraryItems = this.db.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+    const libraryItemsAccessible = libraryItems.filter(req.user.checkCanAccessLibraryItem)
+    if (libraryItems.length && !libraryItemsAccessible.length) {
+      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to any of the books`, req.user)
       return res.sendStatus(403)
     }
 
@@ -70,7 +84,7 @@ class SeriesController {
     }
 
     req.series = series
-    req.libraryItemsInSeries = libraryItemsInSeries
+    req.libraryItemsInSeries = libraryItemsAccessible
     next()
   }
 }
