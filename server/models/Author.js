@@ -16,6 +16,7 @@ module.exports = (sequelize) => {
         name: this.name,
         description: this.description,
         imagePath: this.imagePath,
+        libraryId: this.libraryId,
         addedAt: this.createdAt.valueOf(),
         updatedAt: this.updatedAt.valueOf()
       })
@@ -46,7 +47,8 @@ module.exports = (sequelize) => {
         name: oldAuthor.name,
         asin: oldAuthor.asin,
         description: oldAuthor.description,
-        imagePath: oldAuthor.imagePath
+        imagePath: oldAuthor.imagePath,
+        libraryId: oldAuthor.libraryId
       }
     }
 

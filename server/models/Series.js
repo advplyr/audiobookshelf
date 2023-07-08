@@ -14,6 +14,7 @@ module.exports = (sequelize) => {
         id: this.id,
         name: this.name,
         description: this.description,
+        libraryId: this.libraryId,
         addedAt: this.createdAt.valueOf(),
         updatedAt: this.updatedAt.valueOf()
       })
@@ -42,7 +43,8 @@ module.exports = (sequelize) => {
       return {
         id: oldSeries.id,
         name: oldSeries.name,
-        description: oldSeries.description
+        description: oldSeries.description,
+        libraryId: oldSeries.libraryId
       }
     }
 

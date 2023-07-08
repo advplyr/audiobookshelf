@@ -244,7 +244,7 @@ class AuthorController {
   }
 
   middleware(req, res, next) {
-    var author = Database.authors.find(au => au.id === req.params.id)
+    const author = Database.authors.find(au => au.id === req.params.id)
     if (!author) return res.sendStatus(404)
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
