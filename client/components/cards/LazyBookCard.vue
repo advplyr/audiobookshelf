@@ -680,7 +680,6 @@ export default {
         .$patch(apiEndpoint, updatePayload)
         .then(() => {
           this.processing = false
-          toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)

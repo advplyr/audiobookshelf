@@ -110,7 +110,10 @@ export default {
     itemEpisodeMap() {
       const map = {}
       this.itemEpisodes.forEach((item) => {
-        if (item.enclosure) map[item.enclosure.url.split('?')[0]] = true
+        if (item.enclosure) {
+          const cleanUrl = this.getCleanEpisodeUrl(item.enclosure.url)
+          map[cleanUrl] = true
+        }
       })
       return map
     },
@@ -129,6 +132,29 @@ export default {
     }
   },
   methods: {
+    /**
+     * RSS feed episode url is used for matching with existing downloaded episodes.
+     * Some RSS feeds include timestamps in the episode url (e.g. patreon) that can change on requests.
+     * These need to be removed in order to detect the same episode each time the feed is pulled.
+     *
+     * An RSS feed may include an `id` in the query string. In these cases we want to leave the `id`.
+     * @see https://github.com/advplyr/audiobookshelf/issues/1896
+     *
+     * @param {string} url - rss feed episode url
+     * @returns {string} rss feed episode url without dynamic query strings
+     */
+    getCleanEpisodeUrl(url) {
+      let queryString = url.split('?')[1]
+      if (!queryString) return url
+
+      const searchParams = new URLSearchParams(queryString)
+      for (const p of Array.from(searchParams.keys())) {
+        if (p !== 'id') searchParams.delete(p)
+      }
+
+      if (!searchParams.toString()) return url
+      return `${url}?${searchParams.toString()}`
+    },
     inputUpdate() {
       clearTimeout(this.searchTimeout)
       this.searchTimeout = setTimeout(() => {
@@ -198,7 +224,7 @@ export default {
         .map((_ep) => {
           return {
             ..._ep,
-            cleanUrl: _ep.enclosure.url.split('?')[0]
+            cleanUrl: this.getCleanEpisodeUrl(_ep.enclosure.url)
           }
         })
       this.episodesCleaned.sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1))

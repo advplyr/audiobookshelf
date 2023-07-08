@@ -391,7 +391,13 @@ class LibraryController {
     res.sendStatus(200)
   }
 
-  // api/libraries/:id/series
+  /**
+   * api/libraries/:id/series
+   * Optional query string: `?include=rssfeed` that adds `rssFeed` to series if a feed is open
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getAllSeriesForLibrary(req, res) {
     const libraryItems = req.libraryItems
 
@@ -450,6 +456,42 @@ class LibraryController {
 
     payload.results = series
     res.json(payload)
+  }
+
+  /**
+   * api/libraries/:id/series/:seriesId
+   *
+   * Optional includes (e.g. `?include=rssfeed,progress`)
+   * rssfeed: adds `rssFeed` to series object if a feed is open
+   * progress: adds `progress` to series object with { libraryItemIds:Array<llid>, libraryItemIdsFinished:Array<llid>, isFinished:boolean }
+   * 
+   * @param {*} req 
+   * @param {*} res - Series
+   */
+  async getSeriesForLibrary(req, res) {
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
+    const series = Database.series.find(se => se.id === req.params.seriesId)
+    if (!series) return res.sendStatus(404)
+
+    const libraryItemsInSeries = req.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+
+    const seriesJson = series.toJSON()
+    if (include.includes('progress')) {
+      const libraryItemsFinished = libraryItemsInSeries.filter(li => !!req.user.getMediaProgress(li.id)?.isFinished)
+      seriesJson.progress = {
+        libraryItemIds: libraryItemsInSeries.map(li => li.id),
+        libraryItemIdsFinished: libraryItemsFinished.map(li => li.id),
+        isFinished: libraryItemsFinished.length >= libraryItemsInSeries.length
+      }
+    }
+
+    if (include.includes('rssfeed')) {
+      const feedObj = this.rssFeedManager.findFeedForEntityId(seriesJson.id)
+      seriesJson.rssFeed = feedObj?.toJSONMinified() || null
+    }
+
+    res.json(seriesJson)
   }
 
   // api/libraries/:id/collections
@@ -859,7 +901,7 @@ class LibraryController {
   middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
-      return res.sendStatus(404)
+      return res.sendStatus(403)
     }
 
     const library = Database.libraries.find(lib => lib.id === req.params.id)

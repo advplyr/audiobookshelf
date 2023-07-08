@@ -320,7 +320,7 @@ export default class PlayerHandler {
     }
     this.listeningTimeSinceSync = 0
     this.lastSyncTime = 0
-    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 4000 }).catch((error) => {
+    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 6000 }).catch((error) => {
       console.error('Failed to close session', error)
     })
   }
@@ -340,12 +340,13 @@ export default class PlayerHandler {
     }
 
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 6000 }).then(() => {
+    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000 }).then(() => {
       this.failedProgressSyncs = 0
     }).catch((error) => {
       console.error('Failed to update session progress', error)
+      // After 4 failed sync attempts show an alert toast
       this.failedProgressSyncs++
-      if (this.failedProgressSyncs >= 2) {
+      if (this.failedProgressSyncs >= 4) {
         this.ctx.showFailedProgressSyncs()
         this.failedProgressSyncs = 0
       }
