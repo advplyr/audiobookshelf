@@ -74,5 +74,9 @@ module.exports = (sequelize) => {
     modelName: 'author'
   })
 
+  const { library } = sequelize.models
+  library.hasMany(Author)
+  Author.belongsTo(library)
+
   return Author
 }

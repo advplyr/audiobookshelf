@@ -9,8 +9,8 @@ const oldDbIdMap = {
   libraries: {},
   libraryFolders: {},
   libraryItems: {},
-  authors: {},
-  series: {},
+  authors: {}, // key is (new) library id with another map of author ids
+  series: {}, // key is (new) library id with another map of series ids
   collections: {},
   podcastEpisodes: {},
   books: {}, // key is library item id
@@ -98,10 +98,10 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   // Migrate BookAuthors
   //
   for (const oldBookAuthor of oldBook.metadata.authors) {
-    if (oldDbIdMap.authors[oldBookAuthor.id]) {
+    if (oldDbIdMap.authors[LibraryItem.libraryId][oldBookAuthor.id]) {
       newRecords.bookAuthor.push({
         id: uuidv4(),
-        authorId: oldDbIdMap.authors[oldBookAuthor.id],
+        authorId: oldDbIdMap.authors[LibraryItem.libraryId][oldBookAuthor.id],
         bookId: Book.id
       })
     } else {
@@ -113,11 +113,11 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   // Migrate BookSeries
   //
   for (const oldBookSeries of oldBook.metadata.series) {
-    if (oldDbIdMap.series[oldBookSeries.id]) {
+    if (oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id]) {
       const BookSeries = {
         id: uuidv4(),
         sequence: oldBookSeries.sequence,
-        seriesId: oldDbIdMap.series[oldBookSeries.id],
+        seriesId: oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id],
         bookId: Book.id
       }
       newRecords.bookSeries.push(BookSeries)
@@ -297,33 +297,66 @@ function migrateLibraries(oldLibraries) {
   }
 }
 
-function migrateAuthors(oldAuthors) {
+function migrateAuthors(oldAuthors, oldLibraryItems) {
   for (const oldAuthor of oldAuthors) {
-    const Author = {
-      id: uuidv4(),
-      name: oldAuthor.name,
-      asin: oldAuthor.asin || null,
-      description: oldAuthor.description,
-      imagePath: oldAuthor.imagePath,
-      createdAt: oldAuthor.addedAt || Date.now(),
-      updatedAt: oldAuthor.updatedAt || Date.now()
+    // Get an array of NEW library ids that have this author
+    const librariesWithThisAuthor = [...new Set(oldLibraryItems.map(li => {
+      if (!li.media.metadata.authors?.some(au => au.id === oldAuthor.id)) return null
+      if (!oldDbIdMap.libraries[li.libraryId]) {
+        Logger.warn(`[dbMigration] Authors library id ${li.libraryId} was not migrated`)
+      }
+      return oldDbIdMap.libraries[li.libraryId]
+    }).filter(lid => lid))]
+
+    if (!librariesWithThisAuthor.length) {
+      Logger.error(`[dbMigration] Author ${oldAuthor.name} was not found in any libraries`)
     }
-    oldDbIdMap.authors[oldAuthor.id] = Author.id
-    newRecords.author.push(Author)
+
+    for (const libraryId of librariesWithThisAuthor) {
+      const Author = {
+        id: uuidv4(),
+        name: oldAuthor.name,
+        asin: oldAuthor.asin || null,
+        description: oldAuthor.description,
+        imagePath: oldAuthor.imagePath,
+        createdAt: oldAuthor.addedAt || Date.now(),
+        updatedAt: oldAuthor.updatedAt || Date.now(),
+        libraryId
+      }
+      if (!oldDbIdMap.authors[libraryId]) oldDbIdMap.authors[libraryId] = {}
+      oldDbIdMap.authors[libraryId][oldAuthor.id] = Author.id
+      newRecords.author.push(Author)
+    }
   }
 }
 
-function migrateSeries(oldSerieses) {
+function migrateSeries(oldSerieses, oldLibraryItems) {
+  // Originaly series were shared between libraries if they had the same name
+  // Series will be separate between libraries
   for (const oldSeries of oldSerieses) {
-    const Series = {
-      id: uuidv4(),
-      name: oldSeries.name,
-      description: oldSeries.description || null,
-      createdAt: oldSeries.addedAt || Date.now(),
-      updatedAt: oldSeries.updatedAt || Date.now()
+    // Get an array of NEW library ids that have this series
+    const librariesWithThisSeries = [...new Set(oldLibraryItems.map(li => {
+      if (!li.media.metadata.series?.some(se => se.id === oldSeries.id)) return null
+      return oldDbIdMap.libraries[li.libraryId]
+    }).filter(lid => lid))]
+
+    if (!librariesWithThisSeries.length) {
+      Logger.error(`[dbMigration] Series ${oldSeries.name} was not found in any libraries`)
     }
-    oldDbIdMap.series[oldSeries.id] = Series.id
-    newRecords.series.push(Series)
+
+    for (const libraryId of librariesWithThisSeries) {
+      const Series = {
+        id: uuidv4(),
+        name: oldSeries.name,
+        description: oldSeries.description || null,
+        createdAt: oldSeries.addedAt || Date.now(),
+        updatedAt: oldSeries.updatedAt || Date.now(),
+        libraryId
+      }
+      if (!oldDbIdMap.series[libraryId]) oldDbIdMap.series[libraryId] = {}
+      oldDbIdMap.series[libraryId][oldSeries.id] = Series.id
+      newRecords.series.push(Series)
+    }
   }
 }
 
@@ -615,7 +648,14 @@ function migrateFeeds(oldFeeds) {
     } else if (oldFeed.entityType === 'libraryItem') {
       entityId = oldDbIdMap.libraryItems[oldFeed.entityId]
     } else if (oldFeed.entityType === 'series') {
-      entityId = oldDbIdMap.series[oldFeed.entityId]
+      // Series were split to be per library
+      // This will use the first series it finds
+      for (const libraryId in oldDbIdMap.series) {
+        if (oldDbIdMap.series[libraryId][oldFeed.entityId]) {
+          entityId = oldDbIdMap.series[libraryId][oldFeed.entityId]
+          break
+        }
+      }
     }
 
     if (!entityId) {
@@ -719,9 +759,9 @@ module.exports.migrate = async (DatabaseModels) => {
 
   const start = Date.now()
   migrateSettings(data.settings)
-  migrateAuthors(data.authors)
-  migrateSeries(data.series)
   migrateLibraries(data.libraries)
+  migrateAuthors(data.authors, data.libraryItems)
+  migrateSeries(data.series, data.libraryItems)
   migrateLibraryItems(data.libraryItems)
   migrateUsers(data.users)
   migrateSessions(data.sessions)

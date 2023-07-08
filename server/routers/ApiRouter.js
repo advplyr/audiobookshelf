@@ -519,7 +519,7 @@ class ApiRouter {
     return listeningStats
   }
 
-  async createAuthorsAndSeriesForItemUpdate(mediaPayload) {
+  async createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryId) {
     if (mediaPayload.metadata) {
       const mediaMetadata = mediaPayload.metadata
 
@@ -534,10 +534,10 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.authors[i].id || mediaMetadata.authors[i].id.startsWith('new')) {
-            let author = Database.authors.find(au => au.checkNameEquals(authorName))
+            let author = Database.authors.find(au => au.libraryId === libraryId && au.checkNameEquals(authorName))
             if (!author) {
               author = new Author()
-              author.setData(mediaMetadata.authors[i])
+              author.setData(mediaMetadata.authors[i], libraryId)
               Logger.debug(`[ApiRouter] Created new author "${author.name}"`)
               newAuthors.push(author)
             }
@@ -563,10 +563,10 @@ class ApiRouter {
           }
 
           if (!mediaMetadata.series[i].id || mediaMetadata.series[i].id.startsWith('new')) {
-            let seriesItem = Database.series.find(se => se.checkNameEquals(seriesName))
+            let seriesItem = Database.series.find(se => se.libraryId === libraryId && se.checkNameEquals(seriesName))
             if (!seriesItem) {
               seriesItem = new Series()
-              seriesItem.setData(mediaMetadata.series[i])
+              seriesItem.setData(mediaMetadata.series[i], libraryId)
               Logger.debug(`[ApiRouter] Created new series "${seriesItem.name}"`)
               newSeries.push(seriesItem)
             }

@@ -105,7 +105,7 @@ class LibraryItemController {
 
     // Book specific
     if (libraryItem.isBook) {
-      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
+      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
     }
 
     // Podcast specific
@@ -342,7 +342,7 @@ class LibraryItemController {
       var libraryItem = Database.libraryItems.find(_li => _li.id === updatePayloads[i].id)
       if (!libraryItem) return null
 
-      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload)
+      await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
 
       var hasUpdates = libraryItem.media.update(mediaPayload)
       if (hasUpdates) {

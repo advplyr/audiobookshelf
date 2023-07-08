@@ -477,13 +477,13 @@ class Scanner {
 
     // Create or match all new authors and series
     if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
-      var newAuthors = []
+      const newAuthors = []
       libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
-        var _author = Database.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
-        if (!_author) _author = newAuthors.find(au => au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
+        let _author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name))
+        if (!_author) _author = newAuthors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
         if (!_author) { // Must create new author
           _author = new Author()
-          _author.setData(tempMinAuthor)
+          _author.setData(tempMinAuthor, libraryItem.libraryId)
           newAuthors.push(_author)
         }
 
@@ -498,13 +498,13 @@ class Scanner {
       }
     }
     if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
-      var newSeries = []
+      const newSeries = []
       libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
-        var _series = Database.series.find(se => se.checkNameEquals(tempMinSeries.name))
-        if (!_series) _series = newSeries.find(se => se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
+        let _series = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
+        if (!_series) _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
         if (!_series) { // Must create new series
           _series = new Series()
-          _series.setData(tempMinSeries)
+          _series.setData(tempMinSeries, libraryItem.libraryId)
           newSeries.push(_series)
         }
         return {
@@ -877,12 +877,11 @@ class Scanner {
         matchData.author = matchData.author.split(',').map(au => au.trim()).filter(au => !!au)
       }
       const authorPayload = []
-      for (let index = 0; index < matchData.author.length; index++) {
-        const authorName = matchData.author[index]
-        var author = Database.authors.find(au => au.checkNameEquals(authorName))
+      for (const authorName of matchData.author) {
+        let author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(authorName))
         if (!author) {
           author = new Author()
-          author.setData({ name: authorName })
+          author.setData({ name: authorName }, libraryItem.libraryId)
           await Database.createAuthor(author)
           SocketAuthority.emitter('author_added', author.toJSON())
         }
@@ -895,12 +894,11 @@ class Scanner {
     if (matchData.series && (!libraryItem.media.metadata.seriesName || options.overrideDetails)) {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesPayload = []
-      for (let index = 0; index < matchData.series.length; index++) {
-        const seriesMatchItem = matchData.series[index]
-        var seriesItem = Database.series.find(au => au.checkNameEquals(seriesMatchItem.series))
+      for (const seriesMatchItem of matchData.series) {
+        let seriesItem = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(seriesMatchItem.series))
         if (!seriesItem) {
           seriesItem = new Series()
-          seriesItem.setData({ name: seriesMatchItem.series })
+          seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)
           await Database.createSeries(seriesItem)
           SocketAuthority.emitter('series_added', seriesItem.toJSON())
         }

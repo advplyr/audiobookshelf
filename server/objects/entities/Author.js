@@ -11,6 +11,7 @@ class Author {
     this.imagePath = null
     this.addedAt = null
     this.updatedAt = null
+    this.libraryId = null
 
     if (author) {
       this.construct(author)
@@ -25,6 +26,7 @@ class Author {
     this.imagePath = author.imagePath
     this.addedAt = author.addedAt
     this.updatedAt = author.updatedAt
+    this.libraryId = author.libraryId
   }
 
   toJSON() {
@@ -35,7 +37,8 @@ class Author {
       description: this.description,
       imagePath: this.imagePath,
       addedAt: this.addedAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      libraryId: this.libraryId
     }
   }
 
@@ -52,7 +55,7 @@ class Author {
     }
   }
 
-  setData(data) {
+  setData(data, libraryId) {
     this.id = uuidv4()
     this.name = data.name
     this.description = data.description || null
@@ -60,6 +63,7 @@ class Author {
     this.imagePath = data.imagePath || null
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
+    this.libraryId = libraryId
   }
 
   update(payload) {

@@ -68,5 +68,9 @@ module.exports = (sequelize) => {
     modelName: 'series'
   })
 
+  const { library } = sequelize.models
+  library.hasMany(Series)
+  Series.belongsTo(library)
+
   return Series
 }

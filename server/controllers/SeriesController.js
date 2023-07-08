@@ -10,7 +10,7 @@ class SeriesController {
    * /api/series/:id
    * 
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
-   * Series are not library specific so we need to know what the library id is 
+   * Series are not library specific so we need to know what the library id is
    * 
    * @param {*} req 
    * @param {*} res 
