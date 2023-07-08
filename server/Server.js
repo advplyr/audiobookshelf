@@ -29,7 +29,7 @@ const CoverManager = require('./managers/CoverManager')
 const AbMergeManager = require('./managers/AbMergeManager')
 const CacheManager = require('./managers/CacheManager')
 const LogManager = require('./managers/LogManager')
-// const BackupManager = require('./managers/BackupManager') // TODO
+const BackupManager = require('./managers/BackupManager')
 const PlaybackSessionManager = require('./managers/PlaybackSessionManager')
 const PodcastManager = require('./managers/PodcastManager')
 const AudioMetadataMangaer = require('./managers/AudioMetadataManager')
@@ -59,7 +59,6 @@ class Server {
       filePerms.setDefaultDirSync(global.MetadataPath, false)
     }
 
-    // this.db = new Db()
     this.watcher = new Watcher()
     this.auth = new Auth()
 
@@ -67,7 +66,7 @@ class Server {
     this.taskManager = new TaskManager()
     this.notificationManager = new NotificationManager()
     this.emailManager = new EmailManager()
-    // this.backupManager = new BackupManager(this.db)
+    this.backupManager = new BackupManager()
     this.logManager = new LogManager()
     this.cacheManager = new CacheManager()
     this.abMergeManager = new AbMergeManager(this.taskManager)
@@ -109,7 +108,7 @@ class Server {
     await this.purgeMetadata() // Remove metadata folders without library item
     await this.cacheManager.ensureCachePaths()
 
-    // await this.backupManager.init() // TODO: Implement backups
+    await this.backupManager.init()
     await this.logManager.init()
     await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()

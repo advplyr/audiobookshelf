@@ -11,7 +11,7 @@ class Database {
   constructor() {
     this.sequelize = null
     this.dbPath = null
-    this.isNew = false // New database.sqlite created
+    this.isNew = false // New absdatabase.sqlite created
 
     // Temporarily using format of old DB
     // below data should be loaded from the DB as needed
@@ -40,14 +40,14 @@ class Database {
 
   async checkHasDb() {
     if (!await fs.pathExists(this.dbPath)) {
-      Logger.info(`[Database] database.sqlite not found at ${this.dbPath}`)
+      Logger.info(`[Database] absdatabase.sqlite not found at ${this.dbPath}`)
       return false
     }
     return true
   }
 
   async init(force = false) {
-    this.dbPath = Path.join(global.ConfigPath, 'database.sqlite')
+    this.dbPath = Path.join(global.ConfigPath, 'absdatabase.sqlite')
 
     // First check if this is a new database
     this.isNew = !(await this.checkHasDb()) || force
@@ -59,7 +59,7 @@ class Database {
     await this.buildModels(force)
     Logger.info(`[Database] Db initialized`, Object.keys(this.sequelize.models))
 
-    await this.loadData(force)
+    await this.loadData()
   }
 
   async connect() {
@@ -81,6 +81,17 @@ class Database {
       Logger.error(`[Database] Failed to connect to db`, error)
       return false
     }
+  }
+
+  async disconnect() {
+    Logger.info(`[Database] Disconnecting sqlite db`)
+    await this.sequelize.close()
+    this.sequelize = null
+  }
+
+  async reconnect() {
+    Logger.info(`[Database] Reconnecting sqlite db`)
+    await this.init()
   }
 
   buildModels(force = false) {
@@ -109,8 +120,8 @@ class Database {
     return this.sequelize.sync({ force, alter: false })
   }
 
-  async loadData(force = false) {
-    if (this.isNew && await dbMigration.checkShouldMigrate(force)) {
+  async loadData() {
+    if (this.isNew && await dbMigration.checkShouldMigrate()) {
       Logger.info(`[Database] New database was created and old database was detected - migrating old to new`)
       await dbMigration.migrate(this.models)
     }
@@ -143,6 +154,7 @@ class Database {
   }
 
   async createRootUser(username, pash, token) {
+    if (!this.sequelize) return false
     const newUser = await this.models.user.createRootUser(username, pash, token)
     if (newUser) {
       this.users.push(newUser)
@@ -152,60 +164,73 @@ class Database {
   }
 
   updateServerSettings() {
+    if (!this.sequelize) return false
     global.ServerSettings = this.serverSettings.toJSON()
     return this.updateSetting(this.serverSettings)
   }
 
   updateSetting(settings) {
+    if (!this.sequelize) return false
     return this.models.setting.updateSettingObj(settings.toJSON())
   }
 
   async createUser(oldUser) {
+    if (!this.sequelize) return false
     await this.models.user.createFromOld(oldUser)
     this.users.push(oldUser)
     return true
   }
 
   updateUser(oldUser) {
+    if (!this.sequelize) return false
     return this.models.user.updateFromOld(oldUser)
   }
 
   updateBulkUsers(oldUsers) {
+    if (!this.sequelize) return false
     return Promise.all(oldUsers.map(u => this.updateUser(u)))
   }
 
   async removeUser(userId) {
+    if (!this.sequelize) return false
     await this.models.user.removeById(userId)
     this.users = this.users.filter(u => u.id !== userId)
   }
 
   upsertMediaProgress(oldMediaProgress) {
+    if (!this.sequelize) return false
     return this.models.mediaProgress.upsertFromOld(oldMediaProgress)
   }
 
   removeMediaProgress(mediaProgressId) {
+    if (!this.sequelize) return false
     return this.models.mediaProgress.removeById(mediaProgressId)
   }
 
   updateBulkBooks(oldBooks) {
+    if (!this.sequelize) return false
     return Promise.all(oldBooks.map(oldBook => this.models.book.saveFromOld(oldBook)))
   }
 
   async createLibrary(oldLibrary) {
+    if (!this.sequelize) return false
     await this.models.library.createFromOld(oldLibrary)
     this.libraries.push(oldLibrary)
   }
 
   updateLibrary(oldLibrary) {
+    if (!this.sequelize) return false
     return this.models.library.updateFromOld(oldLibrary)
   }
 
   async removeLibrary(libraryId) {
+    if (!this.sequelize) return false
     await this.models.library.removeById(libraryId)
     this.libraries = this.libraries.filter(lib => lib.id !== libraryId)
   }
 
   async createCollection(oldCollection) {
+    if (!this.sequelize) return false
     const newCollection = await this.models.collection.createFromOld(oldCollection)
     // Create CollectionBooks
     if (newCollection) {
@@ -227,6 +252,7 @@ class Database {
   }
 
   updateCollection(oldCollection) {
+    if (!this.sequelize) return false
     const collectionBooks = []
     let order = 1
     oldCollection.books.forEach((libraryItemId) => {
@@ -242,23 +268,28 @@ class Database {
   }
 
   async removeCollection(collectionId) {
+    if (!this.sequelize) return false
     await this.models.collection.removeById(collectionId)
     this.collections = this.collections.filter(c => c.id !== collectionId)
   }
 
   createCollectionBook(collectionBook) {
+    if (!this.sequelize) return false
     return this.models.collectionBook.create(collectionBook)
   }
 
   createBulkCollectionBooks(collectionBooks) {
+    if (!this.sequelize) return false
     return this.models.collectionBook.bulkCreate(collectionBooks)
   }
 
   removeCollectionBook(collectionId, bookId) {
+    if (!this.sequelize) return false
     return this.models.collectionBook.removeByIds(collectionId, bookId)
   }
 
   async createPlaylist(oldPlaylist) {
+    if (!this.sequelize) return false
     const newPlaylist = await this.models.playlist.createFromOld(oldPlaylist)
     if (newPlaylist) {
       const playlistMediaItems = []
@@ -288,6 +319,7 @@ class Database {
   }
 
   updatePlaylist(oldPlaylist) {
+    if (!this.sequelize) return false
     const playlistMediaItems = []
     let order = 1
     oldPlaylist.items.forEach((item) => {
@@ -304,36 +336,44 @@ class Database {
   }
 
   async removePlaylist(playlistId) {
+    if (!this.sequelize) return false
     await this.models.playlist.removeById(playlistId)
     this.playlists = this.playlists.filter(p => p.id !== playlistId)
   }
 
   createPlaylistMediaItem(playlistMediaItem) {
+    if (!this.sequelize) return false
     return this.models.playlistMediaItem.create(playlistMediaItem)
   }
 
   createBulkPlaylistMediaItems(playlistMediaItems) {
+    if (!this.sequelize) return false
     return this.models.playlistMediaItem.bulkCreate(playlistMediaItems)
   }
 
   removePlaylistMediaItem(playlistId, mediaItemId) {
+    if (!this.sequelize) return false
     return this.models.playlistMediaItem.removeByIds(playlistId, mediaItemId)
   }
 
   getLibraryItem(libraryItemId) {
+    if (!this.sequelize) return false
     return this.libraryItems.find(li => li.id === libraryItemId)
   }
 
   async createLibraryItem(oldLibraryItem) {
+    if (!this.sequelize) return false
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
     this.libraryItems.push(oldLibraryItem)
   }
 
   updateLibraryItem(oldLibraryItem) {
+    if (!this.sequelize) return false
     return this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
   }
 
   async updateBulkLibraryItems(oldLibraryItems) {
+    if (!this.sequelize) return false
     let updatesMade = 0
     for (const oldLibraryItem of oldLibraryItems) {
       const hasUpdates = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
@@ -343,6 +383,7 @@ class Database {
   }
 
   async createBulkLibraryItems(oldLibraryItems) {
+    if (!this.sequelize) return false
     for (const oldLibraryItem of oldLibraryItems) {
       await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
       this.libraryItems.push(oldLibraryItem)
@@ -350,68 +391,82 @@ class Database {
   }
 
   async removeLibraryItem(libraryItemId) {
+    if (!this.sequelize) return false
     await this.models.libraryItem.removeById(libraryItemId)
     this.libraryItems = this.libraryItems.filter(li => li.id !== libraryItemId)
   }
 
   async createFeed(oldFeed) {
+    if (!this.sequelize) return false
     await this.models.feed.fullCreateFromOld(oldFeed)
     this.feeds.push(oldFeed)
   }
 
   updateFeed(oldFeed) {
+    if (!this.sequelize) return false
     return this.models.feed.fullUpdateFromOld(oldFeed)
   }
 
   async removeFeed(feedId) {
+    if (!this.sequelize) return false
     await this.models.feed.removeById(feedId)
     this.feeds = this.feeds.filter(f => f.id !== feedId)
   }
 
   updateSeries(oldSeries) {
+    if (!this.sequelize) return false
     return this.models.series.updateFromOld(oldSeries)
   }
 
   async createSeries(oldSeries) {
+    if (!this.sequelize) return false
     await this.models.series.createFromOld(oldSeries)
     this.series.push(oldSeries)
   }
 
   async createBulkSeries(oldSeriesObjs) {
+    if (!this.sequelize) return false
     await this.models.series.createBulkFromOld(oldSeriesObjs)
     this.series.push(...oldSeriesObjs)
   }
 
   async removeSeries(seriesId) {
+    if (!this.sequelize) return false
     await this.models.series.removeById(seriesId)
     this.series = this.series.filter(se => se.id !== seriesId)
   }
 
   async createAuthor(oldAuthor) {
+    if (!this.sequelize) return false
     await this.models.createFromOld(oldAuthor)
     this.authors.push(oldAuthor)
   }
 
   async createBulkAuthors(oldAuthors) {
+    if (!this.sequelize) return false
     await this.models.author.createBulkFromOld(oldAuthors)
     this.authors.push(...oldAuthors)
   }
 
   updateAuthor(oldAuthor) {
+    if (!this.sequelize) return false
     return this.models.author.updateFromOld(oldAuthor)
   }
 
   async removeAuthor(authorId) {
+    if (!this.sequelize) return false
     await this.models.author.removeById(authorId)
     this.authors = this.authors.filter(au => au.id !== authorId)
   }
 
   async createBulkBookAuthors(bookAuthors) {
+    if (!this.sequelize) return false
     await this.models.bookAuthor.bulkCreate(bookAuthors)
     this.authors.push(...bookAuthors)
   }
 
   async removeBulkBookAuthors(authorId = null, bookId = null) {
+    if (!this.sequelize) return false
     if (!authorId && !bookId) return
     await this.models.bookAuthor.removeByIds(authorId, bookId)
     this.authors = this.authors.filter(au => {
@@ -422,34 +477,42 @@ class Database {
   }
 
   getPlaybackSessions(where = null) {
+    if (!this.sequelize) return false
     return this.models.playbackSession.getOldPlaybackSessions(where)
   }
 
   getPlaybackSession(sessionId) {
+    if (!this.sequelize) return false
     return this.models.playbackSession.getById(sessionId)
   }
 
   createPlaybackSession(oldSession) {
+    if (!this.sequelize) return false
     return this.models.playbackSession.createFromOld(oldSession)
   }
 
   updatePlaybackSession(oldSession) {
+    if (!this.sequelize) return false
     return this.models.playbackSession.updateFromOld(oldSession)
   }
 
   removePlaybackSession(sessionId) {
+    if (!this.sequelize) return false
     return this.models.playbackSession.removeById(sessionId)
   }
 
   getDeviceByDeviceId(deviceId) {
+    if (!this.sequelize) return false
     return this.models.device.getOldDeviceByDeviceId(deviceId)
   }
 
   updateDevice(oldDevice) {
+    if (!this.sequelize) return false
     return this.models.device.updateFromOld(oldDevice)
   }
 
   createDevice(oldDevice) {
+    if (!this.sequelize) return false
     return this.models.device.createFromOld(oldDevice)
   }
 }

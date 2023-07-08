@@ -798,8 +798,7 @@ module.exports.migrate = async (DatabaseModels) => {
 /**
  * @returns {boolean} true if old database exists
  */
-module.exports.checkShouldMigrate = async (force = false) => {
+module.exports.checkShouldMigrate = async () => {
   if (await oldDbFiles.checkHasOldDb()) return true
-  if (!force) return false
   return oldDbFiles.checkHasOldDbZip()
 }

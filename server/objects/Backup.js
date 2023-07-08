@@ -6,7 +6,6 @@ class Backup {
   constructor(data = null) {
     this.id = null
     this.datePretty = null
-    this.backupMetadataCovers = null
 
     this.backupDirPath = null
     this.filename = null
@@ -23,9 +22,9 @@ class Backup {
   }
 
   get detailsString() {
-    var details = []
+    const details = []
     details.push(this.id)
-    details.push(this.backupMetadataCovers ? '1' : '0')
+    details.push('1') // Unused old boolean spot
     details.push(this.createdAt)
     details.push(this.serverVersion)
     return details.join('\n')
@@ -33,7 +32,6 @@ class Backup {
 
   construct(data) {
     this.id = data.details[0]
-    this.backupMetadataCovers = data.details[1] === '1'
     this.createdAt = Number(data.details[2])
     this.serverVersion = data.details[3] || null
 
@@ -48,7 +46,6 @@ class Backup {
   toJSON() {
     return {
       id: this.id,
-      backupMetadataCovers: this.backupMetadataCovers,
       backupDirPath: this.backupDirPath,
       datePretty: this.datePretty,
       fullPath: this.fullPath,
@@ -60,13 +57,11 @@ class Backup {
     }
   }
 
-  setData(data) {
+  setData(backupDirPath) {
     this.id = date.format(new Date(), 'YYYY-MM-DD[T]HHmm')
     this.datePretty = date.format(new Date(), 'ddd, MMM D YYYY HH:mm')
 
-    this.backupMetadataCovers = data.backupMetadataCovers
-
-    this.backupDirPath = data.backupDirPath
+    this.backupDirPath = backupDirPath
 
     this.filename = this.id + '.audiobookshelf'
     this.path = Path.join('backups', this.filename)

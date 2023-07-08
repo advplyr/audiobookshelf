@@ -95,8 +95,9 @@ export default {
         })
         .catch((error) => {
           this.isBackingUp = false
-          console.error('Failed', error)
-          this.$toast.error(this.$strings.ToastBackupRestoreFailed)
+          console.error('Failed to apply backup', error)
+          const errorMsg = error.response.data || this.$strings.ToastBackupRestoreFailed
+          this.$toast.error(errorMsg)
         })
     },
     deleteBackupClick(backup) {
