@@ -75,7 +75,9 @@ module.exports = (sequelize) => {
     }
   })
 
-  playlist.hasMany(PlaylistMediaItem)
+  playlist.hasMany(PlaylistMediaItem, {
+    onDelete: 'CASCADE'
+  })
   PlaylistMediaItem.belongsTo(playlist)
 
   return PlaylistMediaItem

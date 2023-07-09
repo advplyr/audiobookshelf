@@ -52,6 +52,7 @@ class PlaybackSessionManager {
       }
     }
 
+    await Database.createDevice(deviceInfo)
 
     return deviceInfo
   }
@@ -220,9 +221,6 @@ class PlaybackSessionManager {
       }
       newPlaybackSession.audioTracks = audioTracks
     }
-
-    // Will save on the first sync
-    user.currentSessionId = newPlaybackSession.id
 
     this.sessions.push(newPlaybackSession)
     SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, Database.libraryItems))

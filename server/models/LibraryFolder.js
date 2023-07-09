@@ -16,7 +16,9 @@ module.exports = (sequelize) => {
   })
 
   const { library } = sequelize.models
-  library.hasMany(LibraryFolder)
+  library.hasMany(LibraryFolder, {
+    onDelete: 'CASCADE'
+  })
   LibraryFolder.belongsTo(library)
 
   return LibraryFolder

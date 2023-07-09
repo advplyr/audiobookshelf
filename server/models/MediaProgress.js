@@ -134,7 +134,9 @@ module.exports = (sequelize) => {
     }
   })
 
-  user.hasMany(MediaProgress)
+  user.hasMany(MediaProgress, {
+    onDelete: 'CASCADE'
+  })
   MediaProgress.belongsTo(user)
 
   return MediaProgress

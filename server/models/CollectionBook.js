@@ -32,10 +32,14 @@ module.exports = (sequelize) => {
   book.belongsToMany(collection, { through: CollectionBook })
   collection.belongsToMany(book, { through: CollectionBook })
 
-  book.hasMany(CollectionBook)
+  book.hasMany(CollectionBook, {
+    onDelete: 'CASCADE'
+  })
   CollectionBook.belongsTo(book)
 
-  collection.hasMany(CollectionBook)
+  collection.hasMany(CollectionBook, {
+    onDelete: 'CASCADE'
+  })
   CollectionBook.belongsTo(collection)
 
   return CollectionBook

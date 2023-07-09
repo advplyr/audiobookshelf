@@ -71,7 +71,9 @@ module.exports = (sequelize) => {
   })
 
   const { library } = sequelize.models
-  library.hasMany(Series)
+  library.hasMany(Series, {
+    onDelete: 'CASCADE'
+  })
   Series.belongsTo(library)
 
   return Series

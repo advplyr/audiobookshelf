@@ -90,7 +90,7 @@ class DeviceInfo {
   setData(ip, ua, clientDeviceInfo, serverVersion, userId) {
     this.id = uuidv4()
     this.userId = userId
-    this.deviceId = clientDeviceInfo?.deviceId || null
+    this.deviceId = clientDeviceInfo?.deviceId || this.id
     this.ipAddress = ip || null
 
     this.browserName = ua?.browser.name || null

@@ -756,6 +756,8 @@ export default {
       this.store.commit('globals/setConfirmPrompt', payload)
     },
     removeSeriesFromContinueListening() {
+      if (!this.series) return
+
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
       axios

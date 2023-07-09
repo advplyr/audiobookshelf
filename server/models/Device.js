@@ -32,7 +32,9 @@ module.exports = (sequelize) => {
 
     static async getOldDeviceByDeviceId(deviceId) {
       const device = await this.findOne({
-        deviceId
+        where: {
+          deviceId
+        }
       })
       if (!device) return null
       return device.getOldDevice()
@@ -105,7 +107,9 @@ module.exports = (sequelize) => {
 
   const { user } = sequelize.models
 
-  user.hasMany(Device)
+  user.hasMany(Device, {
+    onDelete: 'CASCADE'
+  })
   Device.belongsTo(user)
 
   return Device

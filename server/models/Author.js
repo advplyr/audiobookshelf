@@ -77,7 +77,9 @@ module.exports = (sequelize) => {
   })
 
   const { library } = sequelize.models
-  library.hasMany(Author)
+  library.hasMany(Author, {
+    onDelete: 'CASCADE'
+  })
   Author.belongsTo(library)
 
   return Author

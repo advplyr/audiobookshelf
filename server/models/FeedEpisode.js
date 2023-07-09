@@ -73,7 +73,9 @@ module.exports = (sequelize) => {
 
   const { feed } = sequelize.models
 
-  feed.hasMany(FeedEpisode)
+  feed.hasMany(FeedEpisode, {
+    onDelete: 'CASCADE'
+  })
   FeedEpisode.belongsTo(feed)
 
   return FeedEpisode

@@ -230,10 +230,10 @@ class Server {
   async initializeServer(req, res) {
     Logger.info(`[Server] Initializing new server`)
     const newRoot = req.body.newRoot
-    let rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
+    const rootUsername = newRoot.username || 'root'
+    const rootPash = newRoot.password ? await this.auth.hashPass(newRoot.password) : ''
     if (!rootPash) Logger.warn(`[Server] Creating root user with no password`)
-    let rootToken = await this.auth.generateAccessToken({ userId: 'root', username: newRoot.username })
-    await Database.createRootUser(newRoot.username, rootPash, rootToken)
+    await Database.createRootUser(rootUsername, rootPash, this.auth)
 
     res.sendStatus(200)
   }

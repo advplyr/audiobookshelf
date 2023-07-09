@@ -89,9 +89,13 @@ module.exports = (sequelize) => {
       })
     }
 
-    static async createRootUser(username, pash, token) {
+    static async createRootUser(username, pash, auth) {
+      const userId = uuidv4()
+
+      const token = await auth.generateAccessToken({ userId, username })
+
       const newRoot = new oldUser({
-        id: uuidv4(),
+        id: userId,
         type: 'root',
         username,
         pash,

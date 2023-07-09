@@ -39,18 +39,19 @@ module.exports = (sequelize) => {
      * @param {object} oldLibrary 
      * @returns {Library|null}
      */
-    static createFromOld(oldLibrary) {
+    static async createFromOld(oldLibrary) {
       const library = this.getFromOld(oldLibrary)
 
       library.libraryFolders = oldLibrary.folders.map(folder => {
         return {
           id: folder.id,
-          path: folder.fullPath,
-          libraryId: library.id
+          path: folder.fullPath
         }
       })
 
-      return this.create(library).catch((error) => {
+      return this.create(library, {
+        include: sequelize.models.libraryFolder
+      }).catch((error) => {
         Logger.error(`[Library] Failed to create library ${library.id}`, error)
         return null
       })

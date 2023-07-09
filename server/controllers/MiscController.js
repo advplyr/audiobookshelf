@@ -112,19 +112,19 @@ class MiscController {
       Logger.error('User other than admin attempting to update server settings', req.user)
       return res.sendStatus(403)
     }
-    var settingsUpdate = req.body
+    const settingsUpdate = req.body
     if (!settingsUpdate || !isObject(settingsUpdate)) {
       return res.status(500).send('Invalid settings update object')
     }
 
-    var madeUpdates = Database.serverSettings.update(settingsUpdate)
+    const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
+      await Database.updateServerSettings()
+
       // If backup schedule is updated - update backup manager
       if (settingsUpdate.backupSchedule !== undefined) {
         this.backupManager.updateCronSchedule()
       }
-
-      await Database.updateServerSettings()
     }
     return res.json({
       success: true,

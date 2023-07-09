@@ -236,7 +236,7 @@ class Database {
     if (newCollection) {
       const collectionBooks = []
       oldCollection.books.forEach((libraryItemId) => {
-        const libraryItem = this.libraryItems.filter(li => li.id === libraryItemId)
+        const libraryItem = this.libraryItems.find(li => li.id === libraryItemId)
         if (libraryItem) {
           collectionBooks.push({
             collectionId: newCollection.id,

@@ -43,7 +43,8 @@ class LibraryController {
     }
 
     const library = new Library()
-    newLibraryPayload.displayOrder = Database.libraries.length + 1
+
+    newLibraryPayload.displayOrder = Database.libraries.map(li => li.displayOrder).sort((a, b) => a - b).pop() + 1
     library.setData(newLibraryPayload)
     await Database.createLibrary(library)
 
