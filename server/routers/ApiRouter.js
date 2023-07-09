@@ -140,7 +140,6 @@ class ApiRouter {
 
     this.router.get('/users/:id/listening-sessions', UserController.middleware.bind(this), UserController.getListeningSessions.bind(this))
     this.router.get('/users/:id/listening-stats', UserController.middleware.bind(this), UserController.getListeningStats.bind(this))
-    this.router.post('/users/:id/purge-media-progress', UserController.middleware.bind(this), UserController.purgeMediaProgress.bind(this))
 
     //
     // Collection Routes

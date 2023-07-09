@@ -166,42 +166,6 @@ class UserController {
     res.json(listeningStats)
   }
 
-  // POST: api/users/:id/purge-media-progress
-  // TODO: Remove
-  async purgeMediaProgress(req, res) {
-    return res.sendStatus(404)
-    // const user = req.reqUser
-
-    // if (user.type === 'root' && !req.user.isRoot) {
-    //   Logger.error(`[UserController] Admin user attempted to purge media progress of root user`, req.user.username)
-    //   return res.sendStatus(403)
-    // }
-
-    // var progressPurged = 0
-    // user.mediaProgress = user.mediaProgress.filter(mp => {
-    //   const libraryItem = Database.libraryItems.find(li => li.id === mp.libraryItemId)
-    //   if (!libraryItem) {
-    //     progressPurged++
-    //     return false
-    //   } else if (mp.episodeId) {
-    //     const episode = libraryItem.mediaType === 'podcast' ? libraryItem.media.getEpisode(mp.episodeId) : null
-    //     if (!episode) { // Episode not found
-    //       progressPurged++
-    //       return false
-    //     }
-    //   }
-    //   return true
-    // })
-
-    // if (progressPurged) {
-    //   Logger.info(`[UserController] Purged ${progressPurged} media progress for user ${user.username}`)
-    //   await this.db.updateEntity('user', user)
-    //   SocketAuthority.adminEmitter('user_updated', user.toJSONForBrowser())
-    // }
-
-    // res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
-  }
-
   // POST: api/users/online (admin)
   async getOnlineUsers(req, res) {
     if (!req.user.isAdminOrUp) {
