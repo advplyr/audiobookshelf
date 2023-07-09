@@ -137,6 +137,10 @@ module.exports.downloadPodcastEpisode = (podcastEpisodeDownload) => {
 
     for (const tag in taggings) {
       if (taggings[tag]) {
+        if (taggings[tag].length > 10000) {
+          Logger.warn(`[ffmpegHelpers] Episode download tag "${tag}" is too long (${taggings[tag].length} characters) - trimming it down`)
+          taggings[tag] = taggings[tag].slice(0, 10000)
+        }
         ffmpeg.addOption('-metadata', `${tag}=${taggings[tag]}`)
       }
     }
