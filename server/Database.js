@@ -14,7 +14,7 @@ class Database {
     this.isNew = false // New absdatabase.sqlite created
 
     // Temporarily using format of old DB
-    // below data should be loaded from the DB as needed
+    // TODO: below data should be loaded from the DB as needed
     this.libraryItems = []
     this.users = []
     this.libraries = []

@@ -252,11 +252,7 @@ class LibraryController {
     }
 
     if (payload.sortBy) {
-      // old sort key TODO: should be mutated in dbMigration
       let sortKey = payload.sortBy
-      if (sortKey.startsWith('book.')) {
-        sortKey = sortKey.replace('book.', 'media.metadata.')
-      }
 
       // Handle server setting sortingIgnorePrefix
       const sortByTitle = sortKey === 'media.metadata.title'

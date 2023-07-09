@@ -20,7 +20,7 @@
   "pkg": {
     "assets": [
       "client/dist/**/*",
-      "server/Db.js"
+      "node_modules/sqlite3/lib/binding/**/*.node"
     ],
     "scripts": [
       "prod.js",
