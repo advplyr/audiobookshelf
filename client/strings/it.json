@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Crea playlist da una Raccolta",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast non ha l'URL del feed RSS da utilizzare per il match",
   "MessageQuickMatchDescription": "Compila i dettagli dell'articolo vuoto e copri con il risultato della prima corrispondenza di '{0}'. Non sovrascrive i dettagli a meno che non sia abilitata l'impostazione del server \"Preferisci metadati corrispondenti\".",
-  "MessageRemoveAllItemsWarning": "AVVERTIMENTO! Questa azione rimuoverà tutti gli elementi della libreria dal database, inclusi eventuali aggiornamenti o corrispondenze apportate. Questo non fa nulla ai tuoi file effettivi. Sei sicuro?",
   "MessageRemoveChapter": "Rimuovi Capitolo",
   "MessageRemoveEpisodes": "rimuovi {0} episodio(i)",
   "MessageRemoveFromPlayerQueue": "Rimuovi dalla coda di riproduzione",

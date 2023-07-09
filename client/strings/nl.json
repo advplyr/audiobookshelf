@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Afspeellijst aanmaken vanuit collectie",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast heeft geen RSS-feed URL om te gebruiken voor matching",
   "MessageQuickMatchDescription": "Vul lege onderdeeldetails & cover met eerste matchresultaat van '{0}'. Overschrijft geen details tenzij 'Prefereer gematchte metadata' serverinstelling is ingeschakeld.",
-  "MessageRemoveAllItemsWarning": "WAARSCHUWING! Deze actie zal alle onderdelen in de bibliotheek verwijderen uit de database, inclusief enige bijwerkingen of matches die je hebt gemaakt. Dit doet niets met je onderliggende bestanden. Weet je het zeker?",
   "MessageRemoveChapter": "Verwijder hoofdstuk",
   "MessageRemoveEpisodes": "Verwijder {0} aflevering(en)",
   "MessageRemoveFromPlayerQueue": "Verwijder uit afspeelwachtrij",

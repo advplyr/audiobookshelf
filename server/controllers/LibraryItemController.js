@@ -441,20 +441,6 @@ class LibraryItemController {
     }
   }
 
-  // DELETE: api/items/all
-  // TODO: Remove
-  async deleteAll(req, res) {
-    return res.sendStatus(404)
-    // if (!req.user.isAdminOrUp) {
-    //   Logger.warn('User other than admin attempted to delete all library items', req.user)
-    //   return res.sendStatus(403)
-    // }
-    // Logger.info('Removing all Library Items')
-    // var success = await this.db.recreateLibraryItemsDb()
-    // if (success) res.sendStatus(200)
-    // else res.sendStatus(500)
-  }
-
   // POST: api/items/:id/scan (admin)
   async scan(req, res) {
     if (!req.user.isAdminOrUp) {

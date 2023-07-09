@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Erstelle eine Wiedergabeliste aus der Sammlung",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast hat keine RSS-Feed-Url welche für den Online-Abgleich verwendet werden kann",
   "MessageQuickMatchDescription": "Füllt leere Details und Titelbilder mit dem ersten Treffer aus '{0}'. Überschreibt keine Details, es sei denn, die Server-Einstellung \"Passende Metadaten bevorzugen\" ist aktiviert.",
-  "MessageRemoveAllItemsWarning": "WARNUNG! Bei dieser Aktion werden alle Bibliotheksobjekte aus der Datenbank entfernt, einschließlich aller Aktualisierungen oder Online-Abgleichs, die Sie vorgenommen haben. Ihre eigentlichen Dateien bleiben davon unberührt. Sind Sie sicher?",
   "MessageRemoveChapter": "Kapitel löschen",
   "MessageRemoveEpisodes": "Entferne {0} Episode(n)",
   "MessageRemoveFromPlayerQueue": "Aus der Abspielwarteliste löschen",

@@ -192,7 +192,6 @@
       <div class="flex-grow" />
       <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeCache">{{ $strings.ButtonPurgeAllCache }}</ui-btn>
       <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isResettingLibraryItems" @click="resetLibraryItems">{{ $strings.ButtonRemoveAllLibraryItems }}</ui-btn>
     </div>
 
     <div class="flex items-center py-4">
@@ -367,23 +366,6 @@ export default {
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
-    },
-    resetLibraryItems() {
-      if (confirm(this.$strings.MessageRemoveAllItemsWarning)) {
-        this.isResettingLibraryItems = true
-        this.$axios
-          .$delete('/api/items/all')
-          .then(() => {
-            this.isResettingLibraryItems = false
-            this.$toast.success('Successfully reset items')
-            location.reload()
-          })
-          .catch((error) => {
-            console.error('failed to reset items', error)
-            this.isResettingLibraryItems = false
-            this.$toast.error('Failed to reset items - manually remove the /config/libraryItems folder')
-          })
-      }
     },
     purgeCache() {
       this.showConfirmPurgeCache = true
