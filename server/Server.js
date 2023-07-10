@@ -251,15 +251,19 @@ class Server {
 
     let purged = 0
     await Promise.all(foldersInItemsMetadata.map(async foldername => {
-      const hasMatchingItem = Database.libraryItems.find(ab => ab.id === foldername)
-      if (!hasMatchingItem) {
-        const folderPath = Path.join(itemsMetadata, foldername)
-        Logger.debug(`[Server] Purging unused metadata ${folderPath}`)
+      const itemFullPath = fileUtils.filePathToPOSIX(Path.join(itemsMetadata, foldername))
 
-        await fs.remove(folderPath).then(() => {
+      const hasMatchingItem = Database.libraryItems.find(li => {
+        if (!li.media.coverPath) return false
+        return itemFullPath === fileUtils.filePathToPOSIX(Path.dirname(li.media.coverPath))
+      })
+      if (!hasMatchingItem) {
+        Logger.debug(`[Server] Purging unused metadata ${itemFullPath}`)
+
+        await fs.remove(itemFullPath).then(() => {
           purged++
         }).catch((err) => {
-          Logger.error(`[Server] Failed to delete folder path ${folderPath}`, err)
+          Logger.error(`[Server] Failed to delete folder path ${itemFullPath}`, err)
         })
       }
     }))
