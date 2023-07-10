@@ -1,22 +1,29 @@
 <template>
   <div class="w-full py-6">
-    <p class="text-lg mb-2 font-semibold md:hidden">{{ $strings.HeaderEpisodes }}</p>
-    <div class="flex items-center mb-4">
-      <p class="text-lg mb-0 font-semibold hidden md:block">{{ $strings.HeaderEpisodes }}</p>
+    <div class="flex flex-wrap flex-col md:flex-row md:items-center mb-4">
+      <div class="flex items-center flex-nowrap whitespace-nowrap mb-2 md:mb-0">
+        <p class="text-lg mb-0 font-semibold">{{ $strings.HeaderEpisodes }}</p>
+        <div class="inline-flex bg-white/5 px-1 mx-2 rounded-md text-sm text-gray-100">
+          <p v-if="episodesList.length === episodes.length">{{ episodes.length }}</p>
+          <p v-else>{{ episodesList.length }} / {{ episodes.length }}</p>
+        </div>
+      </div>
       <div class="flex-grow hidden md:block" />
-      <template v-if="isSelectionMode">
-        <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
-          <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
-        </ui-tooltip>
-        <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
-        <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
-      </template>
-      <template v-else>
-        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 sm:ml-4" />
-        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
-        <div class="flex-grow md:hidden" />
-        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
-      </template>
+      <div class="flex items-center">
+        <template v-if="isSelectionMode">
+          <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
+            <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
+          </ui-tooltip>
+          <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
+          <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
+        </template>
+        <template v-else>
+          <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" />
+          <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+          <div class="flex-grow md:hidden" />
+          <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
+        </template>
+      </div>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
@@ -157,7 +164,7 @@ export default {
     episodesList() {
       return this.episodesSorted.filter((episode) => {
         if (!this.searchText) return true
-        return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
+        return episode.title?.toLowerCase().includes(this.searchText) || episode.subtitle?.toLowerCase().includes(this.searchText)
       })
     },
     selectedIsFinished() {
