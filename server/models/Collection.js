@@ -10,7 +10,8 @@ module.exports = (sequelize) => {
         include: {
           model: sequelize.models.book,
           include: sequelize.models.libraryItem
-        }
+        },
+        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
       })
       return collections.map(c => this.getOldCollection(c))
     }

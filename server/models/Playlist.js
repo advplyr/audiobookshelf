@@ -22,7 +22,8 @@ module.exports = (sequelize) => {
               }
             }
           ]
-        }
+        },
+        order: [['playlistMediaItems', 'order', 'ASC']]
       })
       return playlists.map(p => this.getOldPlaylist(p))
     }
