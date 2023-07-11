@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     clickedOption(action) {
-      this.$emit('action', action)
+      this.$emit('action', { action })
     }
   },
   mounted() {}
