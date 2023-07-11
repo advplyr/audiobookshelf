@@ -94,7 +94,7 @@
         <transition name="slide">
           <div v-if="showEncodeOptions" class="mb-4 pb-4 border-b border-white/10">
             <div class="flex flex-wrap -mx-2">
-              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 64k)'" class="m-2 max-w-40" />
+              <ui-text-input-with-label ref="bitrateInput" v-model="encodingOptions.bitrate" :disabled="processing || isTaskFinished" :label="'Audio Bitrate (e.g. 128k)'" class="m-2 max-w-40" />
               <ui-text-input-with-label ref="channelsInput" v-model="encodingOptions.channels" :disabled="processing || isTaskFinished" :label="'Audio Channels (1 or 2)'" class="m-2 max-w-40" />
               <ui-text-input-with-label ref="codecInput" v-model="encodingOptions.codec" :disabled="processing || isTaskFinished" :label="'Audio Codec'" class="m-2 max-w-40" />
             </div>
@@ -214,7 +214,7 @@ export default {
       showEncodeOptions: false,
       shouldBackupAudioFiles: true,
       encodingOptions: {
-        bitrate: '64k',
+        bitrate: '128k',
         channels: '2',
         codec: 'aac'
       }
