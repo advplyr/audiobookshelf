@@ -57,7 +57,7 @@ class AbMergeManager {
   }
 
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
-    const audioBitrate = encodingOptions.bitrate || '64k'
+    const audioBitrate = encodingOptions.bitrate || '128k'
     const audioCodec = encodingOptions.codec || 'aac'
     const audioChannels = encodingOptions.channels || 2
 
