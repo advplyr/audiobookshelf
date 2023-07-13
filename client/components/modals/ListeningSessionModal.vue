@@ -2,7 +2,7 @@
   <modals-modal v-model="show" name="listening-session-modal" :processing="processing" :width="700" :height="'unset'">
     <template #outer>
       <div class="absolute top-0 left-0 p-5 w-2/3 overflow-hidden">
-        <p class="text-3xl text-white truncate">{{ $strings.HeaderSession }} {{ _session.id }}</p>
+        <p class="text-lg md:text-2xl text-white truncate">{{ $strings.HeaderSession }} {{ _session.id }}</p>
       </div>
     </template>
     <div ref="container" class="w-full rounded-lg bg-bg box-shadow-md overflow-y-auto overflow-x-hidden p-6" style="max-height: 80vh">
@@ -50,19 +50,19 @@
           <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">{{ $strings.LabelItem }}</p>
           <div v-if="_session.libraryId" class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelLibrary }} Id</div>
-            <div class="px-1">
+            <div class="px-1 text-xs">
               {{ _session.libraryId }}
             </div>
           </div>
           <div class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelLibraryItem }} Id</div>
-            <div class="px-1">
+            <div class="px-1 text-xs">
               {{ _session.libraryItemId }}
             </div>
           </div>
           <div v-if="_session.episodeId" class="flex items-center -mx-1 mb-1">
             <div class="w-40 px-1 text-gray-200">{{ $strings.LabelEpisode }} Id</div>
-            <div class="px-1">
+            <div class="px-1 text-xs">
               {{ _session.episodeId }}
             </div>
           </div>
@@ -81,7 +81,7 @@
         </div>
         <div class="w-full md:w-1/3">
           <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mb-2 mt-6 md:mt-0">{{ $strings.LabelUser }}</p>
-          <p class="mb-1">{{ _session.userId }}</p>
+          <p class="mb-1 text-xs">{{ _session.userId }}</p>
 
           <p class="font-semibold uppercase text-xs text-gray-400 tracking-wide mt-6 mb-2">{{ $strings.LabelMediaPlayer }}</p>
           <p class="mb-1">{{ playMethodName }}</p>
