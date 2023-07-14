@@ -8,7 +8,6 @@ class CacheController {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    Logger.info(`[MiscController] Purging all cache`)
     await this.cacheManager.purgeAll()
     res.sendStatus(200)
   }
@@ -18,7 +17,6 @@ class CacheController {
     if (!req.user.isAdminOrUp) {
       return res.sendStatus(403)
     }
-    Logger.info(`[MiscController] Purging items cache`)
     await this.cacheManager.purgeItems()
     res.sendStatus(200)
   }
