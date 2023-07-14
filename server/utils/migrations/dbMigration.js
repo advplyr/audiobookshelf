@@ -151,8 +151,8 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     autoDownloadEpisodes: !!oldPodcast.autoDownloadEpisodes,
     autoDownloadSchedule: oldPodcast.autoDownloadSchedule,
     lastEpisodeCheck: oldPodcast.lastEpisodeCheck,
-    maxEpisodesToKeep: oldPodcast.maxEpisodesToKeep,
-    maxNewEpisodesToDownload: oldPodcast.maxNewEpisodesToDownload,
+    maxEpisodesToKeep: oldPodcast.maxEpisodesToKeep || 0,
+    maxNewEpisodesToDownload: oldPodcast.maxNewEpisodesToDownload || 3,
     lastCoverSearchQuery: oldPodcast.lastCoverSearchQuery,
     lastCoverSearch: oldPodcast.lastCoverSearch,
     createdAt: LibraryItem.createdAt,
@@ -189,7 +189,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       updatedAt: oldEpisode.updatedAt,
       podcastId: Podcast.id,
       audioFile: oldEpisode.audioFile,
-      chapters: oldEpisode.chapters
+      chapters: oldEpisode.chapters || []
     }
     newRecords.podcastEpisode.push(PodcastEpisode)
     oldDbIdMap.podcastEpisodes[oldEpisode.id] = PodcastEpisode.id
