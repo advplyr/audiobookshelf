@@ -1,4 +1,5 @@
 const { DataTypes, Model } = require('sequelize')
+const Logger = require('../Logger')
 
 const oldPlaylist = require('../objects/Playlist')
 const { areEquivalent } = require('../utils/index')
@@ -32,14 +33,15 @@ module.exports = (sequelize) => {
       const items = playlistExpanded.playlistMediaItems.map(pmi => {
         const libraryItemId = pmi.mediaItem?.podcast?.libraryItem?.id || pmi.mediaItem?.libraryItem?.id || null
         if (!libraryItemId) {
-          console.log(JSON.stringify(pmi, null, 2))
-          throw new Error('No library item id')
+          Logger.error(`[Playlist] Invalid playlist media item - No library item id found`, JSON.stringify(pmi, null, 2))
+          return null
         }
         return {
           episodeId: pmi.mediaItemType === 'podcastEpisode' ? pmi.mediaItemId : '',
-          libraryItemId: libraryItemId
+          libraryItemId
         }
-      })
+      }).filter(pmi => pmi)
+
       return new oldPlaylist({
         id: playlistExpanded.id,
         libraryId: playlistExpanded.libraryId,

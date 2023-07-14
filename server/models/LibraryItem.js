@@ -149,7 +149,7 @@ module.exports = (sequelize) => {
           for (const existingPodcastEpisode of existingPodcastEpisodes) {
             // Episode was removed
             if (!updatedPodcastEpisodes.some(ep => ep.id === existingPodcastEpisode.id)) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingPodcastEpisode.title}" was removed`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingPodcastEpisode.title}" was removed`)
               await existingPodcastEpisode.destroy()
               hasUpdates = true
             }
@@ -157,7 +157,7 @@ module.exports = (sequelize) => {
           for (const updatedPodcastEpisode of updatedPodcastEpisodes) {
             const existingEpisodeMatch = existingPodcastEpisodes.find(ep => ep.id === updatedPodcastEpisode.id)
             if (!existingEpisodeMatch) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${updatedPodcastEpisode.title}" was added`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${updatedPodcastEpisode.title}" was added`)
               await sequelize.models.podcastEpisode.createFromOld(updatedPodcastEpisode)
               hasUpdates = true
             } else {
@@ -168,7 +168,7 @@ module.exports = (sequelize) => {
                 if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
                 if (!areEquivalent(updatedEpisodeCleaned[key], existingValue, true)) {
-                  Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
+                  Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" episode "${existingEpisodeMatch.title}" ${key} was updated from "${existingValue}" to "${updatedEpisodeCleaned[key]}"`)
                   episodeHasUpdates = true
                 }
               }
@@ -189,7 +189,7 @@ module.exports = (sequelize) => {
           for (const existingAuthor of existingAuthors) {
             // Author was removed from Book
             if (!updatedAuthors.some(au => au.id === existingAuthor.id)) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${existingAuthor.name}" was removed`)
               await sequelize.models.bookAuthor.removeByIds(existingAuthor.id, libraryItemExpanded.media.id)
               hasUpdates = true
             }
@@ -197,7 +197,7 @@ module.exports = (sequelize) => {
           for (const updatedAuthor of updatedAuthors) {
             // Author was added
             if (!existingAuthors.some(au => au.id === updatedAuthor.id)) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" author "${updatedAuthor.name}" was added`)
               await sequelize.models.bookAuthor.create({ authorId: updatedAuthor.id, bookId: libraryItemExpanded.media.id })
               hasUpdates = true
             }
@@ -205,7 +205,7 @@ module.exports = (sequelize) => {
           for (const existingSeries of existingSeriesAll) {
             // Series was removed
             if (!updatedSeriesAll.some(se => se.id === existingSeries.id)) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${existingSeries.name}" was removed`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${existingSeries.name}" was removed`)
               await sequelize.models.bookSeries.removeByIds(existingSeries.id, libraryItemExpanded.media.id)
               hasUpdates = true
             }
@@ -214,11 +214,11 @@ module.exports = (sequelize) => {
             // Series was added/updated
             const existingSeriesMatch = existingSeriesAll.find(se => se.id === updatedSeries.id)
             if (!existingSeriesMatch) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" was added`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" was added`)
               await sequelize.models.bookSeries.create({ seriesId: updatedSeries.id, bookId: libraryItemExpanded.media.id, sequence: updatedSeries.sequence })
               hasUpdates = true
             } else if (existingSeriesMatch.bookSeries.sequence !== updatedSeries.sequence) {
-              Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
+              Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
               await existingSeriesMatch.bookSeries.update({ sequence: updatedSeries.sequence })
               hasUpdates = true
             }
@@ -231,7 +231,7 @@ module.exports = (sequelize) => {
           if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
           if (!areEquivalent(updatedMedia[key], existingValue, true)) {
-            Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
+            Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" ${libraryItemExpanded.mediaType}.${key} updated from ${existingValue} to ${updatedMedia[key]}`)
             hasMediaUpdates = true
           }
         }
@@ -248,27 +248,16 @@ module.exports = (sequelize) => {
         if (existingValue instanceof Date) existingValue = existingValue.valueOf()
 
         if (!areEquivalent(updatedLibraryItem[key], existingValue, true)) {
-          Logger.debug(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
+          Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" ${key} updated from ${existingValue} to ${updatedLibraryItem[key]}`)
           hasLibraryItemUpdates = true
         }
       }
       if (hasLibraryItemUpdates) {
         await libraryItemExpanded.update(updatedLibraryItem)
+        Logger.info(`[LibraryItem] Library item "${libraryItemExpanded.id}" updated`)
         hasUpdates = true
       }
       return hasUpdates
-    }
-
-    static updateFromOld(oldLibraryItem) {
-      const libraryItem = this.getFromOld(oldLibraryItem)
-      return this.update(libraryItem, {
-        where: {
-          id: libraryItem.id
-        }
-      }).then((result) => result[0] > 0).catch((error) => {
-        Logger.error(`[LibraryItem] Failed to update libraryItem ${libraryItem.id}`, error)
-        return false
-      })
     }
 
     static getFromOld(oldLibraryItem) {

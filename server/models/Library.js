@@ -1,6 +1,5 @@
-const Logger = require('../Logger')
 const { DataTypes, Model } = require('sequelize')
-
+const Logger = require('../Logger')
 const oldLibrary = require('../objects/Library')
 
 module.exports = (sequelize) => {

@@ -447,7 +447,7 @@ class ApiRouter {
       if (!otherLibraryItemsInSeries.length) {
         // Close open RSS feed for series
         await this.rssFeedManager.closeFeedForEntityId(series.id)
-        Logger.debug(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
+        Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
         await Database.removeSeries(series.id)
         // TODO: Socket events for series?
       }

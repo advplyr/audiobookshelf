@@ -434,7 +434,7 @@ function migrateSessions(oldSessions) {
   for (const oldSession of oldSessions) {
     const userId = oldDbIdMap.users[oldSession.userId]
     if (!userId) {
-      Logger.debug(`[dbMigration] Not migrating playback session ${oldSession.id} because user was not found`)
+      Logger.info(`[dbMigration] Not migrating playback session ${oldSession.id} because user was not found`)
       continue
     }
 

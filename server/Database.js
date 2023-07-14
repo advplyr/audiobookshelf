@@ -57,7 +57,7 @@ class Database {
     }
 
     await this.buildModels(force)
-    Logger.info(`[Database] Db initialized`, Object.keys(this.sequelize.models))
+    Logger.info(`[Database] Db initialized with models:`, Object.keys(this.sequelize.models).join(', '))
 
     await this.loadData()
   }
