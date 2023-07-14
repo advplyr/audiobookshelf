@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Create playlist from collection",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast nema RSS feed url za matchanje",
   "MessageQuickMatchDescription": "Popuni prazne detalje stavki i cover sa prvim match rezultato iz '{0}'. Ne briše detalje osim ako 'Prefer matched metadata' server postavka nije uključena.",
-  "MessageRemoveAllItemsWarning": "UPOZORENJE! Ova radnja briše sve stavke iz biblioteke uključujući bilokakve aktualizacije ili matcheve. Ovo ne mjenja vaše lokalne datoteke. Jeste li sigurni?",
   "MessageRemoveChapter": "Remove chapter",
   "MessageRemoveEpisodes": "ukloni {0} epizoda/-e",
   "MessageRemoveFromPlayerQueue": "Remove from player queue",

@@ -1,5 +1,5 @@
 const Logger = require('../../Logger')
-const { getId } = require('../../utils/index')
+const uuidv4 = require("uuid").v4
 const { checkNamesAreEqual } = require('../../utils/parsers/parseNameString')
 
 class Author {
@@ -11,6 +11,7 @@ class Author {
     this.imagePath = null
     this.addedAt = null
     this.updatedAt = null
+    this.libraryId = null
 
     if (author) {
       this.construct(author)
@@ -25,6 +26,7 @@ class Author {
     this.imagePath = author.imagePath
     this.addedAt = author.addedAt
     this.updatedAt = author.updatedAt
+    this.libraryId = author.libraryId
   }
 
   toJSON() {
@@ -35,7 +37,8 @@ class Author {
       description: this.description,
       imagePath: this.imagePath,
       addedAt: this.addedAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      libraryId: this.libraryId
     }
   }
 
@@ -52,14 +55,15 @@ class Author {
     }
   }
 
-  setData(data) {
-    this.id = getId('aut')
+  setData(data, libraryId) {
+    this.id = uuidv4()
     this.name = data.name
     this.description = data.description || null
     this.asin = data.asin || null
     this.imagePath = data.imagePath || null
     this.addedAt = Date.now()
     this.updatedAt = Date.now()
+    this.libraryId = libraryId
   }
 
   update(payload) {

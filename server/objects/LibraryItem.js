@@ -1,3 +1,4 @@
+const uuidv4 = require("uuid").v4
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const { version } = require('../../package.json')
@@ -8,7 +9,7 @@ const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
 const Video = require('./mediaTypes/Video')
 const Music = require('./mediaTypes/Music')
-const { areEquivalent, copyValue, getId, cleanStringForSearch } = require('../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../utils/index')
 const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class LibraryItem {
@@ -191,7 +192,7 @@ class LibraryItem {
 
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {
-    this.id = getId('li')
+    this.id = uuidv4()
     this.mediaType = libraryMediaType
     if (libraryMediaType === 'video') {
       this.media = new Video()
@@ -202,6 +203,7 @@ class LibraryItem {
     } else if (libraryMediaType === 'music') {
       this.media = new Music()
     }
+    this.media.id = uuidv4()
     this.media.libraryItemId = this.id
 
     for (const key in payload) {

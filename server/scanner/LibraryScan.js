@@ -1,4 +1,5 @@
 const Path = require('path')
+const uuidv4 = require("uuid").v4
 const fs = require('../libs/fsExtra')
 const date = require('../libs/dateAndTime')
 
@@ -6,7 +7,7 @@ const Logger = require('../Logger')
 const Library = require('../objects/Library')
 const { LogLevel } = require('../utils/constants')
 const filePerms = require('../utils/filePerms')
-const { getId, secondsToTimestamp } = require('../utils/index')
+const { secondsToTimestamp } = require('../utils/index')
 
 class LibraryScan {
   constructor() {
@@ -84,7 +85,7 @@ class LibraryScan {
   }
 
   setData(library, scanOptions, type = 'scan') {
-    this.id = getId('lscan')
+    this.id = uuidv4()
     this.type = type
     this.library = new Library(library.toJSON()) // clone library
 

@@ -1,3 +1,4 @@
+const uuidv4 = require("uuid").v4
 const FeedMeta = require('./FeedMeta')
 const FeedEpisode = require('./FeedEpisode')
 const RSS = require('../libs/rss')
@@ -90,7 +91,7 @@ class Feed {
     const feedUrl = `${serverAddress}/feed/${slug}`
     const author = isPodcast ? mediaMetadata.author : mediaMetadata.authorName
 
-    this.id = slug
+    this.id = uuidv4()
     this.slug = slug
     this.userId = userId
     this.entityType = 'libraryItem'
@@ -179,7 +180,7 @@ class Feed {
     const itemsWithTracks = collectionExpanded.books.filter(libraryItem => libraryItem.media.tracks.length)
     const firstItemWithCover = itemsWithTracks.find(item => item.media.coverPath)
 
-    this.id = slug
+    this.id = uuidv4()
     this.slug = slug
     this.userId = userId
     this.entityType = 'collection'
@@ -253,7 +254,7 @@ class Feed {
     const libraryId = itemsWithTracks[0].libraryId
     const firstItemWithCover = itemsWithTracks.find(li => li.media.coverPath)
 
-    this.id = slug
+    this.id = uuidv4()
     this.slug = slug
     this.userId = userId
     this.entityType = 'series'

@@ -5,6 +5,7 @@ const MediaProgress = require('./MediaProgress')
 class User {
   constructor(user) {
     this.id = null
+    this.oldUserId = null // TODO: Temp for keeping old access tokens
     this.username = null
     this.pash = null
     this.type = null
@@ -73,6 +74,7 @@ class User {
   toJSON() {
     return {
       id: this.id,
+      oldUserId: this.oldUserId,
       username: this.username,
       pash: this.pash,
       type: this.type,
@@ -93,6 +95,7 @@ class User {
   toJSONForBrowser(hideRootToken = false, minimal = false) {
     const json = {
       id: this.id,
+      oldUserId: this.oldUserId,
       username: this.username,
       type: this.type,
       token: (this.type === 'root' && hideRootToken) ? '' : this.token,
@@ -126,6 +129,7 @@ class User {
     }
     return {
       id: this.id,
+      oldUserId: this.oldUserId,
       username: this.username,
       type: this.type,
       session,
@@ -137,6 +141,7 @@ class User {
 
   construct(user) {
     this.id = user.id
+    this.oldUserId = user.oldUserId
     this.username = user.username
     this.pash = user.pash
     this.type = user.type
@@ -320,7 +325,7 @@ class User {
     if (!itemProgress) {
       const newItemProgress = new MediaProgress()
 
-      newItemProgress.setData(libraryItem.id, updatePayload, episodeId)
+      newItemProgress.setData(libraryItem, updatePayload, episodeId, this.id)
       this.mediaProgress.push(newItemProgress)
       return true
     }
@@ -333,12 +338,6 @@ class User {
   removeMediaProgress(id) {
     if (!this.mediaProgress.some(mp => mp.id === id)) return false
     this.mediaProgress = this.mediaProgress.filter(mp => mp.id !== id)
-    return true
-  }
-
-  removeMediaProgressForLibraryItem(libraryItemId) {
-    if (!this.mediaProgress.some(lip => lip.libraryItemId == libraryItemId)) return false
-    this.mediaProgress = this.mediaProgress.filter(lip => lip.libraryItemId != libraryItemId)
     return true
   }
 

@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 class SeriesController {
   constructor() { }
@@ -9,7 +10,7 @@ class SeriesController {
    * /api/series/:id
    * 
    * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
-   * Series are not library specific so we need to know what the library id is 
+   * Series are not library specific so we need to know what the library id is
    * 
    * @param {*} req 
    * @param {*} res 
@@ -45,7 +46,7 @@ class SeriesController {
     var q = (req.query.q || '').toLowerCase()
     if (!q) return res.json([])
     var limit = (req.query.limit && !isNaN(req.query.limit)) ? Number(req.query.limit) : 25
-    var series = this.db.series.filter(se => se.name.toLowerCase().includes(q))
+    var series = Database.series.filter(se => se.name.toLowerCase().includes(q))
     series = series.slice(0, limit)
     res.json({
       results: series
@@ -55,20 +56,20 @@ class SeriesController {
   async update(req, res) {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
-      await this.db.updateEntity('series', req.series)
+      await Database.updateSeries(req.series)
       SocketAuthority.emitter('series_updated', req.series.toJSON())
     }
     res.json(req.series.toJSON())
   }
 
   middleware(req, res, next) {
-    const series = this.db.series.find(se => se.id === req.params.id)
+    const series = Database.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)
 
     /**
      * Filter out any library items not accessible to user
      */
-    const libraryItems = this.db.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+    const libraryItems = Database.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
     const libraryItemsAccessible = libraryItems.filter(req.user.checkCanAccessLibraryItem)
     if (libraryItems.length && !libraryItemsAccessible.length) {
       Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to any of the books`, req.user)

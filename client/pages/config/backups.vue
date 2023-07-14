@@ -107,7 +107,7 @@ export default {
         this.$toast.error('Invalid number of backups to keep')
         return
       }
-      var updatePayload = {
+      const updatePayload = {
         backupSchedule: this.enableBackups ? this.cronExpression : false,
         backupsToKeep: Number(this.backupsToKeep),
         maxBackupSize: Number(this.maxBackupSize)

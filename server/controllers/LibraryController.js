@@ -9,6 +9,9 @@ const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
 })
+
+const Database = require('../Database')
+
 class LibraryController {
   constructor() { }
 
@@ -40,13 +43,14 @@ class LibraryController {
     }
 
     const library = new Library()
-    newLibraryPayload.displayOrder = this.db.libraries.length + 1
+
+    newLibraryPayload.displayOrder = Database.libraries.map(li => li.displayOrder).sort((a, b) => a - b).pop() + 1
     library.setData(newLibraryPayload)
-    await this.db.insertEntity('library', library)
+    await Database.createLibrary(library)
 
     // Only emit to users with access to library
     const userFilter = (user) => {
-      return user.checkCanAccessLibrary && user.checkCanAccessLibrary(library.id)
+      return user.checkCanAccessLibrary?.(library.id)
     }
     SocketAuthority.emitter('library_added', library.toJSON(), userFilter)
 
@@ -58,14 +62,15 @@ class LibraryController {
 
   findAll(req, res) {
     const librariesAccessible = req.user.librariesAccessible || []
-    if (librariesAccessible && librariesAccessible.length) {
+    if (librariesAccessible.length) {
       return res.json({
-        libraries: this.db.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON())
+        libraries: Database.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON())
       })
     }
 
     res.json({
-      libraries: this.db.libraries.map(lib => lib.toJSON())
+      libraries: Database.libraries.map(lib => lib.toJSON())
+      // libraries: Database.libraries.map(lib => lib.toJSON())
     })
   }
 
@@ -75,7 +80,7 @@ class LibraryController {
       return res.json({
         filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
         issues: req.libraryItems.filter(li => li.hasIssues).length,
-        numUserPlaylists: this.db.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).length,
+        numUserPlaylists: Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).length,
         library: req.library
       })
     }
@@ -128,14 +133,14 @@ class LibraryController {
       this.cronManager.updateLibraryScanCron(library)
 
       // Remove libraryItems no longer in library
-      const itemsToRemove = this.db.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
+      const itemsToRemove = Database.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
       if (itemsToRemove.length) {
         Logger.info(`[Scanner] Updating library, removing ${itemsToRemove.length} items`)
         for (let i = 0; i < itemsToRemove.length; i++) {
           await this.handleDeleteLibraryItem(itemsToRemove[i])
         }
       }
-      await this.db.updateEntity('library', library)
+      await Database.updateLibrary(library)
 
       // Only emit to users with access to library
       const userFilter = (user) => {
@@ -153,21 +158,21 @@ class LibraryController {
     this.watcher.removeLibrary(library)
 
     // Remove collections for library
-    const collections = this.db.collections.filter(c => c.libraryId === library.id)
+    const collections = Database.collections.filter(c => c.libraryId === library.id)
     for (const collection of collections) {
       Logger.info(`[Server] deleting collection "${collection.name}" for library "${library.name}"`)
-      await this.db.removeEntity('collection', collection.id)
+      await Database.removeCollection(collection.id)
     }
 
     // Remove items in this library
-    const libraryItems = this.db.libraryItems.filter(li => li.libraryId === library.id)
+    const libraryItems = Database.libraryItems.filter(li => li.libraryId === library.id)
     Logger.info(`[Server] deleting library "${library.name}" with ${libraryItems.length} items"`)
     for (let i = 0; i < libraryItems.length; i++) {
       await this.handleDeleteLibraryItem(libraryItems[i])
     }
 
     const libraryJson = library.toJSON()
-    await this.db.removeEntity('library', library.id)
+    await Database.removeLibrary(library.id)
     SocketAuthority.emitter('library_removed', libraryJson)
     return res.json(libraryJson)
   }
@@ -197,7 +202,7 @@ class LibraryController {
     // Step 1 - Filter the retrieved library items
     let filterSeries = null
     if (payload.filterBy) {
-      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, this.rssFeedManager.feedsArray)
+      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, Database.feeds)
       payload.total = libraryItems.length
 
       // Determining if we are filtering titles by a series, and if so, which series
@@ -209,7 +214,7 @@ class LibraryController {
     // If also filtering by series, will not collapse the filtered series as this would lead
     // to series having a collapsed series that is just that series.
     if (payload.collapseseries) {
-      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, this.db.series, filterSeries, req.library.settings.hideSingleBookSeries)
+      let collapsedItems = libraryHelpers.collapseBookSeries(libraryItems, Database.series, filterSeries, req.library.settings.hideSingleBookSeries)
 
       if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
         libraryItems = collapsedItems
@@ -237,7 +242,7 @@ class LibraryController {
       // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
       sortArray.push({
         asc: (li) => {
-          if (this.db.serverSettings.sortingIgnorePrefix) {
+          if (Database.serverSettings.sortingIgnorePrefix) {
             return li.collapsedSeries?.nameIgnorePrefix || li.media.metadata.titleIgnorePrefix
           } else {
             return li.collapsedSeries?.name || li.media.metadata.title
@@ -247,15 +252,11 @@ class LibraryController {
     }
 
     if (payload.sortBy) {
-      // old sort key TODO: should be mutated in dbMigration
       let sortKey = payload.sortBy
-      if (sortKey.startsWith('book.')) {
-        sortKey = sortKey.replace('book.', 'media.metadata.')
-      }
 
       // Handle server setting sortingIgnorePrefix
       const sortByTitle = sortKey === 'media.metadata.title'
-      if (sortByTitle && this.db.serverSettings.sortingIgnorePrefix) {
+      if (sortByTitle && Database.serverSettings.sortingIgnorePrefix) {
         // BookMetadata.js has titleIgnorePrefix getter
         sortKey += 'IgnorePrefix'
       }
@@ -267,7 +268,7 @@ class LibraryController {
         sortArray.push({
           asc: (li) => {
             if (li.collapsedSeries) {
-              return this.db.serverSettings.sortingIgnorePrefix ?
+              return Database.serverSettings.sortingIgnorePrefix ?
                 li.collapsedSeries.nameIgnorePrefix :
                 li.collapsedSeries.name
             } else {
@@ -284,7 +285,7 @@ class LibraryController {
           if (mediaIsBook && sortBySequence) {
             return li.media.metadata.getSeries(filterSeries).sequence
           } else if (mediaIsBook && sortByTitle && li.collapsedSeries) {
-            return this.db.serverSettings.sortingIgnorePrefix ?
+            return Database.serverSettings.sortingIgnorePrefix ?
               li.collapsedSeries.nameIgnorePrefix :
               li.collapsedSeries.name
           } else {
@@ -411,7 +412,7 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let series = libraryHelpers.getSeriesFromBooks(libraryItems, this.db.series, null, payload.filterBy, req.user, payload.minified, req.library.settings.hideSingleBookSeries)
+    let series = libraryHelpers.getSeriesFromBooks(libraryItems, Database.series, null, payload.filterBy, req.user, payload.minified, req.library.settings.hideSingleBookSeries)
 
     const direction = payload.sortDesc ? 'desc' : 'asc'
     series = naturalSort(series).by([
@@ -428,7 +429,7 @@ class LibraryController {
           } else if (payload.sortBy === 'lastBookAdded') {
             return Math.max(...(se.books).map(x => x.addedAt), 0)
           } else { // sort by name
-            return this.db.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
+            return Database.serverSettings.sortingIgnorePrefix ? se.nameIgnorePrefixSort : se.name
           }
         }
       }
@@ -467,7 +468,7 @@ class LibraryController {
   async getSeriesForLibrary(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
-    const series = this.db.series.find(se => se.id === req.params.seriesId)
+    const series = Database.series.find(se => se.id === req.params.seriesId)
     if (!series) return res.sendStatus(404)
 
     const libraryItemsInSeries = req.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
@@ -508,7 +509,7 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let collections = this.db.collections.filter(c => c.libraryId === req.library.id).map(c => {
+    let collections = Database.collections.filter(c => c.libraryId === req.library.id).map(c => {
       const expanded = c.toJSONExpanded(libraryItems, payload.minified)
 
       // If all books restricted to user in this collection then hide this collection
@@ -535,7 +536,7 @@ class LibraryController {
 
   // api/libraries/:id/playlists
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = this.db.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).map(p => p.toJSONExpanded(this.db.libraryItems))
+    let playlistsForUser = Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).map(p => p.toJSONExpanded(Database.libraryItems))
 
     const payload = {
       results: [],
@@ -559,7 +560,7 @@ class LibraryController {
       return res.status(400).send('Invalid library media type')
     }
 
-    let libraryItems = this.db.libraryItems.filter(li => li.libraryId === req.library.id)
+    let libraryItems = Database.libraryItems.filter(li => li.libraryId === req.library.id)
     let albums = libraryHelpers.groupMusicLibraryItemsIntoAlbums(libraryItems)
     albums = naturalSort(albums).asc(a => a.title) // Alphabetical by album title
 
@@ -603,26 +604,26 @@ class LibraryController {
     var orderdata = req.body
     var hasUpdates = false
     for (let i = 0; i < orderdata.length; i++) {
-      var library = this.db.libraries.find(lib => lib.id === orderdata[i].id)
+      var library = Database.libraries.find(lib => lib.id === orderdata[i].id)
       if (!library) {
         Logger.error(`[LibraryController] Invalid library not found in reorder ${orderdata[i].id}`)
         return res.sendStatus(500)
       }
       if (library.update({ displayOrder: orderdata[i].newOrder })) {
         hasUpdates = true
-        await this.db.updateEntity('library', library)
+        await Database.updateLibrary(library)
       }
     }
 
     if (hasUpdates) {
-      this.db.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
+      Database.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
       Logger.debug(`[LibraryController] Updated library display orders`)
     } else {
       Logger.debug(`[LibraryController] Library orders were up to date`)
     }
 
     res.json({
-      libraries: this.db.libraries.map(lib => lib.toJSON())
+      libraries: Database.libraries.map(lib => lib.toJSON())
     })
   }
 
@@ -652,7 +653,7 @@ class LibraryController {
       if (queryResult.series?.length) {
         queryResult.series.forEach((se) => {
           if (!seriesMatches[se.id]) {
-            const _series = this.db.series.find(_se => _se.id === se.id)
+            const _series = Database.series.find(_se => _se.id === se.id)
             if (_series) seriesMatches[se.id] = { series: _series.toJSON(), books: [li.toJSON()] }
           } else {
             seriesMatches[se.id].books.push(li.toJSON())
@@ -662,7 +663,7 @@ class LibraryController {
       if (queryResult.authors?.length) {
         queryResult.authors.forEach((au) => {
           if (!authorMatches[au.id]) {
-            const _author = this.db.authors.find(_au => _au.id === au.id)
+            const _author = Database.authors.find(_au => _au.id === au.id)
             if (_author) {
               authorMatches[au.id] = _author.toJSON()
               authorMatches[au.id].numBooks = 1
@@ -729,7 +730,7 @@ class LibraryController {
       if (li.media.metadata.authors && li.media.metadata.authors.length) {
         li.media.metadata.authors.forEach((au) => {
           if (!authors[au.id]) {
-            const _author = this.db.authors.find(_au => _au.id === au.id)
+            const _author = Database.authors.find(_au => _au.id === au.id)
             if (_author) {
               authors[au.id] = _author.toJSON()
               authors[au.id].numBooks = 1
@@ -791,7 +792,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      await this.db.updateLibraryItems(itemsUpdated)
+      await Database.updateBulkBooks(itemsUpdated.map(i => i.media))
       SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
 
@@ -816,7 +817,7 @@ class LibraryController {
     }
 
     if (itemsUpdated.length) {
-      await this.db.updateLibraryItems(itemsUpdated)
+      await Database.updateBulkBooks(itemsUpdated.map(i => i.media))
       SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
 
@@ -900,12 +901,12 @@ class LibraryController {
       return res.sendStatus(403)
     }
 
-    const library = this.db.libraries.find(lib => lib.id === req.params.id)
+    const library = Database.libraries.find(lib => lib.id === req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }
     req.library = library
-    req.libraryItems = this.db.libraryItems.filter(li => {
+    req.libraryItems = Database.libraryItems.filter(li => {
       return li.libraryId === library.id && req.user.checkCanAccessLibraryItem(li)
     })
     next()

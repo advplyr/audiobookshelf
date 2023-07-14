@@ -1,5 +1,4 @@
-const Logger = require('../Logger')
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Playlist {
   constructor(playlist) {
@@ -88,7 +87,7 @@ class Playlist {
     if (!data.userId || !data.libraryId || !data.name) {
       return false
     }
-    this.id = getId('pl')
+    this.id = uuidv4()
     this.userId = data.userId
     this.libraryId = data.libraryId
     this.name = data.name

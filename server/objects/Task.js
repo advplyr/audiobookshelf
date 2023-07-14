@@ -1,4 +1,4 @@
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Task {
   constructor() {
@@ -35,7 +35,7 @@ class Task {
   }
 
   setData(action, title, description, showSuccess, data = {}) {
-    this.id = getId(action)
+    this.id = uuidv4()
     this.action = action
     this.data = { ...data }
     this.title = title

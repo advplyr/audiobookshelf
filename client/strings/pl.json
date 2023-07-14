@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Create playlist from collection",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast nie ma adresu url kanału RSS, który mógłby zostać użyty do dopasowania",
   "MessageQuickMatchDescription": "Wypełnij puste informacje i okładkę pierwszym wynikiem dopasowania z '{0}'. Nie nadpisuje szczegółów, chyba że włączone jest ustawienie serwera 'Preferuj dopasowane metadane'.",
-  "MessageRemoveAllItemsWarning": "UWAGA! Ta akcja usunie wszystkie elementy biblioteki z bazy danych, w tym wszystkie aktualizacje lub dopasowania, które zostały wykonane. Pliki pozostaną niezmienione. Czy jesteś pewien?",
   "MessageRemoveChapter": "Usuń rozdział",
   "MessageRemoveEpisodes": "Usuń {0} odcinków",
   "MessageRemoveFromPlayerQueue": "Remove from player queue",

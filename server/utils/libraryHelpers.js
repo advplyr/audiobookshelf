@@ -1,5 +1,6 @@
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const Logger = require('../Logger')
+const Database = require('../Database')
 const { getTitlePrefixAtEnd, isNullOrNaN, getTitleIgnorePrefix } = require('../utils/index')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -574,7 +575,7 @@ module.exports = {
             const hideFromContinueListening = user.checkShouldHideSeriesFromContinueListening(librarySeries.id)
 
             if (!seriesMap[librarySeries.id]) {
-              const seriesObj = ctx.db.series.find(se => se.id === librarySeries.id)
+              const seriesObj = Database.series.find(se => se.id === librarySeries.id)
               if (seriesObj) {
                 const series = {
                   ...seriesObj.toJSON(),
@@ -626,7 +627,7 @@ module.exports = {
         if (libraryItem.media.metadata.authors.length) {
           for (const libraryAuthor of libraryItem.media.metadata.authors) {
             if (!authorMap[libraryAuthor.id]) {
-              const authorObj = ctx.db.authors.find(au => au.id === libraryAuthor.id)
+              const authorObj = Database.authors.find(au => au.id === libraryAuthor.id)
               if (authorObj) {
                 const author = {
                   ...authorObj.toJSON(),

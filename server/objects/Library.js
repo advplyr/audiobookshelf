@@ -1,6 +1,6 @@
+const uuidv4 = require("uuid").v4
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
-const { getId } = require('../utils/index')
 const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class Library {
@@ -87,7 +87,7 @@ class Library {
   }
 
   setData(data) {
-    this.id = data.id ? data.id : getId('lib')
+    this.id = data.id || uuidv4()
     this.name = data.name
     if (data.folder) {
       this.folders = [

@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const Database = require('../Database')
 const { toNumber } = require('../utils/index')
 
 class SessionController {
@@ -49,7 +50,7 @@ class SessionController {
     }
 
     const openSessions = this.playbackSessionManager.sessions.map(se => {
-      const user = this.db.users.find(u => u.id === se.userId) || null
+      const user = Database.users.find(u => u.id === se.userId) || null
       return {
         ...se.toJSON(),
         user: user ? { id: user.id, username: user.username } : null
@@ -62,7 +63,7 @@ class SessionController {
   }
 
   getOpenSession(req, res) {
-    var libraryItem = this.db.getLibraryItem(req.session.libraryItemId)
+    var libraryItem = Database.getLibraryItem(req.session.libraryItemId)
     var sessionForClient = req.session.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }
@@ -87,7 +88,7 @@ class SessionController {
       await this.playbackSessionManager.removeSession(req.session.id)
     }
 
-    await this.db.removeEntity('session', req.session.id)
+    await Database.removePlaybackSession(req.session.id)
     res.sendStatus(200)
   }
 
@@ -115,7 +116,7 @@ class SessionController {
   }
 
   async middleware(req, res, next) {
-    const playbackSession = await this.db.getPlaybackSession(req.params.id)
+    const playbackSession = await Database.getPlaybackSession(req.params.id)
     if (!playbackSession) {
       Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
       return res.sendStatus(404)

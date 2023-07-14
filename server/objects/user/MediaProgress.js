@@ -1,8 +1,14 @@
+const uuidv4 = require("uuid").v4
+
 class MediaProgress {
   constructor(progress) {
     this.id = null
+    this.userId = null
     this.libraryItemId = null
     this.episodeId = null // For podcasts
+
+    this.mediaItemId = null // For use in new data model
+    this.mediaItemType = null // For use in new data model
 
     this.duration = null
     this.progress = null // 0 to 1
@@ -25,8 +31,11 @@ class MediaProgress {
   toJSON() {
     return {
       id: this.id,
+      userId: this.userId,
       libraryItemId: this.libraryItemId,
       episodeId: this.episodeId,
+      mediaItemId: this.mediaItemId,
+      mediaItemType: this.mediaItemType,
       duration: this.duration,
       progress: this.progress,
       currentTime: this.currentTime,
@@ -42,8 +51,11 @@ class MediaProgress {
 
   construct(progress) {
     this.id = progress.id
+    this.userId = progress.userId
     this.libraryItemId = progress.libraryItemId
     this.episodeId = progress.episodeId
+    this.mediaItemId = progress.mediaItemId
+    this.mediaItemType = progress.mediaItemType
     this.duration = progress.duration || 0
     this.progress = progress.progress
     this.currentTime = progress.currentTime || 0
@@ -60,10 +72,16 @@ class MediaProgress {
     return !this.isFinished && (this.progress > 0 || (this.ebookLocation != null && this.ebookProgress > 0))
   }
 
-  setData(libraryItemId, progress, episodeId = null) {
-    this.id = episodeId ? `${libraryItemId}-${episodeId}` : libraryItemId
-    this.libraryItemId = libraryItemId
+  setData(libraryItem, progress, episodeId, userId) {
+    this.id = uuidv4()
+    this.userId = userId
+    this.libraryItemId = libraryItem.id
     this.episodeId = episodeId
+
+    // PodcastEpisodeId or BookId
+    this.mediaItemId = episodeId || libraryItem.media.id
+    this.mediaItemType = episodeId ? 'podcastEpisode' : 'book'
+
     this.duration = progress.duration || 0
     this.progress = Math.min(1, (progress.progress || 0))
     this.currentTime = progress.currentTime || 0

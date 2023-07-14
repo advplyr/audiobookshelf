@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 
@@ -19,8 +20,7 @@ const AudioFile = require('../objects/files/AudioFile')
 const Task = require("../objects/Task")
 
 class PodcastManager {
-  constructor(db, watcher, notificationManager, taskManager) {
-    this.db = db
+  constructor(watcher, notificationManager, taskManager) {
     this.watcher = watcher
     this.notificationManager = notificationManager
     this.taskManager = taskManager
@@ -30,10 +30,6 @@ class PodcastManager {
 
     this.failedCheckMap = {}
     this.MaxFailedEpisodeChecks = 24
-  }
-
-  get serverSettings() {
-    return this.db.serverSettings || {}
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
@@ -59,6 +55,7 @@ class PodcastManager {
       const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
+      newPe.podcastId = libraryItem.media.id
       const newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
@@ -153,7 +150,7 @@ class PodcastManager {
       return false
     }
 
-    const libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = Database.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
@@ -182,7 +179,7 @@ class PodcastManager {
     }
 
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     const podcastEpisodeExpanded = podcastEpisode.toJSONExpanded()
     podcastEpisodeExpanded.libraryItem = libraryItem.toJSONExpanded()
@@ -235,6 +232,7 @@ class PodcastManager {
     }
     const newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
+    newAudioFile.index = 1
     return newAudioFile
   }
 
@@ -274,7 +272,7 @@ class PodcastManager {
 
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     return libraryItem.media.autoDownloadEpisodes
   }
@@ -313,7 +311,7 @@ class PodcastManager {
 
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
 
     return newEpisodes

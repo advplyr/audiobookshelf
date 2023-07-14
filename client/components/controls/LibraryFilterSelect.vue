@@ -271,12 +271,16 @@ export default {
       let filterValue = null
       if (parts.length > 1) {
         const decoded = this.$decode(parts[1])
-        if (decoded.startsWith('aut_')) {
+        if (parts[0] === 'authors') {
           const author = this.authors.find((au) => au.id == decoded)
           if (author) filterValue = author.name
-        } else if (decoded.startsWith('ser_')) {
-          const series = this.series.find((se) => se.id == decoded)
-          if (series) filterValue = series.name
+        } else if (parts[0] === 'series') {
+          if (decoded === 'no-series') {
+            filterValue = this.$strings.MessageNoSeries
+          } else {
+            const series = this.series.find((se) => se.id == decoded)
+            if (series) filterValue = series.name
+          }
         } else {
           filterValue = decoded
         }

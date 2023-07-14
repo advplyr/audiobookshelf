@@ -10,8 +10,7 @@ const toneHelpers = require('../utils/toneHelpers')
 const Task = require('../objects/Task')
 
 class AudioMetadataMangaer {
-  constructor(db, taskManager) {
-    this.db = db
+  constructor(taskManager) {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')

@@ -2,6 +2,7 @@ const fs = require('../libs/fsExtra')
 const Path = require('path')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 // Utils
 const { groupFilesIntoLibraryItemPaths, getLibraryItemFileData, scanFolder, checkFilepathIsAudioFile } = require('../utils/scandir')
@@ -22,8 +23,7 @@ const Series = require('../objects/entities/Series')
 const Task = require('../objects/Task')
 
 class Scanner {
-  constructor(db, coverManager, taskManager) {
-    this.db = db
+  constructor(coverManager, taskManager) {
     this.coverManager = coverManager
     this.taskManager = taskManager
 
@@ -66,7 +66,7 @@ class Scanner {
   }
 
   async scanLibraryItemByRequest(libraryItem) {
-    const library = this.db.libraries.find(lib => lib.id === libraryItem.libraryId)
+    const library = Database.libraries.find(lib => lib.id === libraryItem.libraryId)
     if (!library) {
       Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
       return ScanResult.NOTHING
@@ -108,7 +108,7 @@ class Scanner {
     if (checkRes.updated) hasUpdated = true
 
     // Sync other files first so that local images are used as cover art
-    if (await libraryItem.syncFiles(this.db.serverSettings.scannerPreferOpfMetadata, library.settings)) {
+    if (await libraryItem.syncFiles(Database.serverSettings.scannerPreferOpfMetadata, library.settings)) {
       hasUpdated = true
     }
 
@@ -141,7 +141,7 @@ class Scanner {
     }
 
     if (hasUpdated) {
-      await this.db.updateLibraryItem(libraryItem)
+      await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
       return ScanResult.UPDATED
     }
@@ -160,7 +160,7 @@ class Scanner {
     }
 
     const scanOptions = new ScanOptions()
-    scanOptions.setData(options, this.db.serverSettings)
+    scanOptions.setData(options, Database.serverSettings)
 
     const libraryScan = new LibraryScan()
     libraryScan.setData(library, scanOptions)
@@ -212,7 +212,7 @@ class Scanner {
 
     // Remove items with no inode
     libraryItemDataFound = libraryItemDataFound.filter(lid => lid.ino)
-    const libraryItemsInLibrary = this.db.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
+    const libraryItemsInLibrary = Database.libraryItems.filter(li => li.libraryId === libraryScan.libraryId)
 
     const MaxSizePerChunk = 2.5e9
     const itemDataToRescanChunks = []
@@ -333,7 +333,7 @@ class Scanner {
   }
 
   async updateLibraryItemChunk(itemsToUpdate) {
-    await this.db.updateLibraryItems(itemsToUpdate)
+    await Database.updateBulkLibraryItems(itemsToUpdate)
     SocketAuthority.emitter('items_updated', itemsToUpdate.map(li => li.toJSONExpanded()))
   }
 
@@ -351,7 +351,7 @@ class Scanner {
 
     if (itemsUpdated.length) {
       libraryScan.resultsUpdated += itemsUpdated.length
-      await this.db.updateLibraryItems(itemsUpdated)
+      await Database.updateBulkLibraryItems(itemsUpdated)
       SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
   }
@@ -368,7 +368,7 @@ class Scanner {
     }
 
     libraryScan.resultsAdded += newLibraryItems.length
-    await this.db.insertLibraryItems(newLibraryItems)
+    await Database.createBulkLibraryItems(newLibraryItems)
     SocketAuthority.emitter('items_added', newLibraryItems.map(li => li.toJSONExpanded()))
   }
 
@@ -436,6 +436,7 @@ class Scanner {
 
     const libraryItem = new LibraryItem()
     libraryItem.setData(library.mediaType, libraryItemData)
+    libraryItem.setLastScan()
 
     const mediaFiles = libraryItemData.libraryFiles.filter(lf => lf.fileType === 'audio' || lf.fileType === 'video')
     if (mediaFiles.length) {
@@ -476,13 +477,13 @@ class Scanner {
 
     // Create or match all new authors and series
     if (libraryItem.media.metadata.authors.some(au => au.id.startsWith('new'))) {
-      var newAuthors = []
+      const newAuthors = []
       libraryItem.media.metadata.authors = libraryItem.media.metadata.authors.map((tempMinAuthor) => {
-        var _author = this.db.authors.find(au => au.checkNameEquals(tempMinAuthor.name))
-        if (!_author) _author = newAuthors.find(au => au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
+        let _author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name))
+        if (!_author) _author = newAuthors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(tempMinAuthor.name)) // Check new unsaved authors
         if (!_author) { // Must create new author
           _author = new Author()
-          _author.setData(tempMinAuthor)
+          _author.setData(tempMinAuthor, libraryItem.libraryId)
           newAuthors.push(_author)
         }
 
@@ -492,18 +493,18 @@ class Scanner {
         }
       })
       if (newAuthors.length) {
-        await this.db.insertEntities('author', newAuthors)
+        await Database.createBulkAuthors(newAuthors)
         SocketAuthority.emitter('authors_added', newAuthors.map(au => au.toJSON()))
       }
     }
     if (libraryItem.media.metadata.series.some(se => se.id.startsWith('new'))) {
-      var newSeries = []
+      const newSeries = []
       libraryItem.media.metadata.series = libraryItem.media.metadata.series.map((tempMinSeries) => {
-        var _series = this.db.series.find(se => se.checkNameEquals(tempMinSeries.name))
-        if (!_series) _series = newSeries.find(se => se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
+        let _series = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name))
+        if (!_series) _series = newSeries.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(tempMinSeries.name)) // Check new unsaved series
         if (!_series) { // Must create new series
           _series = new Series()
-          _series.setData(tempMinSeries)
+          _series.setData(tempMinSeries, libraryItem.libraryId)
           newSeries.push(_series)
         }
         return {
@@ -513,7 +514,7 @@ class Scanner {
         }
       })
       if (newSeries.length) {
-        await this.db.insertEntities('series', newSeries)
+        await Database.createBulkSeries(newSeries)
         SocketAuthority.emitter('multiple_series_added', newSeries.map(se => se.toJSON()))
       }
     }
@@ -551,7 +552,7 @@ class Scanner {
 
     for (const folderId in folderGroups) {
       const libraryId = folderGroups[folderId].libraryId
-      const library = this.db.libraries.find(lib => lib.id === libraryId)
+      const library = Database.libraries.find(lib => lib.id === libraryId)
       if (!library) {
         Logger.error(`[Scanner] Library not found in files changed ${libraryId}`)
         continue;
@@ -597,12 +598,12 @@ class Scanner {
       const altDir = `${itemDir}/${firstNest}`
 
       const fullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), itemDir)
-      const childLibraryItem = this.db.libraryItems.find(li => li.path !== fullPath && li.path.startsWith(fullPath))
+      const childLibraryItem = Database.libraryItems.find(li => li.path !== fullPath && li.path.startsWith(fullPath))
       if (!childLibraryItem) {
         continue
       }
       const altFullPath = Path.posix.join(filePathToPOSIX(folder.fullPath), altDir)
-      const altChildLibraryItem = this.db.libraryItems.find(li => li.path !== altFullPath && li.path.startsWith(altFullPath))
+      const altChildLibraryItem = Database.libraryItems.find(li => li.path !== altFullPath && li.path.startsWith(altFullPath))
       if (altChildLibraryItem) {
         continue
       }
@@ -619,9 +620,9 @@ class Scanner {
       const dirIno = await getIno(fullPath)
 
       // Check if book dir group is already an item
-      let existingLibraryItem = this.db.libraryItems.find(li => fullPath.startsWith(li.path))
+      let existingLibraryItem = Database.libraryItems.find(li => fullPath.startsWith(li.path))
       if (!existingLibraryItem) {
-        existingLibraryItem = this.db.libraryItems.find(li => li.ino === dirIno)
+        existingLibraryItem = Database.libraryItems.find(li => li.ino === dirIno)
         if (existingLibraryItem) {
           Logger.debug(`[Scanner] scanFolderUpdates: Library item found by inode value=${dirIno}. "${existingLibraryItem.relPath} => ${itemDir}"`)
           // Update library item paths for scan and all library item paths will get updated in LibraryItem.checkScanData
@@ -636,7 +637,7 @@ class Scanner {
           if (!exists) {
             Logger.info(`[Scanner] Scanning file update group and library item was deleted "${existingLibraryItem.media.metadata.title}" - marking as missing`)
             existingLibraryItem.setMissing()
-            await this.db.updateLibraryItem(existingLibraryItem)
+            await Database.updateLibraryItem(existingLibraryItem)
             SocketAuthority.emitter('item_updated', existingLibraryItem.toJSONExpanded())
 
             itemGroupingResults[itemDir] = ScanResult.REMOVED
@@ -654,7 +655,7 @@ class Scanner {
       }
 
       // Check if a library item is a subdirectory of this dir
-      var childItem = this.db.libraryItems.find(li => (li.path + '/').startsWith(fullPath + '/'))
+      var childItem = Database.libraryItems.find(li => (li.path + '/').startsWith(fullPath + '/'))
       if (childItem) {
         Logger.warn(`[Scanner] Files were modified in a parent directory of a library item "${childItem.media.metadata.title}" - ignoring`)
         itemGroupingResults[itemDir] = ScanResult.NOTHING
@@ -666,7 +667,7 @@ class Scanner {
       var newLibraryItem = await this.scanPotentialNewLibraryItem(library, folder, fullPath, isSingleMediaItem)
       if (newLibraryItem) {
         await this.createNewAuthorsAndSeries(newLibraryItem)
-        await this.db.insertLibraryItem(newLibraryItem)
+        await Database.createLibraryItem(newLibraryItem)
         SocketAuthority.emitter('item_added', newLibraryItem.toJSONExpanded())
       }
       itemGroupingResults[itemDir] = newLibraryItem ? ScanResult.ADDED : ScanResult.NOTHING
@@ -686,7 +687,7 @@ class Scanner {
       titleDistance: 2,
       authorDistance: 2
     }
-    const scannerCoverProvider = this.db.serverSettings.scannerCoverProvider
+    const scannerCoverProvider = Database.serverSettings.scannerCoverProvider
     const results = await this.bookFinder.findCovers(scannerCoverProvider, libraryItem.media.metadata.title, libraryItem.media.metadata.authorName, options)
     if (results.length) {
       if (libraryScan) libraryScan.addLog(LogLevel.DEBUG, `Found best cover for "${libraryItem.media.metadata.title}"`)
@@ -716,7 +717,7 @@ class Scanner {
 
     // Set to override existing metadata if scannerPreferMatchedMetadata setting is true and 
     // the overrideDefaults option is not set or set to false.
-    if ((overrideDefaults == false) && (this.db.serverSettings.scannerPreferMatchedMetadata)) {
+    if ((overrideDefaults == false) && (Database.serverSettings.scannerPreferMatchedMetadata)) {
       options.overrideCover = true
       options.overrideDetails = true
     }
@@ -783,7 +784,7 @@ class Scanner {
         await this.quickMatchPodcastEpisodes(libraryItem, options)
       }
 
-      await this.db.updateLibraryItem(libraryItem)
+      await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
@@ -876,13 +877,12 @@ class Scanner {
         matchData.author = matchData.author.split(',').map(au => au.trim()).filter(au => !!au)
       }
       const authorPayload = []
-      for (let index = 0; index < matchData.author.length; index++) {
-        const authorName = matchData.author[index]
-        var author = this.db.authors.find(au => au.checkNameEquals(authorName))
+      for (const authorName of matchData.author) {
+        let author = Database.authors.find(au => au.libraryId === libraryItem.libraryId && au.checkNameEquals(authorName))
         if (!author) {
           author = new Author()
-          author.setData({ name: authorName })
-          await this.db.insertEntity('author', author)
+          author.setData({ name: authorName }, libraryItem.libraryId)
+          await Database.createAuthor(author)
           SocketAuthority.emitter('author_added', author.toJSON())
         }
         authorPayload.push(author.toJSONMinimal())
@@ -894,13 +894,12 @@ class Scanner {
     if (matchData.series && (!libraryItem.media.metadata.seriesName || options.overrideDetails)) {
       if (!Array.isArray(matchData.series)) matchData.series = [{ series: matchData.series, sequence: matchData.sequence }]
       const seriesPayload = []
-      for (let index = 0; index < matchData.series.length; index++) {
-        const seriesMatchItem = matchData.series[index]
-        var seriesItem = this.db.series.find(au => au.checkNameEquals(seriesMatchItem.series))
+      for (const seriesMatchItem of matchData.series) {
+        let seriesItem = Database.series.find(se => se.libraryId === libraryItem.libraryId && se.checkNameEquals(seriesMatchItem.series))
         if (!seriesItem) {
           seriesItem = new Series()
-          seriesItem.setData({ name: seriesMatchItem.series })
-          await this.db.insertEntity('series', seriesItem)
+          seriesItem.setData({ name: seriesMatchItem.series }, libraryItem.libraryId)
+          await Database.createSeries(seriesItem)
           SocketAuthority.emitter('series_added', seriesItem.toJSON())
         }
         seriesPayload.push(seriesItem.toJSONMinimal(seriesMatchItem.sequence))
@@ -981,7 +980,7 @@ class Scanner {
       return
     }
 
-    var itemsInLibrary = this.db.getLibraryItemsInLibrary(library.id)
+    const itemsInLibrary = Database.libraryItems.filter(li => li.libraryId === library.id)
     if (!itemsInLibrary.length) {
       Logger.error(`[Scanner] matchLibraryItems: Library has no items ${library.id}`)
       return

@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Créer une liste de lecture depuis la collection",
   "MessagePodcastHasNoRSSFeedForMatching": "Le Podcast n’a pas d’URL de flux RSS à utiliser pour la correspondance",
   "MessageQuickMatchDescription": "Renseigne les détails manquants ainsi que la couverture avec la première correspondance de « {0} ». N’écrase pas les données présentes à moins que le paramètre « Préférer les Métadonnées par correspondance » soit activé.",
-  "MessageRemoveAllItemsWarning": "ATTENTION ! Cette action supprimera toute la base de données de la bibliothèque ainsi que les mises à jour ou correspondances qui auraient été effectuées. Cela n’a aucune incidence sur les fichiers de la bibliothèque. Souhaitez-vous continuer ?",
   "MessageRemoveChapter": "Supprimer le chapitre",
   "MessageRemoveEpisodes": "Suppression de {0} épisode(s)",
   "MessageRemoveFromPlayerQueue": "Supprimer de la liste d’écoute",

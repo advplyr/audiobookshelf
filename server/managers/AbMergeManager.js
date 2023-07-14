@@ -10,8 +10,7 @@ const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
 class AbMergeManager {
-  constructor(db, taskManager) {
-    this.db = db
+  constructor(taskManager) {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')

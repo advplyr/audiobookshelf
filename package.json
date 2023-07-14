@@ -20,7 +20,7 @@
   "pkg": {
     "assets": [
       "client/dist/**/*",
-      "server/Db.js"
+      "node_modules/sqlite3/lib/binding/**/*.node"
     ],
     "scripts": [
       "prod.js",
@@ -36,7 +36,9 @@
     "htmlparser2": "^8.0.1",
     "node-tone": "^1.0.1",
     "nodemailer": "^6.9.2",
+    "sequelize": "^6.32.1",
     "socket.io": "^4.5.4",
+    "sqlite3": "^5.1.6",
     "xml2js": "^0.5.0"
   },
   "devDependencies": {

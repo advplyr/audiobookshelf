@@ -29,7 +29,6 @@ class ServerSettings {
     this.backupSchedule = false // If false then auto-backups are disabled
     this.backupsToKeep = 2
     this.maxBackupSize = 1
-    this.backupMetadataCovers = true
 
     // Logger
     this.loggerDailyLogsToKeep = 7
@@ -82,7 +81,6 @@ class ServerSettings {
     this.backupSchedule = settings.backupSchedule || false
     this.backupsToKeep = settings.backupsToKeep || 2
     this.maxBackupSize = settings.maxBackupSize || 1
-    this.backupMetadataCovers = settings.backupMetadataCovers !== false
 
     this.loggerDailyLogsToKeep = settings.loggerDailyLogsToKeep || 7
     this.loggerScannerLogsToKeep = settings.loggerScannerLogsToKeep || 2
@@ -145,7 +143,6 @@ class ServerSettings {
       backupSchedule: this.backupSchedule,
       backupsToKeep: this.backupsToKeep,
       maxBackupSize: this.maxBackupSize,
-      backupMetadataCovers: this.backupMetadataCovers,
       loggerDailyLogsToKeep: this.loggerDailyLogsToKeep,
       loggerScannerLogsToKeep: this.loggerScannerLogsToKeep,
       homeBookshelfView: this.homeBookshelfView,

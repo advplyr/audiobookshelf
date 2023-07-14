@@ -53,7 +53,7 @@ class CacheManager {
     if (await fs.pathExists(path)) {
       if (global.XAccel) {
         Logger.debug(`Use X-Accel to serve static file ${path}`)
-        return res.status(204).header({'X-Accel-Redirect': global.XAccel + path}).send()
+        return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + path }).send()
       }
 
       const r = fs.createReadStream(path)
@@ -79,7 +79,7 @@ class CacheManager {
 
     if (global.XAccel) {
       Logger.debug(`Use X-Accel to serve static file ${writtenFile}`)
-      return res.status(204).header({'X-Accel-Redirect': global.XAccel + writtenFile}).send()
+      return res.status(204).header({ 'X-Accel-Redirect': global.XAccel + writtenFile }).send()
     }
 
     var readStream = fs.createReadStream(writtenFile)
@@ -116,6 +116,7 @@ class CacheManager {
   }
 
   async purgeAll() {
+    Logger.info(`[CacheManager] Purging all cache at "${this.CachePath}"`)
     if (await fs.pathExists(this.CachePath)) {
       await fs.remove(this.CachePath).catch((error) => {
         Logger.error(`[CacheManager] Failed to remove cache dir "${this.CachePath}"`, error)
@@ -125,6 +126,7 @@ class CacheManager {
   }
 
   async purgeItems() {
+    Logger.info(`[CacheManager] Purging items cache at "${this.ItemCachePath}"`)
     if (await fs.pathExists(this.ItemCachePath)) {
       await fs.remove(this.ItemCachePath).catch((error) => {
         Logger.error(`[CacheManager] Failed to remove items cache dir "${this.ItemCachePath}"`, error)

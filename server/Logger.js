@@ -3,7 +3,8 @@ const { LogLevel } = require('./utils/constants')
 
 class Logger {
   constructor() {
-    this.logLevel = process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.TRACE
+    this.isDev = process.env.NODE_ENV !== 'production'
+    this.logLevel = !this.isDev ? LogLevel.INFO : LogLevel.TRACE
     this.socketListeners = []
 
     this.logManager = null
@@ -84,6 +85,15 @@ class Logger {
   setLogLevel(level) {
     this.logLevel = level
     this.debug(`Set Log Level to ${this.levelString}`)
+  }
+
+  /**
+   * Only to console and only for development
+   * @param  {...any} args
+   */
+  dev(...args) {
+    if (!this.isDev) return
+    console.log(`[${this.timestamp}] DEV:`, ...args)
   }
 
   trace(...args) {

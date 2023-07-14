@@ -43,9 +43,8 @@ class BackupController {
     res.sendFile(req.backup.fullPath)
   }
 
-  async apply(req, res) {
-    await this.backupManager.requestApplyBackup(req.backup)
-    res.sendStatus(200)
+  apply(req, res) {
+    this.backupManager.requestApplyBackup(req.backup, res)
   }
 
   middleware(req, res, next) {

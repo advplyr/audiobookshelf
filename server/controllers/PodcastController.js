@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 
@@ -18,7 +19,7 @@ class PodcastController {
     }
     const payload = req.body
 
-    const library = this.db.libraries.find(lib => lib.id === payload.libraryId)
+    const library = Database.libraries.find(lib => lib.id === payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
       return res.status(404).send('Library not found')
@@ -33,7 +34,7 @@ class PodcastController {
     const podcastPath = filePathToPOSIX(payload.path)
 
     // Check if a library item with this podcast folder exists already
-    const existingLibraryItem = this.db.libraryItems.find(li => li.path === podcastPath && li.libraryId === library.id)
+    const existingLibraryItem = Database.libraryItems.find(li => li.path === podcastPath && li.libraryId === library.id)
     if (existingLibraryItem) {
       Logger.error(`[PodcastController] Podcast already exists with name "${existingLibraryItem.media.metadata.title}" at path "${podcastPath}"`)
       return res.status(400).send('Podcast already exists')
@@ -80,7 +81,7 @@ class PodcastController {
       }
     }
 
-    await this.db.insertLibraryItem(libraryItem)
+    await Database.createLibraryItem(libraryItem)
     SocketAuthority.emitter('item_added', libraryItem.toJSONExpanded())
 
     res.json(libraryItem.toJSONExpanded())
@@ -199,7 +200,7 @@ class PodcastController {
     const overrideDetails = req.query.override === '1'
     const episodesUpdated = await this.scanner.quickMatchPodcastEpisodes(req.libraryItem, { overrideDetails })
     if (episodesUpdated) {
-      await this.db.updateLibraryItem(req.libraryItem)
+      await Database.updateLibraryItem(req.libraryItem)
       SocketAuthority.emitter('item_updated', req.libraryItem.toJSONExpanded())
     }
 
@@ -216,9 +217,8 @@ class PodcastController {
       return res.status(404).send('Episode not found')
     }
 
-    var wasUpdated = libraryItem.media.updateEpisode(episodeId, req.body)
-    if (wasUpdated) {
-      await this.db.updateLibraryItem(libraryItem)
+    if (libraryItem.media.updateEpisode(episodeId, req.body)) {
+      await Database.updateLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     }
 
@@ -267,13 +267,13 @@ class PodcastController {
       libraryItem.removeLibraryFile(episodeRemoved.audioFile.ino)
     }
 
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     res.json(libraryItem.toJSON())
   }
 
   middleware(req, res, next) {
-    const item = this.db.libraryItems.find(li => li.id === req.params.id)
+    const item = Database.libraryItems.find(li => li.id === req.params.id)
     if (!item || !item.media) return res.sendStatus(404)
 
     if (!item.isPodcast) {

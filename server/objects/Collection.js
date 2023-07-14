@@ -1,10 +1,9 @@
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Collection {
   constructor(collection) {
     this.id = null
     this.libraryId = null
-    this.userId = null
 
     this.name = null
     this.description = null
@@ -25,7 +24,6 @@ class Collection {
     return {
       id: this.id,
       libraryId: this.libraryId,
-      userId: this.userId,
       name: this.name,
       description: this.description,
       cover: this.cover,
@@ -60,7 +58,6 @@ class Collection {
   construct(collection) {
     this.id = collection.id
     this.libraryId = collection.libraryId
-    this.userId = collection.userId
     this.name = collection.name
     this.description = collection.description || null
     this.cover = collection.cover || null
@@ -71,11 +68,10 @@ class Collection {
   }
 
   setData(data) {
-    if (!data.userId || !data.libraryId || !data.name) {
+    if (!data.libraryId || !data.name) {
       return false
     }
-    this.id = getId('col')
-    this.userId = data.userId
+    this.id = uuidv4()
     this.libraryId = data.libraryId
     this.name = data.name
     this.description = data.description || null

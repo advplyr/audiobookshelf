@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "从收藏中创建播放列表",
   "MessagePodcastHasNoRSSFeedForMatching": "播客没有可用于匹配 RSS 源的 url",
   "MessageQuickMatchDescription": "使用来自 '{0}' 的第一个匹配结果填充空白详细信息和封面. 除非启用 '首选匹配元数据' 服务器设置, 否则不会覆盖详细信息.",
-  "MessageRemoveAllItemsWarning": "警告! 此操作将从数据库中删除所有的媒体库项, 包括您所做的任何更新或匹配. 这不会对实际文件产生任何影响. 你确定吗?",
   "MessageRemoveChapter": "移除章节",
   "MessageRemoveEpisodes": "移除 {0} 剧集",
   "MessageRemoveFromPlayerQueue": "从播放队列中移除",

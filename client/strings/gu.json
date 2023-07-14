@@ -592,7 +592,6 @@
   "MessagePlaylistCreateFromCollection": "Create playlist from collection",
   "MessagePodcastHasNoRSSFeedForMatching": "Podcast has no RSS feed url to use for matching",
   "MessageQuickMatchDescription": "Populate empty item details & cover with first match result from '{0}'. Does not overwrite details unless 'Prefer matched metadata' server setting is enabled.",
-  "MessageRemoveAllItemsWarning": "WARNING! This action will remove all library items from the database including any updates or matches you have made. This does not do anything to your actual files. Are you sure?",
   "MessageRemoveChapter": "Remove chapter",
   "MessageRemoveEpisodes": "Remove {0} episode(s)",
   "MessageRemoveFromPlayerQueue": "Remove from player queue",
