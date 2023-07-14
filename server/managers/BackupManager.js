@@ -180,8 +180,10 @@ class BackupManager {
 
           const backup = new Backup({ details, fullPath: fullFilePath })
 
-          if (!backup.serverVersion) {
-            Logger.error(`[BackupManager] Old unsupported backup was found "${backup.fullPath}"`)
+          if (!backup.serverVersion) { // Backups before v2
+            Logger.error(`[BackupManager] Old unsupported backup was found "${backup.filename}"`)
+          } else if (!backup.key) { // Backups before sqlite migration
+            Logger.warn(`[BackupManager] Old unsupported backup was found "${backup.filename}" (pre sqlite migration)`)
           }
 
           backup.fileSize = await getFileSize(backup.fullPath)
