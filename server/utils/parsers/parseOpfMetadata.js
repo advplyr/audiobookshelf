@@ -17,8 +17,7 @@ function parseCreators(metadata) {
 
 function fetchCreators(creators, role) {
   if (!creators || !creators.length) return null
-  const creatorNames = creators.filter(c => c.role === role).map(c => c.value)
-  return creatorNames.filter((item, index) => creatorNames.indexOf(item) === index)
+  return [...new Set(creators.filter(c => c.role === role).map(c => c.value))]
 }
 
 function fetchTagString(metadata, tag) {
