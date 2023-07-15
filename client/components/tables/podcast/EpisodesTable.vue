@@ -58,7 +58,6 @@ export default {
       selectedEpisodes: [],
       episodesToRemove: [],
       processing: false,
-      quickMatchingEpisodes: false,
       search: null,
       searchTimeout: null,
       searchText: null
@@ -78,6 +77,10 @@ export default {
         {
           text: 'Quick match all episodes',
           action: 'quick-match-episodes'
+        },
+        {
+          text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
+          action: 'batch-mark-as-finished'
         }
       ]
     },
@@ -169,9 +172,15 @@ export default {
     },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
-      return !this.selectedEpisodes.find((episode) => {
-        var itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
-        return !itemProgress || !itemProgress.isFinished
+      return !this.selectedEpisodes.some((episode) => {
+        const itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        return !itemProgress?.isFinished
+      })
+    },
+    allEpisodesFinished() {
+      return !this.episodesSorted.some((episode) => {
+        const itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        return !itemProgress?.isFinished
       })
     },
     dateFormat() {
@@ -194,17 +203,34 @@ export default {
     },
     contextMenuAction({ action }) {
       if (action === 'quick-match-episodes') {
-        if (this.quickMatchingEpisodes) return
+        if (this.processing) return
 
         this.quickMatchAllEpisodes()
+      } else if (action === 'batch-mark-as-finished') {
+        if (this.processing) return
+
+        this.markAllEpisodesFinished()
       }
+    },
+    markAllEpisodesFinished() {
+      const newIsFinished = !this.allEpisodesFinished
+      const payload = {
+        message: newIsFinished ? this.$strings.MessageConfirmMarkAllEpisodesFinished : this.$strings.MessageConfirmMarkAllEpisodesNotFinished,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.batchUpdateEpisodesFinished(this.episodesSorted, newIsFinished)
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     quickMatchAllEpisodes() {
       if (!this.mediaMetadata.feedUrl) {
         this.$toast.error(this.$strings.MessagePodcastHasNoRSSFeedForMatching)
         return
       }
-      this.quickMatchingEpisodes = true
+      this.processing = true
 
       const payload = {
         message: 'Quick matching episodes will overwrite details if a match is found. Only unmatched episodes will be updated. Are you sure?',
@@ -224,7 +250,7 @@ export default {
                 this.$toast.error('Failed to match episodes')
               })
           }
-          this.quickMatchingEpisodes = false
+          this.processing = false
         },
         type: 'yesNo'
       }
@@ -248,17 +274,19 @@ export default {
       this.$store.commit('addItemToQueue', queueItem)
     },
     toggleBatchFinished() {
+      this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)
+    },
+    batchUpdateEpisodesFinished(episodes, newIsFinished) {
       this.processing = true
-      var newIsFinished = !this.selectedIsFinished
-      var updateProgressPayloads = this.selectedEpisodes.map((episode) => {
+
+      const updateProgressPayloads = episodes.map((episode) => {
         return {
           libraryItemId: this.libraryItem.id,
           episodeId: episode.id,
           isFinished: newIsFinished
         }
       })
-
-      this.$axios
+      return this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
           this.$toast.success(this.$strings.ToastBatchUpdateSuccess)
