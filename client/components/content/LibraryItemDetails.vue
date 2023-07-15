@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="narrators?.length" class="flex py-0.5 mt-4">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelNarrators }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
@@ -12,7 +12,7 @@
       </div>
     </div>
     <div v-if="publishedYear" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublishYear }}</span>
       </div>
       <div>
@@ -20,7 +20,7 @@
       </div>
     </div>
     <div v-if="publisher" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
       <div>
@@ -28,7 +28,7 @@
       </div>
     </div>
     <div v-if="musicAlbum" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">Album</span>
       </div>
       <div>
@@ -36,7 +36,7 @@
       </div>
     </div>
     <div v-if="musicAlbumArtist" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">Album Artist</span>
       </div>
       <div>
@@ -44,7 +44,7 @@
       </div>
     </div>
     <div v-if="musicTrackPretty" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">Track</span>
       </div>
       <div>
@@ -52,7 +52,7 @@
       </div>
     </div>
     <div v-if="musicDiscPretty" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">Disc</span>
       </div>
       <div>
@@ -60,7 +60,7 @@
       </div>
     </div>
     <div v-if="podcastType" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPodcastType }}</span>
       </div>
       <div class="capitalize">
@@ -68,7 +68,7 @@
       </div>
     </div>
     <div class="flex py-0.5" v-if="genres.length">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelGenres }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
@@ -79,7 +79,7 @@
       </div>
     </div>
     <div class="flex py-0.5" v-if="tags.length">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelTags }}</span>
       </div>
       <div class="max-w-[calc(100vw-10rem)] overflow-hidden overflow-ellipsis">
@@ -90,7 +90,7 @@
       </div>
     </div>
     <div v-if="tracks.length || audioFile || (isPodcast && totalPodcastDuration)" class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelDuration }}</span>
       </div>
       <div>
@@ -98,7 +98,7 @@
       </div>
     </div>
     <div class="flex py-0.5">
-      <div class="w-32">
+      <div class="w-24 min-w-24 sm:w-32 sm:min-w-32">
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelSize }}</span>
       </div>
       <div>
