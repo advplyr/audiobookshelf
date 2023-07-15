@@ -43,6 +43,8 @@ module.exports.parse = (nameString) => {
   // Example &LF: Friedman, Milton & Friedman, Rose
   if (nameString.includes('&')) {
     nameString.split('&').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
+  } else if (nameString.includes(' and ')) {
+    nameString.split(' and ').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
   } else if (nameString.includes(';')) {
     nameString.split(';').forEach((asa) => splitNames = splitNames.concat(asa.split(',')))
   } else {
