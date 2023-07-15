@@ -92,7 +92,7 @@ function fetchDescription(metadata) {
 
 function fetchGenres(metadata) {
   if (!metadata['dc:subject'] || !metadata['dc:subject'].length) return []
-  return metadata['dc:subject'].map(g => typeof g === 'string' ? g : null).filter(g => !!g).filter((item, index) => metadata['dc:subject'].indexOf(item) === index)
+  return [...new Set(metadata['dc:subject'].filter(g => typeof g === 'string'))]
 }
 
 function fetchLanguage(metadata) {
