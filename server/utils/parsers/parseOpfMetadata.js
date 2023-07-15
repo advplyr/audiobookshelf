@@ -122,7 +122,7 @@ function fetchNarrators(creators, metadata) {
 
 function fetchTags(metadata) {
   if (!metadata['dc:tag'] || !metadata['dc:tag'].length) return []
-  return metadata['dc:tag'].filter(tag => (typeof tag === 'string')).filter((item, index) => metadata['dc:tag'].indexOf(item) === index)
+  return [...new Set(metadata['dc:tag'].filter(tag => typeof tag === 'string'))]
 }
 
 function stripPrefix(str) {
