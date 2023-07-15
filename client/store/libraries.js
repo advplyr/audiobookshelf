@@ -238,21 +238,23 @@ export const mutations = {
     if (!libraryItem || !state.filterData) return
     if (state.currentLibraryId !== libraryItem.libraryId) return
     /*
-    var data = {
+    structure of filterData:
+    {
       authors: [],
       genres: [],
       tags: [],
       series: [],
       narrators: [],
-      languages: []
+      languages: [],
+      publishers: []
     }
     */
-    var mediaMetadata = libraryItem.media.metadata
+    const mediaMetadata = libraryItem.media.metadata
 
     // Add/update book authors
-    if (mediaMetadata.authors && mediaMetadata.authors.length) {
+    if (mediaMetadata.authors?.length) {
       mediaMetadata.authors.forEach((author) => {
-        var indexOf = state.filterData.authors.findIndex(au => au.id === author.id)
+        const indexOf = state.filterData.authors.findIndex(au => au.id === author.id)
         if (indexOf >= 0) {
           state.filterData.authors.splice(indexOf, 1, author)
         } else {
@@ -263,9 +265,9 @@ export const mutations = {
     }
 
     // Add/update series
-    if (mediaMetadata.series && mediaMetadata.series.length) {
+    if (mediaMetadata.series?.length) {
       mediaMetadata.series.forEach((series) => {
-        var indexOf = state.filterData.series.findIndex(se => se.id === series.id)
+        const indexOf = state.filterData.series.findIndex(se => se.id === series.id)
         if (indexOf >= 0) {
           state.filterData.series.splice(indexOf, 1, { id: series.id, name: series.name })
         } else {
@@ -276,7 +278,7 @@ export const mutations = {
     }
 
     // Add genres
-    if (mediaMetadata.genres && mediaMetadata.genres.length) {
+    if (mediaMetadata.genres?.length) {
       mediaMetadata.genres.forEach((genre) => {
         if (!state.filterData.genres.includes(genre)) {
           state.filterData.genres.push(genre)
@@ -286,7 +288,7 @@ export const mutations = {
     }
 
     // Add tags
-    if (libraryItem.media.tags && libraryItem.media.tags.length) {
+    if (libraryItem.media.tags?.length) {
       libraryItem.media.tags.forEach((tag) => {
         if (!state.filterData.tags.includes(tag)) {
           state.filterData.tags.push(tag)
@@ -296,7 +298,7 @@ export const mutations = {
     }
 
     // Add narrators
-    if (mediaMetadata.narrators && mediaMetadata.narrators.length) {
+    if (mediaMetadata.narrators?.length) {
       mediaMetadata.narrators.forEach((narrator) => {
         if (!state.filterData.narrators.includes(narrator)) {
           state.filterData.narrators.push(narrator)
@@ -305,12 +307,16 @@ export const mutations = {
       })
     }
 
+    // Add publishers
+    if (mediaMetadata.publisher && !state.filterData.publishers.includes(mediaMetadata.publisher)) {
+      state.filterData.publishers.push(mediaMetadata.publisher)
+      state.filterData.publishers.sort((a, b) => a.localeCompare(b))
+    }
+
     // Add language
-    if (mediaMetadata.language) {
-      if (!state.filterData.languages.includes(mediaMetadata.language)) {
-        state.filterData.languages.push(mediaMetadata.language)
-        state.filterData.languages.sort((a, b) => a.localeCompare(b))
-      }
+    if (mediaMetadata.language && !state.filterData.languages.includes(mediaMetadata.language)) {
+      state.filterData.languages.push(mediaMetadata.language)
+      state.filterData.languages.sort((a, b) => a.localeCompare(b))
     }
   },
   setCollections(state, collections) {

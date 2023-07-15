@@ -125,6 +125,11 @@ export default {
           sublist: true
         },
         {
+          text: this.$strings.LabelPublisher,
+          value: 'publishers',
+          sublist: true
+        },
+        {
           text: this.$strings.LabelLanguage,
           value: 'languages',
           sublist: true
@@ -165,6 +170,11 @@ export default {
         {
           text: this.$strings.LabelNarrator,
           value: 'narrators',
+          sublist: true
+        },
+        {
+          text: this.$strings.LabelPublisher,
+          value: 'publishers',
           sublist: true
         },
         {
@@ -312,6 +322,9 @@ export default {
     },
     languages() {
       return this.filterData.languages || []
+    },
+    publishers() {
+      return this.filterData.publishers || []
     },
     progress() {
       return [

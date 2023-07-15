@@ -24,7 +24,7 @@
         <span class="text-white text-opacity-60 uppercase text-sm">{{ $strings.LabelPublisher }}</span>
       </div>
       <div>
-        {{ publisher }}
+        <nuxt-link :to="`/library/${libraryId}/bookshelf?filter=publishers.${$encode(publisher)}`" class="hover:underline">{{ publisher }}</nuxt-link>
       </div>
     </div>
     <div v-if="musicAlbum" class="flex py-0.5">

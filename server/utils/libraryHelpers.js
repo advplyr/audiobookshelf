@@ -14,7 +14,7 @@ module.exports = {
   getFilteredLibraryItems(libraryItems, filterBy, user, feedsArray) {
     let filtered = libraryItems
 
-    const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'missing', 'languages', 'tracks', 'ebooks']
+    const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'publishers', 'missing', 'languages', 'tracks', 'ebooks']
     const group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
       const filterVal = filterBy.replace(`${group}.`, '')
@@ -29,6 +29,7 @@ module.exports = {
       }
       else if (group === 'authors') filtered = filtered.filter(li => li.isBook && li.media.metadata.hasAuthor(filter))
       else if (group === 'narrators') filtered = filtered.filter(li => li.isBook && li.media.metadata.hasNarrator(filter))
+      else if (group === 'publishers') filtered = filtered.filter(li => li.isBook && li.media.metadata.publisher === filter)
       else if (group === 'progress') {
         filtered = filtered.filter(li => {
           const itemProgress = user.getMediaProgress(li.id)
@@ -82,16 +83,17 @@ module.exports = {
 
   // Returns false if should be filtered out
   checkFilterForSeriesLibraryItem(libraryItem, filterBy) {
-    var searchGroups = ['genres', 'tags', 'authors', 'progress', 'narrators', 'languages']
-    var group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
+    const searchGroups = ['genres', 'tags', 'authors', 'progress', 'narrators', 'publishers', 'languages']
+    const group = searchGroups.find(_group => filterBy.startsWith(_group + '.'))
     if (group) {
-      var filterVal = filterBy.replace(`${group}.`, '')
-      var filter = this.decode(filterVal)
+      const filterVal = filterBy.replace(`${group}.`, '')
+      const filter = this.decode(filterVal)
 
       if (group === 'genres') return libraryItem.media.metadata.genres.includes(filter)
       else if (group === 'tags') return libraryItem.media.tags.includes(filter)
       else if (group === 'authors') return libraryItem.isBook && libraryItem.media.metadata.hasAuthor(filter)
       else if (group === 'narrators') return libraryItem.isBook && libraryItem.media.metadata.hasNarrator(filter)
+      else if (group === 'publishers') return libraryItem.isBook && libraryItem.media.metadata.publisher === filter
       else if (group === 'languages') {
         return libraryItem.media.metadata.language === filter
       }
@@ -123,27 +125,28 @@ module.exports = {
   },
 
   getDistinctFilterDataNew(libraryItems) {
-    var data = {
+    const data = {
       authors: [],
       genres: [],
       tags: [],
       series: [],
       narrators: [],
-      languages: []
+      languages: [],
+      publishers: []
     }
     libraryItems.forEach((li) => {
-      var mediaMetadata = li.media.metadata
-      if (mediaMetadata.authors && mediaMetadata.authors.length) {
+      const mediaMetadata = li.media.metadata
+      if (mediaMetadata.authors?.length) {
         mediaMetadata.authors.forEach((author) => {
-          if (author && !data.authors.find(au => au.id === author.id)) data.authors.push({ id: author.id, name: author.name })
+          if (author && !data.authors.some(au => au.id === author.id)) data.authors.push({ id: author.id, name: author.name })
         })
       }
-      if (mediaMetadata.series && mediaMetadata.series.length) {
+      if (mediaMetadata.series?.length) {
         mediaMetadata.series.forEach((series) => {
-          if (series && !data.series.find(se => se.id === series.id)) data.series.push({ id: series.id, name: series.name })
+          if (series && !data.series.some(se => se.id === series.id)) data.series.push({ id: series.id, name: series.name })
         })
       }
-      if (mediaMetadata.genres && mediaMetadata.genres.length) {
+      if (mediaMetadata.genres?.length) {
         mediaMetadata.genres.forEach((genre) => {
           if (genre && !data.genres.includes(genre)) data.genres.push(genre)
         })
@@ -153,18 +156,24 @@ module.exports = {
           if (tag && !data.tags.includes(tag)) data.tags.push(tag)
         })
       }
-      if (mediaMetadata.narrators && mediaMetadata.narrators.length) {
+      if (mediaMetadata.narrators?.length) {
         mediaMetadata.narrators.forEach((narrator) => {
           if (narrator && !data.narrators.includes(narrator)) data.narrators.push(narrator)
         })
       }
-      if (mediaMetadata.language && !data.languages.includes(mediaMetadata.language)) data.languages.push(mediaMetadata.language)
+      if (mediaMetadata.publisher && !data.publishers.includes(mediaMetadata.publisher)) {
+        data.publishers.push(mediaMetadata.publisher)
+      }
+      if (mediaMetadata.language && !data.languages.includes(mediaMetadata.language)) {
+        data.languages.push(mediaMetadata.language)
+      }
     })
     data.authors = naturalSort(data.authors).asc(au => au.name)
     data.genres = naturalSort(data.genres).asc()
     data.tags = naturalSort(data.tags).asc()
     data.series = naturalSort(data.series).asc(se => se.name)
     data.narrators = naturalSort(data.narrators).asc()
+    data.publishers = naturalSort(data.publishers).asc()
     data.languages = naturalSort(data.languages).asc()
     return data
   },
