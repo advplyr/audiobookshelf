@@ -416,5 +416,23 @@ class User {
     if (!progress) return false
     return progress.removeFromContinueListening()
   }
+
+  /**
+   * Number of podcast episodes not finished for library item
+   * Note: libraryItem passed in from libraryHelpers is not a LibraryItem class instance
+   * @param {LibraryItem|object} libraryItem 
+   * @returns {number}
+   */
+  getNumEpisodesIncompleteForPodcast(libraryItem) {
+    if (!libraryItem?.media.episodes) return 0
+    let numEpisodesIncomplete = 0
+    for (const episode of libraryItem.media.episodes) {
+      const mediaProgress = this.getMediaProgress(libraryItem.id, episode.id)
+      if (!mediaProgress?.isFinished) {
+        numEpisodesIncomplete++
+      }
+    }
+    return numEpisodesIncomplete
+  }
 }
 module.exports = User

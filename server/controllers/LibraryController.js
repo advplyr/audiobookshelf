@@ -198,6 +198,7 @@ class LibraryController {
       include: include.join(',')
     }
     const mediaIsBook = payload.mediaType === 'book'
+    const mediaIsPodcast = payload.mediaType === 'podcast'
 
     // Step 1 - Filter the retrieved library items
     let filterSeries = null
@@ -236,7 +237,6 @@ class LibraryController {
     const sortArray = []
 
     // When on the series page, sort by sequence only
-    if (payload.sortBy === 'book.volumeNumber') payload.sortBy = null // TODO: Remove temp fix after mobile release 0.9.60
     if (filterSeries && !payload.sortBy) {
       sortArray.push({ asc: (li) => li.media.metadata.getSeries(filterSeries).sequence })
       // If no series sequence then fallback to sorting by title (or collapsed series name for sub-series)
@@ -358,6 +358,11 @@ class LibraryController {
         if (include.includes('rssfeed')) {
           const feedData = this.rssFeedManager.findFeedForEntityId(json.id)
           json.rssFeed = feedData ? feedData.toJSONMinified() : null
+        }
+
+        // add numEpisodesIncomplete if "include=numEpisodesIncomplete" was put in query string (only for podcasts)
+        if (mediaIsPodcast && include.includes('numepisodesincomplete')) {
+          json.numEpisodesIncomplete = req.user.getNumEpisodesIncompleteForPodcast(li)
         }
 
         if (filterSeries) {

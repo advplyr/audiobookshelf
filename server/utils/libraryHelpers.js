@@ -360,6 +360,7 @@ module.exports = {
     const mediaType = library.mediaType
     const isPodcastLibrary = mediaType === 'podcast'
     const includeRssFeed = include.includes('rssfeed')
+    const includeNumEpisodesIncomplete = include.includes('numepisodesincomplete') // Podcasts only
     const hideSingleBookSeries = library.settings.hideSingleBookSeries
 
     const shelves = [
@@ -456,12 +457,18 @@ module.exports = {
 
     for (const libraryItem of libraryItems) {
       if (libraryItem.addedAt > categoryMap['recently-added'].smallest) {
+        const libraryItemObj = libraryItem.toJSONMinified()
+
+        // add numEpisodesIncomplete if "include=numEpisodesIncomplete" was put in query string (only for podcasts)
+        if (includeNumEpisodesIncomplete && libraryItem.isPodcast) {
+          libraryItemObj.numEpisodesIncomplete = user.getNumEpisodesIncompleteForPodcast(libraryItem)
+        }
 
         const indexToPut = categoryMap['recently-added'].items.findIndex(i => libraryItem.addedAt > i.addedAt)
         if (indexToPut >= 0) {
-          categoryMap['recently-added'].items.splice(indexToPut, 0, libraryItem.toJSONMinified())
+          categoryMap['recently-added'].items.splice(indexToPut, 0, libraryItemObj)
         } else {
-          categoryMap['recently-added'].items.push(libraryItem.toJSONMinified())
+          categoryMap['recently-added'].items.push(libraryItemObj)
         }
 
         if (categoryMap['recently-added'].items.length > maxEntitiesPerShelf) {
