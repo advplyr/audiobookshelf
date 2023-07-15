@@ -88,7 +88,9 @@ class LibraryItemController {
     }
 
     const libraryItemPath = req.libraryItem.path
-    const filename = `${req.libraryItem.media.metadata.title}.zip`
+    const itemTitle = req.libraryItem.media.metadata.title
+    Logger.info(`[LibraryItemController] User "${req.user.username}" requested download for item "${itemTitle}" at "${libraryItemPath}"`)
+    const filename = `${itemTitle}.zip`
     zipHelpers.zipDirectoryPipe(libraryItemPath, filename, res)
   }
 
