@@ -1245,7 +1245,7 @@ async function handleOldUsers(ctx) {
     // Convert old library ids to new library ids
     if (user.librariesAccessible?.length) {
       user.librariesAccessible = user.librariesAccessible.map(lid => {
-        if (!lid.startsWith('lib_')) return lid // Already not an old library id so dont change
+        if (!lid.startsWith('lib_') && lid !== 'main') return lid // Already not an old library id so dont change
         hasUpdates = true
         return oldDbIdMap.libraries[lid]
       }).filter(lid => lid)
