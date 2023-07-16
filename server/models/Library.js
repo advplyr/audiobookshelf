@@ -6,7 +6,8 @@ module.exports = (sequelize) => {
   class Library extends Model {
     static async getAllOldLibraries() {
       const libraries = await this.findAll({
-        include: sequelize.models.libraryFolder
+        include: sequelize.models.libraryFolder,
+        order: [['displayOrder', 'ASC']]
       })
       return libraries.map(lib => this.getOldLibrary(lib))
     }
