@@ -1,3 +1,4 @@
+const uuidv4 = require("uuid").v4
 const Path = require('path')
 const serverVersion = require('../../package.json').version
 const Logger = require('../Logger')
@@ -19,6 +20,7 @@ class PlaybackSessionManager {
   constructor() {
     this.StreamsPath = Path.join(global.MetadataPath, 'streams')
 
+    this.oldPlaybackSessionMap = {} // TODO: Remove after updated mobile versions
     this.sessions = []
   }
 
@@ -74,13 +76,14 @@ class PlaybackSessionManager {
   }
 
   async syncLocalSessionsRequest(req, res) {
+    const deviceInfo = await this.getDeviceInfo(req)
     const user = req.user
     const sessions = req.body.sessions || []
 
     const syncResults = []
     for (const sessionJson of sessions) {
       Logger.info(`[PlaybackSessionManager] Syncing local session "${sessionJson.displayTitle}" (${sessionJson.id})`)
-      const result = await this.syncLocalSession(user, sessionJson)
+      const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
       syncResults.push(result)
     }
 
@@ -89,7 +92,7 @@ class PlaybackSessionManager {
     })
   }
 
-  async syncLocalSession(user, sessionJson) {
+  async syncLocalSession(user, sessionJson, deviceInfo) {
     const libraryItem = Database.getLibraryItem(sessionJson.libraryItemId)
     const episode = (sessionJson.episodeId && libraryItem && libraryItem.isPodcast) ? libraryItem.media.getEpisode(sessionJson.episodeId) : null
     if (!libraryItem || (libraryItem.isPodcast && !episode)) {
@@ -101,10 +104,37 @@ class PlaybackSessionManager {
       }
     }
 
+    // TODO: Temp update local playback session id to uuidv4 & library item/book/episode ids
+    if (sessionJson.id?.startsWith('play_local_')) {
+      if (!this.oldPlaybackSessionMap[sessionJson.id]) {
+        const newSessionId = uuidv4()
+        this.oldPlaybackSessionMap[sessionJson.id] = newSessionId
+        sessionJson.id = newSessionId
+      } else {
+        sessionJson.id = this.oldPlaybackSessionMap[sessionJson.id]
+      }
+    }
+    if (sessionJson.libraryItemId !== libraryItem.id) {
+      Logger.info(`[PlaybackSessionManager] Mapped old libraryItemId "${sessionJson.libraryItemId}" to ${libraryItem.id}`)
+      sessionJson.libraryItemId = libraryItem.id
+      sessionJson.bookId = episode ? null : libraryItem.media.id
+    }
+    if (!sessionJson.bookId && !episode) {
+      sessionJson.bookId = libraryItem.media.id
+    }
+    if (episode && sessionJson.episodeId !== episode.id) {
+      Logger.info(`[PlaybackSessionManager] Mapped old episodeId "${sessionJson.episodeId}" to ${episode.id}`)
+      sessionJson.episodeId = episode.id
+    }
+    if (sessionJson.libraryId !== libraryItem.libraryId) {
+      sessionJson.libraryId = libraryItem.libraryId
+    }
+
     let session = await Database.getPlaybackSession(sessionJson.id)
     if (!session) {
       // New session from local
       session = new PlaybackSession(sessionJson)
+      session.deviceInfo = deviceInfo
       Logger.debug(`[PlaybackSessionManager] Inserting new session for "${session.displayTitle}" (${session.id})`)
       await Database.createPlaybackSession(session)
     } else {
@@ -152,8 +182,11 @@ class PlaybackSessionManager {
     return result
   }
 
-  async syncLocalSessionRequest(user, sessionJson, res) {
-    const result = await this.syncLocalSession(user, sessionJson)
+  async syncLocalSessionRequest(req, res) {
+    const deviceInfo = await this.getDeviceInfo(req)
+    const user = req.user
+    const sessionJson = req.body
+    const result = await this.syncLocalSession(user, sessionJson, deviceInfo)
     if (result.error) {
       res.status(500).send(result.error)
     } else {

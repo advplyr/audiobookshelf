@@ -22,6 +22,7 @@ module.exports = (sequelize) => {
       })
       return new oldLibrary({
         id: libraryExpanded.id,
+        oldLibraryId: libraryExpanded.extraData?.oldLibraryId || null,
         name: libraryExpanded.name,
         folders,
         displayOrder: libraryExpanded.displayOrder,
@@ -92,6 +93,10 @@ module.exports = (sequelize) => {
     }
 
     static getFromOld(oldLibrary) {
+      const extraData = {}
+      if (oldLibrary.oldLibraryId) {
+        extraData.oldLibraryId = oldLibrary.oldLibraryId
+      }
       return {
         id: oldLibrary.id,
         name: oldLibrary.name,
@@ -101,7 +106,8 @@ module.exports = (sequelize) => {
         provider: oldLibrary.provider,
         settings: oldLibrary.settings?.toJSON() || {},
         createdAt: oldLibrary.createdAt,
-        updatedAt: oldLibrary.lastUpdate
+        updatedAt: oldLibrary.lastUpdate,
+        extraData
       }
     }
 
@@ -127,7 +133,8 @@ module.exports = (sequelize) => {
     provider: DataTypes.STRING,
     lastScan: DataTypes.DATE,
     lastScanVersion: DataTypes.STRING,
-    settings: DataTypes.JSON
+    settings: DataTypes.JSON,
+    extraData: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'library'

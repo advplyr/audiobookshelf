@@ -1,3 +1,4 @@
+const { DataTypes, QueryInterface } = require('sequelize')
 const Path = require('path')
 const uuidv4 = require("uuid").v4
 const Logger = require('../../Logger')
@@ -16,29 +17,6 @@ const oldDbIdMap = {
   books: {}, // key is library item id
   podcasts: {}, // key is library item id
   devices: {} // key is a json stringify of the old DeviceInfo data OR deviceId if it exists
-}
-const newRecords = {
-  user: [],
-  library: [],
-  libraryFolder: [],
-  author: [],
-  book: [],
-  podcast: [],
-  libraryItem: [],
-  bookAuthor: [],
-  series: [],
-  bookSeries: [],
-  podcastEpisode: [],
-  mediaProgress: [],
-  device: [],
-  playbackSession: [],
-  collection: [],
-  collectionBook: [],
-  playlist: [],
-  playlistMediaItem: [],
-  feed: [],
-  feedEpisode: [],
-  setting: []
 }
 
 function getDeviceInfoString(deviceInfo, UserId) {
@@ -60,8 +38,21 @@ function getDeviceInfoString(deviceInfo, UserId) {
   return 'temp-' + Buffer.from(keys.join('-'), 'utf-8').toString('base64')
 }
 
+/**
+ * Migrate oldLibraryItem.media to Book model
+ * Migrate BookSeries and BookAuthor
+ * @param {objects.LibraryItem} oldLibraryItem 
+ * @param {object} LibraryItem models.LibraryItem object
+ * @returns {object} { book: object, bookSeries: [], bookAuthor: [] }
+ */
 function migrateBook(oldLibraryItem, LibraryItem) {
   const oldBook = oldLibraryItem.media
+
+  const _newRecords = {
+    book: null,
+    bookSeries: [],
+    bookAuthor: []
+  }
 
   //
   // Migrate Book
@@ -91,17 +82,23 @@ function migrateBook(oldLibraryItem, LibraryItem) {
     tags: oldBook.tags,
     genres: oldBook.metadata.genres
   }
-  newRecords.book.push(Book)
+  _newRecords.book = Book
   oldDbIdMap.books[oldLibraryItem.id] = Book.id
 
   //
   // Migrate BookAuthors
   //
+  const bookAuthorsInserted = []
   for (const oldBookAuthor of oldBook.metadata.authors) {
     if (oldDbIdMap.authors[LibraryItem.libraryId][oldBookAuthor.id]) {
-      newRecords.bookAuthor.push({
+      const authorId = oldDbIdMap.authors[LibraryItem.libraryId][oldBookAuthor.id]
+
+      if (bookAuthorsInserted.includes(authorId)) continue // Duplicate prevention
+      bookAuthorsInserted.push(authorId)
+
+      _newRecords.bookAuthor.push({
         id: uuidv4(),
-        authorId: oldDbIdMap.authors[LibraryItem.libraryId][oldBookAuthor.id],
+        authorId,
         bookId: Book.id
       })
     } else {
@@ -112,22 +109,40 @@ function migrateBook(oldLibraryItem, LibraryItem) {
   //
   // Migrate BookSeries
   //
+  const bookSeriesInserted = []
   for (const oldBookSeries of oldBook.metadata.series) {
     if (oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id]) {
-      const BookSeries = {
+      const seriesId = oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id]
+
+      if (bookSeriesInserted.includes(seriesId)) continue // Duplicate prevention
+      bookSeriesInserted.push(seriesId)
+
+      _newRecords.bookSeries.push({
         id: uuidv4(),
         sequence: oldBookSeries.sequence,
         seriesId: oldDbIdMap.series[LibraryItem.libraryId][oldBookSeries.id],
         bookId: Book.id
-      }
-      newRecords.bookSeries.push(BookSeries)
+      })
     } else {
       Logger.warn(`[dbMigration] migrateBook: Series not found "${oldBookSeries.name}"`)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate oldLibraryItem.media to Podcast model
+ * Migrate PodcastEpisode
+ * @param {objects.LibraryItem} oldLibraryItem 
+ * @param {object} LibraryItem models.LibraryItem object
+ * @returns {object} { podcast: object, podcastEpisode: [] }
+ */
 function migratePodcast(oldLibraryItem, LibraryItem) {
+  const _newRecords = {
+    podcast: null,
+    podcastEpisode: []
+  }
+
   const oldPodcast = oldLibraryItem.media
   const oldPodcastMetadata = oldPodcast.metadata
 
@@ -161,7 +176,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
     tags: oldPodcast.tags,
     genres: oldPodcastMetadata.genres
   }
-  newRecords.podcast.push(Podcast)
+  _newRecords.podcast = Podcast
   oldDbIdMap.podcasts[oldLibraryItem.id] = Podcast.id
 
   //
@@ -173,6 +188,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
 
     const PodcastEpisode = {
       id: uuidv4(),
+      oldEpisodeId: oldEpisode.id,
       index: oldEpisode.index,
       season: oldEpisode.season || null,
       episode: oldEpisode.episode || null,
@@ -191,12 +207,26 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
       audioFile: oldEpisode.audioFile,
       chapters: oldEpisode.chapters || []
     }
-    newRecords.podcastEpisode.push(PodcastEpisode)
+    _newRecords.podcastEpisode.push(PodcastEpisode)
     oldDbIdMap.podcastEpisodes[oldEpisode.id] = PodcastEpisode.id
   }
+  return _newRecords
 }
 
+/**
+ * Migrate libraryItems to LibraryItem, Book, Podcast models
+ * @param {Array<objects.LibraryItem>} oldLibraryItems 
+ * @returns {object} { libraryItem: [], book: [], podcast: [], podcastEpisode: [], bookSeries: [], bookAuthor: [] }
+ */
 function migrateLibraryItems(oldLibraryItems) {
+  const _newRecords = {
+    book: [],
+    podcast: [],
+    podcastEpisode: [],
+    bookSeries: [],
+    bookAuthor: [],
+    libraryItem: []
+  }
   for (const oldLibraryItem of oldLibraryItems) {
     const libraryFolderId = oldDbIdMap.libraryFolders[oldLibraryItem.folderId]
     if (!libraryFolderId) {
@@ -218,6 +248,7 @@ function migrateLibraryItems(oldLibraryItems) {
     //
     const LibraryItem = {
       id: uuidv4(),
+      oldLibraryItemId: oldLibraryItem.id,
       ino: oldLibraryItem.ino,
       path: oldLibraryItem.path,
       relPath: oldLibraryItem.relPath,
@@ -241,22 +272,39 @@ function migrateLibraryItems(oldLibraryItems) {
       })
     }
     oldDbIdMap.libraryItems[oldLibraryItem.id] = LibraryItem.id
-    newRecords.libraryItem.push(LibraryItem)
+    _newRecords.libraryItem.push(LibraryItem)
 
     // 
     // Migrate Book/Podcast
     //
     if (oldLibraryItem.mediaType === 'book') {
-      migrateBook(oldLibraryItem, LibraryItem)
+      const bookRecords = migrateBook(oldLibraryItem, LibraryItem)
+      _newRecords.book.push(bookRecords.book)
+      _newRecords.bookAuthor.push(...bookRecords.bookAuthor)
+      _newRecords.bookSeries.push(...bookRecords.bookSeries)
+
       LibraryItem.mediaId = oldDbIdMap.books[oldLibraryItem.id]
     } else if (oldLibraryItem.mediaType === 'podcast') {
-      migratePodcast(oldLibraryItem, LibraryItem)
+      const podcastRecords = migratePodcast(oldLibraryItem, LibraryItem)
+      _newRecords.podcast.push(podcastRecords.podcast)
+      _newRecords.podcastEpisode.push(...podcastRecords.podcastEpisode)
+
       LibraryItem.mediaId = oldDbIdMap.podcasts[oldLibraryItem.id]
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate Library and LibraryFolder
+ * @param {Array<objects.Library>} oldLibraries 
+ * @returns {object} { library: [], libraryFolder: [] }
+ */
 function migrateLibraries(oldLibraries) {
+  const _newRecords = {
+    library: [],
+    libraryFolder: []
+  }
   for (const oldLibrary of oldLibraries) {
     if (!['book', 'podcast'].includes(oldLibrary.mediaType)) {
       Logger.error(`[dbMigration] migrateLibraries: Not migrating library with mediaType=${oldLibrary.mediaType}`)
@@ -268,6 +316,7 @@ function migrateLibraries(oldLibraries) {
     //
     const Library = {
       id: uuidv4(),
+      oldLibraryId: oldLibrary.id,
       name: oldLibrary.name,
       displayOrder: oldLibrary.displayOrder,
       icon: oldLibrary.icon || null,
@@ -278,7 +327,7 @@ function migrateLibraries(oldLibraries) {
       updatedAt: oldLibrary.lastUpdate
     }
     oldDbIdMap.libraries[oldLibrary.id] = Library.id
-    newRecords.library.push(Library)
+    _newRecords.library.push(Library)
 
     // 
     // Migrate LibraryFolders
@@ -292,12 +341,21 @@ function migrateLibraries(oldLibraries) {
         libraryId: Library.id
       }
       oldDbIdMap.libraryFolders[oldFolder.id] = LibraryFolder.id
-      newRecords.libraryFolder.push(LibraryFolder)
+      _newRecords.libraryFolder.push(LibraryFolder)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate Author
+ * Previously Authors were shared between libraries, this will ensure every author has one library
+ * @param {Array<objects.entities.Author>} oldAuthors 
+ * @param {Array<objects.LibraryItem>} oldLibraryItems 
+ * @returns {Array<object>} Array of Author model objs
+ */
 function migrateAuthors(oldAuthors, oldLibraryItems) {
+  const _newRecords = []
   for (const oldAuthor of oldAuthors) {
     // Get an array of NEW library ids that have this author
     const librariesWithThisAuthor = [...new Set(oldLibraryItems.map(li => {
@@ -325,12 +383,21 @@ function migrateAuthors(oldAuthors, oldLibraryItems) {
       }
       if (!oldDbIdMap.authors[libraryId]) oldDbIdMap.authors[libraryId] = {}
       oldDbIdMap.authors[libraryId][oldAuthor.id] = Author.id
-      newRecords.author.push(Author)
+      _newRecords.push(Author)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate Series
+ * Previously Series were shared between libraries, this will ensure every series has one library
+ * @param {Array<objects.entities.Series>} oldSerieses 
+ * @param {Array<objects.LibraryItem>} oldLibraryItems 
+ * @returns {Array<object>} Array of Series model objs
+ */
 function migrateSeries(oldSerieses, oldLibraryItems) {
+  const _newRecords = []
   // Originaly series were shared between libraries if they had the same name
   // Series will be separate between libraries
   for (const oldSeries of oldSerieses) {
@@ -355,16 +422,47 @@ function migrateSeries(oldSerieses, oldLibraryItems) {
       }
       if (!oldDbIdMap.series[libraryId]) oldDbIdMap.series[libraryId] = {}
       oldDbIdMap.series[libraryId][oldSeries.id] = Series.id
-      newRecords.series.push(Series)
+      _newRecords.push(Series)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate users to User and MediaProgress models
+ * @param {Array<objects.User>} oldUsers 
+ * @returns {object} { user: [], mediaProgress: [] }
+ */
 function migrateUsers(oldUsers) {
+  const _newRecords = {
+    user: [],
+    mediaProgress: []
+  }
   for (const oldUser of oldUsers) {
     // 
     // Migrate User
     //
+    // Convert old library ids to new ids
+    const librariesAccessible = (oldUser.librariesAccessible || []).map((lid) => oldDbIdMap.libraries[lid]).filter(li => li)
+
+    // Convert old library item ids to new ids
+    const bookmarks = (oldUser.bookmarks || []).map(bm => {
+      bm.libraryItemId = oldDbIdMap.libraryItems[bm.libraryItemId]
+      return bm
+    }).filter(bm => bm.libraryItemId)
+
+    // Convert old series ids to new
+    const seriesHideFromContinueListening = (oldUser.seriesHideFromContinueListening || []).map(oldSeriesId => {
+      // Series were split to be per library
+      // This will use the first series it finds
+      for (const libraryId in oldDbIdMap.series) {
+        if (oldDbIdMap.series[libraryId][oldSeriesId]) {
+          return oldDbIdMap.series[libraryId][oldSeriesId]
+        }
+      }
+      return null
+    }).filter(se => se)
+
     const User = {
       id: uuidv4(),
       username: oldUser.username,
@@ -374,19 +472,19 @@ function migrateUsers(oldUsers) {
       isActive: !!oldUser.isActive,
       lastSeen: oldUser.lastSeen || null,
       extraData: {
-        seriesHideFromContinueListening: oldUser.seriesHideFromContinueListening || [],
+        seriesHideFromContinueListening,
         oldUserId: oldUser.id // Used to keep old tokens
       },
       createdAt: oldUser.createdAt || Date.now(),
       permissions: {
         ...oldUser.permissions,
-        librariesAccessible: oldUser.librariesAccessible || [],
+        librariesAccessible,
         itemTagsSelected: oldUser.itemTagsSelected || []
       },
-      bookmarks: oldUser.bookmarks
+      bookmarks
     }
     oldDbIdMap.users[oldUser.id] = User.id
-    newRecords.user.push(User)
+    _newRecords.user.push(User)
 
     // 
     // Migrate MediaProgress
@@ -425,12 +523,23 @@ function migrateUsers(oldUsers) {
           progress: oldMediaProgress.progress
         }
       }
-      newRecords.mediaProgress.push(MediaProgress)
+      _newRecords.mediaProgress.push(MediaProgress)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate playbackSessions to PlaybackSession and Device models
+ * @param {Array<objects.PlaybackSession>} oldSessions 
+ * @returns {object} { playbackSession: [], device: [] }
+ */
 function migrateSessions(oldSessions) {
+  const _newRecords = {
+    device: [],
+    playbackSession: []
+  }
+
   for (const oldSession of oldSessions) {
     const userId = oldDbIdMap.users[oldSession.userId]
     if (!userId) {
@@ -495,11 +604,11 @@ function migrateSessions(oldSessions) {
           userId,
           extraData
         }
-        newRecords.device.push(Device)
+        deviceId = Device.id
+        _newRecords.device.push(Device)
         oldDbIdMap.devices[deviceDeviceId] = Device.id
       }
     }
-
 
     //
     // Migrate PlaybackSession
@@ -528,7 +637,7 @@ function migrateSessions(oldSessions) {
       serverVersion: oldSession.deviceInfo?.serverVersion || null,
       createdAt: oldSession.startedAt,
       updatedAt: oldSession.updatedAt,
-      userId, // Can be null
+      userId,
       deviceId,
       timeListening: oldSession.timeListening,
       coverPath: oldSession.coverPath,
@@ -539,11 +648,21 @@ function migrateSessions(oldSessions) {
         libraryItemId: oldDbIdMap.libraryItems[oldSession.libraryItemId]
       }
     }
-    newRecords.playbackSession.push(PlaybackSession)
+    _newRecords.playbackSession.push(PlaybackSession)
   }
+  return _newRecords
 }
 
+/**
+ * Migrate collections to Collection & CollectionBook
+ * @param {Array<objects.Collection>} oldCollections 
+ * @returns {object} { collection: [], collectionBook: [] }
+ */
 function migrateCollections(oldCollections) {
+  const _newRecords = {
+    collection: [],
+    collectionBook: []
+  }
   for (const oldCollection of oldCollections) {
     const libraryId = oldDbIdMap.libraries[oldCollection.libraryId]
     if (!libraryId) {
@@ -566,7 +685,7 @@ function migrateCollections(oldCollections) {
       libraryId
     }
     oldDbIdMap.collections[oldCollection.id] = Collection.id
-    newRecords.collection.push(Collection)
+    _newRecords.collection.push(Collection)
 
     let order = 1
     BookIds.forEach((bookId) => {
@@ -577,12 +696,22 @@ function migrateCollections(oldCollections) {
         collectionId: Collection.id,
         order: order++
       }
-      newRecords.collectionBook.push(CollectionBook)
+      _newRecords.collectionBook.push(CollectionBook)
     })
   }
+  return _newRecords
 }
 
+/**
+ * Migrate playlists to Playlist and PlaylistMediaItem
+ * @param {Array<objects.Playlist>} oldPlaylists 
+ * @returns {object} { playlist: [], playlistMediaItem: [] }
+ */
 function migratePlaylists(oldPlaylists) {
+  const _newRecords = {
+    playlist: [],
+    playlistMediaItem: []
+  }
   for (const oldPlaylist of oldPlaylists) {
     const libraryId = oldDbIdMap.libraries[oldPlaylist.libraryId]
     if (!libraryId) {
@@ -622,7 +751,7 @@ function migratePlaylists(oldPlaylists) {
       userId,
       libraryId
     }
-    newRecords.playlist.push(Playlist)
+    _newRecords.playlist.push(Playlist)
 
     let order = 1
     MediaItemIds.forEach((mediaItemId) => {
@@ -634,12 +763,22 @@ function migratePlaylists(oldPlaylists) {
         playlistId: Playlist.id,
         order: order++
       }
-      newRecords.playlistMediaItem.push(PlaylistMediaItem)
+      _newRecords.playlistMediaItem.push(PlaylistMediaItem)
     })
   }
+  return _newRecords
 }
 
+/**
+ * Migrate feeds to Feed and FeedEpisode models
+ * @param {Array<objects.Feed>} oldFeeds 
+ * @returns {object} { feed: [], feedEpisode: [] }
+ */
 function migrateFeeds(oldFeeds) {
+  const _newRecords = {
+    feed: [],
+    feedEpisode: []
+  }
   for (const oldFeed of oldFeeds) {
     if (!oldFeed.episodes?.length) {
       continue
@@ -698,7 +837,7 @@ function migrateFeeds(oldFeeds) {
       updatedAt: oldFeed.updatedAt,
       userId
     }
-    newRecords.feed.push(Feed)
+    _newRecords.feed.push(Feed)
 
     //
     // Migrate FeedEpisodes
@@ -724,65 +863,227 @@ function migrateFeeds(oldFeeds) {
         updatedAt: oldFeed.updatedAt,
         feedId: Feed.id
       }
-      newRecords.feedEpisode.push(FeedEpisode)
+      _newRecords.feedEpisode.push(FeedEpisode)
     }
   }
+  return _newRecords
 }
 
+/**
+ * Migrate ServerSettings, NotificationSettings and EmailSettings to Setting model
+ * @param {Array<objects.settings.*>} oldSettings 
+ * @returns {Array<object>} Array of Setting model objs
+ */
 function migrateSettings(oldSettings) {
+  const _newRecords = []
   const serverSettings = oldSettings.find(s => s.id === 'server-settings')
   const notificationSettings = oldSettings.find(s => s.id === 'notification-settings')
   const emailSettings = oldSettings.find(s => s.id === 'email-settings')
 
   if (serverSettings) {
-    newRecords.setting.push({
+    _newRecords.push({
       key: 'server-settings',
       value: serverSettings
     })
   }
 
   if (notificationSettings) {
-    newRecords.setting.push({
+    _newRecords.push({
       key: 'notification-settings',
       value: notificationSettings
     })
   }
 
   if (emailSettings) {
-    newRecords.setting.push({
+    _newRecords.push({
       key: 'email-settings',
       value: emailSettings
     })
+  }
+  return _newRecords
+}
+
+/**
+ * Load old libraries and bulkCreate new Library and LibraryFolder rows
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateLibraries(DatabaseModels) {
+  const oldLibraries = await oldDbFiles.loadOldData('libraries')
+  const newLibraryRecords = migrateLibraries(oldLibraries)
+  for (const model in newLibraryRecords) {
+    Logger.info(`[dbMigration] Inserting ${newLibraryRecords[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newLibraryRecords[model])
+  }
+}
+
+/**
+ * Load old EmailSettings, NotificationSettings and ServerSettings and bulkCreate new Setting rows
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateSettings(DatabaseModels) {
+  const oldSettings = await oldDbFiles.loadOldData('settings')
+  const newSettings = migrateSettings(oldSettings)
+  Logger.info(`[dbMigration] Inserting ${newSettings.length} setting rows`)
+  await DatabaseModels.setting.bulkCreate(newSettings)
+}
+
+/**
+ * Load old authors and bulkCreate new Author rows
+ * @param {Map<string,Model>} DatabaseModels 
+ * @param {Array<objects.LibraryItem>} oldLibraryItems
+ */
+async function handleMigrateAuthors(DatabaseModels, oldLibraryItems) {
+  const oldAuthors = await oldDbFiles.loadOldData('authors')
+  const newAuthors = migrateAuthors(oldAuthors, oldLibraryItems)
+  Logger.info(`[dbMigration] Inserting ${newAuthors.length} author rows`)
+  await DatabaseModels.author.bulkCreate(newAuthors)
+}
+
+/**
+ * Load old series and bulkCreate new Series rows
+ * @param {Map<string,Model>} DatabaseModels 
+ * @param {Array<objects.LibraryItem>} oldLibraryItems
+ */
+async function handleMigrateSeries(DatabaseModels, oldLibraryItems) {
+  const oldSeries = await oldDbFiles.loadOldData('series')
+  const newSeries = migrateSeries(oldSeries, oldLibraryItems)
+  Logger.info(`[dbMigration] Inserting ${newSeries.length} series rows`)
+  await DatabaseModels.series.bulkCreate(newSeries)
+}
+
+/**
+ * bulkCreate new LibraryItem, Book and Podcast rows
+ * @param {Map<string,Model>} DatabaseModels 
+ * @param {Array<objects.LibraryItem>} oldLibraryItems
+ */
+async function handleMigrateLibraryItems(DatabaseModels, oldLibraryItems) {
+  const newItemsBooksPodcasts = migrateLibraryItems(oldLibraryItems)
+  for (const model in newItemsBooksPodcasts) {
+    Logger.info(`[dbMigration] Inserting ${newItemsBooksPodcasts[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newItemsBooksPodcasts[model])
+  }
+}
+
+/**
+ * Migrate authors, series then library items in chunks
+ * Authors and series require old library items loaded first
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateAuthorsSeriesAndLibraryItems(DatabaseModels) {
+  const oldLibraryItems = await oldDbFiles.loadOldData('libraryItems')
+  await handleMigrateAuthors(DatabaseModels, oldLibraryItems)
+
+  await handleMigrateSeries(DatabaseModels, oldLibraryItems)
+
+  // Migrate library items in chunks of 1000
+  const numChunks = Math.ceil(oldLibraryItems.length / 1000)
+  for (let i = 0; i < numChunks; i++) {
+    let start = i * 1000
+    await handleMigrateLibraryItems(DatabaseModels, oldLibraryItems.slice(start, start + 1000))
+  }
+}
+
+/**
+ * Load old users and bulkCreate new User rows
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateUsers(DatabaseModels) {
+  const oldUsers = await oldDbFiles.loadOldData('users')
+  const newUserRecords = migrateUsers(oldUsers)
+  for (const model in newUserRecords) {
+    Logger.info(`[dbMigration] Inserting ${newUserRecords[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newUserRecords[model])
+  }
+}
+
+/**
+ * Load old sessions and bulkCreate new PlaybackSession & Device rows
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateSessions(DatabaseModels) {
+  const oldSessions = await oldDbFiles.loadOldData('sessions')
+
+  let chunkSize = 1000
+  let numChunks = Math.ceil(oldSessions.length / chunkSize)
+
+  for (let i = 0; i < numChunks; i++) {
+    let start = i * chunkSize
+    const newSessionRecords = migrateSessions(oldSessions.slice(start, start + chunkSize))
+    for (const model in newSessionRecords) {
+      Logger.info(`[dbMigration] Inserting ${newSessionRecords[model].length} ${model} rows`)
+      await DatabaseModels[model].bulkCreate(newSessionRecords[model])
+    }
+  }
+
+}
+
+/**
+ * Load old collections and bulkCreate new Collection, CollectionBook models
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateCollections(DatabaseModels) {
+  const oldCollections = await oldDbFiles.loadOldData('collections')
+  const newCollectionRecords = migrateCollections(oldCollections)
+  for (const model in newCollectionRecords) {
+    Logger.info(`[dbMigration] Inserting ${newCollectionRecords[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newCollectionRecords[model])
+  }
+}
+
+/**
+ * Load old playlists and bulkCreate new Playlist, PlaylistMediaItem models
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigratePlaylists(DatabaseModels) {
+  const oldPlaylists = await oldDbFiles.loadOldData('playlists')
+  const newPlaylistRecords = migratePlaylists(oldPlaylists)
+  for (const model in newPlaylistRecords) {
+    Logger.info(`[dbMigration] Inserting ${newPlaylistRecords[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newPlaylistRecords[model])
+  }
+}
+
+/**
+ * Load old feeds and bulkCreate new Feed, FeedEpisode models
+ * @param {Map<string,Model>} DatabaseModels 
+ */
+async function handleMigrateFeeds(DatabaseModels) {
+  const oldFeeds = await oldDbFiles.loadOldData('feeds')
+  const newFeedRecords = migrateFeeds(oldFeeds)
+  for (const model in newFeedRecords) {
+    Logger.info(`[dbMigration] Inserting ${newFeedRecords[model].length} ${model} rows`)
+    await DatabaseModels[model].bulkCreate(newFeedRecords[model])
   }
 }
 
 module.exports.migrate = async (DatabaseModels) => {
   Logger.info(`[dbMigration] Starting migration`)
 
-  const data = await oldDbFiles.init()
-
   const start = Date.now()
-  migrateSettings(data.settings)
-  migrateLibraries(data.libraries)
-  migrateAuthors(data.authors, data.libraryItems)
-  migrateSeries(data.series, data.libraryItems)
-  migrateLibraryItems(data.libraryItems)
-  migrateUsers(data.users)
-  migrateSessions(data.sessions)
-  migrateCollections(data.collections)
-  migratePlaylists(data.playlists)
-  migrateFeeds(data.feeds)
 
-  let totalRecords = 0
-  for (const model in newRecords) {
-    Logger.info(`[dbMigration] Inserting ${newRecords[model].length} ${model} rows`)
-    if (newRecords[model].length) {
-      await DatabaseModels[model].bulkCreate(newRecords[model])
-      totalRecords += newRecords[model].length
-    }
-  }
+  // Migrate to Library and LibraryFolder models
+  await handleMigrateLibraries(DatabaseModels)
 
-  const elapsed = Date.now() - start
+  // Migrate EmailSettings, NotificationSettings and ServerSettings to Setting model
+  await handleMigrateSettings(DatabaseModels)
+
+  // Migrate Series, Author, LibraryItem, Book, Podcast
+  await handleMigrateAuthorsSeriesAndLibraryItems(DatabaseModels)
+
+  // Migrate User, MediaProgress
+  await handleMigrateUsers(DatabaseModels)
+
+  // Migrate PlaybackSession, Device
+  await handleMigrateSessions(DatabaseModels)
+
+  // Migrate Collection, CollectionBook
+  await handleMigrateCollections(DatabaseModels)
+
+  // Migrate Playlist, PlaylistMediaItem
+  await handleMigratePlaylists(DatabaseModels)
+
+  // Migrate Feed, FeedEpisode
+  await handleMigrateFeeds(DatabaseModels)
 
   // Purge author images and cover images from cache
   try {
@@ -796,7 +1097,8 @@ module.exports.migrate = async (DatabaseModels) => {
   // Put all old db folders into a zipfile oldDb.zip
   await oldDbFiles.zipWrapOldDb()
 
-  Logger.info(`[dbMigration] Migration complete. ${totalRecords} rows. Elapsed ${(elapsed / 1000).toFixed(2)}s`)
+  const elapsed = Date.now() - start
+  Logger.info(`[dbMigration] Migration complete. Elapsed ${(elapsed / 1000).toFixed(2)}s`)
 }
 
 /**
@@ -805,4 +1107,205 @@ module.exports.migrate = async (DatabaseModels) => {
 module.exports.checkShouldMigrate = async () => {
   if (await oldDbFiles.checkHasOldDb()) return true
   return oldDbFiles.checkHasOldDbZip()
+}
+
+/**
+ * Migration from 2.3.0 to 2.3.1 - create extraData columns in LibraryItem and PodcastEpisode
+ * @param {QueryInterface} queryInterface 
+ */
+async function migrationPatchNewColumns(queryInterface) {
+  try {
+    return queryInterface.sequelize.transaction(t => {
+      return Promise.all([
+        queryInterface.addColumn('libraryItems', 'extraData', {
+          type: DataTypes.JSON
+        }, { transaction: t }),
+        queryInterface.addColumn('podcastEpisodes', 'extraData', {
+          type: DataTypes.JSON
+        }, { transaction: t }),
+        queryInterface.addColumn('libraries', 'extraData', {
+          type: DataTypes.JSON
+        }, { transaction: t })
+      ])
+    })
+  } catch (error) {
+    Logger.error(`[dbMigration] Migration from 2.3.0+ column creation failed`, error)
+    return false
+  }
+}
+
+/**
+ * Migration from 2.3.0 to 2.3.1 - old library item ids
+ * @param {/src/Database} ctx 
+ */
+async function handleOldLibraryItems(ctx) {
+  const oldLibraryItems = await oldDbFiles.loadOldData('libraryItems')
+  const libraryItems = await ctx.models.libraryItem.getAllOldLibraryItems()
+
+  const bulkUpdateItems = []
+  const bulkUpdateEpisodes = []
+
+  for (const libraryItem of libraryItems) {
+    // Find matching old library item by ino
+    const matchingOldLibraryItem = oldLibraryItems.find(oli => oli.ino === libraryItem.ino)
+    if (matchingOldLibraryItem) {
+      oldDbIdMap.libraryItems[matchingOldLibraryItem.id] = libraryItem.id
+
+      bulkUpdateItems.push({
+        id: libraryItem.id,
+        extraData: {
+          oldLibraryItemId: matchingOldLibraryItem.id
+        }
+      })
+
+      if (libraryItem.media.episodes?.length && matchingOldLibraryItem.media.episodes?.length) {
+        for (const podcastEpisode of libraryItem.media.episodes) {
+          // Find matching old episode by audio file ino
+          const matchingOldPodcastEpisode = matchingOldLibraryItem.media.episodes.find(oep => oep.audioFile?.ino && oep.audioFile.ino === podcastEpisode.audioFile?.ino)
+          if (matchingOldPodcastEpisode) {
+            oldDbIdMap.podcastEpisodes[matchingOldPodcastEpisode.id] = podcastEpisode.id
+
+            bulkUpdateEpisodes.push({
+              id: podcastEpisode.id,
+              extraData: {
+                oldEpisodeId: matchingOldPodcastEpisode.id
+              }
+            })
+          }
+        }
+      }
+    }
+  }
+
+  if (bulkUpdateEpisodes.length) {
+    await ctx.models.podcastEpisode.bulkCreate(bulkUpdateEpisodes, {
+      updateOnDuplicate: ['extraData']
+    })
+  }
+
+  if (bulkUpdateItems.length) {
+    await ctx.models.libraryItem.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['extraData']
+    })
+  }
+
+  Logger.info(`[dbMigration] Migration 2.3.0+: Updated ${bulkUpdateItems.length} library items & ${bulkUpdateEpisodes.length} episodes`)
+}
+
+/**
+ * Migration from 2.3.0 to 2.3.1 - updating oldLibraryId
+ * @param {/src/Database} ctx 
+ */
+async function handleOldLibraries(ctx) {
+  const oldLibraries = await oldDbFiles.loadOldData('libraries')
+  const libraries = await ctx.models.library.getAllOldLibraries()
+
+  let librariesUpdated = 0
+  for (const library of libraries) {
+    // Find matching old library using exact match on folder paths, exact match on library name
+    const matchingOldLibrary = oldLibraries.find(ol => {
+      if (ol.name !== library.name) {
+        return false
+      }
+      const folderPaths = ol.folders?.map(f => f.fullPath) || []
+      return folderPaths.join(',') === library.folderPaths.join(',')
+    })
+
+    if (matchingOldLibrary) {
+      library.oldLibraryId = matchingOldLibrary.id
+      oldDbIdMap.libraries[library.oldLibraryId] = library.id
+      await ctx.models.library.updateFromOld(library)
+      librariesUpdated++
+    }
+  }
+  Logger.info(`[dbMigration] Migration 2.3.0+: Updated ${librariesUpdated} libraries`)
+}
+
+/**
+ * Migration from 2.3.0 to 2.3.1 - fixing librariesAccessible and bookmarks
+ * @param {/src/Database} ctx 
+ */
+async function handleOldUsers(ctx) {
+  const users = await ctx.models.user.getOldUsers()
+
+  let usersUpdated = 0
+  for (const user of users) {
+    let hasUpdates = false
+    if (user.bookmarks?.length) {
+      user.bookmarks = user.bookmarks.map(bm => {
+        // Only update if this is not the old id format
+        if (!bm.libraryItemId.startsWith('li_')) return bm
+
+        bm.libraryItemId = oldDbIdMap.libraryItems[bm.libraryItemId]
+        hasUpdates = true
+        return bm
+      }).filter(bm => bm.libraryItemId)
+    }
+
+    // Convert old library ids to new library ids
+    if (user.librariesAccessible?.length) {
+      user.librariesAccessible = user.librariesAccessible.map(lid => {
+        if (!lid.startsWith('lib_')) return lid // Already not an old library id so dont change
+        hasUpdates = true
+        return oldDbIdMap.libraries[lid]
+      }).filter(lid => lid)
+    }
+
+    if (user.seriesHideFromContinueListening?.length) {
+      user.seriesHideFromContinueListening = user.seriesHideFromContinueListening.map((seriesId) => {
+        if (seriesId.startsWith('se_')) {
+          hasUpdates = true
+          return null // Filter out old series ids
+        }
+        return seriesId
+      }).filter(se => se)
+    }
+
+    if (hasUpdates) {
+      await ctx.models.user.updateFromOld(user)
+      usersUpdated++
+    }
+  }
+  Logger.info(`[dbMigration] Migration 2.3.0+: Updated ${usersUpdated} users`)
+}
+
+/**
+ * Migration from 2.3.0 to 2.3.1
+ * @param {/src/Database} ctx 
+ */
+module.exports.migrationPatch = async (ctx) => {
+  const queryInterface = ctx.sequelize.getQueryInterface()
+  const librariesTableDescription = await queryInterface.describeTable('libraries')
+
+  if (librariesTableDescription?.extraData) {
+    Logger.info(`[dbMigration] Migration patch 2.3.0+ - extraData columns already on model`)
+  } else {
+    const migrationResult = await migrationPatchNewColumns(queryInterface)
+    if (migrationResult === false) {
+      return
+    }
+  }
+
+  const oldDbPath = Path.join(global.ConfigPath, 'oldDb.zip')
+  if (!await fs.pathExists(oldDbPath)) {
+    Logger.info(`[dbMigration] Migration patch 2.3.0+ unnecessary - no oldDb.zip found`)
+    return
+  }
+
+  const migrationStart = Date.now()
+  Logger.info(`[dbMigration] Applying migration patch from 2.3.0+`)
+
+  // Extract from oldDb.zip
+  if (!await oldDbFiles.checkExtractItemsUsersAndLibraries()) {
+    return
+  }
+
+  await handleOldLibraryItems(ctx)
+  await handleOldLibraries(ctx)
+  await handleOldUsers(ctx)
+
+  await oldDbFiles.removeOldItemsUsersAndLibrariesFolders()
+
+  const elapsed = Date.now() - migrationStart
+  Logger.info(`[dbMigration] Migration patch 2.3.0+ finished. Elapsed ${(elapsed / 1000).toFixed(2)}s`)
 }

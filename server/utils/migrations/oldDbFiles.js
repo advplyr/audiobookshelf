@@ -71,27 +71,11 @@ async function loadDbData(dbpath) {
   }
 }
 
-module.exports.init = async () => {
-  const dbs = {
-    libraryItems: Path.join(global.ConfigPath, 'libraryItems', 'data'),
-    users: Path.join(global.ConfigPath, 'users', 'data'),
-    sessions: Path.join(global.ConfigPath, 'sessions', 'data'),
-    libraries: Path.join(global.ConfigPath, 'libraries', 'data'),
-    settings: Path.join(global.ConfigPath, 'settings', 'data'),
-    collections: Path.join(global.ConfigPath, 'collections', 'data'),
-    playlists: Path.join(global.ConfigPath, 'playlists', 'data'),
-    authors: Path.join(global.ConfigPath, 'authors', 'data'),
-    series: Path.join(global.ConfigPath, 'series', 'data'),
-    feeds: Path.join(global.ConfigPath, 'feeds', 'data')
-  }
-
-  const data = {}
-  for (const key in dbs) {
-    data[key] = await loadDbData(dbs[key])
-    Logger.info(`[oldDbFiles] ${data[key].length} ${key} loaded`)
-  }
-
-  return data
+module.exports.loadOldData = async (dbName) => {
+  const dbPath = Path.join(global.ConfigPath, dbName, 'data')
+  const dbData = await loadDbData(dbPath) || []
+  Logger.info(`[oldDbFiles] ${dbData.length} ${dbName} loaded`)
+  return dbData
 }
 
 module.exports.zipWrapOldDb = async () => {
@@ -184,6 +168,59 @@ module.exports.checkHasOldDbZip = async () => {
   // Extract oldDb.zip
   const zip = new StreamZip.async({ file: oldDbPath })
   await zip.extract(null, global.ConfigPath)
+  await zip.close()
 
   return this.checkHasOldDb()
+}
+
+/**
+ * Used for migration from 2.3.0 -> 2.3.1
+ * @returns {boolean} true if extracted
+ */
+module.exports.checkExtractItemsUsersAndLibraries = async () => {
+  const oldDbPath = Path.join(global.ConfigPath, 'oldDb.zip')
+
+  const zip = new StreamZip.async({ file: oldDbPath })
+  const libraryItemsPath = Path.join(global.ConfigPath, 'libraryItems')
+  await zip.extract('libraryItems/', libraryItemsPath)
+
+  if (!await fs.pathExists(libraryItemsPath)) {
+    Logger.error(`[oldDbFiles] Failed to extract old libraryItems from oldDb.zip`)
+    return false
+  }
+
+  const usersPath = Path.join(global.ConfigPath, 'users')
+  await zip.extract('users/', usersPath)
+
+  if (!await fs.pathExists(usersPath)) {
+    Logger.error(`[oldDbFiles] Failed to extract old users from oldDb.zip`)
+    await fs.remove(libraryItemsPath) // Remove old library items folder
+    return false
+  }
+
+  const librariesPath = Path.join(global.ConfigPath, 'libraries')
+  await zip.extract('libraries/', librariesPath)
+
+  if (!await fs.pathExists(librariesPath)) {
+    Logger.error(`[oldDbFiles] Failed to extract old libraries from oldDb.zip`)
+    await fs.remove(usersPath) // Remove old users folder
+    await fs.remove(libraryItemsPath) // Remove old library items folder
+    return false
+  }
+
+  await zip.close()
+
+  return true
+}
+
+/**
+ * Used for migration from 2.3.0 -> 2.3.1
+ */
+module.exports.removeOldItemsUsersAndLibrariesFolders = async () => {
+  const libraryItemsPath = Path.join(global.ConfigPath, 'libraryItems')
+  const usersPath = Path.join(global.ConfigPath, 'users')
+  const librariesPath = Path.join(global.ConfigPath, 'libraries')
+  await fs.remove(libraryItemsPath)
+  await fs.remove(usersPath)
+  await fs.remove(librariesPath)
 }

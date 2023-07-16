@@ -128,6 +128,18 @@ class Database {
 
     const startTime = Date.now()
 
+    const settingsData = await this.models.setting.getOldSettings()
+    this.settings = settingsData.settings
+    this.emailSettings = settingsData.emailSettings
+    this.serverSettings = settingsData.serverSettings
+    this.notificationSettings = settingsData.notificationSettings
+    global.ServerSettings = this.serverSettings.toJSON()
+
+    // Version specific migrations
+    if (this.serverSettings.version === '2.3.0' && packageJson.version !== '2.3.0') {
+      await dbMigration.migrationPatch(this)
+    }
+
     this.libraryItems = await this.models.libraryItem.getAllOldLibraryItems()
     this.users = await this.models.user.getOldUsers()
     this.libraries = await this.models.library.getAllOldLibraries()
@@ -136,13 +148,6 @@ class Database {
     this.authors = await this.models.author.getOldAuthors()
     this.series = await this.models.series.getAllOldSeries()
     this.feeds = await this.models.feed.getOldFeeds()
-
-    const settingsData = await this.models.setting.getOldSettings()
-    this.settings = settingsData.settings
-    this.emailSettings = settingsData.emailSettings
-    this.serverSettings = settingsData.serverSettings
-    this.notificationSettings = settingsData.notificationSettings
-    global.ServerSettings = this.serverSettings.toJSON()
 
     Logger.info(`[Database] Db data loaded in ${Date.now() - startTime}ms`)
 
@@ -357,7 +362,11 @@ class Database {
   }
 
   getLibraryItem(libraryItemId) {
-    if (!this.sequelize) return false
+    if (!this.sequelize || !libraryItemId) return false
+
+    // Temp support for old library item ids from mobile
+    if (libraryItemId.startsWith('li_')) return this.libraryItems.find(li => li.oldLibraryItemId === libraryItemId)
+
     return this.libraryItems.find(li => li.id === libraryItemId)
   }
 

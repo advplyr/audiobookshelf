@@ -115,12 +115,23 @@ class PlaybackSession {
     this.userId = session.userId
     this.libraryId = session.libraryId || null
     this.libraryItemId = session.libraryItemId
-    this.bookId = session.bookId
+    this.bookId = session.bookId || null
     this.episodeId = session.episodeId
     this.mediaType = session.mediaType
     this.duration = session.duration
     this.playMethod = session.playMethod
     this.mediaPlayer = session.mediaPlayer || null
+
+    // Temp do not store old IDs
+    if (this.libraryId?.startsWith('lib_')) {
+      this.libraryId = null
+    }
+    if (this.libraryItemId?.startsWith('li_') || this.libraryItemId?.startsWith('local_')) {
+      this.libraryItemId = null
+    }
+    if (this.episodeId?.startsWith('ep_') || this.episodeId?.startsWith('local_')) {
+      this.episodeId = null
+    }
 
     if (session.deviceInfo instanceof DeviceInfo) {
       this.deviceInfo = new DeviceInfo(session.deviceInfo.toJSON())

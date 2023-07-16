@@ -94,7 +94,7 @@ class SessionController {
 
   // POST: api/session/local
   syncLocal(req, res) {
-    this.playbackSessionManager.syncLocalSessionRequest(req.user, req.body, res)
+    this.playbackSessionManager.syncLocalSessionRequest(req, res)
   }
 
   // POST: api/session/local-all

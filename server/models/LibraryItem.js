@@ -49,6 +49,7 @@ module.exports = (sequelize) => {
       return new oldLibraryItem({
         id: libraryItemExpanded.id,
         ino: libraryItemExpanded.ino,
+        oldLibraryItemId: libraryItemExpanded.extraData?.oldLibraryItemId || null,
         libraryId: libraryItemExpanded.libraryId,
         folderId: libraryItemExpanded.libraryFolderId,
         path: libraryItemExpanded.path,
@@ -261,6 +262,10 @@ module.exports = (sequelize) => {
     }
 
     static getFromOld(oldLibraryItem) {
+      const extraData = {}
+      if (oldLibraryItem.oldLibraryItemId) {
+        extraData.oldLibraryItemId = oldLibraryItem.oldLibraryItemId
+      }
       return {
         id: oldLibraryItem.id,
         ino: oldLibraryItem.ino,
@@ -278,7 +283,8 @@ module.exports = (sequelize) => {
         lastScanVersion: oldLibraryItem.scanVersion,
         libraryId: oldLibraryItem.libraryId,
         libraryFolderId: oldLibraryItem.folderId,
-        libraryFiles: oldLibraryItem.libraryFiles?.map(lf => lf.toJSON()) || []
+        libraryFiles: oldLibraryItem.libraryFiles?.map(lf => lf.toJSON()) || [],
+        extraData
       }
     }
 
@@ -317,7 +323,8 @@ module.exports = (sequelize) => {
     birthtime: DataTypes.DATE(6),
     lastScan: DataTypes.DATE,
     lastScanVersion: DataTypes.STRING,
-    libraryFiles: DataTypes.JSON
+    libraryFiles: DataTypes.JSON,
+    extraData: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'libraryItem'

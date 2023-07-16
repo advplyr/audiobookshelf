@@ -16,6 +16,7 @@ class LibraryItem {
   constructor(libraryItem = null) {
     this.id = null
     this.ino = null // Inode
+    this.oldLibraryItemId = null
 
     this.libraryId = null
     this.folderId = null
@@ -52,6 +53,7 @@ class LibraryItem {
   construct(libraryItem) {
     this.id = libraryItem.id
     this.ino = libraryItem.ino || null
+    this.oldLibraryItemId = libraryItem.oldLibraryItemId
     this.libraryId = libraryItem.libraryId
     this.folderId = libraryItem.folderId
     this.path = libraryItem.path
@@ -97,6 +99,7 @@ class LibraryItem {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,
@@ -121,6 +124,7 @@ class LibraryItem {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,
@@ -145,6 +149,7 @@ class LibraryItem {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,

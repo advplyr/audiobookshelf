@@ -335,6 +335,11 @@ class Podcast {
   }
 
   getEpisode(episodeId) {
+    if (!episodeId) return null
+
+    // Support old episode ids for mobile downloads
+    if (episodeId.startsWith('ep_')) return this.episodes.find(ep => ep.oldEpisodeId == episodeId)
+
     return this.episodes.find(ep => ep.id == episodeId)
   }
 

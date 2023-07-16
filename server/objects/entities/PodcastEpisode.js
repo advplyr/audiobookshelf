@@ -10,6 +10,7 @@ class PodcastEpisode {
     this.libraryItemId = null
     this.podcastId = null
     this.id = null
+    this.oldEpisodeId = null
     this.index = null
 
     this.season = null
@@ -36,6 +37,7 @@ class PodcastEpisode {
     this.libraryItemId = episode.libraryItemId
     this.podcastId = episode.podcastId
     this.id = episode.id
+    this.oldEpisodeId = episode.oldEpisodeId
     this.index = episode.index
     this.season = episode.season
     this.episode = episode.episode
@@ -59,6 +61,7 @@ class PodcastEpisode {
       libraryItemId: this.libraryItemId,
       podcastId: this.podcastId,
       id: this.id,
+      oldEpisodeId: this.oldEpisodeId,
       index: this.index,
       season: this.season,
       episode: this.episode,
@@ -81,6 +84,7 @@ class PodcastEpisode {
       libraryItemId: this.libraryItemId,
       podcastId: this.podcastId,
       id: this.id,
+      oldEpisodeId: this.oldEpisodeId,
       index: this.index,
       season: this.season,
       episode: this.episode,

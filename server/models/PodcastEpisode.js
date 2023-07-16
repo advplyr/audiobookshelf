@@ -15,6 +15,7 @@ module.exports = (sequelize) => {
         libraryItemId: libraryItemId || null,
         podcastId: this.podcastId,
         id: this.id,
+        oldEpisodeId: this.extraData?.oldEpisodeId || null,
         index: this.index,
         season: this.season,
         episode: this.episode,
@@ -38,6 +39,10 @@ module.exports = (sequelize) => {
     }
 
     static getFromOld(oldEpisode) {
+      const extraData = {}
+      if (oldEpisode.oldEpisodeId) {
+        extraData.oldEpisodeId = oldEpisode.oldEpisodeId
+      }
       return {
         id: oldEpisode.id,
         index: oldEpisode.index,
@@ -54,7 +59,8 @@ module.exports = (sequelize) => {
         publishedAt: oldEpisode.publishedAt,
         podcastId: oldEpisode.podcastId,
         audioFile: oldEpisode.audioFile?.toJSON() || null,
-        chapters: oldEpisode.chapters
+        chapters: oldEpisode.chapters,
+        extraData
       }
     }
   }
@@ -79,7 +85,8 @@ module.exports = (sequelize) => {
     publishedAt: DataTypes.DATE,
 
     audioFile: DataTypes.JSON,
-    chapters: DataTypes.JSON
+    chapters: DataTypes.JSON,
+    extraData: DataTypes.JSON
   }, {
     sequelize,
     modelName: 'podcastEpisode'
