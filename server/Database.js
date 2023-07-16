@@ -447,7 +447,7 @@ class Database {
 
   async createAuthor(oldAuthor) {
     if (!this.sequelize) return false
-    await this.models.createFromOld(oldAuthor)
+    await this.models.author.createFromOld(oldAuthor)
     this.authors.push(oldAuthor)
   }
 
