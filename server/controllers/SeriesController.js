@@ -70,7 +70,7 @@ class SeriesController {
      * Filter out any library items not accessible to user
      */
     const libraryItems = Database.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
-    const libraryItemsAccessible = libraryItems.filter(req.user.checkCanAccessLibraryItem)
+    const libraryItemsAccessible = libraryItems.filter(li => req.user.checkCanAccessLibraryItem(li))
     if (libraryItems.length && !libraryItemsAccessible.length) {
       Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to any of the books`, req.user)
       return res.sendStatus(403)
