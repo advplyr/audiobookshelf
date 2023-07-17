@@ -104,6 +104,9 @@ class PlaybackSessionManager {
       }
     }
 
+    sessionJson.userId = user.id
+    sessionJson.serverVersion = serverVersion
+
     // TODO: Temp update local playback session id to uuidv4 & library item/book/episode ids
     if (sessionJson.id?.startsWith('play_local_')) {
       if (!this.oldPlaybackSessionMap[sessionJson.id]) {
