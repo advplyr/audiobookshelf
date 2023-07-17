@@ -119,7 +119,7 @@ module.exports = (sequelize) => {
               {
                 model: sequelize.models.series,
                 through: {
-                  attributes: ['sequence']
+                  attributes: ['id', 'sequence']
                 }
               }
             ]
@@ -220,7 +220,7 @@ module.exports = (sequelize) => {
               hasUpdates = true
             } else if (existingSeriesMatch.bookSeries.sequence !== updatedSeries.sequence) {
               Logger.dev(`[LibraryItem] "${libraryItemExpanded.media.title}" series "${updatedSeries.name}" sequence was updated from "${existingSeriesMatch.bookSeries.sequence}" to "${updatedSeries.sequence}"`)
-              await existingSeriesMatch.bookSeries.update({ sequence: updatedSeries.sequence })
+              await existingSeriesMatch.bookSeries.update({ id: updatedSeries.id, sequence: updatedSeries.sequence })
               hasUpdates = true
             }
           }

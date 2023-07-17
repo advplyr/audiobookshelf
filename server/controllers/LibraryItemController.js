@@ -100,6 +100,7 @@ class LibraryItemController {
   async updateMedia(req, res) {
     const libraryItem = req.libraryItem
     const mediaPayload = req.body
+
     // Item has cover and update is removing cover so purge it from cache
     if (libraryItem.media.coverPath && (mediaPayload.coverPath === '' || mediaPayload.coverPath === null)) {
       await this.cacheManager.purgeCoverCache(libraryItem.id)
