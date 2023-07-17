@@ -10,7 +10,7 @@ FROM sandreas/tone:v0.1.5 AS tone
 FROM node:16-alpine
 
 ENV NODE_ENV=production
-ENV NODE_OPTIONS=--max-old-space-size=4096
+ENV NODE_OPTIONS=--max-old-space-size=8192
 
 RUN apk update && \
     apk add --no-cache --update \
