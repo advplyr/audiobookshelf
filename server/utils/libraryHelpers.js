@@ -11,7 +11,7 @@ module.exports = {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
   },
 
-  getFilteredLibraryItems(libraryItems, filterBy, user, feedsArray) {
+  async getFilteredLibraryItems(libraryItems, filterBy, user) {
     let filtered = libraryItems
 
     const searchGroups = ['genres', 'tags', 'series', 'authors', 'progress', 'narrators', 'publishers', 'missing', 'languages', 'tracks', 'ebooks']
@@ -71,7 +71,9 @@ module.exports = {
     } else if (filterBy === 'issues') {
       filtered = filtered.filter(li => li.hasIssues)
     } else if (filterBy === 'feed-open') {
-      filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
+      const libraryItemIdsWithFeed = await Database.models.feed.findAllLibraryItemIds()
+      filtered = filtered.filter(li => libraryItemIdsWithFeed.includes(li.id))
+      // filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
     } else if (filterBy === 'abridged') {
       filtered = filtered.filter(li => !!li.media.metadata?.abridged)
     } else if (filterBy === 'ebook') {
@@ -356,7 +358,7 @@ module.exports = {
     return filteredLibraryItems
   },
 
-  buildPersonalizedShelves(ctx, user, libraryItems, library, maxEntitiesPerShelf, include) {
+  async buildPersonalizedShelves(ctx, user, libraryItems, library, maxEntitiesPerShelf, include) {
     const mediaType = library.mediaType
     const isPodcastLibrary = mediaType === 'podcast'
     const includeRssFeed = include.includes('rssfeed')
@@ -846,27 +848,30 @@ module.exports = {
 
     const categoriesWithItems = Object.values(categoryMap).filter(cat => cat.items.length)
 
-    return categoriesWithItems.map(cat => {
-      const shelf = shelves.find(s => s.id === cat.id)
-      shelf.entities = cat.items
+    const finalShelves = []
+    for (const categoryWithItems of categoriesWithItems) {
+      const shelf = shelves.find(s => s.id === categoryWithItems.id)
+      shelf.entities = categoryWithItems.items
 
       // Add rssFeed to entities if query string "include=rssfeed" was on request
       if (includeRssFeed) {
         if (shelf.type === 'book' || shelf.type === 'podcast') {
-          shelf.entities = shelf.entities.map((item) => {
-            item.rssFeed = ctx.rssFeedManager.findFeedForEntityId(item.id)?.toJSONMinified() || null
+          shelf.entities = await Promise.all(shelf.entities.map(async (item) => {
+            const feed = await ctx.rssFeedManager.findFeedForEntityId(item.id)
+            item.rssFeed = feed?.toJSONMinified() || null
             return item
-          })
+          }))
         } else if (shelf.type === 'series') {
-          shelf.entities = shelf.entities.map((series) => {
-            series.rssFeed = ctx.rssFeedManager.findFeedForEntityId(series.id)?.toJSONMinified() || null
+          shelf.entities = await Promise.all(shelf.entities.map(async (series) => {
+            const feed = await ctx.rssFeedManager.findFeedForEntityId(series.id)
+            series.rssFeed = feed?.toJSONMinified() || null
             return series
-          })
+          }))
         }
       }
-
-      return shelf
-    })
+      finalShelves.push(shelf)
+    }
+    return finalShelves
   },
 
   groupMusicLibraryItemsIntoAlbums(libraryItems) {

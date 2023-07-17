@@ -30,7 +30,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
+    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -55,7 +55,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
+    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }
@@ -89,7 +89,7 @@ class RSSFeedController {
     }
 
     // Check that this slug is not being used for another feed (slug will also be the Feed id)
-    if (this.rssFeedManager.findFeedBySlug(options.slug)) {
+    if (await this.rssFeedManager.findFeedBySlug(options.slug)) {
       Logger.error(`[RSSFeedController] Cannot open RSS feed because slug "${options.slug}" is already in use`)
       return res.status(400).send('Slug already in use')
     }

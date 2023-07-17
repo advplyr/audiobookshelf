@@ -23,7 +23,6 @@ class Database {
     this.playlists = []
     this.authors = []
     this.series = []
-    this.feeds = []
 
     this.serverSettings = null
     this.notificationSettings = null
@@ -147,7 +146,6 @@ class Database {
     this.playlists = await this.models.playlist.getOldPlaylists()
     this.authors = await this.models.author.getOldAuthors()
     this.series = await this.models.series.getAllOldSeries()
-    this.feeds = await this.models.feed.getOldFeeds()
 
     Logger.info(`[Database] Db data loaded in ${Date.now() - startTime}ms`)
 
@@ -408,7 +406,6 @@ class Database {
   async createFeed(oldFeed) {
     if (!this.sequelize) return false
     await this.models.feed.fullCreateFromOld(oldFeed)
-    this.feeds.push(oldFeed)
   }
 
   updateFeed(oldFeed) {
@@ -419,7 +416,6 @@ class Database {
   async removeFeed(feedId) {
     if (!this.sequelize) return false
     await this.models.feed.removeById(feedId)
-    this.feeds = this.feeds.filter(f => f.id !== feedId)
   }
 
   updateSeries(oldSeries) {

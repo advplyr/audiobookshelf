@@ -13,7 +13,7 @@ class LibraryItemController {
   constructor() { }
 
   // Example expand with authors: api/items/:id?expanded=1&include=authors
-  findOne(req, res) {
+  async findOne(req, res) {
     const includeEntities = (req.query.include || '').split(',')
     if (req.query.expanded == 1) {
       var item = req.libraryItem.toJSONExpanded()
@@ -25,8 +25,8 @@ class LibraryItemController {
       }
 
       if (includeEntities.includes('rssfeed')) {
-        const feedData = this.rssFeedManager.findFeedForEntityId(item.id)
-        item.rssFeed = feedData ? feedData.toJSONMinified() : null
+        const feedData = await this.rssFeedManager.findFeedForEntityId(item.id)
+        item.rssFeed = feedData?.toJSONMinified() || null
       }
 
       if (item.mediaType == 'book') {

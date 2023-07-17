@@ -179,7 +179,7 @@ class LibraryController {
 
   // api/libraries/:id/items
   // TODO: Optimize this method, items are iterated through several times but can be combined
-  getLibraryItems(req, res) {
+  async getLibraryItems(req, res) {
     let libraryItems = req.libraryItems
 
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
@@ -203,7 +203,7 @@ class LibraryController {
     // Step 1 - Filter the retrieved library items
     let filterSeries = null
     if (payload.filterBy) {
-      libraryItems = libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user, Database.feeds)
+      libraryItems = await libraryHelpers.getFilteredLibraryItems(libraryItems, payload.filterBy, req.user)
       payload.total = libraryItems.length
 
       // Determining if we are filtering titles by a series, and if so, which series
@@ -319,7 +319,7 @@ class LibraryController {
     }
 
     // Step 4 - Transform the items to pass to the client side
-    payload.results = libraryItems.map(li => {
+    payload.results = await Promise.all(libraryItems.map(async li => {
       const json = payload.minified ? li.toJSONMinified() : li.toJSON()
 
       if (li.collapsedSeries) {
@@ -356,7 +356,7 @@ class LibraryController {
       } else {
         // add rssFeed object if "include=rssfeed" was put in query string (only for non-collapsed series)
         if (include.includes('rssfeed')) {
-          const feedData = this.rssFeedManager.findFeedForEntityId(json.id)
+          const feedData = await this.rssFeedManager.findFeedForEntityId(json.id)
           json.rssFeed = feedData ? feedData.toJSONMinified() : null
         }
 
@@ -372,7 +372,7 @@ class LibraryController {
       }
 
       return json
-    })
+    }))
 
     res.json(payload)
   }
@@ -449,11 +449,11 @@ class LibraryController {
 
     // add rssFeed when "include=rssfeed" is in query string
     if (include.includes('rssfeed')) {
-      series = series.map((se) => {
-        const feedData = this.rssFeedManager.findFeedForEntityId(se.id)
+      series = await Promise.all(series.map(async (se) => {
+        const feedData = await this.rssFeedManager.findFeedForEntityId(se.id)
         se.rssFeed = feedData?.toJSONMinified() || null
         return se
-      })
+      }))
     }
 
     payload.results = series
@@ -489,7 +489,7 @@ class LibraryController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = this.rssFeedManager.findFeedForEntityId(seriesJson.id)
+      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
       seriesJson.rssFeed = feedObj?.toJSONMinified() || null
     }
 
@@ -514,19 +514,21 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let collections = Database.collections.filter(c => c.libraryId === req.library.id).map(c => {
+    let collections = await Promise.all(Database.collections.filter(c => c.libraryId === req.library.id).map(async c => {
       const expanded = c.toJSONExpanded(libraryItems, payload.minified)
 
       // If all books restricted to user in this collection then hide this collection
       if (!expanded.books.length && c.books.length) return null
 
       if (include.includes('rssfeed')) {
-        const feedData = this.rssFeedManager.findFeedForEntityId(c.id)
+        const feedData = await this.rssFeedManager.findFeedForEntityId(c.id)
         expanded.rssFeed = feedData?.toJSONMinified() || null
       }
 
       return expanded
-    }).filter(c => !!c)
+    }))
+
+    collections = collections.filter(c => !!c)
 
     payload.total = collections.length
 
@@ -595,7 +597,7 @@ class LibraryController {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
-    const categories = libraryHelpers.buildPersonalizedShelves(this, req.user, req.libraryItems, req.library, limitPerShelf, include)
+    const categories = await libraryHelpers.buildPersonalizedShelves(this, req.user, req.libraryItems, req.library, limitPerShelf, include)
     res.json(categories)
   }
 

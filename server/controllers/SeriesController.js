@@ -35,7 +35,7 @@ class SeriesController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = this.rssFeedManager.findFeedForEntityId(seriesJson.id)
+      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
       seriesJson.rssFeed = feedObj?.toJSONMinified() || null
     }
 

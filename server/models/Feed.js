@@ -56,6 +56,53 @@ module.exports = (sequelize) => {
       })
     }
 
+    /**
+     * Find all library item ids that have an open feed (used in library filter)
+     * @returns {Promise<Array<String>>} array of library item ids
+     */
+    static async findAllLibraryItemIds() {
+      const feeds = await this.findAll({
+        attributes: ['entityId'],
+        where: {
+          entityType: 'libraryItem'
+        }
+      })
+      return feeds.map(f => f.entityId).filter(f => f) || []
+    }
+
+    /**
+     * Find feed where and return oldFeed
+     * @param {object} where sequelize where object
+     * @returns {Promise<objects.Feed>} oldFeed
+     */
+    static async findOneOld(where) {
+      if (!where) return null
+      const feedExpanded = await this.findOne({
+        where,
+        include: {
+          model: sequelize.models.feedEpisode
+        }
+      })
+      if (!feedExpanded) return null
+      return this.getOldFeed(feedExpanded)
+    }
+
+    /**
+     * Find feed and return oldFeed
+     * @param {string} id
+     * @returns {Promise<objects.Feed>} oldFeed
+     */
+    static async findByPkOld(id) {
+      if (!id) return null
+      const feedExpanded = await this.findByPk(id, {
+        include: {
+          model: sequelize.models.feedEpisode
+        }
+      })
+      if (!feedExpanded) return null
+      return this.getOldFeed(feedExpanded)
+    }
+
     static async fullCreateFromOld(oldFeed) {
       const feedObj = this.getFromOld(oldFeed)
       const newFeed = await this.create(feedObj)
