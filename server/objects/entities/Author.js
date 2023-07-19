@@ -57,7 +57,10 @@ class Author {
 
   setData(data, libraryId) {
     this.id = uuidv4()
-    this.name = data.name
+    if (!data.name) {
+      Logger.error(`[Author] setData: Setting author data without a name`, data)
+    }
+    this.name = data.name || ''
     this.description = data.description || null
     this.asin = data.asin || null
     this.imagePath = data.imagePath || null
