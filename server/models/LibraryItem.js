@@ -5,6 +5,95 @@ const { areEquivalent } = require('../utils/index')
 
 module.exports = (sequelize) => {
   class LibraryItem extends Model {
+    /**
+     * Loads all podcast episodes, all library items in chunks of 500, then maps them to old library items
+     * @todo this is a temporary solution until we can use the sqlite without loading all the library items on init
+     * 
+     * @returns {Promise<objects.LibraryItem[]>} old library items
+     */
+    static async loadAllLibraryItems() {
+      let start = Date.now()
+      Logger.info(`[LibraryItem] Loading podcast episodes...`)
+      const podcastEpisodes = await sequelize.models.podcastEpisode.findAll()
+      Logger.info(`[LibraryItem] Finished loading ${podcastEpisodes.length} podcast episodes in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
+      Logger.info(`[LibraryItem] Loading library items...`)
+      let libraryItems = await this.getAllOldLibraryItemsIncremental()
+      Logger.info(`[LibraryItem] Finished loading ${libraryItems.length} library items in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      // Map LibraryItem to old library item
+      libraryItems = libraryItems.map(li => {
+        if (li.mediaType === 'podcast') {
+          li.media.podcastEpisodes = podcastEpisodes.filter(pe => pe.podcastId === li.media.id)
+        }
+        return this.getOldLibraryItem(li)
+      })
+
+      return libraryItems
+    }
+
+    /**
+     * Loads all LibraryItem in batches of 500
+     * @todo temporary solution
+     * 
+     * @param {Model<LibraryItem>[]} libraryItems 
+     * @param {number} offset 
+     * @returns {Promise<Model<LibraryItem>[]>}
+     */
+    static async getAllOldLibraryItemsIncremental(libraryItems = [], offset = 0) {
+      const limit = 500
+      const rows = await this.getLibraryItemsIncrement(offset, limit)
+      libraryItems.push(...rows)
+      if (!rows.length || rows.length < limit) {
+        return libraryItems
+      }
+      Logger.info(`[LibraryItem] Loaded ${rows.length} library items. ${libraryItems.length} loaded so far.`)
+      return this.getAllOldLibraryItemsIncremental(libraryItems, offset + rows.length)
+    }
+
+    /**
+     * Gets library items partially expanded, not including podcast episodes
+     * @todo temporary solution
+     * 
+     * @param {number} offset
+     * @param {number} limit
+     * @returns {Promise<Model<LibraryItem>[]>} LibraryItem
+     */
+    static getLibraryItemsIncrement(offset, limit) {
+      return this.findAll({
+        include: [
+          {
+            model: sequelize.models.book,
+            include: [
+              {
+                model: sequelize.models.author,
+                through: {
+                  attributes: []
+                }
+              },
+              {
+                model: sequelize.models.series,
+                through: {
+                  attributes: ['sequence']
+                }
+              }
+            ]
+          },
+          {
+            model: sequelize.models.podcast
+          }
+        ],
+        offset,
+        limit
+      })
+    }
+
+    /**
+     * Currently unused because this is too slow and uses too much mem
+     * 
+     * @returns {Array<objects.LibraryItem>} old library items
+     */
     static async getAllOldLibraryItems() {
       let libraryItems = await this.findAll({
         include: [
@@ -38,6 +127,12 @@ module.exports = (sequelize) => {
       return libraryItems.map(ti => this.getOldLibraryItem(ti))
     }
 
+    /**
+     * Convert an expanded LibraryItem into an old library item
+     * 
+     * @param {Model<LibraryItem>} libraryItemExpanded 
+     * @returns {oldLibraryItem}
+     */
     static getOldLibraryItem(libraryItemExpanded) {
       let media = null
       if (libraryItemExpanded.mediaType === 'book') {

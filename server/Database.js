@@ -119,6 +119,13 @@ class Database {
     return this.sequelize.sync({ force, alter: false })
   }
 
+  /**
+   * Checks if migration to sqlite db is necessary & runs migration.
+   * 
+   * Check if version was upgraded and run any version specific migrations.
+   * 
+   * Loads most of the data from the database. This is a temporary solution.
+   */
   async loadData() {
     if (this.isNew && await dbMigration.checkShouldMigrate()) {
       Logger.info(`[Database] New database was created and old database was detected - migrating old to new`)
@@ -139,15 +146,30 @@ class Database {
       await dbMigration.migrationPatch(this)
     }
 
-    this.libraryItems = await this.models.libraryItem.getAllOldLibraryItems()
-    this.users = await this.models.user.getOldUsers()
-    this.libraries = await this.models.library.getAllOldLibraries()
-    this.collections = await this.models.collection.getOldCollections()
-    this.playlists = await this.models.playlist.getOldPlaylists()
-    this.authors = await this.models.author.getOldAuthors()
-    this.series = await this.models.series.getAllOldSeries()
+    Logger.info(`[Database] Loading db data...`)
 
-    Logger.info(`[Database] Db data loaded in ${Date.now() - startTime}ms`)
+    this.libraryItems = await this.models.libraryItem.loadAllLibraryItems()
+    Logger.info(`[Database] Loaded ${this.libraryItems.length} library items`)
+
+    this.users = await this.models.user.getOldUsers()
+    Logger.info(`[Database] Loaded ${this.users.length} users`)
+
+    this.libraries = await this.models.library.getAllOldLibraries()
+    Logger.info(`[Database] Loaded ${this.libraries.length} libraries`)
+
+    this.collections = await this.models.collection.getOldCollections()
+    Logger.info(`[Database] Loaded ${this.collections.length} collections`)
+
+    this.playlists = await this.models.playlist.getOldPlaylists()
+    Logger.info(`[Database] Loaded ${this.playlists.length} playlists`)
+
+    this.authors = await this.models.author.getOldAuthors()
+    Logger.info(`[Database] Loaded ${this.authors.length} authors`)
+
+    this.series = await this.models.series.getAllOldSeries()
+    Logger.info(`[Database] Loaded ${this.series.length} series`)
+
+    Logger.info(`[Database] Db data loaded in ${((Date.now() - startTime) / 1000).toFixed(2)}s`)
 
     if (packageJson.version !== this.serverSettings.version) {
       Logger.info(`[Database] Server upgrade detected from ${this.serverSettings.version} to ${packageJson.version}`)
