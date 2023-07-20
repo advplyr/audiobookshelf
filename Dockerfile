@@ -32,9 +32,5 @@ RUN apk del make python3 g++
 ENV NODE_OPTIONS=--max-old-space-size=4096
 
 EXPOSE 80
-HEALTHCHECK \
-    --interval=30s \
-    --timeout=3s \
-    --start-period=10s \
-    CMD curl -f http://127.0.0.1/healthcheck || exit 1
+
 CMD ["node", "index.js"]
