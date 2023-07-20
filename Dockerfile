@@ -29,8 +29,6 @@ RUN npm ci --only=production
 
 RUN apk del make python3 g++
 
-ENV NODE_OPTIONS=--max-old-space-size=4096
-
 EXPOSE 80
 
 CMD ["node", "index.js"]
