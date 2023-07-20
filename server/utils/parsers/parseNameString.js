@@ -86,13 +86,10 @@ module.exports.parse = (nameString) => {
   // Filter out names that have no first and last
   names = names.filter(n => n.first_name || n.last_name)
 
-  var namesArray = names.map(a => a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name)
-  var firstLast = names.length ? namesArray.join(', ') : ''
-  var lastFirst = names.length ? names.map(a => a.first_name ? `${a.last_name}, ${a.first_name}` : a.last_name).join(', ') : ''
+  // Set name strings and remove duplicates
+  const namesArray = [...new Set(names.map(a => a.first_name ? `${a.first_name} ${a.last_name}` : a.last_name))]
 
   return {
-    nameFL: firstLast, // String of comma separated first last
-    nameLF: lastFirst, // String of comma separated last, first
     names: namesArray // Array of first last
   }
 }
