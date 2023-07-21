@@ -40,6 +40,7 @@ class Feed {
     this.userId = feed.userId
     this.entityType = feed.entityType
     this.entityId = feed.entityId
+    this.entityUpdatedAt = feed.entityUpdatedAt
     this.coverPath = feed.coverPath
     this.serverAddress = feed.serverAddress
     this.feedUrl = feed.feedUrl
@@ -78,7 +79,6 @@ class Feed {
 
   getEpisodePath(id) {
     var episode = this.episodes.find(ep => ep.id === id)
-    console.log('getEpisodePath=', id, episode)
     if (!episode) return null
     return episode.fullPath
   }
