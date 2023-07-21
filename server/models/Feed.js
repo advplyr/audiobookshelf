@@ -18,7 +18,6 @@ module.exports = (sequelize) => {
 
     static getOldFeed(feedExpanded) {
       const episodes = feedExpanded.feedEpisodes.map((feedEpisode) => feedEpisode.getOldEpisode())
-
       return new oldFeed({
         id: feedExpanded.id,
         slug: feedExpanded.slug,
@@ -26,6 +25,7 @@ module.exports = (sequelize) => {
         entityType: feedExpanded.entityType,
         entityId: feedExpanded.entityId,
         entityUpdatedAt: feedExpanded.entityUpdatedAt?.valueOf() || null,
+        coverPath: feedExpanded.coverPath || null,
         meta: {
           title: feedExpanded.title,
           description: feedExpanded.description,
@@ -174,6 +174,7 @@ module.exports = (sequelize) => {
         entityUpdatedAt: oldFeed.entityUpdatedAt,
         serverAddress: oldFeed.serverAddress,
         feedURL: oldFeed.feedUrl,
+        coverPath: oldFeed.coverPath || null,
         imageURL: oldFeedMeta.imageUrl,
         siteURL: oldFeedMeta.link,
         title: oldFeedMeta.title,
@@ -218,7 +219,8 @@ module.exports = (sequelize) => {
     ownerName: DataTypes.STRING,
     ownerEmail: DataTypes.STRING,
     explicit: DataTypes.BOOLEAN,
-    preventIndexing: DataTypes.BOOLEAN
+    preventIndexing: DataTypes.BOOLEAN,
+    coverPath: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'feed'

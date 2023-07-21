@@ -96,6 +96,7 @@ class RssFeedManager {
 
       if (libraryItem && (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt)) {
         Logger.debug(`[RssFeedManager] Updating RSS feed for item ${libraryItem.id} "${libraryItem.media.metadata.title}"`)
+
         feed.updateFromItem(libraryItem)
         await Database.updateFeed(feed)
       }

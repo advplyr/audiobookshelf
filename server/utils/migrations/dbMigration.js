@@ -822,6 +822,7 @@ function migrateFeeds(oldFeeds) {
       entityUpdatedAt: oldFeed.entityUpdatedAt,
       serverAddress: oldFeed.serverAddress,
       feedURL: oldFeed.feedUrl,
+      coverPath: oldFeed.coverPath || null,
       imageURL: oldFeedMeta.imageUrl,
       siteURL: oldFeedMeta.link,
       title: oldFeedMeta.title,
@@ -1308,4 +1309,33 @@ module.exports.migrationPatch = async (ctx) => {
 
   const elapsed = Date.now() - migrationStart
   Logger.info(`[dbMigration] Migration patch 2.3.0+ finished. Elapsed ${(elapsed / 1000).toFixed(2)}s`)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Adding coverPath column to Feed model
+ * @param {/src/Database} ctx 
+ */
+module.exports.migrationPatch2 = async (ctx) => {
+  const queryInterface = ctx.sequelize.getQueryInterface()
+  const feedTableDescription = await queryInterface.describeTable('feeds')
+
+  if (feedTableDescription?.coverPath) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - coverPath column is already on model`)
+    return
+  }
+
+  try {
+    await queryInterface.sequelize.transaction(t => {
+      return Promise.all([
+        queryInterface.addColumn('feeds', 'coverPath', {
+          type: DataTypes.STRING
+        }, { transaction: t })
+      ])
+    })
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ finished`)
+  } catch (error) {
+    Logger.error(`[dbMigration] Migration from 2.3.3+ column creation failed`, error)
+    throw new Error('Migration 2.3.3+ failed ' + error)
+  }
 }

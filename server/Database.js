@@ -120,6 +120,17 @@ class Database {
   }
 
   /**
+   * Compare two server versions
+   * @param {string} v1 
+   * @param {string} v2 
+   * @returns {-1|0|1} 1 if v1 > v2
+   */
+  compareVersions(v1, v2) {
+    if (!v1 || !v2) return 0
+    return v1.localeCompare(v2, undefined, { numeric: true, sensitivity: "case", caseFirst: "upper" })
+  }
+
+  /**
    * Checks if migration to sqlite db is necessary & runs migration.
    * 
    * Check if version was upgraded and run any version specific migrations.
@@ -142,8 +153,10 @@ class Database {
     global.ServerSettings = this.serverSettings.toJSON()
 
     // Version specific migrations
-    if (this.serverSettings.version === '2.3.0' && packageJson.version !== '2.3.0') {
+    if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') > 1) {
       await dbMigration.migrationPatch(this)
+    } else if (this.serverSettings.version === '2.3.3' && this.compareVersions(packageJson.version, '2.3.3') >= 0) { // TODO: Update to > 1 after 2.3.4
+      await dbMigration.migrationPatch2(this)
     }
 
     Logger.info(`[Database] Loading db data...`)
