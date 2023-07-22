@@ -167,10 +167,9 @@ class LibraryController {
     this.watcher.removeLibrary(library)
 
     // Remove collections for library
-    const collections = Database.collections.filter(c => c.libraryId === library.id)
-    for (const collection of collections) {
-      Logger.info(`[Server] deleting collection "${collection.name}" for library "${library.name}"`)
-      await Database.removeCollection(collection.id)
+    const numCollectionsRemoved = await Database.models.collection.removeAllForLibrary(library.id)
+    if (numCollectionsRemoved) {
+      Logger.info(`[Server] Removed ${numCollectionsRemoved} collections for library "${library.name}"`)
     }
 
     // Remove items in this library
@@ -527,7 +526,9 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let collections = await Promise.all(Database.collections.filter(c => c.libraryId === req.library.id).map(async c => {
+    const collectionsForLibrary = await Database.models.collection.getAllForLibrary(req.library.id)
+
+    let collections = await Promise.all(collectionsForLibrary.map(async c => {
       const expanded = c.toJSONExpanded(libraryItems, payload.minified)
 
       // If all books restricted to user in this collection then hide this collection

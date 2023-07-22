@@ -392,9 +392,8 @@ class ApiRouter {
 
     if (libraryItem.isBook) {
       // remove book from collections
-      const collectionsWithBook = Database.collections.filter(c => c.books.includes(libraryItem.id))
-      for (let i = 0; i < collectionsWithBook.length; i++) {
-        const collection = collectionsWithBook[i]
+      const collectionsWithBook = await Database.models.collection.getAllForBook(libraryItem.media.id)
+      for (const collection of collectionsWithBook) {
         collection.removeBook(libraryItem.id)
         await Database.removeCollectionBook(collection.id, libraryItem.media.id)
         SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(Database.libraryItems))

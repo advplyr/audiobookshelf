@@ -19,7 +19,6 @@ class Database {
     // TODO: below data should be loaded from the DB as needed
     this.libraryItems = []
     this.settings = []
-    this.collections = []
     this.playlists = []
     this.authors = []
     this.series = []
@@ -161,9 +160,6 @@ class Database {
     this.libraryItems = await this.models.libraryItem.loadAllLibraryItems()
     Logger.info(`[Database] Loaded ${this.libraryItems.length} library items`)
 
-    this.collections = await this.models.collection.getOldCollections()
-    Logger.info(`[Database] Loaded ${this.collections.length} collections`)
-
     this.playlists = await this.models.playlist.getOldPlaylists()
     Logger.info(`[Database] Loaded ${this.playlists.length} playlists`)
 
@@ -280,7 +276,6 @@ class Database {
         await this.createBulkCollectionBooks(collectionBooks)
       }
     }
-    this.collections.push(oldCollection)
   }
 
   updateCollection(oldCollection) {
@@ -302,7 +297,6 @@ class Database {
   async removeCollection(collectionId) {
     if (!this.sequelize) return false
     await this.models.collection.removeById(collectionId)
-    this.collections = this.collections.filter(c => c.id !== collectionId)
   }
 
   createCollectionBook(collectionBook) {
