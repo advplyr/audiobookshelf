@@ -19,7 +19,7 @@ class PodcastController {
     }
     const payload = req.body
 
-    const library = Database.libraries.find(lib => lib.id === payload.libraryId)
+    const library = await Database.models.library.getOldById(payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
       return res.status(404).send('Library not found')

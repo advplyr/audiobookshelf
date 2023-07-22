@@ -104,10 +104,16 @@ class Auth {
     })
   }
 
-  getUserLoginResponsePayload(user) {
+  /**
+   * Payload returned to a user after successful login
+   * @param {oldUser} user 
+   * @returns {object}
+   */
+  async getUserLoginResponsePayload(user) {
+    const libraryIds = await Database.models.library.getAllLibraryIds()
     return {
       user: user.toJSONForBrowser(),
-      userDefaultLibraryId: user.getDefaultLibraryId(Database.libraries),
+      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
       serverSettings: Database.serverSettings.toJSONForBrowser(),
       ereaderDevices: Database.emailSettings.getEReaderDevices(user),
       Source: global.Source
@@ -136,7 +142,8 @@ class Auth {
         return res.status(401).send('Invalid root password (hint: there is none)')
       } else {
         Logger.info(`[Auth] ${user.username} logged in from ${ipAddress}`)
-        return res.json(this.getUserLoginResponsePayload(user))
+        const userLoginResponsePayload = await this.getUserLoginResponsePayload(user)
+        return res.json(userLoginResponsePayload)
       }
     }
 
@@ -144,7 +151,8 @@ class Auth {
     const compare = await bcrypt.compare(password, user.pash)
     if (compare) {
       Logger.info(`[Auth] ${user.username} logged in from ${ipAddress}`)
-      res.json(this.getUserLoginResponsePayload(user))
+      const userLoginResponsePayload = await this.getUserLoginResponsePayload(user)
+      res.json(userLoginResponsePayload)
     } else {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
       if (req.rateLimit.remaining <= 2) {

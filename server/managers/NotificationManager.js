@@ -14,15 +14,15 @@ class NotificationManager {
     return notificationData
   }
 
-  onPodcastEpisodeDownloaded(libraryItem, episode) {
+  async onPodcastEpisodeDownloaded(libraryItem, episode) {
     if (!Database.notificationSettings.isUseable) return
 
     Logger.debug(`[NotificationManager] onPodcastEpisodeDownloaded: Episode "${episode.title}" for podcast ${libraryItem.media.metadata.title}`)
-    const library = Database.libraries.find(lib => lib.id === libraryItem.libraryId)
+    const library = await Database.models.library.getOldById(libraryItem.libraryId)
     const eventData = {
       libraryItemId: libraryItem.id,
       libraryId: libraryItem.libraryId,
-      libraryName: library ? library.name : 'Unknown',
+      libraryName: library?.name || 'Unknown',
       mediaTags: (libraryItem.media.tags || []).join(', '),
       podcastTitle: libraryItem.media.metadata.title,
       podcastAuthor: libraryItem.media.metadata.author || '',

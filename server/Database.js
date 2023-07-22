@@ -17,7 +17,6 @@ class Database {
     // TODO: below data should be loaded from the DB as needed
     this.libraryItems = []
     this.users = []
-    this.libraries = []
     this.settings = []
     this.collections = []
     this.playlists = []
@@ -168,9 +167,6 @@ class Database {
     this.users = await this.models.user.getOldUsers()
     Logger.info(`[Database] Loaded ${this.users.length} users`)
 
-    this.libraries = await this.models.library.getAllOldLibraries()
-    Logger.info(`[Database] Loaded ${this.libraries.length} libraries`)
-
     this.collections = await this.models.collection.getOldCollections()
     Logger.info(`[Database] Loaded ${this.collections.length} collections`)
 
@@ -190,6 +186,8 @@ class Database {
       this.serverSettings.version = packageJson.version
       await this.updateServerSettings()
     }
+
+    this.models.library.getMaxDisplayOrder()
   }
 
   async createRootUser(username, pash, token) {
@@ -254,7 +252,6 @@ class Database {
   async createLibrary(oldLibrary) {
     if (!this.sequelize) return false
     await this.models.library.createFromOld(oldLibrary)
-    this.libraries.push(oldLibrary)
   }
 
   updateLibrary(oldLibrary) {
@@ -265,7 +262,6 @@ class Database {
   async removeLibrary(libraryId) {
     if (!this.sequelize) return false
     await this.models.library.removeById(libraryId)
-    this.libraries = this.libraries.filter(lib => lib.id !== libraryId)
   }
 
   async createCollection(oldCollection) {

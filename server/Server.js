@@ -93,6 +93,10 @@ class Server {
     this.auth.authMiddleware(req, res, next)
   }
 
+  /**
+   * Initialize database, backups, logs, rss feeds, cron jobs & watcher
+   * Cleanup stale/invalid data
+   */
   async init() {
     Logger.info('[Server] Init v' + version)
     await this.playbackSessionManager.removeOrphanStreams()
@@ -111,13 +115,15 @@ class Server {
     await this.logManager.init()
     await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()
-    this.cronManager.init()
+
+    const libraries = await Database.models.library.getAllOldLibraries()
+    this.cronManager.init(libraries)
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
       this.watcher.disabled = true
     } else {
-      this.watcher.initWatcher(Database.libraries)
+      this.watcher.initWatcher(libraries)
       this.watcher.on('files', this.filesChanged.bind(this))
     }
   }
