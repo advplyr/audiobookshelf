@@ -405,12 +405,14 @@ class Database {
 
   async createLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
+    await oldLibraryItem.saveMetadata()
     await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
     this.libraryItems.push(oldLibraryItem)
   }
 
-  updateLibraryItem(oldLibraryItem) {
+  async updateLibraryItem(oldLibraryItem) {
     if (!this.sequelize) return false
+    await oldLibraryItem.saveMetadata()
     return this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
   }
 
@@ -418,8 +420,11 @@ class Database {
     if (!this.sequelize) return false
     let updatesMade = 0
     for (const oldLibraryItem of oldLibraryItems) {
+      await oldLibraryItem.saveMetadata()
       const hasUpdates = await this.models.libraryItem.fullUpdateFromOld(oldLibraryItem)
-      if (hasUpdates) updatesMade++
+      if (hasUpdates) {
+        updatesMade++
+      }
     }
     return updatesMade
   }
@@ -427,6 +432,7 @@ class Database {
   async createBulkLibraryItems(oldLibraryItems) {
     if (!this.sequelize) return false
     for (const oldLibraryItem of oldLibraryItems) {
+      await oldLibraryItem.saveMetadata()
       await this.models.libraryItem.fullCreateFromOld(oldLibraryItem)
       this.libraryItems.push(oldLibraryItem)
     }

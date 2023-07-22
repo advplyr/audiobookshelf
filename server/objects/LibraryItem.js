@@ -523,7 +523,10 @@ class LibraryItem {
     return this.media.getDirectPlayTracklist(episodeId)
   }
 
-  // Saves metadata.abs file
+  /**
+   * Save metadata.json/metadata.abs file
+   * @returns {boolean} true if saved
+   */
   async saveMetadata() {
     if (this.mediaType === 'video' || this.mediaType === 'music') return
 
@@ -556,6 +559,7 @@ class LibraryItem {
           await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
           this.libraryFiles.push(newLibraryFile)
         }
+        Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
 
         return true
       }).catch((error) => {
