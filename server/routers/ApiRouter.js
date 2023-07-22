@@ -381,7 +381,8 @@ class ApiRouter {
 
   async handleDeleteLibraryItem(libraryItem) {
     // Remove media progress for this library item from all users
-    for (const user of Database.users) {
+    const users = await Database.models.user.getOldUsers()
+    for (const user of users) {
       for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItem.id)) {
         await Database.removeMediaProgress(mediaProgress.id)
       }
@@ -462,11 +463,11 @@ class ApiRouter {
   async getAllSessionsWithUserData() {
     const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
     return sessions.map(se => {
-      const user = Database.users.find(u => u.id === se.userId)
       return {
         ...se,
-        user: user ? { id: user.id, username: user.username } : null
+        user: minifiedUserObjects.find(u => u.id === se.userId) || null
       }
     })
   }

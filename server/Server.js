@@ -250,7 +250,8 @@ class Server {
 
   // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
   async cleanUserData() {
-    for (const _user of Database.users) {
+    const users = await Database.models.user.getOldUsers()
+    for (const _user of users) {
       if (_user.mediaProgress.length) {
         for (const mediaProgress of _user.mediaProgress) {
           const libraryItem = Database.libraryItems.find(li => li.id === mediaProgress.libraryItemId)

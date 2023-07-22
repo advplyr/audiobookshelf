@@ -17,7 +17,8 @@ class UserController {
     const includes = (req.query.include || '').split(',').map(i => i.trim())
 
     // Minimal toJSONForBrowser does not include mediaProgress and bookmarks
-    const users = Database.users.map(u => u.toJSONForBrowser(hideRootToken, true))
+    const allUsers = await Database.models.user.getOldUsers()
+    const users = allUsers.map(u => u.toJSONForBrowser(hideRootToken, true))
 
     if (includes.includes('latestSession')) {
       for (const user of users) {
@@ -31,25 +32,20 @@ class UserController {
     })
   }
 
-  findOne(req, res) {
+  async findOne(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error('User other than admin attempting to get user', req.user)
       return res.sendStatus(403)
     }
 
-    const user = Database.users.find(u => u.id === req.params.id)
-    if (!user) {
-      return res.sendStatus(404)
-    }
-
-    res.json(this.userJsonWithItemProgressDetails(user, !req.user.isRoot))
+    res.json(this.userJsonWithItemProgressDetails(req.reqUser, !req.user.isRoot))
   }
 
   async create(req, res) {
-    var account = req.body
+    const account = req.body
+    const username = account.username
 
-    var username = account.username
-    var usernameExists = Database.users.find(u => u.username.toLowerCase() === username.toLowerCase())
+    const usernameExists = await Database.models.user.getUserByUsername(username)
     if (usernameExists) {
       return res.status(500).send('Username already taken')
     }
@@ -73,7 +69,7 @@ class UserController {
   }
 
   async update(req, res) {
-    var user = req.reqUser
+    const user = req.reqUser
 
     if (user.type === 'root' && !req.user.isRoot) {
       Logger.error(`[UserController] Admin user attempted to update root user`, req.user.username)
@@ -84,7 +80,7 @@ class UserController {
     var shouldUpdateToken = false
 
     if (account.username !== undefined && account.username !== user.username) {
-      var usernameExists = Database.users.find(u => u.username.toLowerCase() === account.username.toLowerCase())
+      const usernameExists = await Database.models.user.getUserByUsername(account.username)
       if (usernameExists) {
         return res.status(500).send('Username already taken')
       }
@@ -178,7 +174,7 @@ class UserController {
     })
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     if (!req.user.isAdminOrUp && req.user.id !== req.params.id) {
       return res.sendStatus(403)
     } else if ((req.method == 'PATCH' || req.method == 'POST' || req.method == 'DELETE') && !req.user.isAdminOrUp) {
@@ -186,7 +182,7 @@ class UserController {
     }
 
     if (req.params.id) {
-      req.reqUser = Database.users.find(u => u.id === req.params.id)
+      req.reqUser = await Database.models.user.getUserById(req.params.id)
       if (!req.reqUser) {
         return res.sendStatus(404)
       }

@@ -1,10 +1,14 @@
 const uuidv4 = require("uuid").v4
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, Op } = require('sequelize')
 const Logger = require('../Logger')
 const oldUser = require('../objects/user/User')
 
 module.exports = (sequelize) => {
   class User extends Model {
+    /**
+     * Get all oldUsers
+     * @returns {Promise<oldUser>}
+     */
     static async getOldUsers() {
       const users = await this.findAll({
         include: sequelize.models.mediaProgress
@@ -89,6 +93,13 @@ module.exports = (sequelize) => {
       })
     }
 
+    /**
+     * Create root user
+     * @param {string} username 
+     * @param {string} pash 
+     * @param {Auth} auth 
+     * @returns {oldUser}
+     */
     static async createRootUser(username, pash, auth) {
       const userId = uuidv4()
 
@@ -105,6 +116,95 @@ module.exports = (sequelize) => {
       })
       await this.createFromOld(newRoot)
       return newRoot
+    }
+
+    /**
+     * Get a user by id or by the old database id
+     * @temp User ids were updated in v2.3.0 migration and old API tokens may still use that id
+     * @param {string} userId 
+     * @returns {Promise<oldUser|null>} null if not found
+     */
+    static async getUserByIdOrOldId(userId) {
+      if (!userId) return null
+      const user = await this.findOne({
+        where: {
+          [Op.or]: [
+            {
+              id: userId
+            },
+            {
+              extraData: {
+                [Op.substring]: userId
+              }
+            }
+          ]
+        },
+        include: sequelize.models.mediaProgress
+      })
+      if (!user) return null
+      return this.getOldUser(user)
+    }
+
+    /**
+     * Get user by username case insensitive
+     * @param {string} username 
+     * @returns {Promise<oldUser|null>} returns null if not found
+     */
+    static async getUserByUsername(username) {
+      if (!username) return null
+      const user = await this.findOne({
+        where: {
+          username: {
+            [Op.like]: username
+          }
+        },
+        include: sequelize.models.mediaProgress
+      })
+      if (!user) return null
+      return this.getOldUser(user)
+    }
+
+    /**
+     * Get user by id
+     * @param {string} userId 
+     * @returns {Promise<oldUser|null>} returns null if not found
+     */
+    static async getUserById(userId) {
+      if (!userId) return null
+      const user = await this.findByPk(userId, {
+        include: sequelize.models.mediaProgress
+      })
+      if (!user) return null
+      return this.getOldUser(user)
+    }
+
+    /**
+     * Get array of user id and username
+     * @returns {object[]} { id, username }
+     */
+    static async getMinifiedUserObjects() {
+      const users = await this.findAll({
+        attributes: ['id', 'username']
+      })
+      return users.map(u => {
+        return {
+          id: u.id,
+          username: u.username
+        }
+      })
+    }
+
+    /**
+     * Return true if root user exists
+     * @returns {boolean}
+     */
+    static async getHasRootUser() {
+      const count = await this.count({
+        where: {
+          type: 'root'
+        }
+      })
+      return count > 0
     }
   }
 

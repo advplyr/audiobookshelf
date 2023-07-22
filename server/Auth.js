@@ -32,12 +32,13 @@ class Auth {
     await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    if (Database.users.length) {
-      for (const user of Database.users) {
+    const users = await Database.models.user.getOldUsers()
+    if (users.length) {
+      for (const user of users) {
         user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
         Logger.warn(`[Auth] User ${user.username} api token has been updated using new token secret`)
       }
-      await Database.updateBulkUsers(Database.users)
+      await Database.updateBulkUsers(users)
     }
   }
 
@@ -93,13 +94,18 @@ class Auth {
 
   verifyToken(token) {
     return new Promise((resolve) => {
-      jwt.verify(token, Database.serverSettings.tokenSecret, (err, payload) => {
+      jwt.verify(token, Database.serverSettings.tokenSecret, async (err, payload) => {
         if (!payload || err) {
           Logger.error('JWT Verify Token Failed', err)
           return resolve(null)
         }
-        const user = Database.users.find(u => (u.id === payload.userId || u.oldUserId === payload.userId) && u.username === payload.username)
-        resolve(user || null)
+
+        const user = await Database.models.user.getUserByIdOrOldId(payload.userId)
+        if (user && user.username === payload.username) {
+          resolve(user)
+        } else {
+          resolve(null)
+        }
       })
     })
   }
@@ -125,7 +131,7 @@ class Auth {
     const username = (req.body.username || '').toLowerCase()
     const password = req.body.password || ''
 
-    const user = Database.users.find(u => u.username.toLowerCase() === username)
+    const user = await Database.models.user.getUserByUsername(username)
 
     if (!user?.isActive) {
       Logger.warn(`[Auth] Failed login attempt ${req.rateLimit.current} of ${req.rateLimit.limit} from ${ipAddress}`)
@@ -172,7 +178,7 @@ class Auth {
   async userChangePassword(req, res) {
     var { password, newPassword } = req.body
     newPassword = newPassword || ''
-    const matchingUser = Database.users.find(u => u.id === req.user.id)
+    const matchingUser = await Database.models.user.getUserById(req.user.id)
 
     // Only root can have an empty password
     if (matchingUser.type !== 'root' && !newPassword) {

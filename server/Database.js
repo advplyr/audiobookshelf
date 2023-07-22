@@ -6,17 +6,18 @@ const fs = require('./libs/fsExtra')
 const Logger = require('./Logger')
 
 const dbMigration = require('./utils/migrations/dbMigration')
+const Auth = require('./Auth')
 
 class Database {
   constructor() {
     this.sequelize = null
     this.dbPath = null
     this.isNew = false // New absdatabase.sqlite created
+    this.hasRootUser = false // Used to show initialization page in web ui
 
     // Temporarily using format of old DB
     // TODO: below data should be loaded from the DB as needed
     this.libraryItems = []
-    this.users = []
     this.settings = []
     this.collections = []
     this.playlists = []
@@ -30,10 +31,6 @@ class Database {
 
   get models() {
     return this.sequelize?.models || {}
-  }
-
-  get hasRootUser() {
-    return this.users.some(u => u.type === 'root')
   }
 
   async checkHasDb() {
@@ -164,9 +161,6 @@ class Database {
     this.libraryItems = await this.models.libraryItem.loadAllLibraryItems()
     Logger.info(`[Database] Loaded ${this.libraryItems.length} library items`)
 
-    this.users = await this.models.user.getOldUsers()
-    Logger.info(`[Database] Loaded ${this.users.length} users`)
-
     this.collections = await this.models.collection.getOldCollections()
     Logger.info(`[Database] Loaded ${this.collections.length} collections`)
 
@@ -179,6 +173,9 @@ class Database {
     this.series = await this.models.series.getAllOldSeries()
     Logger.info(`[Database] Loaded ${this.series.length} series`)
 
+    // Set if root user has been created
+    this.hasRootUser = await this.models.user.getHasRootUser()
+
     Logger.info(`[Database] Db data loaded in ${((Date.now() - startTime) / 1000).toFixed(2)}s`)
 
     if (packageJson.version !== this.serverSettings.version) {
@@ -186,18 +183,20 @@ class Database {
       this.serverSettings.version = packageJson.version
       await this.updateServerSettings()
     }
-
-    this.models.library.getMaxDisplayOrder()
   }
 
-  async createRootUser(username, pash, token) {
+  /**
+   * Create root user
+   * @param {string} username 
+   * @param {string} pash 
+   * @param {Auth} auth 
+   * @returns {boolean} true if created
+   */
+  async createRootUser(username, pash, auth) {
     if (!this.sequelize) return false
-    const newUser = await this.models.user.createRootUser(username, pash, token)
-    if (newUser) {
-      this.users.push(newUser)
-      return true
-    }
-    return false
+    await this.models.user.createRootUser(username, pash, auth)
+    this.hasRootUser = true
+    return true
   }
 
   updateServerSettings() {
@@ -214,7 +213,6 @@ class Database {
   async createUser(oldUser) {
     if (!this.sequelize) return false
     await this.models.user.createFromOld(oldUser)
-    this.users.push(oldUser)
     return true
   }
 
@@ -231,7 +229,6 @@ class Database {
   async removeUser(userId) {
     if (!this.sequelize) return false
     await this.models.user.removeById(userId)
-    this.users = this.users.filter(u => u.id !== userId)
   }
 
   upsertMediaProgress(oldMediaProgress) {
