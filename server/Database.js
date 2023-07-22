@@ -66,7 +66,8 @@ class Database {
     this.sequelize = new Sequelize({
       dialect: 'sqlite',
       storage: this.dbPath,
-      logging: false
+      logging: false,
+      transactionType: 'IMMEDIATE'
     })
 
     // Helper function
