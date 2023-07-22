@@ -289,6 +289,7 @@ class MediaFileScanner {
         // Update audio file metadata for audio files already there
         existingAudioFiles.forEach((af) => {
           const podcastEpisode = libraryItem.media.findEpisodeWithInode(af.ino)
+          af.index = 1
           if (podcastEpisode?.audioFile.updateFromScan(af)) {
             hasUpdated = true
 
