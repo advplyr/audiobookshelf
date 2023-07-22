@@ -285,7 +285,6 @@ class Podcast {
 
   addPodcastEpisode(podcastEpisode) {
     this.episodes.push(podcastEpisode)
-    this.reorderEpisodes()
   }
 
   addNewEpisodeFromAudioFile(audioFile, index) {
@@ -295,19 +294,6 @@ class Podcast {
     audioFile.index = 1 // Only 1 audio file per episode
     pe.setDataFromAudioFile(audioFile, index)
     this.episodes.push(pe)
-  }
-
-  reorderEpisodes() {
-    var hasUpdates = false
-
-    this.episodes = naturalSort(this.episodes).desc((ep) => ep.publishedAt)
-    for (let i = 0; i < this.episodes.length; i++) {
-      if (this.episodes[i].index !== (i + 1)) {
-        this.episodes[i].index = i + 1
-        hasUpdates = true
-      }
-    }
-    return hasUpdates
   }
 
   removeEpisode(episodeId) {

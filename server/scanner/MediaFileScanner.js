@@ -278,11 +278,10 @@ class MediaFileScanner {
         const existingAudioFiles = mediaScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))
 
         if (newAudioFiles.length) {
-          let newIndex = libraryItem.media.episodes.length + 1
+          let newIndex = Math.max(...libraryItem.media.episodes.filter(ep => ep.index == null || isNaN(ep.index)).map(ep => Number(ep.index))) + 1
           newAudioFiles.forEach((newAudioFile) => {
             libraryItem.media.addNewEpisodeFromAudioFile(newAudioFile, newIndex++)
           })
-          libraryItem.media.reorderEpisodes()
           hasUpdated = true
         }
 
