@@ -389,7 +389,7 @@ class ApiRouter {
     }
 
     // TODO: Remove open sessions for library item
-
+    let mediaItemIds = []
     if (libraryItem.isBook) {
       // remove book from collections
       const collectionsWithBook = await Database.models.collection.getAllForBook(libraryItem.media.id)
@@ -401,12 +401,15 @@ class ApiRouter {
 
       // Check remove empty series
       await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
+
+      mediaItemIds.push(libraryItem.media.id)
+    } else if (libraryItem.isPodcast) {
+      mediaItemIds.push(...libraryItem.media.episodes.map(ep => ep.id))
     }
 
     // remove item from playlists
-    const playlistsWithItem = Database.playlists.filter(p => p.hasItemsForLibraryItem(libraryItem.id))
-    for (let i = 0; i < playlistsWithItem.length; i++) {
-      const playlist = playlistsWithItem[i]
+    const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
+    for (const playlist of playlistsWithItem) {
       playlist.removeItemsForLibraryItem(libraryItem.id)
 
       // If playlist is now empty then remove it

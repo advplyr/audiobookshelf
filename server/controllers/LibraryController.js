@@ -83,7 +83,7 @@ class LibraryController {
       return res.json({
         filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
         issues: req.libraryItems.filter(li => li.hasIssues).length,
-        numUserPlaylists: Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).length,
+        numUserPlaylists: await Database.models.playlist.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         library: req.library
       })
     }
@@ -557,7 +557,8 @@ class LibraryController {
 
   // api/libraries/:id/playlists
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).map(p => p.toJSONExpanded(Database.libraryItems))
+    let playlistsForUser = await Database.models.playlist.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
+    playlistsForUser = playlistsForUser.map(p => p.toJSONExpanded(Database.libraryItems))
 
     const payload = {
       results: [],

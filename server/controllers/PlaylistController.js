@@ -22,9 +22,10 @@ class PlaylistController {
   }
 
   // GET: api/playlists
-  findAllForUser(req, res) {
+  async findAllForUser(req, res) {
+    const playlistsForUser = await Database.models.playlist.getPlaylistsForUserAndLibrary(req.user.id)
     res.json({
-      playlists: Database.playlists.filter(p => p.userId === req.user.id).map(p => p.toJSONExpanded(Database.libraryItems))
+      playlists: playlistsForUser.map(p => p.toJSONExpanded(Database.libraryItems))
     })
   }
 
@@ -231,9 +232,9 @@ class PlaylistController {
     res.json(jsonExpanded)
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     if (req.params.id) {
-      const playlist = Database.playlists.find(p => p.id === req.params.id)
+      const playlist = await Database.models.playlist.getById(req.params.id)
       if (!playlist) {
         return res.status(404).send('Playlist not found')
       }
