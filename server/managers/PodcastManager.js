@@ -50,7 +50,7 @@ class PodcastManager {
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    let index = libraryItem.media.episodes.length + 1
+    let index = Math.max(...libraryItem.media.episodes.filter(ep => ep.index == null || isNaN(ep.index)).map(ep => Number(ep.index))) + 1
     for (const ep of episodesToDownload) {
       const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)

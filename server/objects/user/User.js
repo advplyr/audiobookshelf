@@ -258,11 +258,15 @@ class User {
     return hasUpdates
   }
 
-  getDefaultLibraryId(libraries) {
+  /**
+   * Get first available library id for user
+   * 
+   * @param {string[]} libraryIds
+   * @returns {string|null}
+   */
+  getDefaultLibraryId(libraryIds) {
     // Libraries should already be in ascending display order, find first accessible
-    var firstAccessibleLibrary = libraries.find(lib => this.checkCanAccessLibrary(lib.id))
-    if (!firstAccessibleLibrary) return null
-    return firstAccessibleLibrary.id
+    return libraryIds.find(lid => this.checkCanAccessLibrary(lid)) || null
   }
 
   // Returns most recent media progress w/ `media` object and optionally an `episode` object

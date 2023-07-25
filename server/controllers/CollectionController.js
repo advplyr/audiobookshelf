@@ -20,9 +20,10 @@ class CollectionController {
     res.json(jsonExpanded)
   }
 
-  findAll(req, res) {
+  async findAll(req, res) {
+    const collections = await Database.models.collection.getOldCollections()
     res.json({
-      collections: Database.collections.map(c => c.toJSONExpanded(Database.libraryItems))
+      collections: collections.map(c => c.toJSONExpanded(Database.libraryItems))
     })
   }
 
@@ -160,9 +161,9 @@ class CollectionController {
     res.json(collection.toJSONExpanded(Database.libraryItems))
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     if (req.params.id) {
-      const collection = Database.collections.find(c => c.id === req.params.id)
+      const collection = await Database.models.collection.getById(req.params.id)
       if (!collection) {
         return res.status(404).send('Collection not found')
       }

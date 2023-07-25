@@ -13,13 +13,21 @@ class CronManager {
     this.podcastCronExpressionsExecuting = []
   }
 
-  init() {
-    this.initLibraryScanCrons()
+  /**
+   * Initialize library scan crons & podcast download crons
+   * @param {oldLibrary[]} libraries 
+   */
+  init(libraries) {
+    this.initLibraryScanCrons(libraries)
     this.initPodcastCrons()
   }
 
-  initLibraryScanCrons() {
-    for (const library of Database.libraries) {
+  /**
+   * Initialize library scan crons
+   * @param {oldLibrary[]} libraries 
+   */
+  initLibraryScanCrons(libraries) {
+    for (const library of libraries) {
       if (library.settings.autoScanCronExpression) {
         this.startCronForLibrary(library)
       }

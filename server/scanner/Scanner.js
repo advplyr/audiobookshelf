@@ -66,7 +66,7 @@ class Scanner {
   }
 
   async scanLibraryItemByRequest(libraryItem) {
-    const library = Database.libraries.find(lib => lib.id === libraryItem.libraryId)
+    const library = await Database.models.library.getOldById(libraryItem.libraryId)
     if (!library) {
       Logger.error(`[Scanner] Scan libraryItem by id library not found "${libraryItem.libraryId}"`)
       return ScanResult.NOTHING
@@ -552,7 +552,7 @@ class Scanner {
 
     for (const folderId in folderGroups) {
       const libraryId = folderGroups[folderId].libraryId
-      const library = Database.libraries.find(lib => lib.id === libraryId)
+      const library = await Database.models.library.getOldById(libraryId)
       if (!library) {
         Logger.error(`[Scanner] Library not found in files changed ${libraryId}`)
         continue;

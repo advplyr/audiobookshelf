@@ -381,19 +381,19 @@ class ApiRouter {
 
   async handleDeleteLibraryItem(libraryItem) {
     // Remove media progress for this library item from all users
-    for (const user of Database.users) {
+    const users = await Database.models.user.getOldUsers()
+    for (const user of users) {
       for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItem.id)) {
         await Database.removeMediaProgress(mediaProgress.id)
       }
     }
 
     // TODO: Remove open sessions for library item
-
+    let mediaItemIds = []
     if (libraryItem.isBook) {
       // remove book from collections
-      const collectionsWithBook = Database.collections.filter(c => c.books.includes(libraryItem.id))
-      for (let i = 0; i < collectionsWithBook.length; i++) {
-        const collection = collectionsWithBook[i]
+      const collectionsWithBook = await Database.models.collection.getAllForBook(libraryItem.media.id)
+      for (const collection of collectionsWithBook) {
         collection.removeBook(libraryItem.id)
         await Database.removeCollectionBook(collection.id, libraryItem.media.id)
         SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(Database.libraryItems))
@@ -401,12 +401,15 @@ class ApiRouter {
 
       // Check remove empty series
       await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
+
+      mediaItemIds.push(libraryItem.media.id)
+    } else if (libraryItem.isPodcast) {
+      mediaItemIds.push(...libraryItem.media.episodes.map(ep => ep.id))
     }
 
     // remove item from playlists
-    const playlistsWithItem = Database.playlists.filter(p => p.hasItemsForLibraryItem(libraryItem.id))
-    for (let i = 0; i < playlistsWithItem.length; i++) {
-      const playlist = playlistsWithItem[i]
+    const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
+    for (const playlist of playlistsWithItem) {
       playlist.removeItemsForLibraryItem(libraryItem.id)
 
       // If playlist is now empty then remove it
@@ -462,11 +465,11 @@ class ApiRouter {
   async getAllSessionsWithUserData() {
     const sessions = await Database.getPlaybackSessions()
     sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
     return sessions.map(se => {
-      const user = Database.users.find(u => u.id === se.userId)
       return {
         ...se,
-        user: user ? { id: user.id, username: user.username } : null
+        user: minifiedUserObjects.find(u => u.id === se.userId) || null
       }
     })
   }

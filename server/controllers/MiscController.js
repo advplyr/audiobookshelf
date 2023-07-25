@@ -24,18 +24,18 @@ class MiscController {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
-    var files = Object.values(req.files)
-    var title = req.body.title
-    var author = req.body.author
-    var series = req.body.series
-    var libraryId = req.body.library
-    var folderId = req.body.folder
+    const files = Object.values(req.files)
+    const title = req.body.title
+    const author = req.body.author
+    const series = req.body.series
+    const libraryId = req.body.library
+    const folderId = req.body.folder
 
-    var library = Database.libraries.find(lib => lib.id === libraryId)
+    const library = await Database.models.library.getOldById(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
-    var folder = library.folders.find(fold => fold.id === folderId)
+    const folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
@@ -45,8 +45,8 @@ class MiscController {
     }
 
     // For setting permissions recursively
-    var outputDirectory = ''
-    var firstDirPath = ''
+    let outputDirectory = ''
+    let firstDirPath = ''
 
     if (library.isPodcast) { // Podcasts only in 1 folder
       outputDirectory = Path.join(folder.fullPath, title)
@@ -62,8 +62,7 @@ class MiscController {
       }
     }
 
-    var exists = await fs.pathExists(outputDirectory)
-    if (exists) {
+    if (await fs.pathExists(outputDirectory)) {
       Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
       return res.status(500).send(`Directory "${outputDirectory}" already exists`)
     }
@@ -132,12 +131,19 @@ class MiscController {
     })
   }
 
-  authorize(req, res) {
+  /**
+   * POST: /api/authorize
+   * Used to authorize an API token
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
+  async authorize(req, res) {
     if (!req.user) {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    const userResponse = this.auth.getUserLoginResponsePayload(req.user)
+    const userResponse = await this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
 

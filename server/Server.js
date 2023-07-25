@@ -93,6 +93,10 @@ class Server {
     this.auth.authMiddleware(req, res, next)
   }
 
+  /**
+   * Initialize database, backups, logs, rss feeds, cron jobs & watcher
+   * Cleanup stale/invalid data
+   */
   async init() {
     Logger.info('[Server] Init v' + version)
     await this.playbackSessionManager.removeOrphanStreams()
@@ -105,20 +109,21 @@ class Server {
     }
 
     await this.cleanUserData() // Remove invalid user item progress
-    await this.purgeMetadata() // Remove metadata folders without library item
     await this.cacheManager.ensureCachePaths()
 
     await this.backupManager.init()
     await this.logManager.init()
     await this.apiRouter.checkRemoveEmptySeries(Database.series) // Remove empty series
     await this.rssFeedManager.init()
-    this.cronManager.init()
+
+    const libraries = await Database.models.library.getAllOldLibraries()
+    this.cronManager.init(libraries)
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
       this.watcher.disabled = true
     } else {
-      this.watcher.initWatcher(Database.libraries)
+      this.watcher.initWatcher(libraries)
       this.watcher.on('files', this.filesChanged.bind(this))
     }
   }
@@ -243,39 +248,10 @@ class Server {
     await this.scanner.scanFilesChanged(fileUpdates)
   }
 
-  // Remove unused /metadata/items/{id} folders
-  async purgeMetadata() {
-    const itemsMetadata = Path.join(global.MetadataPath, 'items')
-    if (!(await fs.pathExists(itemsMetadata))) return
-    const foldersInItemsMetadata = await fs.readdir(itemsMetadata)
-
-    let purged = 0
-    await Promise.all(foldersInItemsMetadata.map(async foldername => {
-      const itemFullPath = fileUtils.filePathToPOSIX(Path.join(itemsMetadata, foldername))
-
-      const hasMatchingItem = Database.libraryItems.find(li => {
-        if (!li.media.coverPath) return false
-        return itemFullPath === fileUtils.filePathToPOSIX(Path.dirname(li.media.coverPath))
-      })
-      if (!hasMatchingItem) {
-        Logger.debug(`[Server] Purging unused metadata ${itemFullPath}`)
-
-        await fs.remove(itemFullPath).then(() => {
-          purged++
-        }).catch((err) => {
-          Logger.error(`[Server] Failed to delete folder path ${itemFullPath}`, err)
-        })
-      }
-    }))
-    if (purged > 0) {
-      Logger.info(`[Server] Purged ${purged} unused library item metadata`)
-    }
-    return purged
-  }
-
   // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
   async cleanUserData() {
-    for (const _user of Database.users) {
+    const users = await Database.models.user.getOldUsers()
+    for (const _user of users) {
       if (_user.mediaProgress.length) {
         for (const mediaProgress of _user.mediaProgress) {
           const libraryItem = Database.libraryItems.find(li => li.id === mediaProgress.libraryItemId)

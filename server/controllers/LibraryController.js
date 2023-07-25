@@ -44,7 +44,9 @@ class LibraryController {
 
     const library = new Library()
 
-    newLibraryPayload.displayOrder = Database.libraries.map(li => li.displayOrder).sort((a, b) => a - b).pop() + 1
+    let currentLargestDisplayOrder = await Database.models.library.getMaxDisplayOrder()
+    if (isNaN(currentLargestDisplayOrder)) currentLargestDisplayOrder = 0
+    newLibraryPayload.displayOrder = currentLargestDisplayOrder + 1
     library.setData(newLibraryPayload)
     await Database.createLibrary(library)
 
@@ -60,17 +62,18 @@ class LibraryController {
     res.json(library)
   }
 
-  findAll(req, res) {
+  async findAll(req, res) {
+    const libraries = await Database.models.library.getAllOldLibraries()
+
     const librariesAccessible = req.user.librariesAccessible || []
     if (librariesAccessible.length) {
       return res.json({
-        libraries: Database.libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON())
+        libraries: libraries.filter(lib => librariesAccessible.includes(lib.id)).map(lib => lib.toJSON())
       })
     }
 
     res.json({
-      libraries: Database.libraries.map(lib => lib.toJSON())
-      // libraries: Database.libraries.map(lib => lib.toJSON())
+      libraries: libraries.map(lib => lib.toJSON())
     })
   }
 
@@ -80,7 +83,7 @@ class LibraryController {
       return res.json({
         filterdata: libraryHelpers.getDistinctFilterDataNew(req.libraryItems),
         issues: req.libraryItems.filter(li => li.hasIssues).length,
-        numUserPlaylists: Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).length,
+        numUserPlaylists: await Database.models.playlist.getNumPlaylistsForUserAndLibrary(req.user.id, req.library.id),
         library: req.library
       })
     }
@@ -151,6 +154,12 @@ class LibraryController {
     return res.json(library.toJSON())
   }
 
+  /**
+   * DELETE: /api/libraries/:id
+   * Delete a library
+   * @param {*} req 
+   * @param {*} res 
+   */
   async delete(req, res) {
     const library = req.library
 
@@ -158,10 +167,9 @@ class LibraryController {
     this.watcher.removeLibrary(library)
 
     // Remove collections for library
-    const collections = Database.collections.filter(c => c.libraryId === library.id)
-    for (const collection of collections) {
-      Logger.info(`[Server] deleting collection "${collection.name}" for library "${library.name}"`)
-      await Database.removeCollection(collection.id)
+    const numCollectionsRemoved = await Database.models.collection.removeAllForLibrary(library.id)
+    if (numCollectionsRemoved) {
+      Logger.info(`[Server] Removed ${numCollectionsRemoved} collections for library "${library.name}"`)
     }
 
     // Remove items in this library
@@ -173,6 +181,10 @@ class LibraryController {
 
     const libraryJson = library.toJSON()
     await Database.removeLibrary(library.id)
+
+    // Re-order libraries
+    await Database.models.library.resetDisplayOrder()
+
     SocketAuthority.emitter('library_removed', libraryJson)
     return res.json(libraryJson)
   }
@@ -514,7 +526,9 @@ class LibraryController {
       include: include.join(',')
     }
 
-    let collections = await Promise.all(Database.collections.filter(c => c.libraryId === req.library.id).map(async c => {
+    const collectionsForLibrary = await Database.models.collection.getAllForLibrary(req.library.id)
+
+    let collections = await Promise.all(collectionsForLibrary.map(async c => {
       const expanded = c.toJSONExpanded(libraryItems, payload.minified)
 
       // If all books restricted to user in this collection then hide this collection
@@ -543,7 +557,8 @@ class LibraryController {
 
   // api/libraries/:id/playlists
   async getUserPlaylistsForLibrary(req, res) {
-    let playlistsForUser = Database.playlists.filter(p => p.userId === req.user.id && p.libraryId === req.library.id).map(p => p.toJSONExpanded(Database.libraryItems))
+    let playlistsForUser = await Database.models.playlist.getPlaylistsForUserAndLibrary(req.user.id, req.library.id)
+    playlistsForUser = playlistsForUser.map(p => p.toJSONExpanded(Database.libraryItems))
 
     const payload = {
       results: [],
@@ -601,17 +616,23 @@ class LibraryController {
     res.json(categories)
   }
 
-  // PATCH: Change the order of libraries
+  /**
+   * POST: /api/libraries/order
+   * Change the display order of libraries
+   * @param {*} req 
+   * @param {*} res 
+   */
   async reorder(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error('[LibraryController] ReorderLibraries invalid user', req.user)
       return res.sendStatus(403)
     }
+    const libraries = await Database.models.library.getAllOldLibraries()
 
-    var orderdata = req.body
-    var hasUpdates = false
+    const orderdata = req.body
+    let hasUpdates = false
     for (let i = 0; i < orderdata.length; i++) {
-      var library = Database.libraries.find(lib => lib.id === orderdata[i].id)
+      const library = libraries.find(lib => lib.id === orderdata[i].id)
       if (!library) {
         Logger.error(`[LibraryController] Invalid library not found in reorder ${orderdata[i].id}`)
         return res.sendStatus(500)
@@ -623,14 +644,14 @@ class LibraryController {
     }
 
     if (hasUpdates) {
-      Database.libraries.sort((a, b) => a.displayOrder - b.displayOrder)
+      libraries.sort((a, b) => a.displayOrder - b.displayOrder)
       Logger.debug(`[LibraryController] Updated library display orders`)
     } else {
       Logger.debug(`[LibraryController] Library orders were up to date`)
     }
 
     res.json({
-      libraries: Database.libraries.map(lib => lib.toJSON())
+      libraries: libraries.map(lib => lib.toJSON())
     })
   }
 
@@ -902,13 +923,13 @@ class LibraryController {
     res.send(opmlText)
   }
 
-  middleware(req, res, next) {
+  async middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
       return res.sendStatus(403)
     }
 
-    const library = Database.libraries.find(lib => lib.id === req.params.id)
+    const library = await Database.models.library.getOldById(req.params.id)
     if (!library) {
       return res.status(404).send('Library not found')
     }

@@ -43,17 +43,17 @@ class SessionController {
     res.json(payload)
   }
 
-  getOpenSessions(req, res) {
+  async getOpenSessions(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[SessionController] getOpenSessions: Non-admin user requested open session data ${req.user.id}/"${req.user.username}"`)
       return res.sendStatus(404)
     }
 
+    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
     const openSessions = this.playbackSessionManager.sessions.map(se => {
-      const user = Database.users.find(u => u.id === se.userId) || null
       return {
         ...se.toJSON(),
-        user: user ? { id: user.id, username: user.username } : null
+        user: minifiedUserObjects.find(u => u.id === se.userId) || null
       }
     })
 

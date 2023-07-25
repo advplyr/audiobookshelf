@@ -4,6 +4,10 @@ const oldLibrary = require('../objects/Library')
 
 module.exports = (sequelize) => {
   class Library extends Model {
+    /**
+     * Get all old libraries
+     * @returns {Promise<oldLibrary[]>}
+     */
     static async getAllOldLibraries() {
       const libraries = await this.findAll({
         include: sequelize.models.libraryFolder,
@@ -12,6 +16,11 @@ module.exports = (sequelize) => {
       return libraries.map(lib => this.getOldLibrary(lib))
     }
 
+    /**
+     * Convert expanded Library to oldLibrary
+     * @param {Library} libraryExpanded 
+     * @returns {Promise<oldLibrary>}
+     */
     static getOldLibrary(libraryExpanded) {
       const folders = libraryExpanded.libraryFolders.map(folder => {
         return {
@@ -58,6 +67,11 @@ module.exports = (sequelize) => {
       })
     }
 
+    /**
+     * Update library and library folders
+     * @param {object} oldLibrary 
+     * @returns 
+     */
     static async updateFromOld(oldLibrary) {
       const existingLibrary = await this.findByPk(oldLibrary.id, {
         include: sequelize.models.libraryFolder
@@ -112,12 +126,70 @@ module.exports = (sequelize) => {
       }
     }
 
+    /**
+     * Destroy library by id
+     * @param {string} libraryId 
+     * @returns 
+     */
     static removeById(libraryId) {
       return this.destroy({
         where: {
           id: libraryId
         }
       })
+    }
+
+    /**
+     * Get all library ids
+     * @returns {Promise<string[]>} array of library ids
+     */
+    static async getAllLibraryIds() {
+      const libraries = await this.findAll({
+        attributes: ['id']
+      })
+      return libraries.map(l => l.id)
+    }
+
+    /**
+     * Find Library by primary key & return oldLibrary
+     * @param {string} libraryId 
+     * @returns {Promise<oldLibrary|null>} Returns null if not found
+     */
+    static async getOldById(libraryId) {
+      if (!libraryId) return null
+      const library = await this.findByPk(libraryId, {
+        include: sequelize.models.libraryFolder
+      })
+      if (!library) return null
+      return this.getOldLibrary(library)
+    }
+
+    /**
+     * Get the largest value in the displayOrder column
+     * Used for setting a new libraries display order
+     * @returns {Promise<number>}
+     */
+    static getMaxDisplayOrder() {
+      return this.max('displayOrder') || 0
+    }
+
+    /**
+     * Updates displayOrder to be sequential
+     * Used after removing a library
+     */
+    static async resetDisplayOrder() {
+      const libraries = await this.findAll({
+        order: [['displayOrder', 'ASC']]
+      })
+      for (let i = 0; i < libraries.length; i++) {
+        const library = libraries[i]
+        if (library.displayOrder !== i + 1) {
+          Logger.dev(`[Library] Updating display order of library from ${library.displayOrder} to ${i + 1}`)
+          await library.update({ displayOrder: i + 1 }).catch((error) => {
+            Logger.error(`[Library] Failed to update library display order to ${i + 1}`, error)
+          })
+        }
+      }
     }
   }
 

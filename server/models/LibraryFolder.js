@@ -1,7 +1,18 @@
 const { DataTypes, Model } = require('sequelize')
 
 module.exports = (sequelize) => {
-  class LibraryFolder extends Model { }
+  class LibraryFolder extends Model {
+    /**
+     * Gets all library folder path strings
+     * @returns {Promise<string[]>} array of library folder paths
+     */
+    static async getAllLibraryFolderPaths() {
+      const libraryFolders = await this.findAll({
+        attributes: ['path']
+      })
+      return libraryFolders.map(l => l.path)
+    }
+  }
 
   LibraryFolder.init({
     id: {

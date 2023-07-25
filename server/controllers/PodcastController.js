@@ -19,7 +19,7 @@ class PodcastController {
     }
     const payload = req.body
 
-    const library = Database.libraries.find(lib => lib.id === payload.libraryId)
+    const library = await Database.models.library.getOldById(payload.libraryId)
     if (!library) {
       Logger.error(`[PodcastController] Create: Library not found "${payload.libraryId}"`)
       return res.status(404).send('Library not found')
@@ -241,18 +241,18 @@ class PodcastController {
 
   // DELETE: api/podcasts/:id/episode/:episodeId
   async removeEpisode(req, res) {
-    var episodeId = req.params.episodeId
-    var libraryItem = req.libraryItem
-    var hardDelete = req.query.hard === '1'
+    const episodeId = req.params.episodeId
+    const libraryItem = req.libraryItem
+    const hardDelete = req.query.hard === '1'
 
-    var episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
+    const episode = libraryItem.media.episodes.find(ep => ep.id === episodeId)
     if (!episode) {
       Logger.error(`[PodcastController] removeEpisode episode ${episodeId} not found for item ${libraryItem.id}`)
       return res.sendStatus(404)
     }
 
     if (hardDelete) {
-      var audioFile = episode.audioFile
+      const audioFile = episode.audioFile
       // TODO: this will trigger the watcher. should maybe handle this gracefully
       await fs.remove(audioFile.metadata.path).then(() => {
         Logger.info(`[PodcastController] Hard deleted episode file at "${audioFile.metadata.path}"`)
@@ -265,6 +265,22 @@ class PodcastController {
     const episodeRemoved = libraryItem.media.removeEpisode(episodeId)
     if (episodeRemoved && episodeRemoved.audioFile) {
       libraryItem.removeLibraryFile(episodeRemoved.audioFile.ino)
+    }
+
+    // Update/remove playlists that had this podcast episode
+    const playlistsWithEpisode = await Database.models.playlist.getPlaylistsForMediaItemIds([episodeId])
+    for (const playlist of playlistsWithEpisode) {
+      playlist.removeItem(libraryItem.id, episodeId)
+
+      // If playlist is now empty then remove it
+      if (!playlist.items.length) {
+        Logger.info(`[PodcastController] Playlist "${playlist.name}" has no more items - removing it`)
+        await Database.removePlaylist(playlist.id)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(Database.libraryItems))
+      } else {
+        await Database.updatePlaylist(playlist)
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
+      }
     }
 
     await Database.updateLibraryItem(libraryItem)
