@@ -11,6 +11,7 @@ const languageCodeMap = {
   'fr': { label: 'Français', dateFnsLocale: 'fr' },
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
+  'lt': { label: 'Lietuvių', dateFnsLocale: 'lt' },
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
