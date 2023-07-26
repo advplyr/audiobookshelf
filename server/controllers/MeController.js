@@ -188,12 +188,12 @@ class MeController {
     for (const localProgress of localMediaProgress) {
       if (!localProgress.libraryItemId) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object`, localProgress)
-        return
+        continue
       }
       const libraryItem = Database.getLibraryItem(localProgress.libraryItemId)
       if (!libraryItem) {
         Logger.error(`[MeController] syncLocalMediaProgress invalid local media progress object no library item`, localProgress)
-        return
+        continue
       }
 
       let mediaProgress = req.user.getMediaProgress(localProgress.libraryItemId, localProgress.episodeId)
