@@ -189,6 +189,31 @@ class LibraryController {
     return res.json(libraryJson)
   }
 
+  async getLibraryItemsNew(req, res) {
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+
+    const payload = {
+      results: [],
+      total: undefined,
+      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
+      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0,
+      sortBy: req.query.sort,
+      sortDesc: req.query.desc === '1',
+      filterBy: req.query.filter,
+      mediaType: req.library.mediaType,
+      minified: req.query.minified === '1',
+      collapseseries: req.query.collapseseries === '1',
+      include: include.join(',')
+    }
+    payload.offset = payload.page * payload.limit
+
+    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library.id, req.user.id, payload)
+    payload.results = libraryItems.map(li => li.toJSONMinified())
+    payload.total = count
+
+    res.json(payload)
+  }
+
   // api/libraries/:id/items
   // TODO: Optimize this method, items are iterated through several times but can be combined
   async getLibraryItems(req, res) {

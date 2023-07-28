@@ -5,19 +5,52 @@ module.exports = (sequelize) => {
   class Book extends Model {
     static getOldBook(libraryItemExpanded) {
       const bookExpanded = libraryItemExpanded.media
-      const authors = bookExpanded.authors.map(au => {
-        return {
-          id: au.id,
-          name: au.name
-        }
-      })
-      const series = bookExpanded.series.map(se => {
-        return {
-          id: se.id,
-          name: se.name,
-          sequence: se.bookSeries.sequence
-        }
-      })
+      let authors = []
+      if (bookExpanded.authors?.length) {
+        authors = bookExpanded.authors.map(au => {
+          return {
+            id: au.id,
+            name: au.name
+          }
+        })
+      } else if (bookExpanded.bookAuthors?.length) {
+        authors = bookExpanded.bookAuthors.map(ba => {
+          if (ba.author) {
+            return {
+              id: ba.author.id,
+              name: ba.author.name
+            }
+          } else {
+            Logger.error(`[Book] Invalid bookExpanded bookAuthors: no author`, ba)
+            return null
+          }
+        }).filter(a => a)
+      }
+
+      let series = []
+      if (bookExpanded.series?.length) {
+        series = bookExpanded.series.map(se => {
+          return {
+            id: se.id,
+            name: se.name,
+            sequence: se.bookSeries.sequence
+          }
+        })
+      } else if (bookExpanded.bookSeries?.length) {
+        series = bookExpanded.bookSeries.map(bs => {
+          if (bs.series) {
+            return {
+              id: bs.series.id,
+              name: bs.series.name,
+              sequence: bs.sequence
+            }
+          } else {
+            Logger.error(`[Book] Invalid bookExpanded bookSeries: no series`, bs)
+            return null
+          }
+        }).filter(s => s)
+      }
+
       return {
         id: bookExpanded.id,
         libraryItemId: libraryItemExpanded.id,
@@ -66,6 +99,7 @@ module.exports = (sequelize) => {
       return {
         id: oldBook.id,
         title: oldBook.metadata.title,
+        titleIgnorePrefix: oldBook.metadata.titleIgnorePrefix,
         subtitle: oldBook.metadata.subtitle,
         publishedYear: oldBook.metadata.publishedYear,
         publishedDate: oldBook.metadata.publishedDate,
@@ -79,6 +113,7 @@ module.exports = (sequelize) => {
         narrators: oldBook.metadata.narrators,
         ebookFile: oldBook.ebookFile?.toJSON() || null,
         coverPath: oldBook.coverPath,
+        duration: oldBook.duration,
         audioFiles: oldBook.audioFiles?.map(af => af.toJSON()) || [],
         chapters: oldBook.chapters,
         tags: oldBook.tags,
@@ -94,6 +129,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     title: DataTypes.STRING,
+    titleIgnorePrefix: DataTypes.STRING,
     subtitle: DataTypes.STRING,
     publishedYear: DataTypes.STRING,
     publishedDate: DataTypes.STRING,
@@ -105,6 +141,7 @@ module.exports = (sequelize) => {
     explicit: DataTypes.BOOLEAN,
     abridged: DataTypes.BOOLEAN,
     coverPath: DataTypes.STRING,
+    duration: DataTypes.FLOAT,
 
     narrators: DataTypes.JSON,
     audioFiles: DataTypes.JSON,

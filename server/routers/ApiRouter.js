@@ -74,6 +74,7 @@ class ApiRouter {
     this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
     this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
 
+    this.router.get('/libraries/:id/items2', LibraryController.middleware.bind(this), LibraryController.getLibraryItemsNew.bind(this))
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
     this.router.delete('/libraries/:id/issues', LibraryController.middleware.bind(this), LibraryController.removeLibraryItemsWithIssues.bind(this))
     this.router.get('/libraries/:id/episode-downloads', LibraryController.middleware.bind(this), LibraryController.getEpisodeDownloadQueue.bind(this))

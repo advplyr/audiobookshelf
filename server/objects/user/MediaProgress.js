@@ -72,6 +72,10 @@ class MediaProgress {
     return !this.isFinished && (this.progress > 0 || (this.ebookLocation != null && this.ebookProgress > 0))
   }
 
+  get notStarted() {
+    return !this.isFinished && this.progress == 0
+  }
+
   setData(libraryItem, progress, episodeId, userId) {
     this.id = uuidv4()
     this.userId = userId

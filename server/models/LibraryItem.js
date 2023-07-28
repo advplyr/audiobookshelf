@@ -1,6 +1,7 @@
 const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
+const libraryFilters = require('../utils/queries/libraryFilters')
 const { areEquivalent } = require('../utils/index')
 
 module.exports = (sequelize) => {
@@ -374,6 +375,7 @@ module.exports = (sequelize) => {
         mtime: oldLibraryItem.mtimeMs,
         ctime: oldLibraryItem.ctimeMs,
         birthtime: oldLibraryItem.birthtimeMs,
+        size: oldLibraryItem.size,
         lastScan: oldLibraryItem.lastScan,
         lastScanVersion: oldLibraryItem.scanVersion,
         libraryId: oldLibraryItem.libraryId,
@@ -390,6 +392,14 @@ module.exports = (sequelize) => {
         },
         individualHooks: true
       })
+    }
+
+    static async getByFilterAndSort(libraryId, userId, { filterBy, sortBy, sortDesc, limit, offset }) {
+      const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(libraryId, filterBy, sortBy, sortDesc, limit, offset, userId)
+      return {
+        libraryItems: libraryItems.map(ti => this.getOldLibraryItem(ti)),
+        count
+      }
     }
 
     getMedia(options) {
@@ -416,6 +426,7 @@ module.exports = (sequelize) => {
     mtime: DataTypes.DATE(6),
     ctime: DataTypes.DATE(6),
     birthtime: DataTypes.DATE(6),
+    size: DataTypes.BIGINT,
     lastScan: DataTypes.DATE,
     lastScanVersion: DataTypes.STRING,
     libraryFiles: DataTypes.JSON,

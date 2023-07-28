@@ -43,6 +43,7 @@ module.exports = (sequelize) => {
       return {
         id: oldSeries.id,
         name: oldSeries.name,
+        nameIgnorePrefix: oldSeries.nameIgnorePrefix,
         description: oldSeries.description,
         libraryId: oldSeries.libraryId
       }
@@ -64,6 +65,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     name: DataTypes.STRING,
+    nameIgnorePrefix: DataTypes.STRING,
     description: DataTypes.TEXT
   }, {
     sequelize,

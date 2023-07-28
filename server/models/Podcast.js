@@ -39,6 +39,7 @@ module.exports = (sequelize) => {
       return {
         id: oldPodcast.id,
         title: oldPodcastMetadata.title,
+        titleIgnorePrefix: oldPodcastMetadata.titleIgnorePrefix,
         author: oldPodcastMetadata.author,
         releaseDate: oldPodcastMetadata.releaseDate,
         feedURL: oldPodcastMetadata.feedUrl,
@@ -69,6 +70,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     title: DataTypes.STRING,
+    titleIgnorePrefix: DataTypes.STRING,
     author: DataTypes.STRING,
     releaseDate: DataTypes.STRING,
     feedURL: DataTypes.STRING,

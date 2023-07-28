@@ -4,6 +4,7 @@ const uuidv4 = require("uuid").v4
 const Logger = require('../../Logger')
 const fs = require('../../libs/fsExtra')
 const oldDbFiles = require('./oldDbFiles')
+const parseNameString = require('../parsers/parseNameString')
 
 const oldDbIdMap = {
   users: {},
@@ -17,6 +18,18 @@ const oldDbIdMap = {
   books: {}, // key is library item id
   podcasts: {}, // key is library item id
   devices: {} // key is a json stringify of the old DeviceInfo data OR deviceId if it exists
+}
+
+let prefixesToIgnore = ['the']
+function getTitleIgnorePrefix(title) {
+  if (!title?.trim()) return title
+  for (const prefix of prefixesToIgnore) {
+    // e.g. for prefix "the". If title is "The Book" return "Book"
+    if (title.toLowerCase().startsWith(`${prefix} `)) {
+      return title.substring(prefix.length).trim()
+    }
+  }
+  return title
 }
 
 function getDeviceInfoString(deviceInfo, UserId) {
@@ -54,12 +67,21 @@ function migrateBook(oldLibraryItem, LibraryItem) {
     bookAuthor: []
   }
 
+  const tracks = (oldBook.audioFiles || []).filter(af => !af.exclude && !af.invalid)
+  let duration = 0
+  for (const track of tracks) {
+    if (track.duration !== null && !isNaN(track.duration)) {
+      duration += track.duration
+    }
+  }
+
   //
   // Migrate Book
   //
   const Book = {
     id: uuidv4(),
     title: oldBook.metadata.title,
+    titleIgnorePrefix: getTitleIgnorePrefix(oldBook.metadata.title),
     subtitle: oldBook.metadata.subtitle,
     publishedYear: oldBook.metadata.publishedYear,
     publishedDate: oldBook.metadata.publishedDate,
@@ -77,6 +99,7 @@ function migrateBook(oldLibraryItem, LibraryItem) {
     narrators: oldBook.metadata.narrators,
     ebookFile: oldBook.ebookFile,
     coverPath: oldBook.coverPath,
+    duration,
     audioFiles: oldBook.audioFiles,
     chapters: oldBook.chapters,
     tags: oldBook.tags,
@@ -152,6 +175,7 @@ function migratePodcast(oldLibraryItem, LibraryItem) {
   const Podcast = {
     id: uuidv4(),
     title: oldPodcastMetadata.title,
+    titleIgnorePrefix: getTitleIgnorePrefix(oldPodcastMetadata.title),
     author: oldPodcastMetadata.author,
     releaseDate: oldPodcastMetadata.releaseDate,
     feedURL: oldPodcastMetadata.feedUrl,
@@ -243,6 +267,13 @@ function migrateLibraryItems(oldLibraryItems) {
       continue
     }
 
+    let size = 0
+    for (const libraryFile of oldLibraryItem.libraryFiles) {
+      if (libraryFile.metadata?.size && !isNaN(libraryFile.metadata?.size)) {
+        size += libraryFile.metadata.size
+      }
+    }
+
     //
     // Migrate LibraryItem
     //
@@ -260,6 +291,7 @@ function migrateLibraryItems(oldLibraryItems) {
       mtime: oldLibraryItem.mtimeMs,
       ctime: oldLibraryItem.ctimeMs,
       birthtime: oldLibraryItem.birthtimeMs,
+      size,
       lastScan: oldLibraryItem.lastScan,
       lastScanVersion: oldLibraryItem.scanVersion,
       createdAt: oldLibraryItem.addedAt,
@@ -371,9 +403,11 @@ function migrateAuthors(oldAuthors, oldLibraryItems) {
     }
 
     for (const libraryId of librariesWithThisAuthor) {
+      const lastFirst = oldAuthor.name ? parseNameString.nameToLastFirst(oldAuthor.name) : ''
       const Author = {
         id: uuidv4(),
         name: oldAuthor.name,
+        lastFirst,
         asin: oldAuthor.asin || null,
         description: oldAuthor.description,
         imagePath: oldAuthor.imagePath,
@@ -415,6 +449,7 @@ function migrateSeries(oldSerieses, oldLibraryItems) {
       const Series = {
         id: uuidv4(),
         name: oldSeries.name,
+        nameIgnorePrefix: getTitleIgnorePrefix(oldSeries.name),
         description: oldSeries.description || null,
         createdAt: oldSeries.addedAt || Date.now(),
         updatedAt: oldSeries.updatedAt || Date.now(),
@@ -886,6 +921,11 @@ function migrateSettings(oldSettings) {
       key: 'server-settings',
       value: serverSettings
     })
+
+    if (serverSettings.sortingPrefixes?.length) {
+      // Used for migrating titles/names
+      prefixesToIgnore = serverSettings.sortingPrefixes
+    }
   }
 
   if (notificationSettings) {
@@ -1313,27 +1353,263 @@ module.exports.migrationPatch = async (ctx) => {
 
 /**
  * Migration from 2.3.3 to 2.3.4
+ * Populating the size column on libraryItem
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2LibraryItems(ctx, offset = 0) {
+  const libraryItems = await ctx.models.libraryItem.findAll({
+    limit: 500,
+    offset
+  })
+  if (!libraryItems.length) return
+
+  const bulkUpdateItems = []
+  for (const libraryItem of libraryItems) {
+    if (libraryItem.libraryFiles?.length) {
+      let size = 0
+      libraryItem.libraryFiles.forEach(lf => {
+        if (!isNaN(lf.metadata?.size)) {
+          size += Number(lf.metadata.size)
+        }
+      })
+      bulkUpdateItems.push({
+        id: libraryItem.id,
+        size
+      })
+    }
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} library items`)
+    await ctx.models.libraryItem.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['size']
+    })
+  }
+
+  if (libraryItems.length < 500) {
+    return
+  }
+  return migrationPatch2LibraryItems(ctx, offset + libraryItems.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Populating the duration & titleIgnorePrefix column on book
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2Books(ctx, offset = 0) {
+  const books = await ctx.models.book.findAll({
+    limit: 500,
+    offset
+  })
+  if (!books.length) return
+
+  const bulkUpdateItems = []
+  for (const book of books) {
+    let duration = 0
+
+    if (book.audioFiles?.length) {
+      const tracks = book.audioFiles.filter(af => !af.exclude && !af.invalid)
+      for (const track of tracks) {
+        if (track.duration !== null && !isNaN(track.duration)) {
+          duration += track.duration
+        }
+      }
+    }
+
+    bulkUpdateItems.push({
+      id: book.id,
+      titleIgnorePrefix: getTitleIgnorePrefix(book.title),
+      duration
+    })
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} books`)
+    await ctx.models.book.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['duration', 'titleIgnorePrefix']
+    })
+  }
+
+  if (books.length < 500) {
+    return
+  }
+  return migrationPatch2Books(ctx, offset + books.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Populating the titleIgnorePrefix column on podcast
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2Podcasts(ctx, offset = 0) {
+  const podcasts = await ctx.models.podcast.findAll({
+    limit: 500,
+    offset
+  })
+  if (!podcasts.length) return
+
+  const bulkUpdateItems = []
+  for (const podcast of podcasts) {
+    bulkUpdateItems.push({
+      id: podcast.id,
+      titleIgnorePrefix: getTitleIgnorePrefix(podcast.title)
+    })
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} podcasts`)
+    await ctx.models.podcast.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['titleIgnorePrefix']
+    })
+  }
+
+  if (podcasts.length < 500) {
+    return
+  }
+  return migrationPatch2Podcasts(ctx, offset + podcasts.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Populating the nameIgnorePrefix column on series
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2Series(ctx, offset = 0) {
+  const allSeries = await ctx.models.series.findAll({
+    limit: 500,
+    offset
+  })
+  if (!allSeries.length) return
+
+  const bulkUpdateItems = []
+  for (const series of allSeries) {
+    bulkUpdateItems.push({
+      id: series.id,
+      nameIgnorePrefix: getTitleIgnorePrefix(series.name)
+    })
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} series`)
+    await ctx.models.series.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['nameIgnorePrefix']
+    })
+  }
+
+  if (allSeries.length < 500) {
+    return
+  }
+  return migrationPatch2Series(ctx, offset + allSeries.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Populating the lastFirst column on author
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2Authors(ctx, offset = 0) {
+  const authors = await ctx.models.author.findAll({
+    limit: 500,
+    offset
+  })
+  if (!authors.length) return
+
+  const bulkUpdateItems = []
+  for (const author of authors) {
+    if (author.name?.trim()) {
+      bulkUpdateItems.push({
+        id: author.id,
+        lastFirst: parseNameString.nameToLastFirst(author.name)
+      })
+    }
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} authors`)
+    await ctx.models.author.bulkCreate(bulkUpdateItems, {
+      updateOnDuplicate: ['lastFirst']
+    })
+  }
+
+  if (authors.length < 500) {
+    return
+  }
+  return migrationPatch2Authors(ctx, offset + authors.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
  * Adding coverPath column to Feed model
  * @param {/src/Database} ctx 
  */
 module.exports.migrationPatch2 = async (ctx) => {
   const queryInterface = ctx.sequelize.getQueryInterface()
   const feedTableDescription = await queryInterface.describeTable('feeds')
+  const authorsTableDescription = await queryInterface.describeTable('authors')
 
-  if (feedTableDescription?.coverPath) {
-    Logger.info(`[dbMigration] Migration patch 2.3.3+ - coverPath column is already on model`)
-    return
+  if (feedTableDescription?.coverPath && authorsTableDescription?.lastFirst) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - columns already on model`)
+    return false
   }
+  Logger.info(`[dbMigration] Applying migration patch from 2.3.3+`)
 
   try {
     await queryInterface.sequelize.transaction(t => {
-      return Promise.all([
-        queryInterface.addColumn('feeds', 'coverPath', {
+      const queries = [
+        queryInterface.addColumn('authors', 'lastFirst', {
           type: DataTypes.STRING
-        }, { transaction: t })
-      ])
+        }, { transaction: t }),
+        queryInterface.addColumn('libraryItems', 'size', {
+          type: DataTypes.BIGINT
+        }, { transaction: t }),
+        queryInterface.addColumn('books', 'duration', {
+          type: DataTypes.FLOAT
+        }, { transaction: t }),
+        queryInterface.addColumn('books', 'titleIgnorePrefix', {
+          type: DataTypes.STRING
+        }, { transaction: t }),
+        queryInterface.addColumn('podcasts', 'titleIgnorePrefix', {
+          type: DataTypes.STRING
+        }, { transaction: t }),
+        queryInterface.addColumn('series', 'nameIgnorePrefix', {
+          type: DataTypes.STRING
+        }, { transaction: t }),
+      ]
+      if (!feedTableDescription?.coverPath) {
+        queries.push(queryInterface.addColumn('feeds', 'coverPath', {
+          type: DataTypes.STRING
+        }, { transaction: t }))
+      }
+      return Promise.all(queries)
     })
+
+    if (global.ServerSettings.sortingPrefixes?.length) {
+      prefixesToIgnore = global.ServerSettings.sortingPrefixes
+    }
+
+    // Patch library items size column
+    await migrationPatch2LibraryItems(ctx, 0)
+
+    // Patch books duration & titleIgnorePrefix column
+    await migrationPatch2Books(ctx, 0)
+
+    // Patch podcasts titleIgnorePrefix column
+    await migrationPatch2Podcasts(ctx, 0)
+
+    // Patch authors lastFirst column
+    await migrationPatch2Authors(ctx, 0)
+
+    // Patch series nameIgnorePrefix column
+    await migrationPatch2Series(ctx, 0)
+
     Logger.info(`[dbMigration] Migration patch 2.3.3+ finished`)
+    return true
   } catch (error) {
     Logger.error(`[dbMigration] Migration from 2.3.3+ column creation failed`, error)
     throw new Error('Migration 2.3.3+ failed ' + error)

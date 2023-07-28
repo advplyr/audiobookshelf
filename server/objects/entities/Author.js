@@ -1,6 +1,6 @@
 const Logger = require('../../Logger')
 const uuidv4 = require("uuid").v4
-const { checkNamesAreEqual } = require('../../utils/parsers/parseNameString')
+const { checkNamesAreEqual, nameToLastFirst } = require('../../utils/parsers/parseNameString')
 
 class Author {
   constructor(author) {
@@ -27,6 +27,11 @@ class Author {
     this.addedAt = author.addedAt
     this.updatedAt = author.updatedAt
     this.libraryId = author.libraryId
+  }
+
+  get lastFirst() {
+    if (!this.name) return ''
+    return nameToLastFirst(this.name)
   }
 
   toJSON() {

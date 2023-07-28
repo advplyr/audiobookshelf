@@ -45,6 +45,7 @@ module.exports = (sequelize) => {
       return {
         id: oldAuthor.id,
         name: oldAuthor.name,
+        lastFirst: oldAuthor.lastFirst,
         asin: oldAuthor.asin,
         description: oldAuthor.description,
         imagePath: oldAuthor.imagePath,
@@ -68,6 +69,7 @@ module.exports = (sequelize) => {
       primaryKey: true
     },
     name: DataTypes.STRING,
+    lastFirst: DataTypes.STRING,
     asin: DataTypes.STRING,
     description: DataTypes.TEXT,
     imagePath: DataTypes.STRING

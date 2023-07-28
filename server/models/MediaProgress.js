@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
         mediaItemId: this.mediaItemId,
         mediaItemType: this.mediaItemType,
         duration: this.duration,
-        progress: this.extraData?.progress || null,
+        progress: this.extraData?.progress || 0,
         currentTime: this.currentTime,
         isFinished: !!this.isFinished,
         hideFromContinueListening: !!this.hideFromContinueListening,

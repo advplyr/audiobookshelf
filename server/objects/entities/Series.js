@@ -1,4 +1,5 @@
 const uuidv4 = require("uuid").v4
+const { getTitleIgnorePrefix } = require('../../utils/index')
 
 class Series {
   constructor(series) {
@@ -21,6 +22,11 @@ class Series {
     this.addedAt = series.addedAt
     this.updatedAt = series.updatedAt
     this.libraryId = series.libraryId
+  }
+
+  get nameIgnorePrefix() {
+    if (!this.name) return ''
+    return getTitleIgnorePrefix(this.name)
   }
 
   toJSON() {

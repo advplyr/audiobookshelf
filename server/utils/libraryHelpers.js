@@ -34,7 +34,7 @@ module.exports = {
         filtered = filtered.filter(li => {
           const itemProgress = user.getMediaProgress(li.id)
           if (filter === 'finished' && (itemProgress && itemProgress.isFinished)) return true
-          if (filter === 'not-started' && !itemProgress) return true
+          if (filter === 'not-started' && (!itemProgress || itemProgress.notStarted)) return true
           if (filter === 'not-finished' && (!itemProgress || !itemProgress.isFinished)) return true
           if (filter === 'in-progress' && (itemProgress && itemProgress.inProgress)) return true
           return false
