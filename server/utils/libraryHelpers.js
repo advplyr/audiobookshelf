@@ -73,7 +73,6 @@ module.exports = {
     } else if (filterBy === 'feed-open') {
       const libraryItemIdsWithFeed = await Database.models.feed.findAllLibraryItemIds()
       filtered = filtered.filter(li => libraryItemIdsWithFeed.includes(li.id))
-      // filtered = filtered.filter(li => feedsArray.some(feed => feed.entityId === li.id))
     } else if (filterBy === 'abridged') {
       filtered = filtered.filter(li => !!li.media.metadata?.abridged)
     } else if (filterBy === 'ebook') {

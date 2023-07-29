@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, literal } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
@@ -70,13 +70,13 @@ module.exports = (sequelize) => {
               {
                 model: sequelize.models.author,
                 through: {
-                  attributes: []
+                  attributes: ['createdAt']
                 }
               },
               {
                 model: sequelize.models.series,
                 through: {
-                  attributes: ['sequence']
+                  attributes: ['sequence', 'createdAt']
                 }
               }
             ]
@@ -84,6 +84,12 @@ module.exports = (sequelize) => {
           {
             model: sequelize.models.podcast
           }
+        ],
+        order: [
+          ['createdAt', 'ASC'],
+          // Ensure author & series stay in the same order
+          [sequelize.models.book, sequelize.models.author, sequelize.models.bookAuthor, 'createdAt', 'ASC'],
+          [sequelize.models.book, sequelize.models.series, 'bookSeries', 'createdAt', 'ASC'],
         ],
         offset,
         limit

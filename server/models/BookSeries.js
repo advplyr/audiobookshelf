@@ -22,7 +22,8 @@ module.exports = (sequelize) => {
   }, {
     sequelize,
     modelName: 'bookSeries',
-    timestamps: false
+    timestamps: true,
+    updatedAt: false
   })
 
   // Super Many-to-Many

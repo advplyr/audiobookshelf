@@ -1545,6 +1545,76 @@ async function migrationPatch2Authors(ctx, offset = 0) {
 
 /**
  * Migration from 2.3.3 to 2.3.4
+ * Populating the createdAt column on bookAuthor
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2BookAuthors(ctx, offset = 0) {
+  const bookAuthors = await ctx.models.bookAuthor.findAll({
+    include: {
+      model: ctx.models.author
+    },
+    limit: 500,
+    offset
+  })
+  if (!bookAuthors.length) return
+
+  const bulkUpdateItems = []
+  for (const bookAuthor of bookAuthors) {
+    if (bookAuthor.author?.createdAt) {
+      const dateString = bookAuthor.author.createdAt.toISOString().replace('T', ' ').replace('Z', '')
+      bulkUpdateItems.push(`("${bookAuthor.id}","${dateString}")`)
+    }
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} bookAuthors`)
+    await ctx.sequelize.query(`INSERT INTO bookAuthors ('id','createdAt') VALUES ${bulkUpdateItems.join(',')} ON CONFLICT(id) DO UPDATE SET 'createdAt' = EXCLUDED.createdAt;`)
+  }
+
+  if (bookAuthors.length < 500) {
+    return
+  }
+  return migrationPatch2BookAuthors(ctx, offset + bookAuthors.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
+ * Populating the createdAt column on bookSeries
+ * @param {/src/Database} ctx 
+ * @param {number} offset 
+ */
+async function migrationPatch2BookSeries(ctx, offset = 0) {
+  const allBookSeries = await ctx.models.bookSeries.findAll({
+    include: {
+      model: ctx.models.series
+    },
+    limit: 500,
+    offset
+  })
+  if (!allBookSeries.length) return
+
+  const bulkUpdateItems = []
+  for (const bookSeries of allBookSeries) {
+    if (bookSeries.series?.createdAt) {
+      const dateString = bookSeries.series.createdAt.toISOString().replace('T', ' ').replace('Z', '')
+      bulkUpdateItems.push(`("${bookSeries.id}","${dateString}")`)
+    }
+  }
+
+  if (bulkUpdateItems.length) {
+    Logger.info(`[dbMigration] Migration patch 2.3.3+ - patching ${bulkUpdateItems.length} bookSeries`)
+    await ctx.sequelize.query(`INSERT INTO bookSeries ('id','createdAt') VALUES ${bulkUpdateItems.join(',')} ON CONFLICT(id) DO UPDATE SET 'createdAt' = EXCLUDED.createdAt;`)
+  }
+
+  if (allBookSeries.length < 500) {
+    return
+  }
+  return migrationPatch2BookSeries(ctx, offset + allBookSeries.length)
+}
+
+/**
+ * Migration from 2.3.3 to 2.3.4
  * Adding coverPath column to Feed model
  * @param {/src/Database} ctx 
  */
@@ -1552,8 +1622,9 @@ module.exports.migrationPatch2 = async (ctx) => {
   const queryInterface = ctx.sequelize.getQueryInterface()
   const feedTableDescription = await queryInterface.describeTable('feeds')
   const authorsTableDescription = await queryInterface.describeTable('authors')
+  const bookAuthorsTableDescription = await queryInterface.describeTable('bookAuthors')
 
-  if (feedTableDescription?.coverPath && authorsTableDescription?.lastFirst) {
+  if (feedTableDescription?.coverPath && authorsTableDescription?.lastFirst && bookAuthorsTableDescription?.createdAt) {
     Logger.info(`[dbMigration] Migration patch 2.3.3+ - columns already on model`)
     return false
   }
@@ -1562,25 +1633,35 @@ module.exports.migrationPatch2 = async (ctx) => {
   try {
     await queryInterface.sequelize.transaction(t => {
       const queries = [
-        queryInterface.addColumn('authors', 'lastFirst', {
-          type: DataTypes.STRING
+        queryInterface.addColumn('bookAuthors', 'createdAt', {
+          type: DataTypes.DATE
         }, { transaction: t }),
-        queryInterface.addColumn('libraryItems', 'size', {
-          type: DataTypes.BIGINT
-        }, { transaction: t }),
-        queryInterface.addColumn('books', 'duration', {
-          type: DataTypes.FLOAT
-        }, { transaction: t }),
-        queryInterface.addColumn('books', 'titleIgnorePrefix', {
-          type: DataTypes.STRING
-        }, { transaction: t }),
-        queryInterface.addColumn('podcasts', 'titleIgnorePrefix', {
-          type: DataTypes.STRING
-        }, { transaction: t }),
-        queryInterface.addColumn('series', 'nameIgnorePrefix', {
-          type: DataTypes.STRING
+        queryInterface.addColumn('bookSeries', 'createdAt', {
+          type: DataTypes.DATE
         }, { transaction: t }),
       ]
+      if (!authorsTableDescription?.lastFirst) {
+        queries.push(...[
+          queryInterface.addColumn('authors', 'lastFirst', {
+            type: DataTypes.STRING
+          }, { transaction: t }),
+          queryInterface.addColumn('libraryItems', 'size', {
+            type: DataTypes.BIGINT
+          }, { transaction: t }),
+          queryInterface.addColumn('books', 'duration', {
+            type: DataTypes.FLOAT
+          }, { transaction: t }),
+          queryInterface.addColumn('books', 'titleIgnorePrefix', {
+            type: DataTypes.STRING
+          }, { transaction: t }),
+          queryInterface.addColumn('podcasts', 'titleIgnorePrefix', {
+            type: DataTypes.STRING
+          }, { transaction: t }),
+          queryInterface.addColumn('series', 'nameIgnorePrefix', {
+            type: DataTypes.STRING
+          }, { transaction: t }),
+        ])
+      }
       if (!feedTableDescription?.coverPath) {
         queries.push(queryInterface.addColumn('feeds', 'coverPath', {
           type: DataTypes.STRING
@@ -1589,24 +1670,32 @@ module.exports.migrationPatch2 = async (ctx) => {
       return Promise.all(queries)
     })
 
-    if (global.ServerSettings.sortingPrefixes?.length) {
-      prefixesToIgnore = global.ServerSettings.sortingPrefixes
+    if (!authorsTableDescription?.lastFirst) {
+      if (global.ServerSettings.sortingPrefixes?.length) {
+        prefixesToIgnore = global.ServerSettings.sortingPrefixes
+      }
+
+      // Patch library items size column
+      await migrationPatch2LibraryItems(ctx, 0)
+
+      // Patch books duration & titleIgnorePrefix column
+      await migrationPatch2Books(ctx, 0)
+
+      // Patch podcasts titleIgnorePrefix column
+      await migrationPatch2Podcasts(ctx, 0)
+
+      // Patch authors lastFirst column
+      await migrationPatch2Authors(ctx, 0)
+
+      // Patch series nameIgnorePrefix column
+      await migrationPatch2Series(ctx, 0)
     }
 
-    // Patch library items size column
-    await migrationPatch2LibraryItems(ctx, 0)
+    // Patch bookAuthors createdAt column
+    await migrationPatch2BookAuthors(ctx, 0)
 
-    // Patch books duration & titleIgnorePrefix column
-    await migrationPatch2Books(ctx, 0)
-
-    // Patch podcasts titleIgnorePrefix column
-    await migrationPatch2Podcasts(ctx, 0)
-
-    // Patch authors lastFirst column
-    await migrationPatch2Authors(ctx, 0)
-
-    // Patch series nameIgnorePrefix column
-    await migrationPatch2Series(ctx, 0)
+    // Patch bookSeries createdAt column
+    await migrationPatch2BookSeries(ctx, 0)
 
     Logger.info(`[dbMigration] Migration patch 2.3.3+ finished`)
     return true
