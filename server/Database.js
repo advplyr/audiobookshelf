@@ -148,10 +148,10 @@ class Database {
     global.ServerSettings = this.serverSettings.toJSON()
 
     // Version specific migrations
-    if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') > 1) {
+    if (this.serverSettings.version === '2.3.0' && this.compareVersions(packageJson.version, '2.3.0') == 1) {
       await dbMigration.migrationPatch(this)
     }
-    if (this.serverSettings.version === '2.3.3' && this.compareVersions(packageJson.version, '2.3.3') >= 0) { // TODO: Update to > 1 after 2.3.4
+    if (['2.3.0', '2.3.1', '2.3.2', '2.3.3'].includes(this.serverSettings.version) && this.compareVersions(packageJson.version, '2.3.3') >= 0) {
       await dbMigration.migrationPatch2(this)
     }
 
