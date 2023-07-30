@@ -5,7 +5,9 @@ module.exports = {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
   },
 
-  async getFilteredLibraryItems(libraryId, filterBy, sortBy, sortDesc, limit, offset, userId) {
+  async getFilteredLibraryItems(libraryId, userId, options) {
+    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include } = options
+
     let filterValue = null
     let filterGroup = null
     if (filterBy) {
@@ -16,6 +18,6 @@ module.exports = {
     }
 
     // TODO: Handle podcast filters
-    return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, limit, offset)
+    return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset)
   }
 }

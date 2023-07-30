@@ -208,7 +208,7 @@ class LibraryController {
     payload.offset = payload.page * payload.limit
 
     const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library.id, req.user.id, payload)
-    payload.results = libraryItems.map(li => li.toJSONMinified())
+    payload.results = libraryItems
     payload.total = count
 
     res.json(payload)

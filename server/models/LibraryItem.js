@@ -400,10 +400,22 @@ module.exports = (sequelize) => {
       })
     }
 
-    static async getByFilterAndSort(libraryId, userId, { filterBy, sortBy, sortDesc, limit, offset }) {
-      const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(libraryId, filterBy, sortBy, sortDesc, limit, offset, userId)
+    static async getByFilterAndSort(libraryId, userId, options) {
+      const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(libraryId, userId, options)
       return {
-        libraryItems: libraryItems.map(ti => this.getOldLibraryItem(ti)),
+        libraryItems: libraryItems.map(li => {
+          const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
+          if (li.collapsedSeries) {
+            oldLibraryItem.collapsedSeries = li.collapsedSeries
+          }
+          if (li.series) {
+            oldLibraryItem.media.metadata.series = li.series
+          }
+          if (li.rssFeed) {
+            oldLibraryItem.rssFeed = sequelize.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          }
+          return oldLibraryItem
+        }),
         count
       }
     }

@@ -3,6 +3,51 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 
 module.exports = {
+  getCollapseSeriesMediaProgressFilter(value) {
+    const mediaWhere = {}
+    if (value === 'not-finished') {
+      mediaWhere['$books.mediaProgresses.isFinished$'] = {
+        [Sequelize.Op.or]: [null, false]
+      }
+    } else if (value === 'not-started') {
+      mediaWhere[Sequelize.Op.and] = [
+        {
+          '$books.mediaProgresses.currentTime$': {
+            [Sequelize.Op.or]: [null, 0]
+          }
+        },
+        {
+          '$books.mediaProgresses.isFinished$': {
+            [Sequelize.Op.or]: [null, false]
+          }
+        }
+      ]
+    } else if (value === 'finished') {
+      mediaWhere['$books.mediaProgresses.isFinished$'] = true
+    } else if (value === 'in-progress') {
+      mediaWhere[Sequelize.Op.and] = [
+        {
+          [Sequelize.Op.or]: [
+            {
+              '$books.mediaProgresses.currentTime$': {
+                [Sequelize.Op.gt]: 0
+              }
+            },
+            {
+              '$books.mediaProgresses.ebookProgress$': {
+                [Sequelize.Op.gt]: 0
+              }
+            }
+          ]
+        },
+        {
+          '$books.mediaProgresses.isFinished$': false
+        }
+      ]
+    }
+    return mediaWhere
+  },
+
   /**
    * Get where options for Book model
    * @param {string} group 
@@ -104,9 +149,10 @@ module.exports = {
    * Get sequelize order
    * @param {string} sortBy 
    * @param {boolean} sortDesc 
+   * @param {boolean} collapseseries
    * @returns {Sequelize.order}
    */
-  getOrder(sortBy, sortDesc) {
+  getOrder(sortBy, sortDesc, collapseseries) {
     const dir = sortDesc ? 'DESC' : 'ASC'
     if (sortBy === 'addedAt') {
       return [[Sequelize.literal('libraryItem.createdAt'), dir]]
@@ -125,13 +171,67 @@ module.exports = {
     } else if (sortBy === 'media.metadata.authorName') {
       return [['author_name', dir]]
     } else if (sortBy === 'media.metadata.title') {
+      if (collapseseries) {
+        return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
+      }
+
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [['titleIgnorePrefix', dir]]
       } else {
         return [['title', dir]]
       }
+    } else if (sortBy === 'sequence') {
+      const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
+      return [[Sequelize.literal(`\`series.bookSeries.sequence\` COLLATE NOCASE ${nullDir}`)]]
     }
     return []
+  },
+
+  async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
+    const allSeries = await Database.models.series.findAll({
+      attributes: [
+        'id',
+        'name',
+        [Sequelize.literal('(SELECT count(*) FROM bookSeries bs WHERE bs.seriesId = series.id)'), 'numBooks']
+      ],
+      distinct: true,
+      subQuery: false,
+      where: seriesWhere,
+      include: [
+        {
+          model: Database.models.book,
+          attributes: ['id', 'title'],
+          through: {
+            attributes: ['id', 'seriesId', 'bookId', 'sequence']
+          },
+          ...bookFindOptions,
+          required: true
+        }
+      ],
+      order: [
+        Sequelize.literal('`books.bookSeries.sequence` COLLATE NOCASE ASC NULLS LAST')
+      ]
+    })
+    const bookSeriesToInclude = []
+    const booksToInclude = []
+    let booksToExclude = []
+    allSeries.forEach(s => {
+      let found = false
+      for (let book of s.books) {
+        if (!found && !booksToInclude.includes(book.id)) {
+          booksToInclude.push(book.id)
+          bookSeriesToInclude.push({
+            id: book.bookSeries.id,
+            numBooks: s.dataValues.numBooks
+          })
+          booksToExclude = booksToExclude.filter(bid => bid !== book.id)
+          found = true
+        } else if (!booksToExclude.includes(book.id) && !booksToInclude.includes(book.id)) {
+          booksToExclude.push(book.id)
+        }
+      }
+    })
+    return { booksToExclude, bookSeriesToInclude }
   },
 
   /**
@@ -141,11 +241,22 @@ module.exports = {
    * @param {[string]} filterValue 
    * @param {string} sortBy 
    * @param {string} sortDesc 
+   * @param {boolean} collapseseries
+   * @param {string[]} include
    * @param {number} limit 
    * @param {number} offset 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, limit, offset) {
+  async getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset) {
+    // TODO: Handle collapse sub-series
+    if (filterGroup === 'series' && collapseseries) {
+      collapseseries = false
+    }
+    if (filterGroup !== 'series' && sortBy === 'sequence') {
+      sortBy = 'media.metadata.title'
+    }
+    const includeRSSFeed = include.includes('rssfeed')
+
     // For sorting by author name an additional attribute must be added
     //   with author names concatenated
     let bookAttributes = null
@@ -169,10 +280,10 @@ module.exports = {
 
     let seriesInclude = {
       model: Database.models.bookSeries,
-      attributes: ['seriesId', 'sequence', 'createdAt'],
+      attributes: ['id', 'seriesId', 'sequence', 'createdAt'],
       include: {
         model: Database.models.series,
-        attributes: ['id', 'name']
+        attributes: ['id', 'name', 'nameIgnorePrefix']
       },
       order: [
         ['createdAt', 'ASC']
@@ -193,9 +304,17 @@ module.exports = {
       separate: true
     }
 
+    const sortOrder = this.getOrder(sortBy, sortDesc, collapseseries)
+
     const libraryItemIncludes = []
     const bookIncludes = []
-    if (filterGroup === 'feed-open') {
+    if (includeRSSFeed) {
+      libraryItemIncludes.push({
+        model: Database.models.feed,
+        required: filterGroup === 'feed-open'
+      })
+    }
+    if (filterGroup === 'feed-open' && !includeRSSFeed) {
       libraryItemIncludes.push({
         model: Database.models.feed,
         required: true
@@ -243,6 +362,10 @@ module.exports = {
           attributes: ['sequence']
         }
       })
+      if (sortBy !== 'sequence') {
+        // Secondary sort by sequence
+        sortOrder.push([Sequelize.literal('`series.bookSeries.sequence` COLLATE NOCASE ASC NULLS LAST')])
+      }
     } else if (filterGroup === 'issues') {
       libraryItemWhere[Sequelize.Op.or] = [
         {
@@ -263,8 +386,52 @@ module.exports = {
       })
     }
 
+    const bookWhere = filterGroup ? this.getMediaGroupQuery(filterGroup, filterValue) : {}
+
+    let collapseSeriesBookSeries = []
+    if (collapseseries) {
+      let seriesBookWhere = null
+      let seriesWhere = null
+      if (filterGroup === 'progress') {
+        seriesWhere = this.getCollapseSeriesMediaProgressFilter(filterValue)
+      } else if (filterGroup === 'missing' && filterValue === 'authors') {
+        seriesWhere = {
+          ['$books.authors.id$']: null
+        }
+      } else {
+        seriesBookWhere = bookWhere
+      }
+
+      const bookFindOptions = {
+        where: seriesBookWhere,
+        include: [
+          {
+            model: Database.models.libraryItem,
+            required: true,
+            where: libraryItemWhere,
+            include: libraryItemIncludes
+          },
+          authorInclude,
+          ...bookIncludes
+        ]
+      }
+      const { booksToExclude, bookSeriesToInclude } = await this.getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere)
+      if (booksToExclude.length) {
+        bookWhere['id'] = {
+          [Sequelize.Op.notIn]: booksToExclude
+        }
+      }
+      collapseSeriesBookSeries = bookSeriesToInclude
+      if (!bookAttributes?.include) bookAttributes = { include: [] }
+      if (global.ServerSettings.sortingIgnorePrefix) {
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map(v => `"${v.id}"`).join(', ')})), titleIgnorePrefix)`), 'display_title'])
+      } else {
+        bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.name FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map(v => `"${v.id}"`).join(', ')})), title)`), 'display_title'])
+      }
+    }
+
     const { rows: books, count } = await Database.models.book.findAndCountAll({
-      where: filterGroup ? this.getMediaGroupQuery(filterGroup, filterValue) : null,
+      where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
       include: [
@@ -278,7 +445,7 @@ module.exports = {
         authorInclude,
         ...bookIncludes
       ],
-      order: this.getOrder(sortBy, sortDesc),
+      order: sortOrder,
       subQuery: false,
       limit,
       offset
@@ -287,9 +454,39 @@ module.exports = {
     const libraryItems = books.map((bookExpanded) => {
       const libraryItem = bookExpanded.libraryItem.toJSON()
       const book = bookExpanded.toJSON()
+
+      if (filterGroup === 'series' && book.series?.length) {
+        // For showing sequence on book cover when filtering for series
+        libraryItem.series = {
+          id: book.series[0].id,
+          name: book.series[0].name,
+          sequence: book.series[0].bookSeries?.sequence || null
+        }
+      }
+
       delete book.libraryItem
       delete book.authors
       delete book.series
+
+      // For showing details of collapsed series
+      if (collapseseries && book.bookSeries?.length) {
+        const collapsedSeries = book.bookSeries.find(bs => collapseSeriesBookSeries.some(cbs => cbs.id === bs.id))
+        if (collapsedSeries) {
+          const collapseSeriesObj = collapseSeriesBookSeries.find(csbs => csbs.id === collapsedSeries.id)
+          libraryItem.collapsedSeries = {
+            id: collapsedSeries.series.id,
+            name: collapsedSeries.series.name,
+            nameIgnorePrefix: collapsedSeries.series.nameIgnorePrefix,
+            sequence: collapsedSeries.sequence,
+            numBooks: collapseSeriesObj?.numBooks || 0
+          }
+        }
+      }
+
+      if (libraryItem.feeds?.length) {
+        libraryItem.rssFeed = libraryItem.feeds[0]
+      }
+
       libraryItem.media = book
 
       return libraryItem

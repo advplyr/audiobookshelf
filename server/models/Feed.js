@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
     }
 
     static getOldFeed(feedExpanded) {
-      const episodes = feedExpanded.feedEpisodes.map((feedEpisode) => feedEpisode.getOldEpisode())
+      const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
       return new oldFeed({
         id: feedExpanded.id,
         slug: feedExpanded.slug,
@@ -42,7 +42,7 @@ module.exports = (sequelize) => {
         },
         serverAddress: feedExpanded.serverAddress,
         feedUrl: feedExpanded.feedURL,
-        episodes,
+        episodes: episodes || [],
         createdAt: feedExpanded.createdAt.valueOf(),
         updatedAt: feedExpanded.updatedAt.valueOf()
       })
