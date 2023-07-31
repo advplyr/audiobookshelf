@@ -1,12 +1,20 @@
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
+const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 
 module.exports = {
   decode(text) {
     return Buffer.from(decodeURIComponent(text), 'base64').toString()
   },
 
-  async getFilteredLibraryItems(libraryId, userId, options) {
-    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include } = options
+  /**
+   * Get library items using filter and sort
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {object} options 
+   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   */
+  async getFilteredLibraryItems(library, userId, options) {
+    const { filterBy, sortBy, sortDesc, limit, offset, collapseseries, include, mediaType } = options
 
     let filterValue = null
     let filterGroup = null
@@ -17,7 +25,11 @@ module.exports = {
       filterValue = group ? this.decode(filterBy.replace(`${group}.`, '')) : null
     }
 
-    // TODO: Handle podcast filters
-    return libraryItemsBookFilters.getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset)
+    if (mediaType === 'book') {
+      return libraryItemsBookFilters.getFilteredLibraryItems(library.id, userId, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset)
+    } else {
+      return libraryItemsPodcastFilters.getFilteredLibraryItems(library.id, userId, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset)
+    }
+
   }
 }

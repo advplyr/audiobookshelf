@@ -3,6 +3,13 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 
 module.exports = {
+  /**
+   * When collapsing series and filtering by progress
+   * different where options are required
+   * 
+   * @param {string} value 
+   * @returns {Sequelize.WhereOptions}
+   */
   getCollapseSeriesMediaProgressFilter(value) {
     const mediaWhere = {}
     if (value === 'not-finished') {
@@ -52,10 +59,13 @@ module.exports = {
    * Get where options for Book model
    * @param {string} group 
    * @param {[string]} value 
-   * @returns {Sequelize.WhereOptions}
+   * @returns {object} { Sequelize.WhereOptions, string[] }
    */
   getMediaGroupQuery(group, value) {
+    if (!group) return { mediaWhere: {}, replacements: {} }
+
     let mediaWhere = {}
+    const replacements = {}
 
     if (group === 'progress') {
       if (value === 'not-finished') {
@@ -103,9 +113,10 @@ module.exports = {
     } else if (group === 'abridged') {
       mediaWhere['abridged'] = true
     } else if (['genres', 'tags', 'narrators'].includes(group)) {
-      mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = "${value}")`), {
+      mediaWhere[group] = Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(${group}) WHERE json_valid(${group}) AND json_each.value = :filterValue)`), {
         [Sequelize.Op.gte]: 1
       })
+      replacements.filterValue = value
     } else if (group === 'publishers') {
       mediaWhere['publisher'] = value
     } else if (group === 'languages') {
@@ -142,7 +153,7 @@ module.exports = {
       }
     }
 
-    return mediaWhere
+    return { mediaWhere, replacements }
   },
 
   /**
@@ -167,18 +178,18 @@ module.exports = {
     } else if (sortBy === 'media.metadata.publishedYear') {
       return [['publishedYear', dir]]
     } else if (sortBy === 'media.metadata.authorNameLF') {
-      return [['author_name', dir]]
+      return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.authorName') {
-      return [['author_name', dir]]
+      return [[Sequelize.literal('author_name COLLATE NOCASE'), dir]]
     } else if (sortBy === 'media.metadata.title') {
       if (collapseseries) {
         return [[Sequelize.literal('display_title COLLATE NOCASE'), dir]]
       }
 
       if (global.ServerSettings.sortingIgnorePrefix) {
-        return [['titleIgnorePrefix', dir]]
+        return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
       } else {
-        return [['title', dir]]
+        return [[Sequelize.literal('title COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
@@ -187,6 +198,15 @@ module.exports = {
     return []
   },
 
+  /**
+   * When collapsing series get first book in each series
+   * to know which books to exclude from primary query.
+   * Additionally use this query to get the number of books in each series
+   * 
+   * @param {Sequelize.ModelStatic} bookFindOptions 
+   * @param {Sequelize.WhereOptions} seriesWhere 
+   * @returns {object} { booksToExclude, bookSeriesToInclude }
+   */
   async getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere) {
     const allSeries = await Database.models.series.findAll({
       attributes: [
@@ -386,7 +406,7 @@ module.exports = {
       })
     }
 
-    const bookWhere = filterGroup ? this.getMediaGroupQuery(filterGroup, filterValue) : {}
+    const { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
 
     let collapseSeriesBookSeries = []
     if (collapseseries) {
@@ -399,7 +419,7 @@ module.exports = {
           ['$books.authors.id$']: null
         }
       } else {
-        seriesBookWhere = bookWhere
+        seriesBookWhere = mediaWhere
       }
 
       const bookFindOptions = {
@@ -417,12 +437,15 @@ module.exports = {
       }
       const { booksToExclude, bookSeriesToInclude } = await this.getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere)
       if (booksToExclude.length) {
-        bookWhere['id'] = {
+        mediaWhere['id'] = {
           [Sequelize.Op.notIn]: booksToExclude
         }
       }
       collapseSeriesBookSeries = bookSeriesToInclude
       if (!bookAttributes?.include) bookAttributes = { include: [] }
+
+      // When collapsing series and sorting by title then use the series name instead of the book title
+      //  for this set an attribute "display_title" to use in sorting
       if (global.ServerSettings.sortingIgnorePrefix) {
         bookAttributes.include.push([Sequelize.literal(`IFNULL((SELECT s.nameIgnorePrefix FROM bookSeries AS bs, series AS s WHERE bs.seriesId = s.id AND bs.bookId = book.id AND bs.id IN (${bookSeriesToInclude.map(v => `"${v.id}"`).join(', ')})), titleIgnorePrefix)`), 'display_title'])
       } else {
@@ -431,9 +454,10 @@ module.exports = {
     }
 
     const { rows: books, count } = await Database.models.book.findAndCountAll({
-      where: bookWhere,
+      where: mediaWhere,
       distinct: true,
       attributes: bookAttributes,
+      replacements,
       include: [
         {
           model: Database.models.libraryItem,

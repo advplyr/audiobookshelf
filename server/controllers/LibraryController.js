@@ -207,7 +207,7 @@ class LibraryController {
     }
     payload.offset = payload.page * payload.limit
 
-    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library.id, req.user.id, payload)
+    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library, req.user.id, payload)
     payload.results = libraryItems
     payload.total = count
 
