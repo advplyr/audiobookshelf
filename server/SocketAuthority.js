@@ -48,7 +48,7 @@ class SocketAuthority {
   clientEmitter(userId, evt, data) {
     const clients = this.getClientsForUser(userId)
     if (!clients.length) {
-      return Logger.debug(`[Server] clientEmitter - no clients found for user ${userId}`)
+      return Logger.debug(`[SocketAuthority] clientEmitter - no clients found for user ${userId}`)
     }
     clients.forEach((client) => {
       if (client.socket) {
@@ -83,7 +83,7 @@ class SocketAuthority {
       }
       socket.sheepClient = this.clients[socket.id]
 
-      Logger.info('[Server] Socket Connected', socket.id)
+      Logger.info('[SocketAuthority] Socket Connected', socket.id)
 
       // Required for associating a User with a socket
       socket.on('auth', (token) => this.authenticateSocket(socket, token))
@@ -102,16 +102,16 @@ class SocketAuthority {
 
         const _client = this.clients[socket.id]
         if (!_client) {
-          Logger.warn(`[Server] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
+          Logger.warn(`[SocketAuthority] Socket ${socket.id} disconnect, no client (Reason: ${reason})`)
         } else if (!_client.user) {
-          Logger.info(`[Server] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
+          Logger.info(`[SocketAuthority] Unauth socket ${socket.id} disconnected (Reason: ${reason})`)
           delete this.clients[socket.id]
         } else {
-          Logger.debug('[Server] User Offline ' + _client.user.username)
+          Logger.debug('[SocketAuthority] User Offline ' + _client.user.username)
           this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
 
           const disconnectTime = Date.now() - _client.connected_at
-          Logger.info(`[Server] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
+          Logger.info(`[SocketAuthority] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
           delete this.clients[socket.id]
         }
       })
@@ -126,13 +126,13 @@ class SocketAuthority {
         if (client.user && client.user.isAdminOrUp) {
           this.emitter('admin_message', payload.message || '')
         } else {
-          Logger.error(`[Server] Non-admin user sent the message_all_users event`)
+          Logger.error(`[SocketAuthority] Non-admin user sent the message_all_users event`)
         }
       })
       socket.on('ping', () => {
         const client = this.clients[socket.id] || {}
         const user = client.user || {}
-        Logger.debug(`[Server] Received ping from socket ${user.username || 'No User'}`)
+        Logger.debug(`[SocketAuthority] Received ping from socket ${user.username || 'No User'}`)
         socket.emit('pong')
       })
     })
@@ -147,9 +147,13 @@ class SocketAuthority {
       return socket.emit('invalid_token')
     }
     const client = this.clients[socket.id]
+    if (!client) {
+      Logger.error(`[SocketAuthority] Socket for user ${user.username} has no client`)
+      return
+    }
 
     if (client.user !== undefined) {
-      Logger.debug(`[Server] Authenticating socket client already has user`, client.user.username)
+      Logger.debug(`[SocketAuthority] Authenticating socket client already has user`, client.user.username)
     }
 
     client.user = user
@@ -159,7 +163,7 @@ class SocketAuthority {
       return
     }
 
-    Logger.debug(`[Server] User Online ${client.user.username}`)
+    Logger.debug(`[SocketAuthority] User Online ${client.user.username}`)
 
     this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
 
@@ -183,22 +187,22 @@ class SocketAuthority {
     if (socketId && this.clients[socketId]) {
       const client = this.clients[socketId]
       const clientSocket = client.socket
-      Logger.debug(`[Server] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
+      Logger.debug(`[SocketAuthority] Found user client ${clientSocket.id}, Has user: ${!!client.user}, Socket has client: ${!!clientSocket.sheepClient}`)
 
       if (client.user) {
-        Logger.debug('[Server] User Offline ' + client.user.username)
+        Logger.debug('[SocketAuthority] User Offline ' + client.user.username)
         this.adminEmitter('user_offline', client.user.toJSONForPublic(null, Database.libraryItems))
       }
 
       delete this.clients[socketId].user
       if (clientSocket && clientSocket.sheepClient) delete this.clients[socketId].socket.sheepClient
     } else if (socketId) {
-      Logger.warn(`[Server] No client for socket ${socketId}`)
+      Logger.warn(`[SocketAuthority] No client for socket ${socketId}`)
     }
   }
 
   cancelScan(id) {
-    Logger.debug('[Server] Cancel scan', id)
+    Logger.debug('[SocketAuthority] Cancel scan', id)
     this.Server.scanner.setCancelLibraryScan(id)
   }
 }
