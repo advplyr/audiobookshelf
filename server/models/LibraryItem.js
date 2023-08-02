@@ -437,6 +437,53 @@ module.exports = (sequelize) => {
       }
     }
 
+    static async getPersonalizedShelves(library, userId, include, limit) {
+      const isPodcastLibrary = library.mediaType === 'podcast'
+      const shelves = []
+      const itemsInProgressPayload = await libraryFilters.getLibraryItemsInProgress(library, userId, include, limit, false)
+      if (itemsInProgressPayload.libraryItems.length) {
+        shelves.push({
+          id: 'continue-listening',
+          label: 'Continue Listening',
+          labelStringKey: 'LabelContinueListening',
+          type: isPodcastLibrary ? 'episode' : 'book',
+          entities: itemsInProgressPayload.libraryItems,
+          total: itemsInProgressPayload.count
+        })
+      }
+
+      if (library.mediaType === 'book') {
+        const ebooksInProgressPayload = await libraryFilters.getLibraryItemsInProgress(library, userId, include, limit, true)
+        if (ebooksInProgressPayload.libraryItems.length) {
+          shelves.push({
+            id: 'continue-reading',
+            label: 'Continue Reading',
+            labelStringKey: 'LabelContinueReading',
+            type: 'book',
+            entities: ebooksInProgressPayload.libraryItems,
+            total: ebooksInProgressPayload.count
+          })
+        }
+      }
+
+      const mostRecentPayload = await libraryFilters.getLibraryItemsMostRecentlyAdded(library, userId, include, limit)
+      if (mostRecentPayload.libraryItems.length) {
+        shelves.push({
+          id: 'recently-added',
+          label: 'Recently Added',
+          labelStringKey: 'LabelRecentlyAdded',
+          type: library.mediaType,
+          entities: mostRecentPayload.libraryItems,
+          total: mostRecentPayload.count
+        })
+      }
+
+      // TODO: Handle continue series library items
+      const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, userId, include, limit)
+
+      return shelves
+    }
+
     getMedia(options) {
       if (!this.mediaType) return Promise.resolve(null)
       const mixinMethodName = `get${sequelize.uppercaseFirst(this.mediaType)}`

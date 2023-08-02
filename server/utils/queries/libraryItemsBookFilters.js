@@ -107,6 +107,28 @@ module.exports = {
             '$mediaProgresses.isFinished$': false
           }
         ]
+      } else if (value === 'audio-in-progress') {
+        mediaWhere[Sequelize.Op.and] = [
+          {
+            '$mediaProgresses.currentTime$': {
+              [Sequelize.Op.gt]: 0
+            }
+          },
+          {
+            '$mediaProgresses.isFinished$': false
+          }
+        ]
+      } else if (value === 'ebook-in-progress') {
+        mediaWhere[Sequelize.Op.and] = [
+          {
+            '$mediaProgresses.ebookProgress$': {
+              [Sequelize.Op.gt]: 0
+            }
+          },
+          {
+            '$mediaProgresses.isFinished$': false
+          }
+        ]
       }
     } else if (group === 'series' && value === 'no-series') {
       mediaWhere['$series.id$'] = null
@@ -194,6 +216,8 @@ module.exports = {
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
       return [[Sequelize.literal(`\`series.bookSeries.sequence\` COLLATE NOCASE ${nullDir}`)]]
+    } else if (sortBy === 'progress') {
+      return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
     }
     return []
   },
@@ -273,6 +297,9 @@ module.exports = {
       collapseseries = false
     }
     if (filterGroup !== 'series' && sortBy === 'sequence') {
+      sortBy = 'media.metadata.title'
+    }
+    if (filterGroup !== 'progress' && sortBy === 'progress') {
       sortBy = 'media.metadata.title'
     }
     const includeRSSFeed = include.includes('rssfeed')
@@ -398,7 +425,7 @@ module.exports = {
     } else if (filterGroup === 'progress') {
       bookIncludes.push({
         model: Database.models.mediaProgress,
-        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress'],
+        attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
         where: {
           userId
         },
@@ -520,5 +547,52 @@ module.exports = {
       libraryItems,
       count
     }
+  },
+
+  async getContinueSeriesLibraryItems(libraryId, userId, limit, offset) {
+    const { rows: series, count } = await Database.models.series.findAndCountAll({
+      where: [
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = b.id AND mp.userId = :userId AND bs.bookId = b.id AND bs.seriesId = series.id AND mp.isFinished = 1)`), {
+          [Sequelize.Op.gt]: 0
+        }),
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = b.id AND mp.userId = :userId AND bs.bookId = b.id AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0),
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.userId = :userId AND mp.mediaItemId = bs.bookId WHERE bs.seriesId = series.id AND (mp.currentTime = 0 OR mp.currentTime IS NULL) AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
+          [Sequelize.Op.gt]: 0
+        })
+      ],
+      replacements: {
+        userId
+      },
+      distinct: true,
+      include: [
+        {
+          model: Database.models.book,
+          through: {
+            attributes: ['sequence']
+          },
+          include: [
+            {
+              model: Database.models.libraryItem,
+              where: {
+                libraryId
+              }
+            },
+            {
+              model: Database.models.author,
+              attributes: ['id', 'name'],
+              through: {
+                attributes: []
+              }
+            }
+          ]
+        }
+      ],
+      order: [[Sequelize.literal(`\`books.bookSeries.sequence\` COLLATE NOCASE ASC NULLS LAST`)]],
+      subQuery: false,
+      limit,
+      offset
+    })
+
+    Logger.debug('Found', series.length, 'series to continue', 'total=', count)
   }
 }

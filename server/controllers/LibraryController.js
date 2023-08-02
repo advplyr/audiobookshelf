@@ -631,8 +631,24 @@ class LibraryController {
     res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
   }
 
-  // api/libraries/:id/personalized
-  // New and improved personalized call only loops through library items once
+  /**
+   * GET: /api/libraries/:id/personalized2
+   * TODO: new endpoint
+   * @param {*} req 
+   * @param {*} res 
+   */
+  async getUserPersonalizedShelves(req, res) {
+    const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
+    const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
+    const shelves = await Database.models.libraryItem.getPersonalizedShelves(req.library, req.user.id, include, limitPerShelf)
+    res.json(shelves)
+  }
+
+  /**
+   * GET: /api/libraries/:id/personalized
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getLibraryUserPersonalizedOptimal(req, res) {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
