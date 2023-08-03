@@ -11,7 +11,6 @@ const StreamZip = require('../libs/nodeStreamZip')
 
 // Utils
 const { getFileSize } = require('../utils/fileUtils')
-const filePerms = require('../utils/filePerms')
 
 const Backup = require('../objects/Backup')
 

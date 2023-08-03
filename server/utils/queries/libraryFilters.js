@@ -90,6 +90,19 @@ module.exports = {
   },
 
   async getLibraryItemsContinueSeries(library, userId, include, limit) {
-    await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, userId, limit, 0)
+    const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, userId, include, limit, 0)
+    return {
+      libraryItems: libraryItems.map(li => {
+        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        if (li.rssFeed) {
+          oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+        }
+        if (li.series) {
+          oldLibraryItem.media.metadata.series = li.series
+        }
+        return oldLibraryItem
+      }),
+      count
+    }
   }
 }

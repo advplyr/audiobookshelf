@@ -549,19 +549,53 @@ module.exports = {
     }
   },
 
-  async getContinueSeriesLibraryItems(libraryId, userId, limit, offset) {
-    const { rows: series, count } = await Database.models.series.findAndCountAll({
-      where: [
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = b.id AND mp.userId = :userId AND bs.bookId = b.id AND bs.seriesId = series.id AND mp.isFinished = 1)`), {
-          [Sequelize.Op.gt]: 0
-        }),
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM books b, bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = b.id AND mp.userId = :userId AND bs.bookId = b.id AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0),
-        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.userId = :userId AND mp.mediaItemId = bs.bookId WHERE bs.seriesId = series.id AND (mp.currentTime = 0 OR mp.currentTime IS NULL) AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
-          [Sequelize.Op.gt]: 0
-        })
-      ],
-      replacements: {
+  async getContinueSeriesLibraryItems(libraryId, userId, include, limit, offset) {
+    const mediaProgressForUserForSeries = await Database.models.mediaProgress.findAll({
+      where: {
         userId
+      },
+      include: [
+        {
+          model: Database.models.book,
+          attributes: ['id', 'title'],
+          include: {
+            model: Database.models.series,
+            attributes: ['id'],
+            through: {
+              attributes: []
+            },
+            required: true
+          },
+          required: true
+        }
+      ]
+    })
+
+    let seriesToIncludeMap = {}
+    let seriesToExclude = []
+    for (const prog of mediaProgressForUserForSeries) {
+      const series = prog.mediaItem?.series || []
+      for (const s of series) {
+        if (prog.currentTime > 0 && !prog.isFinished) { // in-progress
+          delete seriesToIncludeMap[s.id]
+          if (!seriesToExclude.includes(s.id)) seriesToExclude.push(s.id)
+        } else if (prog.isFinished && !seriesToExclude.includes(s.id)) { // finished
+          const lastUpdate = prog.updatedAt?.valueOf() || 0
+          if (!seriesToIncludeMap[s.id] || lastUpdate > seriesToIncludeMap[s.id]) {
+            seriesToIncludeMap[s.id] = lastUpdate
+          }
+        }
+      }
+    }
+
+    const { rows: series, count } = await Database.models.series.findAndCountAll({
+      where: {
+        id: {
+          [Sequelize.Op.in]: Object.keys(seriesToIncludeMap)
+        },
+        '$books.mediaProgresses.isFinished$': {
+          [Sequelize.Op.or]: [false, null]
+        }
       },
       distinct: true,
       include: [
@@ -570,6 +604,7 @@ module.exports = {
           through: {
             attributes: ['sequence']
           },
+          required: true,
           include: [
             {
               model: Database.models.libraryItem,
@@ -578,21 +613,53 @@ module.exports = {
               }
             },
             {
-              model: Database.models.author,
-              attributes: ['id', 'name'],
-              through: {
-                attributes: []
-              }
+              model: Database.models.bookAuthor,
+              attributes: ['authorId'],
+              include: {
+                model: Database.models.author
+              },
+              separate: true
+            },
+            {
+              model: Database.models.mediaProgress,
+              where: {
+                userId
+              },
+              required: false
             }
           ]
         }
       ],
-      order: [[Sequelize.literal(`\`books.bookSeries.sequence\` COLLATE NOCASE ASC NULLS LAST`)]],
+      order: [
+        [Sequelize.literal(`CAST(\`books.bookSeries.sequence\` AS INTEGER) COLLATE NOCASE ASC NULLS LAST`)],
+        [Sequelize.literal(`\`books.mediaProgresses.updatedAt\` DESC`)]
+      ],
       subQuery: false,
       limit,
       offset
     })
 
     Logger.debug('Found', series.length, 'series to continue', 'total=', count)
+
+    const libraryItems = series.map(s => {
+      const book = s.books.find(book => {
+        return !book.mediaProgresses?.[0]?.isFinished
+      })
+      const libraryItem = book.libraryItem.toJSON()
+
+      libraryItem.series = {
+        id: s.id,
+        name: s.name,
+        sequence: book.bookSeries.sequence
+      }
+      delete book.bookSeries
+
+      libraryItem.media = book
+      return libraryItem
+    })
+    return {
+      libraryItems,
+      count
+    }
   }
 }

@@ -464,6 +464,18 @@ module.exports = (sequelize) => {
             total: ebooksInProgressPayload.count
           })
         }
+
+        const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, userId, include, limit)
+        if (continueSeriesPayload.libraryItems.length) {
+          shelves.push({
+            id: 'continue-series',
+            label: 'Continue Series',
+            labelStringKey: 'LabelContinueSeries',
+            type: 'book',
+            entities: continueSeriesPayload.libraryItems,
+            total: continueSeriesPayload.count
+          })
+        }
       }
 
       const mostRecentPayload = await libraryFilters.getLibraryItemsMostRecentlyAdded(library, userId, include, limit)
@@ -477,9 +489,6 @@ module.exports = (sequelize) => {
           total: mostRecentPayload.count
         })
       }
-
-      // TODO: Handle continue series library items
-      const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, userId, include, limit)
 
       return shelves
     }
