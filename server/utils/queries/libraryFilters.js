@@ -1,4 +1,5 @@
 const Database = require('../../Database')
+const Logger = require('../../Logger')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 
@@ -127,6 +128,81 @@ module.exports = {
         }
         return oldLibraryItem
       }),
+      count
+    }
+  },
+
+  /**
+   * Get series for recent series shelf
+   * @param {oldLibrary} library 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @returns {object} { series:oldSeries[], count:number}
+   */
+  async getSeriesMostRecentlyAdded(library, include, limit) {
+    const seriesIncludes = []
+    if (include.includes('rssfeed')) {
+      seriesIncludes.push({
+        model: Database.models.feed
+      })
+    }
+    const { rows: series, count } = await Database.models.series.findAndCountAll({
+      where: {
+        libraryId: library.id
+      },
+      limit,
+      offset: 0,
+      distinct: true,
+      subQuery: false,
+      include: [
+        {
+          model: Database.models.bookSeries,
+          include: {
+            model: Database.models.book,
+            include: {
+              model: Database.models.libraryItem
+            }
+          },
+          separate: true
+        },
+        ...seriesIncludes
+      ],
+      order: [
+        ['createdAt', 'DESC']
+      ]
+    })
+
+    Logger.debug(`Found ${series.length} series recently added (${count} total)`)
+
+    const allOldSeries = []
+    for (const s of series) {
+      const oldSeries = s.getOldSeries().toJSON()
+
+      if (s.feeds?.length) {
+        oldSeries.rssFeed = Database.models.feed.getOldFeed(s.feeds[0]).toJSONMinified()
+      }
+
+      // TODO: Sort books by sequence in query
+      s.bookSeries.sort((a, b) => {
+        if (!a.sequence) return 1
+        if (!b.sequence) return -1
+        return a.sequence.localeCompare(b.sequence, undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        })
+      })
+      oldSeries.books = s.bookSeries.map(bs => {
+        const libraryItem = bs.book.libraryItem.toJSON()
+        delete bs.book.libraryItem
+        libraryItem.media = bs.book
+        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem).toJSONMinified()
+        return oldLibraryItem
+      })
+      allOldSeries.push(oldSeries)
+    }
+
+    return {
+      series: allOldSeries,
       count
     }
   }

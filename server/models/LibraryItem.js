@@ -498,6 +498,18 @@ module.exports = (sequelize) => {
         })
       }
 
+      const seriesMostRecentPayload = await libraryFilters.getSeriesMostRecentlyAdded(library, include, 5)
+      if (seriesMostRecentPayload.series.length) {
+        shelves.push({
+          id: 'recent-series',
+          label: 'Recent Series',
+          labelStringKey: 'LabelRecentSeries',
+          type: 'series',
+          entities: seriesMostRecentPayload.series,
+          total: seriesMostRecentPayload.count
+        })
+      }
+
       return shelves
     }
 
