@@ -437,6 +437,14 @@ module.exports = (sequelize) => {
       }
     }
 
+    /**
+     * Get home page data personalized shelves
+     * @param {oldLibrary} library 
+     * @param {string} userId 
+     * @param {string[]} include 
+     * @param {number} limit 
+     * @returns {object[]} array of shelf objects
+     */
     static async getPersonalizedShelves(library, userId, include, limit) {
       const isPodcastLibrary = library.mediaType === 'podcast'
       const shelves = []

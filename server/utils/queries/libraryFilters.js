@@ -33,6 +33,15 @@ module.exports = {
     }
   },
 
+  /**
+   * Get library items for continue listening & continue reading shelves
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @param {boolean} ebook true if continue reading shelf
+   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   */
   async getLibraryItemsInProgress(library, userId, include, limit, ebook = false) {
     if (library.mediaType === 'book') {
       const filterValue = ebook ? 'ebook-in-progress' : 'audio-in-progress'
@@ -55,6 +64,14 @@ module.exports = {
     }
   },
 
+  /**
+   * Get library items for most recently added shelf
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   */
   async getLibraryItemsMostRecentlyAdded(library, userId, include, limit) {
     if (library.mediaType === 'book') {
       const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, userId, null, null, 'addedAt', true, false, include, limit, 0)
@@ -89,6 +106,14 @@ module.exports = {
     }
   },
 
+  /**
+   * Get library items for continue series shelf
+   * @param {string} library 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   */
   async getLibraryItemsContinueSeries(library, userId, include, limit) {
     const { libraryItems, count } = await libraryItemsBookFilters.getContinueSeriesLibraryItems(library.id, userId, include, limit, 0)
     return {
