@@ -688,6 +688,10 @@ module.exports = {
         sequence: bookSeries.sequence
       }
 
+      if (libraryItem.feeds?.length) {
+        libraryItem.rssFeed = libraryItem.feeds[0]
+      }
+
       libraryItem.media = bookSeries.book
       return libraryItem
     })
