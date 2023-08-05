@@ -152,5 +152,95 @@ module.exports = {
       libraryItems,
       count
     }
+  },
+
+  /**
+   * Get podcast episodes filtered and sorted
+   * @param {string} libraryId 
+   * @param {string} userId 
+   * @param {[string]} filterGroup 
+   * @param {[string]} filterValue 
+   * @param {string} sortBy 
+   * @param {string} sortDesc 
+   * @param {number} limit 
+   * @param {number} offset 
+   * @returns {object} {libraryItems:LibraryItem[], count:number}
+   */
+  async getFilteredPodcastEpisodes(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, limit, offset) {
+    if (sortBy === 'progress' && filterGroup !== 'progress') {
+      Logger.warn('Cannot sort podcast episodes by progress without filtering by progress')
+      sortBy = 'createdAt'
+    }
+
+    const podcastEpisodeIncludes = []
+    let podcastEpisodeWhere = {}
+    if (filterGroup === 'progress') {
+      podcastEpisodeIncludes.push({
+        model: Database.models.mediaProgress,
+        where: {
+          userId
+        },
+        attributes: ['id', 'isFinished', 'currentTime', 'updatedAt']
+      })
+
+      if (filterValue === 'in-progress') {
+        podcastEpisodeWhere = [
+          {
+            '$mediaProgresses.isFinished$': false
+          },
+          {
+            '$mediaProgresses.currentTime$': {
+              [Sequelize.Op.gt]: 0
+            }
+          }
+        ]
+      } else if (filterValue === 'finished') {
+        podcastEpisodeWhere['$mediaProgresses.isFinished$'] = true
+      }
+    }
+
+    const podcastEpisodeOrder = []
+    if (sortBy === 'createdAt') {
+      podcastEpisodeOrder.push(['createdAt', sortDesc ? 'DESC' : 'ASC'])
+    } else if (sortBy === 'progress') {
+      podcastEpisodeOrder.push([Sequelize.literal('mediaProgresses.updatedAt'), sortDesc ? 'DESC' : 'ASC'])
+    }
+
+    const { rows: podcastEpisodes, count } = await Database.models.podcastEpisode.findAndCountAll({
+      where: podcastEpisodeWhere,
+      include: [
+        {
+          model: Database.models.podcast,
+          include: [
+            {
+              model: Database.models.libraryItem,
+              where: {
+                libraryId
+              }
+            }
+          ]
+        },
+        ...podcastEpisodeIncludes
+      ],
+      distinct: true,
+      subQuery: false,
+      order: podcastEpisodeOrder,
+      limit,
+      offset
+    })
+
+    const libraryItems = podcastEpisodes.map((ep) => {
+      const libraryItem = ep.podcast.libraryItem.toJSON()
+      const podcast = ep.podcast.toJSON()
+      delete podcast.libraryItem
+      libraryItem.media = podcast
+      libraryItem.recentEpisode = ep.getOldPodcastEpisode(libraryItem.id)
+      return libraryItem
+    })
+
+    return {
+      libraryItems,
+      count
+    }
   }
 }

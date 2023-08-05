@@ -133,12 +133,15 @@ export default {
       this.rendition.spread(settings.spread || 'auto')
     },
     prev() {
+      if (!this.rendition?.manager) return
       return this.rendition?.prev()
     },
     next() {
+      if (!this.rendition?.manager) return
       return this.rendition?.next()
     },
     goToChapter(href) {
+      if (!this.rendition?.manager) return
       return this.rendition?.display(href)
     },
     keyUp(e) {

@@ -170,9 +170,8 @@ export default {
       this.loaded = true
     },
     async fetchCategories() {
-      const endpoint = this.currentLibraryMediaType === 'book' ? 'personalized2' : 'personalized'
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/${endpoint}?include=rssfeed,numEpisodesIncomplete`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized2?include=rssfeed,numEpisodesIncomplete`)
         .then((data) => {
           return data
         })

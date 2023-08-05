@@ -59,10 +59,14 @@ module.exports = {
         count
       }
     } else {
-      // TODO: Get episodes in progress
+      const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, userId, 'progress', 'in-progress', 'progress', true, limit, 0)
       return {
-        count: 0,
-        items: []
+        count,
+        items: libraryItems.map(li => {
+          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          oldLibraryItem.recentEpisode = li.recentEpisode
+          return oldLibraryItem
+        })
       }
     }
   },
@@ -160,10 +164,14 @@ module.exports = {
         count
       }
     } else {
-      // TODO: Get podcast episodes finished
+      const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, userId, 'progress', 'finished', 'progress', true, limit, 0)
       return {
-        items: [],
-        count: 0
+        count,
+        items: libraryItems.map(li => {
+          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          oldLibraryItem.recentEpisode = li.recentEpisode
+          return oldLibraryItem
+        })
       }
     }
   },
@@ -298,6 +306,27 @@ module.exports = {
         return oldLibraryItem
       }),
       count
+    }
+  },
+
+  /**
+   * Get podcast episodes most recently added
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {number} limit 
+   * @returns {object} {libraryItems:oldLibraryItem[], count:number}
+   */
+  async getNewestPodcastEpisodes(library, userId, limit) {
+    if (library.mediaType !== 'podcast') return { libraryItems: [], count: 0 }
+
+    const { libraryItems, count } = await libraryItemsPodcastFilters.getFilteredPodcastEpisodes(library.id, userId, null, null, 'createdAt', true, limit, 0)
+    return {
+      count,
+      libraryItems: libraryItems.map(li => {
+        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        oldLibraryItem.recentEpisode = li.recentEpisode
+        return oldLibraryItem
+      })
     }
   }
 }

@@ -230,7 +230,7 @@ module.exports = {
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS INTEGER) COLLATE NOCASE ${nullDir}`)]]
+      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS INTEGER) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
     }
@@ -268,7 +268,7 @@ module.exports = {
         }
       ],
       order: [
-        Sequelize.literal('CAST(`books.bookSeries.sequence` AS INTEGER) COLLATE NOCASE ASC NULLS LAST')
+        Sequelize.literal('CAST(`books.bookSeries.sequence` AS INTEGER) ASC NULLS LAST')
       ]
     })
     const bookSeriesToInclude = []
@@ -426,7 +426,7 @@ module.exports = {
       })
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
-        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS INTEGER) COLLATE NOCASE ASC NULLS LAST')])
+        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS INTEGER) ASC NULLS LAST')])
       }
     } else if (filterGroup === 'issues') {
       libraryItemWhere[Sequelize.Op.or] = [
