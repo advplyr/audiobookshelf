@@ -1,3 +1,4 @@
+const Sequelize = require('sequelize')
 const Database = require('../../Database')
 const Logger = require('../../Logger')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
@@ -41,14 +42,14 @@ module.exports = {
    * @param {string[]} include 
    * @param {number} limit 
    * @param {boolean} ebook true if continue reading shelf
-   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   * @returns {object} { items:LibraryItem[], count:number }
    */
-  async getLibraryItemsInProgress(library, userId, include, limit, ebook = false) {
+  async getMediaItemsInProgress(library, userId, include, limit, ebook = false) {
     if (library.mediaType === 'book') {
       const filterValue = ebook ? 'ebook-in-progress' : 'audio-in-progress'
       const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, userId, 'progress', filterValue, 'progress', true, false, include, limit, 0)
       return {
-        libraryItems: libraryItems.map(li => {
+        items: libraryItems.map(li => {
           const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
           if (li.rssFeed) {
             oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
@@ -58,9 +59,10 @@ module.exports = {
         count
       }
     } else {
+      // TODO: Get episodes in progress
       return {
         count: 0,
-        libraryItems: []
+        items: []
       }
     }
   },
@@ -133,6 +135,40 @@ module.exports = {
   },
 
   /**
+   * Get library items or podcast episodes for the "Listen Again" or "Read Again" shelf
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @param {boolean} ebook true if "Read Again" shelf
+   * @returns {object} { items:object[], count:number }
+   */
+  async getMediaFinished(library, userId, include, limit, ebook = false) {
+    if (ebook && library.mediaType !== 'book') return { items: [], count: 0 }
+
+    if (library.mediaType === 'book') {
+      const filterValue = ebook ? 'ebook-finished' : 'finished'
+      const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(library.id, userId, 'progress', filterValue, 'progress', true, false, include, limit, 0)
+      return {
+        items: libraryItems.map(li => {
+          const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+          if (li.rssFeed) {
+            oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+          }
+          return oldLibraryItem
+        }),
+        count
+      }
+    } else {
+      // TODO: Get podcast episodes finished
+      return {
+        items: [],
+        count: 0
+      }
+    }
+  },
+
+  /**
    * Get series for recent series shelf
    * @param {oldLibrary} library 
    * @param {string[]} include 
@@ -140,6 +176,8 @@ module.exports = {
    * @returns {object} { series:oldSeries[], count:number}
    */
   async getSeriesMostRecentlyAdded(library, include, limit) {
+    if (library.mediaType !== 'book') return { series: [], count: 0 }
+
     const seriesIncludes = []
     if (include.includes('rssfeed')) {
       seriesIncludes.push({
@@ -172,8 +210,6 @@ module.exports = {
       ]
     })
 
-    Logger.debug(`Found ${series.length} series recently added (${count} total)`)
-
     const allOldSeries = []
     for (const s of series) {
       const oldSeries = s.getOldSeries().toJSON()
@@ -203,6 +239,64 @@ module.exports = {
 
     return {
       series: allOldSeries,
+      count
+    }
+  },
+
+  /**
+   * Get most recently created authors for "Newest Authors" shelf
+   * Author must be linked to at least 1 book
+   * @param {oldLibrary} library 
+   * @param {number} limit 
+   * @returns {object} { authors:oldAuthor[], count:number }
+   */
+  async getNewestAuthors(library, limit) {
+    if (library.mediaType !== 'book') return { authors: [], count: 0 }
+
+    const { rows: authors, count } = await Database.models.author.findAndCountAll({
+      where: {
+        libraryId: library.id
+      },
+      include: {
+        model: Database.models.bookAuthor,
+        required: true // Must belong to a book
+      },
+      limit,
+      distinct: true,
+      order: [
+        ['createdAt', 'DESC']
+      ]
+    })
+
+    return {
+      authors: authors.map((au) => {
+        const numBooks = au.bookAuthors?.length || 0
+        return au.getOldAuthor().toJSONExpanded(numBooks)
+      }),
+      count
+    }
+  },
+
+  /**
+   * Get book library items for the "Discover" shelf
+   * @param {oldLibrary} library 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @returns {object} {libraryItems:oldLibraryItem[], count:number}
+   */
+  async getLibraryItemsToDiscover(library, userId, include, limit) {
+    if (library.mediaType !== 'book') return { libraryItems: [], count: 0 }
+
+    const { libraryItems, count } = await libraryItemsBookFilters.getDiscoverLibraryItems(library.id, userId, include, limit)
+    return {
+      libraryItems: libraryItems.map(li => {
+        const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(li).toJSONMinified()
+        if (li.rssFeed) {
+          oldLibraryItem.rssFeed = Database.models.feed.getOldFeed(li.rssFeed).toJSONMinified()
+        }
+        return oldLibraryItem
+      }),
       count
     }
   }

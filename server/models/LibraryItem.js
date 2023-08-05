@@ -1,4 +1,4 @@
-const { DataTypes, Model, literal } = require('sequelize')
+const { DataTypes, Model } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
@@ -447,32 +447,40 @@ module.exports = (sequelize) => {
      */
     static async getPersonalizedShelves(library, userId, include, limit) {
       const isPodcastLibrary = library.mediaType === 'podcast'
+
+      const fullStart = Date.now() // Used for testing load times
+
       const shelves = []
-      const itemsInProgressPayload = await libraryFilters.getLibraryItemsInProgress(library, userId, include, limit, false)
-      if (itemsInProgressPayload.libraryItems.length) {
+
+      const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, userId, include, limit, false)
+      if (itemsInProgressPayload.items.length) {
         shelves.push({
           id: 'continue-listening',
           label: 'Continue Listening',
           labelStringKey: 'LabelContinueListening',
           type: isPodcastLibrary ? 'episode' : 'book',
-          entities: itemsInProgressPayload.libraryItems,
+          entities: itemsInProgressPayload.items,
           total: itemsInProgressPayload.count
         })
       }
+      Logger.debug(`Loaded ${itemsInProgressPayload.items.length} items for "Continue Listening" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
+      let start = Date.now()
       if (library.mediaType === 'book') {
-        const ebooksInProgressPayload = await libraryFilters.getLibraryItemsInProgress(library, userId, include, limit, true)
-        if (ebooksInProgressPayload.libraryItems.length) {
+        const ebooksInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, userId, include, limit, true)
+        if (ebooksInProgressPayload.items.length) {
           shelves.push({
             id: 'continue-reading',
             label: 'Continue Reading',
             labelStringKey: 'LabelContinueReading',
             type: 'book',
-            entities: ebooksInProgressPayload.libraryItems,
+            entities: ebooksInProgressPayload.items,
             total: ebooksInProgressPayload.count
           })
         }
+        Logger.debug(`Loaded ${ebooksInProgressPayload.items.length} items for "Continue Reading" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
+        start = Date.now()
         const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, userId, include, limit)
         if (continueSeriesPayload.libraryItems.length) {
           shelves.push({
@@ -484,6 +492,8 @@ module.exports = (sequelize) => {
             total: continueSeriesPayload.count
           })
         }
+        Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+        start = Date.now()
       }
 
       const mostRecentPayload = await libraryFilters.getLibraryItemsMostRecentlyAdded(library, userId, include, limit)
@@ -497,7 +507,9 @@ module.exports = (sequelize) => {
           total: mostRecentPayload.count
         })
       }
+      Logger.debug(`Loaded ${mostRecentPayload.libraryItems.length} items for "Recently Added" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
+      start = Date.now()
       const seriesMostRecentPayload = await libraryFilters.getSeriesMostRecentlyAdded(library, include, 5)
       if (seriesMostRecentPayload.series.length) {
         shelves.push({
@@ -509,6 +521,65 @@ module.exports = (sequelize) => {
           total: seriesMostRecentPayload.count
         })
       }
+      Logger.debug(`Loaded ${seriesMostRecentPayload.series.length} items for "Recent Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
+      const discoverLibraryItemsPayload = await libraryFilters.getLibraryItemsToDiscover(library, userId, include, limit)
+      if (discoverLibraryItemsPayload.libraryItems.length) {
+        shelves.push({
+          id: 'discover',
+          label: 'Discover',
+          labelStringKey: 'LabelDiscover',
+          type: library.mediaType,
+          entities: discoverLibraryItemsPayload.libraryItems,
+          total: discoverLibraryItemsPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${discoverLibraryItemsPayload.libraryItems.length} items for "Discover" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
+      const listenAgainPayload = await libraryFilters.getMediaFinished(library, userId, include, limit, false)
+      if (listenAgainPayload.items.length) {
+        shelves.push({
+          id: 'listen-again',
+          label: 'Listen Again',
+          labelStringKey: 'LabelListenAgain',
+          type: isPodcastLibrary ? 'episode' : 'book',
+          entities: listenAgainPayload.items,
+          total: listenAgainPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${listenAgainPayload.items.length} items for "Listen Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
+      const readAgainPayload = await libraryFilters.getMediaFinished(library, userId, include, limit, true)
+      if (readAgainPayload.items.length) {
+        shelves.push({
+          id: 'read-again',
+          label: 'Read Again',
+          labelStringKey: 'LabelReadAgain',
+          type: 'book',
+          entities: readAgainPayload.items,
+          total: readAgainPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${readAgainPayload.items.length} items for "Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      start = Date.now()
+      const newestAuthorsPayload = await libraryFilters.getNewestAuthors(library, limit)
+      if (newestAuthorsPayload.authors.length) {
+        shelves.push({
+          id: 'newest-authors',
+          label: 'Newest Authors',
+          labelStringKey: 'LabelNewestAuthors',
+          type: 'authors',
+          entities: newestAuthorsPayload.authors,
+          total: newestAuthorsPayload.count
+        })
+      }
+      Logger.debug(`Loaded ${newestAuthorsPayload.authors.length} authors for "Newest Authors" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
+      Logger.debug(`Loaded ${shelves.length} personalized shelves in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
       return shelves
     }

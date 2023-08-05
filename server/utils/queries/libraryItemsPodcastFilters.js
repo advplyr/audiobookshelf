@@ -147,7 +147,7 @@ module.exports = {
 
       return libraryItem
     })
-    Logger.debug('Found', libraryItems.length, 'library items', 'total=', count)
+
     return {
       libraryItems,
       count

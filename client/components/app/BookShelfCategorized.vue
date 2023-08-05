@@ -68,6 +68,9 @@ export default {
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
+    currentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
+    },
     libraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
     },
@@ -167,8 +170,9 @@ export default {
       this.loaded = true
     },
     async fetchCategories() {
+      const endpoint = this.currentLibraryMediaType === 'book' ? 'personalized2' : 'personalized'
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed,numEpisodesIncomplete`)
+        .$get(`/api/libraries/${this.currentLibraryId}/${endpoint}?include=rssfeed,numEpisodesIncomplete`)
         .then((data) => {
           return data
         })
@@ -346,8 +350,6 @@ export default {
       })
     },
     episodeAdded(episodeWithLibraryItem) {
-      console.log('Podcast episode added', episodeWithLibraryItem)
-
       const isThisLibrary = episodeWithLibraryItem.libraryItem?.libraryId === this.currentLibraryId
       if (!this.search && isThisLibrary) {
         this.fetchCategories()

@@ -62,7 +62,8 @@ module.exports = {
       } else if (group === 'languages') {
         filtered = filtered.filter(li => li.media.metadata.language === filter)
       } else if (group === 'tracks') {
-        if (filter === 'single') filtered = filtered.filter(li => li.isBook && li.media.numTracks === 1)
+        if (filter === 'none') filtered = filtered.filter(li => li.isBook && !li.media.numTracks)
+        else if (filter === 'single') filtered = filtered.filter(li => li.isBook && li.media.numTracks === 1)
         else if (filter === 'multi') filtered = filtered.filter(li => li.isBook && li.media.numTracks > 1)
       } else if (group === 'ebooks') {
         if (filter === 'ebook') filtered = filtered.filter(li => li.media.ebookFile)

@@ -349,6 +349,10 @@ export default {
     tracks() {
       return [
         {
+          id: 'none',
+          name: this.$strings.LabelTracksNone
+        },
+        {
           id: 'single',
           name: this.$strings.LabelTracksSingleTrack
         },

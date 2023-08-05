@@ -119,7 +119,9 @@ module.exports = {
           }
         ]
       } else if (value === 'ebook-in-progress') {
-        mediaWhere[Sequelize.Op.and] = [
+        // Filters for ebook only
+        mediaWhere = [
+          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
           {
             '$mediaProgresses.ebookProgress$': {
               [Sequelize.Op.gt]: 0
@@ -127,6 +129,17 @@ module.exports = {
           },
           {
             '$mediaProgresses.isFinished$': false
+          }
+        ]
+      } else if (value === 'ebook-finished') {
+        // Filters for ebook only
+        mediaWhere = [
+          Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0),
+          {
+            '$mediaProgresses.isFinished$': true,
+            'ebookFile': {
+              [Sequelize.Op.not]: null
+            }
           }
         ]
       }
@@ -144,7 +157,9 @@ module.exports = {
     } else if (group === 'languages') {
       mediaWhere['language'] = value
     } else if (group === 'tracks') {
-      if (value === 'multi') {
+      if (value === 'none') {
+        mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), 0)
+      } else if (value === 'multi') {
         mediaWhere = Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('audioFiles')), {
           [Sequelize.Op.gt]: 1
         })
@@ -542,7 +557,7 @@ module.exports = {
 
       return libraryItem
     })
-    Logger.debug('Found', libraryItems.length, 'library items', 'total=', count)
+
     return {
       libraryItems,
       count
@@ -663,8 +678,6 @@ module.exports = {
       offset
     })
 
-    Logger.debug('Found', series.length, 'series to continue', 'total=', count)
-
     // Step 3: Map series to library items by selecting the first unfinished book in the series
     const libraryItems = series.map(s => {
       // Natural sort sequence, nulls last
@@ -695,6 +708,128 @@ module.exports = {
       libraryItem.media = bookSeries.book
       return libraryItem
     })
+    return {
+      libraryItems,
+      count
+    }
+  },
+
+  /**
+   * Get book library items for the "Discover" shelf
+   * Random selection of books that are not started
+   *  - only includes the first book of a not-started series
+   * @param {string} libraryId 
+   * @param {string} userId 
+   * @param {string[]} include 
+   * @param {number} limit 
+   * @returns {object} {libraryItems:LibraryItem, count:number}
+   */
+  async getDiscoverLibraryItems(libraryId, userId, include, limit) {
+    // Step 1: Get the first book of every series that hasnt been started yet
+    const seriesNotStarted = await Database.models.series.findAll({
+      where: [
+        {
+          libraryId
+        },
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId WHERE bs.seriesId = series.id AND mp.userId = :userId AND (mp.isFinished = 1 OR mp.currentTime > 0))`), 0)
+      ],
+      replacements: {
+        userId
+      },
+      attributes: ['id'],
+      include: {
+        model: Database.models.bookSeries,
+        attributes: ['bookId', 'sequence'],
+        separate: true,
+        required: true,
+        order: [
+          [Sequelize.literal('CAST(sequence AS INTEGER) ASC NULLS LAST')]
+        ],
+        limit: 1
+      },
+      subQuery: false
+    })
+
+    const booksFromSeriesToInclude = seriesNotStarted.map(se => se.bookSeries?.[0]?.bookId).filter(bid => bid)
+
+    // optional include rssFeed
+    const libraryItemIncludes = []
+    if (include.includes('rssfeed')) {
+      libraryItemIncludes.push({
+        model: Database.models.feed
+      })
+    }
+
+    // Step 2: Get books not started and not in a series OR is the first book of a series not started (ordered randomly)
+    const { rows: books, count } = await Database.models.book.findAndCountAll({
+      where: {
+        '$mediaProgresses.isFinished$': {
+          [Sequelize.Op.or]: [null, 0]
+        },
+        '$mediaProgresses.currentTime$': {
+          [Sequelize.Op.or]: [null, 0]
+        },
+        [Sequelize.Op.or]: [
+          Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
+          {
+            id: {
+              [Sequelize.Op.in]: booksFromSeriesToInclude
+            }
+          }
+        ]
+      },
+      include: [
+        {
+          model: Database.models.libraryItem,
+          where: {
+            libraryId
+          },
+          include: libraryItemIncludes
+        },
+        {
+          model: Database.models.mediaProgress,
+          where: {
+            userId
+          },
+          required: false
+        },
+        {
+          model: Database.models.bookAuthor,
+          attributes: ['authorId'],
+          include: {
+            model: Database.models.author
+          },
+          separate: true
+        },
+        {
+          model: Database.models.bookSeries,
+          attributes: ['seriesId', 'sequence'],
+          include: {
+            model: Database.models.series
+          },
+          separate: true
+        }
+      ],
+      subQuery: false,
+      distinct: true,
+      limit,
+      order: Database.sequelize.random()
+    })
+
+    // Step 3: Map books to library items
+    const libraryItems = books.map((bookExpanded) => {
+      const libraryItem = bookExpanded.libraryItem.toJSON()
+      const book = bookExpanded.toJSON()
+      delete book.libraryItem
+      libraryItem.media = book
+
+      if (libraryItem.feeds?.length) {
+        libraryItem.rssFeed = libraryItem.feeds[0]
+      }
+
+      return libraryItem
+    })
+
     return {
       libraryItems,
       count
