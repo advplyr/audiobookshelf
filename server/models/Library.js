@@ -145,7 +145,8 @@ module.exports = (sequelize) => {
      */
     static async getAllLibraryIds() {
       const libraries = await this.findAll({
-        attributes: ['id']
+        attributes: ['id', 'displayOrder'],
+        order: [['displayOrder', 'ASC']]
       })
       return libraries.map(l => l.id)
     }
