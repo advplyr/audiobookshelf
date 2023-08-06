@@ -1,4 +1,5 @@
 const Path = require('path')
+const Sequelize = require('sequelize')
 const express = require('express')
 const http = require('http')
 const fs = require('./libs/fsExtra')
@@ -248,25 +249,45 @@ class Server {
     await this.scanner.scanFilesChanged(fileUpdates)
   }
 
-  // Remove user media progress with items that no longer exist & remove seriesHideFrom that no longer exist
+  /**
+   * Remove user media progress for items that no longer exist & remove seriesHideFrom that no longer exist
+   */
   async cleanUserData() {
+    // Get all media progress without an associated media item
+    const mediaProgressToRemove = await Database.models.mediaProgress.findAll({
+      where: {
+        '$podcastEpisode.id$': null,
+        '$book.id$': null
+      },
+      attributes: ['id'],
+      include: [
+        {
+          model: Database.models.book,
+          attributes: ['id']
+        },
+        {
+          model: Database.models.podcastEpisode,
+          attributes: ['id']
+        }
+      ]
+    })
+    if (mediaProgressToRemove.length) {
+      // Remove media progress
+      const mediaProgressRemoved = await Database.models.mediaProgress.destroy({
+        where: {
+          id: {
+            [Sequelize.Op.in]: mediaProgressToRemove.map(mp => mp.id)
+          }
+        }
+      })
+      if (mediaProgressRemoved) {
+        Logger.info(`[Server] Removed ${mediaProgressRemoved} media progress for media items that no longer exist in db`)
+      }
+    }
+
+    // Remove series from hide from continue listening that no longer exist
     const users = await Database.models.user.getOldUsers()
     for (const _user of users) {
-      if (_user.mediaProgress.length) {
-        for (const mediaProgress of _user.mediaProgress) {
-          const libraryItem = Database.libraryItems.find(li => li.id === mediaProgress.libraryItemId)
-          if (libraryItem && mediaProgress.episodeId) {
-            const episode = libraryItem.media.checkHasEpisode?.(mediaProgress.episodeId)
-            if (episode) continue
-          } else {
-            continue
-          }
-
-          Logger.debug(`[Server] Removing media progress ${mediaProgress.id} data from user ${_user.username}`)
-          await Database.removeMediaProgress(mediaProgress.id)
-        }
-      }
-
       let hasUpdated = false
       if (_user.seriesHideFromContinueListening.length) {
         _user.seriesHideFromContinueListening = _user.seriesHideFromContinueListening.filter(seriesId => {

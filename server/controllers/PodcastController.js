@@ -263,7 +263,7 @@ class PodcastController {
 
     // Remove episode from Podcast and library file
     const episodeRemoved = libraryItem.media.removeEpisode(episodeId)
-    if (episodeRemoved && episodeRemoved.audioFile) {
+    if (episodeRemoved?.audioFile) {
       libraryItem.removeLibraryFile(episodeRemoved.audioFile.ino)
     }
 
@@ -281,6 +281,16 @@ class PodcastController {
         await Database.updatePlaylist(playlist)
         SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
       }
+    }
+
+    // Remove media progress for this episode
+    const mediaProgressRemoved = await Database.models.mediaProgress.destroy({
+      where: {
+        mediaItemId: episode.id
+      }
+    })
+    if (mediaProgressRemoved) {
+      Logger.info(`[PodcastController] Removed ${mediaProgressRemoved} media progress for episode ${episode.id}`)
     }
 
     await Database.updateLibraryItem(libraryItem)
