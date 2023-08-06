@@ -4,6 +4,35 @@ const Logger = require('../../Logger')
 
 module.exports = {
   /**
+   * User permissions to restrict books for explicit content & tags
+   * @param {oldUser} user 
+   * @returns {object} { bookWhere:Sequelize.WhereOptions, replacements:string[] }
+   */
+  getUserPermissionBookWhereQuery(user) {
+    const bookWhere = []
+    const replacements = {}
+    if (!user.canAccessExplicitContent) {
+      bookWhere.push({
+        explicit: false
+      })
+    }
+    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
+      replacements['userTagsSelected'] = user.itemTagsSelected
+      if (user.permissions.selectedTagsNotAccessible) {
+        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
+      } else {
+        bookWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
+          [Sequelize.Op.gte]: 1
+        }))
+      }
+    }
+    return {
+      bookWhere,
+      replacements
+    }
+  },
+
+  /**
    * When collapsing series and filtering by progress
    * different where options are required
    * 
@@ -296,6 +325,7 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId 
+   * @param {oldUser} user
    * @param {[string]} filterGroup 
    * @param {[string]} filterValue 
    * @param {string} sortBy 
@@ -306,7 +336,7 @@ module.exports = {
    * @param {number} offset 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset) {
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, collapseseries, include, limit, offset) {
     // TODO: Handle collapse sub-series
     if (filterGroup === 'series' && collapseseries) {
       collapseseries = false
@@ -442,14 +472,22 @@ module.exports = {
         model: Database.models.mediaProgress,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],
         where: {
-          userId
+          userId: user.id
         },
         required: false
       })
     }
 
-    const { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
+    let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
 
+    let bookWhere = Array.isArray(mediaWhere) ? mediaWhere : [mediaWhere]
+
+    // User permissions
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+    replacements = { ...replacements, ...userPermissionBookWhere.replacements }
+    bookWhere.push(...userPermissionBookWhere.bookWhere)
+
+    // Handle collapsed series
     let collapseSeriesBookSeries = []
     if (collapseseries) {
       let seriesBookWhere = null
@@ -461,7 +499,7 @@ module.exports = {
           ['$books.authors.id$']: null
         }
       } else {
-        seriesBookWhere = mediaWhere
+        seriesBookWhere = bookWhere
       }
 
       const bookFindOptions = {
@@ -479,9 +517,11 @@ module.exports = {
       }
       const { booksToExclude, bookSeriesToInclude } = await this.getCollapseSeriesBooksToExclude(bookFindOptions, seriesWhere)
       if (booksToExclude.length) {
-        mediaWhere['id'] = {
-          [Sequelize.Op.notIn]: booksToExclude
-        }
+        bookWhere.push({
+          id: {
+            [Sequelize.Op.notIn]: booksToExclude
+          }
+        })
       }
       collapseSeriesBookSeries = bookSeriesToInclude
       if (!bookAttributes?.include) bookAttributes = { include: [] }
@@ -496,7 +536,7 @@ module.exports = {
     }
 
     const { rows: books, count } = await Database.models.book.findAndCountAll({
-      where: mediaWhere,
+      where: bookWhere,
       distinct: true,
       attributes: bookAttributes,
       replacements,
@@ -572,51 +612,13 @@ module.exports = {
    * 3. Has at least 1 unfinished book
    * TODO: Reduce queries
    * @param {string} libraryId 
-   * @param {string} userId 
+   * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
    * @param {number} offset 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getContinueSeriesLibraryItems(libraryId, userId, include, limit, offset) {
-    // Step 1: Get all media progress for user that belongs to a series book
-    const mediaProgressForUserForSeries = await Database.models.mediaProgress.findAll({
-      where: {
-        userId
-      },
-      include: [
-        {
-          model: Database.models.book,
-          attributes: ['id', 'title'],
-          include: {
-            model: Database.models.series,
-            attributes: ['id'],
-            through: {
-              attributes: []
-            },
-            required: true
-          },
-          required: true
-        }
-      ]
-    })
-
-    // Step 1.5: Identify the series that have at least 1 finished book and have no books in progress
-    let seriesToInclude = []
-    let seriesToExclude = []
-    for (const prog of mediaProgressForUserForSeries) {
-      const series = prog.mediaItem?.series || []
-      for (const s of series) {
-        if (prog.currentTime > 0 && !prog.isFinished) { // in-progress
-          seriesToInclude = seriesToInclude.filter(sid => sid !== s.id)
-          if (!seriesToExclude.includes(s.id)) seriesToExclude.push(s.id)
-        } else if (prog.isFinished && !seriesToExclude.includes(s.id) && !seriesToInclude.includes(s.id)) { // finished
-          seriesToInclude.push(s.id)
-        }
-      }
-    }
-
-    // optional include rssFeed with library item
+  async getContinueSeriesLibraryItems(libraryId, user, include, limit, offset) {
     const libraryItemIncludes = []
     if (include.includes('rssfeed')) {
       libraryItemIncludes.push({
@@ -624,90 +626,101 @@ module.exports = {
       })
     }
 
-    // Step 2: Get all series identified in step 1.5 and filter out series where all books are finished
+    const bookWhere = []
+    // TODO: Permissions should also be applied to subqueries
+    // User permissions
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+    bookWhere.push(...userPermissionBookWhere.bookWhere)
+
     const { rows: series, count } = await Database.models.series.findAndCountAll({
-      where: {
-        id: {
-          [Sequelize.Op.in]: seriesToInclude
+      where: [
+        {
+          libraryId
         },
-        '$bookSeries.book.mediaProgresses.isFinished$': {
-          [Sequelize.Op.or]: [false, null]
+        // TODO: Simplify queries
+        // Has at least 1 book finished
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE bs.seriesId = series.id AND mp.mediaItemId = bs.bookId AND mp.userId = :userId AND mp.isFinished = 1)`), {
+          [Sequelize.Op.gte]: 1
+        }),
+        // Has at least 1 book not finished
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId AND mp.userId = :userId WHERE bs.seriesId = series.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), {
+          [Sequelize.Op.gte]: 1
+        }),
+        // Has no books in progress
+        Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM mediaProgresses mp, bookSeries bs WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id AND mp.isFinished = 0 AND mp.currentTime > 0)`), 0)
+      ],
+      attributes: {
+        include: [
+          [Sequelize.literal('(SELECT max(mp.updatedAt) FROM bookSeries bs, mediaProgresses mp WHERE mp.mediaItemId = bs.bookId AND mp.userId = :userId AND bs.seriesId = series.id)'), 'recent_progress']
+        ]
+      },
+      replacements: {
+        userId: user.id,
+        ...userPermissionBookWhere.replacements
+      },
+      include: {
+        model: Database.models.bookSeries,
+        attributes: ['bookId', 'sequence'],
+        separate: true,
+        subQuery: false,
+        order: [
+          [Sequelize.literal('CAST(sequence AS INTEGER) ASC NULLS LAST')]
+        ],
+        where: {
+          '$book.mediaProgresses.isFinished$': {
+            [Sequelize.Op.or]: [null, 0]
+          }
+        },
+        include: {
+          model: Database.models.book,
+          where: bookWhere,
+          include: [
+            {
+              model: Database.models.libraryItem,
+              include: libraryItemIncludes
+            },
+            {
+              model: Database.models.author,
+              through: {
+                attributes: []
+              }
+            },
+            {
+              model: Database.models.mediaProgress,
+              where: {
+                userId: user.id
+              },
+              required: false
+            }
+          ]
         }
       },
-      distinct: true,
-      include: [
-        {
-          model: Database.models.bookSeries,
-          include: {
-            model: Database.models.book,
-            include: [
-              {
-                model: Database.models.libraryItem,
-                where: {
-                  libraryId
-                },
-                include: libraryItemIncludes
-              },
-              {
-                model: Database.models.bookAuthor,
-                attributes: ['authorId'],
-                include: {
-                  model: Database.models.author
-                },
-                separate: true
-              },
-              {
-                model: Database.models.mediaProgress,
-                where: {
-                  userId
-                },
-                required: false
-              }
-            ],
-            required: true
-          },
-          required: true
-        }
-      ],
       order: [
-        // Sort by progress most recently updated
-        [Database.models.bookSeries, Database.models.book, Database.models.mediaProgress, 'updatedAt', 'DESC'],
+        [Sequelize.literal('recent_progress DESC')]
       ],
+      distinct: true,
       subQuery: false,
       limit,
       offset
     })
 
-    // Step 3: Map series to library items by selecting the first unfinished book in the series
     const libraryItems = series.map(s => {
-      // Natural sort sequence, nulls last
-      // TODO: sort in query. was unable to sort nested association with sequelize
-      s.bookSeries.sort((a, b) => {
-        if (!a.sequence) return 1
-        if (!b.sequence) return -1
-        return a.sequence.localeCompare(b.sequence, undefined, {
-          numeric: true,
-          sensitivity: 'base'
-        })
-      })
-
-      // Get first unfinished book to use
-      const bookSeries = s.bookSeries.find(bs => !bs.book.mediaProgresses?.[0]?.isFinished)
-      const libraryItem = bookSeries.book.libraryItem.toJSON()
-
+      if (!s.bookSeries.length) return null // this is only possible if user has restricted books in series
+      const libraryItem = s.bookSeries[0].book.libraryItem.toJSON()
+      const book = s.bookSeries[0].book.toJSON()
+      delete book.libraryItem
       libraryItem.series = {
         id: s.id,
         name: s.name,
-        sequence: bookSeries.sequence
+        sequence: s.bookSeries[0].sequence
       }
-
       if (libraryItem.feeds?.length) {
         libraryItem.rssFeed = libraryItem.feeds[0]
       }
-
-      libraryItem.media = bookSeries.book
+      libraryItem.media = book
       return libraryItem
-    })
+    }).filter(s => s)
+
     return {
       libraryItems,
       count
@@ -719,12 +732,14 @@ module.exports = {
    * Random selection of books that are not started
    *  - only includes the first book of a not-started series
    * @param {string} libraryId 
-   * @param {string} userId 
+   * @param {oldUser} user 
    * @param {string[]} include 
    * @param {number} limit 
    * @returns {object} {libraryItems:LibraryItem, count:number}
    */
-  async getDiscoverLibraryItems(libraryId, userId, include, limit) {
+  async getDiscoverLibraryItems(libraryId, user, include, limit) {
+    const userPermissionBookWhere = this.getUserPermissionBookWhereQuery(user)
+
     // Step 1: Get the first book of every series that hasnt been started yet
     const seriesNotStarted = await Database.models.series.findAll({
       where: [
@@ -734,7 +749,8 @@ module.exports = {
         Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM bookSeries bs LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = bs.bookId WHERE bs.seriesId = series.id AND mp.userId = :userId AND (mp.isFinished = 1 OR mp.currentTime > 0))`), 0)
       ],
       replacements: {
-        userId
+        userId: user.id,
+        ...userPermissionBookWhere.replacements
       },
       attributes: ['id'],
       include: {
@@ -742,6 +758,10 @@ module.exports = {
         attributes: ['bookId', 'sequence'],
         separate: true,
         required: true,
+        include: {
+          model: Database.models.book,
+          where: userPermissionBookWhere.bookWhere
+        },
         order: [
           [Sequelize.literal('CAST(sequence AS INTEGER) ASC NULLS LAST')]
         ],
@@ -762,22 +782,26 @@ module.exports = {
 
     // Step 2: Get books not started and not in a series OR is the first book of a series not started (ordered randomly)
     const { rows: books, count } = await Database.models.book.findAndCountAll({
-      where: {
-        '$mediaProgresses.isFinished$': {
-          [Sequelize.Op.or]: [null, 0]
-        },
-        '$mediaProgresses.currentTime$': {
-          [Sequelize.Op.or]: [null, 0]
-        },
-        [Sequelize.Op.or]: [
-          Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
-          {
-            id: {
-              [Sequelize.Op.in]: booksFromSeriesToInclude
+      where: [
+        {
+          '$mediaProgresses.isFinished$': {
+            [Sequelize.Op.or]: [null, 0]
+          },
+          '$mediaProgresses.currentTime$': {
+            [Sequelize.Op.or]: [null, 0]
+          },
+          [Sequelize.Op.or]: [
+            Sequelize.where(Sequelize.literal(`(SELECT COUNT(*) FROM bookSeries bs where bs.bookId = book.id)`), 0),
+            {
+              id: {
+                [Sequelize.Op.in]: booksFromSeriesToInclude
+              }
             }
-          }
-        ]
-      },
+          ]
+        },
+        ...userPermissionBookWhere.bookWhere
+      ],
+      replacements: userPermissionBookWhere.replacements,
       include: [
         {
           model: Database.models.libraryItem,
@@ -789,7 +813,7 @@ module.exports = {
         {
           model: Database.models.mediaProgress,
           where: {
-            userId
+            userId: user.id
           },
           required: false
         },

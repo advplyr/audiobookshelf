@@ -4,6 +4,34 @@ const Database = require('../../Database')
 const Logger = require('../../Logger')
 
 module.exports = {
+  /**
+   * User permissions to restrict podcasts for explicit content & tags
+   * @param {oldUser} user 
+   * @returns {object} { podcastWhere:Sequelize.WhereOptions, replacements:string[] }
+   */
+  getUserPermissionPodcastWhereQuery(user) {
+    const podcastWhere = []
+    const replacements = {}
+    if (!user.canAccessExplicitContent) {
+      podcastWhere.push({
+        explicit: false
+      })
+    }
+    if (!user.permissions.accessAllTags && user.itemTagsSelected.length) {
+      replacements['userTagsSelected'] = user.itemTagsSelected
+      if (user.permissions.selectedTagsNotAccessible) {
+        podcastWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), 0))
+      } else {
+        podcastWhere.push(Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:userTagsSelected))`), {
+          [Sequelize.Op.gte]: 1
+        }))
+      }
+    }
+    return {
+      podcastWhere,
+      replacements
+    }
+  },
 
   /**
    * Get where options for Podcast model
@@ -64,6 +92,7 @@ module.exports = {
   /**
    * Get library items for podcast media type using filter and sort
    * @param {string} libraryId 
+   * @param {oldUser} user
    * @param {[string]} filterGroup 
    * @param {[string]} filterValue 
    * @param {string} sortBy 
@@ -73,7 +102,7 @@ module.exports = {
    * @param {number} offset 
    * @returns {object} { libraryItems:LibraryItem[], count:number }
    */
-  async getFilteredLibraryItems(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset) {
+  async getFilteredLibraryItems(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, include, limit, offset) {
     const includeRSSFeed = include.includes('rssfeed')
     const includeNumEpisodesIncomplete = include.includes('numepisodesincomplete')
 
@@ -103,11 +132,18 @@ module.exports = {
       podcastIncludes.push([Sequelize.literal(`(SELECT count(*) FROM podcastEpisodes pe LEFT OUTER JOIN mediaProgresses mp ON mp.mediaItemId = pe.id AND mp.userId = :userId WHERE pe.podcastId = podcast.id AND (mp.isFinished = 0 OR mp.isFinished IS NULL))`), 'numEpisodesIncomplete'])
     }
 
-    const { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
-    replacements.userId = userId
+    let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
+    replacements.userId = user.id
+
+    const podcastWhere = []
+    if (Object.keys(mediaWhere).length) podcastWhere.push(mediaWhere)
+
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
+    replacements = { ...replacements, ...userPermissionPodcastWhere.replacements }
+    podcastWhere.push(...userPermissionPodcastWhere.podcastWhere)
 
     const { rows: podcasts, count } = await Database.models.podcast.findAndCountAll({
-      where: mediaWhere,
+      where: podcastWhere,
       replacements,
       distinct: true,
       attributes: {
@@ -157,7 +193,7 @@ module.exports = {
   /**
    * Get podcast episodes filtered and sorted
    * @param {string} libraryId 
-   * @param {string} userId 
+   * @param {oldUser} user 
    * @param {[string]} filterGroup 
    * @param {[string]} filterValue 
    * @param {string} sortBy 
@@ -166,7 +202,7 @@ module.exports = {
    * @param {number} offset 
    * @returns {object} {libraryItems:LibraryItem[], count:number}
    */
-  async getFilteredPodcastEpisodes(libraryId, userId, filterGroup, filterValue, sortBy, sortDesc, limit, offset) {
+  async getFilteredPodcastEpisodes(libraryId, user, filterGroup, filterValue, sortBy, sortDesc, limit, offset) {
     if (sortBy === 'progress' && filterGroup !== 'progress') {
       Logger.warn('Cannot sort podcast episodes by progress without filtering by progress')
       sortBy = 'createdAt'
@@ -178,7 +214,7 @@ module.exports = {
       podcastEpisodeIncludes.push({
         model: Database.models.mediaProgress,
         where: {
-          userId
+          userId: user.id
         },
         attributes: ['id', 'isFinished', 'currentTime', 'updatedAt']
       })
@@ -206,11 +242,15 @@ module.exports = {
       podcastEpisodeOrder.push([Sequelize.literal('mediaProgresses.updatedAt'), sortDesc ? 'DESC' : 'ASC'])
     }
 
+    const userPermissionPodcastWhere = this.getUserPermissionPodcastWhereQuery(user)
+
     const { rows: podcastEpisodes, count } = await Database.models.podcastEpisode.findAndCountAll({
       where: podcastEpisodeWhere,
+      replacements: userPermissionPodcastWhere.replacements,
       include: [
         {
           model: Database.models.podcast,
+          where: userPermissionPodcastWhere.podcastWhere,
           include: [
             {
               model: Database.models.libraryItem,

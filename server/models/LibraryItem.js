@@ -403,12 +403,12 @@ module.exports = (sequelize) => {
     /**
      * Get library items using filter and sort
      * @param {oldLibrary} library 
-     * @param {string} userId 
+     * @param {oldUser} user 
      * @param {object} options 
      * @returns {object} { libraryItems:oldLibraryItem[], count:number }
      */
-    static async getByFilterAndSort(library, userId, options) {
-      const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, userId, options)
+    static async getByFilterAndSort(library, user, options) {
+      const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, user, options)
       return {
         libraryItems: libraryItems.map(li => {
           const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
@@ -440,18 +440,18 @@ module.exports = (sequelize) => {
     /**
      * Get home page data personalized shelves
      * @param {oldLibrary} library 
-     * @param {string} userId 
+     * @param {oldUser} user 
      * @param {string[]} include 
      * @param {number} limit 
      * @returns {object[]} array of shelf objects
      */
-    static async getPersonalizedShelves(library, userId, include, limit) {
+    static async getPersonalizedShelves(library, user, include, limit) {
       const fullStart = Date.now() // Used for testing load times
 
       const shelves = []
 
       // "Continue Listening" shelf
-      const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, userId, include, limit, false)
+      const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, false)
       if (itemsInProgressPayload.items.length) {
         shelves.push({
           id: 'continue-listening',
@@ -467,7 +467,7 @@ module.exports = (sequelize) => {
       let start = Date.now()
       if (library.isBook) {
         // "Continue Reading" shelf
-        const ebooksInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, userId, include, limit, true)
+        const ebooksInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, true)
         if (ebooksInProgressPayload.items.length) {
           shelves.push({
             id: 'continue-reading',
@@ -482,7 +482,7 @@ module.exports = (sequelize) => {
 
         start = Date.now()
         // "Continue Series" shelf
-        const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, userId, include, limit)
+        const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, user, include, limit)
         if (continueSeriesPayload.libraryItems.length) {
           shelves.push({
             id: 'continue-series',
@@ -496,7 +496,7 @@ module.exports = (sequelize) => {
         Logger.debug(`Loaded ${continueSeriesPayload.libraryItems.length} of ${continueSeriesPayload.count} items for "Continue Series" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
       } else if (library.isPodcast) {
         // "Newest Episodes" shelf
-        const newestEpisodesPayload = await libraryFilters.getNewestPodcastEpisodes(library, userId, limit)
+        const newestEpisodesPayload = await libraryFilters.getNewestPodcastEpisodes(library, user, limit)
         if (newestEpisodesPayload.libraryItems.length) {
           shelves.push({
             id: 'newest-episodes',
@@ -512,7 +512,7 @@ module.exports = (sequelize) => {
 
       start = Date.now()
       // "Recently Added" shelf
-      const mostRecentPayload = await libraryFilters.getLibraryItemsMostRecentlyAdded(library, userId, include, limit)
+      const mostRecentPayload = await libraryFilters.getLibraryItemsMostRecentlyAdded(library, user, include, limit)
       if (mostRecentPayload.libraryItems.length) {
         shelves.push({
           id: 'recently-added',
@@ -528,7 +528,7 @@ module.exports = (sequelize) => {
       if (library.isBook) {
         start = Date.now()
         // "Recent Series" shelf
-        const seriesMostRecentPayload = await libraryFilters.getSeriesMostRecentlyAdded(library, include, 5)
+        const seriesMostRecentPayload = await libraryFilters.getSeriesMostRecentlyAdded(library, user, include, 5)
         if (seriesMostRecentPayload.series.length) {
           shelves.push({
             id: 'recent-series',
@@ -543,7 +543,7 @@ module.exports = (sequelize) => {
 
         start = Date.now()
         // "Discover" shelf
-        const discoverLibraryItemsPayload = await libraryFilters.getLibraryItemsToDiscover(library, userId, include, limit)
+        const discoverLibraryItemsPayload = await libraryFilters.getLibraryItemsToDiscover(library, user, include, limit)
         if (discoverLibraryItemsPayload.libraryItems.length) {
           shelves.push({
             id: 'discover',
@@ -559,7 +559,7 @@ module.exports = (sequelize) => {
 
       start = Date.now()
       // "Listen Again" shelf
-      const listenAgainPayload = await libraryFilters.getMediaFinished(library, userId, include, limit, false)
+      const listenAgainPayload = await libraryFilters.getMediaFinished(library, user, include, limit, false)
       if (listenAgainPayload.items.length) {
         shelves.push({
           id: 'listen-again',
@@ -575,7 +575,7 @@ module.exports = (sequelize) => {
       if (library.isBook) {
         start = Date.now()
         // "Read Again" shelf
-        const readAgainPayload = await libraryFilters.getMediaFinished(library, userId, include, limit, true)
+        const readAgainPayload = await libraryFilters.getMediaFinished(library, user, include, limit, true)
         if (readAgainPayload.items.length) {
           shelves.push({
             id: 'read-again',
@@ -590,7 +590,7 @@ module.exports = (sequelize) => {
 
         start = Date.now()
         // "Newest Authors" shelf
-        const newestAuthorsPayload = await libraryFilters.getNewestAuthors(library, limit)
+        const newestAuthorsPayload = await libraryFilters.getNewestAuthors(library, user, limit)
         if (newestAuthorsPayload.authors.length) {
           shelves.push({
             id: 'newest-authors',

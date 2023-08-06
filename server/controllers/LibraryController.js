@@ -207,7 +207,7 @@ class LibraryController {
     }
     payload.offset = payload.page * payload.limit
 
-    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library, req.user.id, payload)
+    const { libraryItems, count } = await Database.models.libraryItem.getByFilterAndSort(req.library, req.user, payload)
     payload.results = libraryItems
     payload.total = count
 
@@ -640,7 +640,7 @@ class LibraryController {
   async getUserPersonalizedShelves(req, res) {
     const limitPerShelf = req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) || 10 : 10
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
-    const shelves = await Database.models.libraryItem.getPersonalizedShelves(req.library, req.user.id, include, limitPerShelf)
+    const shelves = await Database.models.libraryItem.getPersonalizedShelves(req.library, req.user, include, limitPerShelf)
     res.json(shelves)
   }
 
