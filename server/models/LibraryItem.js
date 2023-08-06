@@ -401,6 +401,46 @@ module.exports = (sequelize) => {
     }
 
     /**
+     * Get old library item by id
+     * @param {string} libraryItemId 
+     * @returns {oldLibraryItem}
+     */
+    static async getOldById(libraryItemId) {
+      if (!libraryItemId) return null
+      const libraryItem = await this.findByPk(libraryItemId, {
+        include: [
+          {
+            model: sequelize.models.book,
+            include: [
+              {
+                model: sequelize.models.author,
+                through: {
+                  attributes: []
+                }
+              },
+              {
+                model: sequelize.models.series,
+                through: {
+                  attributes: ['sequence']
+                }
+              }
+            ]
+          },
+          {
+            model: sequelize.models.podcast,
+            include: [
+              {
+                model: sequelize.models.podcastEpisode
+              }
+            ]
+          }
+        ]
+      })
+      if (!libraryItem) return null
+      return this.getOldLibraryItem(libraryItem)
+    }
+
+    /**
      * Get library items using filter and sort
      * @param {oldLibrary} library 
      * @param {oldUser} user 
@@ -607,6 +647,17 @@ module.exports = (sequelize) => {
       Logger.debug(`Loaded ${shelves.length} personalized shelves in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
       return shelves
+    }
+
+    /**
+     * Get book library items for author, optional use user permissions
+     * @param {oldAuthor} author
+     * @param {[oldUser]} user 
+     * @returns {oldLibraryItem[]}
+     */
+    static async getForAuthor(author, user = null) {
+      const { libraryItems } = await libraryFilters.getLibraryItemsForAuthor(author, user, undefined, undefined)
+      return libraryItems.map(li => this.getOldLibraryItem(li))
     }
 
     getMedia(options) {

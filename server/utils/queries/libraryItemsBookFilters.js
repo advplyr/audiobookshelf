@@ -11,6 +11,8 @@ module.exports = {
   getUserPermissionBookWhereQuery(user) {
     const bookWhere = []
     const replacements = {}
+    if (!user) return { bookWhere, replacements }
+
     if (!user.canAccessExplicitContent) {
       bookWhere.push({
         explicit: false
@@ -325,7 +327,7 @@ module.exports = {
   /**
    * Get library items for book media type using filter and sort
    * @param {string} libraryId 
-   * @param {oldUser} user
+   * @param {[oldUser]} user
    * @param {[string]} filterGroup 
    * @param {[string]} filterValue 
    * @param {string} sortBy 
@@ -467,7 +469,7 @@ module.exports = {
           isInvalid: true
         }
       ]
-    } else if (filterGroup === 'progress') {
+    } else if (filterGroup === 'progress' && user) {
       bookIncludes.push({
         model: Database.models.mediaProgress,
         attributes: ['id', 'isFinished', 'currentTime', 'ebookProgress', 'updatedAt'],

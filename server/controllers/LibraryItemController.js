@@ -679,8 +679,8 @@ class LibraryItemController {
     res.sendStatus(200)
   }
 
-  middleware(req, res, next) {
-    req.libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
+  async middleware(req, res, next) {
+    req.libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
     if (!req.libraryItem?.media) return res.sendStatus(404)
 
     // Check user can access this library item

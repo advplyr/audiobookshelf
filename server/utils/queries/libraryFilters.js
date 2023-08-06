@@ -357,5 +357,21 @@ module.exports = {
         return oldLibraryItem
       })
     }
+  },
+
+  /**
+   * Get library items for an author, optional use user permissions
+   * @param {oldAuthor} author 
+   * @param {[oldUser]} user 
+   * @param {number} limit 
+   * @param {number} offset 
+   * @returns {object} { libraryItems:LibraryItem[], count:number }
+   */
+  async getLibraryItemsForAuthor(author, user, limit, offset) {
+    const { libraryItems, count } = await libraryItemsBookFilters.getFilteredLibraryItems(author.libraryId, user, 'authors', author.id, 'addedAt', true, false, [], limit, offset)
+    return {
+      count,
+      libraryItems
+    }
   }
 }

@@ -15,18 +15,13 @@ class AuthorController {
   constructor() { }
 
   async findOne(req, res) {
-    const libraryId = req.query.library
     const include = (req.query.include || '').split(',')
 
     const authorJson = req.author.toJSON()
 
     // Used on author landing page to include library items and items grouped in series
     if (include.includes('items')) {
-      authorJson.libraryItems = Database.libraryItems.filter(li => {
-        if (libraryId && li.libraryId !== libraryId) return false
-        if (!req.user.checkCanAccessLibraryItem(li)) return false // filter out library items user cannot access
-        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
-      })
+      authorJson.libraryItems = await Database.models.libraryItem.getForAuthor(req.author, req.user)
 
       if (include.includes('series')) {
         const seriesMap = {}
@@ -101,7 +96,7 @@ class AuthorController {
     const existingAuthor = authorNameUpdate ? Database.authors.find(au => au.id !== req.author.id && payload.name === au.name) : false
     if (existingAuthor) {
       const bookAuthorsToCreate = []
-      const itemsWithAuthor = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
+      const itemsWithAuthor = await Database.models.libraryItem.getForAuthor(req.author)
       itemsWithAuthor.forEach(libraryItem => { // Replace old author with merging author for each book
         libraryItem.media.metadata.replaceAuthor(req.author, existingAuthor)
         bookAuthorsToCreate.push({
@@ -120,9 +115,7 @@ class AuthorController {
       SocketAuthority.emitter('author_removed', req.author.toJSON())
 
       // Send updated num books for merged author
-      const numBooks = Database.libraryItems.filter(li => {
-        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(existingAuthor.id)
-      }).length
+      const numBooks = await Database.models.libraryItem.getForAuthor(existingAuthor).length
       SocketAuthority.emitter('author_updated', existingAuthor.toJSONExpanded(numBooks))
 
       res.json({
@@ -137,8 +130,8 @@ class AuthorController {
       if (hasUpdated) {
         req.author.updatedAt = Date.now()
 
+        const itemsWithAuthor = await Database.models.libraryItem.getForAuthor(req.author)
         if (authorNameUpdate) { // Update author name on all books
-          const itemsWithAuthor = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasAuthor(req.author.id))
           itemsWithAuthor.forEach(libraryItem => {
             libraryItem.media.metadata.updateAuthor(req.author)
           })
@@ -148,10 +141,7 @@ class AuthorController {
         }
 
         await Database.updateAuthor(req.author)
-        const numBooks = Database.libraryItems.filter(li => {
-          return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
-        }).length
-        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
+        SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(itemsWithAuthor.length))
       }
 
       res.json({
@@ -211,9 +201,8 @@ class AuthorController {
       req.author.updatedAt = Date.now()
 
       await Database.updateAuthor(req.author)
-      const numBooks = Database.libraryItems.filter(li => {
-        return li.media.metadata.hasAuthor && li.media.metadata.hasAuthor(req.author.id)
-      }).length
+
+      const numBooks = await Database.models.libraryItem.getForAuthor(req.author).length
       SocketAuthority.emitter('author_updated', req.author.toJSONExpanded(numBooks))
     }
 
