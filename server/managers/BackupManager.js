@@ -83,7 +83,7 @@ class BackupManager {
       return res.status(500).send('Invalid backup file')
     }
 
-    const tempPath = fileUtils.sanitizeFilename(Path.join(this.BackupPath, backupFile.name))
+    const tempPath = Path.join(this.BackupPath, fileUtils.sanitizeFilename(backupFile.name))
     const success = await backupFile.mv(tempPath).then(() => true).catch((error) => {
       Logger.error('[BackupManager] Failed to move backup file', path, error)
       return false
