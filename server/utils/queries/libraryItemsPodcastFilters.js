@@ -125,6 +125,10 @@ module.exports = {
           isInvalid: true
         }
       ]
+    } else if (filterGroup === 'recent') {
+      libraryItemWhere['createdAt'] = {
+        [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
+      }
     }
 
     const podcastIncludes = []
@@ -210,6 +214,9 @@ module.exports = {
 
     const podcastEpisodeIncludes = []
     let podcastEpisodeWhere = {}
+    let libraryItemWhere = {
+      libraryId
+    }
     if (filterGroup === 'progress') {
       podcastEpisodeIncludes.push({
         model: Database.models.mediaProgress,
@@ -233,6 +240,10 @@ module.exports = {
       } else if (filterValue === 'finished') {
         podcastEpisodeWhere['$mediaProgresses.isFinished$'] = true
       }
+    } else if (filterGroup === 'recent') {
+      libraryItemWhere['createdAt'] = {
+        [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
+      }
     }
 
     const podcastEpisodeOrder = []
@@ -254,9 +265,7 @@ module.exports = {
           include: [
             {
               model: Database.models.libraryItem,
-              where: {
-                libraryId
-              }
+              where: libraryItemWhere
             }
           ]
         },

@@ -493,33 +493,34 @@ module.exports = (sequelize) => {
       // "Continue Listening" shelf
       const itemsInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, false)
       if (itemsInProgressPayload.items.length) {
+        const ebookOnlyItemsInProgress = itemsInProgressPayload.items.filter(li => li.media.isEBookOnly)
+        const audioOnlyItemsInProgress = itemsInProgressPayload.items.filter(li => !li.media.isEBookOnly)
+
         shelves.push({
           id: 'continue-listening',
           label: 'Continue Listening',
           labelStringKey: 'LabelContinueListening',
           type: library.isPodcast ? 'episode' : 'book',
-          entities: itemsInProgressPayload.items,
+          entities: audioOnlyItemsInProgress,
           total: itemsInProgressPayload.count
         })
-      }
-      Logger.debug(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
-      let start = Date.now()
-      if (library.isBook) {
-        // "Continue Reading" shelf
-        const ebooksInProgressPayload = await libraryFilters.getMediaItemsInProgress(library, user, include, limit, true)
-        if (ebooksInProgressPayload.items.length) {
+        if (ebookOnlyItemsInProgress.length) {
+          // "Continue Reading" shelf
           shelves.push({
             id: 'continue-reading',
             label: 'Continue Reading',
             labelStringKey: 'LabelContinueReading',
             type: 'book',
-            entities: ebooksInProgressPayload.items,
-            total: ebooksInProgressPayload.count
+            entities: ebookOnlyItemsInProgress,
+            total: itemsInProgressPayload.count
           })
         }
-        Logger.debug(`Loaded ${ebooksInProgressPayload.items.length} of ${ebooksInProgressPayload.count} items for "Continue Reading" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      }
+      Logger.debug(`Loaded ${itemsInProgressPayload.items.length} of ${itemsInProgressPayload.count} items for "Continue Listening/Reading" in ${((Date.now() - fullStart) / 1000).toFixed(2)}s`)
 
+      let start = Date.now()
+      if (library.isBook) {
         start = Date.now()
         // "Continue Series" shelf
         const continueSeriesPayload = await libraryFilters.getLibraryItemsContinueSeries(library, user, include, limit)
@@ -599,35 +600,35 @@ module.exports = (sequelize) => {
 
       start = Date.now()
       // "Listen Again" shelf
-      const listenAgainPayload = await libraryFilters.getMediaFinished(library, user, include, limit, false)
-      if (listenAgainPayload.items.length) {
+      const mediaFinishedPayload = await libraryFilters.getMediaFinished(library, user, include, limit)
+      if (mediaFinishedPayload.items.length) {
+        const ebookOnlyItemsInProgress = mediaFinishedPayload.items.filter(li => li.media.isEBookOnly)
+        const audioOnlyItemsInProgress = mediaFinishedPayload.items.filter(li => !li.media.isEBookOnly)
+
         shelves.push({
           id: 'listen-again',
           label: 'Listen Again',
           labelStringKey: 'LabelListenAgain',
           type: library.isPodcast ? 'episode' : 'book',
-          entities: listenAgainPayload.items,
-          total: listenAgainPayload.count
+          entities: audioOnlyItemsInProgress,
+          total: mediaFinishedPayload.count
         })
-      }
-      Logger.debug(`Loaded ${listenAgainPayload.items.length} of ${listenAgainPayload.count} items for "Listen Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
-      if (library.isBook) {
-        start = Date.now()
         // "Read Again" shelf
-        const readAgainPayload = await libraryFilters.getMediaFinished(library, user, include, limit, true)
-        if (readAgainPayload.items.length) {
+        if (ebookOnlyItemsInProgress.length) {
           shelves.push({
             id: 'read-again',
             label: 'Read Again',
             labelStringKey: 'LabelReadAgain',
             type: 'book',
-            entities: readAgainPayload.items,
-            total: readAgainPayload.count
+            entities: ebookOnlyItemsInProgress,
+            total: mediaFinishedPayload.count
           })
         }
-        Logger.debug(`Loaded ${readAgainPayload.items.length} of ${readAgainPayload.count} items for "Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+      }
+      Logger.debug(`Loaded ${mediaFinishedPayload.items.length} of ${mediaFinishedPayload.count} items for "Listen/Read Again" in ${((Date.now() - start) / 1000).toFixed(2)}s`)
 
+      if (library.isBook) {
         start = Date.now()
         // "Newest Authors" shelf
         const newestAuthorsPayload = await libraryFilters.getNewestAuthors(library, user, limit)

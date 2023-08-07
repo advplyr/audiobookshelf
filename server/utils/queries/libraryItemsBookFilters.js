@@ -478,6 +478,10 @@ module.exports = {
         },
         required: false
       })
+    } else if (filterGroup === 'recent') {
+      libraryItemWhere['createdAt'] = {
+        [Sequelize.Op.gte]: new Date(new Date() - (60 * 24 * 60 * 60 * 1000)) // 60 days ago
+      }
     }
 
     let { mediaWhere, replacements } = this.getMediaGroupQuery(filterGroup, filterValue)
