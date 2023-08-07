@@ -8,6 +8,7 @@ const cron = require('../libs/nodeCron')
 const fs = require('../libs/fsExtra')
 const archiver = require('../libs/archiver')
 const StreamZip = require('../libs/nodeStreamZip')
+const fileUtils = require('../utils/fileUtils')
 
 // Utils
 const { getFileSize } = require('../utils/fileUtils')
@@ -82,7 +83,7 @@ class BackupManager {
       return res.status(500).send('Invalid backup file')
     }
 
-    const tempPath = Path.join(this.BackupPath, backupFile.name)
+    const tempPath = Path.join(this.BackupPath, fileUtils.sanitizeFilename(backupFile.name))
     const success = await backupFile.mv(tempPath).then(() => true).catch((error) => {
       Logger.error('[BackupManager] Failed to move backup file', path, error)
       return false
@@ -92,8 +93,14 @@ class BackupManager {
     }
 
     const zip = new StreamZip.async({ file: tempPath })
-
-    const entries = await zip.entries()
+    let entries
+    try {
+      entries = await zip.entries()
+    } catch(error){
+      // Not a valid zip file
+      Logger.error('[BackupManager] Failed to read backup file - backup might not be a valid .zip file', tempPath, error)
+      return res.status(400).send('Failed to read backup file - backup might not be a valid .zip file')
+    }
     if (!Object.keys(entries).includes('absdatabase.sqlite')) {
       Logger.error(`[BackupManager] Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.`)
       return res.status(500).send('Invalid backup with no absdatabase.sqlite file - might be a backup created on an old Audiobookshelf server.')
@@ -267,7 +274,7 @@ class BackupManager {
 
   /**
    * @see https://github.com/TryGhost/node-sqlite3/pull/1116
-   * @param {Backup} backup 
+   * @param {Backup} backup
    * @promise
    */
   backupSqliteDb(backup) {
