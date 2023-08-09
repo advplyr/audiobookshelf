@@ -261,7 +261,7 @@ module.exports = {
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
-      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS INTEGER) ${nullDir}`)]]
+      return [[Sequelize.literal(`CAST(\`series.bookSeries.sequence\` AS FLOAT) ${nullDir}`)]]
     } else if (sortBy === 'progress') {
       return [[Sequelize.literal('mediaProgresses.updatedAt'), dir]]
     }
@@ -299,7 +299,7 @@ module.exports = {
         }
       ],
       order: [
-        Sequelize.literal('CAST(`books.bookSeries.sequence` AS INTEGER) ASC NULLS LAST')
+        Sequelize.literal('CAST(`books.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')
       ]
     })
     const bookSeriesToInclude = []
@@ -458,7 +458,7 @@ module.exports = {
       })
       if (sortBy !== 'sequence') {
         // Secondary sort by sequence
-        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS INTEGER) ASC NULLS LAST')])
+        sortOrder.push([Sequelize.literal('CAST(`series.bookSeries.sequence` AS FLOAT) ASC NULLS LAST')])
       }
     } else if (filterGroup === 'issues') {
       libraryItemWhere[Sequelize.Op.or] = [
@@ -670,7 +670,7 @@ module.exports = {
         separate: true,
         subQuery: false,
         order: [
-          [Sequelize.literal('CAST(sequence AS INTEGER) ASC NULLS LAST')]
+          [Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]
         ],
         where: {
           '$book.mediaProgresses.isFinished$': {
@@ -769,11 +769,13 @@ module.exports = {
           where: userPermissionBookWhere.bookWhere
         },
         order: [
-          [Sequelize.literal('CAST(sequence AS INTEGER) ASC NULLS LAST')]
+          [Sequelize.literal('CAST(sequence AS FLOAT) ASC NULLS LAST')]
         ],
         limit: 1
       },
-      subQuery: false
+      subQuery: false,
+      limit,
+      order: Database.sequelize.random()
     })
 
     const booksFromSeriesToInclude = seriesNotStarted.map(se => se.bookSeries?.[0]?.bookId).filter(bid => bid)

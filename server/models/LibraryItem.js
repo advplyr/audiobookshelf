@@ -448,7 +448,10 @@ module.exports = (sequelize) => {
      * @returns {object} { libraryItems:oldLibraryItem[], count:number }
      */
     static async getByFilterAndSort(library, user, options) {
+      let start = Date.now()
       const { libraryItems, count } = await libraryFilters.getFilteredLibraryItems(library, user, options)
+      Logger.debug(`Loaded ${libraryItems.length} of ${count} items for libary page in ${((Date.now() - start) / 1000).toFixed(2)}s`)
+
       return {
         libraryItems: libraryItems.map(li => {
           const oldLibraryItem = this.getOldLibraryItem(li).toJSONMinified()
@@ -692,7 +695,15 @@ module.exports = (sequelize) => {
     extraData: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'libraryItem'
+    modelName: 'libraryItem',
+    indexes: [
+      {
+        fields: ['createdAt']
+      },
+      {
+        fields: ['mediaId']
+      }
+    ]
   })
 
   const { library, libraryFolder, book, podcast } = sequelize.models

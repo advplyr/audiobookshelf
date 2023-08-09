@@ -1620,11 +1620,12 @@ async function migrationPatch2BookSeries(ctx, offset = 0) {
  */
 module.exports.migrationPatch2 = async (ctx) => {
   const queryInterface = ctx.sequelize.getQueryInterface()
+  const libraryItemsIndexes = await queryInterface.showIndex('libraryItems')
   const feedTableDescription = await queryInterface.describeTable('feeds')
   const authorsTableDescription = await queryInterface.describeTable('authors')
   const bookAuthorsTableDescription = await queryInterface.describeTable('bookAuthors')
 
-  if (feedTableDescription?.coverPath && authorsTableDescription?.lastFirst && bookAuthorsTableDescription?.createdAt) {
+  if (feedTableDescription?.coverPath && authorsTableDescription?.lastFirst && bookAuthorsTableDescription?.createdAt && libraryItemsIndexes.some(lii => lii.name === 'library_items_created_at')) {
     Logger.info(`[dbMigration] Migration patch 2.3.3+ - columns already on model`)
     return false
   }
@@ -1633,13 +1634,29 @@ module.exports.migrationPatch2 = async (ctx) => {
   try {
     await queryInterface.sequelize.transaction(t => {
       const queries = [
-        queryInterface.addColumn('bookAuthors', 'createdAt', {
-          type: DataTypes.DATE
-        }, { transaction: t }),
-        queryInterface.addColumn('bookSeries', 'createdAt', {
-          type: DataTypes.DATE
-        }, { transaction: t }),
+        queryInterface.addIndex('libraryItems', {
+          fields: ['mediaId'],
+          transaction: t
+        }),
+        queryInterface.addIndex('libraryItems', {
+          fields: ['createdAt'],
+          transaction: t
+        }),
+        queryInterface.addIndex('mediaProgresses', {
+          fields: ['updatedAt'],
+          transaction: t
+        })
       ]
+      if (!bookAuthorsTableDescription?.createdAt) {
+        queries.push(...[
+          queryInterface.addColumn('bookAuthors', 'createdAt', {
+            type: DataTypes.DATE
+          }, { transaction: t }),
+          queryInterface.addColumn('bookSeries', 'createdAt', {
+            type: DataTypes.DATE
+          }, { transaction: t }),
+        ])
+      }
       if (!authorsTableDescription?.lastFirst) {
         queries.push(...[
           queryInterface.addColumn('authors', 'lastFirst', {
@@ -1691,11 +1708,13 @@ module.exports.migrationPatch2 = async (ctx) => {
       await migrationPatch2Series(ctx, 0)
     }
 
-    // Patch bookAuthors createdAt column
-    await migrationPatch2BookAuthors(ctx, 0)
+    if (!bookAuthorsTableDescription?.createdAt) {
+      // Patch bookAuthors createdAt column
+      await migrationPatch2BookAuthors(ctx, 0)
 
-    // Patch bookSeries createdAt column
-    await migrationPatch2BookSeries(ctx, 0)
+      // Patch bookSeries createdAt column
+      await migrationPatch2BookSeries(ctx, 0)
+    }
 
     Logger.info(`[dbMigration] Migration patch 2.3.3+ finished`)
     return true

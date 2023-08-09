@@ -90,7 +90,12 @@ module.exports = (sequelize) => {
     extraData: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'mediaProgress'
+    modelName: 'mediaProgress',
+    indexes: [
+      {
+        fields: ['updatedAt']
+      }
+    ]
   })
 
   const { book, podcastEpisode, user } = sequelize.models
