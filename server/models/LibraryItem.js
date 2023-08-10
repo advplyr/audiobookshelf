@@ -63,6 +63,10 @@ module.exports = (sequelize) => {
      */
     static getLibraryItemsIncrement(offset, limit) {
       return this.findAll({
+        benchmark: true,
+        logging: (sql, timeMs) => {
+          console.log(`[Query] Elapsed ${timeMs}ms.`)
+        },
         include: [
           {
             model: sequelize.models.book,
@@ -89,7 +93,7 @@ module.exports = (sequelize) => {
           ['createdAt', 'ASC'],
           // Ensure author & series stay in the same order
           [sequelize.models.book, sequelize.models.author, sequelize.models.bookAuthor, 'createdAt', 'ASC'],
-          [sequelize.models.book, sequelize.models.series, 'bookSeries', 'createdAt', 'ASC'],
+          [sequelize.models.book, sequelize.models.series, 'bookSeries', 'createdAt', 'ASC']
         ],
         offset,
         limit
@@ -702,6 +706,15 @@ module.exports = (sequelize) => {
       },
       {
         fields: ['mediaId']
+      },
+      {
+        fields: ['libraryId', 'mediaType']
+      },
+      {
+        fields: ['birthtime']
+      },
+      {
+        fields: ['mtime']
       }
     ]
   })

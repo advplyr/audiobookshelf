@@ -151,7 +151,27 @@ module.exports = (sequelize) => {
     genres: DataTypes.JSON
   }, {
     sequelize,
-    modelName: 'book'
+    modelName: 'book',
+    indexes: [
+      {
+        fields: [{
+          name: 'title',
+          collate: 'NOCASE'
+        }]
+      },
+      {
+        fields: [{
+          name: 'titleIgnorePrefix',
+          collate: 'NOCASE'
+        }]
+      },
+      {
+        fields: ['publishedYear']
+      },
+      {
+        fields: ['duration']
+      }
+    ]
   })
 
   return Book

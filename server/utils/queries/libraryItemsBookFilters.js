@@ -257,7 +257,7 @@ module.exports = {
       if (global.ServerSettings.sortingIgnorePrefix) {
         return [[Sequelize.literal('titleIgnorePrefix COLLATE NOCASE'), dir]]
       } else {
-        return [[Sequelize.literal('title COLLATE NOCASE'), dir]]
+        return [[Sequelize.literal('`book`.`title` COLLATE NOCASE'), dir]]
       }
     } else if (sortBy === 'sequence') {
       const nullDir = sortDesc ? 'DESC NULLS FIRST' : 'ASC NULLS LAST'
@@ -546,6 +546,10 @@ module.exports = {
       distinct: true,
       attributes: bookAttributes,
       replacements,
+      benchmark: true,
+      logging: (sql, timeMs) => {
+        console.log(`[Query] Elapsed ${timeMs}ms.`)
+      },
       include: [
         {
           model: Database.models.libraryItem,
