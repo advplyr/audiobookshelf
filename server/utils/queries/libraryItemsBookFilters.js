@@ -548,7 +548,7 @@ module.exports = {
       replacements,
       benchmark: true,
       logging: (sql, timeMs) => {
-        console.log(`[Query] Elapsed ${timeMs}ms.`)
+        console.log(`[Query] Elapsed ${timeMs}ms`)
       },
       include: [
         {
@@ -870,5 +870,48 @@ module.exports = {
       libraryItems,
       count
     }
+  },
+
+  /**
+   * Get book library items in a collection
+   * @param {oldCollection} collection 
+   * @returns {Promise<LibraryItem[]>}
+   */
+  async getLibraryItemsForCollection(collection) {
+    if (!collection?.books?.length) {
+      Logger.error(`[libraryItemsBookFilters] Invalid collection`, collection)
+      return []
+    }
+    const books = await Database.models.book.findAll({
+      where: {
+        id: {
+          [Sequelize.Op.in]: collection.books
+        }
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: sequelize.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: sequelize.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ]
+    })
+
+    return books.map((book) => {
+      const libraryItem = book.libraryItem
+      delete book.libraryItem
+      libraryItem.media = book
+      return libraryItem
+    })
   }
 }

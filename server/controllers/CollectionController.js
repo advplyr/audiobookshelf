@@ -8,22 +8,23 @@ class CollectionController {
   constructor() { }
 
   async create(req, res) {
-    var newCollection = new Collection()
+    const newCollection = new Collection()
     req.body.userId = req.user.id
-    var success = newCollection.setData(req.body)
-    if (!success) {
+    if (!newCollection.setData(req.body)) {
       return res.status(500).send('Invalid collection data')
     }
-    var jsonExpanded = newCollection.toJSONExpanded(Database.libraryItems)
+
+    const libraryItemsInCollection = await Database.models.libraryItem.getForCollection(newCollection)
+    const jsonExpanded = newCollection.toJSONExpanded(libraryItemsInCollection)
     await Database.createCollection(newCollection)
     SocketAuthority.emitter('collection_added', jsonExpanded)
     res.json(jsonExpanded)
   }
 
   async findAll(req, res) {
-    const collections = await Database.models.collection.getOldCollections()
+    const collectionsExpanded = await Database.models.collection.getOldCollectionsJsonExpanded(req.user)
     res.json({
-      collections: collections.map(c => c.toJSONExpanded(Database.libraryItems))
+      collections: collectionsExpanded
     })
   }
 

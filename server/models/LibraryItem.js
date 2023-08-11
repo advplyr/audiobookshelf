@@ -661,10 +661,20 @@ module.exports = (sequelize) => {
      * Get book library items for author, optional use user permissions
      * @param {oldAuthor} author
      * @param {[oldUser]} user 
-     * @returns {oldLibraryItem[]}
+     * @returns {Promise<oldLibraryItem[]>}
      */
     static async getForAuthor(author, user = null) {
       const { libraryItems } = await libraryFilters.getLibraryItemsForAuthor(author, user, undefined, undefined)
+      return libraryItems.map(li => this.getOldLibraryItem(li))
+    }
+
+    /**
+     * Get book library items in a collection
+     * @param {oldCollection} collection 
+     * @returns {Promise<oldLibraryItem[]>}
+     */
+    static async getForCollection(collection) {
+      const libraryItems = await libraryFilters.getLibraryItemsForCollection(collection)
       return libraryItems.map(li => this.getOldLibraryItem(li))
     }
 

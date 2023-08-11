@@ -16,6 +16,11 @@ module.exports = (sequelize) => {
       return feeds.map(f => this.getOldFeed(f))
     }
 
+    /**
+     * Get old feed from Feed and optionally Feed with FeedEpisodes
+     * @param {Feed} feedExpanded
+     * @returns {oldFeed}
+     */
     static getOldFeed(feedExpanded) {
       const episodes = feedExpanded.feedEpisodes?.map((feedEpisode) => feedEpisode.getOldEpisode())
       return new oldFeed({

@@ -535,8 +535,6 @@ class LibraryController {
 
   // api/libraries/:id/collections
   async getCollectionsForLibrary(req, res) {
-    const libraryItems = req.libraryItems
-
     const include = (req.query.include || '').split(',').map(v => v.trim().toLowerCase()).filter(v => !!v)
 
     const payload = {
@@ -551,23 +549,8 @@ class LibraryController {
       include: include.join(',')
     }
 
-    const collectionsForLibrary = await Database.models.collection.getAllForLibrary(req.library.id)
-
-    let collections = await Promise.all(collectionsForLibrary.map(async c => {
-      const expanded = c.toJSONExpanded(libraryItems, payload.minified)
-
-      // If all books restricted to user in this collection then hide this collection
-      if (!expanded.books.length && c.books.length) return null
-
-      if (include.includes('rssfeed')) {
-        const feedData = await this.rssFeedManager.findFeedForEntityId(c.id)
-        expanded.rssFeed = feedData?.toJSONMinified() || null
-      }
-
-      return expanded
-    }))
-
-    collections = collections.filter(c => !!c)
+    // TODO: Create paginated queries
+    let collections = await Database.models.collection.getOldCollectionsJsonExpanded(req.user, req.library.id, include)
 
     payload.total = collections.length
 
@@ -964,6 +947,12 @@ class LibraryController {
     res.send(opmlText)
   }
 
+  /**
+   * TODO: Replace with middlewareNew
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
   async middleware(req, res, next) {
     if (!req.user.checkCanAccessLibrary(req.params.id)) {
       Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
@@ -978,6 +967,26 @@ class LibraryController {
     req.libraryItems = Database.libraryItems.filter(li => {
       return li.libraryId === library.id && req.user.checkCanAccessLibraryItem(li)
     })
+    next()
+  }
+
+  /**
+   * Middleware that is not using libraryItems from memory
+   * @param {*} req 
+   * @param {*} res 
+   * @param {*} next 
+   */
+  async middlewareNew(req, res, next) {
+    if (!req.user.checkCanAccessLibrary(req.params.id)) {
+      Logger.warn(`[LibraryController] Library ${req.params.id} not accessible to user ${req.user.username}`)
+      return res.sendStatus(403)
+    }
+
+    const library = await Database.models.library.getOldById(req.params.id)
+    if (!library) {
+      return res.status(404).send('Library not found')
+    }
+    req.library = library
     next()
   }
 }
