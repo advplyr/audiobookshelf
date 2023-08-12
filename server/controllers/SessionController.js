@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const Database = require('../Database')
 const { toNumber } = require('../utils/index')
 
 class SessionController {
@@ -42,17 +43,17 @@ class SessionController {
     res.json(payload)
   }
 
-  getOpenSessions(req, res) {
+  async getOpenSessions(req, res) {
     if (!req.user.isAdminOrUp) {
       Logger.error(`[SessionController] getOpenSessions: Non-admin user requested open session data ${req.user.id}/"${req.user.username}"`)
       return res.sendStatus(404)
     }
 
+    const minifiedUserObjects = await Database.models.user.getMinifiedUserObjects()
     const openSessions = this.playbackSessionManager.sessions.map(se => {
-      const user = this.db.users.find(u => u.id === se.userId) || null
       return {
         ...se.toJSON(),
-        user: user ? { id: user.id, username: user.username } : null
+        user: minifiedUserObjects.find(u => u.id === se.userId) || null
       }
     })
 
@@ -62,7 +63,7 @@ class SessionController {
   }
 
   getOpenSession(req, res) {
-    var libraryItem = this.db.getLibraryItem(req.session.libraryItemId)
+    var libraryItem = Database.getLibraryItem(req.session.libraryItemId)
     var sessionForClient = req.session.toJSONForClient(libraryItem)
     res.json(sessionForClient)
   }
@@ -74,7 +75,9 @@ class SessionController {
 
   // POST: api/session/:id/close
   close(req, res) {
-    this.playbackSessionManager.closeSessionRequest(req.user, req.session, req.body, res)
+    let syncData = req.body
+    if (syncData && !Object.keys(syncData).length) syncData = null
+    this.playbackSessionManager.closeSessionRequest(req.user, req.session, syncData, res)
   }
 
   // DELETE: api/session/:id
@@ -85,13 +88,13 @@ class SessionController {
       await this.playbackSessionManager.removeSession(req.session.id)
     }
 
-    await this.db.removeEntity('session', req.session.id)
+    await Database.removePlaybackSession(req.session.id)
     res.sendStatus(200)
   }
 
   // POST: api/session/local
   syncLocal(req, res) {
-    this.playbackSessionManager.syncLocalSessionRequest(req.user, req.body, res)
+    this.playbackSessionManager.syncLocalSessionRequest(req, res)
   }
 
   // POST: api/session/local-all
@@ -113,7 +116,7 @@ class SessionController {
   }
 
   async middleware(req, res, next) {
-    const playbackSession = await this.db.getPlaybackSession(req.params.id)
+    const playbackSession = await Database.getPlaybackSession(req.params.id)
     if (!playbackSession) {
       Logger.error(`[SessionController] Unable to find playback session with id=${req.params.id}`)
       return res.sendStatus(404)

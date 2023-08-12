@@ -9,9 +9,7 @@ const Logger = require('../Logger')
 const TAG = '[LogManager]'
 
 class LogManager {
-  constructor(db) {
-    this.db = db
-
+  constructor() {
     this.DailyLogPath = Path.posix.join(global.MetadataPath, 'logs', 'daily')
     this.ScanLogPath = Path.posix.join(global.MetadataPath, 'logs', 'scans')
 
@@ -20,12 +18,8 @@ class LogManager {
     this.dailyLogFiles = []
   }
 
-  get serverSettings() {
-    return this.db.serverSettings || {}
-  }
-
   get loggerDailyLogsToKeep() {
-    return this.serverSettings.loggerDailyLogsToKeep || 7
+    return global.ServerSettings.loggerDailyLogsToKeep || 7
   }
 
   async ensureLogDirs() {

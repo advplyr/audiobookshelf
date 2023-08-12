@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const Database = require('../Database')
 
 class ToolsController {
   constructor() { }
@@ -65,7 +66,7 @@ class ToolsController {
 
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = this.db.getLibraryItem(libraryItemId)
+      const libraryItem = Database.getLibraryItem(libraryItemId)
       if (!libraryItem) {
         Logger.error(`[ToolsController] Batch embed metadata library item (${libraryItemId}) not found`)
         return res.sendStatus(404)
@@ -105,7 +106,7 @@ class ToolsController {
     }
 
     if (req.params.id) {
-      const item = this.db.libraryItems.find(li => li.id === req.params.id)
+      const item = Database.libraryItems.find(li => li.id === req.params.id)
       if (!item || !item.media) return res.sendStatus(404)
 
       // Check user can access this library item

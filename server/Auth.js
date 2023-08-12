@@ -185,14 +185,15 @@ class Auth {
     } else {
       this.db.serverSettings.tokenSecret = require('crypto').randomBytes(256).toString('base64')
     }
-    await this.db.updateServerSettings()
+    await Database.updateServerSettings()
 
     // New token secret creation added in v2.1.0 so generate new API tokens for each user
-    if (this.db.users.length) {
-      for (const user of this.db.users) {
+    const users = await Database.models.user.getOldUsers()
+    if (users.length) {
+      for (const user of users) {
         user.token = await this.generateAccessToken({ userId: user.id, username: user.username })
       }
-      await this.db.updateEntities('user', this.db.users)
+      await Database.updateBulkUsers(users)
     }
   }
 
@@ -271,8 +272,9 @@ class Auth {
   getUserLoginResponsePayload(user) {
     return {
       user: user.toJSONForBrowser(),
-      userDefaultLibraryId: user.getDefaultLibraryId(this.db.libraries),
-      serverSettings: this.db.serverSettings.toJSONForBrowser(),
+      userDefaultLibraryId: user.getDefaultLibraryId(libraryIds),
+      serverSettings: Database.serverSettings.toJSONForBrowser(),
+      ereaderDevices: Database.emailSettings.getEReaderDevices(user),
       Source: global.Source
     }
   }

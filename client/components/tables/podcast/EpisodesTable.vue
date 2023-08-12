@@ -1,22 +1,29 @@
 <template>
   <div class="w-full py-6">
-    <p class="text-lg mb-2 font-semibold md:hidden">{{ $strings.HeaderEpisodes }}</p>
-    <div class="flex items-center mb-4">
-      <p class="text-lg mb-0 font-semibold hidden md:block">{{ $strings.HeaderEpisodes }}</p>
+    <div class="flex flex-wrap flex-col md:flex-row md:items-center mb-4">
+      <div class="flex items-center flex-nowrap whitespace-nowrap mb-2 md:mb-0">
+        <p class="text-lg mb-0 font-semibold">{{ $strings.HeaderEpisodes }}</p>
+        <div class="inline-flex bg-white/5 px-1 mx-2 rounded-md text-sm text-gray-100">
+          <p v-if="episodesList.length === episodes.length">{{ episodes.length }}</p>
+          <p v-else>{{ episodesList.length }} / {{ episodes.length }}</p>
+        </div>
+      </div>
       <div class="flex-grow hidden md:block" />
-      <template v-if="isSelectionMode">
-        <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
-          <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
-        </ui-tooltip>
-        <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
-        <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
-      </template>
-      <template v-else>
-        <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 sm:ml-4" />
-        <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
-        <div class="flex-grow md:hidden" />
-        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
-      </template>
+      <div class="flex items-center">
+        <template v-if="isSelectionMode">
+          <ui-tooltip :text="selectedIsFinished ? $strings.MessageMarkAsNotFinished : $strings.MessageMarkAsFinished" direction="bottom">
+            <ui-read-icon-btn :disabled="processing" :is-read="selectedIsFinished" @click="toggleBatchFinished" class="mx-1.5" />
+          </ui-tooltip>
+          <ui-btn color="error" :disabled="processing" small class="h-9" @click="removeSelectedEpisodes">{{ $getString('MessageRemoveEpisodes', [selectedEpisodes.length]) }}</ui-btn>
+          <ui-btn :disabled="processing" small class="ml-2 h-9" @click="clearSelected">{{ $strings.ButtonCancel }}</ui-btn>
+        </template>
+        <template v-else>
+          <controls-filter-select v-model="filterKey" :items="filterItems" class="w-36 h-9 md:ml-4" />
+          <controls-sort-select v-model="sortKey" :descending.sync="sortDesc" :items="sortItems" class="w-44 md:w-48 h-9 ml-1 sm:ml-4" />
+          <div class="flex-grow md:hidden" />
+          <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" class="ml-1" @action="contextMenuAction" />
+        </template>
+      </div>
     </div>
     <p v-if="!episodes.length" class="py-4 text-center text-lg">{{ $strings.MessageNoEpisodes }}</p>
     <div v-if="episodes.length" class="w-full py-3 mx-auto flex">
@@ -51,7 +58,6 @@ export default {
       selectedEpisodes: [],
       episodesToRemove: [],
       processing: false,
-      quickMatchingEpisodes: false,
       search: null,
       searchTimeout: null,
       searchText: null
@@ -71,6 +77,10 @@ export default {
         {
           text: 'Quick match all episodes',
           action: 'quick-match-episodes'
+        },
+        {
+          text: this.allEpisodesFinished ? this.$strings.MessageMarkAllEpisodesNotFinished : this.$strings.MessageMarkAllEpisodesFinished,
+          action: 'batch-mark-as-finished'
         }
       ]
     },
@@ -157,14 +167,20 @@ export default {
     episodesList() {
       return this.episodesSorted.filter((episode) => {
         if (!this.searchText) return true
-        return (episode.title && episode.title.toLowerCase().includes(this.searchText)) || (episode.subtitle && episode.subtitle.toLowerCase().includes(this.searchText))
+        return episode.title?.toLowerCase().includes(this.searchText) || episode.subtitle?.toLowerCase().includes(this.searchText)
       })
     },
     selectedIsFinished() {
       // Find an item that is not finished, if none then all items finished
-      return !this.selectedEpisodes.find((episode) => {
-        var itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
-        return !itemProgress || !itemProgress.isFinished
+      return !this.selectedEpisodes.some((episode) => {
+        const itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        return !itemProgress?.isFinished
+      })
+    },
+    allEpisodesFinished() {
+      return !this.episodesSorted.some((episode) => {
+        const itemProgress = this.$store.getters['user/getUserMediaProgress'](this.libraryItem.id, episode.id)
+        return !itemProgress?.isFinished
       })
     },
     dateFormat() {
@@ -185,19 +201,36 @@ export default {
         this.searchText = this.search.toLowerCase().trim()
       }, 500)
     },
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'quick-match-episodes') {
-        if (this.quickMatchingEpisodes) return
+        if (this.processing) return
 
         this.quickMatchAllEpisodes()
+      } else if (action === 'batch-mark-as-finished') {
+        if (this.processing) return
+
+        this.markAllEpisodesFinished()
       }
+    },
+    markAllEpisodesFinished() {
+      const newIsFinished = !this.allEpisodesFinished
+      const payload = {
+        message: newIsFinished ? this.$strings.MessageConfirmMarkAllEpisodesFinished : this.$strings.MessageConfirmMarkAllEpisodesNotFinished,
+        callback: (confirmed) => {
+          if (confirmed) {
+            this.batchUpdateEpisodesFinished(this.episodesSorted, newIsFinished)
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
     },
     quickMatchAllEpisodes() {
       if (!this.mediaMetadata.feedUrl) {
         this.$toast.error(this.$strings.MessagePodcastHasNoRSSFeedForMatching)
         return
       }
-      this.quickMatchingEpisodes = true
+      this.processing = true
 
       const payload = {
         message: 'Quick matching episodes will overwrite details if a match is found. Only unmatched episodes will be updated. Are you sure?',
@@ -217,7 +250,7 @@ export default {
                 this.$toast.error('Failed to match episodes')
               })
           }
-          this.quickMatchingEpisodes = false
+          this.processing = false
         },
         type: 'yesNo'
       }
@@ -241,17 +274,19 @@ export default {
       this.$store.commit('addItemToQueue', queueItem)
     },
     toggleBatchFinished() {
+      this.batchUpdateEpisodesFinished(this.selectedEpisodes, !this.selectedIsFinished)
+    },
+    batchUpdateEpisodesFinished(episodes, newIsFinished) {
       this.processing = true
-      var newIsFinished = !this.selectedIsFinished
-      var updateProgressPayloads = this.selectedEpisodes.map((episode) => {
+
+      const updateProgressPayloads = episodes.map((episode) => {
         return {
           libraryItemId: this.libraryItem.id,
           episodeId: episode.id,
           isFinished: newIsFinished
         }
       })
-
-      this.$axios
+      return this.$axios
         .patch(`/api/me/progress/batch/update`, updateProgressPayloads)
         .then(() => {
           this.$toast.success(this.$strings.ToastBatchUpdateSuccess)

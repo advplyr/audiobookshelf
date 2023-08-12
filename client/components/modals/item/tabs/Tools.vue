@@ -20,7 +20,7 @@
     </div>
 
     <!-- Split to mp3 -->
-    <div v-if="showMp3Split && showExperimentalFeatures" class="w-full border border-black-200 p-4 my-8">
+    <!-- <div v-if="showMp3Split" class="w-full border border-black-200 p-4 my-8">
       <div class="flex items-center">
         <div>
           <p class="text-lg">{{ $strings.LabelToolsSplitM4b }}</p>
@@ -31,7 +31,7 @@
           <ui-btn :disabled="true">{{ $strings.MessageNotYetImplemented }}</ui-btn>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Embed Metadata -->
     <div v-if="mediaTracks.length" class="w-full border border-black-200 p-4 my-8">
@@ -79,9 +79,6 @@ export default {
     return {}
   },
   computed: {
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     libraryItemId() {
       return this.libraryItem?.id || null
     },

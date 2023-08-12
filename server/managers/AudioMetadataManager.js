@@ -10,8 +10,7 @@ const toneHelpers = require('../utils/toneHelpers')
 const Task = require('../objects/Task')
 
 class AudioMetadataMangaer {
-  constructor(db, taskManager) {
-    this.db = db
+  constructor(taskManager) {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
@@ -86,7 +85,7 @@ class AudioMetadataMangaer {
       }
     }
     const taskDescription = `Embedding metadata in audiobook "${libraryItem.media.metadata.title}".`
-    task.setData('embed-metadata', 'Embedding Metadata', taskDescription, taskData)
+    task.setData('embed-metadata', 'Embedding Metadata', taskDescription, false, taskData)
 
     if (this.tasksRunning.length >= this.MAX_CONCURRENT_TASKS) {
       Logger.info(`[AudioMetadataManager] Queueing embed metadata for audiobook "${libraryItem.media.metadata.title}"`)

@@ -213,7 +213,9 @@ export default {
       // Reload HTML content
       this.$refs.trix.editor.loadHTML(newContent)
       // Move cursor to end of new content updated
-      this.$refs.trix.editor.setSelectedRange(this.getContentEndPosition())
+      if (this.autofocus) {
+        this.$refs.trix.editor.setSelectedRange(this.getContentEndPosition())
+      }
     },
     getContentEndPosition() {
       return this.$refs.trix.editor.getDocument().toString().length - 1

@@ -27,7 +27,7 @@
       </div>
     </transition>
 
-    <modals-audio-file-data-modal v-model="showAudioFileDataModal" :audio-file="selectedAudioFile" />
+    <modals-audio-file-data-modal v-model="showAudioFileDataModal" :library-item-id="libraryItemId" :audio-file="selectedAudioFile" />
   </div>
 </template>
 
@@ -38,7 +38,6 @@ export default {
       type: Object,
       default: () => {}
     },
-    isMissing: Boolean,
     expanded: Boolean, // start expanded
     inModal: Boolean
   },

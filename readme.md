@@ -32,7 +32,10 @@ Audiobookshelf is a self-hosted audiobook and podcast server.
 * Chapter editor and chapter lookup (using [Audnexus API](https://audnex.us/))
 * Merge your audio files into a single m4b
 * Embed metadata and cover image into your audio files (using [Tone](https://github.com/sandreas/tone))
-* Basic ebook support and e-reader *(experimental)*
+* Basic ebook support and ereader
+  * Epub, pdf, cbr, cbz
+  * Send ebook to device (i.e. Kindle)
+* Open RSS feeds for podcasts and audiobooks
 
 Is there a feature you are looking for? [Suggest it](https://github.com/advplyr/audiobookshelf/issues/new/choose)
 
@@ -117,9 +120,11 @@ Add this to the site config file on your Apache server after you have changed th
 
 For this to work you must enable at least the following mods using `a2enmod`:
   - `ssl`
-  - `proxy_module`
-  - `proxy_wstunnel_module`
-  - `rewrite_module`
+  - `proxy`
+  - `proxy_http`
+  - `proxy_balancer`
+  - `proxy_wstunnel`
+  - `rewrite`
 
 ```bash
 <IfModule mod_ssl.c>
@@ -142,6 +147,26 @@ For this to work you must enable at least the following mods using `a2enmod`:
     SSLCertificateKeyFile /path/to/key/file
 </VirtualHost>
 </IfModule>
+```
+
+Some SSL certificates like those signed by Let's Encrypt require ACME validation. To allow Let's Encrypt to write and confirm 
+the ACME challenge, edit your VirtualHost definition to prevent proxying traffic that queries `/.well-known` and instead
+serve that directly:
+```bash
+<VirtualHost *:443>
+    # ...
+
+    # create the directory structure  /.well-known/acme-challenges
+    # within DocumentRoot and give the HTTP user recursive write
+    # access to it.
+    DocumentRoot /path/to/local/directory
+    
+    ProxyPreserveHost On
+    ProxyPass /.well-known !
+    ProxyPass / http://localhost:<audiobookshelf_port>/
+    
+    # ...
+</VirtualHost>    
 ```
 
 

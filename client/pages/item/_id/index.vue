@@ -52,13 +52,6 @@
             <div class="hidden md:block flex-grow" />
           </div>
 
-          <!-- Alerts -->
-          <div v-show="showExperimentalReadAlert" class="bg-error p-4 rounded-xl flex items-center">
-            <span class="material-icons text-2xl">warning_amber</span>
-            <p v-if="userIsAdminOrUp" class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader can be enabled in config.</p>
-            <p v-else class="ml-4">Book has no audio tracks but has an ebook. The experimental e-reader must be enabled by a server admin.</p>
-          </div>
-
           <!-- Podcast episode downloads queue -->
           <div v-if="episodeDownloadsQueued.length" class="px-4 py-2 mt-4 bg-info bg-opacity-40 text-sm font-semibold rounded-md text-gray-100 relative max-w-max mx-auto md:mx-0">
             <div class="flex items-center">
@@ -122,7 +115,7 @@
               <ui-icon-btn icon="search" class="mx-0.5" :loading="fetchingRSSFeed" outlined @click="findEpisodesClick" />
             </ui-tooltip>
 
-            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" menu-width="148px" @action="contextMenuAction">
+            <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="148" @action="contextMenuAction">
               <template #default="{ showMenu, clickShowMenu, disabled }">
                 <button type="button" :disabled="disabled" class="mx-0.5 icon-btn bg-primary border border-gray-600 w-9 h-9 rounded-md flex items-center justify-center relative" aria-haspopup="listbox" :aria-expanded="showMenu" @click.stop.prevent="clickShowMenu">
                   <span class="material-icons">more_horiz</span>
@@ -147,7 +140,9 @@
 
           <tables-chapters-table v-if="chapters.length" :library-item="libraryItem" class="mt-6" />
 
-          <tables-library-files-table v-if="libraryFiles.length" :is-missing="isMissing" :library-item="libraryItem" class="mt-6" />
+          <tables-ebook-files-table v-if="ebookFiles.length" :library-item="libraryItem" class="mt-6" />
+
+          <tables-library-files-table v-if="libraryFiles.length" :library-item="libraryItem" class="mt-6" />
         </div>
       </div>
     </div>
@@ -200,12 +195,6 @@ export default {
     dateFormat() {
       return this.$store.state.serverSettings.dateFormat
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
-    enableEReader() {
-      return this.$store.getters['getServerSetting']('enableEReader')
-    },
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
@@ -257,7 +246,7 @@ export default {
       return this.tracks.length
     },
     showReadButton() {
-      return this.ebookFile && (this.showExperimentalFeatures || this.enableEReader)
+      return this.ebookFile
     },
     libraryId() {
       return this.libraryItem.libraryId
@@ -320,6 +309,9 @@ export default {
     libraryFiles() {
       return this.libraryItem.libraryFiles || []
     },
+    ebookFiles() {
+      return this.libraryFiles.filter((lf) => lf.fileType === 'ebook')
+    },
     ebookFile() {
       return this.media.ebookFile
     },
@@ -329,9 +321,6 @@ export default {
     audioFile() {
       // Music track
       return this.media.audioFile
-    },
-    showExperimentalReadAlert() {
-      return !this.tracks.length && this.ebookFile && !this.showExperimentalFeatures && !this.enableEReader
     },
     description() {
       return this.mediaMetadata.description || ''
@@ -431,6 +420,19 @@ export default {
         })
       }
 
+      if (this.ebookFile && this.$store.state.libraries.ereaderDevices?.length) {
+        items.push({
+          text: this.$strings.LabelSendEbookToDevice,
+          subitems: this.$store.state.libraries.ereaderDevices.map((d) => {
+            return {
+              text: d.name,
+              action: 'sendToDevice',
+              data: d.name
+            }
+          })
+        })
+      }
+
       if (this.userCanDelete) {
         items.push({
           text: this.$strings.ButtonDelete,
@@ -506,7 +508,7 @@ export default {
       this.$store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'cover' })
     },
     openEbook() {
-      this.$store.commit('showEReader', this.libraryItem)
+      this.$store.commit('showEReader', { libraryItem: this.libraryItem, keepProgress: true })
     },
     toggleFinished(confirmed = false) {
       if (!this.userIsFinished && this.progressPercent > 0 && !confirmed) {
@@ -531,7 +533,6 @@ export default {
         .$patch(`/api/me/progress/${this.libraryItemId}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -677,14 +678,7 @@ export default {
       }
     },
     downloadLibraryItem() {
-      const a = document.createElement('a')
-      a.style.display = 'none'
-      a.href = this.downloadUrl
-      document.body.appendChild(a)
-      a.click()
-      setTimeout(() => {
-        a.remove()
-      })
+      this.$downloadFile(this.downloadUrl)
     },
     deleteLibraryItem() {
       const payload = {
@@ -711,7 +705,35 @@ export default {
       }
       this.$store.commit('globals/setConfirmPrompt', payload)
     },
-    contextMenuAction(action) {
+    sendToDevice(deviceName) {
+      const payload = {
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFile.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            this.$axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send ebook to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.$store.commit('globals/setConfirmPrompt', payload)
+    },
+    contextMenuAction({ action, data }) {
       if (action === 'collections') {
         this.$store.commit('setSelectedLibraryItem', this.libraryItem)
         this.$store.commit('globals/setShowCollectionsModal', true)
@@ -726,6 +748,8 @@ export default {
         this.downloadLibraryItem()
       } else if (action === 'delete') {
         this.deleteLibraryItem()
+      } else if (action === 'sendToDevice') {
+        this.sendToDevice(data)
       }
     }
   },

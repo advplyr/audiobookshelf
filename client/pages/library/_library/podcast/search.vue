@@ -22,7 +22,7 @@
               <div class="flex items-center">
                 <a :href="podcast.pageUrl" class="text-base md:text-lg text-gray-200 hover:underline" target="_blank" @click.stop>{{ podcast.title }}</a>
                 <widgets-explicit-indicator :explicit="podcast.explicit" />
-                <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary"/>
+                <widgets-already-in-library-indicator :already-in-library="podcast.alreadyInLibrary" />
               </div>
               <p class="text-sm md:text-base text-gray-300 whitespace-nowrap truncate">by {{ podcast.artistName }}</p>
               <p class="text-xs text-gray-400 leading-5">{{ podcast.genres.join(', ') }}</p>
@@ -146,11 +146,15 @@ export default {
     async submitSearch(term) {
       this.processing = true
       this.termSearched = ''
-      var results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(term)}`).catch((error) => {
+      let results = await this.$axios.$get(`/api/search/podcast?term=${encodeURIComponent(term)}`).catch((error) => {
         console.error('Search request failed', error)
         return []
       })
       console.log('Got results', results)
+
+      // Filter out podcasts without an RSS feed
+      results = results.filter((r) => r.feedUrl)
+
       for (let result of results) {
         let podcast = this.existentPodcasts.find((p) => p.itunesId === result.id || p.title === result.title.toLowerCase())
         if (podcast) {
@@ -164,7 +168,7 @@ export default {
     },
     async selectPodcast(podcast) {
       console.log('Selected podcast', podcast)
-      if(podcast.existentId){
+      if (podcast.existentId) {
         this.$router.push(`/item/${podcast.existentId}`)
         return
       }
@@ -173,7 +177,7 @@ export default {
         return
       }
       this.processing = true
-      var payload = await this.$axios.$post(`/api/podcasts/feed`, {rssFeed: podcast.feedUrl}).catch((error) => {
+      const payload = await this.$axios.$post(`/api/podcasts/feed`, { rssFeed: podcast.feedUrl }).catch((error) => {
         console.error('Failed to get feed', error)
         this.$toast.error('Failed to get podcast feed')
         return null

@@ -47,12 +47,6 @@
       <div class="py-2">
         <h1 class="text-lg mb-2 text-white text-opacity-90 px-2 sm:px-0">{{ $strings.HeaderSavedMediaProgress }}</h1>
 
-        <div v-if="mediaProgressWithoutMedia.length" class="flex items-center py-2 mb-2">
-          <p class="text-error">User has media progress for {{ mediaProgressWithoutMedia.length }} items that no longer exist.</p>
-          <div class="flex-grow" />
-          <ui-btn small :loading="purgingMediaProgress" @click.stop="purgeMediaProgress">{{ $strings.ButtonPurgeMediaProgress }}</ui-btn>
-        </div>
-
         <table v-if="mediaProgressWithMedia.length" class="userAudiobooksTable">
           <tr class="bg-primary bg-opacity-40">
             <th class="w-16 text-left">{{ $strings.LabelItem }}</th>
@@ -111,8 +105,7 @@ export default {
   data() {
     return {
       listeningSessions: {},
-      listeningStats: {},
-      purgingMediaProgress: false
+      listeningStats: {}
     }
   },
   computed: {
@@ -133,9 +126,6 @@ export default {
     },
     mediaProgressWithMedia() {
       return this.mediaProgress.filter((mp) => mp.media)
-    },
-    mediaProgressWithoutMedia() {
-      return this.mediaProgress.filter((mp) => !mp.media)
     },
     totalListeningTime() {
       return this.listeningStats.totalTime || 0
@@ -176,24 +166,6 @@ export default {
         return []
       })
       console.log('Loaded user listening data', this.listeningSessions, this.listeningStats)
-    },
-    purgeMediaProgress() {
-      this.purgingMediaProgress = true
-
-      this.$axios
-        .$post(`/api/users/${this.user.id}/purge-media-progress`)
-        .then((updatedUser) => {
-          console.log('Updated user', updatedUser)
-          this.$toast.success('Media progress purged')
-          this.user = updatedUser
-        })
-        .catch((error) => {
-          console.error('Failed to purge media progress', error)
-          this.$toast.error('Failed to purge media progress')
-        })
-        .finally(() => {
-          this.purgingMediaProgress = false
-        })
     }
   },
   mounted() {

@@ -83,8 +83,8 @@ export const getters = {
   getLibraryItemCoverSrc: (state, getters, rootState, rootGetters) => (libraryItem, placeholder = null) => {
     if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItem) return placeholder
-    var media = libraryItem.media
-    if (!media || !media.coverPath || media.coverPath === placeholder) return placeholder
+    const media = libraryItem.media
+    if (!media?.coverPath || media.coverPath === placeholder) return placeholder
 
     // Absolute URL covers (should no longer be used)
     if (media.coverPath.startsWith('http:') || media.coverPath.startsWith('https:')) return media.coverPath
@@ -99,14 +99,14 @@ export const getters = {
 
     return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}&ts=${lastUpdate}`
   },
-  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, placeholder = null, raw = false) => {
-    if (!placeholder) placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
+  getLibraryItemCoverSrcById: (state, getters, rootState, rootGetters) => (libraryItemId, timestamp = null, raw = false) => {
+    const placeholder = `${rootState.routerBasePath}/book_placeholder.jpg`
     if (!libraryItemId) return placeholder
-    var userToken = rootGetters['user/getToken']
+    const userToken = rootGetters['user/getToken']
     if (process.env.NODE_ENV !== 'production') { // Testing
-      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}`
+      return `http://localhost:3333${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
     }
-    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}`
+    return `${rootState.routerBasePath}/api/items/${libraryItemId}/cover?token=${userToken}${raw ? '&raw=1' : ''}${timestamp ? `&ts=${timestamp}` : ''}`
   },
   getIsBatchSelectingMediaItems: (state) => {
     return state.selectedMediaItems.length

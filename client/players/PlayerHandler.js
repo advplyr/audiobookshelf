@@ -52,6 +52,11 @@ export default class PlayerHandler {
     return this.libraryItem.media.episodes.find(ep => ep.id === this.episodeId)
   }
 
+  setSessionId(sessionId) {
+    this.currentSessionId = sessionId
+    this.ctx.$store.commit('setPlaybackSessionId', sessionId)
+  }
+
   load(libraryItem, episodeId, playWhenReady, playbackRate, startTimeOverride = undefined) {
     this.libraryItem = libraryItem
     this.isVideo = libraryItem.mediaType === 'video'
@@ -182,10 +187,11 @@ export default class PlayerHandler {
   }
 
   async prepare(forceTranscode = false) {
-    this.currentSessionId = null // Reset session
+    this.setSessionId(null) // Reset session
 
     const payload = {
       deviceInfo: {
+        clientName: 'Abs Web',
         deviceId: this.getDeviceId()
       },
       supportedMimeTypes: this.player.playableMimeTypes,
@@ -218,7 +224,7 @@ export default class PlayerHandler {
   prepareSession(session) {
     this.failedProgressSyncs = 0
     this.startTime = this.startTimeOverride !== undefined ? this.startTimeOverride : session.currentTime
-    this.currentSessionId = session.id
+    this.setSessionId(session.id)
     this.displayTitle = session.displayTitle
     this.displayAuthor = session.displayAuthor
 
@@ -263,7 +269,7 @@ export default class PlayerHandler {
     this.player = null
     this.playerState = 'IDLE'
     this.libraryItem = null
-    this.currentSessionId = null
+    this.setSessionId(null)
     this.startTime = 0
     this.stopPlayInterval()
   }
@@ -276,6 +282,10 @@ export default class PlayerHandler {
     }
   }
 
+  /**
+   * First sync happens after 20 seconds
+   * subsequent syncs happen every 10 seconds
+   */
   startPlayInterval() {
     clearInterval(this.playInterval)
     let lastTick = Date.now()
@@ -288,7 +298,7 @@ export default class PlayerHandler {
       const exactTimeElapsed = ((Date.now() - lastTick) / 1000)
       lastTick = Date.now()
       this.listeningTimeSinceSync += exactTimeElapsed
-      const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 5 : 20
+      const TimeToWaitBeforeSync = this.lastSyncTime > 0 ? 10 : 20
       if (this.listeningTimeSinceSync >= TimeToWaitBeforeSync) {
         this.sendProgressSync(currentTime)
       }
@@ -300,7 +310,7 @@ export default class PlayerHandler {
     if (this.player) {
       const listeningTimeToAdd = Math.max(0, Math.floor(this.listeningTimeSinceSync))
       // When opening player and quickly closing dont save progress
-      if (listeningTimeToAdd > 20 || this.lastSyncTime > 0) {
+      if (listeningTimeToAdd > 20) {
         syncData = {
           timeListened: listeningTimeToAdd,
           duration: this.getDuration(),
@@ -310,7 +320,7 @@ export default class PlayerHandler {
     }
     this.listeningTimeSinceSync = 0
     this.lastSyncTime = 0
-    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 1000 }).catch((error) => {
+    return this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/close`, syncData, { timeout: 6000 }).catch((error) => {
       console.error('Failed to close session', error)
     })
   }
@@ -330,12 +340,13 @@ export default class PlayerHandler {
     }
 
     this.listeningTimeSinceSync = 0
-    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 3000 }).then(() => {
+    this.ctx.$axios.$post(`/api/session/${this.currentSessionId}/sync`, syncData, { timeout: 9000 }).then(() => {
       this.failedProgressSyncs = 0
     }).catch((error) => {
       console.error('Failed to update session progress', error)
+      // After 4 failed sync attempts show an alert toast
       this.failedProgressSyncs++
-      if (this.failedProgressSyncs >= 2) {
+      if (this.failedProgressSyncs >= 4) {
         this.ctx.showFailedProgressSyncs()
         this.failedProgressSyncs = 0
       }
@@ -390,13 +401,13 @@ export default class PlayerHandler {
     this.player.setPlaybackRate(playbackRate)
   }
 
-  seek(time) {
+  seek(time, shouldSync = true) {
     if (!this.player) return
     this.player.seek(time, this.playerPlaying)
     this.ctx.setCurrentTime(time)
 
     // Update progress if paused
-    if (!this.playerPlaying) {
+    if (!this.playerPlaying && shouldSync) {
       this.sendProgressSync(time)
     }
   }

@@ -7,7 +7,7 @@ export default function ({ $axios, store, $config }) {
     if (config.url.startsWith('http:') || config.url.startsWith('https:')) {
       return
     }
-    var bearerToken = store.state.user.user ? store.state.user.user.token : null
+    const bearerToken = store.state.user.user?.token || null
     if (bearerToken) {
       config.headers.common['Authorization'] = `Bearer ${bearerToken}`
     }

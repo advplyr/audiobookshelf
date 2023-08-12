@@ -1,13 +1,16 @@
+const uuidv4 = require("uuid").v4
 const Path = require('path')
 const Logger = require('../../Logger')
-const { getId, cleanStringForSearch, areEquivalent, copyValue } = require('../../utils/index')
+const { cleanStringForSearch, areEquivalent, copyValue } = require('../../utils/index')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
 
 class PodcastEpisode {
   constructor(episode) {
     this.libraryItemId = null
+    this.podcastId = null
     this.id = null
+    this.oldEpisodeId = null
     this.index = null
 
     this.season = null
@@ -32,7 +35,9 @@ class PodcastEpisode {
 
   construct(episode) {
     this.libraryItemId = episode.libraryItemId
+    this.podcastId = episode.podcastId
     this.id = episode.id
+    this.oldEpisodeId = episode.oldEpisodeId
     this.index = episode.index
     this.season = episode.season
     this.episode = episode.episode
@@ -54,7 +59,9 @@ class PodcastEpisode {
   toJSON() {
     return {
       libraryItemId: this.libraryItemId,
+      podcastId: this.podcastId,
       id: this.id,
+      oldEpisodeId: this.oldEpisodeId,
       index: this.index,
       season: this.season,
       episode: this.episode,
@@ -75,7 +82,9 @@ class PodcastEpisode {
   toJSONExpanded() {
     return {
       libraryItemId: this.libraryItemId,
+      podcastId: this.podcastId,
       id: this.id,
+      oldEpisodeId: this.oldEpisodeId,
       index: this.index,
       season: this.season,
       episode: this.episode,
@@ -109,7 +118,7 @@ class PodcastEpisode {
   }
   get size() { return this.audioFile.metadata.size }
   get enclosureUrl() {
-    return this.enclosure ? this.enclosure.url : null
+    return this.enclosure?.url || null
   }
   get pubYear() {
     if (!this.publishedAt) return null
@@ -117,7 +126,7 @@ class PodcastEpisode {
   }
 
   setData(data, index = 1) {
-    this.id = getId('ep')
+    this.id = uuidv4()
     this.index = index
     this.title = data.title
     this.subtitle = data.subtitle || ''
@@ -133,7 +142,7 @@ class PodcastEpisode {
   }
 
   setDataFromAudioFile(audioFile, index) {
-    this.id = getId('ep')
+    this.id = uuidv4()
     this.audioFile = audioFile
     this.title = Path.basename(audioFile.metadata.filename, Path.extname(audioFile.metadata.filename))
     this.index = index
@@ -148,8 +157,13 @@ class PodcastEpisode {
   update(payload) {
     let hasUpdates = false
     for (const key in this.toJSON()) {
-      if (payload[key] != undefined && !areEquivalent(payload[key], this[key])) {
-        this[key] = copyValue(payload[key])
+      let newValue = payload[key]
+      if (newValue === "") newValue = null
+      let existingValue = this[key]
+      if (existingValue === "") existingValue = null
+
+      if (newValue != undefined && !areEquivalent(newValue, existingValue)) {
+        this[key] = copyValue(newValue)
         hasUpdates = true
       }
     }

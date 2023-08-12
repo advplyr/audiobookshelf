@@ -78,6 +78,7 @@
 </template>
 
 <script>
+import Path from 'path'
 import uploadHelpers from '@/mixins/uploadHelpers'
 
 export default {
@@ -243,7 +244,7 @@ export default {
         ref.setUploadStatus(status)
       }
     },
-    uploadItem(item) {
+    async uploadItem(item) {
       var form = new FormData()
       form.set('title', item.title)
       if (!this.selectedLibraryIsPodcast) {
@@ -294,18 +295,41 @@ export default {
         return
       }
 
-      var items = this.validateItems()
+      const items = this.validateItems()
       if (!items) {
         this.$toast.error('Some invalid items')
         return
       }
       this.processing = true
-      var itemsUploaded = 0
-      var itemsFailed = 0
-      for (let i = 0; i < items.length; i++) {
-        var item = items[i]
+
+      const itemsToUpload = []
+
+      // Check if path already exists before starting upload
+      //  uploading fails if path already exists
+      for (const item of items) {
+        const filepath = Path.join(this.selectedFolder.fullPath, item.directory)
+        const exists = await this.$axios
+          .$post(`/api/filesystem/pathexists`, { filepath })
+          .then((data) => {
+            if (data.exists) {
+              this.$toast.error(`Filepath "${filepath}" already exists on server`)
+            }
+            return data.exists
+          })
+          .catch((error) => {
+            console.error('Failed to check if filepath exists', error)
+            return false
+          })
+        if (!exists) {
+          itemsToUpload.push(item)
+        }
+      }
+
+      let itemsUploaded = 0
+      let itemsFailed = 0
+      for (const item of itemsToUpload) {
         this.updateItemCardStatus(item.index, 'uploading')
-        var result = await this.uploadItem(item)
+        const result = await this.uploadItem(item)
         if (result) itemsUploaded++
         else itemsFailed++
         this.updateItemCardStatus(item.index, result ? 'success' : 'failed')

@@ -188,7 +188,6 @@ export default {
         .$patch(`/api/me/progress/${this.book.id}`, updatePayload)
         .then(() => {
           this.isProcessingReadUpdate = false
-          this.$toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)

@@ -10,8 +10,7 @@ const { writeConcatFile } = require('../utils/ffmpegHelpers')
 const toneHelpers = require('../utils/toneHelpers')
 
 class AbMergeManager {
-  constructor(db, taskManager) {
-    this.db = db
+  constructor(taskManager) {
     this.taskManager = taskManager
 
     this.itemsCacheDir = Path.join(global.MetadataPath, 'cache/items')
@@ -46,7 +45,7 @@ class AbMergeManager {
       toneJsonObject: null
     }
     const taskDescription = `Encoding audiobook "${libraryItem.media.metadata.title}" into a single m4b file.`
-    task.setData('encode-m4b', 'Encoding M4b', taskDescription, taskData)
+    task.setData('encode-m4b', 'Encoding M4b', taskDescription, false, taskData)
     this.taskManager.addTask(task)
     Logger.info(`Start m4b encode for ${libraryItem.id} - TaskId: ${task.id}`)
 
@@ -58,7 +57,7 @@ class AbMergeManager {
   }
 
   async runAudiobookMerge(libraryItem, task, encodingOptions) {
-    const audioBitrate = encodingOptions.bitrate || '64k'
+    const audioBitrate = encodingOptions.bitrate || '128k'
     const audioCodec = encodingOptions.codec || 'aac'
     const audioChannels = encodingOptions.channels || 2
 

@@ -1,4 +1,4 @@
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Notification {
   constructor(notification = null) {
@@ -57,7 +57,7 @@ class Notification {
   }
 
   setData(payload) {
-    this.id = getId('noti')
+    this.id = uuidv4()
     this.libraryId = payload.libraryId || null
     this.eventName = payload.eventName
     this.urls = payload.urls

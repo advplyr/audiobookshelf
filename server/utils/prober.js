@@ -139,15 +139,16 @@ function isNullOrNaN(val) {
  */
 function parseChapters(chapters) {
   if (!chapters) return []
+  let index = 0
   return chapters.map(chap => {
-    var title = chap['TAG:title'] || chap.title || ''
-    if (!title && chap.tags && chap.tags.title) title = chap.tags.title
+    let title = chap['TAG:title'] || chap.title || ''
+    if (!title && chap.tags?.title) title = chap.tags.title
 
-    var timebase = chap.time_base && chap.time_base.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
-    var start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
-    var end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
+    const timebase = chap.time_base?.includes('/') ? Number(chap.time_base.split('/')[1]) : 1
+    const start = !isNullOrNaN(chap.start_time) ? Number(chap.start_time) : !isNullOrNaN(chap.start) ? Number(chap.start) / timebase : 0
+    const end = !isNullOrNaN(chap.end_time) ? Number(chap.end_time) : !isNullOrNaN(chap.end) ? Number(chap.end) / timebase : 0
     return {
-      id: chap.id,
+      id: index++,
       start,
       end,
       title
@@ -309,3 +310,23 @@ function probe(filepath, verbose = false) {
     })
 }
 module.exports.probe = probe
+
+/**
+ * Ffprobe for audio file path
+ * 
+ * @param {string} filepath
+ * @returns {Object} ffprobe json output
+ */
+function rawProbe(filepath) {
+  if (process.env.FFPROBE_PATH) {
+    ffprobe.FFPROBE_PATH = process.env.FFPROBE_PATH
+  }
+
+  return ffprobe(filepath)
+    .catch((err) => {
+      return {
+        error: err
+      }
+    })
+}
+module.exports.rawProbe = rawProbe

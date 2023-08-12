@@ -78,9 +78,6 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     libraryMediaType() {
       return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
@@ -316,12 +313,17 @@ export default {
         this.currentSFQueryString = this.buildSearchParams()
       }
 
-      const entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
+      let entityPath = this.entityName === 'series-books' ? 'items' : this.entityName
+      // TODO: Temp use new library items API for everything except collapse sub-series
+      if (entityPath === 'items' && !this.collapseBookSeries && !(this.filterName === 'Series' && this.collapseSeries)) {
+        entityPath += '2'
+      }
+
       const sfQueryString = this.currentSFQueryString ? this.currentSFQueryString + '&' : ''
-      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed`
+      const fullQueryString = `?${sfQueryString}limit=${this.booksPerFetch}&page=${page}&minified=1&include=rssfeed,numEpisodesIncomplete`
 
       const payload = await this.$axios.$get(`/api/libraries/${this.currentLibraryId}/${entityPath}${fullQueryString}`).catch((error) => {
-        console.error('failed to fetch books', error)
+        console.error('failed to fetch items', error)
         return null
       })
 

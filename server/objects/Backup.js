@@ -5,8 +5,8 @@ const version = require('../../package.json').version
 class Backup {
   constructor(data = null) {
     this.id = null
+    this.key = null // Special key for pre-version checks
     this.datePretty = null
-    this.backupMetadataCovers = null
 
     this.backupDirPath = null
     this.filename = null
@@ -23,9 +23,9 @@ class Backup {
   }
 
   get detailsString() {
-    var details = []
+    const details = []
     details.push(this.id)
-    details.push(this.backupMetadataCovers ? '1' : '0')
+    details.push(this.key)
     details.push(this.createdAt)
     details.push(this.serverVersion)
     return details.join('\n')
@@ -33,7 +33,9 @@ class Backup {
 
   construct(data) {
     this.id = data.details[0]
-    this.backupMetadataCovers = data.details[1] === '1'
+    this.key = data.details[1]
+    if (this.key == 1) this.key = null // v2.2.23 and below backups stored '1' here
+
     this.createdAt = Number(data.details[2])
     this.serverVersion = data.details[3] || null
 
@@ -48,7 +50,7 @@ class Backup {
   toJSON() {
     return {
       id: this.id,
-      backupMetadataCovers: this.backupMetadataCovers,
+      key: this.key,
       backupDirPath: this.backupDirPath,
       datePretty: this.datePretty,
       fullPath: this.fullPath,
@@ -60,13 +62,12 @@ class Backup {
     }
   }
 
-  setData(data) {
+  setData(backupDirPath) {
     this.id = date.format(new Date(), 'YYYY-MM-DD[T]HHmm')
+    this.key = 'sqlite'
     this.datePretty = date.format(new Date(), 'ddd, MMM D YYYY HH:mm')
 
-    this.backupMetadataCovers = data.backupMetadataCovers
-
-    this.backupDirPath = data.backupDirPath
+    this.backupDirPath = backupDirPath
 
     this.filename = this.id + '.audiobookshelf'
     this.path = Path.join('backups', this.filename)

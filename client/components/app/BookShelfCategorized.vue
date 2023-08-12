@@ -16,7 +16,7 @@
     <!-- Alternate plain view -->
     <div v-else-if="isAlternativeBookshelfView" class="w-full mb-24">
       <template v-for="(shelf, index) in shelves">
-        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
+        <widgets-item-slider v-if="shelf.type === 'book' || shelf.type === 'podcast'" :shelf-id="shelf.id" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
           <p class="font-semibold text-gray-100" :style="{ fontSize: sizeMultiplier + 'rem' }">{{ $strings[shelf.labelStringKey] }}</p>
         </widgets-item-slider>
         <widgets-episode-slider v-else-if="shelf.type === 'episode'" :key="index + '.'" :items="shelf.entities" :continue-listening-shelf="shelf.id === 'continue-listening'" :height="232 * sizeMultiplier" class="bookshelf-row pl-8 my-6" @selectEntity="(payload) => selectEntity(payload, index)">
@@ -36,7 +36,7 @@
     <!-- Regular bookshelf view -->
     <div v-else class="w-full">
       <template v-for="(shelf, index) in shelves">
-        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening'" @selectEntity="(payload) => selectEntity(payload, index)" />
+        <app-book-shelf-row :key="index" :index="index" :shelf="shelf" :size-multiplier="sizeMultiplier" :book-cover-width="bookCoverWidth" :book-cover-aspect-ratio="coverAspectRatio" :continue-listening-shelf="shelf.id === 'continue-listening' || shelf.id === 'continue-reading'" @selectEntity="(payload) => selectEntity(payload, index)" />
       </template>
     </div>
   </div>
@@ -65,11 +65,11 @@ export default {
     userIsAdminOrUp() {
       return this.$store.getters['user/getIsAdminOrUp']
     },
-    showExperimentalFeatures() {
-      return this.$store.state.showExperimentalFeatures
-    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
+    },
+    currentLibraryMediaType() {
+      return this.$store.getters['libraries/getCurrentLibraryMediaType']
     },
     libraryName() {
       return this.$store.getters['libraries/getCurrentLibraryName']
@@ -171,7 +171,7 @@ export default {
     },
     async fetchCategories() {
       const categories = await this.$axios
-        .$get(`/api/libraries/${this.currentLibraryId}/personalized?include=rssfeed`)
+        .$get(`/api/libraries/${this.currentLibraryId}/personalized2?include=rssfeed,numEpisodesIncomplete`)
         .then((data) => {
           return data
         })
@@ -286,7 +286,8 @@ export default {
       }
       if (user.mediaProgress.length) {
         const mediaProgressToHide = user.mediaProgress.filter((mp) => mp.hideFromContinueListening)
-        this.removeItemsFromContinueListening(mediaProgressToHide)
+        this.removeItemsFromContinueListeningReading(mediaProgressToHide, 'continue-listening')
+        this.removeItemsFromContinueListeningReading(mediaProgressToHide, 'continue-reading')
       }
     },
     libraryItemAdded(libraryItem) {
@@ -336,8 +337,9 @@ export default {
     },
     libraryItemsAdded(libraryItems) {
       console.log('libraryItems added', libraryItems)
-      // TODO: Check if audiobook would be on this shelf
-      if (!this.search) {
+
+      const isThisLibrary = !libraryItems.some((li) => li.libraryId !== this.currentLibraryId)
+      if (!this.search && isThisLibrary) {
         this.fetchCategories()
       }
     },
@@ -345,6 +347,12 @@ export default {
       items.forEach((li) => {
         this.libraryItemUpdated(li)
       })
+    },
+    episodeAdded(episodeWithLibraryItem) {
+      const isThisLibrary = episodeWithLibraryItem.libraryItem?.libraryId === this.currentLibraryId
+      if (!this.search && isThisLibrary) {
+        this.fetchCategories()
+      }
     },
     removeAllSeriesFromContinueSeries(seriesIds) {
       this.shelves.forEach((shelf) => {
@@ -357,8 +365,8 @@ export default {
         }
       })
     },
-    removeItemsFromContinueListening(mediaProgressItems) {
-      const continueListeningShelf = this.shelves.find((s) => s.id === 'continue-listening')
+    removeItemsFromContinueListeningReading(mediaProgressItems, categoryId) {
+      const continueListeningShelf = this.shelves.find((s) => s.id === categoryId)
       if (continueListeningShelf) {
         if (continueListeningShelf.type === 'book') {
           continueListeningShelf.entities = continueListeningShelf.entities.filter((ent) => {
@@ -373,17 +381,6 @@ export default {
           })
         }
       }
-      // this.shelves.forEach((shelf) => {
-      //   if (shelf.id == 'continue-listening') {
-      //     if (shelf.type == 'book') {
-      //       // Filter out books from continue listening shelf
-      //       shelf.entities = shelf.entities.filter((ent) => {
-      //         if (mediaProgressItems.some(mp => mp.libraryItemId === ent.id)) return false
-      //         return true
-      //       })
-      //     }
-      //   }
-      // })
     },
     authorUpdated(author) {
       this.shelves.forEach((shelf) => {
@@ -417,6 +414,7 @@ export default {
         this.$root.socket.on('item_removed', this.libraryItemRemoved)
         this.$root.socket.on('items_updated', this.libraryItemsUpdated)
         this.$root.socket.on('items_added', this.libraryItemsAdded)
+        this.$root.socket.on('episode_added', this.episodeAdded)
       } else {
         console.error('Error socket not initialized')
       }
@@ -431,6 +429,7 @@ export default {
         this.$root.socket.off('item_removed', this.libraryItemRemoved)
         this.$root.socket.off('items_updated', this.libraryItemsUpdated)
         this.$root.socket.off('items_added', this.libraryItemsAdded)
+        this.$root.socket.off('episode_added', this.episodeAdded)
       } else {
         console.error('Error socket not initialized')
       }

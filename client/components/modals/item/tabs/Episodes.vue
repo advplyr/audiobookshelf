@@ -20,18 +20,14 @@
       <div v-if="!episodes.length" class="flex my-4 text-center justify-center text-xl">{{ $strings.MessageNoEpisodes }}</div>
       <table v-else class="text-sm tracksTable">
         <tr>
-          <th class="text-left">Sort #</th>
-          <th class="text-left whitespace-nowrap">{{ $strings.LabelEpisode }}</th>
-          <th class="text-left">{{ $strings.EpisodeTitle }}</th>
-          <th class="text-center w-28">{{ $strings.EpisodeDuration }}</th>
-          <th class="text-center w-28">{{ $strings.EpisodeSize }}</th>
+          <th class="text-center w-20 min-w-20">{{ $strings.LabelEpisode }}</th>
+          <th class="text-left">{{ $strings.LabelEpisodeTitle }}</th>
+          <th class="text-center w-28">{{ $strings.LabelEpisodeDuration }}</th>
+          <th class="text-center w-28">{{ $strings.LabelEpisodeSize }}</th>
         </tr>
         <tr v-for="episode in episodes" :key="episode.id">
-          <td class="text-left">
-            <p class="px-4">{{ episode.index }}</p>
-          </td>
-          <td class="text-left">
-            <p class="px-4">{{ episode.episode }}</p>
+          <td class="text-center w-20 min-w-20">
+            <p>{{ episode.episode }}</p>
           </td>
           <td>
             {{ episode.title }}

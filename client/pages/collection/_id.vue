@@ -145,7 +145,7 @@ export default {
         feed: this.rssFeed
       })
     },
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       if (action === 'delete') {
         this.removeClick()
       } else if (action === 'create-playlist') {

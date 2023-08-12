@@ -1,20 +1,22 @@
+const uuidv4 = require("uuid").v4
 const fs = require('../libs/fsExtra')
 const Path = require('path')
 const { version } = require('../../package.json')
 const Logger = require('../Logger')
-const abmetadataGenerator = require('../utils/abmetadataGenerator')
+const abmetadataGenerator = require('../utils/generators/abmetadataGenerator')
 const LibraryFile = require('./files/LibraryFile')
 const Book = require('./mediaTypes/Book')
 const Podcast = require('./mediaTypes/Podcast')
 const Video = require('./mediaTypes/Video')
 const Music = require('./mediaTypes/Music')
-const { areEquivalent, copyValue, getId, cleanStringForSearch } = require('../utils/index')
+const { areEquivalent, copyValue, cleanStringForSearch } = require('../utils/index')
 const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class LibraryItem {
   constructor(libraryItem = null) {
     this.id = null
     this.ino = null // Inode
+    this.oldLibraryItemId = null
 
     this.libraryId = null
     this.folderId = null
@@ -51,6 +53,7 @@ class LibraryItem {
   construct(libraryItem) {
     this.id = libraryItem.id
     this.ino = libraryItem.ino || null
+    this.oldLibraryItemId = libraryItem.oldLibraryItemId
     this.libraryId = libraryItem.libraryId
     this.folderId = libraryItem.folderId
     this.path = libraryItem.path
@@ -80,12 +83,23 @@ class LibraryItem {
     this.media.libraryItemId = this.id
 
     this.libraryFiles = libraryItem.libraryFiles.map(f => new LibraryFile(f))
+
+    // Migration for v2.2.23 to set ebook library files as supplementary
+    if (this.isBook && this.media.ebookFile) {
+      for (const libraryFile of this.libraryFiles) {
+        if (libraryFile.isEBookFile && libraryFile.isSupplementary === null) {
+          libraryFile.isSupplementary = this.media.ebookFile.ino !== libraryFile.ino
+        }
+      }
+    }
+
   }
 
   toJSON() {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,
@@ -110,6 +124,7 @@ class LibraryItem {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,
@@ -134,6 +149,7 @@ class LibraryItem {
     return {
       id: this.id,
       ino: this.ino,
+      oldLibraryItemId: this.oldLibraryItemId,
       libraryId: this.libraryId,
       folderId: this.folderId,
       path: this.path,
@@ -181,7 +197,7 @@ class LibraryItem {
 
   // Data comes from scandir library item data
   setData(libraryMediaType, payload) {
-    this.id = getId('li')
+    this.id = uuidv4()
     this.mediaType = libraryMediaType
     if (libraryMediaType === 'video') {
       this.media = new Video()
@@ -192,6 +208,7 @@ class LibraryItem {
     } else if (libraryMediaType === 'music') {
       this.media = new Music()
     }
+    this.media.id = uuidv4()
     this.media.libraryItemId = this.id
 
     for (const key in payload) {
@@ -432,21 +449,41 @@ class LibraryItem {
   }
 
   // Set metadata from files
-  async syncFiles(preferOpfMetadata) {
+  async syncFiles(preferOpfMetadata, librarySettings) {
     let hasUpdated = false
 
-    if (this.mediaType === 'book') {
-      // Add/update ebook file (ebooks that were removed are removed in checkScanData)
-      this.libraryFiles.forEach((lf) => {
-        if (lf.fileType === 'ebook') {
-          if (!this.media.ebookFile) {
-            this.media.setEbookFile(lf)
-            hasUpdated = true
-          } else if (this.media.ebookFile.ino == lf.ino && this.media.ebookFile.updateFromLibraryFile(lf)) { // Update existing ebookFile
-            hasUpdated = true
-          }
+    if (this.isBook) {
+      // Add/update ebook files (ebooks that were removed are removed in checkScanData)
+      if (librarySettings.audiobooksOnly) {
+        hasUpdated = this.media.ebookFile
+        if (hasUpdated) {
+          // If library was set to audiobooks only then set primary ebook as supplementary
+          Logger.info(`[LibraryItem] Library is audiobooks only so setting ebook "${this.media.ebookFile.metadata.filename}" as supplementary`)
         }
-      })
+        this.setPrimaryEbook(null)
+      } else if (this.media.ebookFile) {
+        const matchingLibraryFile = this.libraryFiles.find(lf => lf.ino === this.media.ebookFile.ino)
+        if (matchingLibraryFile && this.media.ebookFile.updateFromLibraryFile(matchingLibraryFile)) {
+          hasUpdated = true
+        }
+        // Set any other ebook files as supplementary
+        const suppEbookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile && !lf.isSupplementary && this.media.ebookFile.ino !== lf.ino)
+        if (suppEbookLibraryFiles.length) {
+          for (const libraryFile of suppEbookLibraryFiles) {
+            libraryFile.isSupplementary = true
+          }
+          hasUpdated = true
+        }
+      } else {
+        const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile && !lf.isSupplementary)
+
+        // Prefer epub ebook then fallback to first other ebook file
+        const ebookLibraryFile = ebookLibraryFiles.find(lf => lf.metadata.format === 'epub') || ebookLibraryFiles[0]
+        if (ebookLibraryFile) {
+          this.setPrimaryEbook(ebookLibraryFile)
+          hasUpdated = true
+        }
+      }
     }
 
     // Set cover image if not set
@@ -486,7 +523,10 @@ class LibraryItem {
     return this.media.getDirectPlayTracklist(episodeId)
   }
 
-  // Saves metadata.abs file
+  /**
+   * Save metadata.json/metadata.abs file
+   * @returns {boolean} true if saved
+   */
   async saveMetadata() {
     if (this.mediaType === 'video' || this.mediaType === 'music') return
 
@@ -519,6 +559,7 @@ class LibraryItem {
           await newLibraryFile.setDataFromPath(metadataFilePath, `metadata.json`)
           this.libraryFiles.push(newLibraryFile)
         }
+        Logger.debug(`[LibraryItem] Success saving abmetadata to "${metadataFilePath}"`)
 
         return true
       }).catch((error) => {
@@ -561,6 +602,21 @@ class LibraryItem {
       return true
     }
     return false
+  }
+
+  /**
+   * Set the EBookFile from a LibraryFile
+   * If null then ebookFile will be removed from the book
+   * all ebook library files that are not primary are marked as supplementary
+   * 
+   * @param {LibraryFile} [libraryFile] 
+   */
+  setPrimaryEbook(ebookLibraryFile = null) {
+    const ebookLibraryFiles = this.libraryFiles.filter(lf => lf.isEBookFile)
+    for (const libraryFile of ebookLibraryFiles) {
+      libraryFile.isSupplementary = ebookLibraryFile?.ino !== libraryFile.ino
+    }
+    this.media.setEbookFile(ebookLibraryFile)
   }
 }
 module.exports = LibraryItem

@@ -8,8 +8,7 @@ const fs = require('../libs/fsExtra')
 
 
 class HlsRouter {
-  constructor(db, auth, playbackSessionManager) {
-    this.db = db
+  constructor(auth, playbackSessionManager) {
     this.auth = auth
     this.playbackSessionManager = playbackSessionManager
 

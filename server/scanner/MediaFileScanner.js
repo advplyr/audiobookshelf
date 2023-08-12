@@ -59,14 +59,7 @@ class MediaFileScanner {
   async scan(mediaType, libraryFile, mediaMetadataFromScan, verbose = false) {
     const probeStart = Date.now()
 
-    let probeData = null
-    // TODO: Temp not using tone for probing until more testing can be done
-    // if (global.ServerSettings.scannerUseTone) {
-    //   Logger.debug(`[MediaFileScanner] using tone to probe audio file "${libraryFile.metadata.path}"`)
-    //   probeData = await toneProber.probe(libraryFile.metadata.path, true)
-    // } else {
-    probeData = await prober.probe(libraryFile.metadata.path, verbose)
-    // }
+    const probeData = await prober.probe(libraryFile.metadata.path, verbose)
 
     if (probeData.error) {
       Logger.error(`[MediaFileScanner] ${probeData.error} : "${libraryFile.metadata.path}"`)
@@ -285,17 +278,17 @@ class MediaFileScanner {
         const existingAudioFiles = mediaScanResult.audioFiles.filter(af => libraryItem.media.findFileWithInode(af.ino))
 
         if (newAudioFiles.length) {
-          let newIndex = libraryItem.media.episodes.length + 1
+          let newIndex = Math.max(...libraryItem.media.episodes.filter(ep => ep.index == null || isNaN(ep.index)).map(ep => Number(ep.index))) + 1
           newAudioFiles.forEach((newAudioFile) => {
             libraryItem.media.addNewEpisodeFromAudioFile(newAudioFile, newIndex++)
           })
-          libraryItem.media.reorderEpisodes()
           hasUpdated = true
         }
 
         // Update audio file metadata for audio files already there
         existingAudioFiles.forEach((af) => {
           const podcastEpisode = libraryItem.media.findEpisodeWithInode(af.ino)
+          af.index = 1
           if (podcastEpisode?.audioFile.updateFromScan(af)) {
             hasUpdated = true
 
@@ -332,9 +325,9 @@ class MediaFileScanner {
     return hasUpdated
   }
 
-  probeAudioFileWithTone(audioFile) {
-    Logger.debug(`[MediaFileScanner] using tone to probe audio file "${audioFile.metadata.path}"`)
-    return toneProber.rawProbe(audioFile.metadata.path)
+  probeAudioFile(audioFile) {
+    Logger.debug(`[MediaFileScanner] Running ffprobe for audio file at "${audioFile.metadata.path}"`)
+    return prober.rawProbe(audioFile.metadata.path)
   }
 }
 module.exports = new MediaFileScanner()

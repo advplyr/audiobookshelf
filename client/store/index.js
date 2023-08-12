@@ -6,6 +6,7 @@ export const state = () => ({
   Source: null,
   versionData: null,
   serverSettings: null,
+  playbackSessionId: null,
   streamLibraryItem: null,
   streamEpisodeId: null,
   streamIsPlaying: false,
@@ -16,11 +17,12 @@ export const state = () => ({
   editPodcastModalTab: 'details',
   showEditModal: false,
   showEReader: false,
+  ereaderKeepProgress: false,
+  ereaderFileId: null,
   selectedLibraryItem: null,
   developerMode: false,
   processingBatch: false,
   previousPath: '/',
-  showExperimentalFeatures: false,
   bookshelfBookIds: [],
   episodeTableEpisodeIds: [],
   openModal: null,
@@ -35,7 +37,7 @@ export const getters = {
     return state.serverSettings[key]
   },
   getLibraryItemIdStreaming: state => {
-    return state.streamLibraryItem ? state.streamLibraryItem.id : null
+    return state.streamLibraryItem?.id || null
   },
   getIsStreamingFromDifferentLibrary: (state, getters, rootState) => {
     if (!state.streamLibraryItem) return false
@@ -150,6 +152,9 @@ export const mutations = {
     if (!settings) return
     state.serverSettings = settings
   },
+  setPlaybackSessionId(state, playbackSessionId) {
+    state.playbackSessionId = playbackSessionId
+  },
   setMediaPlaying(state, payload) {
     if (!payload) {
       state.streamLibraryItem = null
@@ -206,8 +211,10 @@ export const mutations = {
   setEditPodcastModalTab(state, tab) {
     state.editPodcastModalTab = tab
   },
-  showEReader(state, libraryItem) {
+  showEReader(state, { libraryItem, keepProgress, fileId }) {
     state.selectedLibraryItem = libraryItem
+    state.ereaderKeepProgress = keepProgress
+    state.ereaderFileId = fileId
 
     state.showEReader = true
   },
@@ -222,10 +229,6 @@ export const mutations = {
   },
   setProcessingBatch(state, val) {
     state.processingBatch = val
-  },
-  setExperimentalFeatures(state, val) {
-    state.showExperimentalFeatures = val
-    localStorage.setItem('experimental', val ? 1 : 0)
   },
   setOpenModal(state, val) {
     state.openModal = val

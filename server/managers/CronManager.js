@@ -1,9 +1,9 @@
 const cron = require('../libs/nodeCron')
 const Logger = require('../Logger')
+const Database = require('../Database')
 
 class CronManager {
-  constructor(db, scanner, podcastManager) {
-    this.db = db
+  constructor(scanner, podcastManager) {
     this.scanner = scanner
     this.podcastManager = podcastManager
 
@@ -13,13 +13,21 @@ class CronManager {
     this.podcastCronExpressionsExecuting = []
   }
 
-  init() {
-    this.initLibraryScanCrons()
+  /**
+   * Initialize library scan crons & podcast download crons
+   * @param {oldLibrary[]} libraries 
+   */
+  init(libraries) {
+    this.initLibraryScanCrons(libraries)
     this.initPodcastCrons()
   }
 
-  initLibraryScanCrons() {
-    for (const library of this.db.libraries) {
+  /**
+   * Initialize library scan crons
+   * @param {oldLibrary[]} libraries 
+   */
+  initLibraryScanCrons(libraries) {
+    for (const library of libraries) {
       if (library.settings.autoScanCronExpression) {
         this.startCronForLibrary(library)
       }
@@ -64,7 +72,7 @@ class CronManager {
 
   initPodcastCrons() {
     const cronExpressionMap = {}
-    this.db.libraryItems.forEach((li) => {
+    Database.libraryItems.forEach((li) => {
       if (li.mediaType === 'podcast' && li.media.autoDownloadEpisodes) {
         if (!li.media.autoDownloadSchedule) {
           Logger.error(`[CronManager] Podcast auto download schedule is not set for ${li.media.metadata.title}`)
@@ -119,7 +127,7 @@ class CronManager {
     // Get podcast library items to check
     const libraryItems = []
     for (const libraryItemId of libraryItemIds) {
-      const libraryItem = this.db.libraryItems.find(li => li.id === libraryItemId)
+      const libraryItem = Database.libraryItems.find(li => li.id === libraryItemId)
       if (!libraryItem) {
         Logger.error(`[CronManager] Library item ${libraryItemId} not found for episode check cron ${expression}`)
         podcastCron.libraryItemIds = podcastCron.libraryItemIds.filter(lid => lid !== libraryItemId) // Filter it out

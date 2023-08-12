@@ -81,6 +81,8 @@
 
         <!-- issues page remove all button -->
         <ui-btn v-if="isIssuesFilter && userCanDelete && !isBatchSelecting" :loading="processingIssues" color="error" small class="ml-4" @click="removeAllIssues">{{ $strings.ButtonRemoveAll }} {{ numShowing }} {{ entityName }}</ui-btn>
+
+        <ui-context-menu-dropdown v-if="contextMenuItems.length" :items="contextMenuItems" :menu-width="110" class="ml-2" @action="contextMenuAction" />
       </template>
       <!-- search page -->
       <template v-else-if="page === 'search'">
@@ -186,6 +188,9 @@ export default {
     userCanUpdate() {
       return this.$store.getters['user/getUserCanUpdate']
     },
+    userCanDownload() {
+      return this.$store.getters['user/getUserCanDownload']
+    },
     currentLibraryId() {
       return this.$store.state.libraries.currentLibraryId
     },
@@ -276,10 +281,30 @@ export default {
     },
     isIssuesFilter() {
       return this.filterBy === 'issues' && this.$route.query.filter === 'issues'
+    },
+    contextMenuItems() {
+      const items = []
+
+      if (this.isPodcastLibrary && this.isLibraryPage && this.userCanDownload) {
+        items.push({
+          text: 'Export OPML',
+          action: 'export-opml'
+        })
+      }
+
+      return items
     }
   },
   methods: {
-    seriesContextMenuAction(action) {
+    contextMenuAction({ action }) {
+      if (action === 'export-opml') {
+        this.exportOPML()
+      }
+    },
+    exportOPML() {
+      this.$downloadFile(`/api/libraries/${this.currentLibraryId}/opml?token=${this.$store.getters['user/getToken']}`, null, true)
+    },
+    seriesContextMenuAction({ action }) {
       if (action === 'open-rss-feed') {
         this.showOpenSeriesRSSFeed()
       } else if (action === 're-add-to-continue-listening') {

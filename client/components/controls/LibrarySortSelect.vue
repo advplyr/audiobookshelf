@@ -7,11 +7,11 @@
       </span>
     </button>
 
-    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm" role="listbox" aria-labelledby="listbox-label">
+    <ul v-show="showMenu" class="absolute z-10 mt-1 w-full bg-bg border border-black-200 shadow-lg max-h-96 rounded-md py-1 ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none text-sm" role="listbox" aria-labelledby="listbox-label">
       <template v-for="item in selectItems">
-        <li :key="item.value" class="text-gray-50 select-none relative py-2 pr-9 cursor-pointer hover:bg-black-400" :class="item.value === selected ? 'bg-primary bg-opacity-50' : ''" role="option" @click="clickedOption(item.value)">
+        <li :key="item.value" class="select-none relative py-2 pr-9 cursor-pointer hover:bg-white/5" :class="item.value === selected ? 'bg-white/5 text-yellow-400' : 'text-gray-200 hover:text-white'" role="option" @click="clickedOption(item.value)">
           <div class="flex items-center">
-            <span class="font-normal ml-3 block truncate text-xs">{{ item.text }}</span>
+            <span class="font-normal ml-3 block truncate">{{ item.text }}</span>
           </div>
           <span v-if="item.value === selected" class="text-yellow-400 absolute inset-y-0 right-0 flex items-center pr-4">
             <span class="material-icons text-xl">{{ descending ? 'expand_more' : 'expand_less' }}</span>

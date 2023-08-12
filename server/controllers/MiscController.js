@@ -2,6 +2,7 @@ const Path = require('path')
 const fs = require('../libs/fsExtra')
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const filePerms = require('../utils/filePerms')
 const patternValidation = require('../libs/nodeCron/pattern-validation')
@@ -23,18 +24,18 @@ class MiscController {
       Logger.error('Invalid request, no files')
       return res.sendStatus(400)
     }
-    var files = Object.values(req.files)
-    var title = req.body.title
-    var author = req.body.author
-    var series = req.body.series
-    var libraryId = req.body.library
-    var folderId = req.body.folder
+    const files = Object.values(req.files)
+    const title = req.body.title
+    const author = req.body.author
+    const series = req.body.series
+    const libraryId = req.body.library
+    const folderId = req.body.folder
 
-    var library = this.db.libraries.find(lib => lib.id === libraryId)
+    const library = await Database.models.library.getOldById(libraryId)
     if (!library) {
       return res.status(404).send(`Library not found with id ${libraryId}`)
     }
-    var folder = library.folders.find(fold => fold.id === folderId)
+    const folder = library.folders.find(fold => fold.id === folderId)
     if (!folder) {
       return res.status(404).send(`Folder not found with id ${folderId} in library ${library.name}`)
     }
@@ -44,8 +45,8 @@ class MiscController {
     }
 
     // For setting permissions recursively
-    var outputDirectory = ''
-    var firstDirPath = ''
+    let outputDirectory = ''
+    let firstDirPath = ''
 
     if (library.isPodcast) { // Podcasts only in 1 folder
       outputDirectory = Path.join(folder.fullPath, title)
@@ -61,8 +62,7 @@ class MiscController {
       }
     }
 
-    var exists = await fs.pathExists(outputDirectory)
-    if (exists) {
+    if (await fs.pathExists(outputDirectory)) {
       Logger.error(`[Server] Upload directory "${outputDirectory}" already exists`)
       return res.status(500).send(`Directory "${outputDirectory}" already exists`)
     }
@@ -111,32 +111,39 @@ class MiscController {
       Logger.error('User other than admin attempting to update server settings', req.user)
       return res.sendStatus(403)
     }
-    var settingsUpdate = req.body
+    const settingsUpdate = req.body
     if (!settingsUpdate || !isObject(settingsUpdate)) {
       return res.status(500).send('Invalid settings update object')
     }
 
-    var madeUpdates = this.db.serverSettings.update(settingsUpdate)
+    const madeUpdates = Database.serverSettings.update(settingsUpdate)
     if (madeUpdates) {
+      await Database.updateServerSettings()
+
       // If backup schedule is updated - update backup manager
       if (settingsUpdate.backupSchedule !== undefined) {
         this.backupManager.updateCronSchedule()
       }
-
-      await this.db.updateServerSettings()
     }
     return res.json({
       success: true,
-      serverSettings: this.db.serverSettings.toJSONForBrowser()
+      serverSettings: Database.serverSettings.toJSONForBrowser()
     })
   }
 
-  authorize(req, res) {
+  /**
+   * POST: /api/authorize
+   * Used to authorize an API token
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
+  async authorize(req, res) {
     if (!req.user) {
       Logger.error('Invalid user in authorize')
       return res.sendStatus(401)
     }
-    const userResponse = this.auth.getUserLoginResponsePayload(req.user)
+    const userResponse = await this.auth.getUserLoginResponsePayload(req.user)
     res.json(userResponse)
   }
 
@@ -147,7 +154,7 @@ class MiscController {
       return res.sendStatus(404)
     }
     const tags = []
-    this.db.libraryItems.forEach((li) => {
+    Database.libraryItems.forEach((li) => {
       if (li.media.tags && li.media.tags.length) {
         li.media.tags.forEach((tag) => {
           if (!tags.includes(tag)) tags.push(tag)
@@ -176,7 +183,7 @@ class MiscController {
     let tagMerged = false
     let numItemsUpdated = 0
 
-    for (const li of this.db.libraryItems) {
+    for (const li of Database.libraryItems) {
       if (!li.media.tags || !li.media.tags.length) continue
 
       if (li.media.tags.includes(newTag)) tagMerged = true // new tag is an existing tag so this is a merge
@@ -187,7 +194,7 @@ class MiscController {
           li.media.tags.push(newTag) // Add new tag
         }
         Logger.debug(`[MiscController] Rename tag "${tag}" to "${newTag}" for item "${li.media.metadata.title}"`)
-        await this.db.updateLibraryItem(li)
+        await Database.updateLibraryItem(li)
         SocketAuthority.emitter('item_updated', li.toJSONExpanded())
         numItemsUpdated++
       }
@@ -209,13 +216,13 @@ class MiscController {
     const tag = Buffer.from(decodeURIComponent(req.params.tag), 'base64').toString()
 
     let numItemsUpdated = 0
-    for (const li of this.db.libraryItems) {
+    for (const li of Database.libraryItems) {
       if (!li.media.tags || !li.media.tags.length) continue
 
       if (li.media.tags.includes(tag)) {
         li.media.tags = li.media.tags.filter(t => t !== tag)
         Logger.debug(`[MiscController] Remove tag "${tag}" from item "${li.media.metadata.title}"`)
-        await this.db.updateLibraryItem(li)
+        await Database.updateLibraryItem(li)
         SocketAuthority.emitter('item_updated', li.toJSONExpanded())
         numItemsUpdated++
       }
@@ -233,7 +240,7 @@ class MiscController {
       return res.sendStatus(404)
     }
     const genres = []
-    this.db.libraryItems.forEach((li) => {
+    Database.libraryItems.forEach((li) => {
       if (li.media.metadata.genres && li.media.metadata.genres.length) {
         li.media.metadata.genres.forEach((genre) => {
           if (!genres.includes(genre)) genres.push(genre)
@@ -262,7 +269,7 @@ class MiscController {
     let genreMerged = false
     let numItemsUpdated = 0
 
-    for (const li of this.db.libraryItems) {
+    for (const li of Database.libraryItems) {
       if (!li.media.metadata.genres || !li.media.metadata.genres.length) continue
 
       if (li.media.metadata.genres.includes(newGenre)) genreMerged = true // new genre is an existing genre so this is a merge
@@ -273,7 +280,7 @@ class MiscController {
           li.media.metadata.genres.push(newGenre) // Add new genre
         }
         Logger.debug(`[MiscController] Rename genre "${genre}" to "${newGenre}" for item "${li.media.metadata.title}"`)
-        await this.db.updateLibraryItem(li)
+        await Database.updateLibraryItem(li)
         SocketAuthority.emitter('item_updated', li.toJSONExpanded())
         numItemsUpdated++
       }
@@ -295,13 +302,13 @@ class MiscController {
     const genre = Buffer.from(decodeURIComponent(req.params.genre), 'base64').toString()
 
     let numItemsUpdated = 0
-    for (const li of this.db.libraryItems) {
+    for (const li of Database.libraryItems) {
       if (!li.media.metadata.genres || !li.media.metadata.genres.length) continue
 
       if (li.media.metadata.genres.includes(genre)) {
         li.media.metadata.genres = li.media.metadata.genres.filter(t => t !== genre)
         Logger.debug(`[MiscController] Remove genre "${genre}" from item "${li.media.metadata.title}"`)
-        await this.db.updateLibraryItem(li)
+        await Database.updateLibraryItem(li)
         SocketAuthority.emitter('item_updated', li.toJSONExpanded())
         numItemsUpdated++
       }

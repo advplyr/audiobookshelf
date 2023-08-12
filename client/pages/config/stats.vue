@@ -41,7 +41,7 @@
           <div class="flex mb-4 items-center">
             <h1 class="text-2xl">{{ $strings.HeaderStatsRecentSessions }}</h1>
             <div class="flex-grow" />
-            <ui-btn :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
+            <ui-btn v-if="isAdminOrUp" :to="`/config/users/${user.id}/sessions`" class="text-xs" :padding-x="1.5" :padding-y="1">{{ $strings.ButtonViewAll }}</ui-btn>
           </div>
           <p v-if="!mostRecentListeningSessions.length">{{ $strings.MessageNoListeningSessions }}</p>
           <template v-for="(item, index) in mostRecentListeningSessions">
@@ -82,6 +82,9 @@ export default {
     }
   },
   computed: {
+    isAdminOrUp() {
+      return this.$store.getters['user/getIsAdminOrUp']
+    },
     user() {
       return this.$store.state.user.user
     },
@@ -116,7 +119,6 @@ export default {
         console.error('Failed to load listening sesions', err)
         return []
       })
-      console.log('Loaded user listening data', this.listeningStats)
     }
   },
   mounted() {

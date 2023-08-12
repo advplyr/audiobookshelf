@@ -1,5 +1,6 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 
@@ -8,6 +9,7 @@ const { removeFile, downloadFile } = require('../utils/fileUtils')
 const filePerms = require('../utils/filePerms')
 const { levenshteinDistance } = require('../utils/index')
 const opmlParser = require('../utils/parsers/parseOPML')
+const opmlGenerator = require('../utils/generators/opmlGenerator')
 const prober = require('../utils/prober')
 const ffmpegHelpers = require('../utils/ffmpegHelpers')
 
@@ -18,8 +20,7 @@ const AudioFile = require('../objects/files/AudioFile')
 const Task = require("../objects/Task")
 
 class PodcastManager {
-  constructor(db, watcher, notificationManager, taskManager) {
-    this.db = db
+  constructor(watcher, notificationManager, taskManager) {
     this.watcher = watcher
     this.notificationManager = notificationManager
     this.taskManager = taskManager
@@ -29,10 +30,6 @@ class PodcastManager {
 
     this.failedCheckMap = {}
     this.MaxFailedEpisodeChecks = 24
-  }
-
-  get serverSettings() {
-    return this.db.serverSettings || {}
   }
 
   getEpisodeDownloadsInQueue(libraryItemId) {
@@ -53,11 +50,12 @@ class PodcastManager {
   }
 
   async downloadPodcastEpisodes(libraryItem, episodesToDownload, isAutoDownload) {
-    let index = libraryItem.media.episodes.length + 1
+    let index = Math.max(...libraryItem.media.episodes.filter(ep => ep.index == null || isNaN(ep.index)).map(ep => Number(ep.index))) + 1
     for (const ep of episodesToDownload) {
       const newPe = new PodcastEpisode()
       newPe.setData(ep, index++)
       newPe.libraryItemId = libraryItem.id
+      newPe.podcastId = libraryItem.media.id
       const newPeDl = new PodcastEpisodeDownload()
       newPeDl.setData(newPe, libraryItem, isAutoDownload, libraryItem.libraryId)
       this.startPodcastEpisodeDownload(newPeDl)
@@ -78,11 +76,18 @@ class PodcastManager {
       libraryId: podcastEpisodeDownload.libraryId,
       libraryItemId: podcastEpisodeDownload.libraryItemId,
     }
-    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, taskData)
+    task.setData('download-podcast-episode', 'Downloading Episode', taskDescription, false, taskData)
     this.taskManager.addTask(task)
 
     SocketAuthority.emitter('episode_download_started', podcastEpisodeDownload.toJSONForClient())
     this.currentDownload = podcastEpisodeDownload
+
+    // If this file already exists then append the episode id to the filename
+    //  e.g. "/tagesschau 20 Uhr.mp3" becomes "/tagesschau 20 Uhr (ep_asdfasdf).mp3"
+    //  this handles podcasts where every title is the same (ref https://github.com/advplyr/audiobookshelf/issues/1802)
+    if (await fs.pathExists(this.currentDownload.targetPath)) {
+      this.currentDownload.appendEpisodeId = true
+    }
 
     // Ignores all added files to this dir
     this.watcher.addIgnoreDir(this.currentDownload.libraryItem.path)
@@ -140,14 +145,12 @@ class PodcastManager {
   async scanAddPodcastEpisodeAudioFile() {
     const libraryFile = await this.getLibraryFile(this.currentDownload.targetPath, this.currentDownload.targetRelPath)
 
-    // TODO: Set meta tags on new audio file
-
     const audioFile = await this.probeAudioFile(libraryFile)
     if (!audioFile) {
       return false
     }
 
-    const libraryItem = this.db.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
+    const libraryItem = Database.libraryItems.find(li => li.id === this.currentDownload.libraryItem.id)
     if (!libraryItem) {
       Logger.error(`[PodcastManager] Podcast Episode finished but library item was not found ${this.currentDownload.libraryItem.id}`)
       return false
@@ -176,8 +179,11 @@ class PodcastManager {
     }
 
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
+    const podcastEpisodeExpanded = podcastEpisode.toJSONExpanded()
+    podcastEpisodeExpanded.libraryItem = libraryItem.toJSONExpanded()
+    SocketAuthority.emitter('episode_added', podcastEpisodeExpanded)
 
     if (this.currentDownload.isAutoDownload) { // Notifications only for auto downloaded episodes
       this.notificationManager.onPodcastEpisodeDownloaded(libraryItem, podcastEpisode)
@@ -226,6 +232,7 @@ class PodcastManager {
     }
     const newAudioFile = new AudioFile()
     newAudioFile.setDataFromProbe(libraryFile, mediaProbeData)
+    newAudioFile.index = 1
     return newAudioFile
   }
 
@@ -265,7 +272,7 @@ class PodcastManager {
 
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
     return libraryItem.media.autoDownloadEpisodes
   }
@@ -304,7 +311,7 @@ class PodcastManager {
 
     libraryItem.media.lastEpisodeCheck = Date.now()
     libraryItem.updatedAt = Date.now()
-    await this.db.updateLibraryItem(libraryItem)
+    await Database.updateLibraryItem(libraryItem)
     SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
 
     return newEpisodes
@@ -363,6 +370,10 @@ class PodcastManager {
     return {
       feeds: rssFeedData
     }
+  }
+
+  generateOPMLFileText(libraryItems) {
+    return opmlGenerator.generate(libraryItems)
   }
 
   getDownloadQueueDetails(libraryId = null) {

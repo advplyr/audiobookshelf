@@ -1,4 +1,4 @@
-const { getId } = require('../utils/index')
+const uuidv4 = require("uuid").v4
 
 class Task {
   constructor() {
@@ -9,6 +9,7 @@ class Task {
     this.title = null
     this.description = null
     this.error = null
+    this.showSuccess = false // If true client side should keep the task visible after success
 
     this.isFailed = false
     this.isFinished = false
@@ -25,6 +26,7 @@ class Task {
       title: this.title,
       description: this.description,
       error: this.error,
+      showSuccess: this.showSuccess,
       isFailed: this.isFailed,
       isFinished: this.isFinished,
       startedAt: this.startedAt,
@@ -32,12 +34,13 @@ class Task {
     }
   }
 
-  setData(action, title, description, data = {}) {
-    this.id = getId(action)
+  setData(action, title, description, showSuccess, data = {}) {
+    this.id = uuidv4()
     this.action = action
     this.data = { ...data }
     this.title = title
     this.description = description
+    this.showSuccess = showSuccess
     this.startedAt = Date.now()
   }
 
@@ -48,7 +51,10 @@ class Task {
     this.setFinished()
   }
 
-  setFinished() {
+  setFinished(newDescription = null) {
+    if (newDescription) {
+      this.description = newDescription
+    }
     this.isFinished = true
     this.finishedAt = Date.now()
   }

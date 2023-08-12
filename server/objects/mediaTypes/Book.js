@@ -4,7 +4,7 @@ const BookMetadata = require('../metadata/BookMetadata')
 const { areEquivalent, copyValue, cleanStringForSearch } = require('../../utils/index')
 const { parseOpfMetadataXML } = require('../../utils/parsers/parseOpfMetadata')
 const { parseOverdriveMediaMarkersAsChapters } = require('../../utils/parsers/parseOverdriveMediaMarkers')
-const abmetadataGenerator = require('../../utils/abmetadataGenerator')
+const abmetadataGenerator = require('../../utils/generators/abmetadataGenerator')
 const { readTextFile, filePathToPOSIX } = require('../../utils/fileUtils')
 const AudioFile = require('../files/AudioFile')
 const AudioTrack = require('../files/AudioTrack')
@@ -12,6 +12,7 @@ const EBookFile = require('../files/EBookFile')
 
 class Book {
   constructor(book) {
+    this.id = null
     this.libraryItemId = null
     this.metadata = null
 
@@ -32,6 +33,7 @@ class Book {
   }
 
   construct(book) {
+    this.id = book.id
     this.libraryItemId = book.libraryItemId
     this.metadata = new BookMetadata(book.metadata)
     this.coverPath = book.coverPath
@@ -46,6 +48,7 @@ class Book {
 
   toJSON() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSON(),
       coverPath: this.coverPath,
@@ -59,6 +62,7 @@ class Book {
 
   toJSONMinified() {
     return {
+      id: this.id,
       metadata: this.metadata.toJSONMinified(),
       coverPath: this.coverPath,
       tags: [...this.tags],
@@ -75,6 +79,7 @@ class Book {
 
   toJSONExpanded() {
     return {
+      id: this.id,
       libraryItemId: this.libraryItemId,
       metadata: this.metadata.toJSONExpanded(),
       coverPath: this.coverPath,
@@ -142,6 +147,9 @@ class Book {
   get numTracks() {
     return this.tracks.length
   }
+  get isEBookOnly() {
+    return this.ebookFile && !this.numTracks
+  }
 
   update(payload) {
     const json = this.toJSON()
@@ -195,6 +203,7 @@ class Book {
     this.coverPath = coverPath
     return true
   }
+
   removeFileWithInode(inode) {
     if (this.audioFiles.some(af => af.ino === inode)) {
       this.audioFiles = this.audioFiles.filter(af => af.ino !== inode)
@@ -207,8 +216,13 @@ class Book {
     return false
   }
 
+  /**
+   * Get audio file or ebook file from inode
+   * @param {string} inode 
+   * @returns {(AudioFile|EBookFile|null)}
+   */
   findFileWithInode(inode) {
-    var audioFile = this.audioFiles.find(af => af.ino === inode)
+    const audioFile = this.audioFiles.find(af => af.ino === inode)
     if (audioFile) return audioFile
     if (this.ebookFile && this.ebookFile.ino === inode) return this.ebookFile
     return null
@@ -367,10 +381,20 @@ class Book {
     return payload
   }
 
-  setEbookFile(libraryFile) {
-    var ebookFile = new EBookFile()
-    ebookFile.setData(libraryFile)
-    this.ebookFile = ebookFile
+  /**
+   * Set the EBookFile from a LibraryFile
+   * If null then ebookFile will be removed from the book
+   * 
+   * @param {LibraryFile} [libraryFile] 
+   */
+  setEbookFile(libraryFile = null) {
+    if (!libraryFile) {
+      this.ebookFile = null
+    } else {
+      const ebookFile = new EBookFile()
+      ebookFile.setData(libraryFile)
+      this.ebookFile = ebookFile
+    }
   }
 
   addAudioFile(audioFile) {

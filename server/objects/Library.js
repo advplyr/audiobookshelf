@@ -1,11 +1,12 @@
+const uuidv4 = require("uuid").v4
 const Folder = require('./Folder')
 const LibrarySettings = require('./settings/LibrarySettings')
-const { getId } = require('../utils/index')
 const { filePathToPOSIX } = require('../utils/fileUtils')
 
 class Library {
   constructor(library = null) {
     this.id = null
+    this.oldLibraryId = null // TODO: Temp
     this.name = null
     this.folders = []
     this.displayOrder = 1
@@ -33,9 +34,13 @@ class Library {
   get isMusic() {
     return this.mediaType === 'music'
   }
+  get isBook() {
+    return this.mediaType === 'book'
+  }
 
   construct(library) {
     this.id = library.id
+    this.oldLibraryId = library.oldLibraryId
     this.name = library.name
     this.folders = (library.folders || []).map(f => new Folder(f))
     this.displayOrder = library.displayOrder || 1
@@ -71,6 +76,7 @@ class Library {
   toJSON() {
     return {
       id: this.id,
+      oldLibraryId: this.oldLibraryId,
       name: this.name,
       folders: (this.folders || []).map(f => f.toJSON()),
       displayOrder: this.displayOrder,
@@ -84,7 +90,7 @@ class Library {
   }
 
   setData(data) {
-    this.id = data.id ? data.id : getId('lib')
+    this.id = data.id || uuidv4()
     this.name = data.name
     if (data.folder) {
       this.folders = [

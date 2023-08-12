@@ -116,8 +116,13 @@
     </div>
 
     <!-- Podcast Num Episodes -->
-    <div v-else-if="numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
+    <div v-else-if="!numEpisodesIncomplete && numEpisodes && !isHovering && !isSelectionMode" class="absolute rounded-full bg-black bg-opacity-90 box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
       <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodes }}</p>
+    </div>
+
+    <!-- Podcast Num Episodes -->
+    <div v-else-if="numEpisodesIncomplete && !isHovering && !isSelectionMode" class="absolute rounded-full bg-yellow-400 text-black font-semibold box-shadow-md z-10 flex items-center justify-center" :style="{ top: 0.375 * sizeMultiplier + 'rem', right: 0.375 * sizeMultiplier + 'rem', width: 1.25 * sizeMultiplier + 'rem', height: 1.25 * sizeMultiplier + 'rem' }">
+      <p :style="{ fontSize: sizeMultiplier * 0.8 + 'rem' }">{{ numEpisodesIncomplete }}</p>
     </div>
   </div>
 </template>
@@ -174,12 +179,6 @@ export default {
     dateFormat() {
       return this.store.state.serverSettings.dateFormat
     },
-    showExperimentalFeatures() {
-      return this.store.state.showExperimentalFeatures
-    },
-    enableEReader() {
-      return this.store.getters['getServerSetting']('enableEReader')
-    },
     _libraryItem() {
       return this.libraryItem || {}
     },
@@ -233,8 +232,10 @@ export default {
       return this.media.numTracks || 0 // toJSONMinified
     },
     numEpisodes() {
-      if (!this.isPodcast) return 0
       return this.media.numEpisodes || 0
+    },
+    numEpisodesIncomplete() {
+      return this._libraryItem.numEpisodesIncomplete || 0
     },
     processingBatch() {
       return this.store.state.processingBatch
@@ -256,14 +257,14 @@ export default {
     },
     booksInSeries() {
       // Only added to item object when collapseSeries is enabled
-      return this.collapsedSeries ? this.collapsedSeries.numBooks : 0
+      return this.collapsedSeries?.numBooks || 0
     },
     seriesSequenceList() {
-      return this.collapsedSeries ? this.collapsedSeries.seriesSequenceList : null
+      return this.collapsedSeries?.seriesSequenceList || null
     },
     libraryItemIdsInSeries() {
       // Only added to item object when collapseSeries is enabled
-      return this.collapsedSeries ? this.collapsedSeries.libraryItemIds || [] : []
+      return this.collapsedSeries?.libraryItemIds || []
     },
     hasCover() {
       return !!this.media.coverPath
@@ -329,6 +330,9 @@ export default {
       if (this.episodeProgress) return this.episodeProgress
       return this.store.getters['user/getUserMediaProgress'](this.libraryItemId)
     },
+    isEBookOnly() {
+      return !this.numTracks && this.ebookFormat
+    },
     useEBookProgress() {
       if (!this.userProgress || this.userProgress.progress) return false
       return this.userProgress.ebookProgress > 0
@@ -364,13 +368,13 @@ export default {
       return this.store.getters['getIsStreamingFromDifferentLibrary']
     },
     showReadButton() {
-      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && !this.showPlayButton && this.ebookFormat
     },
     showPlayButton() {
       return !this.isSelectionMode && !this.isMissing && !this.isInvalid && !this.isStreaming && (this.numTracks || this.recentEpisode || this.isMusic)
     },
     showSmallEBookIcon() {
-      return !this.isSelectionMode && this.ebookFormat && (this.showExperimentalFeatures || this.enableEReader)
+      return !this.isSelectionMode && this.ebookFormat
     },
     isMissing() {
       return this._libraryItem.isMissing
@@ -486,6 +490,18 @@ export default {
             text: this.$strings.LabelAddToPlaylist
           })
         }
+        if (this.ebookFormat && this.store.state.libraries.ereaderDevices?.length) {
+          items.push({
+            text: this.$strings.LabelSendEbookToDevice,
+            subitems: this.store.state.libraries.ereaderDevices.map((d) => {
+              return {
+                text: d.name,
+                func: 'sendToDevice',
+                data: d.name
+              }
+            })
+          })
+        }
       }
       if (this.userCanUpdate) {
         items.push({
@@ -512,7 +528,7 @@ export default {
       if (this.continueListeningShelf) {
         items.push({
           func: 'removeFromContinueListening',
-          text: this.$strings.ButtonRemoveFromContinueListening
+          text: this.isEBookOnly ? this.$strings.ButtonRemoveFromContinueReading : this.$strings.ButtonRemoveFromContinueListening
         })
       }
       if (!this.isPodcast) {
@@ -671,7 +687,6 @@ export default {
         .$patch(apiEndpoint, updatePayload)
         .then(() => {
           this.processing = false
-          toast.success(updatePayload.isFinished ? this.$strings.ToastItemMarkedAsFinishedSuccess : this.$strings.ToastItemMarkedAsNotFinishedSuccess)
         })
         .catch((error) => {
           console.error('Failed', error)
@@ -716,7 +731,40 @@ export default {
       // More menu func
       this.store.commit('showEditModalOnTab', { libraryItem: this.libraryItem, tab: 'match' })
     },
+    sendToDevice(deviceName) {
+      // More menu func
+      const payload = {
+        // message: `Are you sure you want to send ${this.ebookFormat} ebook "${this.title}" to device "${deviceName}"?`,
+        message: this.$getString('MessageConfirmSendEbookToDevice', [this.ebookFormat, this.title, deviceName]),
+        callback: (confirmed) => {
+          if (confirmed) {
+            const payload = {
+              libraryItemId: this.libraryItemId,
+              deviceName
+            }
+            this.processing = true
+            const axios = this.$axios || this.$nuxt.$axios
+            axios
+              .$post(`/api/emails/send-ebook-to-device`, payload)
+              .then(() => {
+                this.$toast.success(this.$getString('ToastSendEbookToDeviceSuccess', [deviceName]))
+              })
+              .catch((error) => {
+                console.error('Failed to send ebook to device', error)
+                this.$toast.error(this.$strings.ToastSendEbookToDeviceFailed)
+              })
+              .finally(() => {
+                this.processing = false
+              })
+          }
+        },
+        type: 'yesNo'
+      }
+      this.store.commit('globals/setConfirmPrompt', payload)
+    },
     removeSeriesFromContinueListening() {
+      if (!this.series) return
+
       const axios = this.$axios || this.$nuxt.$axios
       this.processing = true
       axios
@@ -829,8 +877,8 @@ export default {
           items: this.moreMenuItems
         },
         created() {
-          this.$on('action', (func) => {
-            if (_this[func]) _this[func]()
+          this.$on('action', (action) => {
+            if (action.func && _this[action.func]) _this[action.func](action.data)
           })
           this.$on('close', () => {
             _this.isMoreMenuOpen = false
@@ -842,7 +890,7 @@ export default {
       var wrapperBox = this.$refs.moreIcon.getBoundingClientRect()
       var el = instance.$el
 
-      var elHeight = this.moreMenuItems.length * 28 + 2
+      var elHeight = this.moreMenuItems.length * 28 + 10
       var elWidth = 130
 
       var bottomOfIcon = wrapperBox.top + wrapperBox.height
@@ -875,7 +923,7 @@ export default {
         return null
       })
       if (!libraryItem) return
-      this.store.commit('showEReader', libraryItem)
+      this.store.commit('showEReader', { libraryItem, keepProgress: true })
     },
     selectBtnClick(evt) {
       if (this.processingBatch) return

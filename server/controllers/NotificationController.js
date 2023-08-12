@@ -1,4 +1,5 @@
 const Logger = require('../Logger')
+const Database = require('../Database')
 const { version } = require('../../package.json')
 
 class NotificationController {
@@ -7,14 +8,14 @@ class NotificationController {
   get(req, res) {
     res.json({
       data: this.notificationManager.getData(),
-      settings: this.db.notificationSettings
+      settings: Database.notificationSettings
     })
   }
 
   async update(req, res) {
-    const updated = this.db.notificationSettings.update(req.body)
+    const updated = Database.notificationSettings.update(req.body)
     if (updated) {
-      await this.db.updateEntity('settings', this.db.notificationSettings)
+      await Database.updateSetting(Database.notificationSettings)
     }
     res.sendStatus(200)
   }
@@ -29,31 +30,31 @@ class NotificationController {
   }
 
   async createNotification(req, res) {
-    const success = this.db.notificationSettings.createNotification(req.body)
+    const success = Database.notificationSettings.createNotification(req.body)
 
     if (success) {
-      await this.db.updateEntity('settings', this.db.notificationSettings)
+      await Database.updateSetting(Database.notificationSettings)
     }
-    res.json(this.db.notificationSettings)
+    res.json(Database.notificationSettings)
   }
 
   async deleteNotification(req, res) {
-    if (this.db.notificationSettings.removeNotification(req.notification.id)) {
-      await this.db.updateEntity('settings', this.db.notificationSettings)
+    if (Database.notificationSettings.removeNotification(req.notification.id)) {
+      await Database.updateSetting(Database.notificationSettings)
     }
-    res.json(this.db.notificationSettings)
+    res.json(Database.notificationSettings)
   }
 
   async updateNotification(req, res) {
-    const success = this.db.notificationSettings.updateNotification(req.body)
+    const success = Database.notificationSettings.updateNotification(req.body)
     if (success) {
-      await this.db.updateEntity('settings', this.db.notificationSettings)
+      await Database.updateSetting(Database.notificationSettings)
     }
-    res.json(this.db.notificationSettings)
+    res.json(Database.notificationSettings)
   }
 
   async sendNotificationTest(req, res) {
-    if (!this.db.notificationSettings.isUseable) return res.status(500).send('Apprise is not configured')
+    if (!Database.notificationSettings.isUseable) return res.status(500).send('Apprise is not configured')
 
     const success = await this.notificationManager.sendTestNotification(req.notification)
     if (success) res.sendStatus(200)
@@ -66,7 +67,7 @@ class NotificationController {
     }
 
     if (req.params.id) {
-      const notification = this.db.notificationSettings.getNotification(req.params.id)
+      const notification = Database.notificationSettings.getNotification(req.params.id)
       if (!notification) {
         return res.sendStatus(404)
       }

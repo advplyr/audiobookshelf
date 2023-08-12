@@ -94,7 +94,7 @@ export default {
     }
   },
   methods: {
-    contextMenuAction(action) {
+    contextMenuAction({ action }) {
       this.showMobileMenu = false
       if (action === 'edit') {
         this.editClick()

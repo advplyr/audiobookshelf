@@ -11,6 +11,7 @@ const languageCodeMap = {
   'fr': { label: 'Français', dateFnsLocale: 'fr' },
   'hr': { label: 'Hrvatski', dateFnsLocale: 'hr' },
   'it': { label: 'Italiano', dateFnsLocale: 'it' },
+  'lt': { label: 'Lietuvių', dateFnsLocale: 'lt' },
   'nl': { label: 'Nederlands', dateFnsLocale: 'nl' },
   'pl': { label: 'Polski', dateFnsLocale: 'pl' },
   'ru': { label: 'Русский', dateFnsLocale: 'ru' },
@@ -34,7 +35,7 @@ Vue.prototype.$strings = { ...enUsStrings }
 
 Vue.prototype.$getString = (key, subs) => {
   if (!Vue.prototype.$strings[key]) return ''
-  if (subs && Array.isArray(subs) && subs.length) {
+  if (subs?.length && Array.isArray(subs)) {
     return supplant(Vue.prototype.$strings[key], subs)
   }
   return Vue.prototype.$strings[key]

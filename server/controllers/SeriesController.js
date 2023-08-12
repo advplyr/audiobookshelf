@@ -1,9 +1,20 @@
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 class SeriesController {
   constructor() { }
 
+  /**
+   * @deprecated
+   * /api/series/:id
+   * 
+   * TODO: Update mobile app to use /api/libraries/:id/series/:seriesId API route instead
+   * Series are not library specific so we need to know what the library id is
+   * 
+   * @param {*} req 
+   * @param {*} res 
+   */
   async findOne(req, res) {
     const include = (req.query.include || '').split(',').map(v => v.trim()).filter(v => !!v)
 
@@ -11,7 +22,7 @@ class SeriesController {
 
     // Add progress map with isFinished flag
     if (include.includes('progress')) {
-      const libraryItemsInSeries = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(seriesJson.id))
+      const libraryItemsInSeries = req.libraryItemsInSeries
       const libraryItemsFinished = libraryItemsInSeries.filter(li => {
         const mediaProgress = req.user.getMediaProgress(li.id)
         return mediaProgress && mediaProgress.isFinished
@@ -24,18 +35,18 @@ class SeriesController {
     }
 
     if (include.includes('rssfeed')) {
-      const feedObj = this.rssFeedManager.findFeedForEntityId(seriesJson.id)
+      const feedObj = await this.rssFeedManager.findFeedForEntityId(seriesJson.id)
       seriesJson.rssFeed = feedObj?.toJSONMinified() || null
     }
 
-    return res.json(seriesJson)
+    res.json(seriesJson)
   }
 
   async search(req, res) {
     var q = (req.query.q || '').toLowerCase()
     if (!q) return res.json([])
     var limit = (req.query.limit && !isNaN(req.query.limit)) ? Number(req.query.limit) : 25
-    var series = this.db.series.filter(se => se.name.toLowerCase().includes(q))
+    var series = Database.series.filter(se => se.name.toLowerCase().includes(q))
     series = series.slice(0, limit)
     res.json({
       results: series
@@ -45,15 +56,25 @@ class SeriesController {
   async update(req, res) {
     const hasUpdated = req.series.update(req.body)
     if (hasUpdated) {
-      await this.db.updateEntity('series', req.series)
+      await Database.updateSeries(req.series)
       SocketAuthority.emitter('series_updated', req.series.toJSON())
     }
     res.json(req.series.toJSON())
   }
 
   middleware(req, res, next) {
-    const series = this.db.series.find(se => se.id === req.params.id)
+    const series = Database.series.find(se => se.id === req.params.id)
     if (!series) return res.sendStatus(404)
+
+    /**
+     * Filter out any library items not accessible to user
+     */
+    const libraryItems = Database.libraryItems.filter(li => li.media.metadata.hasSeries?.(series.id))
+    const libraryItemsAccessible = libraryItems.filter(li => req.user.checkCanAccessLibraryItem(li))
+    if (libraryItems.length && !libraryItemsAccessible.length) {
+      Logger.warn(`[SeriesController] User attempted to access series "${series.id}" without access to any of the books`, req.user)
+      return res.sendStatus(403)
+    }
 
     if (req.method == 'DELETE' && !req.user.canDelete) {
       Logger.warn(`[SeriesController] User attempted to delete without permission`, req.user)
@@ -64,6 +85,7 @@ class SeriesController {
     }
 
     req.series = series
+    req.libraryItemsInSeries = libraryItemsAccessible
     next()
   }
 }

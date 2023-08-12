@@ -166,7 +166,8 @@
             </ui-tooltip>
           </div>
 
-          <div class="pt-4">
+          <!-- old experimental features -->
+          <!-- <div class="pt-4">
             <h2 class="font-semibold">{{ $strings.HeaderSettingsExperimental }}</h2>
           </div>
 
@@ -180,26 +181,6 @@
                 </a>
               </p>
             </ui-tooltip>
-          </div>
-
-          <div class="flex items-center py-2">
-            <ui-toggle-switch labeledBy="settings-enable-e-reader" v-model="newServerSettings.enableEReader" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('enableEReader', val)" />
-            <ui-tooltip :text="$strings.LabelSettingsEnableEReaderHelp">
-              <p class="pl-4">
-                <span id="settings-enable-e-reader">{{ $strings.LabelSettingsEnableEReader }}</span>
-                <span class="material-icons icon-text">info_outlined</span>
-              </p>
-            </ui-tooltip>
-          </div>
-
-          <!-- <div class="flex items-center py-2">
-            <ui-toggle-switch v-model="newServerSettings.scannerUseTone" :disabled="updatingServerSettings" @input="(val) => updateSettingsKey('scannerUseTone', val)" />
-            <ui-tooltip text="Tone library for metadata">
-              <p class="pl-4">
-                Use Tone library for metadata
-                <span class="material-icons icon-text">info_outlined</span>
-              </p>
-            </ui-tooltip>
           </div> -->
         </div>
       </div>
@@ -211,7 +192,6 @@
       <div class="flex-grow" />
       <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeCache">{{ $strings.ButtonPurgeAllCache }}</ui-btn>
       <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isPurgingCache" @click.stop="purgeItemsCache">{{ $strings.ButtonPurgeItemsCache }}</ui-btn>
-      <ui-btn color="bg" small :padding-x="4" class="mr-2 text-xs md:text-sm" :loading="isResettingLibraryItems" @click="resetLibraryItems">{{ $strings.ButtonRemoveAllLibraryItems }}</ui-btn>
     </div>
 
     <div class="flex items-center py-4">
@@ -268,6 +248,11 @@
 
 <script>
 export default {
+  asyncData({ store, redirect }) {
+    if (!store.getters['user/getIsAdminOrUp']) {
+      redirect('/')
+    }
+  },
   data() {
     return {
       isResettingLibraryItems: false,
@@ -302,14 +287,6 @@ export default {
     },
     providers() {
       return this.$store.state.scanners.providers
-    },
-    showExperimentalFeatures: {
-      get() {
-        return this.$store.state.showExperimentalFeatures
-      },
-      set(val) {
-        this.$store.commit('setExperimentalFeatures', val)
-      }
     },
     dateFormats() {
       return this.$store.state.globals.dateFormats
@@ -389,23 +366,6 @@ export default {
 
       this.homepageUseBookshelfView = this.newServerSettings.homeBookshelfView != this.$constants.BookshelfView.DETAIL
       this.useBookshelfView = this.newServerSettings.bookshelfView != this.$constants.BookshelfView.DETAIL
-    },
-    resetLibraryItems() {
-      if (confirm(this.$strings.MessageRemoveAllItemsWarning)) {
-        this.isResettingLibraryItems = true
-        this.$axios
-          .$delete('/api/items/all')
-          .then(() => {
-            this.isResettingLibraryItems = false
-            this.$toast.success('Successfully reset items')
-            location.reload()
-          })
-          .catch((error) => {
-            console.error('failed to reset items', error)
-            this.isResettingLibraryItems = false
-            this.$toast.error('Failed to reset items - manually remove the /config/libraryItems folder')
-          })
-      }
     },
     purgeCache() {
       this.showConfirmPurgeCache = true

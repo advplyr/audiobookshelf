@@ -1,6 +1,3 @@
-const Path = require('path')
-const { encodeUriPath } = require('../../utils/fileUtils')
-
 class AudioTrack {
   constructor() {
     this.index = null
@@ -22,7 +19,7 @@ class AudioTrack {
       contentUrl: this.contentUrl,
       mimeType: this.mimeType,
       codec: this.codec,
-      metadata: this.metadata ? this.metadata.toJSON() : null
+      metadata: this.metadata?.toJSON() || null
     }
   }
 
@@ -31,7 +28,8 @@ class AudioTrack {
     this.startOffset = startOffset
     this.duration = audioFile.duration
     this.title = audioFile.metadata.filename || ''
-    this.contentUrl = Path.join(`${global.RouterBasePath}/s/item/${itemId}`, encodeUriPath(audioFile.metadata.relPath))
+
+    this.contentUrl = `${global.RouterBasePath}/api/items/${itemId}/file/${audioFile.ino}`
     this.mimeType = audioFile.mimeType
     this.codec = audioFile.codec || null
     this.metadata = audioFile.metadata.clone()

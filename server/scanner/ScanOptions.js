@@ -1,5 +1,5 @@
 class ScanOptions {
-  constructor(options) {
+  constructor() {
     this.forceRescan = false
 
     // Server settings
@@ -10,26 +10,11 @@ class ScanOptions {
     this.preferOpfMetadata = false
     this.preferMatchedMetadata = false
     this.preferOverdriveMediaMarker = false
-
-    if (options) {
-      this.construct(options)
-    }
-  }
-
-  construct(options) {
-    for (const key in options) {
-      if (key === 'metadataPrecedence' && options[key].length) {
-        this.metadataPrecedence = [...options[key]]
-      } else if (this[key] !== undefined) {
-        this[key] = options[key]
-      }
-    }
   }
 
   toJSON() {
     return {
       forceRescan: this.forceRescan,
-      metadataPrecedence: this.metadataPrecedence,
       parseSubtitles: this.parseSubtitles,
       findCovers: this.findCovers,
       storeCoverWithItem: this.storeCoverWithItem,

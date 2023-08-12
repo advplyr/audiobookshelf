@@ -19,9 +19,13 @@
           </td>
           <td class="text-sm">{{ user.type }}</td>
           <td class="hidden lg:table-cell">
-            <div v-if="usersOnline[user.id]">
-              <p v-if="usersOnline[user.id].session && usersOnline[user.id].session.libraryItem" class="truncate text-xs">Listening: {{ usersOnline[user.id].session.libraryItem.media.metadata.title || '' }}</p>
-              <p v-else-if="usersOnline[user.id].mostRecent && usersOnline[user.id].mostRecent.media" class="truncate text-xs">Last: {{ usersOnline[user.id].mostRecent.media.metadata.title }}</p>
+            <div v-if="usersOnline[user.id]?.session?.displayTitle">
+              <p class="truncate text-xs">Listening: {{ usersOnline[user.id].session.displayTitle || '' }}</p>
+              <p class="truncate text-xs text-gray-300">{{ getDeviceInfoString(usersOnline[user.id].session.deviceInfo) }}</p>
+            </div>
+            <div v-else-if="user.latestSession?.displayTitle">
+              <p class="truncate text-xs">Last: {{ user.latestSession.displayTitle || '' }}</p>
+              <p class="truncate text-xs text-gray-300">{{ getDeviceInfoString(user.latestSession.deviceInfo) }}</p>
             </div>
           </td>
           <td class="text-xs font-mono hidden sm:table-cell">
@@ -83,6 +87,12 @@ export default {
     }
   },
   methods: {
+    getDeviceInfoString(deviceInfo) {
+      if (!deviceInfo) return ''
+      if (deviceInfo.manufacturer && deviceInfo.model) return `${deviceInfo.manufacturer} ${deviceInfo.model}`
+
+      return `${deviceInfo.osName || 'Unknown'} ${deviceInfo.osVersion || ''} ${deviceInfo.browserName || ''}`
+    },
     deleteUserClick(user) {
       if (this.isDeletingUser) return
       if (confirm(this.$getString('MessageRemoveUserWarning', [user.username]))) {
@@ -114,11 +124,12 @@ export default {
     },
     loadUsers() {
       this.$axios
-        .$get('/api/users')
+        .$get('/api/users?include=latestSession')
         .then((res) => {
           this.users = res.users.sort((a, b) => {
             return a.createdAt - b.createdAt
           })
+          console.log('Loaded users', this.users)
         })
         .catch((error) => {
           console.error('Failed', error)

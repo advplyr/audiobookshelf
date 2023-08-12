@@ -10,11 +10,15 @@ FROM sandreas/tone:v0.1.5 AS tone
 FROM node:16-alpine
 
 ENV NODE_ENV=production
+
 RUN apk update && \
     apk add --no-cache --update \
     curl \
     tzdata \
-    ffmpeg
+    ffmpeg \
+    make \
+    python3 \
+    g++
 
 COPY --from=tone /usr/local/bin/tone /usr/local/bin/
 COPY --from=build /client/dist /client/dist
@@ -23,10 +27,8 @@ COPY server server
 
 RUN npm ci --only=production
 
+RUN apk del make python3 g++
+
 EXPOSE 80
-HEALTHCHECK \
-    --interval=30s \
-    --timeout=3s \
-    --start-period=10s \
-    CMD curl -f http://127.0.0.1/healthcheck || exit 1
+
 CMD ["node", "index.js"]

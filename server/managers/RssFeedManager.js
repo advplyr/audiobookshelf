@@ -2,35 +2,29 @@ const Path = require('path')
 
 const Logger = require('../Logger')
 const SocketAuthority = require('../SocketAuthority')
+const Database = require('../Database')
 
 const fs = require('../libs/fsExtra')
 const Feed = require('../objects/Feed')
 
 class RssFeedManager {
-  constructor(db) {
-    this.db = db
+  constructor() { }
 
-    this.feeds = {}
-  }
-
-  get feedsArray() {
-    return Object.values(this.feeds)
-  }
-
-  validateFeedEntity(feedObj) {
+  async validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
-      if (!this.db.collections.some(li => li.id === feedObj.entityId)) {
+      const collection = await Database.models.collection.getById(feedObj.entityId)
+      if (!collection) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'libraryItem') {
-      if (!this.db.libraryItems.some(li => li.id === feedObj.entityId)) {
+      if (!Database.libraryItems.some(li => li.id === feedObj.entityId)) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Library item "${feedObj.entityId}" not found`)
         return false
       }
     } else if (feedObj.entityType === 'series') {
-      const series = this.db.series.find(s => s.id === feedObj.entityId)
-      const hasSeriesBook = this.db.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+      const series = Database.series.find(s => s.id === feedObj.entityId)
+      const hasSeriesBook = series ? Database.libraryItems.some(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length) : false
       if (!hasSeriesBook) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Series "${feedObj.entityId}" not found or has no audio tracks`)
         return false
@@ -42,47 +36,57 @@ class RssFeedManager {
     return true
   }
 
+  /**
+   * Validate all feeds and remove invalid
+   */
   async init() {
-    const feedObjects = await this.db.getAllEntities('feed')
-    if (!feedObjects || !feedObjects.length) return
-
-    for (const feedObj of feedObjects) {
-      // Migration: In v2.2.12 entityType "item" was updated to "libraryItem"
-      if (feedObj.entityType === 'item') {
-        feedObj.entityType = 'libraryItem'
-        await this.db.updateEntity('feed', feedObj)
-      }
-
+    const feeds = await Database.models.feed.getOldFeeds()
+    for (const feed of feeds) {
       // Remove invalid feeds
-      if (!this.validateFeedEntity(feedObj)) {
-        await this.db.removeEntity('feed', feedObj.id)
+      if (!await this.validateFeedEntity(feed)) {
+        await Database.removeFeed(feed.id)
       }
-
-      const feed = new Feed(feedObj)
-      this.feeds[feed.id] = feed
-      Logger.info(`[RssFeedManager] Opened rss feed ${feed.feedUrl}`)
     }
   }
 
+  /**
+   * Find open feed for an entity (e.g. collection id, playlist id, library item id)
+   * @param {string} entityId 
+   * @returns {Promise<objects.Feed>} oldFeed
+   */
   findFeedForEntityId(entityId) {
-    return Object.values(this.feeds).find(feed => feed.entityId === entityId)
+    return Database.models.feed.findOneOld({ entityId })
   }
 
-  findFeed(feedId) {
-    return this.feeds[feedId] || null
+  /**
+   * Find open feed for a slug
+   * @param {string} slug 
+   * @returns {Promise<objects.Feed>} oldFeed
+   */
+  findFeedBySlug(slug) {
+    return Database.models.feed.findOneOld({ slug })
+  }
+
+  /**
+   * Find open feed for a slug
+   * @param {string} slug 
+   * @returns {Promise<objects.Feed>} oldFeed
+   */
+  findFeed(id) {
+    return Database.models.feed.findByPkOld(id)
   }
 
   async getFeed(req, res) {
-    const feed = this.feeds[req.params.id]
+    const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.warn(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
 
     // Check if feed needs to be updated
     if (feed.entityType === 'libraryItem') {
-      const libraryItem = this.db.getLibraryItem(feed.entityId)
+      const libraryItem = Database.getLibraryItem(feed.entityId)
 
       let mostRecentlyUpdatedAt = libraryItem.updatedAt
       if (libraryItem.isPodcast) {
@@ -93,13 +97,14 @@ class RssFeedManager {
 
       if (libraryItem && (!feed.entityUpdatedAt || mostRecentlyUpdatedAt > feed.entityUpdatedAt)) {
         Logger.debug(`[RssFeedManager] Updating RSS feed for item ${libraryItem.id} "${libraryItem.media.metadata.title}"`)
+
         feed.updateFromItem(libraryItem)
-        await this.db.updateEntity('feed', feed)
+        await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = this.db.collections.find(c => c.id === feed.entityId)
+      const collection = await Database.models.collection.getById(feed.entityId)
       if (collection) {
-        const collectionExpanded = collection.toJSONExpanded(this.db.libraryItems)
+        const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
 
         // Find most recently updated item in collection
         let mostRecentlyUpdatedAt = collectionExpanded.lastUpdate
@@ -113,15 +118,15 @@ class RssFeedManager {
           Logger.debug(`[RssFeedManager] Updating RSS feed for collection "${collection.name}"`)
 
           feed.updateFromCollection(collectionExpanded)
-          await this.db.updateEntity('feed', feed)
+          await Database.updateFeed(feed)
         }
       }
     } else if (feed.entityType === 'series') {
-      const series = this.db.series.find(s => s.id === feed.entityId)
+      const series = Database.series.find(s => s.id === feed.entityId)
       if (series) {
         const seriesJson = series.toJSON()
         // Get books in series that have audio tracks
-        seriesJson.books = this.db.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
+        seriesJson.books = Database.libraryItems.filter(li => li.mediaType === 'book' && li.media.metadata.hasSeries(series.id) && li.media.tracks.length)
 
         // Find most recently updated item in series
         let mostRecentlyUpdatedAt = seriesJson.updatedAt
@@ -140,7 +145,7 @@ class RssFeedManager {
           Logger.debug(`[RssFeedManager] Updating RSS feed for series "${seriesJson.name}"`)
 
           feed.updateFromSeries(seriesJson)
-          await this.db.updateEntity('feed', feed)
+          await Database.updateFeed(feed)
         }
       }
     }
@@ -150,10 +155,10 @@ class RssFeedManager {
     res.send(xml)
   }
 
-  getFeedItem(req, res) {
-    const feed = this.feeds[req.params.id]
+  async getFeedItem(req, res) {
+    const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
@@ -166,10 +171,10 @@ class RssFeedManager {
     res.sendFile(episodePath)
   }
 
-  getFeedCover(req, res) {
-    const feed = this.feeds[req.params.id]
+  async getFeedCover(req, res) {
+    const feed = await this.findFeedBySlug(req.params.slug)
     if (!feed) {
-      Logger.debug(`[RssFeedManager] Feed not found ${req.params.id}`)
+      Logger.debug(`[RssFeedManager] Feed not found ${req.params.slug}`)
       res.sendStatus(404)
       return
     }
@@ -194,10 +199,9 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromItem(user.id, slug, libraryItem, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
-    await this.db.insertEntity('feed', feed)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
   }
@@ -211,10 +215,9 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromCollection(user.id, slug, collectionExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
-    await this.db.insertEntity('feed', feed)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
   }
@@ -228,29 +231,32 @@ class RssFeedManager {
 
     const feed = new Feed()
     feed.setFromSeries(user.id, slug, seriesExpanded, serverAddress, preventIndexing, ownerName, ownerEmail)
-    this.feeds[feed.id] = feed
 
-    Logger.debug(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
-    await this.db.insertEntity('feed', feed)
+    Logger.info(`[RssFeedManager] Opened RSS feed "${feed.feedUrl}"`)
+    await Database.createFeed(feed)
     SocketAuthority.emitter('rss_feed_open', feed.toJSONMinified())
     return feed
   }
 
   async handleCloseFeed(feed) {
     if (!feed) return
-    await this.db.removeEntity('feed', feed.id)
+    await Database.removeFeed(feed.id)
     SocketAuthority.emitter('rss_feed_closed', feed.toJSONMinified())
-    delete this.feeds[feed.id]
     Logger.info(`[RssFeedManager] Closed RSS feed "${feed.feedUrl}"`)
   }
 
-  closeRssFeed(id) {
-    if (!this.feeds[id]) return
-    return this.handleCloseFeed(this.feeds[id])
+  async closeRssFeed(req, res) {
+    const feed = await this.findFeed(req.params.id)
+    if (!feed) {
+      Logger.error(`[RssFeedManager] RSS feed not found with id "${req.params.id}"`)
+      return res.sendStatus(404)
+    }
+    await this.handleCloseFeed(feed)
+    res.sendStatus(200)
   }
 
-  closeFeedForEntityId(entityId) {
-    const feed = this.findFeedForEntityId(entityId)
+  async closeFeedForEntityId(entityId) {
+    const feed = await this.findFeedForEntityId(entityId)
     if (!feed) return
     return this.handleCloseFeed(feed)
   }

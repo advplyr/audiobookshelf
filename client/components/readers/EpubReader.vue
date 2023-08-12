@@ -1,15 +1,15 @@
 <template>
-  <div class="h-full w-full">
+  <div id="epub-reader" class="h-full w-full">
     <div class="h-full flex items-center justify-center">
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center overflow-x-hidden justify-center">
-        <span v-if="hasPrev" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
-      </div>
+      <button type="button" aria-label="Previous page" class="w-24 max-w-24 h-full hidden sm:flex items-center overflow-x-hidden justify-center opacity-50 hover:opacity-100">
+        <span v-if="hasPrev" class="material-icons text-6xl" @mousedown.prevent @click="prev">chevron_left</span>
+      </button>
       <div id="frame" class="w-full" style="height: 80%">
         <div id="viewer"></div>
       </div>
-      <div style="width: 100px; max-width: 100px" class="h-full hidden sm:flex items-center justify-center overflow-x-hidden">
-        <span v-if="hasNext" class="material-icons text-white text-opacity-50 hover:text-opacity-80 cursor-pointer text-6xl" @mousedown.prevent @click="next">chevron_right</span>
-      </div>
+      <button type="button" aria-label="Next page" class="w-24 max-w-24 h-full hidden sm:flex items-center justify-center overflow-x-hidden opacity-50 hover:opacity-100">
+        <span v-if="hasNext" class="material-icons text-6xl" @mousedown.prevent @click="next">chevron_right</span>
+      </button>
     </div>
   </div>
 </template>
@@ -24,22 +24,39 @@ import ePub from 'epubjs'
  */
 export default {
   props: {
-    url: String,
     libraryItem: {
       type: Object,
       default: () => {}
-    }
+    },
+    playerOpen: Boolean,
+    keepProgress: Boolean,
+    fileId: String
   },
   data() {
     return {
       windowWidth: 0,
+      windowHeight: 0,
       /** @type {ePub.Book} */
       book: null,
       /** @type {ePub.Rendition} */
-      rendition: null
+      rendition: null,
+      ereaderSettings: {
+        theme: 'dark',
+        fontScale: 100,
+        lineSpacing: 115,
+        spread: 'auto'
+      }
+    }
+  },
+  watch: {
+    playerOpen() {
+      this.resize()
     }
   },
   computed: {
+    userToken() {
+      return this.$store.getters['user/getToken']
+    },
     /** @returns {string} */
     libraryItemId() {
       return this.libraryItem?.id
@@ -52,11 +69,18 @@ export default {
     },
     /** @returns {Array<ePub.NavItem>} */
     chapters() {
-      return this.book ? this.book.navigation.toc : []
+      return this.book?.navigation?.toc || []
     },
     userMediaProgress() {
       if (!this.libraryItemId) return
       return this.$store.getters['user/getUserMediaProgress'](this.libraryItemId)
+    },
+    savedEbookLocation() {
+      if (!this.keepProgress) return null
+      if (!this.userMediaProgress?.ebookLocation) return null
+      // Validate ebookLocation is an epubcfi
+      if (!String(this.userMediaProgress.ebookLocation).startsWith('epubcfi')) return null
+      return this.userMediaProgress.ebookLocation
     },
     localStorageLocationsKey() {
       return `ebookLocations-${this.libraryItemId}`
@@ -64,16 +88,60 @@ export default {
     readerWidth() {
       if (this.windowWidth < 640) return this.windowWidth
       return this.windowWidth - 200
+    },
+    readerHeight() {
+      if (this.windowHeight < 400 || !this.playerOpen) return this.windowHeight
+      return this.windowHeight - 164
+    },
+    ebookUrl() {
+      if (this.fileId) {
+        return `/api/items/${this.libraryItemId}/ebook/${this.fileId}`
+      }
+      return `/api/items/${this.libraryItemId}/ebook`
+    },
+    themeRules() {
+      const isDark = this.ereaderSettings.theme === 'dark'
+      const fontColor = isDark ? '#fff' : '#000'
+      const backgroundColor = isDark ? 'rgb(35 35 35)' : 'rgb(255, 255, 255)'
+
+      const lineSpacing = this.ereaderSettings.lineSpacing / 100
+
+      const fontScale = this.ereaderSettings.fontScale / 100
+
+      return {
+        '*': {
+          color: `${fontColor}!important`,
+          'background-color': `${backgroundColor}!important`,
+          'line-height': lineSpacing * fontScale + 'rem!important'
+        },
+        a: {
+          color: `${fontColor}!important`
+        }
+      }
     }
   },
   methods: {
+    updateSettings(settings) {
+      this.ereaderSettings = settings
+
+      if (!this.rendition) return
+
+      this.applyTheme()
+
+      const fontScale = settings.fontScale || 100
+      this.rendition.themes.fontSize(`${fontScale}%`)
+      this.rendition.spread(settings.spread || 'auto')
+    },
     prev() {
+      if (!this.rendition?.manager) return
       return this.rendition?.prev()
     },
     next() {
+      if (!this.rendition?.manager) return
       return this.rendition?.next()
     },
     goToChapter(href) {
+      if (!this.rendition?.manager) return
       return this.rendition?.display(href)
     },
     keyUp(e) {
@@ -90,6 +158,7 @@ export default {
      * @param {string} payload.ebookProgress - eBook Progress Percentage
      */
     updateProgress(payload) {
+      if (!this.keepProgress) return
       this.$axios.$patch(`/api/me/progress/${this.libraryItemId}`, payload).catch((error) => {
         console.error('EpubReader.updateProgress failed:', error)
       })
@@ -181,7 +250,7 @@ export default {
     },
     /** @param {string} location - CFI of the new location */
     relocated(location) {
-      if (this.userMediaProgress?.ebookLocation === location.start.cfi) {
+      if (this.savedEbookLocation === location.start.cfi) {
         return
       }
 
@@ -201,43 +270,42 @@ export default {
       const reader = this
 
       /** @type {ePub.Book} */
-      reader.book = new ePub(reader.url, {
+      reader.book = new ePub(reader.ebookUrl, {
         width: this.readerWidth,
-        height: window.innerHeight - 50
+        height: this.readerHeight - 50,
+        openAs: 'epub',
+        requestHeaders: {
+          Authorization: `Bearer ${this.userToken}`
+        }
       })
 
       /** @type {ePub.Rendition} */
       reader.rendition = reader.book.renderTo('viewer', {
         width: this.readerWidth,
-        height: window.innerHeight * 0.8
+        height: this.readerHeight * 0.8,
+        spread: 'auto',
+        snap: true,
+        manager: 'continuous',
+        flow: 'paginated'
       })
 
       // load saved progress
-      reader.rendition.display(this.userMediaProgress?.ebookLocation || reader.book.locations.start)
+      reader.rendition.display(this.savedEbookLocation || reader.book.locations.start)
 
-      // load style
-      reader.rendition.themes.default({ '*': { color: '#fff!important' } })
+      reader.rendition.on('rendered', () => {
+        this.applyTheme()
+      })
 
       reader.book.ready.then(() => {
         // set up event listeners
         reader.rendition.on('relocated', reader.relocated)
         reader.rendition.on('keydown', reader.keyUp)
 
-        let touchStart = 0
-        let touchEnd = 0
         reader.rendition.on('touchstart', (event) => {
-          touchStart = event.changedTouches[0].screenX
+          this.$emit('touchstart', event)
         })
-
         reader.rendition.on('touchend', (event) => {
-          touchEnd = event.changedTouches[0].screenX
-          const touchDistanceX = Math.abs(touchEnd - touchStart)
-          if (touchStart < touchEnd && touchDistanceX > 120) {
-            this.next()
-          }
-          if (touchStart > touchEnd && touchDistanceX > 120) {
-            this.prev()
-          }
+          this.$emit('touchend', event)
         })
 
         // load ebook cfi locations
@@ -253,17 +321,25 @@ export default {
     },
     resize() {
       this.windowWidth = window.innerWidth
-      this.rendition?.resize(this.readerWidth, window.innerHeight * 0.8)
+      this.windowHeight = window.innerHeight
+      this.rendition?.resize(this.readerWidth, this.readerHeight * 0.8)
+    },
+    applyTheme() {
+      if (!this.rendition) return
+      this.rendition.getContents().forEach((c) => {
+        c.addStylesheetRules(this.themeRules)
+      })
     }
+  },
+  mounted() {
+    this.windowWidth = window.innerWidth
+    this.windowHeight = window.innerHeight
+    window.addEventListener('resize', this.resize)
+    this.initEpub()
   },
   beforeDestroy() {
     window.removeEventListener('resize', this.resize)
     this.book?.destroy()
-  },
-  mounted() {
-    this.windowWidth = window.innerWidth
-    window.addEventListener('resize', this.resize)
-    this.initEpub()
   }
 }
 </script>
