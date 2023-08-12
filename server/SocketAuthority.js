@@ -10,8 +10,11 @@ class SocketAuthority {
     this.clients = {}
   }
 
-  // returns an array of User.toJSONForPublic with `connections` for the # of socket connections
-  //  a user can have many socket connections
+  /**
+   * returns an array of User.toJSONForPublic with `connections` for the # of socket connections
+   *  a user can have many socket connections
+   * @returns {object[]}
+   */
   getUsersOnline() {
     const onlineUsersMap = {}
     Object.values(this.clients).filter(c => c.user).forEach(client => {
@@ -19,7 +22,7 @@ class SocketAuthority {
         onlineUsersMap[client.user.id].connections++
       } else {
         onlineUsersMap[client.user.id] = {
-          ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems),
+          ...client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions),
           connections: 1
         }
       }
@@ -108,7 +111,7 @@ class SocketAuthority {
           delete this.clients[socket.id]
         } else {
           Logger.debug('[SocketAuthority] User Offline ' + _client.user.username)
-          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
+          this.adminEmitter('user_offline', _client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
           const disconnectTime = Date.now() - _client.connected_at
           Logger.info(`[SocketAuthority] Socket ${socket.id} disconnected from client "${_client.user.username}" after ${disconnectTime}ms (Reason: ${reason})`)
@@ -165,7 +168,7 @@ class SocketAuthority {
 
     Logger.debug(`[SocketAuthority] User Online ${client.user.username}`)
 
-    this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions, Database.libraryItems))
+    this.adminEmitter('user_online', client.user.toJSONForPublic(this.Server.playbackSessionManager.sessions))
 
     // Update user lastSeen
     user.lastSeen = Date.now()
@@ -191,7 +194,7 @@ class SocketAuthority {
 
       if (client.user) {
         Logger.debug('[SocketAuthority] User Offline ' + client.user.username)
-        this.adminEmitter('user_offline', client.user.toJSONForPublic(null, Database.libraryItems))
+        this.adminEmitter('user_offline', client.user.toJSONForPublic())
       }
 
       delete this.clients[socketId].user

@@ -259,7 +259,7 @@ class PlaybackSessionManager {
     }
 
     this.sessions.push(newPlaybackSession)
-    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, Database.libraryItems))
+    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))
 
     return newPlaybackSession
   }
@@ -304,7 +304,7 @@ class PlaybackSessionManager {
       await this.saveSession(session)
     }
     Logger.debug(`[PlaybackSessionManager] closeSession "${session.id}"`)
-    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions, Database.libraryItems))
+    SocketAuthority.adminEmitter('user_stream_update', user.toJSONForPublic(this.sessions))
     SocketAuthority.clientEmitter(session.userId, 'user_session_closed', session.id)
     return this.removeSession(session.id)
   }

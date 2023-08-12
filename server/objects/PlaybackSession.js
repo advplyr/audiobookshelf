@@ -78,6 +78,11 @@ class PlaybackSession {
     }
   }
 
+  /**
+   * Session data to send to clients
+   * @param {[oldLibraryItem]} libraryItem optional
+   * @returns {object}
+   */
   toJSONForClient(libraryItem) {
     return {
       id: this.id,
@@ -105,8 +110,8 @@ class PlaybackSession {
       startedAt: this.startedAt,
       updatedAt: this.updatedAt,
       audioTracks: this.audioTracks.map(at => at.toJSON()),
-      videoTrack: this.videoTrack ? this.videoTrack.toJSON() : null,
-      libraryItem: libraryItem.toJSONExpanded()
+      videoTrack: this.videoTrack?.toJSON() || null,
+      libraryItem: libraryItem?.toJSONExpanded() || null
     }
   }
 
