@@ -12,7 +12,7 @@ class RssFeedManager {
 
   async validateFeedEntity(feedObj) {
     if (feedObj.entityType === 'collection') {
-      const collection = await Database.models.collection.getById(feedObj.entityId)
+      const collection = await Database.models.collection.getOldById(feedObj.entityId)
       if (!collection) {
         Logger.error(`[RssFeedManager] Removing feed "${feedObj.id}". Collection "${feedObj.entityId}" not found`)
         return false
@@ -102,7 +102,7 @@ class RssFeedManager {
         await Database.updateFeed(feed)
       }
     } else if (feed.entityType === 'collection') {
-      const collection = await Database.models.collection.getById(feed.entityId)
+      const collection = await Database.models.collection.getOldById(feed.entityId)
       if (collection) {
         const collectionExpanded = collection.toJSONExpanded(Database.libraryItems)
 

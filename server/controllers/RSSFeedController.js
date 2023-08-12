@@ -45,7 +45,7 @@ class RSSFeedController {
   async openRSSFeedForCollection(req, res) {
     const options = req.body || {}
 
-    const collection = await Database.models.collection.getById(req.params.collectionId)
+    const collection = await Database.models.collection.getOldById(req.params.collectionId)
     if (!collection) return res.sendStatus(404)
 
     // Check request body options exist

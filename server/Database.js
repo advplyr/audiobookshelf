@@ -275,40 +275,9 @@ class Database {
     }
   }
 
-  updateCollection(oldCollection) {
-    if (!this.sequelize) return false
-    const collectionBooks = []
-    let order = 1
-    oldCollection.books.forEach((libraryItemId) => {
-      const libraryItem = this.getLibraryItem(libraryItemId)
-      if (!libraryItem) return
-      collectionBooks.push({
-        collectionId: oldCollection.id,
-        bookId: libraryItem.media.id,
-        order: order++
-      })
-    })
-    return this.models.collection.fullUpdateFromOld(oldCollection, collectionBooks)
-  }
-
-  async removeCollection(collectionId) {
-    if (!this.sequelize) return false
-    await this.models.collection.removeById(collectionId)
-  }
-
-  createCollectionBook(collectionBook) {
-    if (!this.sequelize) return false
-    return this.models.collectionBook.create(collectionBook)
-  }
-
   createBulkCollectionBooks(collectionBooks) {
     if (!this.sequelize) return false
     return this.models.collectionBook.bulkCreate(collectionBooks)
-  }
-
-  removeCollectionBook(collectionId, bookId) {
-    if (!this.sequelize) return false
-    return this.models.collectionBook.removeByIds(collectionId, bookId)
   }
 
   async createPlaylist(oldPlaylist) {

@@ -882,24 +882,25 @@ module.exports = {
       Logger.error(`[libraryItemsBookFilters] Invalid collection`, collection)
       return []
     }
+
     const books = await Database.models.book.findAll({
-      where: {
-        id: {
-          [Sequelize.Op.in]: collection.books
-        }
-      },
       include: [
         {
-          model: Database.models.libraryItem
+          model: Database.models.libraryItem,
+          where: {
+            id: {
+              [Sequelize.Op.in]: collection.books
+            }
+          }
         },
         {
-          model: sequelize.models.author,
+          model: Database.models.author,
           through: {
             attributes: []
           }
         },
         {
-          model: sequelize.models.series,
+          model: Database.models.series,
           through: {
             attributes: ['sequence']
           }

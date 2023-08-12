@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, Sequelize } = require('sequelize')
 
 const oldCollection = require('../objects/Collection')
 const { areEquivalent } = require('../utils/index')
@@ -113,6 +113,76 @@ module.exports = (sequelize) => {
     }
 
     /**
+     * Get old collection toJSONExpanded, items filtered for user permissions
+     * @param {[oldUser]} user
+     * @param {[string[]]} include
+     * @returns {Promise<object>} oldCollection.toJSONExpanded
+     */
+    async getOldJsonExpanded(user, include) {
+      this.books = await this.getBooks({
+        include: [
+          {
+            model: sequelize.models.libraryItem
+          },
+          {
+            model: sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          },
+
+        ],
+        order: [Sequelize.literal('`collectionBook.order` ASC')]
+      }) || []
+
+      const oldCollection = sequelize.models.collection.getOldCollection(this)
+
+      // Filter books using user permissions
+      // TODO: Handle user permission restrictions on initial query
+      const books = this.books?.filter(b => {
+        if (user) {
+          if (b.tags?.length && !user.checkCanAccessLibraryItemWithTags(b.tags)) {
+            return false
+          }
+          if (b.explicit === true && !user.canAccessExplicitContent) {
+            return false
+          }
+        }
+        return true
+      }) || []
+
+      // Map to library items
+      const libraryItems = books.map(b => {
+        const libraryItem = b.libraryItem
+        delete b.libraryItem
+        libraryItem.media = b
+        return sequelize.models.libraryItem.getOldLibraryItem(libraryItem)
+      })
+
+      // Users with restricted permissions will not see this collection
+      if (!books.length && oldCollection.books.length) {
+        return null
+      }
+
+      const collectionExpanded = oldCollection.toJSONExpanded(libraryItems)
+
+      if (include?.includes('rssfeed')) {
+        const feeds = await this.getFeeds()
+        if (feeds?.length) {
+          collectionExpanded.rssFeed = sequelize.models.feed.getOldFeed(feeds[0])
+        }
+      }
+
+      return collectionExpanded
+    }
+
+    /**
      * Get old collection from Collection
      * @param {Collection} collectionExpanded 
      * @returns {oldCollection}
@@ -195,11 +265,11 @@ module.exports = (sequelize) => {
     }
 
     /**
-     * Get collection by id
+     * Get old collection by id
      * @param {string} collectionId 
      * @returns {Promise<oldCollection|null>} returns null if not found
      */
-    static async getById(collectionId) {
+    static async getOldById(collectionId) {
       if (!collectionId) return null
       const collection = await this.findByPk(collectionId, {
         include: {
@@ -210,6 +280,36 @@ module.exports = (sequelize) => {
       })
       if (!collection) return null
       return this.getOldCollection(collection)
+    }
+
+    /**
+     * Get old collection from current
+     * @returns {Promise<oldCollection>}
+     */
+    async getOld() {
+      this.books = await this.getBooks({
+        include: [
+          {
+            model: sequelize.models.libraryItem
+          },
+          {
+            model: sequelize.models.author,
+            through: {
+              attributes: []
+            }
+          },
+          {
+            model: sequelize.models.series,
+            through: {
+              attributes: ['sequence']
+            }
+          },
+
+        ],
+        order: [Sequelize.literal('`collectionBook.order` ASC')]
+      }) || []
+
+      return sequelize.models.collection.getOldCollection(this)
     }
 
     /**
@@ -224,26 +324,6 @@ module.exports = (sequelize) => {
           libraryId
         }
       })
-    }
-
-    /**
-     * Get all collections for a library
-     * @param {string} libraryId 
-     * @returns {Promise<oldCollection[]>}
-     */
-    static async getAllForLibrary(libraryId) {
-      if (!libraryId) return []
-      const collections = await this.findAll({
-        where: {
-          libraryId
-        },
-        include: {
-          model: sequelize.models.book,
-          include: sequelize.models.libraryItem
-        },
-        order: [[sequelize.models.book, sequelize.models.collectionBook, 'order', 'ASC']]
-      })
-      return collections.map(c => this.getOldCollection(c))
     }
 
     static async getAllForBook(bookId) {

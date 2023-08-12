@@ -393,14 +393,6 @@ class ApiRouter {
     // TODO: Remove open sessions for library item
     let mediaItemIds = []
     if (libraryItem.isBook) {
-      // remove book from collections
-      const collectionsWithBook = await Database.models.collection.getAllForBook(libraryItem.media.id)
-      for (const collection of collectionsWithBook) {
-        collection.removeBook(libraryItem.id)
-        await Database.removeCollectionBook(collection.id, libraryItem.media.id)
-        SocketAuthority.emitter('collection_updated', collection.toJSONExpanded(Database.libraryItems))
-      }
-
       // Check remove empty series
       await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
 

@@ -201,7 +201,7 @@ class PlaylistController {
 
   // POST: api/playlists/collection/:collectionId
   async createFromCollection(req, res) {
-    let collection = await Database.models.collection.getById(req.params.collectionId)
+    let collection = await Database.models.collection.getOldById(req.params.collectionId)
     if (!collection) {
       return res.status(404).send('Collection not found')
     }
