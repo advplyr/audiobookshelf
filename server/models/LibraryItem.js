@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require('sequelize')
+const { DataTypes, Model, WhereOptions } = require('sequelize')
 const Logger = require('../Logger')
 const oldLibraryItem = require('../objects/LibraryItem')
 const libraryFilters = require('../utils/queries/libraryFilters')
@@ -102,11 +102,12 @@ module.exports = (sequelize) => {
 
     /**
      * Currently unused because this is too slow and uses too much mem
-     * 
+     * @param {[WhereOptions]} where
      * @returns {Array<objects.LibraryItem>} old library items
      */
-    static async getAllOldLibraryItems() {
+    static async getAllOldLibraryItems(where = null) {
       let libraryItems = await this.findAll({
+        where,
         include: [
           {
             model: sequelize.models.book,

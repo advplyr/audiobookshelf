@@ -54,6 +54,48 @@ module.exports = (sequelize) => {
       })
     }
 
+    /**
+     * Get old playlist toJSONExpanded
+     * @param {[string[]]} include
+     * @returns {Promise<object>} oldPlaylist.toJSONExpanded
+     */
+    async getOldJsonExpanded(include) {
+      this.playlistMediaItems = await this.getPlaylistMediaItems({
+        include: [
+          {
+            model: sequelize.models.book,
+            include: sequelize.models.libraryItem
+          },
+          {
+            model: sequelize.models.podcastEpisode,
+            include: {
+              model: sequelize.models.podcast,
+              include: sequelize.models.libraryItem
+            }
+          }
+        ],
+        order: [['order', 'ASC']]
+      }) || []
+
+      const oldPlaylist = sequelize.models.playlist.getOldPlaylist(this)
+      const libraryItemIds = oldPlaylist.items.map(i => i.libraryItemId)
+
+      let libraryItems = await sequelize.models.libraryItem.getAllOldLibraryItems({
+        id: libraryItemIds
+      })
+
+      const playlistExpanded = oldCollection.toJSONExpanded(libraryItems)
+
+      if (include?.includes('rssfeed')) {
+        const feeds = await this.getFeeds()
+        if (feeds?.length) {
+          playlistExpanded.rssFeed = sequelize.models.feed.getOldFeed(feeds[0])
+        }
+      }
+
+      return playlistExpanded
+    }
+
     static createFromOld(oldPlaylist) {
       const playlist = this.getFromOld(oldPlaylist)
       return this.create(playlist)

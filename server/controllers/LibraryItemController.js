@@ -309,18 +309,22 @@ class LibraryItemController {
     const hardDelete = req.query.hard == 1 // Delete files from filesystem
 
     const { libraryItemIds } = req.body
-    if (!libraryItemIds || !libraryItemIds.length) {
-      return res.sendStatus(500)
+    if (!libraryItemIds?.length) {
+      return res.status(400).send('Invalid request body')
     }
 
-    const itemsToDelete = Database.libraryItems.filter(li => libraryItemIds.includes(li.id))
+    const itemsToDelete = await Database.models.libraryItem.getAllOldLibraryItems({
+      id: libraryItemIds
+    })
+
     if (!itemsToDelete.length) {
       return res.sendStatus(404)
     }
-    for (let i = 0; i < itemsToDelete.length; i++) {
-      const libraryItemPath = itemsToDelete[i].path
-      Logger.info(`[LibraryItemController] Deleting Library Item "${itemsToDelete[i].media.metadata.title}"`)
-      await this.handleDeleteLibraryItem(itemsToDelete[i])
+
+    for (const libraryItem of itemsToDelete) {
+      const libraryItemPath = libraryItem.path
+      Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
+      await this.handleDeleteLibraryItem(libraryItem)
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {
@@ -333,22 +337,21 @@ class LibraryItemController {
 
   // POST: api/items/batch/update
   async batchUpdate(req, res) {
-    var updatePayloads = req.body
-    if (!updatePayloads || !updatePayloads.length) {
+    const updatePayloads = req.body
+    if (!updatePayloads?.length) {
       return res.sendStatus(500)
     }
 
-    var itemsUpdated = 0
+    let itemsUpdated = 0
 
-    for (let i = 0; i < updatePayloads.length; i++) {
-      var mediaPayload = updatePayloads[i].mediaPayload
-      var libraryItem = Database.libraryItems.find(_li => _li.id === updatePayloads[i].id)
+    for (const updatePayload of updatePayloads) {
+      const mediaPayload = updatePayload.mediaPayload
+      const libraryItem = await Database.models.libraryItem.getOldById(updatePayload.id)
       if (!libraryItem) return null
 
       await this.createAuthorsAndSeriesForItemUpdate(mediaPayload, libraryItem.libraryId)
 
-      var hasUpdates = libraryItem.media.update(mediaPayload)
-      if (hasUpdates) {
+      if (libraryItem.media.update(mediaPayload)) {
         Logger.debug(`[LibraryItemController] Updated library item media ${libraryItem.media.metadata.title}`)
         await Database.updateLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', libraryItem.toJSONExpanded())
@@ -368,13 +371,11 @@ class LibraryItemController {
     if (!libraryItemIds.length) {
       return res.status(403).send('Invalid payload')
     }
-    const libraryItems = []
-    libraryItemIds.forEach((lid) => {
-      const li = Database.libraryItems.find(_li => _li.id === lid)
-      if (li) libraryItems.push(li.toJSONExpanded())
+    const libraryItems = await Database.models.libraryItem.getAllOldLibraryItems({
+      id: libraryItemIds
     })
     res.json({
-      libraryItems
+      libraryItems: libraryItems.map(li => li.toJSONExpanded())
     })
   }
 

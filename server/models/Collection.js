@@ -205,48 +205,6 @@ module.exports = (sequelize) => {
       return this.create(collection)
     }
 
-    static async fullUpdateFromOld(oldCollection, collectionBooks) {
-      const existingCollection = await this.findByPk(oldCollection.id, {
-        include: sequelize.models.collectionBook
-      })
-      if (!existingCollection) return false
-
-      let hasUpdates = false
-      const collection = this.getFromOld(oldCollection)
-
-      for (const cb of collectionBooks) {
-        const existingCb = existingCollection.collectionBooks.find(i => i.bookId === cb.bookId)
-        if (!existingCb) {
-          await sequelize.models.collectionBook.create(cb)
-          hasUpdates = true
-        } else if (existingCb.order != cb.order) {
-          await existingCb.update({ order: cb.order })
-          hasUpdates = true
-        }
-      }
-      for (const cb of existingCollection.collectionBooks) {
-        // collectionBook was removed
-        if (!collectionBooks.some(i => i.bookId === cb.bookId)) {
-          await cb.destroy()
-          hasUpdates = true
-        }
-      }
-
-      let hasCollectionUpdates = false
-      for (const key in collection) {
-        let existingValue = existingCollection[key]
-        if (existingValue instanceof Date) existingValue = existingValue.valueOf()
-        if (!areEquivalent(collection[key], existingValue)) {
-          hasCollectionUpdates = true
-        }
-      }
-      if (hasCollectionUpdates) {
-        existingCollection.update(collection)
-        hasUpdates = true
-      }
-      return hasUpdates
-    }
-
     static getFromOld(oldCollection) {
       return {
         id: oldCollection.id,

@@ -34,9 +34,13 @@ class PodcastController {
     const podcastPath = filePathToPOSIX(payload.path)
 
     // Check if a library item with this podcast folder exists already
-    const existingLibraryItem = Database.libraryItems.find(li => li.path === podcastPath && li.libraryId === library.id)
+    const existingLibraryItem = (await Database.models.libraryItem.count({
+      where: {
+        path: podcastPath
+      }
+    })) > 0
     if (existingLibraryItem) {
-      Logger.error(`[PodcastController] Podcast already exists with name "${existingLibraryItem.media.metadata.title}" at path "${podcastPath}"`)
+      Logger.error(`[PodcastController] Podcast already exists at path "${podcastPath}"`)
       return res.status(400).send('Podcast already exists')
     }
 
@@ -268,18 +272,27 @@ class PodcastController {
     }
 
     // Update/remove playlists that had this podcast episode
-    const playlistsWithEpisode = await Database.models.playlist.getPlaylistsForMediaItemIds([episodeId])
-    for (const playlist of playlistsWithEpisode) {
-      playlist.removeItem(libraryItem.id, episodeId)
+    const playlistMediaItems = await Database.models.playlistMediaItem.findAll({
+      where: {
+        mediaItemId: episodeId
+      },
+      include: {
+        model: Database.models.playlist,
+        include: Database.models.playlistMediaItem
+      }
+    })
+    for (const pmi of playlistMediaItems) {
+      const numItems = pmi.playlist.playlistMediaItems.length - 1
 
-      // If playlist is now empty then remove it
-      if (!playlist.items.length) {
+      if (!numItems) {
         Logger.info(`[PodcastController] Playlist "${playlist.name}" has no more items - removing it`)
-        await Database.removePlaylist(playlist.id)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(Database.libraryItems))
+        const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
+        SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_removed', jsonExpanded)
+        await pmi.playlist.destroy()
       } else {
-        await Database.updatePlaylist(playlist)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
+        await pmi.destroy()
+        const jsonExpanded = await pmi.playlist.getOldJsonExpanded()
+        SocketAuthority.clientEmitter(pmi.playlist.userId, 'playlist_updated', jsonExpanded)
       }
     }
 
@@ -298,9 +311,9 @@ class PodcastController {
     res.json(libraryItem.toJSON())
   }
 
-  middleware(req, res, next) {
-    const item = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!item || !item.media) return res.sendStatus(404)
+  async middleware(req, res, next) {
+    const item = await Database.models.libraryItem.getOldById(req.params.id)
+    if (!item?.media) return res.sendStatus(404)
 
     if (!item.isPodcast) {
       return res.sendStatus(500)

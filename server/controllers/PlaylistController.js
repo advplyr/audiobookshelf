@@ -133,7 +133,7 @@ class PlaylistController {
     const itemsToAdd = req.body.items
     let hasUpdated = false
 
-    let order = playlist.items.length
+    let order = playlist.items.length + 1
     const playlistMediaItems = []
     for (const item of itemsToAdd) {
       if (!item.libraryItemId) {
