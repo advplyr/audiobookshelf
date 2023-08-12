@@ -584,32 +584,6 @@ class LibraryController {
     res.json(payload)
   }
 
-  // api/libraries/:id/albums
-  async getAlbumsForLibrary(req, res) {
-    if (!req.library.isMusic) {
-      return res.status(400).send('Invalid library media type')
-    }
-
-    let libraryItems = Database.libraryItems.filter(li => li.libraryId === req.library.id)
-    let albums = libraryHelpers.groupMusicLibraryItemsIntoAlbums(libraryItems)
-    albums = naturalSort(albums).asc(a => a.title) // Alphabetical by album title
-
-    const payload = {
-      results: [],
-      total: albums.length,
-      limit: req.query.limit && !isNaN(req.query.limit) ? Number(req.query.limit) : 0,
-      page: req.query.page && !isNaN(req.query.page) ? Number(req.query.page) : 0
-    }
-
-    if (payload.limit) {
-      const startIndex = payload.page * payload.limit
-      albums = albums.slice(startIndex, startIndex + payload.limit)
-    }
-
-    payload.results = albums
-    res.json(payload)
-  }
-
   async getLibraryFilterData(req, res) {
     res.json(libraryHelpers.getDistinctFilterDataNew(req.libraryItems))
   }
