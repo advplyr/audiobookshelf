@@ -59,7 +59,7 @@ class MeController {
 
   // PATCH: api/me/progress/:id
   async createUpdateMediaProgress(req, res) {
-    const libraryItem = Database.libraryItems.find(ab => ab.id === req.params.id)
+    const libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -75,7 +75,7 @@ class MeController {
   // PATCH: api/me/progress/:id/:episodeId
   async createUpdateEpisodeMediaProgress(req, res) {
     const episodeId = req.params.episodeId
-    const libraryItem = Database.libraryItems.find(ab => ab.id === req.params.id)
+    const libraryItem = await Database.models.libraryItem.getOldById(req.params.id)
     if (!libraryItem) {
       return res.status(404).send('Item not found')
     }
@@ -101,7 +101,7 @@ class MeController {
 
     let shouldUpdate = false
     for (const itemProgress of itemProgressPayloads) {
-      const libraryItem = Database.libraryItems.find(li => li.id === itemProgress.libraryItemId) // Make sure this library item exists
+      const libraryItem = await Database.models.libraryItem.getOldById(itemProgress.libraryItemId)
       if (libraryItem) {
         if (req.user.createUpdateMediaProgress(libraryItem, itemProgress, itemProgress.episodeId)) {
           const mediaProgress = req.user.getMediaProgress(libraryItem.id, itemProgress.episodeId)
@@ -122,10 +122,10 @@ class MeController {
 
   // POST: api/me/item/:id/bookmark
   async createBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
+    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+
     const { time, title } = req.body
-    var bookmark = req.user.createBookmark(libraryItem.id, time, title)
+    const bookmark = req.user.createBookmark(req.params.id, time, title)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
@@ -133,15 +133,17 @@ class MeController {
 
   // PATCH: api/me/item/:id/bookmark
   async updateBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
+    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+
     const { time, title } = req.body
-    if (!req.user.findBookmark(libraryItem.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] updateBookmark not found`)
       return res.sendStatus(404)
     }
-    var bookmark = req.user.updateBookmark(libraryItem.id, time, title)
+
+    const bookmark = req.user.updateBookmark(req.params.id, time, title)
     if (!bookmark) return res.sendStatus(500)
+
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.json(bookmark)
@@ -149,16 +151,17 @@ class MeController {
 
   // DELETE: api/me/item/:id/bookmark/:time
   async removeBookmark(req, res) {
-    var libraryItem = Database.libraryItems.find(li => li.id === req.params.id)
-    if (!libraryItem) return res.sendStatus(404)
-    var time = Number(req.params.time)
+    if (!await Database.models.libraryItem.checkExistsById(req.params.id)) return res.sendStatus(404)
+
+    const time = Number(req.params.time)
     if (isNaN(time)) return res.sendStatus(500)
 
-    if (!req.user.findBookmark(libraryItem.id, time)) {
+    if (!req.user.findBookmark(req.params.id, time)) {
       Logger.error(`[MeController] removeBookmark not found`)
       return res.sendStatus(404)
     }
-    req.user.removeBookmark(libraryItem.id, time)
+
+    req.user.removeBookmark(req.params.id, time)
     await Database.updateUser(req.user)
     SocketAuthority.clientEmitter(req.user.id, 'user_updated', req.user.toJSONForBrowser())
     res.sendStatus(200)

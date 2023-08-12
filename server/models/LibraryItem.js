@@ -678,6 +678,15 @@ module.exports = (sequelize) => {
       return libraryItems.map(li => this.getOldLibraryItem(li))
     }
 
+    /**
+     * Check if library item exists
+     * @param {string} libraryItemId 
+     * @returns {Promise<boolean>}
+     */
+    static async checkExistsById(libraryItemId) {
+      return (await this.count({ where: { id: libraryItemId } })) > 0
+    }
+
     getMedia(options) {
       if (!this.mediaType) return Promise.resolve(null)
       const mixinMethodName = `get${sequelize.uppercaseFirst(this.mediaType)}`

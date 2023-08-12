@@ -118,7 +118,7 @@ class Server {
     await this.rssFeedManager.init()
 
     const libraries = await Database.models.library.getAllOldLibraries()
-    this.cronManager.init(libraries)
+    await this.cronManager.init(libraries)
 
     if (Database.serverSettings.scannerDisableWatcher) {
       Logger.info(`[Server] Watcher is disabled`)
