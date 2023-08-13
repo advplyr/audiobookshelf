@@ -71,7 +71,7 @@ class LibraryItemController {
   async delete(req, res) {
     const hardDelete = req.query.hard == 1 // Delete from file system
     const libraryItemPath = req.libraryItem.path
-    await this.handleDeleteLibraryItem(req.libraryItem)
+    await this.handleDeleteLibraryItem(req.libraryItem.mediaType, req.libraryItem.id, [req.libraryItem.media.id])
     if (hardDelete) {
       Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
       await fs.remove(libraryItemPath).catch((error) => {
@@ -324,7 +324,7 @@ class LibraryItemController {
     for (const libraryItem of itemsToDelete) {
       const libraryItemPath = libraryItem.path
       Logger.info(`[LibraryItemController] Deleting Library Item "${libraryItem.media.metadata.title}"`)
-      await this.handleDeleteLibraryItem(libraryItem)
+      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, [libraryItem.media.id])
       if (hardDelete) {
         Logger.info(`[LibraryItemController] Deleting library item from file system at "${libraryItemPath}"`)
         await fs.remove(libraryItemPath).catch((error) => {

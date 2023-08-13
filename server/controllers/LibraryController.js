@@ -1,3 +1,4 @@
+const Sequelize = require('sequelize')
 const Path = require('path')
 const fs = require('../libs/fsExtra')
 const filePerms = require('../utils/filePerms')
@@ -6,6 +7,7 @@ const SocketAuthority = require('../SocketAuthority')
 const Library = require('../objects/Library')
 const libraryHelpers = require('../utils/libraryHelpers')
 const libraryItemsBookFilters = require('../utils/queries/libraryItemsBookFilters')
+const libraryItemFilters = require('../utils/queries/libraryItemFilters')
 const { sort, createNewSortInstance } = require('../libs/fastSort')
 const naturalSort = createNewSortInstance({
   comparer: new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' }).compare
@@ -134,6 +136,40 @@ class LibraryController {
           await filePerms.setDefault(path)
         }
       }
+
+      // Handle removing folders
+      for (const folder of library.folders) {
+        if (!req.body.folders.some(f => f.id === folder.id)) {
+          // Remove library items in folder
+          const libraryItemsInFolder = await Database.models.libraryItem.findAll({
+            where: {
+              libraryFolderId: folder.id
+            },
+            attributes: ['id', 'mediaId', 'mediaType'],
+            include: [
+              {
+                model: Database.models.podcast,
+                attributes: ['id'],
+                include: {
+                  model: Database.models.podcastEpisode,
+                  attributes: ['id']
+                }
+              }
+            ]
+          })
+          Logger.info(`[LibraryController] Removed folder "${folder.fullPath}" from library "${library.name}" with ${libraryItemsInFolder.length} library items`)
+          for (const libraryItem of libraryItemsInFolder) {
+            let mediaItemIds = []
+            if (library.isPodcast) {
+              mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+            } else {
+              mediaItemIds.push(libraryItem.mediaId)
+            }
+            Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from folder "${folder.fullPath}"`)
+            await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
+          }
+        }
+      }
     }
 
     const hasUpdates = library.update(req.body)
@@ -145,14 +181,6 @@ class LibraryController {
       // Update auto scan cron
       this.cronManager.updateLibraryScanCron(library)
 
-      // Remove libraryItems no longer in library
-      const itemsToRemove = Database.libraryItems.filter(li => li.libraryId === library.id && !library.checkFullPathInLibrary(li.path))
-      if (itemsToRemove.length) {
-        Logger.info(`[Scanner] Updating library, removing ${itemsToRemove.length} items`)
-        for (let i = 0; i < itemsToRemove.length; i++) {
-          await this.handleDeleteLibraryItem(itemsToRemove[i])
-        }
-      }
       await Database.updateLibrary(library)
 
       // Only emit to users with access to library
@@ -183,10 +211,32 @@ class LibraryController {
     }
 
     // Remove items in this library
-    const libraryItems = Database.libraryItems.filter(li => li.libraryId === library.id)
-    Logger.info(`[Server] deleting library "${library.name}" with ${libraryItems.length} items"`)
-    for (let i = 0; i < libraryItems.length; i++) {
-      await this.handleDeleteLibraryItem(libraryItems[i])
+    const libraryItemsInLibrary = await Database.models.libraryItem.findAll({
+      where: {
+        libraryId: library.id
+      },
+      attributes: ['id', 'mediaId', 'mediaType'],
+      include: [
+        {
+          model: Database.models.podcast,
+          attributes: ['id'],
+          include: {
+            model: Database.models.podcastEpisode,
+            attributes: ['id']
+          }
+        }
+      ]
+    })
+    Logger.info(`[LibraryController] Removing ${libraryItemsInLibrary.length} library items in library "${library.name}"`)
+    for (const libraryItem of libraryItemsInLibrary) {
+      let mediaItemIds = []
+      if (library.isPodcast) {
+        mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+      } else {
+        mediaItemIds.push(libraryItem.mediaId)
+      }
+      Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" from library "${library.name}"`)
+      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
     }
 
     const libraryJson = library.toJSON()
@@ -270,16 +320,6 @@ class LibraryController {
 
       if (!(collapsedItems.length == 1 && collapsedItems[0].collapsedSeries)) {
         libraryItems = collapsedItems
-
-        // Get accurate total entities
-        // let uniqueEntities = new Set()
-        // libraryItems.forEach((item) => {
-        //   if (item.collapsedSeries) {
-        //     item.collapsedSeries.books.forEach(book => uniqueEntities.add(book.id))
-        //   } else {
-        //     uniqueEntities.add(item.id)
-        //   }
-        // })
         payload.total = libraryItems.length
       }
     }
@@ -428,8 +468,37 @@ class LibraryController {
     res.json(payload)
   }
 
+  /**
+   * DELETE: /libraries/:id/issues
+   * Remove all library items missing or invalid
+   * @param {*} req 
+   * @param {*} res 
+   */
   async removeLibraryItemsWithIssues(req, res) {
-    const libraryItemsWithIssues = req.libraryItems.filter(li => li.hasIssues)
+    const libraryItemsWithIssues = await Database.models.libraryItem.findAll({
+      where: {
+        [Sequelize.Op.or]: [
+          {
+            isMissing: true
+          },
+          {
+            isInvalid: true
+          }
+        ]
+      },
+      attributes: ['id', 'mediaId', 'mediaType'],
+      include: [
+        {
+          model: Database.models.podcast,
+          attributes: ['id'],
+          include: {
+            model: Database.models.podcastEpisode,
+            attributes: ['id']
+          }
+        }
+      ]
+    })
+
     if (!libraryItemsWithIssues.length) {
       Logger.warn(`[LibraryController] No library items have issues`)
       return res.sendStatus(200)
@@ -437,8 +506,14 @@ class LibraryController {
 
     Logger.info(`[LibraryController] Removing ${libraryItemsWithIssues.length} items with issues`)
     for (const libraryItem of libraryItemsWithIssues) {
-      Logger.info(`[LibraryController] Removing library item "${libraryItem.media.metadata.title}"`)
-      await this.handleDeleteLibraryItem(libraryItem)
+      let mediaItemIds = []
+      if (library.isPodcast) {
+        mediaItemIds = libraryItem.media.podcastEpisodes.map(pe => pe.id)
+      } else {
+        mediaItemIds.push(libraryItem.mediaId)
+      }
+      Logger.info(`[LibraryController] Removing library item "${libraryItem.id}" with issue`)
+      await this.handleDeleteLibraryItem(libraryItem.mediaType, libraryItem.id, mediaItemIds)
     }
 
     res.sendStatus(200)
@@ -633,6 +708,7 @@ class LibraryController {
 
   /**
    * GET: /api/libraries/:id/personalized
+   * TODO: remove after personalized2 is ready
    * @param {*} req 
    * @param {*} res 
    */
@@ -780,54 +856,97 @@ class LibraryController {
     res.json(stats)
   }
 
+  /**
+   * GET: /api/libraries/:id/authors
+   * Get authors for library
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getAuthors(req, res) {
-    const authors = {}
-    req.libraryItems.forEach((li) => {
-      if (li.media.metadata.authors && li.media.metadata.authors.length) {
-        li.media.metadata.authors.forEach((au) => {
-          if (!authors[au.id]) {
-            const _author = Database.authors.find(_au => _au.id === au.id)
-            if (_author) {
-              authors[au.id] = _author.toJSON()
-              authors[au.id].numBooks = 1
-            }
-          } else {
-            authors[au.id].numBooks++
-          }
-        })
-      }
+    const { bookWhere, replacements } = libraryItemsBookFilters.getUserPermissionBookWhereQuery(req.user)
+    const authors = await Database.models.author.findAll({
+      where: {
+        libraryId: req.library.id
+      },
+      replacements,
+      include: {
+        model: Database.models.book,
+        attributes: ['id', 'tags', 'explicit'],
+        where: bookWhere,
+        required: true,
+        through: {
+          attributes: []
+        }
+      },
+      order: [
+        [Sequelize.literal('name COLLATE NOCASE'), 'ASC']
+      ]
     })
 
+    const oldAuthors = []
+
+    for (const author of authors) {
+      const oldAuthor = author.getOldAuthor().toJSON()
+      oldAuthor.numBooks = author.books.length
+      oldAuthors.push(oldAuthor)
+    }
+
     res.json({
-      authors: naturalSort(Object.values(authors)).asc(au => au.name)
+      authors: oldAuthors
     })
   }
 
+  /**
+   * GET: /api/libraries/:id/narrators
+   * @param {*} req 
+   * @param {*} res 
+   */
   async getNarrators(req, res) {
-    const narrators = {}
-    req.libraryItems.forEach((li) => {
-      if (li.media.metadata.narrators?.length) {
-        li.media.metadata.narrators.forEach((n) => {
-          if (typeof n !== 'string') {
-            Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${li.media.metadata.title}"`)
-          } else if (!narrators[n]) {
-            narrators[n] = {
-              id: encodeURIComponent(Buffer.from(n).toString('base64')),
-              name: n,
-              numBooks: 1
-            }
-          } else {
-            narrators[n].numBooks++
-          }
-        })
-      }
+    // Get all books with narrators
+    const booksWithNarrators = await Database.models.book.findAll({
+      where: Sequelize.where(Sequelize.fn('json_array_length', Sequelize.col('narrators')), {
+        [Sequelize.Op.gt]: 0
+      }),
+      include: {
+        model: Database.models.libraryItem,
+        attributes: ['id', 'libraryId'],
+        where: {
+          libraryId: req.library.id
+        }
+      },
+      attributes: ['id', 'narrators']
     })
+
+    const narrators = {}
+    for (const book of booksWithNarrators) {
+      book.narrators.forEach(n => {
+        if (typeof n !== 'string') {
+          Logger.error(`[LibraryController] getNarrators: Invalid narrator "${n}" on book "${book.title}"`)
+        } else if (!narrators[n]) {
+          narrators[n] = {
+            id: encodeURIComponent(Buffer.from(n).toString('base64')),
+            name: n,
+            numBooks: 1
+          }
+        } else {
+          narrators[n].numBooks++
+        }
+      })
+    }
 
     res.json({
       narrators: naturalSort(Object.values(narrators)).asc(n => n.name)
     })
   }
 
+  /**
+   * PATCH: /api/libraries/:id/narrators/:narratorId
+   * Update narrator name
+   * :narratorId is base64 encoded name
+   * req.body { name }
+   * @param {*} req 
+   * @param {*} res 
+   */
   async updateNarrator(req, res) {
     if (!req.user.canUpdate) {
       Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to update narrator`)
@@ -840,15 +959,27 @@ class LibraryController {
       return res.status(400).send('Invalid request payload. Name not specified.')
     }
 
+    // Update filter data
+    Database.removeNarratorFromFilterData(narratorName)
+    Database.addNarratorToFilterData(updatedName)
+
     const itemsUpdated = []
-    for (const libraryItem of req.libraryItems) {
-      if (libraryItem.media.metadata.updateNarrator(narratorName, updatedName)) {
-        itemsUpdated.push(libraryItem)
+
+    const itemsWithNarrator = await libraryItemFilters.getAllLibraryItemsWithNarrators([narratorName])
+
+    for (const libraryItem of itemsWithNarrator) {
+      libraryItem.media.narrators = libraryItem.media.narrators.filter(n => n !== narratorName)
+      if (!libraryItem.media.narrators.includes(updatedName)) {
+        libraryItem.media.narrators.push(updatedName)
       }
+      await libraryItem.media.update({
+        narrators: libraryItem.media.narrators
+      })
+      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      itemsUpdated.push(oldLibraryItem)
     }
 
     if (itemsUpdated.length) {
-      await Database.updateBulkBooks(itemsUpdated.map(i => i.media))
       SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
 
@@ -857,6 +988,13 @@ class LibraryController {
     })
   }
 
+  /**
+   * DELETE: /api/libraries/:id/narrators/:narratorId
+   * Remove narrator
+   * :narratorId is base64 encoded name
+   * @param {*} req 
+   * @param {*} res 
+   */
   async removeNarrator(req, res) {
     if (!req.user.canUpdate) {
       Logger.error(`[LibraryController] Unauthorized user "${req.user.username}" attempted to remove narrator`)
@@ -865,15 +1003,23 @@ class LibraryController {
 
     const narratorName = libraryHelpers.decode(req.params.narratorId)
 
+    // Update filter data
+    Database.removeNarratorFromFilterData(narratorName)
+
     const itemsUpdated = []
-    for (const libraryItem of req.libraryItems) {
-      if (libraryItem.media.metadata.removeNarrator(narratorName)) {
-        itemsUpdated.push(libraryItem)
-      }
+
+    const itemsWithNarrator = await libraryItemFilters.getAllLibraryItemsWithNarrators([narratorName])
+
+    for (const libraryItem of itemsWithNarrator) {
+      libraryItem.media.narrators = libraryItem.media.narrators.filter(n => n !== narratorName)
+      await libraryItem.media.update({
+        narrators: libraryItem.media.narrators
+      })
+      const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
+      itemsUpdated.push(oldLibraryItem)
     }
 
     if (itemsUpdated.length) {
-      await Database.updateBulkBooks(itemsUpdated.map(i => i.media))
       SocketAuthority.emitter('items_updated', itemsUpdated.map(li => li.toJSONExpanded()))
     }
 

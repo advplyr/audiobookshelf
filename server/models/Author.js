@@ -75,7 +75,24 @@ module.exports = (sequelize) => {
     imagePath: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'author'
+    modelName: 'author',
+    indexes: [
+      {
+        fields: [{
+          name: 'name',
+          collate: 'NOCASE'
+        }]
+      },
+      {
+        fields: [{
+          name: 'lastFirst',
+          collate: 'NOCASE'
+        }]
+      },
+      {
+        fields: ['libraryId']
+      }
+    ]
   })
 
   const { library } = sequelize.models

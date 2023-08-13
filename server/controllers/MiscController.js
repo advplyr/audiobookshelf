@@ -235,19 +235,18 @@ class MiscController {
 
     const libraryItemsWithTag = await libraryItemFilters.getAllLibraryItemsWithTags([tag, newTag])
     for (const libraryItem of libraryItemsWithTag) {
-      let existingTags = libraryItem.media.tags
-      if (existingTags.includes(newTag)) {
+      if (libraryItem.media.tags.includes(newTag)) {
         tagMerged = true // new tag is an existing tag so this is a merge
       }
 
-      if (existingTags.includes(tag)) {
-        existingTags = existingTags.filter(t => t !== tag) // Remove old tag
-        if (!existingTags.includes(newTag)) {
-          existingTags.push(newTag)
+      if (libraryItem.media.tags.includes(tag)) {
+        libraryItem.media.tags = libraryItem.media.tags.filter(t => t !== tag) // Remove old tag
+        if (!libraryItem.media.tags.includes(newTag)) {
+          libraryItem.media.tags.push(newTag)
         }
         Logger.debug(`[MiscController] Rename tag "${tag}" to "${newTag}" for item "${libraryItem.media.title}"`)
         await libraryItem.media.update({
-          tags: existingTags
+          tags: libraryItem.media.tags
         })
         const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
@@ -286,8 +285,9 @@ class MiscController {
     // Remove tag from items
     for (const libraryItem of libraryItemsWithTag) {
       Logger.debug(`[MiscController] Remove tag "${tag}" from item "${libraryItem.media.title}"`)
+      libraryItem.media.tags = libraryItem.media.tags.filter(t => t !== tag)
       await libraryItem.media.update({
-        tags: libraryItem.media.tags.filter(t => t !== tag)
+        tags: libraryItem.media.tags
       })
       const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
@@ -369,19 +369,18 @@ class MiscController {
 
     const libraryItemsWithGenre = await libraryItemFilters.getAllLibraryItemsWithGenres([genre, newGenre])
     for (const libraryItem of libraryItemsWithGenre) {
-      let existingGenres = libraryItem.media.genres
-      if (existingGenres.includes(newGenre)) {
+      if (libraryItem.media.genres.includes(newGenre)) {
         genreMerged = true // new genre is an existing genre so this is a merge
       }
 
-      if (existingGenres.includes(genre)) {
-        existingGenres = existingGenres.filter(t => t !== genre) // Remove old genre
-        if (!existingGenres.includes(newGenre)) {
-          existingGenres.push(newGenre)
+      if (libraryItem.media.genres.includes(genre)) {
+        libraryItem.media.genres = libraryItem.media.genres.filter(t => t !== genre) // Remove old genre
+        if (!libraryItem.media.genres.includes(newGenre)) {
+          libraryItem.media.genres.push(newGenre)
         }
         Logger.debug(`[MiscController] Rename genre "${genre}" to "${newGenre}" for item "${libraryItem.media.title}"`)
         await libraryItem.media.update({
-          genres: existingGenres
+          genres: libraryItem.media.genres
         })
         const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
         SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())
@@ -420,8 +419,9 @@ class MiscController {
     // Remove genre from items
     for (const libraryItem of libraryItemsWithGenre) {
       Logger.debug(`[MiscController] Remove genre "${genre}" from item "${libraryItem.media.title}"`)
+      libraryItem.media.genres = libraryItem.media.genres.filter(g => g !== genre)
       await libraryItem.media.update({
-        genres: libraryItem.media.genres.filter(g => g !== genre)
+        genres: libraryItem.media.genres
       })
       const oldLibraryItem = Database.models.libraryItem.getOldLibraryItem(libraryItem)
       SocketAuthority.emitter('item_updated', oldLibraryItem.toJSONExpanded())

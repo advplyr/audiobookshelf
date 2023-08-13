@@ -71,8 +71,8 @@ class ApiRouter {
     this.router.post('/libraries', LibraryController.create.bind(this))
     this.router.get('/libraries', LibraryController.findAll.bind(this))
     this.router.get('/libraries/:id', LibraryController.middlewareNew.bind(this), LibraryController.findOne.bind(this))
-    this.router.patch('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.update.bind(this))
-    this.router.delete('/libraries/:id', LibraryController.middleware.bind(this), LibraryController.delete.bind(this))
+    this.router.patch('/libraries/:id', LibraryController.middlewareNew.bind(this), LibraryController.update.bind(this))
+    this.router.delete('/libraries/:id', LibraryController.middlewareNew.bind(this), LibraryController.delete.bind(this))
 
     this.router.get('/libraries/:id/items2', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryItemsNew.bind(this))
     this.router.get('/libraries/:id/items', LibraryController.middleware.bind(this), LibraryController.getLibraryItems.bind(this))
@@ -87,10 +87,10 @@ class ApiRouter {
     this.router.get('/libraries/:id/filterdata', LibraryController.middlewareNew.bind(this), LibraryController.getLibraryFilterData.bind(this))
     this.router.get('/libraries/:id/search', LibraryController.middleware.bind(this), LibraryController.search.bind(this))
     this.router.get('/libraries/:id/stats', LibraryController.middleware.bind(this), LibraryController.stats.bind(this))
-    this.router.get('/libraries/:id/authors', LibraryController.middleware.bind(this), LibraryController.getAuthors.bind(this))
-    this.router.get('/libraries/:id/narrators', LibraryController.middleware.bind(this), LibraryController.getNarrators.bind(this))
-    this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.updateNarrator.bind(this))
-    this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middleware.bind(this), LibraryController.removeNarrator.bind(this))
+    this.router.get('/libraries/:id/authors', LibraryController.middlewareNew.bind(this), LibraryController.getAuthors.bind(this))
+    this.router.get('/libraries/:id/narrators', LibraryController.middlewareNew.bind(this), LibraryController.getNarrators.bind(this))
+    this.router.patch('/libraries/:id/narrators/:narratorId', LibraryController.middlewareNew.bind(this), LibraryController.updateNarrator.bind(this))
+    this.router.delete('/libraries/:id/narrators/:narratorId', LibraryController.middlewareNew.bind(this), LibraryController.removeNarrator.bind(this))
     this.router.get('/libraries/:id/matchall', LibraryController.middleware.bind(this), LibraryController.matchAll.bind(this))
     this.router.post('/libraries/:id/scan', LibraryController.middleware.bind(this), LibraryController.scan.bind(this))
     this.router.get('/libraries/:id/recent-episodes', LibraryController.middleware.bind(this), LibraryController.getRecentEpisodes.bind(this))
@@ -380,24 +380,41 @@ class ApiRouter {
     return json
   }
 
-  async handleDeleteLibraryItem(libraryItem) {
+  /**
+   * Remove library item and associated entities
+   * @param {string} mediaType 
+   * @param {string} libraryItemId 
+   * @param {string[]} mediaItemIds array of bookId or podcastEpisodeId
+   */
+  async handleDeleteLibraryItem(mediaType, libraryItemId, mediaItemIds) {
     // Remove media progress for this library item from all users
     const users = await Database.models.user.getOldUsers()
     for (const user of users) {
-      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItem.id)) {
+      for (const mediaProgress of user.getAllMediaProgressForLibraryItem(libraryItemId)) {
         await Database.removeMediaProgress(mediaProgress.id)
       }
     }
 
     // TODO: Remove open sessions for library item
-    let mediaItemIds = []
-    if (libraryItem.isBook) {
-      // Check remove empty series
-      await this.checkRemoveEmptySeries(libraryItem.media.metadata.series, libraryItem.id)
 
-      mediaItemIds.push(libraryItem.media.id)
-    } else if (libraryItem.isPodcast) {
-      mediaItemIds.push(...libraryItem.media.episodes.map(ep => ep.id))
+    // Remove series if empty
+    if (mediaType === 'book') {
+      const bookSeries = await Database.models.bookSeries.findAll({
+        where: {
+          bookId: mediaItemIds[0]
+        },
+        include: {
+          model: Database.models.series,
+          include: {
+            model: Database.models.book
+          }
+        }
+      })
+      for (const bs of bookSeries) {
+        if (bs.series.books.length === 1) {
+          await this.removeEmptySeries(bs.series)
+        }
+      }
     }
 
     // remove item from playlists
@@ -433,23 +450,21 @@ class ApiRouter {
     }
 
     // Close rss feed - remove from db and emit socket event
-    await this.rssFeedManager.closeFeedForEntityId(libraryItem.id)
+    await this.rssFeedManager.closeFeedForEntityId(libraryItemId)
 
     // purge cover cache
-    if (libraryItem.media.coverPath) {
-      await this.cacheManager.purgeCoverCache(libraryItem.id)
-    }
+    await this.cacheManager.purgeCoverCache(libraryItemId)
 
-    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItem.id)
+    const itemMetadataPath = Path.join(global.MetadataPath, 'items', libraryItemId)
     if (await fs.pathExists(itemMetadataPath)) {
       Logger.debug(`[ApiRouter] Removing item metadata path "${itemMetadataPath}"`)
       await fs.remove(itemMetadataPath)
     }
 
-    await Database.removeLibraryItem(libraryItem.id)
+    await Database.removeLibraryItem(libraryItemId)
 
     SocketAuthority.emitter('item_removed', {
-      id: libraryItem.id
+      id: libraryItemId
     })
   }
 
@@ -466,6 +481,12 @@ class ApiRouter {
         // TODO: Socket events for series?
       }
     }
+  }
+
+  async removeEmptySeries(series) {
+    await this.rssFeedManager.closeFeedForEntityId(series.id)
+    Logger.info(`[ApiRouter] Series "${series.name}" is now empty. Removing series`)
+    await Database.removeSeries(series.id)
   }
 
   async getUserListeningSessionsHelper(userId) {

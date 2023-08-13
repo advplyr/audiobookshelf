@@ -122,5 +122,45 @@ module.exports = {
       libraryItems.push(libraryItem)
     }
     return libraryItems
+  },
+
+  /**
+ * Get all library items that have narrators
+ * @param {string[]} narrators 
+ * @returns {Promise<LibraryItem[]>}
+ */
+  async getAllLibraryItemsWithNarrators(narrators) {
+    const libraryItems = []
+    const booksWithGenre = await Database.models.book.findAll({
+      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(narrators) WHERE json_valid(narrators) AND json_each.value IN (:narrators))`), {
+        [Sequelize.Op.gte]: 1
+      }),
+      replacements: {
+        narrators
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: Database.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: Database.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ]
+    })
+    for (const book of booksWithGenre) {
+      const libraryItem = book.libraryItem
+      libraryItem.media = book
+      libraryItems.push(libraryItem)
+    }
+    return libraryItems
   }
 }

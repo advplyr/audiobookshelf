@@ -467,6 +467,20 @@ class Database {
       }
     }
   }
+
+  removeNarratorFromFilterData(narrator) {
+    for (const libraryId in this.libraryFilterData) {
+      this.libraryFilterData[libraryId].narrators = this.libraryFilterData[libraryId].narrators.filter(n => n !== narrator)
+    }
+  }
+
+  addNarratorToFilterData(narrator) {
+    for (const libraryId in this.libraryFilterData) {
+      if (!this.libraryFilterData[libraryId].narrators.includes(narrator)) {
+        this.libraryFilterData[libraryId].narrators.push(narrator)
+      }
+    }
+  }
 }
 
 module.exports = new Database()
