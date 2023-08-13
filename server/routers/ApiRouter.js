@@ -403,17 +403,32 @@ class ApiRouter {
     // remove item from playlists
     const playlistsWithItem = await Database.models.playlist.getPlaylistsForMediaItemIds(mediaItemIds)
     for (const playlist of playlistsWithItem) {
-      playlist.removeItemsForLibraryItem(libraryItem.id)
+      let numMediaItems = playlist.playlistMediaItems.length
+
+      let order = 1
+      // Remove items in playlist and re-order
+      for (const playlistMediaItem of playlist.playlistMediaItems) {
+        if (mediaItemIds.includes(playlistMediaItem.mediaItemId)) {
+          await playlistMediaItem.destroy()
+          numMediaItems--
+        } else {
+          if (playlistMediaItem.order !== order) {
+            playlistMediaItem.update({
+              order
+            })
+          }
+          order++
+        }
+      }
 
       // If playlist is now empty then remove it
-      if (!playlist.items.length) {
+      const jsonExpanded = await playlist.getOldJsonExpanded()
+      if (!numMediaItems) {
         Logger.info(`[ApiRouter] Playlist "${playlist.name}" has no more items - removing it`)
-        await Database.removePlaylist(playlist.id)
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', playlist.toJSONExpanded(Database.libraryItems))
+        await playlist.destroy()
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_removed', jsonExpanded)
       } else {
-        await Database.updatePlaylist(playlist)
-
-        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', playlist.toJSONExpanded(Database.libraryItems))
+        SocketAuthority.clientEmitter(playlist.userId, 'playlist_updated', jsonExpanded)
       }
     }
 

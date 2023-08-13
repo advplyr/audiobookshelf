@@ -122,9 +122,13 @@ class UserController {
     // Todo: check if user is logged in and cancel streams
 
     // Remove user playlists
-    const userPlaylists = await Database.models.playlist.getPlaylistsForUserAndLibrary(user.id)
+    const userPlaylists = await Database.models.playlist.findAll({
+      where: {
+        userId: user.id
+      }
+    })
     for (const playlist of userPlaylists) {
-      await Database.removePlaylist(playlist.id)
+      await playlist.destroy()
     }
 
     const userJson = user.toJSONForBrowser()

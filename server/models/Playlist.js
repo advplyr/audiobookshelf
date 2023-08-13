@@ -84,7 +84,7 @@ module.exports = (sequelize) => {
         id: libraryItemIds
       })
 
-      const playlistExpanded = oldCollection.toJSONExpanded(libraryItems)
+      const playlistExpanded = oldPlaylist.toJSONExpanded(libraryItems)
 
       if (include?.includes('rssfeed')) {
         const feeds = await this.getFeeds()
@@ -248,7 +248,7 @@ module.exports = (sequelize) => {
     /**
      * Get all playlists for mediaItemIds
      * @param {string[]} mediaItemIds 
-     * @returns {Promise<oldPlaylist[]>}
+     * @returns {Promise<Playlist[]>}
      */
     static async getPlaylistsForMediaItemIds(mediaItemIds) {
       if (!mediaItemIds?.length) return []
@@ -282,8 +282,13 @@ module.exports = (sequelize) => {
         ],
         order: [['playlist', 'playlistMediaItems', 'order', 'ASC']]
       })
-      return playlistMediaItemsExpanded.map(pmie => {
-        pmie.playlist.playlistMediaItems = pmie.playlist.playlistMediaItems.map(pmi => {
+
+      const playlists = []
+      for (const playlistMediaItem of playlistMediaItemsExpanded) {
+        const playlist = playlistMediaItem.playlist
+        if (playlists.some(p => p.id === playlist.id)) continue
+
+        playlist.playlistMediaItems = playlist.playlistMediaItems.map(pmi => {
           if (pmi.mediaItemType === 'book' && pmi.book !== undefined) {
             pmi.mediaItem = pmi.book
             pmi.dataValues.mediaItem = pmi.dataValues.book
@@ -297,9 +302,9 @@ module.exports = (sequelize) => {
           delete pmi.dataValues.podcastEpisode
           return pmi
         })
-
-        return this.getOldPlaylist(pmie.playlist)
-      })
+        playlists.push(playlist)
+      }
+      return playlists
     }
   }
 
@@ -320,7 +325,9 @@ module.exports = (sequelize) => {
   library.hasMany(Playlist)
   Playlist.belongsTo(library)
 
-  user.hasMany(Playlist)
+  user.hasMany(Playlist, {
+    onDelete: 'CASCADE'
+  })
   Playlist.belongsTo(user)
 
   Playlist.addHook('afterFind', findResult => {

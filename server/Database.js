@@ -254,81 +254,9 @@ class Database {
     await this.models.library.removeById(libraryId)
   }
 
-  async createCollection(oldCollection) {
-    if (!this.sequelize) return false
-    const newCollection = await this.models.collection.createFromOld(oldCollection)
-    // Create CollectionBooks
-    if (newCollection) {
-      const collectionBooks = []
-      oldCollection.books.forEach((libraryItemId) => {
-        const libraryItem = this.libraryItems.find(li => li.id === libraryItemId)
-        if (libraryItem) {
-          collectionBooks.push({
-            collectionId: newCollection.id,
-            bookId: libraryItem.media.id
-          })
-        }
-      })
-      if (collectionBooks.length) {
-        await this.createBulkCollectionBooks(collectionBooks)
-      }
-    }
-  }
-
   createBulkCollectionBooks(collectionBooks) {
     if (!this.sequelize) return false
     return this.models.collectionBook.bulkCreate(collectionBooks)
-  }
-
-  async createPlaylist(oldPlaylist) {
-    if (!this.sequelize) return false
-    const newPlaylist = await this.models.playlist.createFromOld(oldPlaylist)
-    if (newPlaylist) {
-      const playlistMediaItems = []
-      let order = 1
-      for (const mediaItemObj of oldPlaylist.items) {
-        const libraryItem = this.libraryItems.find(li => li.id === mediaItemObj.libraryItemId)
-        if (!libraryItem) continue
-
-        let mediaItemId = libraryItem.media.id // bookId
-        let mediaItemType = 'book'
-        if (mediaItemObj.episodeId) {
-          mediaItemType = 'podcastEpisode'
-          mediaItemId = mediaItemObj.episodeId
-        }
-        playlistMediaItems.push({
-          playlistId: newPlaylist.id,
-          mediaItemId,
-          mediaItemType,
-          order: order++
-        })
-      }
-      if (playlistMediaItems.length) {
-        await this.createBulkPlaylistMediaItems(playlistMediaItems)
-      }
-    }
-  }
-
-  updatePlaylist(oldPlaylist) {
-    if (!this.sequelize) return false
-    const playlistMediaItems = []
-    let order = 1
-    oldPlaylist.items.forEach((item) => {
-      const libraryItem = this.getLibraryItem(item.libraryItemId)
-      if (!libraryItem) return
-      playlistMediaItems.push({
-        playlistId: oldPlaylist.id,
-        mediaItemId: item.episodeId || libraryItem.media.id,
-        mediaItemType: item.episodeId ? 'podcastEpisode' : 'book',
-        order: order++
-      })
-    })
-    return this.models.playlist.fullUpdateFromOld(oldPlaylist, playlistMediaItems)
-  }
-
-  async removePlaylist(playlistId) {
-    if (!this.sequelize) return false
-    await this.models.playlist.removeById(playlistId)
   }
 
   createPlaylistMediaItem(playlistMediaItem) {
@@ -339,11 +267,6 @@ class Database {
   createBulkPlaylistMediaItems(playlistMediaItems) {
     if (!this.sequelize) return false
     return this.models.playlistMediaItem.bulkCreate(playlistMediaItems)
-  }
-
-  removePlaylistMediaItem(playlistId, mediaItemId) {
-    if (!this.sequelize) return false
-    return this.models.playlistMediaItem.removeByIds(playlistId, mediaItemId)
   }
 
   getLibraryItem(libraryItemId) {
