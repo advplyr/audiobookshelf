@@ -1,6 +1,5 @@
 const Sequelize = require('sequelize')
 const Database = require('../../Database')
-const Logger = require('../../Logger')
 const libraryItemsBookFilters = require('./libraryItemsBookFilters')
 const libraryItemsPodcastFilters = require('./libraryItemsPodcastFilters')
 

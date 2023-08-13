@@ -1,0 +1,126 @@
+const Sequelize = require('sequelize')
+const Database = require('../../Database')
+
+module.exports = {
+  /**
+   * Get all library items that have tags
+   * @param {string[]} tags 
+   * @returns {Promise<LibraryItem[]>}
+   */
+  async getAllLibraryItemsWithTags(tags) {
+    const libraryItems = []
+    const booksWithTag = await Database.models.book.findAll({
+      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
+        [Sequelize.Op.gte]: 1
+      }),
+      replacements: {
+        tags
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: Database.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: Database.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ]
+    })
+    for (const book of booksWithTag) {
+      const libraryItem = book.libraryItem
+      libraryItem.media = book
+      libraryItems.push(libraryItem)
+    }
+    const podcastsWithTag = await Database.models.podcast.findAll({
+      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(tags) WHERE json_valid(tags) AND json_each.value IN (:tags))`), {
+        [Sequelize.Op.gte]: 1
+      }),
+      replacements: {
+        tags
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: Database.models.podcastEpisode
+        }
+      ]
+    })
+    for (const podcast of podcastsWithTag) {
+      const libraryItem = podcast.libraryItem
+      libraryItem.media = podcast
+      libraryItems.push(libraryItem)
+    }
+    return libraryItems
+  },
+
+  /**
+   * Get all library items that have genres
+   * @param {string[]} genres 
+   * @returns {Promise<LibraryItem[]>}
+   */
+  async getAllLibraryItemsWithGenres(genres) {
+    const libraryItems = []
+    const booksWithGenre = await Database.models.book.findAll({
+      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
+        [Sequelize.Op.gte]: 1
+      }),
+      replacements: {
+        genres
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: Database.models.author,
+          through: {
+            attributes: []
+          }
+        },
+        {
+          model: Database.models.series,
+          through: {
+            attributes: ['sequence']
+          }
+        }
+      ]
+    })
+    for (const book of booksWithGenre) {
+      const libraryItem = book.libraryItem
+      libraryItem.media = book
+      libraryItems.push(libraryItem)
+    }
+    const podcastsWithGenre = await Database.models.podcast.findAll({
+      where: Sequelize.where(Sequelize.literal(`(SELECT count(*) FROM json_each(genres) WHERE json_valid(genres) AND json_each.value IN (:genres))`), {
+        [Sequelize.Op.gte]: 1
+      }),
+      replacements: {
+        genres
+      },
+      include: [
+        {
+          model: Database.models.libraryItem
+        },
+        {
+          model: Database.models.podcastEpisode
+        }
+      ]
+    })
+    for (const podcast of podcastsWithGenre) {
+      const libraryItem = podcast.libraryItem
+      libraryItem.media = podcast
+      libraryItems.push(libraryItem)
+    }
+    return libraryItems
+  }
+}
